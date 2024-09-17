@@ -140,7 +140,7 @@ defmodule EctoShorts.CommonChanges do
 
     association_or_nil = changeset.data.__struct__.__schema__(:association, key)
 
-    preload_association_and_put_or_cast(changeset, key, association_or_nil, opts)
+    preload_and_put_or_cast_assoc(changeset, key, association_or_nil, opts)
   end
 
   @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t
@@ -148,11 +148,11 @@ defmodule EctoShorts.CommonChanges do
     preload_change_assoc(changeset, key, default_opts())
   end
 
-  defp preload_association_and_put_or_cast(changeset, _key, nil, _opts) do
+  defp preload_and_put_or_cast_assoc(changeset, _key, nil, _opts) do
     changeset
   end
 
-  defp preload_association_and_put_or_cast(changeset, key, %Ecto.Association.ManyToMany{}, opts) do
+  defp preload_and_put_or_cast_assoc(changeset, key, %Ecto.Association.ManyToMany{}, opts) do
     case Map.get(changeset.params, Atom.to_string(key)) do
       nil -> changeset
       params_data ->
@@ -162,7 +162,7 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  defp preload_association_and_put_or_cast(changeset, key, _ecto_association, opts) do
+  defp preload_and_put_or_cast_assoc(changeset, key, _ecto_association, opts) do
     if Map.has_key?(changeset.params, Atom.to_string(key)) do
       changeset
       |> preload_changeset_assoc(key, opts)
