@@ -746,6 +746,104 @@ defmodule EctoShorts.Actions do
     find_or_create_many(schema, param_list, default_opts())
   end
 
+  @doc """
+  A simple `Ecto.Repo` transaction wrapper.
+
+  This function has special handling for the following responses
+  when a function is given:
+
+    * If the transaction returns `{:ok, {:ok, term()}}` this function returns `{:ok, term()}`.
+    * If the transaction returns `{:ok, {:error, term()}}` this function returns `{:error, term()}`.
+    * If the transaction returns `{:error, {:error, term()}}` this function returns `{:error, term()}`.
+    * If the transaction returns `{:ok, :error}` this function returns `:error`.
+    * If the transaction returns `{:error, :error}` this function returns `:error`.
+
+  If none of these conditions are met this function the response is
+  returned as-is from the transaction. The responses are handled
+  after the transaction has completed.
+
+  ### Options
+
+    * `rollback_on_error` - When set to `true` if the function returns
+      `{:error, term()}` or `:error` the transaction is rolled back,
+      otherwise changes are committed. Defaults to `true`. This option
+      does not apply when an `Ecto.Multi` is given as [Ecto.Repo.transaction/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:transaction/2-use-with-ecto-multi)
+      will roll back the transaction if an error occurs.
+
+  ### Examples
+
+      iex> EctoShorts.Actions.transaction(fn -> :success end)
+      {:ok, :success}
+
+      iex> EctoShorts.Actions.transaction(fn _repo -> :success end)
+      {:ok, :success}
+
+      iex> EctoShorts.Actions.transaction(fn -> {:ok, :success} end)
+      {:ok, :success}
+
+      iex> EctoShorts.Actions.transaction(fn _repo -> {:ok, :success} end)
+      {:ok, :success}
+
+      iex> EctoShorts.Actions.transaction(fn -> {:error, :failed} end)
+      {:error, :failed}
+
+      iex> EctoShorts.Actions.transaction(fn _repo -> {:error, :failed} end)
+      {:error, :failed}
+  """
+  @doc since: "2.5.0"
+  @spec transaction(
+    fun_or_multi :: (-> any()) | (module() -> any()) | Ecto.Multi.t(),
+    opts :: opts()
+  ) :: {:ok, any()} | {:error, any()} | :error | Ecto.Multi.failure()
+  @spec transaction(
+    fun_or_multi :: (-> any()) | (module() -> any()) | Ecto.Multi.t()
+  ) :: {:ok, any()} | {:error, any()} | :error | Ecto.Multi.failure()
+  def transaction(fun_or_multi, opts \\ [])
+
+  def transaction(%_{} = multi, opts) do
+    Config.repo!(opts).transaction(multi, opts)
+  end
+
+  def transaction(fun, opts) do
+    fn repo ->
+      repo
+      |> execute_transaction(fun)
+      |> rollback_on_error(repo, opts)
+    end
+    |> Config.repo!(opts).transaction(opts)
+    |> handle_transaction_response()
+  end
+
+  defp rollback_on_error({:error, _} = error, repo, opts) do
+    if Keyword.get(opts, :rollback_on_error, true) do
+      repo.rollback(error)
+    else
+      error
+    end
+  end
+
+  defp rollback_on_error(:error, repo, opts) do
+    if Keyword.get(opts, :rollback_on_error, true) do
+      repo.rollback(:error)
+    else
+      :error
+    end
+  end
+
+  defp rollback_on_error(result, _repo, _opts) do
+    result
+  end
+
+  defp execute_transaction(repo, fun) when is_function(fun, 1), do: fun.(repo)
+  defp execute_transaction(_repo, fun), do: fun.()
+
+  defp handle_transaction_response({:error, :error}), do: :error
+  defp handle_transaction_response({:error, {:error, _} = error}), do: error
+  defp handle_transaction_response({:ok, :error}), do: :error
+  defp handle_transaction_response({:ok, {:error, _} = error}), do: error
+  defp handle_transaction_response({:ok, {:ok, _} = response}), do: response
+  defp handle_transaction_response(response), do: response
+
   defp find_many(schema, param_list, opts) do
     param_list
     |> Enum.map(fn params ->

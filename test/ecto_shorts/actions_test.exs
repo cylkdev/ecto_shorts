@@ -2,6 +2,7 @@ defmodule EctoShorts.ActionsTest do
   @moduledoc false
   use EctoShorts.DataCase
 
+  alias Ecto.Multi
   alias EctoShorts.Actions
   alias EctoShorts.Support.{
     Repo,
@@ -412,6 +413,111 @@ defmodule EctoShorts.ActionsTest do
       assert %{0 => schema_data} = changes
 
       assert schema_data.id
+    end
+  end
+
+  describe "transaction/2" do
+    test "returns {:ok, changes()} when Ecto.Multi runs successfully" do
+      assert {:ok, %{operation_name: :success}} =
+        Multi.new()
+        |> Multi.run(:operation_name, fn _repo, _changes -> {:ok, :success} end)
+        |> Actions.transaction()
+    end
+
+    test "returns {:error, failed_operation_name, failed_value, changes} when Ecto.Multi fails" do
+      assert {:error, :operation_name, :failed, %{}} =
+        Multi.new()
+        |> Multi.run(:operation_name, fn _repo, _changes -> {:error, :failed} end)
+        |> Actions.transaction()
+    end
+
+    test "returns {:ok, term()} when function is 0-arity and transaction returns a non status tuple" do
+      assert {:ok, :success} = Actions.transaction(fn -> :success end)
+    end
+
+    test "returns {:ok, term()} when function is 1-arity and transaction returns a non status tuple" do
+      assert {:ok, :success} = Actions.transaction(fn _repo -> :success end)
+    end
+
+    test "returns {:ok, term()} when function is 0-arity and transaction returns {:ok, term()}" do
+      assert {:ok, :success} = Actions.transaction(fn -> {:ok, :success} end)
+    end
+
+    test "returns {:ok, term()} when function is 1-arity and transaction returns {:ok, term()}" do
+      assert {:ok, :success} = Actions.transaction(fn _repo -> {:ok, :success} end)
+    end
+
+    test "returns {:error, term()} when function is 0-arity and transaction returns {:error, term()}" do
+      assert {:error, :failed} = Actions.transaction(fn -> {:error, :failed} end)
+    end
+
+    test "returns {:error, term()} when function is 1-arity and transaction returns {:error, term()}" do
+      assert {:error, :failed} = Actions.transaction(fn _repo -> {:error, :failed} end)
+    end
+
+    test "returns ecto repo transaction response when function is 0-arity and transaction returns a term that is not handled" do
+      assert {:ok, {:ok, "foo", "bar"}} = Actions.transaction(fn -> {:ok, "foo", "bar"} end)
+    end
+
+    test "returns ecto repo transaction response when function is 1-arity and transaction returns a term that is not handled" do
+      assert {:ok, {:ok, "foo", "bar"}} = Actions.transaction(fn _repo -> {:ok, "foo", "bar"} end)
+    end
+
+    test "returns {:error, term()} when rollback returns {:error, term()}" do
+      assert {:error, :rollback} = Actions.transaction(fn repo -> repo.rollback({:error, :rollback}) end)
+    end
+
+    test "returns {:error, term()} when rollback returns term" do
+      assert {:error, :rollback} = Actions.transaction(fn repo -> repo.rollback(:rollback) end)
+    end
+
+    test "returns ecto repo transaction response when rollback is not handled" do
+      assert {:error, {:ok, :success}} = Actions.transaction(fn repo -> repo.rollback({:ok, :success}) end)
+    end
+
+    test "transaction is rolled back when {:error, term()} is returned" do
+      assert {:error, :failed} =
+        Actions.transaction(fn ->
+          with {:ok, _comment} <- Actions.create(Comment, %{body: "comment"}) do
+            {:error, :failed}
+          end
+        end)
+
+      comments = Actions.all(Comment)
+
+      assert 0 === length(comments)
+    end
+
+    test "transaction is not rolled back when {:error, term()} is returned and rollback_on_error is false" do
+      assert {:error, :failed} =
+        Actions.transaction(
+          fn ->
+            with {:ok, _comment} <- Actions.create(Comment, %{body: "comment"}) do
+              {:error, :failed}
+            end
+          end,
+          rollback_on_error: false
+        )
+
+        comments = Actions.all(Comment)
+
+        assert 1 === length(comments)
+    end
+
+    test "transaction is not rolled back when :error is returned and rollback_on_error is false" do
+      assert :error =
+        Actions.transaction(
+          fn ->
+            with {:ok, _comment} <- Actions.create(Comment, %{body: "comment"}) do
+              :error
+            end
+          end,
+          rollback_on_error: false
+        )
+
+        comments = Actions.all(Comment)
+
+        assert 1 === length(comments)
     end
   end
 end

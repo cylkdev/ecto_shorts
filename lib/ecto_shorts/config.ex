@@ -33,8 +33,12 @@ defmodule EctoShorts.Config do
   @doc """
   Returns a `Ecto.Repo` module.
 
+<<<<<<< HEAD
   Raises if the key `:repo` is not specified in configuration
   and the option `:repo` is not specified at runtime.
+=======
+  Raises if the repo is not configured and the option `:repo` is not set.
+>>>>>>> c0f43ee (add Actions.transaction/2)
 
   ### Examples
 
