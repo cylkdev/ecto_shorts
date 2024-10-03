@@ -100,7 +100,7 @@ defmodule EctoShorts.Actions do
     id :: id()
   ) :: schema() | nil
   def get(query, id, opts \\ []) do
-    replica!(opts).get(query, id, opts)
+    Config.replica!(opts).get(query, id, opts)
   end
 
   @doc """
@@ -212,7 +212,7 @@ defmodule EctoShorts.Actions do
 
     query
     |> CommonFilters.convert_params_to_filter(params)
-    |> replica!(opts).all(opts)
+    |> Config.replica!(opts).all(opts)
   end
 
   @doc """
@@ -262,7 +262,7 @@ defmodule EctoShorts.Actions do
 
     query
     |> CommonFilters.convert_params_to_filter(params)
-    |> replica!(opts).one(opts)
+    |> Config.replica!(opts).one(opts)
     |> case do
       nil ->
         {:error, Error.call(:not_found, "no records found", %{
@@ -302,7 +302,7 @@ defmodule EctoShorts.Actions do
   def create(query, params, opts \\ []) do
     query
     |> build_changeset(params, opts)
-    |> repo!(opts).insert(opts)
+    |> Config.repo!(opts).insert(opts)
   end
 
   @doc """
@@ -506,7 +506,7 @@ defmodule EctoShorts.Actions do
   def update(query, schema_data, update_params, opts) do
     query
     |> build_changeset(schema_data, update_params, opts)
-    |> repo!(opts).update(opts)
+    |> Config.repo!(opts).update(opts)
   end
 
   @doc """
@@ -554,7 +554,7 @@ defmodule EctoShorts.Actions do
     id :: id()
   ) :: {:ok, schema()} | {:error, any()}
   def delete(%Ecto.Changeset{} = changeset, opts) do
-    case repo!(opts).delete(changeset, opts) do
+    case Config.repo!(opts).delete(changeset, opts) do
       {:error, changeset} ->
         {:error, Error.call(
           :internal_server_error,
@@ -568,7 +568,7 @@ defmodule EctoShorts.Actions do
   def delete(%queryable{} = schema_data, opts) do
     changeset = build_changeset(queryable, schema_data, %{}, opts)
 
-    case repo!(opts).delete(changeset, opts) do
+    case Config.repo!(opts).delete(changeset, opts) do
       {:error, changeset} ->
         {:error, Error.call(
           :internal_server_error,
@@ -616,7 +616,7 @@ defmodule EctoShorts.Actions do
   ) :: {:ok, schema()} | {:error, any()}
   def delete(query, id, opts) when (is_integer(id) or is_binary(id)) do
     with {:ok, schema_data} <- find(query, %{id: id}, opts) do
-      repo!(opts).delete(schema_data, opts)
+      Config.repo!(opts).delete(schema_data, opts)
     end
   end
 
@@ -655,7 +655,7 @@ defmodule EctoShorts.Actions do
     query
     |> CommonSchemas.get_schema_query()
     |> CommonFilters.convert_params_to_filter(params)
-    |> replica!(opts).stream(opts)
+    |> Config.replica!(opts).stream(opts)
   end
 
   @doc """
@@ -697,7 +697,7 @@ defmodule EctoShorts.Actions do
     query
     |> CommonSchemas.get_schema_query()
     |> CommonFilters.convert_params_to_filter(params)
-    |> replica!(opts).aggregate(aggregate, field, opts)
+    |> Config.replica!(opts).aggregate(aggregate, field, opts)
   end
 
   @doc """
@@ -735,7 +735,7 @@ defmodule EctoShorts.Actions do
 
     query
     |> multi_insert(param_list, create_params, opts)
-    |> repo!(opts).transaction()
+    |> Config.repo!(opts).transaction()
     |> case do
       {:ok, created_map} -> {:ok, merge_found(created_map, found_results)}
       error -> error
@@ -745,6 +745,104 @@ defmodule EctoShorts.Actions do
   def find_or_create_many(schema, param_list) do
     find_or_create_many(schema, param_list, default_opts())
   end
+
+  @doc """
+  A simple `Ecto.Repo` transaction wrapper.
+
+  This function has special handling for the following responses
+  when a function is given:
+
+    * If the transaction returns `{:ok, {:ok, term()}}` this function returns `{:ok, term()}`.
+    * If the transaction returns `{:ok, {:error, term()}}` this function returns `{:error, term()}`.
+    * If the transaction returns `{:error, {:error, term()}}` this function returns `{:error, term()}`.
+    * If the transaction returns `{:ok, :error}` this function returns `:error`.
+    * If the transaction returns `{:error, :error}` this function returns `:error`.
+
+  If none of these conditions are met this function the response is
+  returned as-is from the transaction. The responses are handled
+  after the transaction has completed.
+
+  ### Options
+
+    * `rollback_on_error` - When set to `true` if the function returns
+      `{:error, term()}` or `:error` the transaction is rolled back,
+      otherwise changes are committed. Defaults to `true`. This option
+      does not apply when an `Ecto.Multi` is given as [Ecto.Repo.transaction/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:transaction/2-use-with-ecto-multi)
+      will roll back the transaction if an error occurs.
+
+  ### Examples
+
+      iex> EctoShorts.Actions.transaction(fn -> :success end)
+      {:ok, :success}
+
+      iex> EctoShorts.Actions.transaction(fn _repo -> :success end)
+      {:ok, :success}
+
+      iex> EctoShorts.Actions.transaction(fn -> {:ok, :success} end)
+      {:ok, :success}
+
+      iex> EctoShorts.Actions.transaction(fn _repo -> {:ok, :success} end)
+      {:ok, :success}
+
+      iex> EctoShorts.Actions.transaction(fn -> {:error, :failed} end)
+      {:error, :failed}
+
+      iex> EctoShorts.Actions.transaction(fn _repo -> {:error, :failed} end)
+      {:error, :failed}
+  """
+  @doc since: "2.5.0"
+  @spec transaction(
+    fun_or_multi :: (-> any()) | (module() -> any()) | Ecto.Multi.t(),
+    opts :: opts()
+  ) :: {:ok, any()} | {:error, any()} | :error | Ecto.Multi.failure()
+  @spec transaction(
+    fun_or_multi :: (-> any()) | (module() -> any()) | Ecto.Multi.t()
+  ) :: {:ok, any()} | {:error, any()} | :error | Ecto.Multi.failure()
+  def transaction(fun_or_multi, opts \\ [])
+
+  def transaction(%_{} = multi, opts) do
+    Config.repo!(opts).transaction(multi, opts)
+  end
+
+  def transaction(fun, opts) do
+    fn repo ->
+      repo
+      |> execute_transaction(fun)
+      |> rollback_on_error(repo, opts)
+    end
+    |> Config.repo!(opts).transaction(opts)
+    |> handle_transaction_response()
+  end
+
+  defp rollback_on_error({:error, _} = error, repo, opts) do
+    if Keyword.get(opts, :rollback_on_error, true) do
+      repo.rollback(error)
+    else
+      error
+    end
+  end
+
+  defp rollback_on_error(:error, repo, opts) do
+    if Keyword.get(opts, :rollback_on_error, true) do
+      repo.rollback(:error)
+    else
+      :error
+    end
+  end
+
+  defp rollback_on_error(result, _repo, _opts) do
+    result
+  end
+
+  defp execute_transaction(repo, fun) when is_function(fun, 1), do: fun.(repo)
+  defp execute_transaction(_repo, fun), do: fun.()
+
+  defp handle_transaction_response({:error, :error}), do: :error
+  defp handle_transaction_response({:error, {:error, _} = error}), do: error
+  defp handle_transaction_response({:ok, :error}), do: :error
+  defp handle_transaction_response({:ok, {:error, _} = error}), do: error
+  defp handle_transaction_response({:ok, {:ok, _} = response}), do: response
+  defp handle_transaction_response(response), do: response
 
   defp find_many(schema, param_list, opts) do
     param_list
@@ -827,31 +925,7 @@ defmodule EctoShorts.Actions do
     {status, Enum.reverse(res)}
   end
 
-  defp repo!(opts) do
-    with nil <- repo(opts) do
-      raise ArgumentError, message: "ecto shorts must be configured with a repo. For further guidence consult the docs. https://hexdocs.pm/ecto_shorts/EctoShorts.html#module-config"
-    end
+  defp default_opts do
+    [repo: Config.repo(), replica: Config.replica()]
   end
-
-  # `replica!/1` will attempt to retrieve a repo from the replica key and default to
-  # returning the value under the repo: key if no replica is found. If no repos are configured
-  # an ArgumentError will be raised.
-  defp replica!(opts) do
-    with nil <- Keyword.get(opts, :replica),
-      nil <- repo(opts) do
-      raise ArgumentError, message: "ecto shorts must be configured with a repo. For further guidence consult the docs. https://hexdocs.pm/ecto_shorts/EctoShorts.html#module-config"
-    end
-  end
-
-  defp repo([]) do
-    Config.repo()
-  end
-
-  defp repo(opts) do
-    default_opts()
-    |> Keyword.merge(opts)
-    |> Keyword.get(:repo)
-  end
-
-  defp default_opts, do: [repo: Config.repo()]
 end
