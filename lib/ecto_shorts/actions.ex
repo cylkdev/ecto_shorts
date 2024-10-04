@@ -616,7 +616,7 @@ defmodule EctoShorts.Actions do
   ) :: {:ok, schema()} | {:error, any()}
   def delete(query, id, opts) when (is_integer(id) or is_binary(id)) do
     with {:ok, schema_data} <- find(query, %{id: id}, opts) do
-      Config.repo!(opts).delete(schema_data, opts)
+      delete(schema_data, opts)
     end
   end
 
