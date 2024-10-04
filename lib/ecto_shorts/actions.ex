@@ -47,6 +47,22 @@ defmodule EctoShorts.Actions do
     def create_user(params), do: Actions.find(User, params, repo: MyApp.Repo)
   end
   ```
+
+  ## Shared Options
+
+    * `changeset` - Modifies the changeset given to the `Ecto.Repo` api. A changeset
+      is first built using `changeset/2` function from the named struct module (the
+      `Ecto.Schema` module) before this is applied. This means that any pre-existing
+      modifications (eg. constraints) are applied first. The value can be any of the
+      following:
+
+        * `{module, function, args}` - The `function` in the `module` will be invoked
+          with the changeset prepended to the `args`. For example given the args
+          `[params]` it will be called as `module.fun.(changeset, params)`.
+
+        * `2-arity function` - A 2-arity function invoked as `fun.(changeset, params)`.
+
+        * `1-arity function` - A 1-arity function invoked as `fun.(changeset)`.
   """
   @type id :: binary() | integer()
   @type source :: binary()
@@ -554,29 +570,15 @@ defmodule EctoShorts.Actions do
     id :: id()
   ) :: {:ok, schema()} | {:error, any()}
   def delete(%Ecto.Changeset{} = changeset, opts) do
-    case Config.repo!(opts).delete(changeset, opts) do
-      {:error, changeset} ->
-        {:error, Error.call(
-          :internal_server_error,
-          "Error deleting #{inspect(changeset.data.__struct__)}",
-          %{changeset: changeset}
-        )}
-      ok -> ok
-    end
+    changeset
+    |> build_changeset(%{}, opts)
+    |> Config.repo!(opts).delete(opts)
   end
 
   def delete(%queryable{} = schema_data, opts) do
-    changeset = build_changeset(queryable, schema_data, %{}, opts)
-
-    case Config.repo!(opts).delete(changeset, opts) do
-      {:error, changeset} ->
-        {:error, Error.call(
-          :internal_server_error,
-          "Error deleting #{inspect(queryable)}",
-          %{changeset: changeset, schema_data: schema_data}
-        )}
-      ok -> ok
-    end
+    queryable
+    |> build_changeset(schema_data, %{}, opts)
+    |> Config.repo!(opts).delete(opts)
   end
 
   def delete(schema_data, opts) when is_list(schema_data) do
@@ -871,18 +873,7 @@ defmodule EctoShorts.Actions do
   end
 
   defp build_changeset(queryable, schema_data, params, opts) do
-    case opts[:changeset] do
-      nil ->
-        queryable.changeset(schema_data, params)
-
-      func when is_function(func, 2) ->
-        func.(schema_data, params)
-
-      func when is_function(func, 1) ->
-        schema_data
-        |> queryable.changeset(params)
-        |> func.()
-    end
+    prepare_changeset(queryable, schema_data, params, opts)
   end
 
   defp build_changeset({source, queryable}, params, opts) do
@@ -891,13 +882,90 @@ defmodule EctoShorts.Actions do
     build_changeset(queryable, loaded_struct, params, opts)
   end
 
+  defp build_changeset(%_{} = changeset, params, opts) do
+    prepare_changeset(changeset, params, opts)
+  end
+
   defp build_changeset(queryable, params, opts) do
     if Code.ensure_loaded?(queryable) and function_exported?(queryable, :create_changeset, 1) do
-      queryable.create_changeset(params)
+      prepare_changeset(queryable, params, opts)
     else
-      struct = struct(queryable)
+      build_changeset(queryable, struct(queryable), params, opts)
+    end
+  end
 
-      build_changeset(queryable, struct, params, opts)
+  defp prepare_changeset(queryable, schema_data, params, opts) do
+    case opts[:changeset] do
+      nil ->
+        queryable.changeset(schema_data, params)
+
+      {mod, fun, args} ->
+        changeset = queryable.changeset(schema_data, params)
+
+        apply(mod, fun, [changeset] ++ args)
+
+      func when is_function(func, 2) ->
+        schema_data
+        |> queryable.changeset(params)
+        |> func.(params)
+
+      func when is_function(func, 1) ->
+        schema_data
+        |> queryable.changeset(params)
+        |> func.()
+
+    end
+  end
+
+  defp prepare_changeset(changeset, params, opts) when is_struct(changeset, Ecto.Changeset) do
+    case opts[:changeset] do
+      nil ->
+        changeset.data.__struct__.changeset(changeset, params)
+
+      {mod, fun, args} ->
+        changeset = changeset.data.__struct__.changeset(changeset, params)
+
+        apply(mod, fun, [changeset] ++ args)
+
+      func when is_function(func, 2) ->
+        changeset
+        |> changeset.data.__struct__.changeset(params)
+        |> func.(params)
+
+      func when is_function(func, 1) ->
+        changeset
+        |> changeset.data.__struct__.changeset(params)
+        |> func.()
+
+    end
+  end
+
+  defp prepare_changeset(queryable, params, opts) do
+    case opts[:changeset] do
+      nil ->
+        queryable
+        |> struct()
+        |> queryable.changeset(params)
+
+      {mod, fun, args} ->
+        changeset =
+          queryable
+          |> struct()
+          |> queryable.changeset(params)
+
+        apply(mod, fun, [changeset] ++ args)
+
+      func when is_function(func, 2) ->
+        queryable
+        |> struct()
+        |> queryable.changeset(params)
+        |> func.(params)
+
+      func when is_function(func, 1) ->
+        queryable
+        |> struct()
+        |> queryable.changeset(params)
+        |> func.()
     end
   end
 
