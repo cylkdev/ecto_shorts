@@ -10,7 +10,8 @@ defmodule EctoShorts.ActionsTest do
   }
   alias EctoShorts.Support.Schemas.{
     Comment,
-    Post
+    Post,
+    PostNoConstraint
   }
 
   test "raise when :repo not set in option and configuration" do
@@ -23,6 +24,30 @@ defmodule EctoShorts.ActionsTest do
     assert_raise ArgumentError, ~r|EctoShorts replica and repo not configured!|, fn ->
       Actions.all(Comment, %{}, repo: nil, replica: nil)
     end
+  end
+
+  test "option ':changeset' can be used to modify changeset" do
+    assert {:ok, post_schema_data} = Actions.create(PostNoConstraint, %{title: "title"})
+
+    assert {:ok, _comment_schema_data} =
+      Actions.create(
+        Comment,
+        %{
+          body: "body",
+          post_id: post_schema_data.id
+        }
+      )
+
+    assert {:error, changeset} =
+      Actions.delete(post_schema_data, changeset: fn changeset ->
+        changeset
+        |> Ecto.Changeset.no_assoc_constraint(:comments, name: "comments_post_id_fkey")
+        |> Ecto.Changeset.unique_constraint(:unique_identifier)
+      end)
+
+    assert %Ecto.Changeset{} = changeset
+
+    assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
   end
 
   describe "get: " do
@@ -74,6 +99,14 @@ defmodule EctoShorts.ActionsTest do
       assert deleted_schema_data.id === schema_data.id
     end
 
+    test "deletes many records by schema data" do
+      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+
+      assert {:ok, [deleted_schema_data]} = Actions.delete([schema_data])
+
+      assert deleted_schema_data.id === schema_data.id
+    end
+
     test "deletes many records by changeset" do
       assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
 
@@ -84,15 +117,7 @@ defmodule EctoShorts.ActionsTest do
       assert deleted_schema_data.id === schema_data.id
     end
 
-    test "deletes many record by schema data" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
-
-      assert {:ok, [deleted_schema_data]} = Actions.delete([schema_data])
-
-      assert deleted_schema_data.id === schema_data.id
-    end
-
-    test "returns error when given a changeset and a constraint error occurs" do
+    test "returns {:error, changeset} when deleting record by id and a constraint error occurs" do
       assert {:ok, post_schema_data} = Actions.create(Post, %{title: "title"})
 
       assert {:ok, _comment_schema_data} =
@@ -104,16 +129,48 @@ defmodule EctoShorts.ActionsTest do
           }
         )
 
-      assert {:error, error} =
+      assert {:error, changeset} = Actions.delete(Post, post_schema_data.id)
+
+      assert %Ecto.Changeset{} = changeset
+
+      assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
+    end
+
+    test "returns {:error, changeset} when given schema data and a constraint error occurs" do
+      assert {:ok, post_schema_data} = Actions.create(Post, %{title: "title"})
+
+      assert {:ok, _comment_schema_data} =
+        Actions.create(
+          Comment,
+          %{
+            body: "body",
+            post_id: post_schema_data.id
+          }
+        )
+
+      assert {:error, changeset} = Actions.delete(post_schema_data)
+
+      assert %Ecto.Changeset{} = changeset
+
+      assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
+    end
+
+    test "returns {:error, changeset} when given a changeset and a constraint error occurs" do
+      assert {:ok, post_schema_data} = Actions.create(Post, %{title: "title"})
+
+      assert {:ok, _comment_schema_data} =
+        Actions.create(
+          Comment,
+          %{
+            body: "body",
+            post_id: post_schema_data.id
+          }
+        )
+
+      assert {:error, changeset} =
         post_schema_data
         |> Post.changeset(%{})
         |> Actions.delete()
-
-      assert %ErrorMessage{
-        code: :internal_server_error,
-        details: %{changeset: changeset},
-        message: "Error deleting EctoShorts.Support.Schemas.Post"
-      } = error
 
       assert %Ecto.Changeset{} = changeset
 

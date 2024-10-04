@@ -23,5 +23,9 @@ defmodule EctoShorts.Support.Schemas.UserAvatar do
     model_or_changeset
     |> cast(attrs, @available_fields)
     |> no_assoc_constraint(:file_info, name: "file_info_user_avatars_assoc_id_fkey")
+    |> foreign_key_constraint(:assoc_id,
+      name: "file_info_user_avatars_assoc_id_fkey",
+      message: "Cannot delete, record is being referenced."
+    )
   end
 end
