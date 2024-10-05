@@ -210,11 +210,12 @@ defmodule EctoShorts.CommonChanges do
     changeset_put_or_cast_assoc(changeset, field, field_params, ecto_assoc, opts)
   end
 
+  defp changeset_put_or_cast_assoc(changeset, field, nil = _field_params, _ecto_assoc, opts) do
+    Changeset.cast_assoc(changeset, field, opts)
+  end
+
   defp changeset_put_or_cast_assoc(changeset, field, field_params, %{cardinality: :many} = ecto_assoc, opts) do
     cond do
-      is_nil(field_params) ->
-        Changeset.cast_assoc(changeset, field, opts)
-
       Enum.all?(field_params, &ecto_schema?/1) ->
         Changeset.put_assoc(changeset, field, field_params, opts)
 
@@ -242,9 +243,6 @@ defmodule EctoShorts.CommonChanges do
 
   defp changeset_put_or_cast_assoc(changeset, field, field_params, _ecto_assoc, opts) do
     cond do
-      is_nil(field_params) ->
-        Changeset.cast_assoc(changeset, field, opts)
-
       ecto_schema?(field_params) ->
         Changeset.put_assoc(changeset, field, field_params, opts)
 
