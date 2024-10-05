@@ -56,12 +56,17 @@ defmodule EctoShorts.CommonChanges do
   alias Ecto.Changeset
   alias EctoShorts.{Actions, Config}
 
+  @type field :: atom()
+  @type opts :: keyword()
+  @type changeset :: Ecto.Changeset.t()
+  @type changesets :: list(changeset())
+
   @doc "Run's changeset function if when function returns true"
   @spec put_when(
-    Changeset.t,
-    ((Changeset.t) -> boolean),
-    ((Changeset.t) -> Changeset.t)
-  ) :: Changeset.t
+    changeset :: changeset(),
+    when_func :: ((changeset()) -> boolean()),
+    change_func :: ((changeset()) -> changeset())
+  ) :: changeset()
   def put_when(changeset, when_func, change_func) do
     if when_func.(changeset) do
       change_func.(changeset)
@@ -78,9 +83,9 @@ defmodule EctoShorts.CommonChanges do
 
       iex> EctoShorts.CommonChanges.changeset_field_empty?(changeset, :comments)
   """
-  @spec changeset_field_empty?(Changeset.t, atom) :: boolean
-  def changeset_field_empty?(changeset, key) do
-    Changeset.get_field(changeset, key) === []
+  @spec changeset_field_empty?(changeset :: changeset(), field :: field()) :: boolean()
+  def changeset_field_empty?(changeset, field) do
+    Changeset.get_field(changeset, field) === []
   end
 
   @doc """
@@ -91,9 +96,9 @@ defmodule EctoShorts.CommonChanges do
 
       iex> EctoShorts.CommonChanges.changeset_field_nil?(changeset, :comments)
   """
-  @spec changeset_field_nil?(Changeset.t, atom) :: boolean
-  def changeset_field_nil?(changeset, key) do
-    changeset |> Changeset.get_field(key) |> is_nil()
+  @spec changeset_field_nil?(changeset :: changeset(), field :: field()) :: boolean()
+  def changeset_field_nil?(changeset, field) do
+    changeset |> Changeset.get_field(field) |> is_nil()
   end
 
   @doc """
@@ -112,31 +117,43 @@ defmodule EctoShorts.CommonChanges do
       is sufficient. See [Ecto.Changeset.cast_assoc/3](https://hexdocs.pm/ecto/Ecto.Changeset.html#cast_assoc/3)
       for more information.
 
-  ## Example
+  ### Example
 
-    iex> CommonChanges.preload_change_assoc(changeset, :my_relation)
-    iex> CommonChanges.preload_change_assoc(changeset, :my_relation, repo: MyApp.OtherRepo)
-    iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required: true)
-    iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required_when_missing: :my_relation_id)
+      iex> CommonChanges.preload_change_assoc(changeset, :my_relation)
+      iex> CommonChanges.preload_change_assoc(changeset, :my_relation, repo: MyApp.OtherRepo)
+      iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required: true)
+      iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required_when_missing: :my_relation_id)
   """
-  @spec preload_change_assoc(Changeset.t(), atom(), keyword()) :: Changeset.t
-  @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t
-  def preload_change_assoc(changeset, key, opts \\ []) do
-    if Map.has_key?(changeset.params, Atom.to_string(key)) do
+  @spec preload_change_assoc(changeset :: changeset(), field :: field(), opts :: opts()) :: Changeset.t
+  @spec preload_change_assoc(changeset :: changeset(), field :: field()) :: Changeset.t
+  def preload_change_assoc(changeset, field, opts \\ []) do
+    if Map.has_key?(changeset.params, Atom.to_string(field)) do
       changeset
-      |> preload_changeset_assoc(key, opts)
-      |> put_or_cast_assoc(key, opts)
+      |> preload_changeset_assoc(field, opts)
+      |> put_or_cast_assoc(field, opts)
     else
-      put_or_cast_assoc(changeset, key, opts)
+      put_or_cast_assoc(changeset, field, opts)
     end
   end
 
-  @doc "Preloads a changesets association"
-  @spec preload_changeset_assoc(Changeset.t, atom) :: Changeset.t
-  @spec preload_changeset_assoc(Changeset.t, atom, keyword()) :: Changeset.t
+  @doc """
+  Preloads an association if it is not loaded.
+  """
+  @spec preload_changeset_assoc(
+    changeset :: changeset(),
+    field :: field(),
+    opts :: opts()
+  ) :: changeset()
+  @spec preload_changeset_assoc(
+    changeset :: changeset(),
+    field :: field()
+  ) :: changeset()
   def preload_changeset_assoc(changeset, field, opts \\ []) do
     Map.update!(changeset, :data, fn schema_data ->
-      Config.repo!(opts).preload(schema_data, field, opts)
+      case Map.get(schema_data, field) do
+        %Ecto.Association.NotLoaded{} -> Config.repo!(opts).preload(schema_data, field, opts)
+        _ -> schema_data
+      end
     end)
   end
 
@@ -152,11 +169,18 @@ defmodule EctoShorts.CommonChanges do
   CommonChanges.put_or_cast_assoc(change(user, fruits: [%{id: 1}, %{id: 3}]), :fruits)
   ```
 
-  Note: This function raises if the association is a read-only `:through` association.
+  This function raises if the association is a read-only `:through` association.
   See the [documentation](https://hexdocs.pm/ecto/Ecto.Schema.html#has_many/3-has_many-has_one-through) for more information.
   """
-  @spec put_or_cast_assoc(Changeset.t, atom) :: Changeset.t
-  @spec put_or_cast_assoc(Changeset.t, atom, Keyword.t) :: Changeset.t
+  @spec put_or_cast_assoc(
+    changeset :: changeset(),
+    field :: field(),
+    opts :: opts()
+  ) :: changeset()
+  @spec put_or_cast_assoc(
+    changeset :: changeset(),
+    field :: field()
+  ) :: changeset()
   def put_or_cast_assoc(changeset, field, opts \\ []) do
     required? =
       case opts[:required_when_missing] do
@@ -184,28 +208,18 @@ defmodule EctoShorts.CommonChanges do
       Enum.all?(field_params, &member_update?/1) ->
         ids = params_ids(field_params)
 
-        if Enum.any?(ids) do
-          values = Actions.all(ecto_assoc.queryable, %{id: ids}, opts)
+        values = Actions.all(ecto_assoc.queryable, %{id: ids}, opts)
 
-          Changeset.put_assoc(changeset, field, values, opts)
-        else
-          changeset
-        end
+        Changeset.put_assoc(changeset, field, values, opts)
 
       Enum.any?(field_params, &has_id?/1) ->
         ids = params_ids(field_params)
 
-        if Enum.any?(ids) do
-          changeset
-          |> Map.update!(:data, fn schema_data ->
-            values = Actions.all(ecto_assoc.queryable, %{id: ids}, opts)
+        values = Actions.all(ecto_assoc.queryable, %{id: ids}, opts)
 
-            Map.put(schema_data, field, values)
-          end)
-          |> Changeset.cast_assoc(field, opts)
-        else
-          changeset
-        end
+        changeset
+        |> Map.update!(:data, &Map.put(&1, field, values))
+        |> Changeset.cast_assoc(field, opts)
 
       true ->
         Changeset.cast_assoc(changeset, field, opts)
