@@ -53,17 +53,8 @@ defmodule EctoShorts.CommonChanges do
       end
 
   """
-  require Logger
-
-  import Ecto.Changeset, only: [
-    get_field: 2,
-    put_assoc: 4,
-    cast_assoc: 2,
-    cast_assoc: 3
-  ]
-
   alias Ecto.Changeset
-  alias EctoShorts.{Actions, Config, SchemaHelpers}
+  alias EctoShorts.{Actions, Config}
 
   @doc "Run's changeset function if when function returns true"
   @spec put_when(
@@ -89,7 +80,7 @@ defmodule EctoShorts.CommonChanges do
   """
   @spec changeset_field_empty?(Changeset.t, atom) :: boolean
   def changeset_field_empty?(changeset, key) do
-    get_field(changeset, key) === []
+    Changeset.get_field(changeset, key) === []
   end
 
   @doc """
@@ -102,7 +93,7 @@ defmodule EctoShorts.CommonChanges do
   """
   @spec changeset_field_nil?(Changeset.t, atom) :: boolean
   def changeset_field_nil?(changeset, key) do
-    changeset |> get_field(key) |> is_nil()
+    changeset |> Changeset.get_field(key) |> is_nil()
   end
 
   @doc """
@@ -129,63 +120,24 @@ defmodule EctoShorts.CommonChanges do
     iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required_when_missing: :my_relation_id)
   """
   @spec preload_change_assoc(Changeset.t(), atom(), keyword()) :: Changeset.t
-  def preload_change_assoc(changeset, key, opts) do
-    required? =
-      if opts[:required_when_missing] do
-        changeset_field_nil?(changeset, opts[:required_when_missing])
-      else
-        opts[:required] === true
-      end
-
-    opts = Keyword.put(opts, :required, required?)
-
+  @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t
+  def preload_change_assoc(changeset, key, opts \\ []) do
     if Map.has_key?(changeset.params, Atom.to_string(key)) do
       changeset
       |> preload_changeset_assoc(key, opts)
       |> put_or_cast_assoc(key, opts)
     else
-      cast_assoc(changeset, key, opts)
-    end
-  end
-
-  @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t
-  def preload_change_assoc(changeset, key) do
-    if Map.has_key?(changeset.params, Atom.to_string(key)) do
-      changeset
-      |> preload_changeset_assoc(key)
-      |> put_or_cast_assoc(key)
-    else
-      cast_assoc(changeset, key)
+      put_or_cast_assoc(changeset, key, opts)
     end
   end
 
   @doc "Preloads a changesets association"
   @spec preload_changeset_assoc(Changeset.t, atom) :: Changeset.t
   @spec preload_changeset_assoc(Changeset.t, atom, keyword()) :: Changeset.t
-  def preload_changeset_assoc(changeset, key, opts \\ [])
-
-  def preload_changeset_assoc(changeset, key, opts) do
-    if opts[:ids] do
-      schema = changeset_relationship_schema(changeset, key)
-
-      preloaded_data = Actions.all(schema, %{ids: opts[:ids]}, opts)
-
-      Map.update!(changeset, :data, &Map.put(&1, key, preloaded_data))
-    else
-      Map.update!(changeset, :data, &Config.repo!(opts).preload(&1, key, opts))
-    end
-  end
-
-  defp changeset_relationship_schema(changeset, key) do
-    if Map.has_key?(changeset.types, key) and relationship_exists?(changeset.types[key]) do
-      {:assoc, assoc} = Map.get(changeset.types, key)
-
-      assoc.queryable
-    else
-      %parent_schema{} = changeset.data
-
-      raise ArgumentError, "The key #{inspect(key)} is not an association for the queryable #{inspect(parent_schema)}."
-    end
+  def preload_changeset_assoc(changeset, field, opts \\ []) do
+    Map.update!(changeset, :data, fn schema_data ->
+      Config.repo!(opts).preload(schema_data, field, opts)
+    end)
   end
 
   @doc """
@@ -199,66 +151,134 @@ defmodule EctoShorts.CommonChanges do
   ```elixir
   CommonChanges.put_or_cast_assoc(change(user, fruits: [%{id: 1}, %{id: 3}]), :fruits)
   ```
+
+  Note: This function raises if the association is a read-only `:through` association.
+  See the [documentation](https://hexdocs.pm/ecto/Ecto.Schema.html#has_many/3-has_many-has_one-through) for more information.
   """
   @spec put_or_cast_assoc(Changeset.t, atom) :: Changeset.t
   @spec put_or_cast_assoc(Changeset.t, atom, Keyword.t) :: Changeset.t
-  def put_or_cast_assoc(changeset, key, opts \\ []) do
-    params_data = Map.get(changeset.params, Atom.to_string(key))
+  def put_or_cast_assoc(changeset, field, opts \\ []) do
+    required? =
+      case opts[:required_when_missing] do
+        nil -> opts[:required] === true
+        field -> changeset_field_nil?(changeset, field)
+      end
 
-    find_method_and_put_or_cast(changeset, key, params_data, opts)
+    opts = Keyword.put(opts, :required, required?)
+
+    ecto_assoc = fetch_ecto_write_assoc!(changeset.data.__struct__, field)
+
+    field_params = Map.get(changeset.params, Atom.to_string(field))
+
+    changeset_put_or_cast_assoc(changeset, field, field_params, ecto_assoc, opts)
   end
 
-  defp find_method_and_put_or_cast(changeset, key, nil, opts) do
-    cast_assoc(changeset, key, opts)
-  end
-
-  defp find_method_and_put_or_cast(changeset, key, params_data, opts) when is_list(params_data) do
+  defp changeset_put_or_cast_assoc(changeset, field, field_params, %{cardinality: :many} = ecto_assoc, opts) do
     cond do
-      SchemaHelpers.all_schemas?(params_data) ->
-        put_assoc(
-          changeset,
-          key,
-          params_data,
-          opts
-        )
+      is_nil(field_params) ->
+        Changeset.cast_assoc(changeset, field, opts)
 
-      member_update?(params_data) ->
-        schema = changeset_relationship_schema(changeset, key)
-        data = Actions.all(schema, ids: data_ids(params_data))
+      Enum.all?(field_params, &ecto_schema?/1) ->
+        Changeset.put_assoc(changeset, field, field_params, opts)
 
-        put_assoc(changeset, key, data, opts)
+      Enum.all?(field_params, &member_update?/1) ->
+        ids = params_ids(field_params)
 
-      SchemaHelpers.any_created?(params_data) ->
-        changeset
-        |> preload_changeset_assoc(
-          key,
-          Keyword.put(opts, :ids, params_data |> data_ids() |> Enum.reject(&is_nil/1))
-        )
-        |> cast_assoc(key, opts)
+        if Enum.any?(ids) do
+          values = Actions.all(ecto_assoc.queryable, %{id: ids}, opts)
+
+          Changeset.put_assoc(changeset, field, values, opts)
+        else
+          changeset
+        end
+
+      Enum.any?(field_params, &has_id?/1) ->
+        ids = params_ids(field_params)
+
+        if Enum.any?(ids) do
+          changeset
+          |> Map.update!(:data, fn schema_data ->
+            values = Actions.all(ecto_assoc.queryable, %{id: ids}, opts)
+
+            Map.put(schema_data, field, values)
+          end)
+          |> Changeset.cast_assoc(field, opts)
+        else
+          changeset
+        end
 
       true ->
-        cast_assoc(changeset, key, opts)
+        Changeset.cast_assoc(changeset, field, opts)
 
     end
   end
 
-  defp find_method_and_put_or_cast(changeset, key, param_data, opts) do
-    if SchemaHelpers.schema?(param_data) do
-      put_assoc(changeset, key, param_data, opts)
-    else
-      cast_assoc(changeset, key, opts)
+  defp changeset_put_or_cast_assoc(changeset, field, field_params, _ecto_assoc, opts) do
+    cond do
+      is_nil(field_params) ->
+        Changeset.cast_assoc(changeset, field, opts)
+
+      ecto_schema?(field_params) ->
+        Changeset.put_assoc(changeset, field, field_params, opts)
+
+      member_update?(field_params) ->
+        changeset
+        |> preload_changeset_assoc(field, opts)
+        |> Changeset.put_assoc(field, field_params, opts)
+
+      has_id?(field_params) ->
+        changeset
+        |> preload_changeset_assoc(field, opts)
+        |> Changeset.cast_assoc(field, opts)
+
+      true ->
+        Changeset.cast_assoc(changeset, field, opts)
+
     end
   end
 
-  defp member_update?(schemas) do
-    Enum.all?(schemas, fn
-      %{id: id} = item when item === %{id: id} -> true
-      _ -> false
+  defp fetch_ecto_write_assoc!(schema, field) do
+    case fetch_ecto_assoc!(schema, field) do
+      %Ecto.Association.HasThrough{} = ecto_assoc ->
+        raise ArgumentError, """
+        The field '#{inspect(field)}' is a read-only association for the schema
+        '#{inspect(schema)}' and cannot be used with cast_assoc or put_assoc.
+
+        For more information see the ecto documentation:
+        https://hexdocs.pm/ecto/Ecto.Schema.html#has_many/3-has_many-has_one-through
+
+        got:
+
+        #{inspect(ecto_assoc, pretty: true)}
+        """
+
+      ecto_assoc -> ecto_assoc
+    end
+  end
+
+  defp fetch_ecto_assoc!(schema, field) do
+    with nil <- schema.__schema__(:association, field) do
+      raise ArgumentError, "The field #{inspect(field)} is not an association of the schema #{inspect(schema)}."
+    end
+  end
+
+  defp params_ids(params_list) when is_list(params_list) do
+    params_list
+    |> Enum.reduce([], fn
+      %{id: id}, acc -> [id | acc]
+      %{"id" => id}, acc -> [id | acc]
+      _, acc -> acc
     end)
+    |> Enum.reverse()
   end
 
-  defp data_ids(data), do: Enum.map(data, &Map.get(&1, :id))
+  defp has_id?(%{id: _}), do: true
+  defp has_id?(%{"id" => _}), do: true
+  defp has_id?(_), do: false
 
-  defp relationship_exists?({:assoc, _}), do: true
-  defp relationship_exists?(_), do: false
+  defp member_update?(%{id: id} = params) when params === %{id: id}, do: true
+  defp member_update?(_), do: false
+
+  defp ecto_schema?(%{__meta__: %{schema: _}}), do: true
+  defp ecto_schema?(_), do: false
 end
