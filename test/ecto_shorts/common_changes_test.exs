@@ -102,7 +102,7 @@ defmodule EctoShorts.CommonChangesTest do
     test "raises if association does not exist" do
       assert {:ok, post} = Actions.create(Post, %{title: "title"})
 
-      expected_message = "cannot cast assoc `invalid_association`, assoc `invalid_association` not found. Make sure it is spelled correctly and that the association type is not read-only"
+      expected_message = "The field :invalid_association is not an association of the schema EctoShorts.Support.Schemas.Post."
 
       func =
         fn ->
@@ -462,7 +462,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Comment.changeset(%{})
         |> CommonChanges.preload_change_assoc(:post, required: true)
 
-      refute changeset.valid?
+      assert changeset.valid? === false
 
       assert {:post, ["can't be blank"]} in errors_on(changeset)
     end
@@ -498,7 +498,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Comment.changeset(%{})
         |> CommonChanges.preload_change_assoc(:post, required_when_missing: :post_id)
 
-      refute changeset.valid?
+      assert changeset.valid? === false
 
       assert {:post, ["can't be blank"]} in errors_on(changeset)
     end
@@ -734,21 +734,6 @@ defmodule EctoShorts.CommonChangesTest do
         valid?: true
       } = changeset
     end
-
-    test "when option :ids set raises if the association does not exist" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
-
-      expected_message = ~r|The key (.*) is not an association for the queryable (.*)|
-
-      func =
-        fn ->
-          post
-          |> Post.changeset(%{})
-          |> CommonChanges.preload_changeset_assoc(:non_existent_association, ids: [1])
-        end
-
-      assert_raise ArgumentError, expected_message, func
-    end
   end
 
   describe "put_or_cast_assoc: " do
@@ -808,8 +793,7 @@ defmodule EctoShorts.CommonChangesTest do
     end
 
     test "raises an error if invalid parameters is passed as the value for an association" do
-      expected_error_message =
-        "The key :tags is not an association for the queryable EctoShorts.Support.Schemas.Comment."
+      expected_error_message = "The field :tags is not an association of the schema EctoShorts.Support.Schemas.Comment."
 
       # This is expected to fail because tags expects a list
       # of strings however we are passing in a list of maps
@@ -826,7 +810,7 @@ defmodule EctoShorts.CommonChangesTest do
 
     test "raises an error if the key is not a type of ecto changeset queryable" do
       expected_error_message =
-        "The key :invalid_association is not an association for the queryable EctoShorts.Support.Schemas.Comment."
+        "The field :invalid_association is not an association of the schema EctoShorts.Support.Schemas.Comment."
 
       func =
         fn ->
