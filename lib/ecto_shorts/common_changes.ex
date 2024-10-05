@@ -162,12 +162,18 @@ defmodule EctoShorts.CommonChanges do
     field :: field()
   ) :: changeset()
   def preload_changeset_assoc(changeset, field, opts \\ []) do
-    Map.update!(changeset, :data, fn schema_data ->
-      case Map.get(schema_data, field) do
-        %Ecto.Association.NotLoaded{} -> Config.repo!(opts).preload(schema_data, field, opts)
-        _ -> schema_data
-      end
-    end)
+
+    # TODO add opts[:ids]
+
+    changeset
+    |> Map.update!(:data, &preload_not_loaded_assoc(&1, field, opts))
+  end
+
+  defp preload_not_loaded_assoc(schema_data, field, opts) do
+    case Map.get(schema_data, field) do
+      %Ecto.Association.NotLoaded{} -> Config.repo!(opts).preload(schema_data, field, opts)
+      _ -> schema_data
+    end
   end
 
   @doc """
