@@ -83,7 +83,10 @@ defmodule EctoShorts.CommonChanges do
 
       iex> EctoShorts.CommonChanges.changeset_field_empty?(changeset, :comments)
   """
-  @spec changeset_field_empty?(changeset :: changeset(), field :: field()) :: boolean()
+  @spec changeset_field_empty?(
+    changeset :: changeset(),
+    field :: field()
+  ) :: boolean()
   def changeset_field_empty?(changeset, field) do
     Changeset.get_field(changeset, field) === []
   end
@@ -96,7 +99,10 @@ defmodule EctoShorts.CommonChanges do
 
       iex> EctoShorts.CommonChanges.changeset_field_nil?(changeset, :comments)
   """
-  @spec changeset_field_nil?(changeset :: changeset(), field :: field()) :: boolean()
+  @spec changeset_field_nil?(
+    changeset :: changeset(),
+    field :: field()
+  ) :: boolean()
   def changeset_field_nil?(changeset, field) do
     changeset |> Changeset.get_field(field) |> is_nil()
   end
@@ -124,8 +130,15 @@ defmodule EctoShorts.CommonChanges do
       iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required: true)
       iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required_when_missing: :my_relation_id)
   """
-  @spec preload_change_assoc(changeset :: changeset(), field :: field(), opts :: opts()) :: Changeset.t
-  @spec preload_change_assoc(changeset :: changeset(), field :: field()) :: Changeset.t
+  @spec preload_change_assoc(
+    changeset :: changeset(),
+    field :: field(),
+    opts :: opts()
+  ) :: Changeset.t
+  @spec preload_change_assoc(
+    changeset :: changeset(),
+    field :: field()
+  ) :: Changeset.t
   def preload_change_assoc(changeset, field, opts \\ []) do
     if Map.has_key?(changeset.params, Atom.to_string(field)) do
       changeset
