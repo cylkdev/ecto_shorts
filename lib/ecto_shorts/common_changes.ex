@@ -150,7 +150,7 @@ defmodule EctoShorts.CommonChanges do
   end
 
   @doc """
-  Preloads an association if it is not loaded.
+  Preloads the association if it is not loaded.
   """
   @spec preload_changeset_assoc(
     changeset :: changeset(),
@@ -162,11 +162,7 @@ defmodule EctoShorts.CommonChanges do
     field :: field()
   ) :: changeset()
   def preload_changeset_assoc(changeset, field, opts \\ []) do
-
-    # TODO add opts[:ids]
-
-    changeset
-    |> Map.update!(:data, &preload_not_loaded_assoc(&1, field, opts))
+    Map.update!(changeset, :data, &preload_not_loaded_assoc(&1, field, opts))
   end
 
   defp preload_not_loaded_assoc(schema_data, field, opts) do
@@ -190,6 +186,10 @@ defmodule EctoShorts.CommonChanges do
 
   This function raises if the association is a read-only `:through` association.
   See the [documentation](https://hexdocs.pm/ecto/Ecto.Schema.html#has_many/3-has_many-has_one-through) for more information.
+
+  ### Options
+
+    * `ids` - Retrieves existing records matching the given ids and puts the associations.
   """
   @spec put_or_cast_assoc(
     changeset :: changeset(),
@@ -209,18 +209,21 @@ defmodule EctoShorts.CommonChanges do
 
     opts = Keyword.put(opts, :required, required?)
 
-    ecto_assoc = fetch_ecto_write_assoc!(changeset.data.__struct__, field)
+    schema = changeset.data.__struct__
+    ecto_assoc = fetch_ecto_write_assoc!(schema, field)
 
     field_params = Map.get(changeset.params, Atom.to_string(field))
 
-    changeset_put_or_cast_assoc(changeset, field, field_params, ecto_assoc, opts)
+    changeset
+    |> call_put_or_cast_assoc(field, field_params, ecto_assoc, opts)
+    |> put_assoc_by_ids(field, schema, ecto_assoc, opts)
   end
 
-  defp changeset_put_or_cast_assoc(changeset, field, nil = _field_params, _ecto_assoc, opts) do
+  defp call_put_or_cast_assoc(changeset, field, nil = _field_params, _ecto_assoc, opts) do
     Changeset.cast_assoc(changeset, field, opts)
   end
 
-  defp changeset_put_or_cast_assoc(changeset, field, field_params, %{cardinality: :many} = ecto_assoc, opts) do
+  defp call_put_or_cast_assoc(changeset, field, field_params, ecto_assoc, opts) when is_list(field_params) do
     cond do
       Enum.all?(field_params, &ecto_schema?/1) ->
         Changeset.put_assoc(changeset, field, field_params, opts)
@@ -247,7 +250,7 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  defp changeset_put_or_cast_assoc(changeset, field, field_params, _ecto_assoc, opts) do
+  defp call_put_or_cast_assoc(changeset, field, field_params, _ecto_assoc, opts) do
     cond do
       ecto_schema?(field_params) ->
         Changeset.put_assoc(changeset, field, field_params, opts)
@@ -265,6 +268,28 @@ defmodule EctoShorts.CommonChanges do
       true ->
         Changeset.cast_assoc(changeset, field, opts)
 
+    end
+  end
+
+  defp put_assoc_by_ids(changeset, field, schema, ecto_assoc, opts) do
+    ids = opts[:ids]
+
+    if ids do
+      unless ecto_assoc.cardinality === :many do
+        raise ArgumentError, """
+        Expected the association '#{inspect(field)}' for the schema '#{inspect(schema)}' to have a cardinality of many.
+
+        got:
+
+        #{inspect(ecto_assoc, pretty: true)}
+        """
+      end
+
+      values = Actions.all(ecto_assoc.queryable, %{id: ids}, opts)
+
+      Changeset.put_assoc(changeset, field, values, opts)
+    else
+      changeset
     end
   end
 
@@ -293,7 +318,7 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  defp params_ids(params_list) when is_list(params_list) do
+  defp params_ids(params_list) do
     params_list
     |> Enum.reduce([], fn
       %{id: id}, acc -> [id | acc]
