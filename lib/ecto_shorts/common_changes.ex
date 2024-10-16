@@ -167,7 +167,7 @@ defmodule EctoShorts.CommonChanges do
 
   defp preload_not_loaded_assoc(schema_data, field, opts) do
     case Map.get(schema_data, field) do
-      %Ecto.Association.NotLoaded{} -> Config.repo!(opts).preload(schema_data, field, opts)
+      %module{} when module === Ecto.Association.NotLoaded -> Config.repo!(opts).preload(schema_data, field, opts)
       _ -> schema_data
     end
   end
@@ -202,9 +202,10 @@ defmodule EctoShorts.CommonChanges do
   ) :: changeset()
   def put_or_cast_assoc(changeset, field, opts \\ []) do
     required? =
-      case opts[:required_when_missing] do
-        nil -> opts[:required] === true
-        field -> changeset_field_nil?(changeset, field)
+      if Keyword.has_key?(opts, :required_when_missing) do
+        changeset_field_nil?(changeset, opts[:required_when_missing])
+      else
+        opts[:required] === true
       end
 
     opts = Keyword.put(opts, :required, required?)
@@ -295,7 +296,7 @@ defmodule EctoShorts.CommonChanges do
 
   defp fetch_ecto_write_assoc!(schema, field) do
     case fetch_ecto_assoc!(schema, field) do
-      %Ecto.Association.HasThrough{} = ecto_assoc ->
+      %module{} = ecto_assoc when module === Ecto.Association.HasThrough ->
         raise ArgumentError, """
         The field '#{inspect(field)}' is a read-only association for the schema
         '#{inspect(schema)}' and cannot be used with cast_assoc or put_assoc.
