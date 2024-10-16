@@ -31,7 +31,15 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
     assert {:ok, _file_info} =
       Actions.create({"file_info_user_avatars", FileInfo}, %{assoc_id: user_avatar.id})
 
-    assert {:error, changeset} =
+    assert {:error, %{
+      code: :internal_server_error,
+      message: "failed to delete record",
+      details: %{
+        changeset: changeset,
+        data: ^user_avatar,
+        query: UserAvatarNoConstraint
+      }
+    }} =
       Actions.delete(user_avatar, changeset: fn changeset ->
         Ecto.Changeset.foreign_key_constraint(
           changeset,
@@ -135,9 +143,15 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
       assert {:ok, _file_info} =
         Actions.create({"file_info_user_avatars", FileInfo}, %{assoc_id: user_avatar.id})
 
-      assert {:error, changeset} = Actions.delete(user_avatar)
-
-      assert %Ecto.Changeset{} = changeset
+      assert {:error, %{
+        code: :internal_server_error,
+        message: "failed to delete record",
+        details: %{
+          changeset: changeset,
+          data: ^user_avatar,
+          query: UserAvatar
+        }
+      }} = Actions.delete(UserAvatar, user_avatar.id)
 
       assert {:assoc_id, ["Cannot delete, record is being referenced."]} in errors_on(changeset)
     end
@@ -148,9 +162,15 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
       assert {:ok, _file_info} =
         Actions.create({"file_info_user_avatars", FileInfo}, %{assoc_id: user_avatar.id})
 
-      assert {:error, changeset} = Actions.delete(user_avatar)
-
-      assert %Ecto.Changeset{} = changeset
+      assert {:error, %{
+        code: :internal_server_error,
+        message: "failed to delete record",
+        details: %{
+          changeset: changeset,
+          data: ^user_avatar,
+          query: UserAvatar
+        }
+      }} = Actions.delete(user_avatar)
 
       assert {:assoc_id, ["Cannot delete, record is being referenced."]} in errors_on(changeset)
     end
@@ -161,7 +181,15 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
       assert {:ok, _file_info} =
         Actions.create({"file_info_user_avatars", FileInfo}, %{assoc_id: user_avatar.id})
 
-      assert {:error, changeset} =
+      assert {:error, %{
+        code: :internal_server_error,
+        message: "failed to delete record",
+        details: %{
+          changeset: changeset,
+          data: ^user_avatar,
+          query: UserAvatar
+        }
+      }} =
         user_avatar
         |> UserAvatar.changeset()
         |> Actions.delete()
@@ -195,6 +223,7 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
       assert %{changeset: changeset, schema_data: user_avatar} === details
 
       assert {:file_info, ["is still associated with this entry"]} in errors_on(changeset)
+      assert {:assoc_id, ["Cannot delete, record is being referenced."]} in errors_on(changeset)
     end
   end
 

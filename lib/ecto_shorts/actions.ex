@@ -570,15 +570,30 @@ defmodule EctoShorts.Actions do
     id :: id()
   ) :: {:ok, schema()} | {:error, any()}
   def delete(%Ecto.Changeset{} = changeset, opts) do
-    changeset
-    |> build_changeset(%{}, opts)
-    |> Config.repo!(opts).delete(opts)
+    with {:error, %{data: %query{} = data} = changeset} <-
+      changeset
+      |> build_changeset(%{}, opts)
+      |> Config.repo!(opts).delete(opts) do
+      {:error, Error.call(:internal_server_error, "failed to delete record", %{
+        changeset: changeset,
+        data: data,
+        query: query
+      })}
+    end
   end
 
-  def delete(%queryable{} = schema_data, opts) do
-    queryable
-    |> build_changeset(schema_data, %{}, opts)
-    |> Config.repo!(opts).delete(opts)
+  def delete(%query{} = schema_data, opts) do
+    # When ecto schema data is given it is wrapped in a changeset
+    # so that constraint errors can be handled.
+    changeset = build_changeset(query, schema_data, %{}, opts)
+
+    with {:error, changeset} <- Config.repo!(opts).delete(changeset, opts) do
+      {:error, Error.call(:internal_server_error, "failed to delete record", %{
+        changeset: changeset,
+        data: schema_data,
+        query: query,
+      })}
+    end
   end
 
   def delete(schema_data, opts) when is_list(schema_data) do
@@ -982,15 +997,16 @@ defmodule EctoShorts.Actions do
   end
 
   defp reduce_status_tuples(status_tuples) do
-    {status, res} =
-      Enum.reduce(status_tuples, {:ok, []}, fn
-        {:ok, _}, {:error, _} = e -> e
-        {:ok, record}, {:ok, acc} -> {:ok, [record | acc]}
-        {:error, error}, {:ok, _} -> {:error, [error]}
-        {:error, e}, {:error, error_acc} -> {:error, [e | error_acc]}
+    {responses, errors} =
+      Enum.reduce(status_tuples, {[], []}, fn
+        {:ok, resp}, {responses, errors} -> {[resp | responses], errors}
+        {:error, e}, {responses, errors} -> {responses, [e | errors]}
       end)
 
-    {status, Enum.reverse(res)}
+    case {responses, errors} do
+      {responses, []} -> {:ok, Enum.reverse(responses)}
+      {_, errors} -> {:error, Enum.reverse(errors)}
+    end
   end
 
   defp default_opts do
