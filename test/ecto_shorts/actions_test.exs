@@ -38,14 +38,20 @@ defmodule EctoShorts.ActionsTest do
         }
       )
 
-    assert {:error, changeset} =
+    assert {:error, %{
+      code: :internal_server_error,
+      message: "failed to delete record",
+      details: %{
+        changeset: changeset,
+        data: ^post_schema_data,
+        query: PostNoConstraint
+      }
+    }} =
       Actions.delete(post_schema_data, changeset: fn changeset ->
         changeset
         |> Ecto.Changeset.no_assoc_constraint(:comments, name: "comments_post_id_fkey")
         |> Ecto.Changeset.unique_constraint(:unique_identifier)
       end)
-
-    assert %Ecto.Changeset{} = changeset
 
     assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
   end
@@ -129,7 +135,15 @@ defmodule EctoShorts.ActionsTest do
           }
         )
 
-      assert {:error, changeset} = Actions.delete(Post, post_schema_data.id)
+      assert {:error, %{
+        code: :internal_server_error,
+        message: "failed to delete record",
+        details: %{
+          changeset: changeset,
+          data: ^post_schema_data,
+          query: Post
+        }
+      }} = Actions.delete(Post, post_schema_data.id)
 
       assert %Ecto.Changeset{} = changeset
 
@@ -148,9 +162,15 @@ defmodule EctoShorts.ActionsTest do
           }
         )
 
-      assert {:error, changeset} = Actions.delete(post_schema_data)
-
-      assert %Ecto.Changeset{} = changeset
+      assert {:error, %{
+        code: :internal_server_error,
+        message: "failed to delete record",
+        details: %{
+          changeset: changeset,
+          data: ^post_schema_data,
+          query: Post
+        }
+      }} = Actions.delete(post_schema_data)
 
       assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
     end
@@ -167,12 +187,18 @@ defmodule EctoShorts.ActionsTest do
           }
         )
 
-      assert {:error, changeset} =
+      assert {:error, %{
+        code: :internal_server_error,
+        message: "failed to delete record",
+        details: %{
+          changeset: changeset,
+          data: ^post_schema_data,
+          query: Post
+        }
+      }} =
         post_schema_data
         |> Post.changeset(%{})
         |> Actions.delete()
-
-      assert %Ecto.Changeset{} = changeset
 
       assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
     end
