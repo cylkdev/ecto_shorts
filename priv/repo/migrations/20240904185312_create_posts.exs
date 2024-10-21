@@ -8,7 +8,6 @@ defmodule EctoShorts.Support.Repo.Migrations.CreatePosts do
       add :likes, :integer
 
       add :user_id, references(:users,
-        on_delete: :nilify_all,
         on_update: :update_all
       )
 

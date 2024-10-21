@@ -2,201 +2,672 @@ defmodule EctoShorts.ActionsTest do
   @moduledoc false
   use EctoShorts.DataCase
 
-  alias Ecto.Multi
-  alias EctoShorts.Actions
-  alias EctoShorts.Support.{
-    Repo,
-    TestRepo
+  alias Ecto.Adapters.SQL.Sandbox
+  alias Ecto.{Changeset, Multi}
+  alias EctoShorts.{
+    Actions,
+    Support.Repo,
+    Support.Repo2,
+    Support.Schemas.Comment,
+    Support.Schemas.Post,
+    Support.Schemas.PostNoConstraint
   }
-  alias EctoShorts.Support.Schemas.{
-    Comment,
-    Post,
-    PostNoConstraint
-  }
 
-  test "raise when :repo not set in option and configuration" do
-    assert_raise ArgumentError, ~r|EctoShorts repo not configured!|, fn ->
-      Actions.create(Comment, %{}, repo: nil)
+  describe "find_or_create_many/2: " do
+    test "arg queryable - fetches many if results matching all params found" do
+      assert {:ok, %{id: id, title: "created_title"}} = Actions.create(Post, %{title: "created_title"})
+
+      assert {:ok, %{0 => %{id: ^id, title: "created_title"}}} =
+        Actions.find_or_create_many(Post, [%{title: "created_title"}])
+    end
+
+    test "arg {source, queryable} - fetches many if results matching all params found" do
+      assert {:ok, %{id: id, title: "created_title"}} = Actions.create(Post, %{title: "created_title"})
+
+      assert {:ok, %{0 => %{id: ^id, title: "created_title"}}} =
+        Actions.find_or_create_many({"posts", Post}, [%{title: "created_title"}])
+    end
+
+    test "arg queryable - creates many if results matching all params not found" do
+      assert {:ok, %{id: id, title: "created_title"} = schema_data} = Actions.create(Post, %{title: "created_title"})
+
+      assert {:ok, %{id: ^id}} = Actions.delete(schema_data)
+
+      assert {:ok, %{0 => %{id: returned_id, title: "created_title"}}} = Actions.find_or_create_many(Post, [%{title: "created_title"}])
+
+      assert returned_id !== id
+    end
+
+    test "arg {source, queryable} - creates many if results matching all params not found" do
+      assert {:ok, %{id: id, title: "created_title"} = schema_data} = Actions.create(Post, %{title: "created_title"})
+
+      assert {:ok, %{id: ^id}} = Actions.delete(schema_data)
+
+      assert {:ok, %{0 => %{id: returned_id, title: "created_title"}}} = Actions.find_or_create_many({"posts", Post}, [%{title: "created_title"}])
+
+      assert returned_id !== id
+    end
+
+    test "arg queryable - return ecto multi error on create error" do
+      assert {:error,
+        1,
+        %Ecto.Changeset{} = changeset,
+        %{0 => %Post{unique_identifier: "unique_identifier_a", title: "title_a"} = post} = changes
+      } =
+        Actions.find_or_create_many(
+          Post,
+          [
+            %{unique_identifier: "unique_identifier_a", title: "title_a"},
+            %{unique_identifier: "unique_identifier_a", title: "title_b"},
+            %{unique_identifier: "unique_identifier_b"}
+          ]
+        )
+
+      assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
+
+      assert %{0 => post} === changes
+    end
+
+    test "arg {source, queryable} - return ecto multi error on create error" do
+      assert {:error,
+        1,
+        %Ecto.Changeset{} = changeset,
+        %{0 => %Post{unique_identifier: "unique_identifier_a", title: "title_a"} = post} = changes
+      } =
+        Actions.find_or_create_many(
+          {"posts", Post},
+          [
+            %{unique_identifier: "unique_identifier_a", title: "title_a"},
+            %{unique_identifier: "unique_identifier_a", title: "title_b"},
+            %{unique_identifier: "unique_identifier_b"}
+          ]
+        )
+
+      assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
+
+      assert %{0 => post} === changes
     end
   end
 
-  test "raise when :repo and :replica not set in option and configuration" do
-    assert_raise ArgumentError, ~r|EctoShorts replica and repo not configured!|, fn ->
-      Actions.all(Comment, %{}, repo: nil, replica: nil)
-    end
-  end
+  describe "find_and_update_many/2: " do
+    test "arg queryable - fetch result matching params and update" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-  test "option ':changeset' can be used to modify changeset" do
-    assert {:ok, post_schema_data} = Actions.create(PostNoConstraint, %{title: "title"})
-
-    assert {:ok, _comment_schema_data} =
-      Actions.create(
-        Comment,
-        %{
-          body: "body",
-          post_id: post_schema_data.id
-        }
-      )
-
-    assert {:error, %{
-      code: :internal_server_error,
-      message: "failed to delete record",
-      details: %{
-        changeset: changeset,
-        data: ^post_schema_data,
-        query: PostNoConstraint
-      }
-    }} =
-      Actions.delete(post_schema_data, changeset: fn changeset ->
-        changeset
-        |> Ecto.Changeset.no_assoc_constraint(:comments, name: "comments_post_id_fkey")
-        |> Ecto.Changeset.unique_constraint(:unique_identifier)
-      end)
-
-    assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
-  end
-
-  describe "get: " do
-    test "returns record" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
-
-      schema_data_id = schema_data.id
-
-      assert %Comment{id: ^schema_data_id} = Actions.get(Comment, schema_data_id)
+      assert {:ok, %{0 => %Post{id: ^id, title: "updated_post_title"} }} =
+        Actions.find_and_update_many(
+          Post,
+          [{%{id: id}, %{title: "updated_post_title"}}]
+        )
     end
 
-    test "returns nil when record does not exist" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg {source, queryable} - fetch result matching params and update" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{0 => %Post{id: ^id, title: "updated_post_title"} }} =
+        Actions.find_and_update_many(
+          {"posts", Post},
+          [{%{id: id}, %{title: "updated_post_title"}}]
+        )
+    end
+
+    test "arg queryable - return ecto multi error when not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
 
       assert {:ok, _} = Repo.delete(schema_data)
 
-      assert nil === Actions.get(Comment, schema_data.id)
+      assert {:error, 0, error, changes} =
+        Actions.find_and_update_many(
+          Post,
+          [{%{id: id}, %{title: "updated_post_title"}}]
+        )
+
+      assert  %ErrorMessage{
+        code: :not_found,
+        details: %{
+          params: %{id: ^id},
+          query: EctoShorts.Support.Schemas.Post
+        },
+        message: "no records found"
+      } = error
+
+      assert %{} === changes
+    end
+
+    test "arg {source, queryable} - return ecto multi error when not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:error, 0, error, changes} =
+        Actions.find_and_update_many(
+          {"posts", Post},
+          [{%{id: id}, %{title: "updated_post_title"}}]
+        )
+
+      assert  %ErrorMessage{
+        code: :not_found,
+        details: %{
+          params: %{id: ^id},
+          query: {"posts", Post}
+        },
+        message: "no records found"
+      } = error
+
+      assert %{} === changes
+    end
+  end
+
+  describe "find_and_upsert_many/2: " do
+    test "arg queryable - fetches many results and create if not found or update if found" do
+      assert {:ok, %{id: id, unique_identifier: "existing_identifier"}} =
+        Actions.create(Post, %{unique_identifier: "existing_identifier"})
+
+      assert {:ok, %{
+        0 => %{id: ^id, unique_identifier: "updated_identifier"},
+        1 => %{unique_identifier: "new_identifier"}
+      }} =
+        Actions.find_and_upsert_many(
+          Post,
+          [
+            {%{unique_identifier: "existing_identifier"}, %{unique_identifier: "updated_identifier"}},
+            {%{unique_identifier: "non_existent_identifier"}, %{unique_identifier: "new_identifier"}}
+          ]
+        )
+    end
+
+    test "arg {source, queryable} - fetches many results and create if not found or update if found" do
+      assert {:ok, %{id: id, unique_identifier: "existing_identifier"}} =
+        Actions.create(Post, %{unique_identifier: "existing_identifier"})
+
+      assert {:ok, %{
+        0 => %{id: ^id, unique_identifier: "updated_identifier"},
+        1 => %{unique_identifier: "new_identifier"}
+      }} =
+        Actions.find_and_upsert_many(
+          {"posts", Post},
+          [
+            {%{unique_identifier: "existing_identifier"}, %{unique_identifier: "updated_identifier"}},
+            {%{unique_identifier: "non_existent_identifier"}, %{unique_identifier: "new_identifier"}}
+          ]
+        )
+    end
+  end
+
+  describe "find_or_create/2: " do
+    test "arg queryable - fetch result matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id}} = Actions.find_or_create(Post, %{id: id})
+    end
+
+    test "arg {source, queryable} - fetch result matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id}} = Actions.find_or_create({"posts", Post}, %{id: id})
+    end
+
+    test "arg queryable - creates result matching params if not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:ok, %{id: returned_id, title: "created_post_title"}} =
+        Actions.find_or_create(Post, %{
+          id: id,
+          title: "created_post_title"
+        })
+
+      assert id !== returned_id
+    end
+
+    test "arg {source, queryable} - creates result matching params if not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:ok, %{id: returned_id, title: "created_post_title"}} =
+        Actions.find_or_create({"posts", Post}, %{
+          id: id,
+          title: "created_post_title"
+        })
+
+      assert id !== returned_id
+    end
+  end
+
+  describe "find_and_update/2: " do
+    test "arg queryable - fetch result matching params and update" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id, title: "updated_post_title"}} =
+        Actions.find_and_update(
+          Post,
+          %{id: id},
+          %{title: "updated_post_title"}
+        )
+    end
+
+    test "arg {source, queryable} - fetch result matching params and update" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id, title: "updated_post_title"}} =
+        Actions.find_and_update(
+          {"posts", Post},
+          %{id: id},
+          %{title: "updated_post_title"}
+        )
+    end
+
+    test "arg queryable - return error if not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:error, %{code: :not_found}} =
+        Actions.find_and_update(
+          Post,
+          %{id: id},
+          %{title: "updated_post_title"}
+        )
+    end
+
+    test "arg {source, queryable} - return error if not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:error, %{code: :not_found}} =
+        Actions.find_and_update(
+          {"posts", Post},
+          %{id: id},
+          %{title: "updated_post_title"}
+        )
+    end
+  end
+
+  describe "find_and_upsert/3: " do
+    test "arg queryable - fetch result matching params and update" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{title: "updated_post_title"}} =
+        Actions.find_and_upsert(
+          Post,
+          %{id: id},
+          %{title: "updated_post_title"}
+        )
+    end
+
+    test "arg {source, queryable} - fetch result matching params and update" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{title: "updated_post_title"}} =
+        Actions.find_and_upsert(
+          {"posts", Post},
+          %{id: id},
+          %{title: "updated_post_title"}
+        )
+    end
+
+    test "arg queryable - insert result matching params if not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:ok, %{title: "created_post_title"}} =
+        Actions.find_and_upsert(
+          Post,
+          %{id: id},
+          %{title: "created_post_title"}
+        )
+    end
+
+    test "arg {source, queryable} - insert result matching params if not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:ok, %{title: "created_post_title"}} =
+        Actions.find_and_upsert(
+          {"posts", Post},
+          %{id: id},
+          %{title: "created_post_title"}
+        )
+    end
+  end
+
+  describe "get/2: " do
+    test "arg queryable - return nil when record does not exist" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert nil === Actions.get(Post, id)
+    end
+
+    test "arg queryable - return result matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert %Post{id: ^id} = Actions.get(Post, id)
+    end
+
+    test "arg {source, queryable} - return result matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert %Post{id: ^id} = Actions.get({"posts", Post}, id)
+    end
+
+    test "arg {source, queryable} - return nil when record does not exist" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert nil === Actions.get({"posts", Post}, id)
+    end
+  end
+
+  describe "all/1: " do
+    test "arg queryable - return all results" do
+      assert {:ok, %{id: post_1_id}} = Actions.create(Post)
+
+      assert {:ok, %{id: post_2_id}} = Actions.create(Post)
+
+      assert [%{id: ^post_1_id}, %{id: ^post_2_id}] = Actions.all(Post)
+    end
+
+    test "arg {source, queryable} - return all results" do
+      assert {:ok, %{id: post_1_id}} = Actions.create(Post)
+
+      assert {:ok, %{id: post_2_id}} = Actions.create(Post)
+
+      assert [%{id: ^post_1_id}, %{id: ^post_2_id}] = Actions.all({"posts", Post})
+    end
+
+    test "arg query - return results" do
+      assert {:ok, %{id: post_1_id}} = Actions.create(Post)
+
+      assert {:ok, %{id: post_2_id}} = Actions.create(Post)
+
+      query = from p in Post, where: p.id in [^post_1_id, ^post_2_id]
+
+      assert [%{id: ^post_1_id}, %{id: ^post_2_id}] = Actions.all(query)
+    end
+  end
+
+  describe "all/2: " do
+    test "arg queryable - return results matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert [%{id: ^id}] = Actions.all(Post, %{id: id})
+    end
+
+    test "arg queryable - return results matching keyword params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert [%{id: ^id}] = Actions.all(Post, [id: id])
+    end
+
+    test "arg {source, queryable} - return results matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert [%{id: ^id}] = Actions.all({"posts", Post}, %{id: id})
+    end
+
+    test "arg queryable - return results in order when :group_by and :order_by set in params" do
+      assert {:ok, %{id: post_1_id}} = Actions.create(Post, %{likes: 1})
+
+      assert {:ok, %{id: post_2_id}} = Actions.create(Post, %{likes: 2})
+
+      assert [%{id: ^post_2_id}, %{id: ^post_1_id}] = Actions.all(Post, %{group_by: :id, order_by: [{:desc, :likes}]})
+    end
+  end
+
+  describe "all/3: " do
+    test "arg queryable - return results in order when :group_by and :order_by set in options" do
+      assert {:ok, post_1} = Actions.create(Post, %{likes: 1})
+
+      assert {:ok, post_2} = Actions.create(Post, %{likes: 2})
+
+      assert [^post_2, ^post_1] = Actions.all(Post, %{}, group_by: :id, order_by: [{:desc, :likes}])
     end
   end
 
   describe "create: " do
-    test "returns record" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
-
-      assert %Comment{} = schema_data
+    test "arg queryable - create record matching params" do
+      assert {:ok, %Post{title: "post_title"}} = Actions.create(Post, %{title: "post_title"})
     end
 
-    test "returns changeset error" do
-      assert {:error, changeset} = Actions.create(Comment, %{body: "1"})
+    test "arg {source, queryable} - create record matching params" do
+      assert {:ok, %Post{title: "post_title"}} = Actions.create({"posts", Post}, %{title: "post_title"})
+    end
 
-      assert {:body, ["should be at least 3 character(s)"]} in errors_on(changeset)
+    test "arg queryable - return changeset error when params are invalid" do
+      assert {:error, changeset} = Actions.create(Post, %{title: "1"})
+
+      assert {:title, ["should be at least 3 character(s)"]} in errors_on(changeset)
+    end
+
+    test "arg {source, queryable} - return changeset error when params are invalid" do
+      assert {:error, changeset} = Actions.create({"posts", Post}, %{title: "1"})
+
+      assert {:title, ["should be at least 3 character(s)"]} in errors_on(changeset)
     end
   end
 
-  describe "delete: " do
-    test "deletes record by id" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+  describe "find/2: " do
+    test "arg queryable - fetches a single result matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, deleted_schema_data} = Actions.delete(Comment, schema_data.id)
-
-      assert deleted_schema_data.id === schema_data.id
+      assert {:ok, %{id: ^id}} = Actions.find(Post, %{id: id})
     end
 
-    test "deletes record by schema data" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg {source, queryable} - fetches a single result matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, deleted_schema_data} = Actions.delete(schema_data)
-
-      assert deleted_schema_data.id === schema_data.id
+      assert {:ok, %{id: ^id}} = Actions.find({"posts", Post}, %{id: id})
     end
 
-    test "deletes many records by schema data" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg query - fetches a single result" do
+      assert {:ok, %{id: id}} =
+        Actions.create(Post, %{title: "post_title"})
 
-      assert {:ok, [deleted_schema_data]} = Actions.delete([schema_data])
+      query = from p in Post, where: p.id == ^id
 
-      assert deleted_schema_data.id === schema_data.id
+      assert {:ok, %{id: ^id, title: "post_title"}} = Actions.find(query, %{})
     end
 
-    test "deletes many records by changeset" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
-
-      changeset = Comment.changeset(schema_data, %{})
-
-      assert {:ok, [deleted_schema_data]} = Actions.delete([changeset])
-
-      assert deleted_schema_data.id === schema_data.id
+    test "arg queryable - return not found error when params empty" do
+      assert {:error, %ErrorMessage{
+        code: :not_found,
+        details: %{
+          params: %{},
+          query: Post
+        },
+        message: "no records found"
+      }} = Actions.find(Post, %{})
     end
 
-    test "returns {:error, changeset} when deleting record by id and a constraint error occurs" do
-      assert {:ok, post_schema_data} = Actions.create(Post, %{title: "title"})
+    test "arg {source, queryable} - return not found error when params empty" do
+      assert {:error, %ErrorMessage{
+        code: :not_found,
+        details: %{
+          params: %{},
+          query: {"posts", Post}
+        },
+        message: "no records found"
+      }} = Actions.find({"posts", Post}, %{})
+    end
 
-      assert {:ok, _comment_schema_data} =
-        Actions.create(
-          Comment,
-          %{
-            body: "body",
-            post_id: post_schema_data.id
-          }
-        )
+    test "arg queryable - return error if not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:error, %ErrorMessage{
+        code: :not_found,
+        details: %{
+          params: %{id: ^id},
+          query: Post
+        },
+        message: "no records found"
+      }} = Actions.find(Post, %{id: id})
+    end
+
+    test "arg {source, queryable} - return error if not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:error, %ErrorMessage{
+        code: :not_found,
+        details: %{
+          params: %{id: ^id},
+          query: {"posts", Post}
+        },
+        message: "no records found"
+      }} = Actions.find({"posts", Post}, %{id: id})
+    end
+  end
+
+  describe "update/3: " do
+    test "arg queryable - update a single result matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id, title: "updated_post_title"}} =
+        Actions.update(Post, id, %{title: "updated_post_title"})
+    end
+
+    test "arg queryable - update a single result matching schema data" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id, title: "updated_post_title"}} =
+        Actions.update(Post, schema_data, %{title: "updated_post_title"})
+    end
+
+    test "arg queryable - update a single result matching id and keyword params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok,%{id: ^id, title: "updated_post_title"}} =
+        Actions.update(Post, id, [title: "updated_post_title"])
+    end
+
+    test "arg {source, queryable} - update a single result matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id, title: "updated_post_title"}} =
+        Actions.update({"posts", Post}, id, %{title: "updated_post_title"})
+    end
+
+    test "arg {source, queryable} - update a single result matching schema data" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id, title: "updated_post_title"}} =
+        Actions.update({"posts", Post}, schema_data, %{title: "updated_post_title"})
+    end
+
+    test "arg {source, queryable} - update a single result matching id and keyword params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok,%{id: ^id, title: "updated_post_title"}} =
+        Actions.update({"posts", Post}, id, [title: "updated_post_title"])
+    end
+
+    test "arg queryable - return error when result matching id not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:error, %ErrorMessage{
+        code: :not_found,
+        details: %{
+          query: Post,
+          find_params: %{id: ^id},
+          update_params: %{title: "updated_post_title"}
+        },
+        message: "No item found with id:" <> _
+      }} = Actions.update(Post, id, %{title: "updated_post_title"})
+    end
+
+    test "arg {source, queryable} - return error when result matching id not found" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, _} = Repo.delete(schema_data)
+
+      assert {:error, %ErrorMessage{
+        code: :not_found,
+        details: %{
+          query: {"posts", Post},
+          find_params: %{id: ^id},
+          update_params: %{title: "updated_post_title"}
+        },
+        message: "No item found with id:" <> _
+      }} = Actions.update({"posts", Post}, id, %{title: "updated_post_title"})
+    end
+  end
+
+  describe "delete/1: " do
+    test "delete a single result matching changeset" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      changeset = Post.changeset(schema_data, %{})
+
+      assert {:ok, %{id: ^id}} = Actions.delete(changeset)
+    end
+
+
+
+    test "arg schema - delete a single result matching schema" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id}} = Actions.delete(schema_data)
+    end
+
+    test "arg list of changeset - delete many changesets" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      changeset = Post.changeset(schema_data, %{})
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete([changeset])
+    end
+
+    test "arg list of schema - delete many schemas" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete([schema_data])
+    end
+
+    test "arg schema - return changeset with constraint error" do
+      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+
+      assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
       assert {:error, %{
         code: :internal_server_error,
         message: "failed to delete record",
         details: %{
           changeset: changeset,
-          data: ^post_schema_data,
+          schema_data: ^post,
           query: Post
         }
-      }} = Actions.delete(Post, post_schema_data.id)
-
-      assert %Ecto.Changeset{} = changeset
+      }} = Actions.delete(post)
 
       assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
     end
 
-    test "returns {:error, changeset} when given schema data and a constraint error occurs" do
-      assert {:ok, post_schema_data} = Actions.create(Post, %{title: "title"})
+    test "arg changeset - return changeset with constraint error"  do
+      assert {:ok, post} = Actions.create(Post, %{title: "title"})
 
-      assert {:ok, _comment_schema_data} =
-        Actions.create(
-          Comment,
-          %{
-            body: "body",
-            post_id: post_schema_data.id
-          }
-        )
+      assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
       assert {:error, %{
         code: :internal_server_error,
         message: "failed to delete record",
         details: %{
           changeset: changeset,
-          data: ^post_schema_data,
-          query: Post
-        }
-      }} = Actions.delete(post_schema_data)
-
-      assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
-    end
-
-    test "returns {:error, changeset} when given a changeset and a constraint error occurs" do
-      assert {:ok, post_schema_data} = Actions.create(Post, %{title: "title"})
-
-      assert {:ok, _comment_schema_data} =
-        Actions.create(
-          Comment,
-          %{
-            body: "body",
-            post_id: post_schema_data.id
-          }
-        )
-
-      assert {:error, %{
-        code: :internal_server_error,
-        message: "failed to delete record",
-        details: %{
-          changeset: changeset,
-          data: ^post_schema_data,
+          schema_data: ^post,
           query: Post
         }
       }} =
-        post_schema_data
+        post
         |> Post.changeset(%{})
         |> Actions.delete()
 
@@ -204,403 +675,525 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "all: " do
-    test "returns records in ascending order by default" do
-      assert {:ok, schema_data_1} = Actions.create(Comment, %{body: "body"})
+  describe "delete/2: " do
+    test "arg queryable - find and delete a single result matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, schema_data_2} = Actions.create(Comment, %{body: "body"})
-
-      assert [^schema_data_1, ^schema_data_2] = Actions.all(Comment)
+      assert {:ok, %{id: ^id}} = Actions.delete(Post, id)
     end
 
-    test "returns records in descending order when option :order_by is set" do
-      assert {:ok, schema_data_1} = Actions.create(Comment, %{count: 1})
+    test "arg {source, queryable} - delete a single result matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, schema_data_2} = Actions.create(Comment, %{count: 2})
-
-      assert [^schema_data_2, ^schema_data_1] = Actions.all(Comment, %{}, order_by: {:desc, :count})
+      assert {:ok, %{id: ^id}} = Actions.delete({"posts", Post}, id)
     end
 
-    test "returns records by map query parameters" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg query - find and delete a single result matching query and id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert [^schema_data] = Actions.all(Comment, %{id: schema_data.id})
+      query = from p in Post
+
+      assert {:ok, %{id: ^id}} = Actions.delete(query, id)
     end
 
-    test "returns records by keyword parameters" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg queryable - find and delete many results matching list of id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert [^schema_data] = Actions.all(Comment, id: schema_data.id)
+      assert {:ok, [%{id: ^id}]} = Actions.delete(Post, [id])
     end
 
-    test "can use repo in keyword parameters" do
-      TestRepo.with_shared_connection(fn ->
-        assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"}, repo: TestRepo)
+    test "arg {source, queryable} - find and delete many results matching list of id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-        assert [^schema_data] = Actions.all(Comment, id: schema_data.id, repo: TestRepo, replica: nil)
-      end)
+      assert {:ok, [%{id: ^id}]} = Actions.delete({"posts", Post}, [id])
     end
 
-    test "can use replica in keyword parameters" do
-      TestRepo.with_shared_connection(fn ->
-        assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"}, repo: TestRepo)
+    test "arg query - find and delete many results matching list of id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-        assert [^schema_data] = Actions.all(Comment, id: schema_data.id, repo: nil, replica: TestRepo)
-      end)
-    end
-  end
+      query = from p in Post
 
-  describe "find: " do
-    test "returns record" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
-
-      assert {:ok, ^schema_data} = Actions.find(Comment, %{id: schema_data.id})
+      assert {:ok, [%{id: ^id}]} = Actions.delete(query, [id])
     end
 
-    test "returns error message with params and query" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg queryable - find and delete a single result matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, _} = Repo.delete(schema_data)
+      assert {:ok, %{id: ^id}} = Actions.delete(Post, %{id: id})
+    end
 
-      assert {:error, error} = Actions.find(Comment, %{id: schema_data.id})
+    test "arg {source, queryable} - find and delete a single result matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert %ErrorMessage{
-        code: :not_found,
+      assert {:ok, %{id: ^id}} = Actions.delete({"posts", Post}, %{id: id})
+    end
+
+    test "arg query - find and delete a single result matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      query = from p in Post
+
+      assert {:ok, %{id: ^id}} = Actions.delete(query, %{id: id})
+    end
+
+    test "arg queryable - find and delete a single result matching list of params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete(Post, [%{id: id}])
+    end
+
+    test "arg {source, queryable} - find and delete a single result matching list of params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete({"posts", Post}, [%{id: id}])
+    end
+
+    test "arg query - find and delete a single result matching list of params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      query = from p in Post
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete(query, [%{id: id}])
+    end
+
+    test "arg changeset - delete changeset" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      changeset = Post.changeset(schema_data, %{})
+
+      assert {:ok, %{id: ^id}} = Actions.delete(changeset, [])
+    end
+
+    test "arg changeset - delete list of changeset" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      changeset = Post.changeset(schema_data, %{})
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete([changeset], [])
+    end
+
+    test "arg schema - delete schema data" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id}} = Actions.delete(schema_data, [])
+    end
+
+    test "arg schema - delete list of schema data" do
+      assert {:ok, %{id: id} = schema_data} = Actions.create(Post)
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete([schema_data], [])
+    end
+
+    test "arg schema - return list of errors" do
+      assert {:ok, post_1} = Actions.create(Post)
+
+      assert {:ok, %{id: post_2_id} = post_2} = Actions.create(Post)
+      assert {:ok, _} = Actions.create(Comment, %{post_id: post_2_id})
+
+      assert {:error, [
+        %ErrorMessage{
+          code: :internal_server_error,
+          details: %{
+            changeset: %Ecto.Changeset{data: %Post{id: ^post_2_id}} = changeset,
+            query: EctoShorts.Support.Schemas.Post
+          },
+          message: "failed to delete record"
+        }
+      ]} = Actions.delete([post_1, post_2], [])
+
+      assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
+    end
+
+    test "arg queryable - return constraint error" do
+      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+
+      assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
+
+      assert {:error, %{
+        code: :internal_server_error,
+        message: "failed to delete record",
         details: %{
-          params: %{id: error_id},
-          query: EctoShorts.Support.Schemas.Comment
-        },
-        message: "no records found"
-      } = error
+          changeset: changeset,
+          schema_data: ^post,
+          query: Post
+        }
+      }} = Actions.delete(Post, post.id)
 
-      assert error_id === schema_data.id
+      assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
     end
 
-    test "returns not found error message when params is an empty map" do
-      assert {:error, error} = Actions.find(Comment, %{})
+    test "arg {source, queryable} - return constraint error" do
+      assert {:ok, post} = Actions.create(Post, %{title: "title"})
 
-      assert %ErrorMessage{
-        code: :not_found,
+      assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
+
+      assert {:error, %{
+        code: :internal_server_error,
+        message: "failed to delete record",
         details: %{
-          params: %{},
-          query: EctoShorts.Support.Schemas.Comment
-        },
-        message: "no records found"
-      } = error
+          changeset: changeset,
+          schema_data: ^post,
+          query: Post
+        }
+      }} = Actions.delete({"posts", Post}, post.id)
+
+      assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
     end
   end
 
-  describe "find_or_create: " do
-    test "returns existing record" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+  describe "delete/3: " do
+    test "arg queryable - fetch and delete a single result matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, ^schema_data} = Actions.find_or_create(Comment, %{id: schema_data.id})
+      assert {:ok, %{id: ^id}} = Actions.delete(Post, id, [])
     end
 
-    test "creates a record if matching record not found" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg {source, queryable} - fetch and delete a single result matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, _} = Repo.delete(schema_data)
-
-      assert {:ok, created_schema_data} =
-        Actions.find_or_create(Comment, %{
-          id: schema_data.id,
-          body: "created_record"
-        })
-
-      assert %{body: "created_record"} = created_schema_data
-
-      refute schema_data.id === created_schema_data.id
-    end
-  end
-
-  describe "update: " do
-    test "updates existing record by data" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
-
-      assert {:ok, updated_schema_data} = Actions.update(Comment, schema_data, %{body: "updated_body"})
-
-      assert %{body: "updated_body"} = updated_schema_data
+      assert {:ok, %{id: ^id}} = Actions.delete({"posts", Post}, id, [])
     end
 
-    test "updates existing record by ID" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg query - fetch and delete a single result matching query and id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, updated_schema_data} =
-        Actions.update(Comment, schema_data.id, %{body: "updated_body"})
+      query = from p in Post
 
-      assert %{body: "updated_body"} = updated_schema_data
+      assert {:ok, %{id: ^id}} = Actions.delete(query, id, [])
     end
 
-    test "updates existing record by ID and keyword list parameters" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg queryable - fetch and delete many results matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, updated_schema_data} =
-        Actions.update(Comment, schema_data.id, [body: "updated_body"])
-
-      assert %{body: "updated_body"} = updated_schema_data
+      assert {:ok, [%{id: ^id}]} = Actions.delete(Post, [id], [])
     end
 
-    test "returns error when id in params does not match an existing record" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg {source, queryable} - fetch and delete many results matching id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, _} = Repo.delete(schema_data)
-
-      assert {:error, error} =
-        Actions.update(Comment, schema_data.id, %{body: "updated_body"})
-
-      assert %ErrorMessage{
-        code: :not_found,
-        details: %{
-          schema: EctoShorts.Support.Schemas.Comment,
-          schema_id: error_id,
-          updates: %{
-            body: "updated_body"
-          }
-        },
-        message: error_message
-      } = error
-
-      assert error_id === schema_data.id
-
-      assert "No item found with id: #{error_id}" === error_message
-    end
-  end
-
-  describe "find_and_upsert: " do
-    test "creates a record if matching record not found" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
-
-      assert {:ok, _} = Repo.delete(schema_data)
-
-      assert {:ok, schema_data} =
-        Actions.find_and_upsert(
-          Comment,
-          %{id: schema_data.id},
-          %{body: "created_record"}
-        )
-
-      assert %{body: "created_record"} = schema_data
+      assert {:ok, [%{id: ^id}]} = Actions.delete({"posts", Post}, [id], [])
     end
 
-    test "updates existing record" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
+    test "arg query - fetch and delete many results matching query and filter id" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
 
-      assert {:ok, updated_schema_data} =
-        Actions.find_and_upsert(
-          Comment,
-          %{id: schema_data.id},
-          %{body: "updated_body"}
-        )
+      query = from p in Post
 
-      assert %{body: "updated_body"} = updated_schema_data
+      assert {:ok, [%{id: ^id}]} = Actions.delete(query, [id], [])
+    end
+
+    test "arg queryable - fetch and delete a single result matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id}} = Actions.delete(Post, %{id: id}, [])
+    end
+
+    test "arg {source, queryable} - fetch and delete a single result matching params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, %{id: ^id}} = Actions.delete({"posts", Post}, %{id: id}, [])
+    end
+
+    test "arg query - fetch and delete a single result matching query and params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      query = from p in Post
+
+      assert {:ok, %{id: ^id}} = Actions.delete(query, %{id: id}, [])
+    end
+
+    test "arg queryable - fetch and delete many results matching list of params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete(Post, [%{id: id}], [])
+    end
+
+    test "arg {source, queryable} - fetch and delete many results matching list of params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete({"posts", Post}, [%{id: id}], [])
+    end
+
+    test "arg query - fetch and delete many results matching query and list of params" do
+      assert {:ok, %{id: id}} = Actions.create(Post)
+
+      query = from p in Post
+
+      assert {:ok, [%{id: ^id}]} = Actions.delete(query, [%{id: id}], [])
     end
   end
 
-  describe "stream: " do
-    test "returns records given" do
-      assert {:ok, created_schema_data} = Actions.create(Comment, %{body: "body"})
+  describe "stream/1: " do
+    test "arg queryable - return enumerable" do
+      assert {:ok, %{id: post_id}} = Actions.create(Post)
 
-      assert {:ok, [returned_schema_data]} =
+      assert {:ok, [%Post{id: ^post_id}]} =
         Repo.transaction(fn ->
-          Comment
-          |> Actions.stream(%{})
+          Post
+          |> Actions.stream()
           |> Enum.to_list()
         end)
+    end
 
-      assert created_schema_data.id === returned_schema_data.id
+    test "arg {source, queryable} - return enumerable" do
+      assert {:ok, %{id: post_id}} = Actions.create(Post)
+
+      assert {:ok, [%Post{id: ^post_id}]} =
+        Repo.transaction(fn ->
+          {"posts", Post}
+          |> Actions.stream()
+          |> Enum.to_list()
+        end)
+    end
+
+    test "arg query - return enumerable" do
+      assert {:ok, %{id: post_id}} = Actions.create(Post)
+
+      query = from p in Post
+
+      assert {:ok, [%Post{id: ^post_id}]} =
+        Repo.transaction(fn ->
+          query
+          |> Actions.stream()
+          |> Enum.to_list()
+        end)
     end
   end
 
-  describe "aggregate: " do
-    test "returns expected value for aggregate count" do
-      assert {:ok, _schema_data} = Actions.create(Comment, %{body: "body"})
+  describe "aggregate/4: " do
+    test "count" do
+      assert {:ok, _} = Actions.create(Post)
 
-      assert 1 = Actions.aggregate(Comment, %{}, :count, :id)
+      assert 1 = Actions.aggregate(Post, %{}, :count, :id)
     end
 
-    test "returns expected value for aggregate sum" do
-      assert {:ok, _} = Actions.create(Comment, %{count: 1})
-      assert {:ok, _} = Actions.create(Comment, %{count: 2})
+    test "sum" do
+      assert {:ok, _} = Actions.create(Post, %{likes: 1})
+      assert {:ok, _} = Actions.create(Post, %{likes: 2})
 
-      assert 3 = Actions.aggregate(Comment, %{}, :sum, :count)
+      assert 3 = Actions.aggregate(Post, %{}, :sum, :likes)
     end
 
-    test "returns expected value for aggregate avg" do
-      assert {:ok, _} = Actions.create(Comment, %{count: 2})
-      assert {:ok, _} = Actions.create(Comment, %{count: 2})
+    test "avg" do
+      assert {:ok, _} = Actions.create(Post, %{likes: 2})
+      assert {:ok, _} = Actions.create(Post, %{likes: 2})
 
       expected_decimal = Decimal.new("2.0000000000000000")
 
-      assert ^expected_decimal = Actions.aggregate(Comment, %{}, :avg, :count)
+      assert ^expected_decimal = Actions.aggregate(Post, %{}, :avg, :likes)
     end
 
-    test "returns expected value for aggregate min" do
-      assert {:ok, _} = Actions.create(Comment, %{count: 1})
-      assert {:ok, _} = Actions.create(Comment, %{count: 20})
+    test "min" do
+      assert {:ok, _} = Actions.create(Post, %{likes: 1})
+      assert {:ok, _} = Actions.create(Post, %{likes: 20})
 
-      assert 1 = Actions.aggregate(Comment, %{}, :min, :count)
+      assert 1 = Actions.aggregate(Post, %{}, :min, :likes)
     end
 
-    test "returns expected value for aggregate max" do
-      assert {:ok, _} = Actions.create(Comment, %{count: 1})
-      assert {:ok, _} = Actions.create(Comment, %{count: 20})
+    test "max" do
+      assert {:ok, _} = Actions.create(Post, %{likes: 1})
+      assert {:ok, _} = Actions.create(Post, %{likes: 20})
 
-      assert 20 = Actions.aggregate(Comment, %{}, :max, :count)
-    end
-  end
-
-  describe "find_or_create_many: " do
-    test "returns existing record" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
-
-      assert {:ok, [^schema_data]} =
-        Actions.find_or_create_many(Comment, [%{id: schema_data.id}])
-    end
-
-    test "creates a record if matching record not found" do
-      assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
-
-      assert {:ok, _} = Repo.delete(schema_data)
-
-      assert {:ok, list_of_schema_data} =
-        Actions.find_or_create_many(
-          Comment,
-          [
-            %{
-              id: schema_data.id,
-              body: "created_record"
-            }
-          ]
-        )
-
-      assert [%{body: "created_record"}] = list_of_schema_data
-    end
-
-    test "returns error when a constraint error occurs" do
-      assert {:error, 1, changeset, changes} =
-        Actions.find_or_create_many(
-          Post,
-          [
-            %{unique_identifier: "uid"},
-            %{unique_identifier: "uid"}
-          ]
-        )
-
-      assert %Ecto.Changeset{} = changeset
-
-      assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
-
-      # check that an attempt was made to create the first record
-
-      assert %{0 => schema_data} = changes
-
-      assert schema_data.id
+      assert 20 = Actions.aggregate(Post, %{}, :max, :likes)
     end
   end
 
   describe "transaction/2" do
-    test "returns {:ok, changes()} when Ecto.Multi runs successfully" do
-      assert {:ok, %{operation_name: :success}} =
+    test "return multi response" do
+      assert {:ok, %{example: "success"}} =
         Multi.new()
-        |> Multi.run(:operation_name, fn _repo, _changes -> {:ok, :success} end)
+        |> Multi.run(:example, fn _repo, _changes -> {:ok, "success"} end)
         |> Actions.transaction()
     end
 
-    test "returns {:error, failed_operation_name, failed_value, changes} when Ecto.Multi fails" do
-      assert {:error, :operation_name, :failed, %{}} =
+    test "return multi error" do
+      assert {:error, :example, "failed", %{}} =
         Multi.new()
-        |> Multi.run(:operation_name, fn _repo, _changes -> {:error, :failed} end)
+        |> Multi.run(:example, fn _repo, _changes -> {:error, "failed"} end)
         |> Actions.transaction()
     end
 
-    test "returns {:ok, term()} when function is 0-arity and transaction returns a non status tuple" do
-      assert {:ok, :success} = Actions.transaction(fn -> :success end)
-    end
-
-    test "returns {:ok, term()} when function is 1-arity and transaction returns a non status tuple" do
-      assert {:ok, :success} = Actions.transaction(fn _repo -> :success end)
-    end
-
-    test "returns {:ok, term()} when function is 0-arity and transaction returns {:ok, term()}" do
-      assert {:ok, :success} = Actions.transaction(fn -> {:ok, :success} end)
-    end
-
-    test "returns {:ok, term()} when function is 1-arity and transaction returns {:ok, term()}" do
-      assert {:ok, :success} = Actions.transaction(fn _repo -> {:ok, :success} end)
-    end
-
-    test "returns {:error, term()} when function is 0-arity and transaction returns {:error, term()}" do
-      assert {:error, :failed} = Actions.transaction(fn -> {:error, :failed} end)
-    end
-
-    test "returns {:error, term()} when function is 1-arity and transaction returns {:error, term()}" do
-      assert {:error, :failed} = Actions.transaction(fn _repo -> {:error, :failed} end)
-    end
-
-    test "returns ecto repo transaction response when function is 0-arity and transaction returns a term that is not handled" do
-      assert {:ok, {:ok, "foo", "bar"}} = Actions.transaction(fn -> {:ok, "foo", "bar"} end)
-    end
-
-    test "returns ecto repo transaction response when function is 1-arity and transaction returns a term that is not handled" do
-      assert {:ok, {:ok, "foo", "bar"}} = Actions.transaction(fn _repo -> {:ok, "foo", "bar"} end)
-    end
-
-    test "returns {:error, term()} when rollback returns {:error, term()}" do
-      assert {:error, :rollback} = Actions.transaction(fn repo -> repo.rollback({:error, :rollback}) end)
-    end
-
-    test "returns {:error, term()} when rollback returns term" do
-      assert {:error, :rollback} = Actions.transaction(fn repo -> repo.rollback(:rollback) end)
-    end
-
-    test "returns ecto repo transaction response when rollback is not handled" do
-      assert {:error, {:ok, :success}} = Actions.transaction(fn repo -> repo.rollback({:ok, :success}) end)
-    end
-
-    test "transaction is rolled back when {:error, term()} is returned" do
-      assert {:error, :failed} =
+    test "arg 0-arity function - return ok" do
+      assert {:ok, {:ok, %{id: post_id}}} =
         Actions.transaction(fn ->
-          with {:ok, _comment} <- Actions.create(Comment, %{body: "comment"}) do
-            {:error, :failed}
+          Actions.create(Post)
+        end)
+
+      [%Post{id: ^post_id} | _] = Actions.all(Post)
+    end
+
+    test "arg 1-arity function - return ok" do
+      assert {:ok, {:ok, %{id: post_id}}} =
+        Actions.transaction(fn _repo ->
+          Actions.create(Post)
+        end)
+
+      [%Post{id: ^post_id} | _] = Actions.all(Post)
+    end
+
+    test "rollback and return {:error, term()} from function when option :rollback_on_error is true" do
+      assert {:error, {:error, "failed"}} =
+        Actions.transaction(fn ->
+          with {:ok, _} <- Actions.create(Post) do
+            {:error, "failed"}
           end
         end)
 
-      comments = Actions.all(Comment)
+      posts = Actions.all(Post)
 
-      assert 0 === length(comments)
+      assert 0 === length(posts)
     end
 
-    test "transaction is not rolled back when {:error, term()} is returned and rollback_on_error is false" do
-      assert {:error, :failed} =
+    test "rollback and return :error from function when option :rollback_on_error is true" do
+      assert {:error, :error} =
+        Actions.transaction(fn ->
+          with {:ok, _} <- Actions.create(Post) do
+            :error
+          end
+        end)
+
+      posts = Actions.all(Post)
+
+      assert 0 === length(posts)
+    end
+
+    test "commit changes when {:error, term()} returned from function and option :rollback_on_error is false" do
+      assert {:ok, {:error, "failed"}} =
         Actions.transaction(
           fn ->
-            with {:ok, _comment} <- Actions.create(Comment, %{body: "comment"}) do
-              {:error, :failed}
+            with {:ok, _post} <- Actions.create(Post) do
+              {:error, "failed"}
             end
           end,
           rollback_on_error: false
         )
 
-        comments = Actions.all(Comment)
+      posts = Actions.all(Post)
 
-        assert 1 === length(comments)
+      assert 1 === length(posts)
     end
 
-    test "transaction is not rolled back when :error is returned and rollback_on_error is false" do
-      assert :error =
+    test "commit changes when :error returned from function and option :rollback_on_error is false" do
+      assert {:ok, :error} =
         Actions.transaction(
           fn ->
-            with {:ok, _comment} <- Actions.create(Comment, %{body: "comment"}) do
+            with {:ok, _post} <- Actions.create(Post) do
               :error
             end
           end,
           rollback_on_error: false
         )
 
-        comments = Actions.all(Comment)
+        posts = Actions.all(Post)
 
-        assert 1 === length(comments)
+        assert 1 === length(posts)
     end
+  end
+
+  test "raise when :repo not set in option and configuration" do
+    assert_raise ArgumentError, ~r|EctoShorts repo not configured!|, fn ->
+      Actions.create(Post, %{}, repo: nil)
+    end
+  end
+
+  test "raise when :repo and :replica not set in option and configuration" do
+    assert_raise ArgumentError, ~r|EctoShorts replica and repo not configured!|, fn ->
+      Actions.all(Post, %{}, repo: nil, replica: nil)
+    end
+  end
+
+  test "can set repo option" do
+    {:ok, _} = Repo2.start_test_repo()
+
+    :ok = Sandbox.checkout(Repo2)
+
+    :ok = Sandbox.mode(Repo2, {:shared, self()})
+
+    assert Repo2 = Repo2.get_dynamic_repo()
+
+    assert {:ok, %{id: id}} = Actions.create(Post, %{}, repo: Repo2)
+
+    assert [%{id: ^id}] = Actions.all(Post, id: id, repo: Repo2, replica: nil)
+  end
+
+  test "can set replica option" do
+    {:ok, _} = Repo2.start_test_repo()
+
+    :ok = Sandbox.checkout(Repo2)
+
+    :ok = Sandbox.mode(Repo2, {:shared, self()})
+
+    assert Repo2 = Repo2.get_dynamic_repo()
+
+    assert {:ok, %{id: id}} = Actions.create(Post, %{}, repo: Repo2)
+
+    assert [%{id: ^id}] = Actions.all(Post, id: id, repo: nil, replica: Repo2)
+  end
+
+  test "option: changeset - arg 1-arity function - applies changes" do
+    assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "title"})
+
+    assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
+
+    assert {:error, %{
+      code: :internal_server_error,
+      message: "failed to delete record",
+      details: %{
+        changeset: changeset,
+        schema_data: %PostNoConstraint{id: ^post_id},
+        query: PostNoConstraint
+      }
+    }} =
+      Actions.delete(post, changeset: fn changeset ->
+        Changeset.no_assoc_constraint(changeset, :comments, name: "comments_post_id_fkey")
+      end)
+
+    assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
+  end
+
+  test "option: changeset - arg 2-arity function - applies changes" do
+    assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "title"})
+
+    assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
+
+    assert {:error, %{
+      code: :internal_server_error,
+      message: "failed to delete record",
+      details: %{
+        changeset: changeset,
+        schema_data: %PostNoConstraint{id: ^post_id},
+        query: PostNoConstraint
+      }
+    }} =
+      Actions.delete(post, changeset: fn changeset, _params ->
+        Changeset.no_assoc_constraint(changeset, :comments, name: "comments_post_id_fkey")
+      end)
+
+    assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
+  end
+
+  test "option: changeset - arg {mod, fun, args} - applies changes" do
+    defmodule MockConstraintTestHandler do
+      def changeset(changeset) do
+        Changeset.no_assoc_constraint(changeset, :comments, name: "comments_post_id_fkey")
+      end
+    end
+
+    assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "title"})
+
+    assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
+
+    assert {:error, %{
+      code: :internal_server_error,
+      message: "failed to delete record",
+      details: %{
+        changeset: changeset,
+        schema_data: %PostNoConstraint{id: ^post_id},
+        query: PostNoConstraint
+      }
+    }} =
+      Actions.delete(post, changeset: {MockConstraintTestHandler, :changeset, []})
+
+    assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
   end
 end

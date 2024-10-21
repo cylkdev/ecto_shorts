@@ -10,7 +10,7 @@ defmodule EctoShorts.Support.Schemas.PostNoConstraint do
     field :unique_identifier, :string
     field :likes, :integer
 
-    has_many :comments, EctoShorts.Support.Schemas.Comment
+    has_many :comments, EctoShorts.Support.Schemas.Comment, foreign_key: :post_id
 
     has_many :authors, through: [:comments, :user]
 
@@ -35,13 +35,5 @@ defmodule EctoShorts.Support.Schemas.PostNoConstraint do
 
   def create_changeset(attrs \\ %{}) do
     changeset(%__MODULE__{}, attrs)
-  end
-
-  # This callback function is invoked by `EctoShorts.CommonFilters.convert_params_to_filter`
-  # when `:search` is specified in parameters.
-  def by_search(query, attrs) do
-    filters = Map.to_list(attrs)
-
-    Ecto.Query.where(query, ^filters)
   end
 end

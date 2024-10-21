@@ -7,6 +7,7 @@ defmodule EctoShorts.QueryBuilder.Common do
   import Logger, only: [debug: 1]
 
   alias EctoShorts.{
+    CommonSchemas,
     QueryBuilder,
     QueryHelpers
   }
@@ -36,7 +37,8 @@ defmodule EctoShorts.QueryBuilder.Common do
     :limit,
     :offset,
     :search,
-    :order_by
+    :order_by,
+    :group_by
   ]
 
   @doc """
@@ -57,7 +59,8 @@ defmodule EctoShorts.QueryBuilder.Common do
         :limit,
         :offset,
         :search,
-        :order_by
+        :order_by,
+        :group_by
       ]
   """
   @spec filters :: filters()
@@ -76,15 +79,9 @@ defmodule EctoShorts.QueryBuilder.Common do
     filter_key :: filter_key(),
     filter_value :: filter_value()
   ) :: query()
-  def create_schema_filter(query, :preload, val), do: Query.preload(query, ^val)
-
-  def create_schema_filter(query, :start_date, val), do: Query.where(query, [m], m.inserted_at >= ^(val))
-
-  def create_schema_filter(query, :end_date, val), do: Query.where(query, [m], m.inserted_at <= ^val)
+  def create_schema_filter(query, :after, id), do: Query.where(query, [m], m.id > ^id)
 
   def create_schema_filter(query, :before, id), do: Query.where(query, [m], m.id < ^id)
-
-  def create_schema_filter(query, :after, id), do: Query.where(query, [m], m.id > ^id)
 
   def create_schema_filter(query, :ids, ids), do: Query.where(query, [m], m.id in ^ids)
 
@@ -92,9 +89,17 @@ defmodule EctoShorts.QueryBuilder.Common do
 
   def create_schema_filter(query, :limit, val), do: Query.limit(query, ^val)
 
-  def create_schema_filter(query, :first, val), do: Query.limit(query, ^val)
+  def create_schema_filter(query, :group_by, val), do: Query.group_by(query, ^val)
 
   def create_schema_filter(query, :order_by, val), do: Query.order_by(query, ^val)
+
+  def create_schema_filter(query, :preload, val), do: Query.preload(query, ^val)
+
+  def create_schema_filter(query, :start_date, val), do: Query.where(query, [m], m.inserted_at >= ^(val))
+
+  def create_schema_filter(query, :end_date, val), do: Query.where(query, [m], m.inserted_at <= ^val)
+
+  def create_schema_filter(query, :first, val), do: Query.limit(query, ^val)
 
   def create_schema_filter(query, :last, val) do
     query
@@ -105,12 +110,12 @@ defmodule EctoShorts.QueryBuilder.Common do
   end
 
   def create_schema_filter(query, :search, val) do
-    schema = QueryHelpers.get_queryable(query)
+    queryable = CommonSchemas.get_schema_queryable(query)
 
-    if function_exported?(schema, :by_search, 2) do
-      schema.by_search(query, val)
+    if function_exported?(queryable, :by_search, 2) do
+      queryable.by_search(query, val)
     else
-      debug "create_schema_filter: #{inspect schema} doesn't define &search_by/2 (query, params)"
+      debug "create_schema_filter: #{inspect queryable} doesn't define &search_by/2 (query, params)"
 
       query
     end

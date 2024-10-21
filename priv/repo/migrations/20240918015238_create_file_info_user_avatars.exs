@@ -8,12 +8,10 @@ defmodule EctoShorts.Support.Repo.Migrations.CreateFileInfoUserAvatars do
       add :unique_identifier, :text
 
       add :assoc_id, references(:user_avatars,
-        on_delete: :restrict,
         on_update: :update_all
       )
 
       add :user_id, references(:users,
-        on_delete: :delete_all,
         on_update: :update_all
       )
 

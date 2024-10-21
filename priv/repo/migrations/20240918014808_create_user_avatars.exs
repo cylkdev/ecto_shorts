@@ -7,7 +7,6 @@ defmodule EctoShorts.Support.Repo.Migrations.CreateUserAvatars do
       add :description, :text
 
       add :user_id, references(:users,
-        on_delete: :delete_all,
         on_update: :update_all
       )
 

@@ -34,6 +34,7 @@ defmodule EctoShorts.Support.Schemas.Post do
     |> cast(attrs, @available_fields)
     |> no_assoc_constraint(:comments)
     |> unique_constraint(:unique_identifier)
+    |> validate_length(:title, min: 3)
   end
 
   def create_changeset(attrs \\ %{}) do

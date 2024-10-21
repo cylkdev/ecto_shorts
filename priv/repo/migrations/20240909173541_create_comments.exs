@@ -8,12 +8,10 @@ defmodule EctoShorts.Support.Repo.Migrations.CreateComments do
       add :tags, {:array, :text}
 
       add :post_id, references(:posts,
-        on_delete: :restrict,
         on_update: :update_all
       )
 
       add :user_id, references(:users,
-        on_delete: :nilify_all,
         on_update: :update_all
       )
 

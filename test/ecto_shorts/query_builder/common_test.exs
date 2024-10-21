@@ -2,33 +2,77 @@ defmodule EctoShorts.QueryBuilder.CommonTest do
   use ExUnit.Case, async: true
   doctest EctoShorts.QueryBuilder.Common
 
-  alias EctoShorts.QueryBuilder.Common
-  alias EctoShorts.Support.Schemas.Comment
+  alias Ecto.Query
+  alias EctoShorts.{
+    QueryBuilder.Common,
+    Support.Schemas.Post
+  }
 
-  describe "filters: " do
-    test "returns expected list" do
-      assert [
-        :preload,
-        :start_date,
-        :end_date,
-        :before,
-        :after,
-        :ids,
-        :first,
-        :last,
-        :limit,
-        :offset,
-        :search,
-        :order_by
-      ] = Common.filters()
-    end
-  end
+  require Ecto.Query
 
   describe "create_schema_filters: " do
-    test "returns query without changes when passed {:search, term()}" do
-      query = Comment
+    test "arg queryable - returns query built by search/2 callback" do
+      assert %Ecto.Query{
+        from: %Ecto.Query.FromExpr{
+          prefix: nil,
+          source: {"posts", EctoShorts.Support.Schemas.Post}
+        },
+        wheres: [
+          %Ecto.Query.BooleanExpr{
+            expr: {:==, [], [{{:., [], [{:&, [], [0]}, :id]}, [], []}, {:^, [], [0]}]},
+            op: :and,
+            params: [{1, {0, :id}}],
+            subqueries: []
+          }
+        ]
+      } = Query.from(p in Post, where: p.id == ^1)
 
-      assert ^query = Common.create_schema_filter(query, :search, %{id: 1})
+      assert %Ecto.Query{
+        from: %Ecto.Query.FromExpr{
+          prefix: nil,
+          source: {"posts", EctoShorts.Support.Schemas.Post}
+        },
+        wheres: [
+          %Ecto.Query.BooleanExpr{
+            expr: {:==, [], [{{:., [], [{:&, [], [0]}, :id]}, [], []}, {:^, [], [0]}]},
+            op: :and,
+            params: [{1, {0, :id}}],
+            subqueries: []
+          }
+        ]
+      } = Common.create_schema_filter(Post, :search, %{id: 1})
+    end
+
+    test "arg {source, queryable} - returns query built by search/2 callback" do
+      assert %Ecto.Query{
+        from: %Ecto.Query.FromExpr{
+          prefix: nil,
+          source: {"posts", EctoShorts.Support.Schemas.Post}
+        },
+        wheres: [
+          %Ecto.Query.BooleanExpr{
+            expr: {:==, [], [{{:., [], [{:&, [], [0]}, :id]}, [], []}, {:^, [], [0]}]},
+            op: :and,
+            params: [{1, {0, :id}}],
+            subqueries: []
+          }
+        ]
+      } = Query.from(p in Post, where: p.id == ^1)
+
+      assert %Ecto.Query{
+        from: %Ecto.Query.FromExpr{
+          prefix: nil,
+          source: {"posts", EctoShorts.Support.Schemas.Post}
+        },
+        wheres: [
+          %Ecto.Query.BooleanExpr{
+            expr: {:==, [], [{{:., [], [{:&, [], [0]}, :id]}, [], []}, {:^, [], [0]}]},
+            op: :and,
+            params: [{1, {0, :id}}],
+            subqueries: []
+          }
+        ]
+      } = Common.create_schema_filter({"posts", Post}, :search, %{id: 1})
     end
   end
 end
