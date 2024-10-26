@@ -9,7 +9,7 @@ defmodule EctoShorts.QueryBuilder.Common do
   alias EctoShorts.{
     CommonSchemas,
     QueryBuilder,
-    QueryHelpers
+    # QueryHelpers
   }
 
   alias Ecto.Query
