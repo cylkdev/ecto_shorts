@@ -35,7 +35,7 @@
 #     end
 #   end
 
-#   describe "get_loaded_struct/2: " do
+#   describe "get_struct/2: " do
 #     test "returns struct with loaded state and source when given a queryable" do
 #       assert %EctoShorts.Support.MockSchemas.Post{
 #         __meta__: %Ecto.Schema.Metadata{
@@ -44,7 +44,7 @@
 #           prefix: nil,
 #           context: nil
 #         }
-#       } = EctoShorts.CommonSchemas.get_loaded_struct(Post)
+#       } = EctoShorts.CommonSchemas.get_struct(Post)
 #     end
 
 #     test "returns struct with loaded state and source given {source, queryable}" do
@@ -55,7 +55,7 @@
 #           prefix: nil,
 #           context: nil
 #         }
-#       } = EctoShorts.CommonSchemas.get_loaded_struct({"posts", Post})
+#       } = EctoShorts.CommonSchemas.get_struct({"posts", Post})
 #     end
 
 #     test "returns struct with loaded state, source, and prefix if @schema_prefix module attribute is set" do
@@ -66,7 +66,7 @@
 #           prefix: "mock_schema_prefix",
 #           context: nil
 #         }
-#       } = EctoShorts.CommonSchemas.get_loaded_struct(PrefixSchema)
+#       } = EctoShorts.CommonSchemas.get_struct(PrefixSchema)
 #     end
 
 #     test "returns struct with loaded state, source, and prefix given {source, queryable} if @schema_prefix module attribute is set" do
@@ -77,7 +77,7 @@
 #           prefix: "mock_schema_prefix",
 #           context: nil
 #         }
-#       } = EctoShorts.CommonSchemas.get_loaded_struct({"concrete_table", PrefixSchema})
+#       } = EctoShorts.CommonSchemas.get_struct({"concrete_table", PrefixSchema})
 #     end
 #   end
 

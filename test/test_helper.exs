@@ -5,5 +5,9 @@ if System.get_env("CI") do
 end
 
 {:ok, _} = Application.ensure_all_started(:postgrex)
-
 {:ok, _} = EctoShorts.Support.Repo.start_link()
+
+Application.put_env(:logger, :console,
+  format: "$message\n",
+  level: :info
+)

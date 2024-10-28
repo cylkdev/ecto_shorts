@@ -3,12 +3,16 @@ defmodule EctoShorts.Support.Schemas.Post do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @timestamps_opts [type: :naive_datetime]
+
   require Ecto.Query
 
   schema "posts" do
     field :title, :string
     field :unique_identifier, :string
     field :likes, :integer
+    field :views, :integer
+    field :tags, {:array, :string}
 
     has_many :comments, EctoShorts.Support.Schemas.Comment
 
@@ -25,6 +29,9 @@ defmodule EctoShorts.Support.Schemas.Post do
   @available_fields [
     :likes,
     :title,
+    :likes,
+    :views,
+    :tags,
     :unique_identifier,
     :user_id
   ]
@@ -34,7 +41,7 @@ defmodule EctoShorts.Support.Schemas.Post do
     |> cast(attrs, @available_fields)
     |> no_assoc_constraint(:comments)
     |> unique_constraint(:unique_identifier)
-    |> validate_length(:title, min: 3)
+    |> validate_length(:title, min: 10)
   end
 
   def create_changeset(attrs \\ %{}) do

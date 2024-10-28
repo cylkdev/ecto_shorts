@@ -81,20 +81,20 @@ defmodule EctoShorts.CommonFilters do
     query :: query() | queryable() | source_queryable(),
     params :: params()
   ) :: query()
-  def convert_params_to_filter(queryable, params) when params === %{} do
-    CommonSchemas.get_schema_query(queryable)
+  def convert_params_to_filter(query, params) when params === %{} do
+    CommonSchemas.get_schema_query(query)
   end
 
-  def convert_params_to_filter(queryable, params) when is_map(params) do
+  def convert_params_to_filter(query, params) when is_map(params) do
     params = Map.to_list(params)
 
-    queryable
+    query
     |> CommonSchemas.get_schema_query()
     |> convert_params_to_filter(params)
   end
 
-  def convert_params_to_filter(queryable, params) do
-    query = CommonSchemas.get_schema_query(queryable)
+  def convert_params_to_filter(query, params) do
+    query = CommonSchemas.get_schema_query(query)
 
     params
     |> ensure_last_is_final_filter

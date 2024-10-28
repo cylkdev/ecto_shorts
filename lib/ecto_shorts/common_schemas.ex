@@ -23,7 +23,60 @@ defmodule EctoShorts.CommonSchemas do
   ecto schema on any database table that has a matching schema.
   """
   @moduledoc since: "2.5.0"
-alias EctoShorts.QueryHelpers
+  alias EctoShorts.QueryHelpers
+
+  @doc """
+  ...
+  """
+  def prepare_changeset(query_or_model_or_changeset, params, opts \\ [])
+
+  def prepare_changeset(%{data: %{__meta__: %{schema: queryable}}} = changeset, params, opts) do
+    prepare_changeset(queryable, changeset, params, opts)
+  end
+
+  def prepare_changeset(%{__meta__: %{schema: queryable}} = schema_data, params, opts) do
+    prepare_changeset(queryable, schema_data, params, opts)
+  end
+
+  def prepare_changeset({source, queryable}, params, opts) do
+    schema_data = get_struct({source, queryable})
+
+    prepare_changeset(queryable, schema_data, params, opts)
+  end
+
+  def prepare_changeset(queryable, params, opts) do
+    prepare_changeset(queryable, struct(queryable), params, opts)
+  end
+
+  def prepare_changeset({source, queryable}, schema_data, params, opts) do
+    # overwrites the source on existing data
+    schema_data = put_meta(schema_data, source: source)
+
+    prepare_changeset(queryable, schema_data, params, opts)
+  end
+
+  def prepare_changeset(queryable, model_or_changeset, params, opts) when is_atom(queryable) do
+    case opts[:changeset] do
+      nil ->
+        queryable.changeset(model_or_changeset, params)
+
+      {mod, fun, args} ->
+        changeset = queryable.changeset(model_or_changeset, params)
+
+        apply(mod, fun, [changeset] ++ args)
+
+      func when is_function(func, 2) ->
+        model_or_changeset
+        |> queryable.changeset(params)
+        |> func.(params)
+
+      func when is_function(func, 1) ->
+        model_or_changeset
+        |> queryable.changeset(params)
+        |> func.()
+
+    end
+  end
 
   @doc """
   This function invokes the `&__schema__/1` callback function.
@@ -71,11 +124,11 @@ alias EctoShorts.QueryHelpers
 
   ### Examples
 
-      iex> EctoShorts.CommonSchemas.get_loaded_struct(EctoShorts.Support.Schemas.Comment)
-      iex> EctoShorts.CommonSchemas.get_loaded_struct({"comments", EctoShorts.Support.Schemas.Comment})
+      iex> EctoShorts.CommonSchemas.get_struct(EctoShorts.Support.Schemas.Comment)
+      iex> EctoShorts.CommonSchemas.get_struct({"comments", EctoShorts.Support.Schemas.Comment})
   """
-  @spec get_loaded_struct(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: Ecto.Schema.t()
-  def get_loaded_struct({source, queryable}) do
+  @spec get_struct(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: Ecto.Schema.t()
+  def get_struct({source, queryable}) do
     prefix = get_schema_prefix(queryable)
 
     queryable
@@ -83,14 +136,7 @@ alias EctoShorts.QueryHelpers
     |> put_meta(state: :loaded, source: source, prefix: prefix)
   end
 
-  def get_loaded_struct(queryable) do
-    source = get_schema_source(queryable)
-    prefix = get_schema_prefix(queryable)
-
-    queryable
-    |> struct()
-    |> put_meta(state: :loaded, source: source, prefix: prefix)
-  end
+  def get_struct(queryable), do: struct!(queryable)
 
   @doc """
   Returns the `prefix` specified in the schema.
@@ -139,11 +185,11 @@ alias EctoShorts.QueryHelpers
     queryable
   end
 
-  def get_schema_queryable(%module{} = query) when module === Ecto.Query do
+  def get_schema_queryable(%_{} = query) when is_struct(query, Ecto.Query) do
     QueryHelpers.get_queryable(query)
   end
 
-  def get_schema_queryable(queryable) do
+  def get_schema_queryable(queryable) when is_atom(queryable) do
     queryable
   end
 
@@ -201,12 +247,12 @@ alias EctoShorts.QueryHelpers
   @doc since: "2.5.0"
   @spec put_meta(schema :: Ecto.Schema.t() | Ecto.Queryable.t(), meta :: keyword()) :: Ecto.Schema.t()
   def put_meta(%_{__meta__: state} = schema_data, meta) do
-    Ecto.put_meta(schema_data, [
+    Ecto.put_meta(schema_data,
       source: meta[:source] || state.source,
       prefix: meta[:prefix] || state.prefix,
       context: meta[:context] || state.context,
       state: meta[:state] || state.state || :loaded
-    ])
+    )
   end
 
   def put_meta(schema, meta) do

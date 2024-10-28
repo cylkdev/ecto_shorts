@@ -6,6 +6,8 @@ defmodule EctoShorts.Support.Repo.Migrations.CreatePosts do
       add :title, :text
       add :unique_identifier, :text
       add :likes, :integer
+      add :views, :integer
+      add :tags, {:array, :text}
 
       add :user_id, references(:users,
         on_update: :update_all

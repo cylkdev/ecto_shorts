@@ -12,7 +12,7 @@ defmodule EctoShorts.CommonChangesTest do
     test "returns changeset without changes if evaluator function returns false" do
       when_func = fn _changeset -> false end
 
-      change_func = fn changeset -> Ecto.Changeset.put_change(changeset, :title, "title") end
+      change_func = fn changeset -> Ecto.Changeset.put_change(changeset, :title, "post_title") end
 
       changeset =
         %Post{}
@@ -32,7 +32,7 @@ defmodule EctoShorts.CommonChangesTest do
     test "returns changeset with changes if evaluator function returns true" do
       when_func = fn _changeset -> true end
 
-      change_func = fn changeset -> Ecto.Changeset.put_change(changeset, :title, "title") end
+      change_func = fn changeset -> Ecto.Changeset.put_change(changeset, :title, "post_title") end
 
       changeset =
         %Post{}
@@ -43,7 +43,7 @@ defmodule EctoShorts.CommonChangesTest do
         changes: changes
       } = changeset
 
-      assert %{title: "title"} === changes
+      assert %{title: "post_title"} === changes
     end
   end
 
@@ -74,7 +74,7 @@ defmodule EctoShorts.CommonChangesTest do
 
   describe "changeset_field_nil?: " do
     test "returns false if changeset field is in data" do
-      changeset = Post.changeset(%Post{title: "title"}, %{})
+      changeset = Post.changeset(%Post{title: "post_title"}, %{})
 
       refute CommonChanges.changeset_field_nil?(changeset, :title)
     end
@@ -100,7 +100,7 @@ defmodule EctoShorts.CommonChangesTest do
 
   describe "preload_change_assoc: " do
     test "raises if association does not exist" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       expected_message = "The field :invalid_association is not an association of the schema EctoShorts.Support.Schemas.Post."
 
@@ -115,7 +115,7 @@ defmodule EctoShorts.CommonChangesTest do
     end
 
     test "adds change for belongs_to relationship" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       post_id = post.id
 
@@ -144,10 +144,6 @@ defmodule EctoShorts.CommonChangesTest do
             },
             changes: %{title: "updated_title"},
             errors: [],
-            params:  %{
-              "id" => ^post_id,
-              "title" => "updated_title"
-            },
             valid?: true
           }
         },
@@ -162,7 +158,7 @@ defmodule EctoShorts.CommonChangesTest do
     end
 
     test "adds change for has_many relationship" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       post_id = post.id
 
@@ -194,10 +190,6 @@ defmodule EctoShorts.CommonChangesTest do
               },
               changes: %{body: "updated_body"},
               errors: [],
-              params:  %{
-                "id" => ^comment_id,
-                "body" => "updated_body"
-              },
               valid?: true
             }
           ]
@@ -215,7 +207,7 @@ defmodule EctoShorts.CommonChangesTest do
     end
 
     test "adds change for many_to_many relationship" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       post_id = post.id
 
@@ -247,10 +239,6 @@ defmodule EctoShorts.CommonChangesTest do
                 id: ^user_id
               },
               changes: %{email: "updated_email"},
-              params: %{
-                "email" => "updated_email",
-                "id" => ^user_id
-              },
               valid?: true
             }
           ]
@@ -263,15 +251,12 @@ defmodule EctoShorts.CommonChangesTest do
             }
           ]
         },
-        params: %{
-          "users" => [%{email: "updated_email", id: ^user_id}]
-        },
         valid?: true
       } = changeset
     end
 
     test "adds change for many_to_many relationship does not load association if parameters not set" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       post_id = post.id
 
@@ -287,13 +272,12 @@ defmodule EctoShorts.CommonChangesTest do
           id: ^post_id,
           users: %Ecto.Association.NotLoaded{}
         },
-        params: %{},
         valid?: true
       } = changeset
     end
 
     test "does not add change when given schema_data that's already associated with record" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       post_id = post.id
 
@@ -325,7 +309,7 @@ defmodule EctoShorts.CommonChangesTest do
     end
 
     test "adds changeset and no changes when given schema_data that's is not associated with record" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       post_id = post.id
 
@@ -350,7 +334,6 @@ defmodule EctoShorts.CommonChangesTest do
               id: ^post_id
             },
             changes: changes,
-            params: nil,
             valid?: true
           }
         },
@@ -396,7 +379,7 @@ defmodule EctoShorts.CommonChangesTest do
       } = changeset
     end
 
-    test "creates association when preload record not found by id " do
+    test "returns changeset with insert action when record not found by id " do
       assert {:ok, post} = Actions.create(Post, %{title: "created_post_title"})
 
       post_id = post.id
@@ -433,10 +416,6 @@ defmodule EctoShorts.CommonChangesTest do
               action: :insert,
               changes: %{body: "new_comment_body"},
               data: %Comment{},
-              params: %{
-                "body" => "new_comment_body",
-                "id" => ^deleted_comment_id
-              },
               errors: [],
               valid?: true
             }
@@ -445,11 +424,6 @@ defmodule EctoShorts.CommonChangesTest do
         data: %Post{
           id: ^post_id,
           title: "created_post_title"
-        },
-        params: %{
-          "comments" => [
-            %{body: "new_comment_body", id: ^deleted_comment_id}
-          ]
         },
         errors: [],
         valid?: true

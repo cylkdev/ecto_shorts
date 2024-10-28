@@ -85,6 +85,8 @@ defmodule EctoShorts.Actions do
     Config
   }
 
+  @logger_prefix "EctoShorts.Actions"
+
   @doc """
   Fetches a single record where the primary key matches the given `id`.
 
@@ -261,7 +263,7 @@ defmodule EctoShorts.Actions do
   ) :: {:ok, schema()} | {:error, changeset()}
   def create(query, params \\ %{}, opts \\ []) do
     query
-    |> prepare_changeset(params, opts)
+    |> CommonSchemas.prepare_changeset(params, opts)
     |> Config.repo!(opts).insert(opts)
   end
 
@@ -386,7 +388,7 @@ defmodule EctoShorts.Actions do
 
   def update(query, schema_data, update_params, opts) do
     query
-    |> prepare_changeset(schema_data, update_params, opts)
+    |> CommonSchemas.prepare_changeset(schema_data, update_params, opts)
     |> Config.repo!(opts).update(opts)
   end
 
@@ -424,7 +426,7 @@ defmodule EctoShorts.Actions do
   def delete(%_{} = changeset, opts) when is_struct(changeset, Ecto.Changeset) do
     with {:error, %{data: %queryable{} = schema_data} = changeset} <-
       changeset
-      |> prepare_changeset(%{}, opts)
+      |> CommonSchemas.prepare_changeset(%{}, opts)
       |> Config.repo!(opts).delete(opts) do
       {:error, Error.call(:internal_server_error, "failed to delete record", %{
         changeset: changeset,
@@ -435,25 +437,19 @@ defmodule EctoShorts.Actions do
   end
 
   def delete(%queryable{} = schema_data, opts) when not is_struct(schema_data, Ecto.Query) do
-    IO.inspect("2")
-
     # when schema data is given it is wrapped in a changeset
     # so that a constraint error isn't raised and instead we
     # return a changeset error.
     queryable
-    |> prepare_changeset(schema_data, %{}, opts)
+    |> CommonSchemas.prepare_changeset(schema_data, %{}, opts)
     |> delete(opts)
   end
 
   def delete(delete_params, opts) when is_list(delete_params) do
-    IO.inspect("3")
-
     delete_params |> Enum.map(&delete(&1, opts)) |> reduce_status_tuples()
   end
 
   def delete(query, id_or_params) do
-    IO.inspect("4")
-
     delete(query, id_or_params, default_opts())
   end
 
@@ -538,7 +534,6 @@ defmodule EctoShorts.Actions do
   ) :: list(schema())
   def stream(query, params \\ %{}, opts \\ []) do
     query
-    |> CommonSchemas.get_schema_query()
     |> CommonFilters.convert_params_to_filter(params)
     |> Config.replica!(opts).stream(opts)
   end
@@ -580,7 +575,6 @@ defmodule EctoShorts.Actions do
   ) :: term() | nil
   def aggregate(query, params, aggregate, field, opts \\ []) do
     query
-    |> CommonSchemas.get_schema_query()
     |> CommonFilters.convert_params_to_filter(params)
     |> Config.replica!(opts).aggregate(aggregate, field, opts)
   end
@@ -620,14 +614,42 @@ defmodule EctoShorts.Actions do
 
     Config.repo!(opts).transaction(
       fn repo ->
-        result = if is_function(fun, 1), do: fun.(repo), else: fun.()
-
-        case result do
+        case (if is_function(fun, 1), do: fun.(repo), else: fun.()) do
           {:error, _} = error ->
-            if rollback_on_error?, do: repo.rollback(error), else: error
+            if rollback_on_error? do
+              EctoShorts.Utils.Logger.debug(
+                @logger_prefix,
+                """
+                [ transaction/2 | ERROR ] Transaction function returned an error, rolling back.
+
+                got:
+
+                #{inspect(error, pretty: true)}
+                """
+              )
+
+              repo.rollback(error)
+            else
+              error
+            end
 
           :error ->
-            if rollback_on_error?, do: repo.rollback(:error), else: :error
+            if rollback_on_error? do
+              EctoShorts.Utils.Logger.debug(
+                @logger_prefix,
+                """
+                [ transaction/2 | ERROR ] Transaction function returned an error, rolling back.
+
+                got:
+
+                :error
+                """
+              )
+
+              repo.rollback(:error)
+            else
+              :error
+            end
 
           response ->
             response
@@ -671,8 +693,6 @@ defmodule EctoShorts.Actions do
     params :: params()
   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   def find_or_create(query, params, opts \\ []) do
-    params = drop_associations(params, CommonSchemas.get_schema_queryable(query))
-
     with {:error, %{code: :not_found}} <- find(query, params, opts) do
       query
       |> CommonSchemas.get_schema_queryable()
@@ -810,16 +830,15 @@ defmodule EctoShorts.Actions do
 
   defp multi_find_or_create(query, {params, i}, multi, opts) do
     Ecto.Multi.run(multi, i, fn repo, _changes ->
-      params =
-        params
-        |> drop_associations(CommonSchemas.get_schema_queryable(query))
-        |> put_order_by_and_group_by(opts)
+      create_params = put_order_by_and_group_by(params, opts)
 
-      case query |> CommonFilters.convert_params_to_filter(params) |> repo.one(opts) do
+      case query
+          |> CommonFilters.convert_params_to_filter(params)
+          |> repo.one(opts) do
         nil ->
           query
           |> CommonSchemas.get_schema_queryable()
-          |> prepare_changeset(params, opts)
+          |> CommonSchemas.prepare_changeset(create_params, opts)
           |> repo.insert(opts)
 
         schema_data ->
@@ -849,12 +868,12 @@ defmodule EctoShorts.Actions do
       find_params = put_order_by_and_group_by(find_params, opts)
 
       case query
-           |> CommonFilters.convert_params_to_filter(find_params)
-           |> repo.one(opts) do
+          |> CommonFilters.convert_params_to_filter(find_params)
+          |> repo.one(opts) do
         nil ->
           query
           |> CommonSchemas.get_schema_queryable()
-          |> prepare_changeset(create_params, opts)
+          |> CommonSchemas.prepare_changeset(create_params, opts)
           |> repo.insert(opts)
 
         schema_data ->
@@ -884,8 +903,8 @@ defmodule EctoShorts.Actions do
       find_params = put_order_by_and_group_by(find_params, opts)
 
       case query
-           |> CommonFilters.convert_params_to_filter(find_params)
-           |> repo.one(opts) do
+          |> CommonFilters.convert_params_to_filter(find_params)
+          |> repo.one(opts) do
         nil ->
           {:error, Error.call(:not_found, "no records found", %{
             query: query,
@@ -894,7 +913,7 @@ defmodule EctoShorts.Actions do
 
         schema_data ->
           schema_data
-          |> prepare_changeset(update_params, opts)
+          |> CommonSchemas.prepare_changeset(update_params, opts)
           |> repo.update(opts)
 
       end
@@ -921,49 +940,62 @@ defmodule EctoShorts.Actions do
       find_params = put_order_by_and_group_by(find_params, opts)
 
       case query
-           |> CommonFilters.convert_params_to_filter(find_params)
-           |> repo.one(opts) do
+          |> CommonFilters.convert_params_to_filter(find_params)
+          |> repo.one(opts) do
         nil ->
           query
           |> CommonSchemas.get_schema_queryable()
-          |> prepare_changeset(upsert_params, opts)
+          |> CommonSchemas.prepare_changeset(upsert_params, opts)
           |> repo.insert(opts)
 
         schema_data ->
           schema_data
-          |> prepare_changeset(upsert_params, opts)
+          |> CommonSchemas.prepare_changeset(upsert_params, opts)
           |> repo.update(opts)
 
       end
     end)
   end
 
+  ## Batch API
+
   @doc """
   ...
   """
   @doc since: "2.5.0"
+  @spec batch_all(
+    query :: query() | queryable() | source_queryable(),
+    field :: atom(),
+    values :: list(),
+    params :: params(),
+    collection_type :: :set | :bag,
+    opts :: keyword()
+  ) :: %{term() => schema() | list(schema())}
+  @spec batch_all(
+    query :: query() | queryable() | source_queryable(),
+    field :: atom(),
+    values :: list(),
+    params :: params(),
+    collection_type :: :set | :bag
+  ) :: %{term() => schema() | list(schema())}
   def batch_all(query, field, values, params, collection_type, opts) do
-    queryable = CommonSchemas.get_schema_queryable(query)
-
-    params =
-      params
-      |> drop_associations(queryable)
-      |> Map.merge(%{field => values})
-
     schema_data =
       query
-      |> CommonFilters.convert_params_to_filter(params)
+      |> CommonFilters.convert_params_to_filter(Map.merge(params, %{field => values}))
       |> all(opts)
 
-    case collection_type do
-      :bag -> Enum.group_by(schema_data, &Map.get(&1, field))
-      _ -> Map.new(schema_data, &{Map.get(&1, field), &1})
+    if collection_type === :bag do
+      Enum.group_by(schema_data, &Map.get(&1, field))
+    else
+      Map.new(schema_data, &{Map.get(&1, field), &1})
     end
   end
 
   def batch_all(query, field, values, params, collection_type) do
     batch_all(query, field, values, params, collection_type, default_opts())
   end
+
+  ## Helper functions
 
   defp preload(schema_data, opts) do
     case opts[:preload] do
@@ -992,58 +1024,6 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  defp prepare_changeset(%{data: %{__meta__: %{schema: queryable}}} = changeset, params, opts) do
-    prepare_changeset(queryable, changeset, params, opts)
-  end
-
-  defp prepare_changeset(%{__meta__: %{schema: queryable}} = schema_data, params, opts) do
-    prepare_changeset(queryable, schema_data, params, opts)
-  end
-
-  defp prepare_changeset({source, queryable}, params, opts) do
-    schema_data = CommonSchemas.get_loaded_struct({source, queryable})
-
-    prepare_changeset(queryable, schema_data, params, opts)
-  end
-
-  defp prepare_changeset(queryable, params, opts) do
-    prepare_changeset(queryable, struct(queryable), params, opts)
-  end
-
-  defp prepare_changeset({source, queryable}, schema_data, params, opts) do
-    # overwrites the source on existing data
-    schema_data = CommonSchemas.put_meta(schema_data, source: source)
-
-    prepare_changeset(queryable, schema_data, params, opts)
-  end
-
-  defp prepare_changeset(queryable, model_or_changeset, params, opts) when is_atom(queryable) do
-    case opts[:changeset] do
-      nil ->
-        queryable.changeset(model_or_changeset, params)
-
-      {mod, fun, args} ->
-        changeset = queryable.changeset(model_or_changeset, params)
-
-        apply(mod, fun, [changeset] ++ args)
-
-      func when is_function(func, 2) ->
-        model_or_changeset
-        |> queryable.changeset(params)
-        |> func.(params)
-
-      func when is_function(func, 1) ->
-        model_or_changeset
-        |> queryable.changeset(params)
-        |> func.()
-
-    end
-  end
-
-  defp drop_associations(params, queryable) do
-    Map.drop(params, queryable.__schema__(:associations))
-  end
-
   defp reduce_status_tuples(status_tuples) do
     {oks, errors} =
       Enum.reduce(status_tuples, {[], []}, fn
@@ -1058,6 +1038,9 @@ defmodule EctoShorts.Actions do
   end
 
   defp default_opts do
-    [repo: Config.repo(), replica: Config.replica()]
+    [
+      replica: Config.replica(),
+      repo: Config.repo()
+    ]
   end
 end

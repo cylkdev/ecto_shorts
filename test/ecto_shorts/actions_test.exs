@@ -55,7 +55,7 @@ defmodule EctoShorts.ActionsTest do
 
   describe "option changeset : " do
     test "1-arity function - changeset - add changeset validations" do
-      assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "title"})
+      assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
@@ -82,7 +82,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "1-arity function - data - add changeset validations" do
-      assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "title"})
+      assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
@@ -107,7 +107,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "2-arity function - add changeset validations" do
-      assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "title"})
+      assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
@@ -138,7 +138,7 @@ defmodule EctoShorts.ActionsTest do
         end
       end
 
-      assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "title"})
+      assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
@@ -226,13 +226,13 @@ defmodule EctoShorts.ActionsTest do
       assert {:error,
         1,
         %Ecto.Changeset{} = changeset,
-        %{0 => %{unique_identifier: "unique_identifier_a", title: "title_a"} = post} = changes
+        %{0 => %{unique_identifier: "unique_identifier_a", title: "post_title_a"} = post} = changes
       } =
         Actions.find_and_create_many(
           Post,
           [
-            {%{unique_identifier: "unique_identifier_a"}, %{unique_identifier: "unique_identifier_a", title: "title_a"}},
-            {%{unique_identifier: "non_existent_identifier"}, %{unique_identifier: "unique_identifier_a", title: "title_b"}},
+            {%{unique_identifier: "unique_identifier_a"}, %{unique_identifier: "unique_identifier_a", title: "post_title_a"}},
+            {%{unique_identifier: "non_existent_identifier"}, %{unique_identifier: "unique_identifier_a", title: "post_title_b"}},
             {%{unique_identifier: "unique_identifier_b"}, %{unique_identifier: "unique_identifier_b"}}
           ]
         )
@@ -246,13 +246,13 @@ defmodule EctoShorts.ActionsTest do
       assert {:error,
         1,
         %Ecto.Changeset{} = changeset,
-        %{0 => %{unique_identifier: "unique_identifier_a", title: "title_a"} = post} = changes
+        %{0 => %{unique_identifier: "unique_identifier_a", title: "post_title_a"} = post} = changes
       } =
         Actions.find_and_create_many(
           {"posts", Post},
           [
-            {%{unique_identifier: "unique_identifier_a"}, %{unique_identifier: "unique_identifier_a", title: "title_a"}},
-            {%{unique_identifier: "non_existent_identifier"}, %{unique_identifier: "unique_identifier_a", title: "title_b"}},
+            {%{unique_identifier: "unique_identifier_a"}, %{unique_identifier: "unique_identifier_a", title: "post_title_a"}},
+            {%{unique_identifier: "non_existent_identifier"}, %{unique_identifier: "unique_identifier_a", title: "post_title_b"}},
             {%{unique_identifier: "unique_identifier_b"}, %{unique_identifier: "unique_identifier_b"}}
           ]
         )
@@ -268,13 +268,13 @@ defmodule EctoShorts.ActionsTest do
       assert {:error,
         1,
         %Ecto.Changeset{} = changeset,
-        %{0 => %{unique_identifier: "unique_identifier_a", title: "title_a"} = post} = changes
+        %{0 => %{unique_identifier: "unique_identifier_a", title: "post_title_a"} = post} = changes
       } =
         Actions.find_and_create_many(
           query,
           [
-            {%{unique_identifier: "unique_identifier_a"}, %{unique_identifier: "unique_identifier_a", title: "title_a"}},
-            {%{unique_identifier: "non_existent_identifier"}, %{unique_identifier: "unique_identifier_a", title: "title_b"}},
+            {%{unique_identifier: "unique_identifier_a"}, %{unique_identifier: "unique_identifier_a", title: "post_title_a"}},
+            {%{unique_identifier: "non_existent_identifier"}, %{unique_identifier: "unique_identifier_a", title: "post_title_b"}},
             {%{unique_identifier: "unique_identifier_b"}, %{unique_identifier: "unique_identifier_b"}}
           ]
         )
@@ -354,13 +354,13 @@ defmodule EctoShorts.ActionsTest do
       assert {:error,
         1,
         %Ecto.Changeset{} = changeset,
-        %{0 => %{unique_identifier: "unique_identifier_a", title: "title_a"} = post} = changes
+        %{0 => %{unique_identifier: "unique_identifier_a", title: "post_title_a"} = post} = changes
       } =
         Actions.find_or_create_many(
           Post,
           [
-            %{unique_identifier: "unique_identifier_a", title: "title_a"},
-            %{unique_identifier: "unique_identifier_a", title: "title_b"},
+            %{unique_identifier: "unique_identifier_a", title: "post_title_a"},
+            %{unique_identifier: "unique_identifier_a", title: "post_title_b"},
             %{unique_identifier: "unique_identifier_b"}
           ]
         )
@@ -374,13 +374,13 @@ defmodule EctoShorts.ActionsTest do
       assert {:error,
         1,
         %Ecto.Changeset{} = changeset,
-        %{0 => %{unique_identifier: "unique_identifier_a", title: "title_a"} = post} = changes
+        %{0 => %{unique_identifier: "unique_identifier_a", title: "post_title_a"} = post} = changes
       } =
         Actions.find_or_create_many(
           {"posts", Post},
           [
-            %{unique_identifier: "unique_identifier_a", title: "title_a"},
-            %{unique_identifier: "unique_identifier_a", title: "title_b"},
+            %{unique_identifier: "unique_identifier_a", title: "post_title_a"},
+            %{unique_identifier: "unique_identifier_a", title: "post_title_b"},
             %{unique_identifier: "unique_identifier_b"}
           ]
         )
@@ -396,13 +396,13 @@ defmodule EctoShorts.ActionsTest do
       assert {:error,
         1,
         %Ecto.Changeset{} = changeset,
-        %{0 => %{unique_identifier: "unique_identifier_a", title: "title_a"} = post} = changes
+        %{0 => %{unique_identifier: "unique_identifier_a", title: "post_title_a"} = post} = changes
       } =
         Actions.find_or_create_many(
           query,
           [
-            %{unique_identifier: "unique_identifier_a", title: "title_a"},
-            %{unique_identifier: "unique_identifier_a", title: "title_b"},
+            %{unique_identifier: "unique_identifier_a", title: "post_title_a"},
+            %{unique_identifier: "unique_identifier_a", title: "post_title_b"},
             %{unique_identifier: "unique_identifier_b"}
           ]
         )
@@ -974,15 +974,15 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - return changeset error when params are invalid" do
-      assert {:error, changeset} = Actions.create(Post, %{title: "1"})
+      assert {:error, changeset} = Actions.create(Post, %{title: "short"})
 
-      assert {:title, ["should be at least 3 character(s)"]} in errors_on(changeset)
+      assert {:title, ["should be at least 10 character(s)"]} in errors_on(changeset)
     end
 
     test "{source, queryable} - return changeset error when params are invalid" do
-      assert {:error, changeset} = Actions.create({"posts", Post}, %{title: "1"})
+      assert {:error, changeset} = Actions.create({"posts", Post}, %{title: "short"})
 
-      assert {:title, ["should be at least 3 character(s)"]} in errors_on(changeset)
+      assert {:title, ["should be at least 10 character(s)"]} in errors_on(changeset)
     end
   end
 
@@ -996,15 +996,15 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - return changeset error when params are invalid" do
-      assert {:error, changeset} = Actions.create(Post, %{title: "1"}, [])
+      assert {:error, changeset} = Actions.create(Post, %{title: "short"}, [])
 
-      assert {:title, ["should be at least 3 character(s)"]} in errors_on(changeset)
+      assert {:title, ["should be at least 10 character(s)"]} in errors_on(changeset)
     end
 
     test "{source, queryable} - return changeset error when params are invalid" do
-      assert {:error, changeset} = Actions.create({"posts", Post}, %{title: "1"}, [])
+      assert {:error, changeset} = Actions.create({"posts", Post}, %{title: "short"}, [])
 
-      assert {:title, ["should be at least 3 character(s)"]} in errors_on(changeset)
+      assert {:title, ["should be at least 10 character(s)"]} in errors_on(changeset)
     end
   end
 
@@ -1221,7 +1221,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "data - return changeset with constraint error" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
@@ -1239,7 +1239,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "changeset - return changeset with constraint error"  do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
@@ -1390,7 +1390,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - return constraint error" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
@@ -1408,7 +1408,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - return constraint error" do
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
@@ -1428,7 +1428,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - return constraint error" do
       query = from p in Post
 
-      assert {:ok, post} = Actions.create(Post, %{title: "title"})
+      assert {:ok, post} = Actions.create(Post, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
 
@@ -1779,29 +1779,29 @@ defmodule EctoShorts.ActionsTest do
 
   describe "batch_all/5 : " do
     test "queryable - returns results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "new_title"})
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
-      assert %{^post_id => %{id: ^post_id, title: "new_title"}} =
-        Actions.batch_all(Post, :id, [post_id], %{title: "new_title"}, :set)
+      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
+        Actions.batch_all(Post, :id, [post_id], %{title: "post_created_title"}, :set)
     end
 
     test "{source, queryable} - returns results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "new_title"})
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
-      assert %{^post_id => %{id: ^post_id, title: "new_title"}} =
-        Actions.batch_all({"posts", Post}, :id, [post_id], %{title: "new_title"}, :set)
+      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
+        Actions.batch_all({"posts", Post}, :id, [post_id], %{title: "post_created_title"}, :set)
     end
 
     test "query - returns results matching params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "new_title"})
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
-      assert %{^post_id => %{id: ^post_id, title: "new_title"}} =
-        Actions.batch_all(query, :id, [post_id], %{title: "new_title"}, :set)
+      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
+        Actions.batch_all(query, :id, [post_id], %{title: "post_created_title"}, :set)
     end
 
     test "queryable - returns a map with values as a single result" do
@@ -1859,29 +1859,29 @@ defmodule EctoShorts.ActionsTest do
 
   describe "batch_all/6 : " do
     test "queryable - returns results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "new_title"})
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
-      assert %{^post_id => %{id: ^post_id, title: "new_title"}} =
-        Actions.batch_all(Post, :id, [post_id], %{title: "new_title"}, :set, [])
+      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
+        Actions.batch_all(Post, :id, [post_id], %{title: "post_created_title"}, :set, [])
     end
 
     test "{source, queryable} - returns results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "new_title"})
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
-      assert %{^post_id => %{id: ^post_id, title: "new_title"}} =
-        Actions.batch_all({"posts", Post}, :id, [post_id], %{title: "new_title"}, :set, [])
+      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
+        Actions.batch_all({"posts", Post}, :id, [post_id], %{title: "post_created_title"}, :set, [])
     end
 
     test "query - returns results matching params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "new_title"})
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
-      assert %{^post_id => %{id: ^post_id, title: "new_title"}} =
-        Actions.batch_all(query, :id, [post_id], %{title: "new_title"}, :set, [])
+      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
+        Actions.batch_all(query, :id, [post_id], %{title: "post_created_title"}, :set, [])
     end
 
     test "queryable - returns a map with values as a single result" do

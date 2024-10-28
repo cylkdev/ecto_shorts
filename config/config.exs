@@ -3,8 +3,8 @@
 import Config
 
 config :ecto_shorts,
-  repo: nil,
   replica: nil,
+  repo: nil,
   error_module: EctoShorts.Actions.Error
 
 if Mix.env() === :test do

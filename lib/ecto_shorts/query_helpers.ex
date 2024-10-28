@@ -24,7 +24,7 @@ defmodule EctoShorts.QueryHelpers do
       ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.get_source_queryable()
       {"comments", EctoShorts.Support.Schemas.Comment}
   """
-  @spec get_source_queryable(query :: Ecto.Query.t() | Ecto.Queryable.t()) :: {binary(), Ecto.Queryable.t()}
+  @spec get_source_queryable(query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: {binary(), Ecto.Queryable.t()}
   def get_source_queryable(%{from: %{source: {source, queryable}}}), do: {source, queryable}
   def get_source_queryable(%{from: %{query: %{from: {source, queryable}}}}), do: {source, queryable}
   def get_source_queryable(query), do: query |> Query.from() |> get_source_queryable()
@@ -46,8 +46,6 @@ defmodule EctoShorts.QueryHelpers do
       queryable
     end
   end
-
-  def get_queryable(query), do: query
 
   @doc """
   Returns an Ecto.Query for the given schema.
