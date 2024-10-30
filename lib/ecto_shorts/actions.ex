@@ -107,6 +107,8 @@ defmodule EctoShorts.Actions do
     Config.repo!(opts).preload(struct_or_structs, preloads, opts)
   end
 
+  ## Query API
+
   @doc """
   Fetches a single record where the primary key matches the given `id`.
 
@@ -996,61 +998,34 @@ defmodule EctoShorts.Actions do
   ...
   """
   @doc since: "2.5.0"
-  @spec batch_all(
-    query :: query() | queryable() | source_queryable(),
-    field :: atom(),
-    values :: list(),
-    params :: params(),
-    collection_type :: :set | :bag,
-    opts :: keyword()
-  ) :: %{term() => schema() | list(schema())}
-  @spec batch_all(
-    query :: query() | queryable() | source_queryable(),
-    field :: atom(),
-    values :: list(),
-    params :: params(),
-    collection_type :: :set | :bag
-  ) :: %{term() => schema() | list(schema())}
-  def batch_all(query, field, values, params, collection_type, opts) do
-    schema_data =
-      query
-      |> CommonFilters.convert_params_to_filter(Map.merge(params, %{field => values}))
-      |> Config.repo!(opts).all(opts)
+  def update_all(query, query_params, updates, opts) do
+    update_all_params = CommonParams.convert_to_update_all_params(query, updates, opts)
 
-    if collection_type === :bag do
-      Enum.group_by(schema_data, &Map.get(&1, field))
-    else
-      Map.new(schema_data, &{Map.get(&1, field), &1})
-    end
+    # TODO: add the ability to select
+
+    query
+    |> CommonFilters.convert_params_to_filter(query_params)
+    |> Config.repo!(opts).update_all(update_all_params, opts)
   end
 
-  def batch_all(query, field, values, params, collection_type) do
-    batch_all(query, field, values, params, collection_type, default_opts())
-  end
+  @default_insert_all_options [
+    on_conflict: {:replace_all_except, [:id, :inserted_at]},
+    conflict_target: [:id]
+  ]
 
   @doc """
   ...
   """
-  # @spec insert_all(
-  #   query :: binary() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-  #   params :: Ecto.Query.t() | list(map() | Ecto.Schema.t() | Ecto.Changeset.t() | {Ecto.Schema.t(), map()} | {Ecto.Changeset.t(), map()}),
-  #   opts :: keyword()
-  # ) :: {:ok, {non_neg_integer(), nil | list(Ecto.Schema.t())}} | {:error, list(Ecto.Changeset.t())}
-  def insert_all({source, queryable}, params, opts) do
-    with {:ok, insert_params} <-
-      CommonParams.convert_to_insert_all_params(queryable, params, opts) do
-      {:ok, Config.repo!(opts).insert_all(source, insert_params, opts)}
-    end
-  end
-
-  def insert_all(query, params, opts) when is_binary(query) or is_struct(params, Ecto.Query) do
-    {:ok, Config.repo!(opts).insert_all(query, params, opts)}
+  @doc since: "2.5.0"
+  def insert_all(source, params, opts) when is_binary(source) do
+    {:ok, Config.repo!(opts).insert_all(source, params, opts)}
   end
 
   def insert_all(query, params, opts) do
-    with {:ok, insert_params} <-
-      CommonParams.convert_to_insert_all_params(query, params, opts) do
-      {:ok, Config.repo!(opts).insert_all(query, insert_params, opts)}
+    opts = Keyword.merge(@default_insert_all_options, opts)
+
+    with {:ok, insert_all_params} <- CommonParams.convert_to_insert_all_params(query, params, opts) do
+      {:ok, Config.repo!(opts).insert_all(query, insert_all_params, opts)}
     end
   end
 

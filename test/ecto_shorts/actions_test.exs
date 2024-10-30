@@ -35,7 +35,7 @@ defmodule EctoShorts.ActionsTest do
 
     assert {:ok, %{id: post_id}} = Actions.create(Post, %{}, repo: Repo2)
 
-    assert [%{id: ^post_id}] = Actions.all(Post, post_id: post_id, repo: Repo2, replica: nil)
+    assert [%{id: ^post_id}] = Actions.all(Post, id: post_id, repo: Repo2, replica: nil)
   end
 
   test "can set replica option" do
@@ -49,7 +49,7 @@ defmodule EctoShorts.ActionsTest do
 
     assert {:ok, %{id: post_id}} = Actions.create(Post, %{}, repo: Repo2)
 
-    assert [%{id: ^post_id}] = Actions.all(Post, post_id: post_id, repo: nil, replica: Repo2)
+    assert [%{id: ^post_id}] = Actions.all(Post, id: post_id, repo: nil, replica: Repo2)
   end
 
   describe "preload/2: " do
@@ -1889,166 +1889,6 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "batch_all/5 : " do
-    test "queryable - returns results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
-        Actions.batch_all(Post, :id, [post_id], %{title: "post_created_title"}, :set)
-    end
-
-    test "{source, queryable} - returns results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
-        Actions.batch_all({"posts", Post}, :id, [post_id], %{title: "post_created_title"}, :set)
-    end
-
-    test "query - returns results matching params" do
-      query = from p in Post
-
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
-        Actions.batch_all(query, :id, [post_id], %{title: "post_created_title"}, :set)
-    end
-
-    test "queryable - returns a map with values as a single result" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id}} =
-        Actions.batch_all(Post, :id, [post_id], %{}, :set)
-    end
-
-    test "{source, queryable} - returns a map with values as a single result" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id}} =
-        Actions.batch_all({"posts", Post}, :id, [post_id], %{}, :set)
-    end
-
-    test "query - returns a map with values as a single result" do
-      query = from p in Post
-
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id}} =
-        Actions.batch_all(query, :id, [post_id], %{}, :set)
-    end
-
-    test "queryable - returns a map with values as lists of results" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => [%{id: ^post_id}]} =
-        Actions.batch_all(Post, :id, [post_id], %{}, :bag)
-    end
-
-    test "{source, queryable} - returns a map with values as lists of results" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => [%{id: ^post_id}]} =
-        Actions.batch_all({"posts", Post}, :id, [post_id], %{}, :bag)
-    end
-
-    test "query - returns a map with values as lists of results" do
-      query = from p in Post
-
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => [%{id: ^post_id}]} =
-        Actions.batch_all(query, :id, [post_id], %{}, :bag)
-    end
-  end
-
-  describe "batch_all/6 : " do
-    test "queryable - returns results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
-        Actions.batch_all(Post, :id, [post_id], %{title: "post_created_title"}, :set, [])
-    end
-
-    test "{source, queryable} - returns results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
-        Actions.batch_all({"posts", Post}, :id, [post_id], %{title: "post_created_title"}, :set, [])
-    end
-
-    test "query - returns results matching params" do
-      query = from p in Post
-
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{title: "post_created_title"})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id, title: "post_created_title"}} =
-        Actions.batch_all(query, :id, [post_id], %{title: "post_created_title"}, :set, [])
-    end
-
-    test "queryable - returns a map with values as a single result" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id}} =
-        Actions.batch_all(Post, :id, [post_id], %{}, :set, [])
-    end
-
-    test "{source, queryable} - returns a map with values as a single result" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id}} =
-        Actions.batch_all({"posts", Post}, :id, [post_id], %{}, :set, [])
-    end
-
-    test "query - returns a map with values as a single result" do
-      query = from p in Post
-
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => %{id: ^post_id}} =
-        Actions.batch_all(query, :id, [post_id], %{}, :set, [])
-    end
-
-    test "queryable - returns a map with values as lists of results" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => [%{id: ^post_id}]} =
-        Actions.batch_all(Post, :id, [post_id], %{}, :bag, [])
-    end
-
-    test "{source, queryable} - returns a map with values as lists of results" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => [%{id: ^post_id}]} =
-        Actions.batch_all({"posts", Post}, :id, [post_id], %{}, :bag, [])
-    end
-
-    test "query - returns a map with values as lists of results" do
-      query = from p in Post
-
-      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
-      assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
-
-      assert %{^post_id => [%{id: ^post_id}]} =
-        Actions.batch_all(query, :id, [post_id], %{}, :bag, [])
-    end
-  end
-
   describe "&insert_all/2: " do
     test "when given params and params are valid, returns created records" do
       assert {:ok, {1, nil}} =
@@ -2062,13 +1902,13 @@ defmodule EctoShorts.ActionsTest do
     test "when given source, inserts records into table" do
       assert {:ok, params} = EctoShorts.CommonParams.convert_to_insert_all_params(Post, [%{title: "post_1_title"}])
 
-      assert {:ok, {1, nil}} = Actions.insert_all("posts", params)
+      assert {:ok, {1, nil}} = Actions.insert_all("posts", params, [])
 
       assert [%Post{title: "post_1_title"}] = Actions.all(Post)
     end
 
     test "when given {source, queryable} and valid params, creates params with queryable changeset and inserts into table" do
-      assert {:ok, {1, nil}} = Actions.insert_all({"posts", Post}, [%{title: "post_1_title"}])
+      assert {:ok, {1, nil}} = Actions.insert_all({"posts", Post}, [%{title: "post_1_title"}], [])
 
       assert [%Post{title: "post_1_title"}] = Actions.all(Post)
     end
@@ -2091,7 +1931,15 @@ defmodule EctoShorts.ActionsTest do
             }
           ]
         }
-      } = Actions.insert_all(Post, [%{title: "post_1_title"}, %{title: "post_2_title"}], returning: true)
+      } =
+        Actions.insert_all(
+          Post,
+          [
+            %{title: "post_1_title"},
+            %{title: "post_2_title"}
+          ],
+          returning: true
+        )
 
       assert NaiveDateTime.diff(returned_post_1_inserted_at, NaiveDateTime.utc_now()) <= 0
       assert NaiveDateTime.diff(returned_post_1_updated_at, NaiveDateTime.utc_now()) <= 0
@@ -2133,9 +1981,7 @@ defmodule EctoShorts.ActionsTest do
             {post_1_changeset, %{title: "post_1_updated_title"}},
             {post_2_changeset, %{title: "post_2_updated_title"}}
           ],
-          returning: true,
-          on_conflict: {:replace_all_except, [:id, :inserted_at]},
-          conflict_target: [:id]
+          returning: true
         )
 
       assert returned_post_1_inserted_at === post_1.inserted_at
@@ -2175,9 +2021,7 @@ defmodule EctoShorts.ActionsTest do
             {post_1, %{title: "post_1_updated_title"}},
             {post_2, %{title: "post_2_updated_title"}}
           ],
-          returning: true,
-          on_conflict: {:replace_all_except, [:id, :inserted_at]},
-          conflict_target: [:id]
+          returning: true
         )
 
       assert returned_post_1_inserted_at === post_1.inserted_at
@@ -2187,8 +2031,49 @@ defmodule EctoShorts.ActionsTest do
       assert NaiveDateTime.diff(returned_post_2_updated_at, post_2.updated_at) >= 0
     end
 
-    test "when given {struct, params} and params has id, find and update or find and create (upsert) result" do
+    test "when params has id, batch preload and update existing records" do
+      assert {:ok, %{id: post_1_id}} = Actions.create(Post, %{title: "post_1_created_title"})
+      assert {:ok, %{id: post_2_id}} = Actions.create(Post, %{title: "post_2_created_title"})
 
+      assert {
+        :ok,
+        {
+          2,
+          [
+            %Post{
+              id: ^post_1_id,
+              title: "post_1_updated_title"
+            },
+            %Post{
+              id: ^post_2_id,
+              title: "post_2_updated_title"
+            }
+          ]
+        }
+      } =
+        Actions.insert_all(
+          Post,
+          [
+            %{id: post_1_id, title: "post_1_updated_title"},
+            %{id: post_2_id, title: "post_2_updated_title"}
+          ],
+          returning: true
+        )
+    end
+  end
+
+  describe "&update_all/4: " do
+    test "" do
+      assert {:ok, %{id: post_1_id}} = Actions.create(Post, %{title: "post_1_title", likes: 50})
+      assert {:ok, %{id: post_2_id}} = Actions.create(Post, %{title: "post_2_title", likes: 50})
+
+      assert {2, nil} =
+        Actions.update_all(
+          Post,
+          %{id: [post_1_id, post_2_id]},
+          %{likes: 100},
+          returning: true
+        )
     end
   end
 end

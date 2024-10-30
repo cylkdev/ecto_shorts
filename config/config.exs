@@ -23,4 +23,4 @@ if Mix.env() === :test do
 end
 
 
-config :logger, :console, level: :info
+# config :logger, :console, level: :info

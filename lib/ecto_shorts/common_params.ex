@@ -4,11 +4,13 @@ defmodule EctoShorts.CommonParams do
   """
   @moduledoc since: "2.5.0"
 
-  alias EctoShorts.CommonSchemas
+  alias EctoShorts.{
+    CommonBatches,
+    CommonSchemas
+  }
 
   @logger_prefix "EctoShorts.CommonParams"
 
-  # @naive_datetime :naive_datetime
   @utc_datetime :utc_datetime
 
   @inserted_at_field_name :inserted_at
@@ -16,22 +18,23 @@ defmodule EctoShorts.CommonParams do
 
   @time_zone_utc "Etc/UTC"
 
-  # @one_hundred 100
-
   ## Insert API
 
   @doc """
   ...
   """
-  def convert_to_insert_all_params(query, params, opts \\ [])
-
-  def convert_to_insert_all_params(query, params, opts) do
+  @doc since: "2.5.0"
+  def convert_to_insert_all_params(query, params_list, opts \\ []) do
     queryable = CommonSchemas.get_schema_queryable(query)
 
     naive_datetime = maybe_generate_naive_datetime(opts)
 
+    field = opts[:preload] || :id
+    query_params = opts[:preload_filter] || %{}
+
     results_errors =
-      params
+      queryable
+      |> batch_preload(params_list, field, query_params, opts)
       |> Stream.with_index()
       |> Enum.reduce({[], []}, fn {params, idx}, {results, errors} ->
         case apply_insert_change(queryable, params, naive_datetime, opts) do
@@ -46,18 +49,20 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
+  ## Data validation
+
   defp apply_insert_change(queryable, {changeset, params}, naive_datetime, opts) when is_struct(changeset, Ecto.Changeset) do
     action = if has_id?(changeset.data), do: :update, else: :insert
 
     params = drop_associations(params, queryable)
 
     if Keyword.get(opts, :validate, true) do
-      with {:ok, schema_data} <-
+      with {:ok, struct} <-
         queryable
         |> CommonSchemas.prepare_changeset(changeset, params, opts)
         |> Ecto.Changeset.apply_action(opts[:action] || changeset.action || action) do
 
-        {:ok, dump_insert_change(schema_data, queryable, naive_datetime, opts)}
+        {:ok, dump_insert_change(struct, queryable, naive_datetime, opts)}
       end
     else
       result =
@@ -69,22 +74,22 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp apply_insert_change(queryable, {%_{} = schema_data, params}, naive_datetime, opts) do
-    action = if has_id?(schema_data), do: :update, else: :insert
+  defp apply_insert_change(queryable, {%_{} = struct, params}, naive_datetime, opts) do
+    action = if has_id?(struct), do: :update, else: :insert
 
     params = drop_associations(params, queryable)
 
     if Keyword.get(opts, :validate, true) do
-      with {:ok, schema_data} <-
+      with {:ok, struct} <-
         queryable
-        |> CommonSchemas.prepare_changeset(schema_data, params, opts)
+        |> CommonSchemas.prepare_changeset(struct, params, opts)
         |> Ecto.Changeset.apply_action(opts[:action] || action) do
 
-        {:ok, dump_insert_change(schema_data, queryable, naive_datetime, opts)}
+        {:ok, dump_insert_change(struct, queryable, naive_datetime, opts)}
       end
     else
       result =
-        schema_data
+        struct
         |> struct!(params)
         |> dump_insert_change(queryable, naive_datetime, opts)
 
@@ -96,8 +101,8 @@ defmodule EctoShorts.CommonParams do
     apply_insert_change(queryable, {changeset, %{}}, naive_datetime, opts)
   end
 
-  defp apply_insert_change(queryable, %_{} = schema_data, naive_datetime, opts) do
-    apply_insert_change(queryable, {schema_data, %{}}, naive_datetime, opts)
+  defp apply_insert_change(queryable, %_{} = struct, naive_datetime, opts) do
+    apply_insert_change(queryable, {struct, %{}}, naive_datetime, opts)
   end
 
   defp apply_insert_change(queryable, params, naive_datetime, opts) do
@@ -106,12 +111,12 @@ defmodule EctoShorts.CommonParams do
     params = drop_associations(params, queryable)
 
     if Keyword.get(opts, :validate, true) do
-      with {:ok, schema_data} <-
+      with {:ok, struct} <-
         queryable
         |> CommonSchemas.prepare_changeset(struct(queryable), params, opts)
         |> Ecto.Changeset.apply_action(opts[:action] || action) do
 
-        {:ok, dump_insert_change(schema_data, queryable, naive_datetime, opts)}
+        {:ok, dump_insert_change(struct, queryable, naive_datetime, opts)}
       end
     else
       result =
@@ -123,8 +128,8 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp dump_insert_change(schema_data, queryable, datetime, opts) do
-    schema_data
+  defp dump_insert_change(struct, queryable, datetime, opts) do
+    struct
     |> schema_to_map()
     |> drop_nil_values()
     |> drop_associations(queryable)
@@ -132,6 +137,8 @@ defmodule EctoShorts.CommonParams do
     |> put_timestamp_inserted_at(queryable, datetime, opts)
     |> put_timestamp_updated_at(queryable, datetime, opts)
   end
+
+  ## Placeholders
 
   defp maybe_put_placeholders(params, opts) do
     case opts[:placeholders] do
@@ -157,6 +164,8 @@ defmodule EctoShorts.CommonParams do
   defp put_placeholder(params, key) do
     Map.put(params, key, {:placeholder, key})
   end
+
+  ## Timestamps
 
   defp put_timestamp_inserted_at(params, queryable, naive_datetime, opts) do
     if naive_datetime && Keyword.get(opts, :timestamp_inserted_at, true) do
@@ -202,11 +211,157 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
+  @doc """
+  ...
+  """
+  @doc since: "2.5.0"
+  def batch_preload(queryable, params_list, field, query_params, opts) do
+    # TODO: add support for many fields
+
+    {batch_values, batch_value_idx_list} = split_preload_batch_values(params_list, field, opts)
+
+    if Enum.any?(batch_values) do
+      EctoShorts.Utils.Logger.debug(
+        @logger_prefix,
+        "Preload | fetching batch values | field=#{inspect(field)}, schema=#{inspect(queryable)}, values=#{inspect(batch_values, charlists: false)}"
+      )
+
+      queryable
+      |> CommonBatches.batch_all(field, batch_values, query_params, :set, opts)
+      |> merge_batch_structs(params_list, batch_value_idx_list)
+    else
+      params_list
+    end
+  end
+
+  defp merge_batch_structs(batch_value_structs, params_list, batch_value_idx_list) do
+    Enum.reduce(batch_value_structs, params_list, fn
+      {batch_value, new_struct}, acc ->
+        idx_list = Map.fetch!(batch_value_idx_list, batch_value)
+
+        Enum.reduce(idx_list, acc, fn idx, acc ->
+          case Enum.at(params_list, idx) do
+            {%{data: %{__meta__: _} = changeset}, params} = current ->
+              next = {%{changeset | data: new_struct}, params}
+
+              EctoShorts.Utils.Logger.debug(
+                @logger_prefix,
+                """
+                Preload | merging result | index=#{idx}, value=#{batch_value}
+
+                current:
+                #{inspect(current)}
+
+                next:
+                #{inspect(next, pretty: true)}
+                """
+              )
+
+              put_in(acc, [Access.at(idx)], next)
+
+            {_struct, params} = current ->
+              next = {new_struct, params}
+
+              EctoShorts.Utils.Logger.debug(
+                @logger_prefix,
+                """
+                Preload | merging result | index=#{idx}, value=#{batch_value}
+
+                current:
+                #{inspect(current)}
+
+                next:
+                #{inspect(next, pretty: true)}
+                """
+              )
+
+              put_in(acc, [Access.at(idx)], next)
+
+            params ->
+              next = {new_struct, params}
+
+              EctoShorts.Utils.Logger.debug(
+                @logger_prefix,
+                """
+                Preload | merging result | index=#{idx}, value=#{batch_value}
+
+                current:
+                #{inspect(params)}
+
+                next:
+                #{inspect(next, pretty: true)}
+                """
+              )
+
+              put_in(acc, [Access.at(idx)], next)
+
+          end
+        end)
+    end)
+  end
+
+  defp split_preload_batch_values(params_list, key, opts) do
+    result =
+      params_list
+      |> Stream.with_index()
+      |> Enum.reduce({[], %{}}, fn
+        {{%{data: %{__meta__: _ = struct} = _changeset}, _params}, idx}, {values, batch_value_idx_list} = acc ->
+          if opts[:force_preload] do
+            case Map.fetch!(struct, key) do
+              nil -> acc
+              val ->
+                EctoShorts.Utils.Logger.debug(
+                  @logger_prefix,
+                  "Queueing preload from existing data | index=#{idx}, key=#{key}, value=#{val}"
+                )
+
+                {[val | values], Map.update(batch_value_idx_list, val, [idx], &[&1 | idx])}
+            end
+          else
+            acc
+          end
+
+        {{struct, _params}, idx}, {values, batch_value_idx_list} = acc ->
+          if opts[:force_preload] do
+            case Map.fetch!(struct, key) do
+              nil -> acc
+              val ->
+                EctoShorts.Utils.Logger.debug(
+                  @logger_prefix,
+                  "Queueing preload from existing data | index=#{idx}, key=#{key}, value=#{val}"
+                )
+
+                {[val | values], Map.update(batch_value_idx_list, val, [idx], &[&1 | idx])}
+            end
+          else
+            acc
+          end
+
+        {params, idx}, {values, batch_value_idx_list} = acc ->
+          case Map.get(params, key) || Map.get(params, Atom.to_string(key)) do
+            nil -> acc
+            val ->
+              EctoShorts.Utils.Logger.debug(
+                @logger_prefix,
+                "Queueing preload | index=#{idx}, key=#{key}, value=#{val}"
+              )
+
+              {[val | values], Map.update(batch_value_idx_list, val, [idx], &[&1 | idx])}
+          end
+
+      end)
+
+    {values, batch_value_idx_list} = result
+
+    {values |> Enum.uniq() |> Enum.reverse(), batch_value_idx_list}
+  end
+
   ## Update API
 
   @doc """
   ...
   """
+  @doc since: "2.5.0"
   @spec convert_to_update_all_params(
     query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
     params :: map() | keyword(),
@@ -345,7 +500,7 @@ defmodule EctoShorts.CommonParams do
     {:pull, key, val}
   end
 
-  ## Timestamp API
+  ## Timestamps
 
   defp maybe_to_utc_datetime(naive_datetime, type) do
     if type === @utc_datetime do
@@ -373,10 +528,10 @@ defmodule EctoShorts.CommonParams do
     queryable.__schema__(:type, field_name)
   end
 
-  ## Helper API
+  ## Helpers
 
-  defp schema_to_map(schema_data) do
-    Map.drop(schema_data, [:__meta__, :__struct__])
+  defp schema_to_map(struct) do
+    Map.drop(struct, [:__meta__, :__struct__])
   end
 
   defp drop_id(params) do
@@ -391,7 +546,7 @@ defmodule EctoShorts.CommonParams do
     Map.drop(params, queryable.__schema__(:associations))
   end
 
-  defp has_id?(params), do: Map.has_key?(params, :id)
+  defp has_id?(params), do: Map.has_key?(params, :id) || Map.has_key?(params, "id")
 
   defp drop_nil_values(params) do
     params
