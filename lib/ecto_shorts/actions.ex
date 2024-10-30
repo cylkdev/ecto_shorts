@@ -81,11 +81,31 @@ defmodule EctoShorts.Actions do
   alias EctoShorts.{
     Actions.Error,
     CommonFilters,
+    CommonParams,
     CommonSchemas,
     Config
   }
 
   @logger_prefix "EctoShorts.Actions"
+
+  @doc """
+  Executes the preload function using the configured repo.
+
+  ### Examples
+
+      iex> EctoShorts.Actions.preload(%EctoShorts.Support.Schemas.Post{id: 1}, :user)
+
+      iex> EctoShorts.Actions.preload([%EctoShorts.Support.Schemas.Post{id: 1}], :user)
+  """
+  @doc since: "2.5.0"
+  @spec preload(
+    struct_or_structs :: list(Ecto.Schema.t()) | Ecto.Schema.t(),
+    preloads :: term(),
+    opts :: keyword()
+  ) :: list(Ecto.Schema.t()) | Ecto.Schema.t() | nil
+  def preload(struct_or_structs, preloads, opts \\ []) do
+    Config.repo!(opts).preload(struct_or_structs, preloads, opts)
+  end
 
   @doc """
   Fetches a single record where the primary key matches the given `id`.
@@ -115,9 +135,7 @@ defmodule EctoShorts.Actions do
     id :: id()
   ) :: schema() | nil
   def get(query, id, opts \\ []) do
-    query
-    |> Config.replica!(opts).get(id, opts)
-    |> preload(opts)
+    Config.replica!(opts).get(query, id, opts)
   end
 
   @doc """
@@ -230,7 +248,6 @@ defmodule EctoShorts.Actions do
     query
     |> CommonFilters.convert_params_to_filter(params)
     |> Config.replica!(opts).all(opts)
-    |> preload(opts)
   end
 
   @doc """
@@ -258,10 +275,7 @@ defmodule EctoShorts.Actions do
     query :: queryable() | source_queryable(),
     params :: params()
   ) :: {:ok, schema()} | {:error, changeset()}
-  @spec create(
-    query :: queryable() | source_queryable()
-  ) :: {:ok, schema()} | {:error, changeset()}
-  def create(query, params \\ %{}, opts \\ []) do
+  def create(query, params, opts \\ []) do
     query
     |> CommonSchemas.prepare_changeset(params, opts)
     |> Config.repo!(opts).insert(opts)
@@ -324,7 +338,7 @@ defmodule EctoShorts.Actions do
           params: params
         })}
 
-      schema_data -> {:ok, preload(schema_data, opts)}
+      schema_data -> {:ok, schema_data}
     end
   end
 
@@ -424,7 +438,7 @@ defmodule EctoShorts.Actions do
     id_or_opts :: id() | list(id()) | opts()
   ) :: {:ok, list(schema())} | {:error, list(changeset())}
   def delete(%_{} = changeset, opts) when is_struct(changeset, Ecto.Changeset) do
-    with {:error, %{data: %queryable{} = schema_data} = changeset} <-
+    with {:error, %{data: %{__meta__: %{schema: queryable}} = schema_data} = changeset} <-
       changeset
       |> CommonSchemas.prepare_changeset(%{}, opts)
       |> Config.repo!(opts).delete(opts) do
@@ -436,7 +450,7 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  def delete(%queryable{} = schema_data, opts) when not is_struct(schema_data, Ecto.Query) do
+  def delete(%{__meta__: %{schema: queryable}} = schema_data, opts) do
     # when schema data is given it is wrapped in a changeset
     # so that a constraint error isn't raised and instead we
     # return a changeset error.
@@ -577,87 +591,6 @@ defmodule EctoShorts.Actions do
     query
     |> CommonFilters.convert_params_to_filter(params)
     |> Config.replica!(opts).aggregate(aggregate, field, opts)
-  end
-
-  @doc """
-  A simple wrapper for `Ecto.Repo.transaction/2`.
-
-  ### Options
-
-    * `rollback_on_error` - When set to `true` if the function returns
-      `{:error, term()}` or `:error` the transaction is rolled back,
-      otherwise changes are committed. Defaults to `true`. This option
-      does not apply when an `Ecto.Multi` is given as [Ecto.Repo.transaction/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:transaction/2-use-with-ecto-multi)
-      will roll back the transaction if an error occurs.
-
-  ### Examples
-
-      iex> EctoShorts.Actions.transaction(fn -> :success end)
-      {:ok, :success}
-  """
-  @doc since: "2.5.0"
-  @spec transaction(
-    fun_or_multi :: (-> any()) | (module() -> any()) | Ecto.Multi.t(),
-    opts :: opts()
-  ) :: {:ok, any()} | {:error, any()} | :error | Ecto.Multi.failure()
-  @spec transaction(
-    fun_or_multi :: (-> any()) | (module() -> any()) | Ecto.Multi.t()
-  ) :: {:ok, any()} | {:error, any()} | :error | Ecto.Multi.failure()
-  def transaction(fun_or_multi, opts \\ [])
-
-  def transaction(%_{} = multi, opts) do
-    Config.repo!(opts).transaction(multi, opts)
-  end
-
-  def transaction(fun, opts) do
-    rollback_on_error? = Keyword.get(opts, :rollback_on_error, true)
-
-    Config.repo!(opts).transaction(
-      fn repo ->
-        case (if is_function(fun, 1), do: fun.(repo), else: fun.()) do
-          {:error, _} = error ->
-            if rollback_on_error? do
-              EctoShorts.Utils.Logger.debug(
-                @logger_prefix,
-                """
-                [ transaction/2 | ERROR ] Transaction function returned an error, rolling back.
-
-                got:
-
-                #{inspect(error, pretty: true)}
-                """
-              )
-
-              repo.rollback(error)
-            else
-              error
-            end
-
-          :error ->
-            if rollback_on_error? do
-              EctoShorts.Utils.Logger.debug(
-                @logger_prefix,
-                """
-                [ transaction/2 | ERROR ] Transaction function returned an error, rolling back.
-
-                got:
-
-                :error
-                """
-              )
-
-              repo.rollback(:error)
-            else
-              :error
-            end
-
-          response ->
-            response
-
-        end
-      end,
-      opts
-    )
   end
 
   @doc """
@@ -957,7 +890,107 @@ defmodule EctoShorts.Actions do
     end)
   end
 
-  ## Batch API
+  @doc """
+  A simple wrapper for [Ecto.Repo.transaction/2](https://hexdocs.pm/ecto/Ecto.Repo.html).
+
+  ### Options
+
+    * `rollback_on_error` - When set to `true` if the function returns
+      `{:error, term}` or `:error` the transaction is rolled back,
+      otherwise changes are committed. Defaults to `true`. This option
+      does not apply when an `Ecto.Multi` is given as [Ecto.Repo.transaction/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:transaction/2-use-with-ecto-multi)
+      will roll back the transaction if an error occurs.
+
+  ### Examples
+
+      iex> EctoShorts.Actions.transaction(fn -> :success end)
+      {:ok, :success}
+  """
+  @doc since: "2.5.0"
+  @spec transaction(
+    fun_or_multi :: (-> any()) | (module() -> any()) | Ecto.Multi.t(),
+    opts :: opts()
+  ) :: {:ok, any()} | {:error, any()} | :error | Ecto.Multi.failure()
+  @spec transaction(
+    fun_or_multi :: (-> any()) | (module() -> any()) | Ecto.Multi.t()
+  ) :: {:ok, any()} | {:error, any()} | :error | Ecto.Multi.failure()
+  def transaction(fun_or_multi, opts \\ [])
+
+  def transaction(%_{} = multi, opts) do
+    Config.repo!(opts).transaction(multi, opts)
+  end
+
+  def transaction(fun, opts) do
+    rollback_on_error? = Keyword.get(opts, :rollback_on_error, true)
+
+    operation =
+      fn repo ->
+        case ( if is_function(fun, 1), do: fun.(repo), else: fun.() ) do
+          :ok ->
+            :ok
+
+          {:ok, _} = response ->
+            response
+
+          {:error, _} = error ->
+            if rollback_on_error? do
+              EctoShorts.Utils.Logger.debug(
+                @logger_prefix,
+                """
+                Transaction function completed and returned an error. Rolling back transaction.
+
+                got:
+
+                #{inspect(error)}
+                """
+              )
+
+              repo.rollback(error)
+            else
+              error
+            end
+
+          :error ->
+            if rollback_on_error? do
+              EctoShorts.Utils.Logger.debug(
+                @logger_prefix,
+                """
+                Transaction function completed and returned an error. Rolling back transaction.
+
+                got:
+
+                :error
+                """
+              )
+
+              repo.rollback(:error)
+            else
+              :error
+            end
+
+          term ->
+            if rollback_on_error? do
+              EctoShorts.Utils.Logger.debug(
+                @logger_prefix,
+                """
+                Transaction function completed and returned an error. Rolling back transaction.
+
+                got:
+
+                #{inspect(term)}
+                """
+              )
+
+              repo.rollback(term)
+            else
+              term
+            end
+
+        end
+      end
+
+    Config.repo!(opts).transaction(operation, opts)
+  end
 
   @doc """
   ...
@@ -982,7 +1015,7 @@ defmodule EctoShorts.Actions do
     schema_data =
       query
       |> CommonFilters.convert_params_to_filter(Map.merge(params, %{field => values}))
-      |> all(opts)
+      |> Config.repo!(opts).all(opts)
 
     if collection_type === :bag do
       Enum.group_by(schema_data, &Map.get(&1, field))
@@ -995,14 +1028,37 @@ defmodule EctoShorts.Actions do
     batch_all(query, field, values, params, collection_type, default_opts())
   end
 
-  ## Helper functions
-
-  defp preload(schema_data, opts) do
-    case opts[:preload] do
-      nil -> schema_data
-      preloads -> Config.repo!(opts).preload(schema_data, preloads, opts)
+  @doc """
+  ...
+  """
+  # @spec insert_all(
+  #   query :: binary() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+  #   params :: Ecto.Query.t() | list(map() | Ecto.Schema.t() | Ecto.Changeset.t() | {Ecto.Schema.t(), map()} | {Ecto.Changeset.t(), map()}),
+  #   opts :: keyword()
+  # ) :: {:ok, {non_neg_integer(), nil | list(Ecto.Schema.t())}} | {:error, list(Ecto.Changeset.t())}
+  def insert_all({source, queryable}, params, opts) do
+    with {:ok, insert_params} <-
+      CommonParams.convert_to_insert_all_params(queryable, params, opts) do
+      {:ok, Config.repo!(opts).insert_all(source, insert_params, opts)}
     end
   end
+
+  def insert_all(query, params, opts) when is_binary(query) or is_struct(params, Ecto.Query) do
+    {:ok, Config.repo!(opts).insert_all(query, params, opts)}
+  end
+
+  def insert_all(query, params, opts) do
+    with {:ok, insert_params} <-
+      CommonParams.convert_to_insert_all_params(query, params, opts) do
+      {:ok, Config.repo!(opts).insert_all(query, insert_params, opts)}
+    end
+  end
+
+  def insert_all(query, params) do
+    insert_all(query, params, default_opts())
+  end
+
+  ## Helper functions
 
   defp put_order_by_and_group_by(params, opts) do
     params

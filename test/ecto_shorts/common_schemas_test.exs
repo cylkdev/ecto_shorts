@@ -1,148 +1,359 @@
-# defmodule EctoShorts.CommonSchemasTest do
-#   use ExUnit.Case, async: true
-#   doctest EctoShorts.CommonSchemas
+defmodule EctoShorts.CommonSchemasTest do
+  use EctoShorts.DataCase
+  doctest EctoShorts.CommonSchemas
 
-#   alias EctoShorts.CommonSchemas
-#   alias EctoShorts.Support.Schemas.Post
+  alias Ecto.Changeset
 
-#   require Ecto.Query
+  alias EctoShorts.{
+    CommonSchemas,
+    Support.Schemas.Post,
+    Support.Schemas.PostAbstract,
+    Support.Schemas.PostNoConstraint,
+    Support.Schemas.PostWithPrefix,
+    Support.Schemas.PostWithPrefixAbstract
+  }
 
-#   describe "get_schema_reflection/1: " do
-#     test "returns expected value given schema" do
-#       assert [:id, :body, :inserted_at, :updated_at] =
-#         EctoShorts.CommonSchemas.get_schema_reflection(Post, :fields)
-#     end
+  import Ecto.Query
 
-#     test "returns expected value given {source, queryable}" do
-#       assert [:id, :body, :inserted_at, :updated_at] =
-#         EctoShorts.CommonSchemas.get_schema_reflection({"posts", Post}, :fields)
-#     end
-#   end
+  describe "get_schema_reflection/1: " do
+    test "when given queryable, return expected result" do
+      assert [
+        :id,
+        :title,
+        :unique_identifier,
+        :likes,
+        :tags,
+        :views,
+        :user_id,
+        :inserted_at,
+        :updated_at
+      ] = EctoShorts.CommonSchemas.get_schema_reflection(Post, :fields)
+    end
 
-#   describe "get_schema_reflection/2: " do
-#     test "returns expected value given schema" do
-#       assert :string =
-#         EctoShorts.CommonSchemas.get_schema_reflection(Post, :type, :body)
-#     end
+    test "when given {source, queryable}, return expected result" do
+      assert [
+        :id,
+        :title,
+        :unique_identifier,
+        :likes,
+        :tags,
+        :views,
+        :user_id,
+        :inserted_at,
+        :updated_at
+      ] = EctoShorts.CommonSchemas.get_schema_reflection({"posts", PostAbstract}, :fields)
+    end
+  end
 
-#     test "returns expected value given {source, queryable}" do
-#       assert :string =
-#         EctoShorts.CommonSchemas.get_schema_reflection(
-#           {"posts", Post},
-#           :type,
-#           :body
-#         )
-#     end
-#   end
+  describe "get_schema_reflection/2: " do
+    test "when given queryable, return expected result" do
+      assert :string = EctoShorts.CommonSchemas.get_schema_reflection(Post, :type, :title)
+    end
 
-#   describe "get_struct/2: " do
-#     test "returns struct with loaded state and source when given a queryable" do
-#       assert %EctoShorts.Support.MockSchemas.Post{
-#         __meta__: %Ecto.Schema.Metadata{
-#           state: :loaded,
-#           source: "basic_schemas",
-#           prefix: nil,
-#           context: nil
-#         }
-#       } = EctoShorts.CommonSchemas.get_struct(Post)
-#     end
+    test "when given {source, queryable}, return expected result" do
+      assert :string = EctoShorts.CommonSchemas.get_schema_reflection({"posts", PostAbstract}, :type, :title)
+    end
+  end
 
-#     test "returns struct with loaded state and source given {source, queryable}" do
-#       assert %EctoShorts.Support.MockSchemas.AbstractSchema{
-#         __meta__: %Ecto.Schema.Metadata{
-#           state: :loaded,
-#           source: "concrete_table",
-#           prefix: nil,
-#           context: nil
-#         }
-#       } = EctoShorts.CommonSchemas.get_struct({"posts", Post})
-#     end
+  describe "get_schema_struct/2: " do
+    test "when given queryable, returns built struct" do
+      assert %Post{
+        __meta__: %Ecto.Schema.Metadata{
+          state: :built,
+          source: "posts",
+          prefix: nil,
+          context: nil
+        }
+      } = EctoShorts.CommonSchemas.get_schema_struct(Post)
+    end
 
-#     test "returns struct with loaded state, source, and prefix if @schema_prefix module attribute is set" do
-#       assert %EctoShorts.Support.MockSchemas.PrefixSchema{
-#         __meta__: %Ecto.Schema.Metadata{
-#           state: :loaded,
-#           source: "prefix_schemas",
-#           prefix: "mock_schema_prefix",
-#           context: nil
-#         }
-#       } = EctoShorts.CommonSchemas.get_struct(PrefixSchema)
-#     end
+    test "when given {source, queryable}, returns loaded struct" do
+      assert %PostAbstract{
+        __meta__: %Ecto.Schema.Metadata{
+          state: :loaded,
+          source: "posts",
+          prefix: nil,
+          context: nil
+        }
+      } = EctoShorts.CommonSchemas.get_schema_struct({"posts", PostAbstract})
+    end
 
-#     test "returns struct with loaded state, source, and prefix given {source, queryable} if @schema_prefix module attribute is set" do
-#       assert %EctoShorts.Support.MockSchemas.PrefixSchema{
-#         __meta__: %Ecto.Schema.Metadata{
-#           state: :loaded,
-#           source: "concrete_table",
-#           prefix: "mock_schema_prefix",
-#           context: nil
-#         }
-#       } = EctoShorts.CommonSchemas.get_struct({"concrete_table", PrefixSchema})
-#     end
-#   end
+    test "when given queryable and module has @schema_prefix attribute, sets prefix to module attribute value" do
+      assert %PostWithPrefix{
+        __meta__: %Ecto.Schema.Metadata{
+          state: :built,
+          source: "posts",
+          prefix: "custom_schema_prefix",
+          context: nil
+        }
+      } = EctoShorts.CommonSchemas.get_schema_struct(PostWithPrefix)
+    end
 
-#   describe "get_schema_prefix/2: " do
-#     test "returns @schema_prefix module attribute value if set in schema" do
-#       assert "mock_schema_prefix" = CommonSchemas.get_schema_prefix(PrefixSchema)
-#     end
+    test "when given {source, queryable} and module has @schema_prefix attribute, sets prefix to module attribute value" do
+      assert %PostWithPrefixAbstract{
+        __meta__: %Ecto.Schema.Metadata{
+          state: :loaded,
+          source: "posts",
+          prefix: "custom_schema_prefix",
+          context: nil
+        }
+      } = EctoShorts.CommonSchemas.get_schema_struct({"posts", PostWithPrefixAbstract})
+    end
+  end
 
-#     test "returns nil if schema does not have @schema_prefix module attribute set" do
-#       assert nil === CommonSchemas.get_schema_prefix(AbstractSchema)
-#     end
+  describe "get_schema_prefix/2: " do
+    test "when given queryable and module has @schema_prefix attribute, returns the value of @schema_prefix" do
+      assert "custom_schema_prefix" = CommonSchemas.get_schema_prefix(PostWithPrefix)
+    end
 
-#     test "returns @schema_prefix module attribute value if set in schema and {source, queryable} tuple is given" do
-#       assert "mock_schema_prefix" = CommonSchemas.get_schema_prefix({"concrete_table", PrefixSchema})
-#     end
+    test "when given {source, queryable} and module has @schema_prefix attribute, returns the value of @schema_prefix" do
+      assert "custom_schema_prefix" = CommonSchemas.get_schema_prefix({"posts", PostWithPrefixAbstract})
+    end
 
-#     test "returns nil if schema does not have @schema_prefix module attribute set and {source, queryable} tuple is given" do
-#       assert nil === CommonSchemas.get_schema_prefix({"posts", Post})
-#     end
-#   end
+    test "when given queryable and schema module does not have @schema_prefix attribute, returns nil" do
+      assert nil === CommonSchemas.get_schema_prefix(Post)
+    end
 
-#   describe "get_schema_source/2: " do
-#     test "returns source defined in schema" do
-#       assert "basic_schemas" = CommonSchemas.get_schema_source(Post)
-#     end
+    test "when given {source, queryable} and schema module does not have @schema_prefix attribute, returns nil" do
+      assert nil === CommonSchemas.get_schema_prefix({"posts", PostAbstract})
+    end
+  end
 
-#     test "returns source given {source, queryable}" do
-#       assert "concrete_table" = CommonSchemas.get_schema_source({"concrete_table", PrefixSchema})
-#     end
-#   end
+  describe "get_schema_source/2: " do
+    test "when given {source, queryable}, returns source from schema module" do
+      assert "posts" = CommonSchemas.get_schema_source(Post)
+    end
 
-#   describe "get_schema_queryable/2: " do
-#     test "returns queryable module" do
-#       assert EctoShorts.Support.MockSchemas.Post =
-#         CommonSchemas.get_schema_queryable(Post)
-#     end
+    test "when given {source, queryable}, returns source in given tuple" do
+      assert "custom_source" = CommonSchemas.get_schema_source({"custom_source", PostAbstract})
+    end
+  end
 
-#     test "returns queryable module given {source, queryable}" do
-#       assert EctoShorts.Support.MockSchemas.AbstractSchema =
-#         CommonSchemas.get_schema_queryable({"posts", Post})
-#     end
-#   end
+  describe "get_schema_queryable/2: " do
+    test "when given queryable, returns the given queryable" do
+      assert Post = CommonSchemas.get_schema_queryable(Post)
+    end
 
-#   describe "get_schema_query/1: " do
-#     test "returns query struct" do
-#       query = Ecto.Query.from(AbstractSchema)
+    test "when given {source, queryable}, returns queryable module in given tuple" do
+      assert PostAbstract = CommonSchemas.get_schema_queryable({"custom_source", PostAbstract})
+    end
+  end
 
-#       assert ^query = CommonSchemas.get_schema_query(query)
-#     end
+  describe "get_schema_query/1: " do
+    test "when given a query, returns the query" do
+      query = from p in Post
 
-#     test "returns queryable" do
-#       queryable = EctoShorts.CommonSchemasTest.MockSchema
+      assert ^query = CommonSchemas.get_schema_query(query)
+    end
 
-#       assert ^queryable = CommonSchemas.get_schema_query(queryable)
-#     end
+    test "when given a queryable, returns query" do
+      assert %Ecto.Query{} = CommonSchemas.get_schema_query(Post)
+    end
 
-#     test "returns query where the from prefix is the value set by the @schema_prefix module attribute" do
-#       query = CommonSchemas.get_schema_query({"concrete_table", PrefixSchema})
+    test "when given queryable and schema has module attribute @schema_prefix set, sets the from prefix to @schema_prefix value" do
+      assert %Ecto.Query{
+        from: %{
+          prefix: "custom_schema_prefix",
+          source: {"posts", PostWithPrefix}
+        }
+      } = CommonSchemas.get_schema_query(PostWithPrefix)
+    end
 
-#       assert %Ecto.Query{
-#         from: %{
-#           prefix: "mock_schema_prefix",
-#           source: {"concrete_table", PrefixSchema}
-#         }
-#       } = query
-#     end
-#   end
-# end
+    test "when given {source, queryable} and schema has module attribute @schema_prefix set, sets the from prefix to @schema_prefix value" do
+      assert %Ecto.Query{
+        from: %{
+          prefix: "custom_schema_prefix",
+          source: {"posts", PostWithPrefixAbstract}
+        }
+      } = CommonSchemas.get_schema_query({"posts", PostWithPrefixAbstract})
+    end
+  end
+
+  describe "prepare_changeset/2: " do
+    test "when given (changeset, params, opts), return a changeset" do
+      changeset = Post.changeset(%Post{id: 1}, %{})
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset(changeset, %{title: "post_title"})
+    end
+
+    test "when given (schema_data, params, opts), return a changeset" do
+      post = %Post{id: 1}
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset(post, %{title: "post_title"})
+    end
+
+    test "when given (queryable, params, opts), return a changeset" do
+      assert %Ecto.Changeset{
+        data: %Post{},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset(Post, %{title: "post_title"})
+    end
+
+    test "when given ({source, queryable}, params, opts), return a changeset" do
+      assert %Ecto.Changeset{
+        data: %PostAbstract{},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset({"posts", PostAbstract}, %{title: "post_title"})
+    end
+  end
+
+  describe "prepare_changeset/3: " do
+    test "when given (changeset, params, opts), return a changeset" do
+      changeset = Post.changeset(%Post{id: 1}, %{})
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset(changeset, %{title: "post_title"}, [])
+    end
+
+    test "when given (schema_data, params, opts), return a changeset" do
+      post = %Post{id: 1}
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset(post, %{title: "post_title"}, [])
+    end
+
+    test "when given (queryable, params, opts), return a changeset" do
+      assert %Ecto.Changeset{
+        data: %Post{},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset(Post, %{title: "post_title"}, [])
+    end
+
+    test "when given ({source, queryable}, params, opts), return a changeset" do
+      assert %Ecto.Changeset{
+        data: %PostAbstract{},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset({"posts", PostAbstract}, %{title: "post_title"}, [])
+    end
+  end
+
+  describe "prepare_changeset/4: " do
+    test "when given (queryable, changeset, params), returns a valid changeset" do
+      changeset = Post.changeset(%Post{id: 1}, %{})
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset(Post, changeset, %{title: "post_title"}, [])
+    end
+
+    test "when given ({source, queryable}, changeset, params), returns a valid changeset" do
+      changeset = Post.changeset(%Post{id: 1}, %{})
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset({"posts", PostAbstract}, changeset, %{title: "post_title"}, [])
+    end
+
+    test "when given (queryable, schema_data, params), return a changeset" do
+      post = %Post{id: 1}
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset(Post, post, %{title: "post_title"}, [])
+    end
+
+    test "when given ({source, queryable}, schema_data, params), return a changeset" do
+      post = %Post{id: 1}
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } = CommonSchemas.prepare_changeset({"posts", PostAbstract}, post, %{title: "post_title"}, [])
+    end
+
+    test "when given schema_data the value of option :changeset is a 1-arity function, add constraint" do
+      post = %Post{id: 1}
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } =
+        CommonSchemas.prepare_changeset(
+          PostNoConstraint,
+          post,
+          %{title: "post_title"},
+          changeset: fn changeset ->
+            Changeset.no_assoc_constraint(changeset, :comments, name: "comments_post_id_fkey")
+          end
+        )
+    end
+
+    test "when given schema_data the value of option :changeset is a 2-arity function, add constraint" do
+      post = %Post{id: 1}
+
+      assert %Ecto.Changeset{
+        data: %Post{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } =
+        CommonSchemas.prepare_changeset(
+          PostNoConstraint,
+          post,
+          %{title: "post_title"},
+          changeset: fn changeset, params ->
+            changeset
+            |> PostNoConstraint.changeset(params)
+            |> Changeset.no_assoc_constraint(:comments, name: "comments_post_id_fkey")
+          end
+        )
+    end
+
+    test "when given schema_data the value of option :changeset is {module, fun, args}, add constraint" do
+      post = %PostNoConstraint{id: 1}
+
+      assert %Ecto.Changeset{
+        data: %PostNoConstraint{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } =
+        CommonSchemas.prepare_changeset(
+          PostNoConstraint,
+          post,
+          %{title: "post_title"},
+          changeset: {EctoShorts.Support.MockPostNoConstraintCallback, :changeset, []}
+        )
+    end
+
+    test "when given schema_data the value of option :changeset is {module, fun}, add constraint" do
+      post = %PostNoConstraint{id: 1}
+
+      assert %Ecto.Changeset{
+        data: %PostNoConstraint{id: 1},
+        changes: %{title: "post_title"},
+        valid?: true
+      } =
+        CommonSchemas.prepare_changeset(
+          PostNoConstraint,
+          post,
+          %{title: "post_title"},
+          changeset: {EctoShorts.Support.MockPostNoConstraintCallback, :changeset}
+        )
+    end
+  end
+end

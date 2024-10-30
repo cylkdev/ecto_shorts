@@ -1,14 +1,14 @@
-defmodule EctoShorts.Support.Schemas.PostTimestampCustomFieldName do
+defmodule EctoShorts.Support.Schemas.PostWithPrefixAbstract do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "posts" do
+  @schema_prefix "custom_schema_prefix"
+
+  schema "abstract table: posts" do
     field :title, :string
 
-    timestamps type: :utc_datetime,
-               inserted_at: :created_at,
-               updated_at: :modified_at
+    timestamps(type: :utc_datetime)
   end
 
   @available_fields [:title]

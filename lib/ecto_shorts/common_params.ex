@@ -23,7 +23,9 @@ defmodule EctoShorts.CommonParams do
   @doc """
   ...
   """
-  def convert_to_insert_params(query, params, opts) do
+  def convert_to_insert_all_params(query, params, opts \\ [])
+
+  def convert_to_insert_all_params(query, params, opts) do
     queryable = CommonSchemas.get_schema_queryable(query)
 
     naive_datetime = maybe_generate_naive_datetime(opts)
@@ -31,8 +33,8 @@ defmodule EctoShorts.CommonParams do
     results_errors =
       params
       |> Stream.with_index()
-      |> Enum.reduce({[], []}, fn {changes, idx}, {results, errors} ->
-        case apply_changes(queryable, changes, naive_datetime, opts) do
+      |> Enum.reduce({[], []}, fn {params, idx}, {results, errors} ->
+        case apply_insert_change(queryable, params, naive_datetime, opts) do
           {:ok, res} -> {[res | results], errors}
           {:error, err} -> {results, [{idx, err} | errors]}
         end
@@ -44,17 +46,7 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp prepare_insert_params(schema_data, queryable, datetime, opts) do
-    schema_data
-    |> schema_to_map()
-    |> drop_nil_values()
-    |> drop_associations(queryable)
-    |> maybe_put_placeholders(opts)
-    |> put_timestamp_inserted_at(queryable, datetime, opts)
-    |> put_timestamp_updated_at(queryable, datetime, opts)
-  end
-
-  defp apply_changes(queryable, {changeset, params}, naive_datetime, opts) when is_struct(changeset, Ecto.Changeset) do
+  defp apply_insert_change(queryable, {changeset, params}, naive_datetime, opts) when is_struct(changeset, Ecto.Changeset) do
     action = if has_id?(changeset.data), do: :update, else: :insert
 
     params = drop_associations(params, queryable)
@@ -65,19 +57,19 @@ defmodule EctoShorts.CommonParams do
         |> CommonSchemas.prepare_changeset(changeset, params, opts)
         |> Ecto.Changeset.apply_action(opts[:action] || changeset.action || action) do
 
-        {:ok, prepare_insert_params(schema_data, queryable, naive_datetime, opts)}
+        {:ok, dump_insert_change(schema_data, queryable, naive_datetime, opts)}
       end
     else
       result =
         changeset.data
         |> struct!(Map.merge(changeset.changes, params))
-        |> prepare_insert_params(queryable, naive_datetime, opts)
+        |> dump_insert_change(queryable, naive_datetime, opts)
 
       {:ok, result}
     end
   end
 
-  defp apply_changes(queryable, {%_{} = schema_data, params}, naive_datetime, opts) do
+  defp apply_insert_change(queryable, {%_{} = schema_data, params}, naive_datetime, opts) do
     action = if has_id?(schema_data), do: :update, else: :insert
 
     params = drop_associations(params, queryable)
@@ -88,19 +80,27 @@ defmodule EctoShorts.CommonParams do
         |> CommonSchemas.prepare_changeset(schema_data, params, opts)
         |> Ecto.Changeset.apply_action(opts[:action] || action) do
 
-        {:ok, prepare_insert_params(schema_data, queryable, naive_datetime, opts)}
+        {:ok, dump_insert_change(schema_data, queryable, naive_datetime, opts)}
       end
     else
       result =
         schema_data
         |> struct!(params)
-        |> prepare_insert_params(queryable, naive_datetime, opts)
+        |> dump_insert_change(queryable, naive_datetime, opts)
 
       {:ok, result}
     end
   end
 
-  defp apply_changes(queryable, params, naive_datetime, opts) do
+  defp apply_insert_change(queryable, changeset, naive_datetime, opts) when is_struct(changeset, Ecto.Changeset) do
+    apply_insert_change(queryable, {changeset, %{}}, naive_datetime, opts)
+  end
+
+  defp apply_insert_change(queryable, %_{} = schema_data, naive_datetime, opts) do
+    apply_insert_change(queryable, {schema_data, %{}}, naive_datetime, opts)
+  end
+
+  defp apply_insert_change(queryable, params, naive_datetime, opts) do
     action = if has_id?(params), do: :update, else: :insert
 
     params = drop_associations(params, queryable)
@@ -111,16 +111,26 @@ defmodule EctoShorts.CommonParams do
         |> CommonSchemas.prepare_changeset(struct(queryable), params, opts)
         |> Ecto.Changeset.apply_action(opts[:action] || action) do
 
-        {:ok, prepare_insert_params(schema_data, queryable, naive_datetime, opts)}
+        {:ok, dump_insert_change(schema_data, queryable, naive_datetime, opts)}
       end
     else
       result =
         queryable
         |> struct!(params)
-        |> prepare_insert_params(queryable, naive_datetime, opts)
+        |> dump_insert_change(queryable, naive_datetime, opts)
 
       {:ok, result}
     end
+  end
+
+  defp dump_insert_change(schema_data, queryable, datetime, opts) do
+    schema_data
+    |> schema_to_map()
+    |> drop_nil_values()
+    |> drop_associations(queryable)
+    |> maybe_put_placeholders(opts)
+    |> put_timestamp_inserted_at(queryable, datetime, opts)
+    |> put_timestamp_updated_at(queryable, datetime, opts)
   end
 
   defp maybe_put_placeholders(params, opts) do
@@ -197,17 +207,24 @@ defmodule EctoShorts.CommonParams do
   @doc """
   ...
   """
-  def convert_to_update_params(query, params, opts) when is_map(params) do
-    convert_to_update_params(query, Map.to_list(params), opts)
+  @spec convert_to_update_all_params(
+    query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+    params :: map() | keyword(),
+    opts :: keyword()
+  ) :: keyword()
+  def convert_to_update_all_params(query, params, opts \\ [])
+
+  def convert_to_update_all_params(query, params, opts) when is_map(params) do
+    convert_to_update_all_params(query, Map.to_list(params), opts)
   end
 
-  def convert_to_update_params(query, params, opts) do
+  def convert_to_update_all_params(query, params, opts) do
     queryable = CommonSchemas.get_schema_queryable(query)
 
     naive_datetime = maybe_generate_naive_datetime(opts)
 
     params
-    |> Keyword.drop([:id, "id"])
+    |> drop_id()
     |> drop_associations(queryable)
     |> normalize_updates()
     |> merge_updates(queryable)
@@ -218,7 +235,9 @@ defmodule EctoShorts.CommonParams do
   defp maybe_sort_update_params(params, opts) do
     if Keyword.get(opts, :ordered, true) do
       params
-      |> Enum.map(fn {action, params} -> {action, Enum.sort_by(params, fn {key, _} -> key end)} end)
+      |> Enum.map(fn {action, params} ->
+        {action, Enum.sort_by(params, fn {key, _} -> key end)}
+      end)
       |> Enum.sort_by(fn {action, _} -> action end)
     else
       params
@@ -326,7 +345,7 @@ defmodule EctoShorts.CommonParams do
     {:pull, key, val}
   end
 
-  ## Helper API
+  ## Timestamp API
 
   defp maybe_to_utc_datetime(naive_datetime, type) do
     if type === @utc_datetime do
@@ -354,8 +373,14 @@ defmodule EctoShorts.CommonParams do
     queryable.__schema__(:type, field_name)
   end
 
+  ## Helper API
+
   defp schema_to_map(schema_data) do
     Map.drop(schema_data, [:__meta__, :__struct__])
+  end
+
+  defp drop_id(params) do
+    Enum.reject(params, fn {k, _} -> k in [:id, "id"] end)
   end
 
   defp drop_associations(params, queryable) when is_list(params) do

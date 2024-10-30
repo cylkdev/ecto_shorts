@@ -21,3 +21,6 @@ if Mix.env() === :test do
     pool: Ecto.Adapters.SQL.Sandbox,
     pool_size: 10
 end
+
+
+config :logger, :console, level: :info

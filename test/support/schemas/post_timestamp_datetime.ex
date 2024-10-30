@@ -3,8 +3,6 @@ defmodule EctoShorts.Support.Schemas.PostTimestampDateTime do
   use Ecto.Schema
   import Ecto.Changeset
 
-  require Ecto.Query
-
   schema "posts" do
     field :title, :string
 

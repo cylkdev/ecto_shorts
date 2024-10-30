@@ -2,7 +2,6 @@ defmodule EctoShorts.ActionsTest do
   @moduledoc false
   use EctoShorts.DataCase
 
-  alias Ecto.Adapters.SQL.Sandbox
   alias Ecto.{Changeset, Multi}
   alias EctoShorts.{
     Actions,
@@ -28,9 +27,9 @@ defmodule EctoShorts.ActionsTest do
   test "can set repo option" do
     {:ok, _} = Repo2.start_test_repo()
 
-    :ok = Sandbox.checkout(Repo2)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo2)
 
-    :ok = Sandbox.mode(Repo2, {:shared, self()})
+    :ok = Ecto.Adapters.SQL.Sandbox.mode(Repo2, {:shared, self()})
 
     assert Repo2 = Repo2.get_dynamic_repo()
 
@@ -42,9 +41,9 @@ defmodule EctoShorts.ActionsTest do
   test "can set replica option" do
     {:ok, _} = Repo2.start_test_repo()
 
-    :ok = Sandbox.checkout(Repo2)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo2)
 
-    :ok = Sandbox.mode(Repo2, {:shared, self()})
+    :ok = Ecto.Adapters.SQL.Sandbox.mode(Repo2, {:shared, self()})
 
     assert Repo2 = Repo2.get_dynamic_repo()
 
@@ -53,8 +52,38 @@ defmodule EctoShorts.ActionsTest do
     assert [%{id: ^post_id}] = Actions.all(Post, post_id: post_id, repo: nil, replica: Repo2)
   end
 
-  describe "option changeset : " do
-    test "1-arity function - changeset - add changeset validations" do
+  describe "preload/2: " do
+    test "when field is a valid association, returns result with association data" do
+      assert {:ok, %{id: post_id} = post} = Actions.create(Post, %{})
+
+      assert {:ok, %{id: comment_id}} = Actions.create(Comment, %{post_id: post_id})
+
+      assert %Post{
+        id: ^post_id,
+        comments: [
+          %Comment{id: ^comment_id}
+        ]
+      } = Actions.preload(post, :comments)
+    end
+  end
+
+  describe "preload/3: " do
+    test "when field is a valid association, returns result with association data" do
+      assert {:ok, %{id: post_id} = post} = Actions.create(Post, %{})
+
+      assert {:ok, %{id: comment_id}} = Actions.create(Comment, %{post_id: post_id})
+
+      assert %Post{
+        id: ^post_id,
+        comments: [
+          %Comment{id: ^comment_id}
+        ]
+      } = Actions.preload(post, :comments, [])
+    end
+  end
+
+  describe "option changeset: " do
+    test "when given a changeset and value of option :changeset is a 1-arity function, add changeset validations" do
       assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
@@ -81,7 +110,7 @@ defmodule EctoShorts.ActionsTest do
       assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
     end
 
-    test "1-arity function - data - add changeset validations" do
+    test "when arg is schema_data and value of option :changeset is a 1-arity function, add changeset validations" do
       assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
@@ -106,7 +135,7 @@ defmodule EctoShorts.ActionsTest do
       assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
     end
 
-    test "2-arity function - add changeset validations" do
+    test "when given a changeset and value of option :changeset is a 2-arity function, add changeset validations" do
       assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
@@ -124,20 +153,16 @@ defmodule EctoShorts.ActionsTest do
           query: PostNoConstraint
         }
       }} =
-        Actions.delete(post, changeset: fn changeset, _params ->
-          Changeset.no_assoc_constraint(changeset, :comments, name: "comments_post_id_fkey")
+        Actions.delete(post, changeset: fn struct, _params ->
+          struct
+          |> PostNoConstraint.changeset(%{})
+          |> Changeset.no_assoc_constraint(:comments, name: "comments_post_id_fkey")
         end)
 
       assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
     end
 
     test "{mod, fun, args} - add changeset validations" do
-      defmodule MockConstraintTestHandler do
-        def changeset(changeset) do
-          Changeset.no_assoc_constraint(changeset, :comments, name: "comments_post_id_fkey")
-        end
-      end
-
       assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "post_title"})
 
       assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
@@ -150,8 +175,25 @@ defmodule EctoShorts.ActionsTest do
           schema_data: %PostNoConstraint{id: ^post_id},
           query: PostNoConstraint
         }
-      }} =
-        Actions.delete(post, changeset: {MockConstraintTestHandler, :changeset, []})
+      }} = Actions.delete(post, changeset: {EctoShorts.Support.MockPostNoConstraintCallback, :changeset, []})
+
+      assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
+    end
+
+    test "{mod, fun} - add changeset validations" do
+      assert {:ok, %{id: post_id} = post} = Actions.create(PostNoConstraint, %{title: "post_title"})
+
+      assert {:ok, _comment} = Actions.create(Comment, %{post_id: post.id})
+
+      assert {:error, %{
+        code: :internal_server_error,
+        message: "failed to delete record",
+        details: %{
+          changeset: changeset,
+          schema_data: %PostNoConstraint{id: ^post_id},
+          query: PostNoConstraint
+        }
+      }} = Actions.delete(post, changeset: {EctoShorts.Support.MockPostNoConstraintCallback, :changeset})
 
       assert {:comments, ["are still associated with this entry"]} in errors_on(changeset)
     end
@@ -415,14 +457,14 @@ defmodule EctoShorts.ActionsTest do
 
   describe "find_and_update_many/2 : " do
     test "queryable - fetches and updates result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{0 => %{id: ^post_id, title: "updated_post_title"} }} =
         Actions.find_and_update_many(Post, [{%{id: post_id}, %{title: "updated_post_title"}}])
     end
 
     test "{source, queryable} - fetches and updates result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{0 => %{id: ^post_id, title: "updated_post_title"} }} =
         Actions.find_and_update_many({"posts", Post}, [{%{id: post_id}, %{title: "updated_post_title"}}])
@@ -431,14 +473,14 @@ defmodule EctoShorts.ActionsTest do
     test "query - fetches and updates result matching params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{0 => %{id: ^post_id, title: "updated_post_title"} }} =
         Actions.find_and_update_many(query, [{%{id: post_id}, %{title: "updated_post_title"}}])
     end
 
     test "queryable - return ecto multi error when not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -458,7 +500,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - return ecto multi error when not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -480,7 +522,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - return ecto multi error when not found" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -557,13 +599,13 @@ defmodule EctoShorts.ActionsTest do
 
   describe "find_or_create/2 : " do
     test "queryable - fetches result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.find_or_create(Post, %{id: post_id})
     end
 
     test "{source, queryable} - fetches result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.find_or_create({"posts", Post}, %{id: post_id})
     end
@@ -571,13 +613,13 @@ defmodule EctoShorts.ActionsTest do
     test "query - fetches result matching params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.find_or_create(query, %{id: post_id})
     end
 
     test "queryable - creates result matching params if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -588,7 +630,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - creates result matching params if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -601,7 +643,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - creates result matching params if not found" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -637,7 +679,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - creates result matching params if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -648,7 +690,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - creates result matching params if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -661,7 +703,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - creates result matching params if not found" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -674,14 +716,14 @@ defmodule EctoShorts.ActionsTest do
 
   describe "find_and_update/2 : " do
     test "queryable - fetches and updates result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id, title: "updated_post_title"}} =
         Actions.find_and_update(Post, %{id: post_id}, %{title: "updated_post_title"})
     end
 
     test "{source, queryable} - fetches and updates result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id, title: "updated_post_title"}} =
         Actions.find_and_update({"posts", Post}, %{id: post_id}, %{title: "updated_post_title"})
@@ -690,14 +732,14 @@ defmodule EctoShorts.ActionsTest do
     test "query - fetches and updates result matching params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id, title: "updated_post_title"}} =
         Actions.find_and_update(query, %{id: post_id}, %{title: "updated_post_title"})
     end
 
     test "queryable - returns error message if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -706,7 +748,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - returns error message if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -717,7 +759,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - returns error message if not found" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -728,14 +770,14 @@ defmodule EctoShorts.ActionsTest do
 
   describe "find_and_upsert/3 : " do
     test "queryable - fetches and updates result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{title: "updated_post_title"}} =
         Actions.find_and_upsert(Post, %{id: post_id}, %{title: "updated_post_title"})
     end
 
     test "{source, queryable} - fetches and updates result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{title: "updated_post_title"}} =
         Actions.find_and_upsert({"posts", Post}, %{id: post_id}, %{title: "updated_post_title"})
@@ -744,14 +786,14 @@ defmodule EctoShorts.ActionsTest do
     test "query - fetches and updates result matching params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{title: "updated_post_title"}} =
         Actions.find_and_upsert(query, %{id: post_id}, %{title: "updated_post_title"})
     end
 
     test "queryable - creates result matching params if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -760,7 +802,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - creates result matching params if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -771,7 +813,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - creates result matching params if not found" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -782,7 +824,7 @@ defmodule EctoShorts.ActionsTest do
 
   describe "get/2 : " do
     test "queryable - return nil when record does not exist" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -790,7 +832,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - return nil when record does not exist" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -800,7 +842,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - return nil when record does not exist" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -808,13 +850,13 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - return result with matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert %{id: ^post_id} = Actions.get(Post, post_id)
     end
 
     test "{source, queryable} - return result with matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert %{id: ^post_id} = Actions.get({"posts", Post}, post_id)
     end
@@ -822,7 +864,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - return result with matching id" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert %{id: ^post_id} = Actions.get(query, post_id)
     end
@@ -830,17 +872,17 @@ defmodule EctoShorts.ActionsTest do
 
   describe "all/1 : " do
     test "queryable - return all results" do
-      assert {:ok, %{id: post_1_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_1_id}} = Actions.create(Post, %{})
 
-      assert {:ok, %{id: post_2_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_2_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_1_id}, %{id: ^post_2_id}] = Actions.all(Post)
     end
 
     test "{source, queryable} - return all results" do
-      assert {:ok, %{id: post_1_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_1_id}} = Actions.create(Post, %{})
 
-      assert {:ok, %{id: post_2_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_2_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_1_id}, %{id: ^post_2_id}] = Actions.all({"posts", Post})
     end
@@ -848,9 +890,9 @@ defmodule EctoShorts.ActionsTest do
     test "query - return results" do
       query = from p in Post
 
-      assert {:ok, %{id: post_1_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_1_id}} = Actions.create(Post, %{})
 
-      assert {:ok, %{id: post_2_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_2_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_1_id}, %{id: ^post_2_id}] = Actions.all(query)
     end
@@ -858,13 +900,13 @@ defmodule EctoShorts.ActionsTest do
 
   describe "all/2 : " do
     test "queryable - return results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all(Post, %{id: post_id})
     end
 
     test "{source, queryable} - return results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all({"posts", Post}, %{id: post_id})
     end
@@ -872,19 +914,19 @@ defmodule EctoShorts.ActionsTest do
     test "query - return results matching params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all(query, %{id: post_id})
     end
 
     test "queryable - return results matching keyword params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all(Post, [id: post_id])
     end
 
     test "{source, queryable} - return results matching keyword params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all({"posts", Post}, [id: post_id])
     end
@@ -892,7 +934,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - return results matching keyword params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all(query, [id: post_id])
     end
@@ -908,13 +950,13 @@ defmodule EctoShorts.ActionsTest do
 
   describe "all/3 : " do
     test "queryable - return results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all(Post, %{id: post_id}, [])
     end
 
     test "{source, queryable} - return results matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all({"posts", Post}, %{id: post_id}, [])
     end
@@ -922,19 +964,19 @@ defmodule EctoShorts.ActionsTest do
     test "query - return results matching params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all(query, %{id: post_id}, [])
     end
 
     test "queryable - return results matching keyword params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all(Post, [id: post_id], [])
     end
 
     test "{source, queryable} - return results matching keyword params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all({"posts", Post}, [id: post_id], [])
     end
@@ -942,7 +984,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - return results matching keyword params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert [%{id: ^post_id}] = Actions.all(query, [id: post_id], [])
     end
@@ -953,14 +995,6 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, post_2} = Actions.create(Post, %{likes: 2})
 
       assert [^post_2, ^post_1] = Actions.all(Post, %{}, group_by: :id, order_by: [{:desc, :likes}])
-    end
-
-    test "preloads associations with option :preload" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
-      assert {:ok, %{id: comment_id}} = Actions.create(Comment, %{post_id: post_id})
-
-      assert [%{id: ^post_id, comments: [%{id: ^comment_id}]}] =
-        Actions.all(Post, %{}, preload: :comments)
     end
   end
 
@@ -1010,13 +1044,13 @@ defmodule EctoShorts.ActionsTest do
 
   describe "find/2 : " do
     test "queryable - fetches a single result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.find(Post, %{id: post_id})
     end
 
     test "{source, queryable} - fetches a single result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.find({"posts", Post}, %{id: post_id})
     end
@@ -1052,7 +1086,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - returns error message if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -1067,7 +1101,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - returns error message if not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -1084,14 +1118,14 @@ defmodule EctoShorts.ActionsTest do
 
   describe "update/3 : " do
     test "queryable - update a single result with matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id, title: "updated_post_title"}} =
         Actions.update(Post, post_id, %{title: "updated_post_title"})
     end
 
     test "{source, queryable} - update a single result with matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id, title: "updated_post_title"}} =
         Actions.update({"posts", Post}, post_id, %{title: "updated_post_title"})
@@ -1100,35 +1134,35 @@ defmodule EctoShorts.ActionsTest do
     test "query - update a single result with matching id" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id, title: "updated_post_title"}} =
         Actions.update(query, post_id, %{title: "updated_post_title"})
     end
 
     test "queryable - update a single result matching schema data" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id, title: "updated_post_title"}} =
         Actions.update(Post, schema_data, %{title: "updated_post_title"})
     end
 
     test "{source, queryable} - update a single result matching schema data" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id, title: "updated_post_title"}} =
         Actions.update({"posts", Post}, schema_data, %{title: "updated_post_title"})
     end
 
     test "queryable - update a single result with matching id and keyword params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok,%{id: ^post_id, title: "updated_post_title"}} =
         Actions.update(Post, post_id, [title: "updated_post_title"])
     end
 
     test "{source, queryable} - update a single result with matching id and keyword params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok,%{id: ^post_id, title: "updated_post_title"}} =
         Actions.update({"posts", Post}, post_id, [title: "updated_post_title"])
@@ -1137,14 +1171,14 @@ defmodule EctoShorts.ActionsTest do
     test "query - update a single result with matching id and keyword params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok,%{id: ^post_id, title: "updated_post_title"}} =
         Actions.update(query, post_id, [title: "updated_post_title"])
     end
 
     test "queryable - returns error message when result with matching id not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -1159,7 +1193,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - returns error message when result with matching id not found" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -1176,7 +1210,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - returns error message when result with matching id not found" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, _} = Repo.delete(schema_data)
 
@@ -1193,7 +1227,7 @@ defmodule EctoShorts.ActionsTest do
 
   describe "delete/1 : " do
     test "delete a single result matching changeset" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       changeset = Post.changeset(schema_data, %{})
 
@@ -1201,13 +1235,13 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "data - delete a single result matching schema" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(schema_data)
     end
 
     test "list of changeset - delete many changesets" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       changeset = Post.changeset(schema_data, %{})
 
@@ -1215,7 +1249,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "list of data - delete many schemas" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete([schema_data])
     end
@@ -1262,13 +1296,13 @@ defmodule EctoShorts.ActionsTest do
 
   describe "delete/2 : " do
     test "queryable - find and delete a single result with matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(Post, post_id)
     end
 
     test "{source, queryable} - delete a single result with matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete({"posts", Post}, post_id)
     end
@@ -1276,19 +1310,19 @@ defmodule EctoShorts.ActionsTest do
     test "query - find and delete a single result matching query and id" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(query, post_id)
     end
 
     test "queryable - find and delete many results matching list of id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete(Post, [post_id])
     end
 
     test "{source, queryable} - find and delete many results matching list of id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete({"posts", Post}, [post_id])
     end
@@ -1296,19 +1330,19 @@ defmodule EctoShorts.ActionsTest do
     test "query - find and delete many results matching list of id" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete(query, [post_id])
     end
 
     test "queryable - find and delete a single result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(Post, %{id: post_id})
     end
 
     test "{source, queryable} - find and delete a single result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete({"posts", Post}, %{id: post_id})
     end
@@ -1316,19 +1350,19 @@ defmodule EctoShorts.ActionsTest do
     test "query - find and delete a single result matching params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(query, %{id: post_id})
     end
 
     test "queryable - find and delete a single result matching list of params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete(Post, [%{id: post_id}])
     end
 
     test "{source, queryable} - find and delete a single result matching list of params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete({"posts", Post}, [%{id: post_id}])
     end
@@ -1336,13 +1370,13 @@ defmodule EctoShorts.ActionsTest do
     test "query - find and delete a single result matching list of params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete(query, [%{id: post_id}])
     end
 
     test "changeset - delete changeset" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       changeset = Post.changeset(schema_data, %{})
 
@@ -1350,7 +1384,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "changeset - delete list of changeset" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       changeset = Post.changeset(schema_data, %{})
 
@@ -1358,21 +1392,21 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "data - delete schema data" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(schema_data, [])
     end
 
     test "data - delete list of schema data" do
-      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post)
+      assert {:ok, %{id: post_id} = schema_data} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete([schema_data], [])
     end
 
     test "data - return list of errors" do
-      assert {:ok, post_1} = Actions.create(Post)
+      assert {:ok, post_1} = Actions.create(Post, %{})
 
-      assert {:ok, %{id: post_2_id} = post_2} = Actions.create(Post)
+      assert {:ok, %{id: post_2_id} = post_2} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_2_id})
 
       assert {:error, [
@@ -1448,13 +1482,13 @@ defmodule EctoShorts.ActionsTest do
 
   describe "delete/3 : " do
     test "queryable - fetch and delete a single result with matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(Post, post_id, [])
     end
 
     test "{source, queryable} - fetch and delete a single result with matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete({"posts", Post}, post_id, [])
     end
@@ -1462,19 +1496,19 @@ defmodule EctoShorts.ActionsTest do
     test "query - fetch and delete a single result matching query and id" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(query, post_id, [])
     end
 
     test "queryable - fetch and delete many results matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete(Post, [post_id], [])
     end
 
     test "{source, queryable} - fetch and delete many results matching id" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete({"posts", Post}, [post_id], [])
     end
@@ -1482,19 +1516,19 @@ defmodule EctoShorts.ActionsTest do
     test "query - fetch and delete many results matching query and filter id" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete(query, [post_id], [])
     end
 
     test "queryable - fetch and delete a single result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(Post, %{id: post_id}, [])
     end
 
     test "{source, queryable} - fetch and delete a single result matching params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete({"posts", Post}, %{id: post_id}, [])
     end
@@ -1502,19 +1536,19 @@ defmodule EctoShorts.ActionsTest do
     test "query - fetch and delete a single result matching query and params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, %{id: ^post_id}} = Actions.delete(query, %{id: post_id}, [])
     end
 
     test "queryable - fetch and delete many results matching list of params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete(Post, [%{id: post_id}], [])
     end
 
     test "{source, queryable} - fetch and delete many results matching list of params" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete({"posts", Post}, [%{id: post_id}], [])
     end
@@ -1522,7 +1556,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - fetch and delete many results matching query and list of params" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} = Actions.delete(query, [%{id: post_id}], [])
     end
@@ -1530,7 +1564,7 @@ defmodule EctoShorts.ActionsTest do
 
   describe "stream/1 : " do
     test "queryable - return enumerable" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} =
         Repo.transaction(fn ->
@@ -1541,7 +1575,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - return enumerable" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} =
         Repo.transaction(fn ->
@@ -1554,7 +1588,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - return enumerable" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
 
       assert {:ok, [%{id: ^post_id}]} =
         Repo.transaction(fn ->
@@ -1567,13 +1601,13 @@ defmodule EctoShorts.ActionsTest do
 
   describe "aggregate/4 : " do
     test "queryable - count" do
-      assert {:ok, _} = Actions.create(Post)
+      assert {:ok, _} = Actions.create(Post, %{})
 
       assert 1 = Actions.aggregate(Post, %{}, :count, :id)
     end
 
     test "{source, queryable} - count" do
-      assert {:ok, _} = Actions.create(Post)
+      assert {:ok, _} = Actions.create(Post, %{})
 
       assert 1 = Actions.aggregate({"posts", Post}, %{}, :count, :id)
     end
@@ -1581,7 +1615,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - count" do
       query = from p in Post
 
-      assert {:ok, _} = Actions.create(Post)
+      assert {:ok, _} = Actions.create(Post, %{})
 
       assert 1 = Actions.aggregate(query, %{}, :count, :id)
     end
@@ -1686,94 +1720,172 @@ defmodule EctoShorts.ActionsTest do
   end
 
   describe "transaction/2" do
-    test "return multi response" do
+    test "when given an ecto multi, returns ecto multi response" do
       assert {:ok, %{example: "success"}} =
         Multi.new()
         |> Multi.run(:example, fn _repo, _changes -> {:ok, "success"} end)
         |> Actions.transaction()
     end
 
-    test "return multi error" do
+    test "when given an ecto multi, returns ecto multi error" do
       assert {:error, :example, "failed", %{}} =
         Multi.new()
         |> Multi.run(:example, fn _repo, _changes -> {:error, "failed"} end)
         |> Actions.transaction()
     end
 
-    test "0-arity function - return ok" do
-      assert {:ok, {:ok, %{id: post_id}}} =
-        Actions.transaction(fn ->
-          Actions.create(Post)
-        end)
-
-      [%{id: ^post_id} | _] = Actions.all(Post)
+    test "when 0-arity function returns {:ok, term}, return {:ok, {:ok, term}}" do
+      assert {:ok, {:ok, %Post{id: 1}}} = Actions.transaction(fn -> {:ok, %Post{id: 1}} end)
     end
 
-    test "1-arity function - return ok" do
-      assert {:ok, {:ok, %{id: post_id}}} =
-        Actions.transaction(fn _repo ->
-          Actions.create(Post)
-        end)
-
-      [%{id: ^post_id} | _] = Actions.all(Post)
+    test "when 1-arity function returns {:ok, term}, return {:ok, {:ok, term}}" do
+      assert {:ok, {:ok, %Post{id: 1}}} = Actions.transaction(fn _repo -> {:ok, %Post{id: 1}} end)
     end
 
-    test "rollback and return {:error, term()} from function when option :rollback_on_error is true" do
-      assert {:error, {:error, "failed"}} =
+    test "when 0-arity function returns :ok, return {:ok, :ok}" do
+      assert {:ok, :ok} =  Actions.transaction(fn -> :ok end)
+    end
+
+    test "when 1-arity function returns :ok, return {:ok, :ok}" do
+      assert {:ok, :ok} =  Actions.transaction(fn _repo -> :ok end)
+    end
+
+    test "when option :rollback_on_error not set and function returns a term, roll back and return {:error, term}" do
+      assert {:error, ["some_string"]} =
         Actions.transaction(fn ->
-          with {:ok, _} <- Actions.create(Post) do
-            {:error, "failed"}
+          with {:ok, _} <- Actions.create(Post, %{unique_identifier: "duplicate"}) do
+            ["some_string"]
           end
         end)
 
-      posts = Actions.all(Post)
-
-      assert 0 === length(posts)
+      assert [] = Actions.all(Post)
     end
 
-    test "rollback and return :error from function when option :rollback_on_error is true" do
+    test "when option :rollback_on_error is true and function returns a term, roll back and return {:error, term}" do
+      assert {:error, ["some_string"]} =
+        Actions.transaction(
+          fn ->
+            with {:ok, _} <- Actions.create(Post, %{unique_identifier: "duplicate"}) do
+              ["some_string"]
+            end
+          end,
+          rollback_on_error: true
+        )
+
+      assert [] = Actions.all(Post)
+    end
+
+    test "when option :rollback_on_error is false and function returns a term, does not roll back and return {:ok, term}" do
+      assert {:ok, ["some_string"]} =
+        Actions.transaction(
+          fn ->
+            with {:ok, _} <- Actions.create(Post, %{title: "post_title"}) do
+              ["some_string"]
+            end
+          end,
+          rollback_on_error: false
+        )
+
+      assert [%Post{title: "post_title"}] = Actions.all(Post)
+    end
+
+    test "when option :rollback_on_error not set and constraint violation occurs, roll back and return {:error, changeset}" do
+      assert {:error, {:error, changeset}} =
+        Actions.transaction(fn ->
+          with {:ok, _} <- Actions.create(Post, %{unique_identifier: "duplicate"}) do
+            Actions.create(Post, %{unique_identifier: "duplicate"})
+          end
+        end)
+
+      assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
+
+      assert [] = Actions.all(Post)
+    end
+
+    test "when option :rollback_on_error is true and constraint violation occurs, roll back and return {:error, changeset}" do
+      assert {:error, {:error, changeset}} =
+        Actions.transaction(
+          fn ->
+            with {:ok, _} <- Actions.create(Post, %{unique_identifier: "duplicate"}) do
+              Actions.create(Post, %{unique_identifier: "duplicate"})
+            end
+          end,
+          rollback_on_error: true
+        )
+
+      assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
+
+      assert [] = Actions.all(Post)
+    end
+
+    test "when option :rollback_on_error not set and function returns :error, roll back and return {:error, :error}" do
       assert {:error, :error} =
         Actions.transaction(fn ->
-          with {:ok, _} <- Actions.create(Post) do
+          with {:ok, _} <- Actions.create(Post, %{title: "post_title"}) do
             :error
           end
         end)
 
-      posts = Actions.all(Post)
-
-      assert 0 === length(posts)
+      assert [] = Actions.all(Post)
     end
 
-    test "commit changes when {:error, term()} returned from function and option :rollback_on_error is false" do
+    test "when option :rollback_on_error is true and function returns :error, roll back and return {:error, :error}" do
+      assert {:error, :error} =
+        Actions.transaction(
+          fn ->
+            with {:ok, _} <- Actions.create(Post, %{title: "post_title"}) do
+              :error
+            end
+          end,
+          rollback_on_error: true
+        )
+
+      assert [] = Actions.all(Post)
+    end
+
+    test "when option :rollback_on_error is false and constraint violation occurs, returns {:error, :rollback}" do
+      # When a constraint violation occurs the entire transaction is voided and {:error, rollback} is returned.
+      # This is the expected behaviour: https://github.com/elixir-ecto/ecto/issues/2617#issuecomment-404795075
+
+      assert {:error, :rollback} =
+        Actions.transaction(
+          fn ->
+            Enum.map(1..2, fn _ ->
+              Actions.create(Post, %{title: "post_1_title", unique_identifier: "duplicate"})
+            end)
+          end,
+          rollback_on_error: false
+        )
+
+      assert [] = Actions.all(Post)
+    end
+
+    test "when option :rollback_on_error is false and function returns {:error, term}, does not roll back and return {:ok, {:error, term}}" do
       assert {:ok, {:error, "failed"}} =
         Actions.transaction(
           fn ->
-            with {:ok, _post} <- Actions.create(Post) do
+            with {:ok, _} <- Actions.create(Post, %{title: "post_title"}) do
               {:error, "failed"}
             end
           end,
           rollback_on_error: false
         )
 
-      posts = Actions.all(Post)
-
-      assert 1 === length(posts)
+      assert [%Post{title: "post_title"}] = Actions.all(Post)
     end
 
-    test "commit changes when :error returned from function and option :rollback_on_error is false" do
+    test "when option :rollback_on_error is false and function returns :error, does not roll back and return {:ok, :error}" do
       assert {:ok, :error} =
         Actions.transaction(
           fn ->
-            with {:ok, _post} <- Actions.create(Post) do
+            with {:ok, _} <- Actions.create(Post, %{title: "post_title"}) do
               :error
             end
           end,
           rollback_on_error: false
         )
 
-        posts = Actions.all(Post)
-
-        assert 1 === length(posts)
+      assert [%Post{title: "post_title"}] = Actions.all(Post)
     end
   end
 
@@ -1805,7 +1917,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - returns a map with values as a single result" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => %{id: ^post_id}} =
@@ -1813,7 +1925,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - returns a map with values as a single result" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => %{id: ^post_id}} =
@@ -1823,7 +1935,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - returns a map with values as a single result" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => %{id: ^post_id}} =
@@ -1831,7 +1943,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - returns a map with values as lists of results" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => [%{id: ^post_id}]} =
@@ -1839,7 +1951,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - returns a map with values as lists of results" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => [%{id: ^post_id}]} =
@@ -1849,7 +1961,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - returns a map with values as lists of results" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => [%{id: ^post_id}]} =
@@ -1885,7 +1997,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - returns a map with values as a single result" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => %{id: ^post_id}} =
@@ -1893,7 +2005,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - returns a map with values as a single result" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => %{id: ^post_id}} =
@@ -1903,7 +2015,7 @@ defmodule EctoShorts.ActionsTest do
     test "query - returns a map with values as a single result" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => %{id: ^post_id}} =
@@ -1911,7 +2023,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "queryable - returns a map with values as lists of results" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => [%{id: ^post_id}]} =
@@ -1919,7 +2031,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "{source, queryable} - returns a map with values as lists of results" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => [%{id: ^post_id}]} =
@@ -1929,37 +2041,154 @@ defmodule EctoShorts.ActionsTest do
     test "query - returns a map with values as lists of results" do
       query = from p in Post
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
+      assert {:ok, %{id: post_id}} = Actions.create(Post, %{})
       assert {:ok, _} = Actions.create(Comment, %{post_id: post_id})
 
       assert %{^post_id => [%{id: ^post_id}]} =
         Actions.batch_all(query, :id, [post_id], %{}, :bag, [])
     end
+  end
 
-    test "queryable - preloads association" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
-      assert {:ok, %{id: comment_id}} = Actions.create(Comment, %{post_id: post_id})
+  describe "&insert_all/2: " do
+    test "when given params and params are valid, returns created records" do
+      assert {:ok, {1, nil}} =
+        Actions.insert_all(Post, [%{title: "post_1_title"}])
 
-      assert %{^post_id => %{id: ^post_id, comments: [%{id: ^comment_id}]}} =
-        Actions.batch_all(Post, :id, [post_id], %{}, :set, preload: :comments)
+      assert [%Post{title: "post_1_title"}] = Actions.all(Post)
+    end
+  end
+
+  describe "&insert_all/3: " do
+    test "when given source, inserts records into table" do
+      assert {:ok, params} = EctoShorts.CommonParams.convert_to_insert_all_params(Post, [%{title: "post_1_title"}])
+
+      assert {:ok, {1, nil}} = Actions.insert_all("posts", params)
+
+      assert [%Post{title: "post_1_title"}] = Actions.all(Post)
     end
 
-    test "{source, queryable} - preloads association" do
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
-      assert {:ok, %{id: comment_id}} = Actions.create(Comment, %{post_id: post_id})
+    test "when given {source, queryable} and valid params, creates params with queryable changeset and inserts into table" do
+      assert {:ok, {1, nil}} = Actions.insert_all({"posts", Post}, [%{title: "post_1_title"}])
 
-      assert %{^post_id => %{id: ^post_id, comments: [%{id: ^comment_id}]}} =
-        Actions.batch_all({"posts", Post}, :id, [post_id], %{}, :set, preload: :comments)
+      assert [%Post{title: "post_1_title"}] = Actions.all(Post)
     end
 
-    test "query - preloads association" do
-      query = from p in Post
+    test "when given params and params are valid, returns created records" do
+      assert {
+        :ok,
+        {
+          2,
+          [
+            %Post{
+              title: "post_1_title",
+              inserted_at: returned_post_1_inserted_at,
+              updated_at: returned_post_1_updated_at
+            },
+            %Post{
+              title: "post_2_title",
+              inserted_at: returned_post_2_inserted_at,
+              updated_at: returned_post_2_updated_at
+            }
+          ]
+        }
+      } = Actions.insert_all(Post, [%{title: "post_1_title"}, %{title: "post_2_title"}], returning: true)
 
-      assert {:ok, %{id: post_id}} = Actions.create(Post)
-      assert {:ok, %{id: comment_id}} = Actions.create(Comment, %{post_id: post_id})
+      assert NaiveDateTime.diff(returned_post_1_inserted_at, NaiveDateTime.utc_now()) <= 0
+      assert NaiveDateTime.diff(returned_post_1_updated_at, NaiveDateTime.utc_now()) <= 0
 
-      assert %{^post_id => %{id: ^post_id, comments: [%{id: ^comment_id}]}} =
-        Actions.batch_all(query, :id, [post_id], %{}, :set, preload: :comments)
+      assert NaiveDateTime.diff(returned_post_2_inserted_at, NaiveDateTime.utc_now()) <= 0
+      assert NaiveDateTime.diff(returned_post_2_updated_at, NaiveDateTime.utc_now()) <= 0
+    end
+
+    test "when given {changeset, params} and params are valid, returns updated records" do
+      assert {:ok, %{id: post_1_id} = post_1} = Actions.create(Post, %{})
+      assert {:ok, %{id: post_2_id} = post_2} = Actions.create(Post, %{})
+
+      post_1_changeset = Post.changeset(post_1, %{})
+      post_2_changeset = Post.changeset(post_2, %{})
+
+      assert {
+        :ok,
+        {
+          2,
+          [
+            %Post{
+              id: ^post_1_id,
+              title: "post_1_updated_title",
+              inserted_at: returned_post_1_inserted_at,
+              updated_at: returned_post_1_updated_at
+            },
+            %Post{
+              id: ^post_2_id,
+              title: "post_2_updated_title",
+              inserted_at: returned_post_2_inserted_at,
+              updated_at: returned_post_2_updated_at
+            }
+          ]
+        }
+      } =
+        Actions.insert_all(
+          Post,
+          [
+            {post_1_changeset, %{title: "post_1_updated_title"}},
+            {post_2_changeset, %{title: "post_2_updated_title"}}
+          ],
+          returning: true,
+          on_conflict: {:replace_all_except, [:id, :inserted_at]},
+          conflict_target: [:id]
+        )
+
+      assert returned_post_1_inserted_at === post_1.inserted_at
+      assert NaiveDateTime.diff(returned_post_1_updated_at, post_1.updated_at) >= 0
+
+      assert returned_post_2_inserted_at === post_2.inserted_at
+      assert NaiveDateTime.diff(returned_post_2_updated_at, post_2.updated_at) >= 0
+    end
+
+    test "when given {struct, params} and params are valid, returns updated records" do
+      assert {:ok, %{id: post_1_id} = post_1} = Actions.create(Post, %{})
+      assert {:ok, %{id: post_2_id} = post_2} = Actions.create(Post, %{})
+
+      assert {
+        :ok,
+        {
+          2,
+          [
+            %Post{
+              id: ^post_1_id,
+              title: "post_1_updated_title",
+              inserted_at: returned_post_1_inserted_at,
+              updated_at: returned_post_1_updated_at
+            },
+            %Post{
+              id: ^post_2_id,
+              title: "post_2_updated_title",
+              inserted_at: returned_post_2_inserted_at,
+              updated_at: returned_post_2_updated_at
+            }
+          ]
+        }
+      } =
+        Actions.insert_all(
+          Post,
+          [
+            {post_1, %{title: "post_1_updated_title"}},
+            {post_2, %{title: "post_2_updated_title"}}
+          ],
+          returning: true,
+          on_conflict: {:replace_all_except, [:id, :inserted_at]},
+          conflict_target: [:id]
+        )
+
+      assert returned_post_1_inserted_at === post_1.inserted_at
+      assert NaiveDateTime.diff(returned_post_1_updated_at, post_1.updated_at) >= 0
+
+      assert returned_post_2_inserted_at === post_2.inserted_at
+      assert NaiveDateTime.diff(returned_post_2_updated_at, post_2.updated_at) >= 0
+    end
+
+    test "when given {struct, params} and params has id, find and update or find and create (upsert) result" do
+
     end
   end
 end

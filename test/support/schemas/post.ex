@@ -2,17 +2,16 @@ defmodule EctoShorts.Support.Schemas.Post do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
 
   @timestamps_opts [type: :naive_datetime]
-
-  require Ecto.Query
 
   schema "posts" do
     field :title, :string
     field :unique_identifier, :string
     field :likes, :integer
-    field :views, :integer
     field :tags, {:array, :string}
+    field :views, :integer
 
     has_many :comments, EctoShorts.Support.Schemas.Comment
 
@@ -29,7 +28,6 @@ defmodule EctoShorts.Support.Schemas.Post do
   @available_fields [
     :likes,
     :title,
-    :likes,
     :views,
     :tags,
     :unique_identifier,
@@ -53,6 +51,6 @@ defmodule EctoShorts.Support.Schemas.Post do
   def by_search(query, attrs) do
     filters = Map.to_list(attrs)
 
-    Ecto.Query.where(query, ^filters)
+    where(query, ^filters)
   end
 end

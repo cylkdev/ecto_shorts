@@ -367,7 +367,7 @@
 #   end
 
 #   describe "create_schema_filter: " do
-#     test "returns expected query given a common filter" do
+#     test "return expected query given a common filter" do
 #       assert query =
 #         Post
 #         |> Ecto.Query.from()
@@ -388,7 +388,7 @@
 #       } = query
 #     end
 
-#     test "returns expected query given a schema filter" do
+#     test "return expected query given a schema filter" do
 #       assert query =
 #         Post
 #         |> Ecto.Query.from()
