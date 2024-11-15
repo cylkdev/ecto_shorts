@@ -1,4 +1,4 @@
-defmodule EctoShorts.Support.Schemas.PostAbstract do
+defmodule EctoShorts.Schemas.PostAbstract do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
@@ -7,20 +7,19 @@ defmodule EctoShorts.Support.Schemas.PostAbstract do
   @timestamps_opts [type: :naive_datetime]
 
   schema "abstract table: posts" do
-    field :title, :string
-    field :unique_identifier, :string
-    field :likes, :integer
-    field :tags, {:array, :string}
-    field :views, :integer
+    field(:title, :string)
+    field(:unique_identifier, :string)
+    field(:likes, :integer)
+    field(:tags, {:array, :string})
+    field(:views, :integer)
 
-    has_many :comments, EctoShorts.Support.Schemas.Comment, foreign_key: :post_id
+    has_many(:comments, EctoShorts.Schemas.Comment, foreign_key: :post_id)
 
-    has_many :authors, through: [:comments, :user]
+    has_many(:authors, through: [:comments, :user])
 
-    belongs_to :user, EctoShorts.Support.Schemas.User
+    belongs_to(:user, EctoShorts.Schemas.User)
 
-    many_to_many :users, EctoShorts.Support.Schemas.User,
-      join_through: EctoShorts.Support.Schemas.UserPost
+    many_to_many(:users, EctoShorts.Schemas.User, join_through: EctoShorts.Schemas.UserPost)
 
     timestamps()
   end

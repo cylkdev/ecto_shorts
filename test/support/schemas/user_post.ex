@@ -1,4 +1,4 @@
-defmodule EctoShorts.Support.Schemas.UserPost do
+defmodule EctoShorts.Schemas.UserPost do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
@@ -6,8 +6,8 @@ defmodule EctoShorts.Support.Schemas.UserPost do
   @primary_key false
 
   schema "users_posts" do
-    belongs_to :post, EctoShorts.Support.Schemas.Post
-    belongs_to :user, EctoShorts.Support.Schemas.User
+    belongs_to(:post, EctoShorts.Schemas.Post)
+    belongs_to(:user, EctoShorts.Schemas.User)
 
     timestamps()
   end

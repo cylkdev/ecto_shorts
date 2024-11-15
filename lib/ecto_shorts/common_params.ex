@@ -51,17 +51,17 @@ defmodule EctoShorts.CommonParams do
 
   ## Data validation
 
-  defp apply_insert_change(queryable, {changeset, params}, naive_datetime, opts) when is_struct(changeset, Ecto.Changeset) do
+  defp apply_insert_change(queryable, {changeset, params}, naive_datetime, opts)
+       when is_struct(changeset, Ecto.Changeset) do
     action = if has_id?(changeset.data), do: :update, else: :insert
 
     params = drop_associations(params, queryable)
 
     if Keyword.get(opts, :validate, true) do
       with {:ok, struct} <-
-        queryable
-        |> CommonSchemas.prepare_changeset(changeset, params, opts)
-        |> Ecto.Changeset.apply_action(opts[:action] || changeset.action || action) do
-
+             queryable
+             |> CommonSchemas.prepare_changeset(changeset, params, opts)
+             |> Ecto.Changeset.apply_action(opts[:action] || changeset.action || action) do
         {:ok, dump_insert_change(struct, queryable, naive_datetime, opts)}
       end
     else
@@ -81,10 +81,9 @@ defmodule EctoShorts.CommonParams do
 
     if Keyword.get(opts, :validate, true) do
       with {:ok, struct} <-
-        queryable
-        |> CommonSchemas.prepare_changeset(struct, params, opts)
-        |> Ecto.Changeset.apply_action(opts[:action] || action) do
-
+             queryable
+             |> CommonSchemas.prepare_changeset(struct, params, opts)
+             |> Ecto.Changeset.apply_action(opts[:action] || action) do
         {:ok, dump_insert_change(struct, queryable, naive_datetime, opts)}
       end
     else
@@ -97,7 +96,8 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp apply_insert_change(queryable, changeset, naive_datetime, opts) when is_struct(changeset, Ecto.Changeset) do
+  defp apply_insert_change(queryable, changeset, naive_datetime, opts)
+       when is_struct(changeset, Ecto.Changeset) do
     apply_insert_change(queryable, {changeset, %{}}, naive_datetime, opts)
   end
 
@@ -112,10 +112,9 @@ defmodule EctoShorts.CommonParams do
 
     if Keyword.get(opts, :validate, true) do
       with {:ok, struct} <-
-        queryable
-        |> CommonSchemas.prepare_changeset(struct(queryable), params, opts)
-        |> Ecto.Changeset.apply_action(opts[:action] || action) do
-
+             queryable
+             |> CommonSchemas.prepare_changeset(struct(queryable), params, opts)
+             |> Ecto.Changeset.apply_action(opts[:action] || action) do
         {:ok, dump_insert_change(struct, queryable, naive_datetime, opts)}
       end
     else
@@ -150,7 +149,9 @@ defmodule EctoShorts.CommonParams do
   defp reduce_placeholders(params, placeholders) do
     Enum.reduce(placeholders, params, fn {placeholder_key, placeholder_value}, params ->
       case Map.get(params, placeholder_key) do
-        nil -> params
+        nil ->
+          params
+
         existing_value ->
           if existing_value === placeholder_value do
             put_placeholder(params, placeholder_key)
@@ -174,7 +175,8 @@ defmodule EctoShorts.CommonParams do
       schema_timestamp_type = schema_timestamp_type(queryable, field_name)
 
       unless schema_timestamp_type do
-        raise ArgumentError, "Timestamp field name for inserted_at not found on schema #{inspect(queryable)}, got: #{inspect(field_name)}."
+        raise ArgumentError,
+              "Timestamp field name for inserted_at not found on schema #{inspect(queryable)}, got: #{inspect(field_name)}."
       end
 
       timestamp_type = opts[:timestamps_type] || schema_timestamp_type
@@ -198,7 +200,8 @@ defmodule EctoShorts.CommonParams do
       schema_timestamp_type = schema_timestamp_type(queryable, field_name)
 
       unless schema_timestamp_type do
-        raise ArgumentError, "Timestamp field name for updated_at not found on schema #{inspect(queryable)}, got: #{inspect(field_name)}."
+        raise ArgumentError,
+              "Timestamp field name for updated_at not found on schema #{inspect(queryable)}, got: #{inspect(field_name)}."
       end
 
       timestamp_type = opts[:timestamps_type] || schema_timestamp_type
@@ -216,28 +219,27 @@ defmodule EctoShorts.CommonParams do
   """
   @doc since: "2.5.0"
   def batch_preload(queryable, params_list, field, query_params, opts) do
-    # TODO: add support for many fields
-
-    {batch_values, batch_value_idx_list} = split_preload_batch_values(params_list, field, opts)
+    {batch_values, batches} = split_preload_batch_values(params_list, field, opts)
 
     if Enum.any?(batch_values) do
       EctoShorts.Utils.Logger.debug(
         @logger_prefix,
-        "Preload | fetching batch values | field=#{inspect(field)}, schema=#{inspect(queryable)}, values=#{inspect(batch_values, charlists: false)}"
+        "Preload | fetching batch values | " <>
+        "field=#{inspect(field)}, schema=#{inspect(queryable)}, values=#{inspect(batch_values, charlists: false)}"
       )
 
       queryable
       |> CommonBatches.batch_all(field, batch_values, query_params, :set, opts)
-      |> merge_batch_structs(params_list, batch_value_idx_list)
+      |> merge_batch_structs(params_list, batches)
     else
       params_list
     end
   end
 
-  defp merge_batch_structs(batch_value_structs, params_list, batch_value_idx_list) do
+  defp merge_batch_structs(batch_value_structs, params_list, batches) do
     Enum.reduce(batch_value_structs, params_list, fn
       {batch_value, new_struct}, acc ->
-        idx_list = Map.fetch!(batch_value_idx_list, batch_value)
+        idx_list = Map.fetch!(batches, batch_value)
 
         Enum.reduce(idx_list, acc, fn idx, acc ->
           case Enum.at(params_list, idx) do
@@ -294,7 +296,6 @@ defmodule EctoShorts.CommonParams do
               )
 
               put_in(acc, [Access.at(idx)], next)
-
           end
         end)
     end)
@@ -305,55 +306,60 @@ defmodule EctoShorts.CommonParams do
       params_list
       |> Stream.with_index()
       |> Enum.reduce({[], %{}}, fn
-        {{%{data: %{__meta__: _ = struct} = _changeset}, _params}, idx}, {values, batch_value_idx_list} = acc ->
+        {{%{data: %{__meta__: _ = struct} = _changeset}, _params}, idx}, {values, batches} = acc ->
           if opts[:force_preload] do
             case Map.fetch!(struct, key) do
-              nil -> acc
+              nil ->
+                acc
+
               val ->
                 EctoShorts.Utils.Logger.debug(
                   @logger_prefix,
                   "Queueing preload from existing data | index=#{idx}, key=#{key}, value=#{val}"
                 )
 
-                {[val | values], Map.update(batch_value_idx_list, val, [idx], &[&1 | idx])}
+                {[val | values], Map.update(batches, val, [idx], &[&1 | idx])}
             end
           else
             acc
           end
 
-        {{struct, _params}, idx}, {values, batch_value_idx_list} = acc ->
+        {{struct, _params}, idx}, {values, batches} = acc ->
           if opts[:force_preload] do
             case Map.fetch!(struct, key) do
-              nil -> acc
+              nil ->
+                acc
+
               val ->
                 EctoShorts.Utils.Logger.debug(
                   @logger_prefix,
                   "Queueing preload from existing data | index=#{idx}, key=#{key}, value=#{val}"
                 )
 
-                {[val | values], Map.update(batch_value_idx_list, val, [idx], &[&1 | idx])}
+                {[val | values], Map.update(batches, val, [idx], &[&1 | idx])}
             end
           else
             acc
           end
 
-        {params, idx}, {values, batch_value_idx_list} = acc ->
+        {params, idx}, {values, batches} = acc ->
           case Map.get(params, key) || Map.get(params, Atom.to_string(key)) do
-            nil -> acc
+            nil ->
+              acc
+
             val ->
               EctoShorts.Utils.Logger.debug(
                 @logger_prefix,
                 "Queueing preload | index=#{idx}, key=#{key}, value=#{val}"
               )
 
-              {[val | values], Map.update(batch_value_idx_list, val, [idx], &[&1 | idx])}
+              {[val | values], Map.update(batches, val, [idx], &[&1 | idx])}
           end
-
       end)
 
-    {values, batch_value_idx_list} = result
+    {values, batches} = result
 
-    {values |> Enum.uniq() |> Enum.reverse(), batch_value_idx_list}
+    {values |> Enum.uniq() |> Enum.reverse(), batches}
   end
 
   ## Update API
@@ -363,10 +369,10 @@ defmodule EctoShorts.CommonParams do
   """
   @doc since: "2.5.0"
   @spec convert_to_update_all_params(
-    query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    params :: map() | keyword(),
-    opts :: keyword()
-  ) :: keyword()
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          params :: map() | keyword(),
+          opts :: keyword()
+        ) :: keyword()
   def convert_to_update_all_params(query, params, opts \\ [])
 
   def convert_to_update_all_params(query, params, opts) when is_map(params) do
@@ -426,7 +432,8 @@ defmodule EctoShorts.CommonParams do
       schema_timestamp_type = schema_timestamp_type(queryable, field_name)
 
       unless schema_timestamp_type do
-        raise ArgumentError, "Timestamp field name for updated_at not found on schema #{inspect(queryable)}, got: #{inspect(field_name)}."
+        raise ArgumentError,
+              "Timestamp field name for updated_at not found on schema #{inspect(queryable)}, got: #{inspect(field_name)}."
       end
 
       timestamp_type = opts[:timestamps_type] || schema_timestamp_type

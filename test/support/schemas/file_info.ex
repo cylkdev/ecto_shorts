@@ -1,4 +1,4 @@
-# defmodule EctoShorts.Support.Schemas.FileInfo do
+# defmodule EctoShorts.Schemas.FileInfo do
 #   @moduledoc false
 #   use Ecto.Schema
 #   import Ecto.Changeset
@@ -11,7 +11,7 @@
 #     field :content_length, :integer
 #     field :unique_identifier, :string
 
-#     belongs_to :user, EctoShorts.Support.Schemas.User
+#     belongs_to :user, EctoShorts.Schemas.User
 
 #     timestamps()
 #   end

@@ -8,13 +8,13 @@
 
 #   ## Example
 
-#     iex> EctoShorts.SchemaHelpers.schema?(%EctoShorts.Support.Schemas.Comment{})
+#     iex> EctoShorts.SchemaHelpers.schema?(%EctoShorts.Schemas.Comment{})
 #     true
 
 #     iex> EctoShorts.SchemaHelpers.schema?(%{some_map: 1})
 #     false
 
-#     iex> EctoShorts.SchemaHelpers.schema?([%EctoShorts.Support.Schemas.Comment{}])
+#     iex> EctoShorts.SchemaHelpers.schema?([%EctoShorts.Schemas.Comment{}])
 #     false
 #   """
 #   @spec schema?(Ecto.Schema.t | any) :: boolean
@@ -26,7 +26,7 @@
 
 #   ## Example
 
-#     iex> EctoShorts.SchemaHelpers.has_schemas?([%{some_map: 1}, %EctoShorts.Support.Schemas.Comment{}])
+#     iex> EctoShorts.SchemaHelpers.has_schemas?([%{some_map: 1}, %EctoShorts.Schemas.Comment{}])
 #     true
 
 #     iex> EctoShorts.SchemaHelpers.has_schemas?([%{some_map: 1}])
@@ -40,10 +40,10 @@
 
 #   ## Example
 
-#     iex> EctoShorts.SchemaHelpers.all_schemas?([%{some_map: 1}, %EctoShorts.Support.Schemas.Comment{}])
+#     iex> EctoShorts.SchemaHelpers.all_schemas?([%{some_map: 1}, %EctoShorts.Schemas.Comment{}])
 #     false
 
-#     iex> EctoShorts.SchemaHelpers.all_schemas?([%EctoShorts.Support.Schemas.Comment{}])
+#     iex> EctoShorts.SchemaHelpers.all_schemas?([%EctoShorts.Schemas.Comment{}])
 #     true
 #   """
 #   @spec all_schemas?(list(Ecto.Schema.t | any)) :: boolean

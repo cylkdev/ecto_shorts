@@ -34,13 +34,13 @@ defmodule EctoShorts.QueryBuilder.Schema do
 
   ### Examples
 
-      iex> EctoShorts.QueryBuilder.Schema.create_schema_filter(EctoShorts.Support.Schemas.Post, :comments, %{id: 1})
+      iex> EctoShorts.QueryBuilder.Schema.create_schema_filter(EctoShorts.Schemas.Post, :comments, %{id: 1})
   """
   @spec create_schema_filter(
-    query :: query(),
-    filter_key :: filter_key(),
-    filter_value :: filter_value()
-  ) :: query()
+          query :: query(),
+          filter_key :: filter_key(),
+          filter_value :: filter_value()
+        ) :: query()
   def create_schema_filter(query, filter_key, filter_value) do
     queryable = QueryHelpers.get_queryable(query)
 
@@ -53,18 +53,18 @@ defmodule EctoShorts.QueryBuilder.Schema do
   ### Examples
 
       iex> EctoShorts.QueryBuilder.Schema.create_schema_filter(
-      ...>   EctoShorts.Support.Schemas.Post,
-      ...>   Ecto.Query.from(EctoShorts.Support.Schemas.Post),
+      ...>   EctoShorts.Schemas.Post,
+      ...>   Ecto.Query.from(EctoShorts.Schemas.Post),
       ...>   :comments,
       ...>   %{id: 1}
       ...> )
   """
   @spec create_schema_filter(
-    queryable :: queryable(),
-    query :: query(),
-    filter_key :: filter_key(),
-    filter_value :: filter_value()
-  ) :: query()
+          queryable :: queryable(),
+          query :: query(),
+          filter_key :: filter_key(),
+          filter_value :: filter_value()
+        ) :: query()
   def create_schema_filter(queryable, query, filter_key, filter_value) do
     cond do
       filter_key in queryable.__schema__(:query_fields) ->
@@ -76,7 +76,9 @@ defmodule EctoShorts.QueryBuilder.Schema do
         create_schema_assocation_filter(queryable, query, filter_key, filter_value, assoc_schema)
 
       true ->
-        Logger.debug("[EctoShorts] #{Atom.to_string(filter_key)} is neither a field nor has a valid association for #{queryable.__schema__(:source)} where filter")
+        Logger.debug(
+          "[EctoShorts] #{Atom.to_string(filter_key)} is neither a field nor has a valid association for #{queryable.__schema__(:source)} where filter"
+        )
 
         query
     end
@@ -91,18 +93,24 @@ defmodule EctoShorts.QueryBuilder.Schema do
 
       %{related: related} ->
         related
-
     end
   end
 
   defp create_schema_query_field_filter(queryable, query, filter_key, filter_value) do
     case queryable.__schema__(:type, filter_key) do
       {:array, _} ->
-        ComparisonFilter.build_array(query, queryable.__schema__(:field_source, filter_key), filter_value)
+        ComparisonFilter.build_array(
+          query,
+          queryable.__schema__(:field_source, filter_key),
+          filter_value
+        )
 
       _ ->
-        ComparisonFilter.build(query, queryable.__schema__(:field_source, filter_key), filter_value)
-
+        ComparisonFilter.build(
+          query,
+          queryable.__schema__(:field_source, filter_key),
+          filter_value
+        )
     end
   end
 
@@ -115,7 +123,8 @@ defmodule EctoShorts.QueryBuilder.Schema do
         query,
         :inner,
         [scm],
-        assoc in assoc(scm, ^filter_key), as: ^binding_alias
+        assoc in assoc(scm, ^filter_key),
+        as: ^binding_alias
       )
     end)
     |> ComparisonFilter.build_relational(binding_alias, filter_value, assoc_schema)

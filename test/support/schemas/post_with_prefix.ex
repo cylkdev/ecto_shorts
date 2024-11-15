@@ -1,4 +1,4 @@
-defmodule EctoShorts.Support.Schemas.PostWithPrefix do
+defmodule EctoShorts.Schemas.PostWithPrefix do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
@@ -6,7 +6,7 @@ defmodule EctoShorts.Support.Schemas.PostWithPrefix do
   @schema_prefix "custom_schema_prefix"
 
   schema "posts" do
-    field :title, :string
+    field(:title, :string)
 
     timestamps(type: :utc_datetime)
   end

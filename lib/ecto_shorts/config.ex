@@ -91,7 +91,7 @@ defmodule EctoShorts.Config do
   @spec replica! :: Ecto.Repo.t()
   def replica!(opts \\ []) do
     with nil <- Keyword.get(opts, :replica, replica()),
-      nil <- Keyword.get(opts, :repo, repo()) do
+         nil <- Keyword.get(opts, :repo, repo()) do
       raise ArgumentError, """
       EctoShorts replica and repo not configured!
 

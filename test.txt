@@ -17,7 +17,7 @@ INSERT INTO "posts" ("unique_identifier","inserted_at","updated_at") VALUES ($1,
 
 got:
 
-{:error, #Ecto.Changeset<action: :insert, changes: %{unique_identifier: "duplicate"}, errors: [unique_identifier: {"has already been taken", [constraint: :unique, constraint_name: "posts_unique_identifier_index"]}], data: #EctoShorts.Support.Schemas.Post<>, valid?: false>}
+{:error, #Ecto.Changeset<action: :insert, changes: %{unique_identifier: "duplicate"}, errors: [unique_identifier: {"has already been taken", [constraint: :unique, constraint_name: "posts_unique_identifier_index"]}], data: #EctoShorts.Schemas.Post<>, valid?: false>}
 
 
 20:09:31.822 [debug] QUERY OK db=0.3ms
@@ -1869,7 +1869,7 @@ INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETUR
 
 20:09:32.064 [debug] [EctoShorts.CommonParams] Queueing preload | index=1, key=id, value=1237
 
-20:09:32.064 [debug] [EctoShorts.CommonParams] Preload | fetching batch values | field=:id, schema=EctoShorts.Support.Schemas.Post, values=[1236, 1237]
+20:09:32.064 [debug] [EctoShorts.CommonParams] Preload | fetching batch values | field=:id, schema=EctoShorts.Schemas.Post, values=[1236, 1237]
 
 20:09:32.066 [debug] QUERY OK source="posts" db=0.3ms queue=0.1ms
 SELECT p0."id", p0."title", p0."unique_identifier", p0."likes", p0."tags", p0."views", p0."user_id", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = ANY($1)) [[1236, 1237]]
@@ -1881,7 +1881,7 @@ current:
 %{id: 1236, title: "post_1_updated_title"}
 
 next:
-{%EctoShorts.Support.Schemas.Post{
+{%EctoShorts.Schemas.Post{
    __meta__: #Ecto.Schema.Metadata<:loaded, "posts">,
    authors: #Ecto.Association.NotLoaded<association :authors is not loaded>,
    comments: #Ecto.Association.NotLoaded<association :comments is not loaded>,
@@ -1905,7 +1905,7 @@ current:
 %{id: 1237, title: "post_2_updated_title"}
 
 next:
-{%EctoShorts.Support.Schemas.Post{
+{%EctoShorts.Schemas.Post{
    __meta__: #Ecto.Schema.Metadata<:loaded, "posts">,
    authors: #Ecto.Association.NotLoaded<association :authors is not loaded>,
    comments: #Ecto.Association.NotLoaded<association :comments is not loaded>,
@@ -2466,7 +2466,7 @@ INSERT INTO "posts" ("unique_identifier","inserted_at","updated_at") VALUES ($1,
 
 got:
 
-{:error, #Ecto.Changeset<action: :insert, changes: %{unique_identifier: "duplicate"}, errors: [unique_identifier: {"has already been taken", [constraint: :unique, constraint_name: "posts_unique_identifier_index"]}], data: #EctoShorts.Support.Schemas.Post<>, valid?: false>}
+{:error, #Ecto.Changeset<action: :insert, changes: %{unique_identifier: "duplicate"}, errors: [unique_identifier: {"has already been taken", [constraint: :unique, constraint_name: "posts_unique_identifier_index"]}], data: #EctoShorts.Schemas.Post<>, valid?: false>}
 
 
 20:09:32.112 [debug] QUERY OK db=0.1ms

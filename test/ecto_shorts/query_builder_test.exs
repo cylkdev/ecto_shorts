@@ -7,7 +7,7 @@
 
 #   alias Ecto.Query
 #   alias EctoShorts.QueryBuilder
-#   alias EctoShorts.Support.Schemas.Comment
+#   alias EctoShorts.Schemas.Comment
 #   alias EctoShorts.Support.Repo
 
 #   describe "create_schema_filter: " do

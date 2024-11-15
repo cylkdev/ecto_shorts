@@ -1,10 +1,10 @@
-defmodule EctoShorts.Support.Schemas.PostTimestampDateTime do
+defmodule EctoShorts.Schemas.PostTimestampDateTime do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "posts" do
-    field :title, :string
+    field(:title, :string)
 
     timestamps(type: :utc_datetime)
   end

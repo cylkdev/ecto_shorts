@@ -1,15 +1,14 @@
-defmodule EctoShorts.Support.Schemas.User do
+defmodule EctoShorts.Schemas.User do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "users" do
-    field :email, :string
+    field(:email, :string)
 
-    has_many :comments, EctoShorts.Support.Schemas.Comment
+    has_many(:comments, EctoShorts.Schemas.Comment)
 
-    many_to_many :posts, EctoShorts.Support.Schemas.Post,
-      join_through: EctoShorts.Support.Schemas.UserPost
+    many_to_many(:posts, EctoShorts.Schemas.Post, join_through: EctoShorts.Schemas.UserPost)
 
     timestamps()
   end

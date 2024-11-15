@@ -47,9 +47,7 @@ defmodule EctoShorts.MixProject do
       {:ecto, "~> 3.0"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0", optional: true},
-
       {:error_message, "~> 0.1"},
-
       {:credo, ">= 0.0.0", only: [:dev, :test]},
       {:excoveralls, ">= 0.0.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.0.0", only: :dev},
@@ -78,16 +76,13 @@ defmodule EctoShorts.MixProject do
           EctoShorts.Actions,
           EctoShorts.CommonChanges
         ],
-
         "Support Modules": [
           EctoShorts.CommonFilters,
           EctoShorts.SchemaHelpers
         ],
-
         "Misc Modules": [
           EctoShorts.Actions.Error
         ],
-
         "Query Builder Modules": [
           EctoShorts.QueryBuilder,
           EctoShorts.QueryBuilder.Schema,

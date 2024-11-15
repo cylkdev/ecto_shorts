@@ -30,14 +30,14 @@ defmodule EctoShorts.CommonSchemas do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchemas.get_schema_reflection(EctoShorts.Support.Schemas.Comment, :fields)
-      iex> EctoShorts.CommonSchemas.get_schema_reflection({"comments", EctoShorts.Support.Schemas.Comment}, :fields)
+      iex> EctoShorts.CommonSchemas.get_schema_reflection(EctoShorts.Schemas.Comment, :fields)
+      iex> EctoShorts.CommonSchemas.get_schema_reflection({"comments", EctoShorts.Schemas.Comment}, :fields)
   """
   @doc since: "2.5.0"
   @spec get_schema_reflection(
-    query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    arg :: atom()
-  ) :: any()
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          arg :: atom()
+        ) :: any()
   def get_schema_reflection({_source, queryable}, arg) do
     queryable.__schema__(arg)
   end
@@ -51,15 +51,15 @@ defmodule EctoShorts.CommonSchemas do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchemas.get_schema_reflection(EctoShorts.Support.Schemas.Comment, :type, :body)
-      iex> EctoShorts.CommonSchemas.get_schema_reflection({"comments", EctoShorts.Support.Schemas.Comment}, :type, :body)
+      iex> EctoShorts.CommonSchemas.get_schema_reflection(EctoShorts.Schemas.Comment, :type, :body)
+      iex> EctoShorts.CommonSchemas.get_schema_reflection({"comments", EctoShorts.Schemas.Comment}, :type, :body)
   """
   @doc since: "2.5.0"
   @spec get_schema_reflection(
-    query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    arg1 :: atom(),
-    arg2 :: atom()
-  ) :: any()
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          arg1 :: atom(),
+          arg2 :: atom()
+        ) :: any()
   def get_schema_reflection({_source, queryable}, arg1, arg2) do
     queryable.__schema__(arg1, arg2)
   end
@@ -73,11 +73,12 @@ defmodule EctoShorts.CommonSchemas do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchemas.get_schema_struct(EctoShorts.Support.Schemas.Comment)
-      iex> EctoShorts.CommonSchemas.get_schema_struct({"comments", EctoShorts.Support.Schemas.Comment})
+      iex> EctoShorts.CommonSchemas.get_schema_struct(EctoShorts.Schemas.Comment)
+      iex> EctoShorts.CommonSchemas.get_schema_struct({"comments", EctoShorts.Schemas.Comment})
   """
   @doc since: "2.5.0"
-  @spec get_schema_struct(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: Ecto.Schema.t()
+  @spec get_schema_struct(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) ::
+          Ecto.Schema.t()
   def get_schema_struct({source, queryable}) do
     prefix = get_schema_prefix(queryable)
 
@@ -93,11 +94,12 @@ defmodule EctoShorts.CommonSchemas do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchemas.get_schema_prefix(EctoShorts.Support.Schemas.Comment)
-      iex> EctoShorts.CommonSchemas.get_schema_prefix({"comments", EctoShorts.Support.Schemas.Comment})
+      iex> EctoShorts.CommonSchemas.get_schema_prefix(EctoShorts.Schemas.Comment)
+      iex> EctoShorts.CommonSchemas.get_schema_prefix({"comments", EctoShorts.Schemas.Comment})
   """
   @doc since: "2.5.0"
-  @spec get_schema_prefix(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: binary() | nil
+  @spec get_schema_prefix(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) ::
+          binary() | nil
   def get_schema_prefix({_source, queryable}) do
     queryable.__schema__(:prefix)
   end
@@ -111,11 +113,12 @@ defmodule EctoShorts.CommonSchemas do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchemas.get_schema_source(EctoShorts.Support.Schemas.Comment)
-      iex> EctoShorts.CommonSchemas.get_schema_source({"comments", EctoShorts.Support.Schemas.Comment})
+      iex> EctoShorts.CommonSchemas.get_schema_source(EctoShorts.Schemas.Comment)
+      iex> EctoShorts.CommonSchemas.get_schema_source({"comments", EctoShorts.Schemas.Comment})
   """
   @doc since: "2.5.0"
-  @spec get_schema_source(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: binary()
+  @spec get_schema_source(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) ::
+          binary()
   def get_schema_source({source, _queryable}) do
     source
   end
@@ -129,11 +132,12 @@ defmodule EctoShorts.CommonSchemas do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchemas.get_schema_queryable(EctoShorts.Support.Schemas.Comment)
-      iex> EctoShorts.CommonSchemas.get_schema_queryable({"comments", EctoShorts.Support.Schemas.Comment})
+      iex> EctoShorts.CommonSchemas.get_schema_queryable(EctoShorts.Schemas.Comment)
+      iex> EctoShorts.CommonSchemas.get_schema_queryable({"comments", EctoShorts.Schemas.Comment})
   """
   @doc since: "2.5.0"
-  @spec get_schema_queryable(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: Ecto.Queryable.t()
+  @spec get_schema_queryable(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) ::
+          Ecto.Queryable.t()
   def get_schema_queryable({_source, queryable}) do
     queryable
   end
@@ -158,16 +162,18 @@ defmodule EctoShorts.CommonSchemas do
   ### Examples
 
       iex> EctoShorts.CommonSchemas.get_schema_query(%Ecto.Query{})
-      iex> EctoShorts.CommonSchemas.get_schema_query(EctoShorts.Support.Schemas.Comment)
-      iex> EctoShorts.CommonSchemas.get_schema_query({"comments", EctoShorts.Support.Schemas.Comment})
+      iex> EctoShorts.CommonSchemas.get_schema_query(EctoShorts.Schemas.Comment)
+      iex> EctoShorts.CommonSchemas.get_schema_query({"comments", EctoShorts.Schemas.Comment})
   """
   @doc since: "2.5.0"
-  @spec get_schema_query(query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: Ecto.Query.t()
+  @spec get_schema_query(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}
+        ) :: Ecto.Query.t()
   def get_schema_query(query) do
     QueryHelpers.build_query_from(query)
   end
 
-   @doc """
+  @doc """
   Returns a struct for the given ecto schema.
 
   ### Options
@@ -176,23 +182,23 @@ defmodule EctoShorts.CommonSchemas do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchemas.put_meta(%EctoShorts.Support.Schemas.Comment{}, state: :loaded, source: "comment", prefix: "prefix")
-      %EctoShorts.Support.Schemas.Comment{
+      iex> EctoShorts.CommonSchemas.put_meta(%EctoShorts.Schemas.Comment{}, state: :loaded, source: "comment", prefix: "prefix")
+      %EctoShorts.Schemas.Comment{
         __meta__: %Ecto.Schema.Metadata{
           context: nil,
           prefix: "prefix",
-          schema: EctoShorts.Support.Schemas.Comment,
+          schema: EctoShorts.Schemas.Comment,
           source: "comment",
           state: :loaded
         }
       }
 
-      iex> EctoShorts.CommonSchemas.put_meta(EctoShorts.Support.Schemas.Comment, state: :loaded, source: "comment", prefix: "prefix")
-      %EctoShorts.Support.Schemas.Comment{
+      iex> EctoShorts.CommonSchemas.put_meta(EctoShorts.Schemas.Comment, state: :loaded, source: "comment", prefix: "prefix")
+      %EctoShorts.Schemas.Comment{
         __meta__: %Ecto.Schema.Metadata{
           context: nil,
           prefix: "prefix",
-          schema: EctoShorts.Support.Schemas.Comment,
+          schema: EctoShorts.Schemas.Comment,
           source: "comment",
           state: :loaded
         }
@@ -200,14 +206,15 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec put_meta(
-    query_or_schema_data :: Ecto.Schema.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    meta :: keyword()
-  ) :: Ecto.Schema.t()
+          query_or_schema_data ::
+            Ecto.Schema.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          meta :: keyword()
+        ) :: Ecto.Schema.t()
   def put_meta(%_{__meta__: state} = schema_data, meta) do
     Ecto.put_meta(schema_data,
-      source: meta[:source] || state.source,
-      prefix: meta[:prefix] || state.prefix,
       context: meta[:context] || state.context,
+      prefix: meta[:prefix] || state.prefix,
+      source: meta[:source] || state.source,
       state: meta[:state] || state.state || :loaded
     )
   end
@@ -223,9 +230,13 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec prepare_changeset(
-    query_or_struct_or_changeset :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()} | Ecto.Schema.t() | Ecto.Changeset.t(),
-    params :: map()
-  ) :: Ecto.Changeset.t()
+          query_or_struct_or_changeset ::
+            Ecto.Queryable.t()
+            | {binary(), Ecto.Queryable.t()}
+            | Ecto.Schema.t()
+            | Ecto.Changeset.t(),
+          params :: map()
+        ) :: Ecto.Changeset.t()
   def prepare_changeset(query_or_struct_or_changeset, params) do
     prepare_changeset(query_or_struct_or_changeset, params, [])
   end
@@ -253,10 +264,14 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec prepare_changeset(
-    query_or_struct_or_changeset :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()} | Ecto.Schema.t() | Ecto.Changeset.t(),
-    params :: map(),
-    opts :: keyword()
-  ) :: Ecto.Changeset.t()
+          query_or_struct_or_changeset ::
+            Ecto.Queryable.t()
+            | {binary(), Ecto.Queryable.t()}
+            | Ecto.Schema.t()
+            | Ecto.Changeset.t(),
+          params :: map(),
+          opts :: keyword()
+        ) :: Ecto.Changeset.t()
   def prepare_changeset(%{data: %{__meta__: %{schema: queryable}}} = changeset, params, opts) do
     prepare_changeset(queryable, changeset, params, opts)
   end
@@ -309,13 +324,23 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec prepare_changeset(
-    query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
-    params :: map(),
-    opts :: keyword()
-  ) :: Ecto.Changeset.t()
-  def prepare_changeset({source, queryable}, %{data: %{__meta__: %{schema: _}} = struct} = changeset, params, opts) do
-    prepare_changeset(queryable, %{changeset | data: put_meta(struct, source: source)}, params, opts)
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          params :: map(),
+          opts :: keyword()
+        ) :: Ecto.Changeset.t()
+  def prepare_changeset(
+        {source, queryable},
+        %{data: %{__meta__: %{schema: _}} = struct} = changeset,
+        params,
+        opts
+      ) do
+    prepare_changeset(
+      queryable,
+      %{changeset | data: put_meta(struct, source: source)},
+      params,
+      opts
+    )
   end
 
   def prepare_changeset({source, queryable}, struct, params, opts) do
@@ -340,7 +365,6 @@ defmodule EctoShorts.CommonSchemas do
 
       _ ->
         queryable.changeset(struct_or_changeset, params)
-
     end
   end
 end

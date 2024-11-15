@@ -21,12 +21,14 @@ defmodule EctoShorts.QueryHelpers do
   ### Examples
 
       iex> require Ecto.Query
-      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.get_source_queryable()
-      {"comments", EctoShorts.Support.Schemas.Comment}
+      ...> EctoShorts.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.get_source_queryable()
+      {"comments", EctoShorts.Schemas.Comment}
   """
   @spec get_source_queryable(query :: Ecto.Query.t()) :: {binary(), Ecto.Queryable.t()}
   def get_source_queryable(%{from: %{source: {source, queryable}}}), do: {source, queryable}
-  def get_source_queryable(%{from: %{query: %{from: {source, queryable}}}}), do: {source, queryable}
+
+  def get_source_queryable(%{from: %{query: %{from: {source, queryable}}}}),
+    do: {source, queryable}
 
   @doc """
   Returns a `Ecto.Queryable` given an `Ecto.Query` or `Ecto.Queryable`.
@@ -34,8 +36,8 @@ defmodule EctoShorts.QueryHelpers do
   ### Examples
 
       iex> require Ecto.Query
-      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.get_queryable()
-      EctoShorts.Support.Schemas.Comment
+      ...> EctoShorts.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.get_queryable()
+      EctoShorts.Schemas.Comment
   """
   @spec get_queryable(query :: Ecto.Query.t()) :: Ecto.Queryable.t()
   def get_queryable(query) do
@@ -59,22 +61,22 @@ defmodule EctoShorts.QueryHelpers do
 
   ### Examples
 
-      iex> EctoShorts.QueryHelpers.build_query_from(EctoShorts.Support.Schemas.Comment)
-      iex> EctoShorts.QueryHelpers.build_query_from(EctoShorts.Support.Schemas.Comment, query_prefix: "query_prefix")
+      iex> EctoShorts.QueryHelpers.build_query_from(EctoShorts.Schemas.Comment)
+      iex> EctoShorts.QueryHelpers.build_query_from(EctoShorts.Schemas.Comment, query_prefix: "query_prefix")
 
-      iex> EctoShorts.QueryHelpers.build_query_from({"comments", EctoShorts.Support.Schemas.Comment})
-      iex> EctoShorts.QueryHelpers.build_query_from({"comments", EctoShorts.Support.Schemas.Comment}, query_prefix: "query_prefix")
-
-      iex> require Ecto.Query
-      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_query_from()
+      iex> EctoShorts.QueryHelpers.build_query_from({"comments", EctoShorts.Schemas.Comment})
+      iex> EctoShorts.QueryHelpers.build_query_from({"comments", EctoShorts.Schemas.Comment}, query_prefix: "query_prefix")
 
       iex> require Ecto.Query
-      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_query_from(query_prefix: "query_prefix")
+      ...> EctoShorts.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_query_from()
+
+      iex> require Ecto.Query
+      ...> EctoShorts.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_query_from(query_prefix: "query_prefix")
   """
   @spec build_query_from(
-    query :: query() | queryable() | source_queryable(),
-    opts :: keyword()
-  ) :: Ecto.Query.t()
+          query :: query() | queryable() | source_queryable(),
+          opts :: keyword()
+        ) :: Ecto.Query.t()
   def build_query_from(query, opts \\ [])
 
   def build_query_from(%_{} = query, opts) do

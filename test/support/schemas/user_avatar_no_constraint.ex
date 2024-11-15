@@ -1,4 +1,4 @@
-# defmodule EctoShorts.Support.Schemas.UserAvatarNoConstraint do
+# defmodule EctoShorts.Schemas.UserAvatarNoConstraint do
 #   @moduledoc false
 #   use Ecto.Schema
 #   import Ecto.Changeset
@@ -7,9 +7,9 @@
 #     field :name, :string
 #     field :description, :string
 
-#     belongs_to :user, EctoShorts.Support.Schemas.User
+#     belongs_to :user, EctoShorts.Schemas.User
 
-#     has_one :file_info, {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+#     has_one :file_info, {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
 
 #     timestamps()
 #   end

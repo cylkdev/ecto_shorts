@@ -7,7 +7,7 @@
 #     Repo,
 #     TestRepo
 #   }
-#   alias EctoShorts.Support.Schemas.{
+#   alias EctoShorts.Schemas.{
 #     FileInfo,
 #     UserAvatar,
 #     UserAvatarNoConstraint
@@ -60,12 +60,12 @@
 
 #       schema_data_id = schema_data.id
 
-#       assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert %EctoShorts.Schemas.FileInfo{
 #         id: ^schema_data_id,
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },
@@ -88,11 +88,11 @@
 #     test "returns record" do
 #       assert {:ok, schema_data} = Actions.create({"file_info_user_avatars", FileInfo}, %{name: "example.txt"})
 
-#       assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert %EctoShorts.Schemas.FileInfo{
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },
@@ -217,7 +217,7 @@
 #       assert %ErrorMessage{
 #         code: :internal_server_error,
 #         details: %{changeset: changeset} = details,
-#         message: "Error deleting EctoShorts.Support.Schemas.UserAvatarNoConstraint"
+#         message: "Error deleting EctoShorts.Schemas.UserAvatarNoConstraint"
 #       } = error
 
 #       assert %{changeset: changeset, schema_data: user_avatar} === details
@@ -292,7 +292,7 @@
 #         code: :not_found,
 #         details: %{
 #           params: %{id: error_id},
-#           query: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+#           query: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
 #         },
 #         message: "no records found"
 #       } = error
@@ -307,7 +307,7 @@
 #         code: :not_found,
 #         details: %{
 #           params: %{},
-#           query: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+#           query: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
 #         },
 #         message: "no records found"
 #       } = error
@@ -332,11 +332,11 @@
 #           body: "created_record"
 #         })
 
-#       assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert %EctoShorts.Schemas.FileInfo{
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },
@@ -359,11 +359,11 @@
 #       assert {:ok, updated_schema_data} =
 #         Actions.update({"file_info_user_avatars", FileInfo}, schema_data, %{name: "updated_name.txt"})
 
-#       assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert %EctoShorts.Schemas.FileInfo{
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },
@@ -382,11 +382,11 @@
 #       assert {:ok, updated_schema_data} =
 #         Actions.update({"file_info_user_avatars", FileInfo}, schema_data.id, %{name: "updated_name.txt"})
 
-#       assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert %EctoShorts.Schemas.FileInfo{
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },
@@ -405,11 +405,11 @@
 #       assert {:ok, updated_schema_data} =
 #         Actions.update({"file_info_user_avatars", FileInfo}, schema_data.id, [name: "updated_name.txt"])
 
-#       assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert %EctoShorts.Schemas.FileInfo{
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },
@@ -431,7 +431,7 @@
 #       assert %ErrorMessage{
 #         code: :not_found,
 #         details: %{
-#           schema: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo},
+#           schema: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo},
 #           schema_id: error_id,
 #           updates: %{
 #             name: "updated_name.txt"
@@ -459,11 +459,11 @@
 #           %{name: "updated_name.txt"}
 #         )
 
-#       assert assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert assert %EctoShorts.Schemas.FileInfo{
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },
@@ -490,7 +490,7 @@
 #         code: :not_found,
 #         details: %{
 #           params: %{id: error_id},
-#           query: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+#           query: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
 #         },
 #         message: "no records found"
 #       } = error
@@ -514,11 +514,11 @@
 #           %{body: "created_record"}
 #         )
 
-#       assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert %EctoShorts.Schemas.FileInfo{
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },
@@ -543,11 +543,11 @@
 #           %{name: "updated_name.txt"}
 #         )
 
-#       assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert %EctoShorts.Schemas.FileInfo{
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },
@@ -636,11 +636,11 @@
 #           ]
 #         )
 
-#       assert %EctoShorts.Support.Schemas.FileInfo{
+#       assert %EctoShorts.Schemas.FileInfo{
 #         __meta__: %Ecto.Schema.Metadata{
 #           context: nil,
 #           prefix: nil,
-#           schema: EctoShorts.Support.Schemas.FileInfo,
+#           schema: EctoShorts.Schemas.FileInfo,
 #           source: "file_info_user_avatars",
 #           state: :loaded
 #         },

@@ -1,10 +1,10 @@
-defmodule EctoShorts.Support.Schemas.PostAbstractNoConstraint do
+defmodule EctoShorts.Schemas.PostAbstractNoConstraint do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
   schema "abstract table: posts" do
-    field :title, :string
+    field(:title, :string)
 
     timestamps(type: :utc_datetime)
   end

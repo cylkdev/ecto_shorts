@@ -4,10 +4,10 @@ defmodule EctoShorts.Utils.Logger do
 
   @doc false
   @spec debug(
-    identifier :: binary(),
-    message :: binary(),
-    options :: keyword()
-  ) :: :ok
+          identifier :: binary(),
+          message :: binary(),
+          options :: keyword()
+        ) :: :ok
   def debug(identifier, message, options \\ []) do
     identifier
     |> format_message(message)
@@ -16,10 +16,10 @@ defmodule EctoShorts.Utils.Logger do
 
   @doc false
   @spec info(
-    identifier :: binary(),
-    message :: binary(),
-    options :: keyword()
-  ) :: :ok
+          identifier :: binary(),
+          message :: binary(),
+          options :: keyword()
+        ) :: :ok
   def info(identifier, message, options \\ []) do
     identifier
     |> format_message(message)
@@ -28,10 +28,10 @@ defmodule EctoShorts.Utils.Logger do
 
   @doc false
   @spec warning(
-    identifier :: binary(),
-    message :: binary(),
-    options :: keyword()
-  ) :: :ok
+          identifier :: binary(),
+          message :: binary(),
+          options :: keyword()
+        ) :: :ok
   if Code.ensure_loaded?(:logger) and function_exported?(:logger, :warning, 2) do
     def warning(identifier, message, options \\ []) do
       identifier
@@ -48,10 +48,10 @@ defmodule EctoShorts.Utils.Logger do
 
   @doc false
   @spec error(
-    identifier :: binary(),
-    message :: binary(),
-    options :: keyword()
-  ) :: :ok
+          identifier :: binary(),
+          message :: binary(),
+          options :: keyword()
+        ) :: :ok
   def error(identifier, message, options \\ []) do
     identifier
     |> format_message(message)

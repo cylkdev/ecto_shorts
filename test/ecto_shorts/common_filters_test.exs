@@ -3,7 +3,7 @@
 #   doctest EctoShorts.CommonFilters
 
 #   alias EctoShorts.CommonFilters
-#   alias EctoShorts.Support.Schemas.Post
+#   alias EctoShorts.Schemas.Post
 
 #   require Ecto.Query
 
@@ -18,7 +18,7 @@
 #           as: nil,
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         prefix: nil,
 #         wheres: [
@@ -38,7 +38,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         preloads: [:comments]
 #       } = query
@@ -53,7 +53,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         wheres: [
 #           %Ecto.Query.BooleanExpr{
@@ -75,7 +75,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         wheres: [
 #           %Ecto.Query.BooleanExpr{
@@ -97,7 +97,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         wheres: [
 #           %Ecto.Query.BooleanExpr{
@@ -119,7 +119,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         wheres: [
 #           %Ecto.Query.BooleanExpr{
@@ -141,7 +141,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         wheres: [
 #           %Ecto.Query.BooleanExpr{
@@ -163,7 +163,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         wheres: [
 #           %Ecto.Query.BooleanExpr{
@@ -185,7 +185,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         wheres: [
 #           %Ecto.Query.BooleanExpr{
@@ -207,7 +207,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         wheres: [
 #           %Ecto.Query.BooleanExpr{
@@ -229,7 +229,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         limit: %Ecto.Query.LimitExpr{
 #           expr: {:^, [], [0]},
@@ -278,7 +278,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         limit: %Ecto.Query.LimitExpr{
 #           expr: {:^, [], [0]},
@@ -299,7 +299,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         offset: %Ecto.Query.QueryExpr{
 #           params: [{^expected_offset, :integer}]
@@ -314,7 +314,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         order_bys: [
 #           %Ecto.Query.QueryExpr{
@@ -332,7 +332,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         order_bys: [
 #           %Ecto.Query.QueryExpr{
@@ -352,7 +352,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         wheres: [
 #           %Ecto.Query.BooleanExpr{
@@ -377,7 +377,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         limit: %Ecto.Query.LimitExpr{
 #           expr: {:^, [], [0]},
@@ -401,7 +401,7 @@
 #         from: %Ecto.Query.FromExpr{
 #           params: [],
 #           prefix: nil,
-#           source: {"posts", EctoShorts.Support.Schemas.Post}
+#           source: {"posts", EctoShorts.Schemas.Post}
 #         },
 #         joins: [
 #           %Ecto.Query.JoinExpr{
