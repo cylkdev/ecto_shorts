@@ -11,7 +11,7 @@ defmodule EctoShorts.Config do
       iex> EctoShorts.Config.repo()
       EctoShorts.Support.Repo
   """
-  @spec repo :: Ecto.Repo.t() | nil
+  @spec repo :: module() | nil
   def repo do
     Application.get_env(@app, :repo)
   end
@@ -25,7 +25,7 @@ defmodule EctoShorts.Config do
       nil
   """
   @doc since: "2.5.0"
-  @spec replica :: Ecto.Repo.t() | nil
+  @spec replica :: module() | nil
   def replica do
     Application.get_env(@app, :replica)
   end
@@ -33,20 +33,19 @@ defmodule EctoShorts.Config do
   @doc """
   Returns a `Ecto.Repo` module.
 
-  Raises if the key `:repo` is not specified in configuration
-  and the option `:repo` is not specified at runtime.
+  Raises if the repo is not configured and the option `:repo` is not set.
 
   ### Examples
 
       iex> EctoShorts.Config.repo!()
       EctoShorts.Support.Repo
 
-      iex> EctoShorts.Config.repo!(repo: YourApp.Repo)
-      YourApp.Repo
+      iex> EctoShorts.Config.repo!(repo: MyApp.Repo)
+      MyApp.Repo
   """
   @doc since: "2.5.0"
-  @spec repo!(opts :: keyword()) :: Ecto.Repo.t()
-  @spec repo! :: Ecto.Repo.t()
+  @spec repo!(opts :: keyword()) :: module()
+  @spec repo! :: module()
   def repo!(opts \\ []) do
     with nil <- Keyword.get(opts, :repo, repo()) do
       raise ArgumentError, """
@@ -57,7 +56,7 @@ defmodule EctoShorts.Config do
       * The option `:repo` is specified at runtime.
 
         ```
-        EctoShorts.Actions.all(YourApp.Schema, %{id: [1, 2, 3]}, repo: YourApp.Repo)
+        EctoShorts.Actions.all(MyApp.Schema, %{id: [1, 2, 3]}, repo: MyApp.Repo)
         ```
 
       * The option `:repo` is set in configuration.
@@ -66,7 +65,7 @@ defmodule EctoShorts.Config do
         # config.exs
         import Config
 
-        config :ecto_shorts, :repo, YourApp.Repo
+        config :ecto_shorts, :repo, MyApp.Repo
         ```
       """
     end
@@ -84,12 +83,12 @@ defmodule EctoShorts.Config do
       iex> EctoShorts.Config.replica!()
       EctoShorts.Support.Repo
 
-      iex> EctoShorts.Config.replica!(replica: YourApp.Repo.Replica)
-      YourApp.Repo.Replica
+      iex> EctoShorts.Config.replica!(replica: MyApp.Repo.Replica)
+      MyApp.Repo.Replica
   """
   @doc since: "2.5.0"
-  @spec replica!(opts :: keyword()) :: Ecto.Repo.t()
-  @spec replica! :: Ecto.Repo.t()
+  @spec replica!(opts :: keyword()) :: module()
+  @spec replica! :: module()
   def replica!(opts \\ []) do
     with nil <- Keyword.get(opts, :replica, replica()),
       nil <- Keyword.get(opts, :repo, repo()) do
@@ -101,7 +100,7 @@ defmodule EctoShorts.Config do
       * The option `:replica` is specified at runtime.
 
         ```
-        EctoShorts.Actions.all(YourApp.Schema, %{id: [1, 2, 3]}, replica: YourApp.Repo.Replica)
+        EctoShorts.Actions.all(MyApp.Schema, %{id: [1, 2, 3]}, replica: MyApp.Repo.Replica)
         ```
 
       * The option `:replica` is set in configuration.
@@ -110,13 +109,13 @@ defmodule EctoShorts.Config do
         # config.exs
         import Config
 
-        config :ecto_shorts, :replica, YourApp.Repo.Replica
+        config :ecto_shorts, :replica, MyApp.Repo.Replica
         ```
 
       * The option `:repo` is specified at runtime.
 
         ```
-        EctoShorts.Actions.all(YourApp.Schema, %{id: [1, 2, 3]}, repo: YourApp.Repo)
+        EctoShorts.Actions.all(MyApp.Schema, %{id: [1, 2, 3]}, repo: MyApp.Repo)
         ```
 
       * The option `:repo` is set in configuration.
@@ -125,7 +124,7 @@ defmodule EctoShorts.Config do
         # config.exs
         import Config
 
-        config :ecto_shorts, :repo, YourApp.Repo
+        config :ecto_shorts, :repo, MyApp.Repo
         ```
       """
     end
