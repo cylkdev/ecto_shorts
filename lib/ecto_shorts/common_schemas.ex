@@ -193,21 +193,21 @@ defmodule EctoShorts.CommonSchemas do
   end
 
   @doc """
-  See `EctoShorts.CommonSchemas.prepare_changeset/3` for more information.
+  See `EctoShorts.CommonSchemas.build_changeset/3` for more information.
   """
   @doc since: "2.5.0"
-  @spec prepare_changeset(
+  @spec build_changeset(
     query_or_struct_or_changeset :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()} | Ecto.Schema.t() | Ecto.Changeset.t(),
     params :: map()
   ) :: Ecto.Changeset.t()
-  def prepare_changeset(query_or_struct_or_changeset, params) do
-    prepare_changeset(query_or_struct_or_changeset, params, [])
+  def build_changeset(query_or_struct_or_changeset, params) do
+    build_changeset(query_or_struct_or_changeset, params, [])
   end
 
   @doc """
   Returns an `Ecto.Changeset`.
 
-  This function is a wrapper for `EctoShorts.CommonSchemas.prepare_changeset/4` and invokes the function
+  This function is a wrapper for `EctoShorts.CommonSchemas.build_changeset/4` and invokes the function
   as follows based on the first argument:
 
     * When a `changeset` is given the function is invoked using the `queryable` module
@@ -226,25 +226,25 @@ defmodule EctoShorts.CommonSchemas do
 
   """
   @doc since: "2.5.0"
-  @spec prepare_changeset(
+  @spec build_changeset(
     query_or_struct_or_changeset :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()} | Ecto.Schema.t() | Ecto.Changeset.t(),
     params :: map(),
     opts :: keyword()
   ) :: Ecto.Changeset.t()
-  def prepare_changeset(%{data: %{__meta__: %{schema: queryable}}} = changeset, params, opts) do
-    prepare_changeset(queryable, changeset, params, opts)
+  def build_changeset(%{data: %{__meta__: %{schema: queryable}}} = changeset, params, opts) do
+    build_changeset(queryable, changeset, params, opts)
   end
 
-  def prepare_changeset(%{__meta__: %{schema: queryable}} = struct, params, opts) do
-    prepare_changeset(queryable, struct, params, opts)
+  def build_changeset(%{__meta__: %{schema: queryable}} = struct, params, opts) do
+    build_changeset(queryable, struct, params, opts)
   end
 
-  def prepare_changeset({source, queryable}, params, opts) do
-    prepare_changeset(queryable, get_schema_struct({source, queryable}), params, opts)
+  def build_changeset({source, queryable}, params, opts) do
+    build_changeset(queryable, get_schema_struct({source, queryable}), params, opts)
   end
 
-  def prepare_changeset(queryable, params, opts) do
-    prepare_changeset(queryable, get_schema_struct(queryable), params, opts)
+  def build_changeset(queryable, params, opts) do
+    build_changeset(queryable, get_schema_struct(queryable), params, opts)
   end
 
   @doc """
@@ -282,21 +282,31 @@ defmodule EctoShorts.CommonSchemas do
 
   """
   @doc since: "2.5.0"
-  @spec prepare_changeset(
+  @spec build_changeset(
     query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
     struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
     params :: map(),
     opts :: keyword()
   ) :: Ecto.Changeset.t()
-  def prepare_changeset({source, queryable}, %{data: %{__meta__: %{schema: _}} = struct} = changeset, params, opts) do
-    prepare_changeset(queryable, %{changeset | data: put_meta(struct, source: source)}, params, opts)
+  def build_changeset(
+    {source, queryable},
+    %{data: %{__meta__: %{schema: _}} = struct} = changeset,
+    params,
+    opts
+  ) do
+    build_changeset(
+      queryable,
+      %{changeset | data: put_meta(struct, source: source)},
+      params,
+      opts
+    )
   end
 
-  def prepare_changeset({source, queryable}, struct, params, opts) do
-    prepare_changeset(queryable, put_meta(struct, source: source), params, opts)
+  def build_changeset({source, queryable}, struct, params, opts) do
+    build_changeset(queryable, put_meta(struct, source: source), params, opts)
   end
 
-  def prepare_changeset(queryable, struct_or_changeset, params, opts) do
+  def build_changeset(queryable, struct_or_changeset, params, opts) do
     case opts[:changeset] do
       {mod, fun, args} ->
         apply(mod, fun, [struct_or_changeset, params] ++ args)
@@ -304,13 +314,13 @@ defmodule EctoShorts.CommonSchemas do
       {mod, fun} ->
         apply(mod, fun, [struct_or_changeset, params])
 
-      func when is_function(func, 2) ->
-        func.(struct_or_changeset, params)
+      fun when is_function(fun, 2) ->
+        fun.(struct_or_changeset, params)
 
-      func when is_function(func, 1) ->
+      fun when is_function(fun, 1) ->
         struct_or_changeset
         |> queryable.changeset(params)
-        |> func.()
+        |> fun.()
 
       _ ->
         queryable.changeset(struct_or_changeset, params)
