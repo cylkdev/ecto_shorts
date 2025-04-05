@@ -18,6 +18,8 @@ defmodule EctoShorts.Actions do
     Config
   }
 
+  @id :id
+
   @doc group: "Transaction API"
   @doc since: "2.5.0"
   @doc """
@@ -27,8 +29,9 @@ defmodule EctoShorts.Actions do
   `:error` or `{:error, reason}` and no exception is raised. You can
   control this behavior with the `:rollback_on_error` option.
 
-  Raises an error if the function does not return `:ok`, `:error`,
-  `{:ok, value}`, or `{:error, reason}`).
+  Raises an error if the option `:rollback_on_error` is true and the
+  function does not return `:ok`, `:error`, `{:ok, value}`, or
+  `{:error, reason}`).
 
   ## Options
 
@@ -108,141 +111,6 @@ defmodule EctoShorts.Actions do
     end
 
     Config.repo!(opts).transaction(op, opts)
-  end
-
-  @doc group: "Query API"
-  @doc since: "2.5.0"
-  @doc """
-  See `find_all/5` for more information.
-
-  ## Examples
-
-      iex> EctoShorts.Actions.find_all(MyApp.Schema, [1])
-      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, [1])
-  """
-  @spec find_all(
-          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          values :: list()
-        ) :: {:ok, list(Ecto.Schema.t())} | {:error, list(term())}
-  def find_all(query, values) do
-    find_all(query, values, [])
-  end
-
-  @doc group: "Query API"
-  @doc since: "2.5.0"
-  @doc """
-  See `find_all/5` for more information.
-
-  ## Examples
-
-      iex> EctoShorts.Actions.find_all(MyApp.Schema, [1], repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_all(MyApp.Schema, [1], replica: MyApp.Repo)
-
-      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, [1], repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, [1], replica: MyApp.Repo)
-  """
-  @spec find_all(
-          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          values :: list(),
-          opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | {:error, list(term())}
-  def find_all(query, values, opts) do
-    find_all(query, :id, values, opts)
-  end
-
-  @doc group: "Query API"
-  @doc since: "2.5.0"
-  @doc """
-  See `find_all/5` for more information.
-
-  ## Examples
-
-      iex> EctoShorts.Actions.find_all(MyApp.Schema, :id, [1], repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_all(MyApp.Schema, :id, [1], replica: MyApp.Repo)
-
-      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, :id, [1], repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, :id, [1], replica: MyApp.Repo)
-  """
-  @spec find_all(
-          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          key :: atom(),
-          values :: list(),
-          opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | {:error, list(term())}
-  def find_all(query, key, values, opts) do
-    find_all(query, key, values, %{}, opts)
-  end
-
-  @doc group: "Query API"
-  @doc since: "2.5.0"
-  @doc """
-  Retrieves all records where a field matches one of the given values.
-
-  ## Filter parameters
-
-  Additional filters can be added to the query by passing `params`.
-
-  ## Options
-
-  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
-
-  All options accepted by [`Ecto.Repo.all/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) are also supported.
-
-  ## Examples
-
-      iex> EctoShorts.Actions.find_all(MyApp.Schema, :id, [1], %{inserted_at: %{gte: ~U[2023-01-01 00:00:00Z]}}, repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_all(MyApp.Schema, :id, [1], %{inserted_at: %{gte: ~U[2023-01-01 00:00:00Z]}}, replica: MyApp.Repo)
-
-      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, :id, [1], %{inserted_at: %{gte: ~U[2023-01-01 00:00:00Z]}}, repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, :id, [1], %{inserted_at: %{gte: ~U[2023-01-01 00:00:00Z]}}, replica: MyApp.Repo)
-  """
-  @spec find_all(
-          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          key :: atom(),
-          values :: list(),
-          params :: map(),
-          opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | {:error, list(term())}
-  def find_all(query, _key, [], params, _opts) do
-    {:error,
-     ErrorMessage.not_found("no records found", %{
-       query: query,
-       params: params
-     })}
-  end
-
-  def find_all(query, key, values, params, opts) do
-    params = Map.merge(params, %{key => values})
-
-    case EctoShorts.Actions.all(query, params, opts) do
-      [] ->
-        {:error,
-         ErrorMessage.not_found("no records found", %{
-           query: query,
-           key: key,
-           values: values,
-           params: params
-         })}
-
-      schema_data_list ->
-        batch_results = Map.new(schema_data_list, &{Map.fetch!(&1, key), &1})
-
-        EctoShorts.Utils.reduce_all(values, fn batch_value ->
-          case Map.get(batch_results, batch_value) do
-            nil ->
-              {:error,
-               ErrorMessage.not_found("no record found", %{
-                 query: query,
-                 key: key,
-                 value: batch_value,
-                 params: params
-               })}
-
-            schema_data ->
-              {:ok, schema_data}
-          end
-        end)
-    end
   end
 
   @doc group: "Query API"
@@ -406,6 +274,155 @@ defmodule EctoShorts.Actions do
     |> Config.repo!(opts).insert(opts)
   end
 
+  @doc group: "Query API"
+  @doc since: "2.5.0"
+  @doc """
+  See `find_all/5` for more information.
+
+  ## Options
+
+  See `find_all/5` for more options.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.find_all(MyApp.Schema, [1])
+      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, [1])
+  """
+  @spec find_all(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          values :: list(integer() | binary())
+        ) :: {:ok, list(Ecto.Schema.t())} | {:error, list(term())}
+  def find_all(query, values) do
+    find_all(query, values, [])
+  end
+
+  @doc group: "Query API"
+  @doc since: "2.5.0"
+  @doc """
+  See `find_all/5` for more information.
+
+  ## Options
+
+    * `:primary_key` – The primary key to use for the query. Defaults to `:id`.
+
+  See `find_all/5` for more options.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.find_all(MyApp.Schema, [1], repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_all(MyApp.Schema, [1], replica: MyApp.Repo)
+
+      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, [1], repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, [1], replica: MyApp.Repo)
+  """
+  @spec find_all(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          values :: list(integer() | binary()),
+          opts :: keyword()
+        ) :: {:ok, list(Ecto.Schema.t())} | {:error, list(term())}
+  def find_all(query, values, opts) do
+    find_all(query, primary_key(query, opts), values, opts)
+  end
+
+  @doc group: "Query API"
+  @doc since: "2.5.0"
+  @doc """
+  See `find_all/5` for more information.
+
+  ## Options
+
+  See `find_all/5` for options.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.find_all(MyApp.Schema, :id, [1], repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_all(MyApp.Schema, :id, [1], replica: MyApp.Repo)
+
+      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, :id, [1], repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, :id, [1], replica: MyApp.Repo)
+  """
+  @spec find_all(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          key :: atom(),
+          values :: list(integer() | binary()),
+          opts :: keyword()
+        ) :: {:ok, list(Ecto.Schema.t())} | {:error, list(term())}
+  def find_all(query, key, values, opts) do
+    find_all(query, key, values, %{}, opts)
+  end
+
+  @doc group: "Query API"
+  @doc since: "2.5.0"
+  @doc """
+  Finds all records where a field matches one of the given values.
+
+  ## Filter parameters
+
+  Additional filters can be added to the query by passing `params`.
+
+  ## Options
+
+  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+
+  All options accepted by [`Ecto.Repo.all/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) are also supported.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.find_all(MyApp.Schema, :id, [1], %{inserted_at: %{gte: ~U[2023-01-01 00:00:00Z]}}, repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_all(MyApp.Schema, :id, [1], %{inserted_at: %{gte: ~U[2023-01-01 00:00:00Z]}}, replica: MyApp.Repo)
+
+      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, :id, [1], %{inserted_at: %{gte: ~U[2023-01-01 00:00:00Z]}}, repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_all({"users", MyApp.Schema}, :id, [1], %{inserted_at: %{gte: ~U[2023-01-01 00:00:00Z]}}, replica: MyApp.Repo)
+  """
+  @spec find_all(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          key :: atom(),
+          values :: list(integer() | binary()),
+          params :: map(),
+          opts :: keyword()
+        ) :: {:ok, list(Ecto.Schema.t())} | {:error, list(term())}
+  def find_all(query, _key, [], params, _opts) do
+    {:error,
+     ErrorMessage.not_found("no records found", %{
+       query: query,
+       params: params
+     })}
+  end
+
+  def find_all(query, key, values, params, opts) do
+    params = Map.merge(params, %{key => values})
+
+    case all(query, params, opts) do
+      [] ->
+        {:error,
+         ErrorMessage.not_found("no records found", %{
+           query: query,
+           key: key,
+           values: values,
+           params: params
+         })}
+
+      schema_data_list ->
+        batch_results = Map.new(schema_data_list, &{Map.fetch!(&1, key), &1})
+
+        EctoShorts.Utils.reduce_all(values, fn batch_value ->
+          case Map.get(batch_results, batch_value) do
+            nil ->
+              {:error,
+               ErrorMessage.not_found("no record found", %{
+                 query: query,
+                 key: key,
+                 value: batch_value,
+                 params: params
+               })}
+
+            schema_data ->
+              {:ok, schema_data}
+          end
+        end)
+    end
+  end
+
   @doc """
   Finds a record matching the given parameters, or creates one if none is found.
 
@@ -424,11 +441,11 @@ defmodule EctoShorts.Actions do
 
       iex> EctoShorts.Actions.find_or_create(MyApp.Schema, %{name: "Fira"})
       iex> EctoShorts.Actions.find_or_create(MyApp.Schema, %{name: "Fira"}, repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_or_create(MyApp.Schema, %{name: "Fira"}, replica: MyApp.Repo.Repo)
+      iex> EctoShorts.Actions.find_or_create(MyApp.Schema, %{name: "Fira"}, replica: MyApp.Repo.Replica)
 
       iex> EctoShorts.Actions.find_or_create({"users", MyApp.Schema}, %{name: "Fira"})
       iex> EctoShorts.Actions.find_or_create({"users", MyApp.Schema}, %{name: "Fira"}, repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_or_create({"users", MyApp.Schema}, %{name: "Fira"}, replica: MyApp.Repo.Repo)
+      iex> EctoShorts.Actions.find_or_create({"users", MyApp.Schema}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
   """
   @spec find_or_create(
           query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
@@ -451,6 +468,101 @@ defmodule EctoShorts.Actions do
 
     with {:error, %{code: :not_found}} <- find(query, find_params, opts) do
       create(query, params, opts)
+    end
+  end
+
+  @doc group: "Query API"
+  @doc """
+  Finds a schema by the given params and updates it with the
+  merged result of `params` and `update_params`. If no record
+  is found, a new one is created using the merged values.
+
+  Accepts a map of params, a map of update params, and an
+  optional keyword list of options.
+
+  ## Options
+
+  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+
+  For more information, see `&find/3` and `&update/4`.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.find_and_update(MyApp.Schema, %{id: 1}, %{name: "Fira"})
+      iex> EctoShorts.Actions.find_and_update(MyApp.Schema, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_and_update(MyApp.Schema, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+
+      iex> EctoShorts.Actions.find_and_update({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"})
+      iex> EctoShorts.Actions.find_and_update({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_and_update({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+  """
+  @spec find_and_update(
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          find_params :: map(),
+          update_params :: map()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
+  @spec find_and_update(
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          find_params :: map(),
+          update_params :: map(),
+          opts :: keyword()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
+  def find_and_update(query, find_params, update_params, opts \\ []) do
+    with {:ok, schema_data} <- find(query, find_params, opts) do
+      update(query, schema_data, update_params, opts)
+    end
+  end
+
+  @doc group: "Query API"
+  @doc """
+  Finds a schema using the given params and either updates it or
+  creates a new record with the merged result of `params` and
+  `update_params`.
+
+  If a matching record is found, it is updated. If not, a new
+  record is created using the combined values.
+
+  Accepts an optional keyword list of options.
+
+  ## Options
+
+  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+
+  For more information, see `&find/3`, `&create/3 and `&update/4`.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.find_and_upsert(MyApp.Schema, %{id: 1}, %{name: "Fira"})
+      iex> EctoShorts.Actions.find_and_upsert(MyApp.Schema, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_and_upsert(MyApp.Schema, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+
+      iex> EctoShorts.Actions.find_and_upsert({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"})
+      iex> EctoShorts.Actions.find_and_upsert({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+      iex> EctoShorts.Actions.find_and_upsert({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+  """
+  @spec find_and_upsert(
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          find_params :: map(),
+          update_params :: map()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
+  @spec find_and_upsert(
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          find_params :: map(),
+          update_params :: map(),
+          opts :: keyword()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
+  def find_and_upsert(query, find_params, update_params, opts \\ []) do
+    case find(query, find_params, opts) do
+      {:ok, schema_data} ->
+        update(query, schema_data, update_params, opts)
+
+      {:error, %{code: :not_found}} ->
+        create_params = Map.merge(find_params, update_params)
+
+        create(query, create_params, opts)
+
+      e ->
+        e
     end
   end
 
@@ -576,6 +688,119 @@ defmodule EctoShorts.Actions do
     |> Config.repo!(opts).update(opts)
   end
 
+  @doc """
+  Deletes a record given existing data.
+
+  ## Options
+
+  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+
+  All options accepted by [`Ecto.Repo.delete/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:delete/2) are also supported.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.delete(%MyApp.Schema{})
+      iex> EctoShorts.Actions.delete([%MyApp.Schema{}])
+  """
+  @spec delete(schema :: Ecto.Schema.t()) ::
+          {:ok, list(Ecto.Schema.t())} | {:error, Ecto.Changeset.t() | term()}
+  @spec delete(schemas :: list(Ecto.Schema.t())) ::
+          {:ok, list(Ecto.Schema.t())} | {:error, list(Ecto.Changeset.t() | term())}
+  def delete(%_{} = schema_data) do
+    delete(schema_data, [])
+  end
+
+  def delete(schema_data_list) when is_list(schema_data_list) do
+    EctoShorts.Utils.reduce_all(schema_data_list, fn schema_data ->
+      delete(schema_data, [])
+    end)
+  end
+
+  @doc """
+  Deletes a struct by it's primary key, struct, list of structs,
+  changeset, or list of changesets.
+
+  ### Options
+
+    * `:repo` - A module that uses `Ecto.Repo`.
+
+  See [Ecto.Repo.delete/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:delete/2) for more options.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.delete(%MyApp.Schema{})
+      iex> EctoShorts.Actions.create(%MyApp.Schema{}, repo: MyApp.Repo)
+  """
+  @spec delete(
+          changeset :: Ecto.Changeset.t(),
+          opts :: keyword()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
+  def delete(%_{data: %_{__meta__: %{schema: schema}}} = changeset, opts) do
+    with {:error, changeset} <- Config.repo!(opts).delete(changeset, opts) do
+      {:error,
+       Error.call(:unprocessable_entity, "Failed to delete the record.", %{
+         query: schema,
+         changeset: changeset,
+         params: changeset.params
+       })}
+    end
+  end
+
+  #   def delete(%queryable{} = schema_data, opts) do
+  #     changeset = build_changeset(queryable, schema_data, %{}, opts)
+
+  #     case Config.repo!(opts).delete(changeset, opts) do
+  #       {:error, changeset} ->
+  #         {:error, Error.call(
+  #           :internal_server_error,
+  #           "Error deleting #{inspect(queryable)}",
+  #           %{changeset: changeset, schema_data: schema_data}
+  #         )}
+  #       ok -> ok
+  #     end
+  #   end
+
+  #   def delete(schema_data, opts) when is_list(schema_data) do
+  #     schema_data |> Enum.map(&delete(&1, opts)) |> reduce_status_tuples()
+  #   end
+
+  #   def delete(query, id) when (is_binary(id) or is_integer(id)) do
+  #     delete(query, id, default_opts())
+  #   end
+
+  #   @doc """
+  #   Deletes a schema. Can also accept a keyword options list.
+
+  #   ### Options
+
+  #     * `:replica` - A module that uses `Ecto.Repo`. This option takes
+  #       precedence over the `:repo` option and will be used to
+  #       fetch the record if set.
+
+  #     * `:repo` - A module that uses `Ecto.Repo`.
+
+  #   See `find/3` and [Ecto.Repo.delete/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:delete/2) for more options.
+
+  #   ## Examples
+
+  #       iex> EctoShorts.Actions.delete(MyApp.Schema, 1)
+  #       iex> EctoShorts.Actions.delete(MyApp.Schema, "binary_id")
+  #       iex> EctoShorts.Actions.delete(MyApp.Schema, "binary_id", repo: MyApp.Repo)
+  #       iex> EctoShorts.Actions.delete({"source", MyApp.Schema}, 1)
+  #       iex> EctoShorts.Actions.delete({"source", MyApp.Schema}, "binary_id")
+  #       iex> EctoShorts.Actions.delete({"source", MyApp.Schema}, "binary_id", repo: MyApp.Repo)
+  #   """
+  #   @spec delete(
+  #     query :: queryable() | source_queryable(),
+  #     id :: id(),
+  #     opts :: opts()
+  #   ) :: {:ok, schema()} | {:error, any()}
+  #   def delete(query, id, opts) when (is_integer(id) or is_binary(id)) do
+  #     with {:ok, schema_data} <- find(query, %{id: id}, opts) do
+  #       Config.repo!(opts).delete(schema_data, opts)
+  #     end
+  #   end
+
   defp drop_associations(params, queryable) do
     Map.drop(params, queryable.__schema__(:associations))
   end
@@ -592,6 +817,14 @@ defmodule EctoShorts.Actions do
       nil -> params
       group_by -> Map.put(params, :group_by, group_by)
     end
+  end
+
+  defp primary_key(query, opts) do
+    queryable = CommonSchemas.get_schema_queryable(query)
+
+    opts[:primary_key] ||
+      :primary_key |> queryable.__schema__() |> List.first() ||
+      @id
   end
 end
 
@@ -683,9 +916,9 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.get(YourSchema, 1)
-#       iex> EctoShorts.Actions.get(YourSchema, 1)
-#       iex> EctoShorts.Actions.get({"source", YourSchema}, 1)
+#       iex> EctoShorts.Actions.get(MyApp.Schema, 1)
+#       iex> EctoShorts.Actions.get(MyApp.Schema, 1)
+#       iex> EctoShorts.Actions.get({"source", MyApp.Schema}, 1)
 #   """
 #   @spec get(
 #     query :: query() | queryable() | source_queryable(),
@@ -707,8 +940,8 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.all(YourSchema)
-#       iex> EctoShorts.Actions.all({"source", YourSchema})
+#       iex> EctoShorts.Actions.all(MyApp.Schema)
+#       iex> EctoShorts.Actions.all({"source", MyApp.Schema})
 #       iex> EctoShorts.Actions.all(%Ecto.Query{})
 #   """
 #   @spec all(query :: queryable() | source_queryable()) :: schemas()
@@ -736,12 +969,12 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.all(YourSchema, %{id: 1})
-#       iex> EctoShorts.Actions.all(YourSchema, id: 1, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.all(YourSchema, id: 1, replica: MyApp.Repo)
-#       iex> EctoShorts.Actions.all({"source", YourSchema}, %{id: 1})
-#       iex> EctoShorts.Actions.all({"source", YourSchema}, id: 1, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.all({"source", YourSchema}, id: 1, replica: MyApp.Repo)
+#       iex> EctoShorts.Actions.all(MyApp.Schema, %{id: 1})
+#       iex> EctoShorts.Actions.all(MyApp.Schema, id: 1, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.all(MyApp.Schema, id: 1, replica: MyApp.Repo)
+#       iex> EctoShorts.Actions.all({"source", MyApp.Schema}, %{id: 1})
+#       iex> EctoShorts.Actions.all({"source", MyApp.Schema}, id: 1, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.all({"source", MyApp.Schema}, id: 1, replica: MyApp.Repo)
 #       iex> EctoShorts.Actions.all(%Ecto.Query{}, %{id: 1})
 #       iex> EctoShorts.Actions.all(%Ecto.Query{}, id: 1, repo: MyApp.Repo)
 #       iex> EctoShorts.Actions.all(%Ecto.Query{}, id: 1, replica: MyApp.Repo)
@@ -787,12 +1020,12 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.all(YourSchema, %{id: 1}, prefix: "public")
-#       iex> EctoShorts.Actions.all(YourSchema, %{id: 1}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.all(YourSchema, %{id: 1}, replica: MyApp.Repo)
-#       iex> EctoShorts.Actions.all({"source", YourSchema}, %{id: 1}, prefix: "public")
-#       iex> EctoShorts.Actions.all({"source", YourSchema}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.all({"source", YourSchema}, replica: MyApp.Repo)
+#       iex> EctoShorts.Actions.all(MyApp.Schema, %{id: 1}, prefix: "public")
+#       iex> EctoShorts.Actions.all(MyApp.Schema, %{id: 1}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.all(MyApp.Schema, %{id: 1}, replica: MyApp.Repo)
+#       iex> EctoShorts.Actions.all({"source", MyApp.Schema}, %{id: 1}, prefix: "public")
+#       iex> EctoShorts.Actions.all({"source", MyApp.Schema}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.all({"source", MyApp.Schema}, replica: MyApp.Repo)
 #       iex> EctoShorts.Actions.all(%Ecto.Query{}, %{id: 1}, prefix: "public")
 #       iex> EctoShorts.Actions.all(%Ecto.Query{}, repo: MyApp.Repo)
 #       iex> EctoShorts.Actions.all(%Ecto.Query{}, replica: MyApp.Repo)
@@ -826,10 +1059,10 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.find(YourSchema, %{id: 1})
-#       iex> EctoShorts.Actions.find({"source", YourSchema}, %{id: 1})
-#       iex> EctoShorts.Actions.find({"source", YourSchema}, %{id: 1}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.find({"source", YourSchema}, %{id: 1}, replica: MyApp.Repo)
+#       iex> EctoShorts.Actions.find(MyApp.Schema, %{id: 1})
+#       iex> EctoShorts.Actions.find({"source", MyApp.Schema}, %{id: 1})
+#       iex> EctoShorts.Actions.find({"source", MyApp.Schema}, %{id: 1}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.find({"source", MyApp.Schema}, %{id: 1}, replica: MyApp.Repo)
 #       iex> EctoShorts.Actions.find(%Ecto.Query{}, %{id: 1})
 #       iex> EctoShorts.Actions.find(%Ecto.Query{}, %{id: 1}, repo: MyApp.Repo)
 #       iex> EctoShorts.Actions.find(%Ecto.Query{}, %{id: 1}, replica: MyApp.Repo)
@@ -882,10 +1115,10 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.create(YourSchema, %{name: "Fira"})
-#       iex> EctoShorts.Actions.create(YourSchema, %{name: "Fira"}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.create({"source", YourSchema}, %{name: "Fira"})
-#       iex> EctoShorts.Actions.create({"source", YourSchema}, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.create(MyApp.Schema, %{name: "Fira"})
+#       iex> EctoShorts.Actions.create(MyApp.Schema, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.create({"source", MyApp.Schema}, %{name: "Fira"})
+#       iex> EctoShorts.Actions.create({"source", MyApp.Schema}, %{name: "Fira"}, repo: MyApp.Repo)
 #   """
 #   @spec create(
 #     query :: queryable() | source_queryable(),
@@ -918,22 +1151,22 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.find_or_create(YourSchema, %{name: "Fira"})
-#       iex> EctoShorts.Actions.find_or_create(YourSchema, %{name: "Fira"}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.find_or_create(YourSchema, %{name: "Fira"}, replica: MyApp.Repo.Repo)
-#       iex> EctoShorts.Actions.find_or_create({"source", YourSchema}, %{name: "Fira"})
-#       iex> EctoShorts.Actions.find_or_create({"source", YourSchema}, %{name: "Fira"}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.find_or_create({"source", YourSchema}, %{name: "Fira"}, replica: MyApp.Repo.Repo)
+#       iex> EctoShorts.Actions.find_or_create(MyApp.Schema, %{name: "Fira"})
+#       iex> EctoShorts.Actions.find_or_create(MyApp.Schema, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.find_or_create(MyApp.Schema, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+#       iex> EctoShorts.Actions.find_or_create({"source", MyApp.Schema}, %{name: "Fira"})
+#       iex> EctoShorts.Actions.find_or_create({"source", MyApp.Schema}, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.find_or_create({"source", MyApp.Schema}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
 #   """
 #   @spec find_or_create(
 #     query :: queryable() | source_queryable(),
 #     params :: params(),
 #     opts :: opts()
-#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
 #   @spec find_or_create(
 #     query :: queryable() | source_queryable(),
 #     params :: params()
-#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
 #   def find_or_create(query, params, opts \\ []) do
 #     queryable = CommonSchemas.get_schema_queryable(query)
 
@@ -960,24 +1193,24 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.find_and_update(YourSchema, %{id: 1}, %{name: "Fira"})
-#       iex> EctoShorts.Actions.find_and_update(YourSchema, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.find_and_update(YourSchema, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Repo)
-#       iex> EctoShorts.Actions.find_and_update({"source", YourSchema}, %{id: 1}, %{name: "Fira"})
-#       iex> EctoShorts.Actions.find_and_update({"source", YourSchema}, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.find_and_update({"source", YourSchema}, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Repo)
+#       iex> EctoShorts.Actions.find_and_update(MyApp.Schema, %{id: 1}, %{name: "Fira"})
+#       iex> EctoShorts.Actions.find_and_update(MyApp.Schema, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.find_and_update(MyApp.Schema, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+#       iex> EctoShorts.Actions.find_and_update({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"})
+#       iex> EctoShorts.Actions.find_and_update({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.find_and_update({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
 #   """
 #   @spec find_and_update(
 #     query :: queryable() | source_queryable(),
 #     find_params :: params(),
 #     update_params :: params(),
 #     opts :: opts()
-#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
 #   @spec find_and_update(
 #     query :: queryable() | source_queryable(),
 #     find_params :: params(),
 #     update_params :: params()
-#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
 #   def find_and_update(query, find_params, update_params, opts \\ []) do
 #     with {:ok, schema_data} <- find(query, find_params, opts) do
 #       update(query, schema_data, update_params, opts)
@@ -1000,24 +1233,24 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.find_and_upsert(YourSchema, %{id: 1}, %{name: "Fira"})
-#       iex> EctoShorts.Actions.find_and_upsert(YourSchema, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.find_and_upsert(YourSchema, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Repo)
-#       iex> EctoShorts.Actions.find_and_upsert({"source", YourSchema}, %{id: 1}, %{name: "Fira"})
-#       iex> EctoShorts.Actions.find_and_upsert({"source", YourSchema}, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.find_and_upsert({"source", YourSchema}, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Repo)
+#       iex> EctoShorts.Actions.find_and_upsert(MyApp.Schema, %{id: 1}, %{name: "Fira"})
+#       iex> EctoShorts.Actions.find_and_upsert(MyApp.Schema, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.find_and_upsert(MyApp.Schema, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+#       iex> EctoShorts.Actions.find_and_upsert({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"})
+#       iex> EctoShorts.Actions.find_and_upsert({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.find_and_upsert({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
 #   """
 #   @spec find_and_upsert(
 #     query :: queryable() | source_queryable(),
 #     find_params :: params(),
 #     update_params :: params(),
 #     opts :: opts()
-#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
 #   @spec find_and_upsert(
 #     query :: queryable() | source_queryable(),
 #     find_params :: params(),
 #     update_params :: params()
-#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+#   ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t() | term()}
 #   def find_and_upsert(query, find_params, update_params, opts \\ []) do
 #     case find(query, find_params, opts) do
 #       {:ok, schema_data} ->
@@ -1047,12 +1280,12 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.update(YourSchema, %{id: 1}, %{name: "Fira"})
-#       iex> EctoShorts.Actions.update(YourSchema, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.update(YourSchema, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Repo)
-#       iex> EctoShorts.Actions.update({"source", YourSchema}, %{id: 1}, %{name: "Fira"})
-#       iex> EctoShorts.Actions.update({"source", YourSchema}, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.update({"source", YourSchema}, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Repo)
+#       iex> EctoShorts.Actions.update(MyApp.Schema, %{id: 1}, %{name: "Fira"})
+#       iex> EctoShorts.Actions.update(MyApp.Schema, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.update(MyApp.Schema, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+#       iex> EctoShorts.Actions.update({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"})
+#       iex> EctoShorts.Actions.update({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.update({"source", MyApp.Schema}, %{id: 1}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
 #   """
 #   @spec update(
 #     query :: queryable() | source_queryable(),
@@ -1111,8 +1344,8 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.delete(%YourSchema{})
-#       iex> EctoShorts.Actions.delete([%YourSchema{}])
+#       iex> EctoShorts.Actions.delete(%MyApp.Schema{})
+#       iex> EctoShorts.Actions.delete([%MyApp.Schema{}])
 #   """
 #   @spec delete(schema :: schema()) :: {:ok, schema()} | {:error, any()}
 #   @spec delete(schemas :: schemas()) :: {:ok, schemas()} | {:error, any()}
@@ -1135,8 +1368,8 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.delete(%YourSchema{})
-#       iex> EctoShorts.Actions.create(%YourSchema{}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.delete(%MyApp.Schema{})
+#       iex> EctoShorts.Actions.create(%MyApp.Schema{}, repo: MyApp.Repo)
 #   """
 #   @spec delete(
 #     schema :: schema(),
@@ -1199,12 +1432,12 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.delete(YourSchema, 1)
-#       iex> EctoShorts.Actions.delete(YourSchema, "binary_id")
-#       iex> EctoShorts.Actions.delete(YourSchema, "binary_id", repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.delete({"source", YourSchema}, 1)
-#       iex> EctoShorts.Actions.delete({"source", YourSchema}, "binary_id")
-#       iex> EctoShorts.Actions.delete({"source", YourSchema}, "binary_id", repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.delete(MyApp.Schema, 1)
+#       iex> EctoShorts.Actions.delete(MyApp.Schema, "binary_id")
+#       iex> EctoShorts.Actions.delete(MyApp.Schema, "binary_id", repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.delete({"source", MyApp.Schema}, 1)
+#       iex> EctoShorts.Actions.delete({"source", MyApp.Schema}, "binary_id")
+#       iex> EctoShorts.Actions.delete({"source", MyApp.Schema}, "binary_id", repo: MyApp.Repo)
 #   """
 #   @spec delete(
 #     query :: queryable() | source_queryable(),
@@ -1232,12 +1465,12 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.stream(YourSchema, %{id: 1})
-#       iex> EctoShorts.Actions.stream(YourSchema, %{id: 1}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.stream(YourSchema, %{id: 1}, replica: MyApp.Repo)
-#       iex> EctoShorts.Actions.stream({"source", YourSchema}, %{id: 1})
-#       iex> EctoShorts.Actions.stream({"source", YourSchema}, %{id: 1}, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.stream({"source", YourSchema}, %{id: 1}, replica: MyApp.Repo)
+#       iex> EctoShorts.Actions.stream(MyApp.Schema, %{id: 1})
+#       iex> EctoShorts.Actions.stream(MyApp.Schema, %{id: 1}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.stream(MyApp.Schema, %{id: 1}, replica: MyApp.Repo)
+#       iex> EctoShorts.Actions.stream({"source", MyApp.Schema}, %{id: 1})
+#       iex> EctoShorts.Actions.stream({"source", MyApp.Schema}, %{id: 1}, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.stream({"source", MyApp.Schema}, %{id: 1}, replica: MyApp.Repo)
 #   """
 #   @spec stream(
 #     query :: queryable() | source_queryable(),
@@ -1270,12 +1503,12 @@ end
 
 #   ## Examples
 
-#       iex> EctoShorts.Actions.aggregate(YourSchema, %{id: 1}, :count, :id)
-#       iex> EctoShorts.Actions.aggregate(YourSchema, %{id: 1}, :count, :id, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.aggregate(YourSchema, %{id: 1}, :count, :id, replica: MyApp.Repo)
-#       iex> EctoShorts.Actions.aggregate({"source", YourSchema}, %{id: 1}, :count, :id)
-#       iex> EctoShorts.Actions.aggregate({"source", YourSchema}, %{id: 1}, :count, :id, repo: MyApp.Repo)
-#       iex> EctoShorts.Actions.aggregate({"source", YourSchema}, %{id: 1}, :count, :id, replica: MyApp.Repo)
+#       iex> EctoShorts.Actions.aggregate(MyApp.Schema, %{id: 1}, :count, :id)
+#       iex> EctoShorts.Actions.aggregate(MyApp.Schema, %{id: 1}, :count, :id, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.aggregate(MyApp.Schema, %{id: 1}, :count, :id, replica: MyApp.Repo)
+#       iex> EctoShorts.Actions.aggregate({"source", MyApp.Schema}, %{id: 1}, :count, :id)
+#       iex> EctoShorts.Actions.aggregate({"source", MyApp.Schema}, %{id: 1}, :count, :id, repo: MyApp.Repo)
+#       iex> EctoShorts.Actions.aggregate({"source", MyApp.Schema}, %{id: 1}, :count, :id, replica: MyApp.Repo)
 #   """
 #   @spec aggregate(
 #     query :: query() | queryable() | source_queryable(),
