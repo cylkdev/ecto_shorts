@@ -256,6 +256,10 @@ defmodule EctoShorts.CommonSchemas do
   granular control over how the changeset is built see the option
   `:changeset`.
 
+  when a source is explicitly given this function overwrites the source in the
+  ecto schema struct metadata so that operation is executed against that database
+  table.
+
   Raises if the result of the executed function does not return an
   `Ecto.Changeset` struct.
 
@@ -296,14 +300,22 @@ defmodule EctoShorts.CommonSchemas do
   ) do
     build_changeset(
       queryable,
-      %{changeset | data: put_meta(struct, source: source)},
+      %{
+        changeset |
+        data: put_meta(struct, source: source)
+      },
       params,
       opts
     )
   end
 
   def build_changeset({source, queryable}, struct, params, opts) do
-    build_changeset(queryable, put_meta(struct, source: source), params, opts)
+    build_changeset(
+      queryable,
+      put_meta(struct, source: source),
+      params,
+      opts
+    )
   end
 
   def build_changeset(queryable, struct_or_changeset, params, opts) do
@@ -321,6 +333,9 @@ defmodule EctoShorts.CommonSchemas do
         struct_or_changeset
         |> queryable.changeset(params)
         |> fun.()
+
+      extra_params when is_map(extra_params) ->
+        queryable.changeset(struct_or_changeset, Map.merge(params, extra_params))
 
       _ ->
         queryable.changeset(struct_or_changeset, params)
