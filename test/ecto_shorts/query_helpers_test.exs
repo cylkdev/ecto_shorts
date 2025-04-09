@@ -8,9 +8,9 @@ defmodule EctoShorts.QueryHelpersTest do
     PrefixSchema
   }
 
-  describe "build_schema_query/2: " do
+  describe "build_query/2: " do
     test "can set source" do
-      query = QueryHelpers.build_schema_query(BasicSchema)
+      query = QueryHelpers.build_query(BasicSchema)
 
       assert %Ecto.Query{
         from: %Ecto.Query.FromExpr{
@@ -21,7 +21,7 @@ defmodule EctoShorts.QueryHelpersTest do
     end
 
     test "can set query prefix" do
-      query = QueryHelpers.build_schema_query(BasicSchema, query_prefix: "query_prefix")
+      query = QueryHelpers.build_query(BasicSchema, query_prefix: "query_prefix")
 
       assert %Ecto.Query{
         from: %Ecto.Query.FromExpr{
@@ -33,7 +33,7 @@ defmodule EctoShorts.QueryHelpersTest do
     end
 
     test "can set from prefix if schema does not have @schema_prefix module attribute" do
-      query = QueryHelpers.build_schema_query(BasicSchema, schema_prefix: "schema_prefix")
+      query = QueryHelpers.build_query(BasicSchema, schema_prefix: "schema_prefix")
 
       assert %Ecto.Query{
         from: %Ecto.Query.FromExpr{
@@ -48,7 +48,7 @@ defmodule EctoShorts.QueryHelpersTest do
 
       func =
         fn ->
-          QueryHelpers.build_schema_query(PrefixSchema, schema_prefix: "schema_prefix")
+          QueryHelpers.build_query(PrefixSchema, schema_prefix: "schema_prefix")
         end
 
       assert_raise Ecto.Query.CompileError, expected_error_message, func

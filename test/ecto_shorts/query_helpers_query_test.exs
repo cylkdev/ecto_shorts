@@ -7,12 +7,12 @@ defmodule EctoShorts.QueryHelpersQueryTest do
 
   require Ecto.Query
 
-  describe "build_schema_query/2: " do
+  describe "build_query/2: " do
     test "can set source" do
       query =
         BasicSchema
         |> Ecto.Query.from()
-        |> QueryHelpers.build_schema_query()
+        |> QueryHelpers.build_query()
 
       assert %Ecto.Query{
         from: %Ecto.Query.FromExpr{
@@ -26,7 +26,7 @@ defmodule EctoShorts.QueryHelpersQueryTest do
       query =
         BasicSchema
         |> Ecto.Query.from()
-        |> QueryHelpers.build_schema_query(query_prefix: "query_prefix")
+        |> QueryHelpers.build_query(query_prefix: "query_prefix")
 
       assert %Ecto.Query{
         from: %Ecto.Query.FromExpr{
@@ -44,7 +44,7 @@ defmodule EctoShorts.QueryHelpersQueryTest do
       query =
         BasicSchema
         |> Ecto.Query.from(prefix: "schema_prefix")
-        |> QueryHelpers.build_schema_query()
+        |> QueryHelpers.build_query()
 
       assert %Ecto.Query{
         from: %Ecto.Query.FromExpr{
@@ -58,7 +58,7 @@ defmodule EctoShorts.QueryHelpersQueryTest do
       query =
         BasicSchema
         |> Ecto.Query.from()
-        |> QueryHelpers.build_schema_query(schema_prefix: "schema_prefix")
+        |> QueryHelpers.build_query(schema_prefix: "schema_prefix")
 
       assert %Ecto.Query{
         from: %Ecto.Query.FromExpr{

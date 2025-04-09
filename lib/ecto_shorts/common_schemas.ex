@@ -136,9 +136,15 @@ defmodule EctoShorts.CommonSchemas do
       iex> EctoShorts.CommonSchemas.get_schema_query({"users", MyApp.UserSchema})
   """
   @doc since: "2.5.0"
-  @spec get_schema_query(query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: Ecto.Query.t()
-  def get_schema_query(query) do
-    QueryHelpers.build_query_from(query)
+  @spec get_schema_query(
+    query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}
+  ) :: Ecto.Query.t()
+  @spec get_schema_query(
+    query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+    opts :: keyword()
+  ) :: Ecto.Query.t()
+  def get_schema_query(query, opts \\ []) do
+    QueryHelpers.build_from_query(query, opts)
   end
 
   @doc """

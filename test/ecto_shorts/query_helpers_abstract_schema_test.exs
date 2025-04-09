@@ -8,9 +8,9 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
     PrefixSchema
   }
 
-  describe "build_schema_query/2: " do
+  describe "build_query/2: " do
     test "can set source given" do
-      query = QueryHelpers.build_schema_query({"concrete_table", AbstractSchema})
+      query = QueryHelpers.build_query({"concrete_table", AbstractSchema})
 
       assert %Ecto.Query{
         from: %Ecto.Query.FromExpr{
@@ -22,7 +22,7 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
 
     test "can set query prefix" do
       query =
-        QueryHelpers.build_schema_query(
+        QueryHelpers.build_query(
           {"concrete_table", AbstractSchema},
           query_prefix: "query_prefix"
         )
@@ -38,7 +38,7 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
 
     test "can set from prefix if schema does not have @schema_prefix module attribute" do
       query =
-        QueryHelpers.build_schema_query(
+        QueryHelpers.build_query(
           {"concrete_table", AbstractSchema},
           schema_prefix: "schema_prefix"
         )
@@ -56,7 +56,7 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
 
       func =
         fn ->
-          QueryHelpers.build_schema_query(
+          QueryHelpers.build_query(
             {"concrete_table", PrefixSchema},
             schema_prefix: "new_prefix"
           )

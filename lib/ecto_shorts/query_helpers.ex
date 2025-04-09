@@ -54,23 +54,23 @@ defmodule EctoShorts.QueryHelpers do
 
   ### Examples
 
-      iex> EctoShorts.QueryHelpers.build_query_from(EctoShorts.Support.Schemas.Comment)
-      iex> EctoShorts.QueryHelpers.build_query_from(EctoShorts.Support.Schemas.Comment, schema_prefix: "schema_prefix")
+      iex> EctoShorts.QueryHelpers.build_from_query(EctoShorts.Support.Schemas.Comment)
+      iex> EctoShorts.QueryHelpers.build_from_query(EctoShorts.Support.Schemas.Comment, schema_prefix: "schema_prefix")
 
-      iex> EctoShorts.QueryHelpers.build_query_from({"comments", EctoShorts.Support.Schemas.Comment})
-      iex> EctoShorts.QueryHelpers.build_query_from({"comments", EctoShorts.Support.Schemas.Comment}, schema_prefix: "schema_prefix")
-
-      iex> require Ecto.Query
-      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_query_from()
+      iex> EctoShorts.QueryHelpers.build_from_query({"comments", EctoShorts.Support.Schemas.Comment})
+      iex> EctoShorts.QueryHelpers.build_from_query({"comments", EctoShorts.Support.Schemas.Comment}, schema_prefix: "schema_prefix")
 
       iex> require Ecto.Query
-      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_query_from(schema_prefix: "schema_prefix")
+      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_from_query()
+
+      iex> require Ecto.Query
+      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_from_query(schema_prefix: "schema_prefix")
   """
-  @spec build_query_from(
+  @spec build_from_query(
     queryable :: queryable() | source_queryable(),
     opts :: keyword()
   ) :: Ecto.Query.t()
-  def build_query_from(queryable, opts \\ []) do
+  def build_from_query(queryable, opts \\ []) do
     case opts[:schema_prefix] do
       nil -> Query.from(queryable)
       schema_prefix -> Query.from(queryable, prefix: ^schema_prefix)
@@ -85,44 +85,44 @@ defmodule EctoShorts.QueryHelpers do
     * `query_prefix` - Sets the prefix on the `query`.
       See the [ecto documentation](https://hexdocs.pm/ecto/multi-tenancy-with-query-prefixes.html#per-query-and-per-struct-prefixes) for more information.
 
-  See `&build_query_from/2` for more options.
+  See `&build_from_query/2` for more options.
 
   ### Examples
 
-      iex> EctoShorts.QueryHelpers.build_schema_query(EctoShorts.Support.Schemas.Comment)
-      iex> EctoShorts.QueryHelpers.build_schema_query(EctoShorts.Support.Schemas.Comment, query_prefix: "query_prefix")
+      iex> EctoShorts.QueryHelpers.build_query(EctoShorts.Support.Schemas.Comment)
+      iex> EctoShorts.QueryHelpers.build_query(EctoShorts.Support.Schemas.Comment, query_prefix: "query_prefix")
 
-      iex> EctoShorts.QueryHelpers.build_schema_query({"comments", EctoShorts.Support.Schemas.Comment})
-      iex> EctoShorts.QueryHelpers.build_schema_query({"comments", EctoShorts.Support.Schemas.Comment}, query_prefix: "query_prefix")
-
-      iex> require Ecto.Query
-      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_schema_query()
+      iex> EctoShorts.QueryHelpers.build_query({"comments", EctoShorts.Support.Schemas.Comment})
+      iex> EctoShorts.QueryHelpers.build_query({"comments", EctoShorts.Support.Schemas.Comment}, query_prefix: "query_prefix")
 
       iex> require Ecto.Query
-      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_schema_query(query_prefix: "query_prefix")
+      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_query()
+
+      iex> require Ecto.Query
+      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_query(query_prefix: "query_prefix")
   """
-  @spec build_schema_query(
+  @spec build_query(
     query :: query() | queryable() | source_queryable(),
     opts :: keyword()
   ) :: Ecto.Query.t()
-  def build_schema_query(query, opts \\ [])
+  def build_query(query, opts \\ [])
 
-  def build_schema_query(%Ecto.Query{} = query, opts) do
+  def build_query(%Ecto.Query{} = query, opts) do
     case opts[:query_prefix] do
       nil -> query
       query_prefix -> Query.put_query_prefix(query, query_prefix)
     end
   end
 
-  def build_schema_query({source, queryable}, opts) do
+  def build_query({source, queryable}, opts) do
     {source, queryable}
-    |> build_query_from(schema_prefix: opts[:schema_prefix])
-    |> build_schema_query(query_prefix: opts[:query_prefix])
+    |> build_from_query(schema_prefix: opts[:schema_prefix])
+    |> build_query(query_prefix: opts[:query_prefix])
   end
 
-  def build_schema_query(queryable, opts) do
+  def build_query(queryable, opts) do
     queryable
-    |> build_query_from(schema_prefix: opts[:schema_prefix])
-    |> build_schema_query(query_prefix: opts[:query_prefix])
+    |> build_from_query(schema_prefix: opts[:schema_prefix])
+    |> build_query(query_prefix: opts[:query_prefix])
   end
 end
