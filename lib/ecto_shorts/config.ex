@@ -7,6 +7,7 @@ defmodule EctoShorts.Config do
 
   @app :ecto_shorts
 
+  @spec from_app_env(key :: atom()) :: any()
   def from_app_env(key), do: Application.get_env(@app, key)
 
   @doc since: "2.5.0"

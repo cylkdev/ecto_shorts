@@ -4,11 +4,14 @@ defmodule EctoShorts.QueryBuilder do
   """
   @moduledoc since: "2.5.0"
 
-  @type adapter :: module()
-  @type filter_key :: atom()
-  @type filter_value :: any()
+  @type t :: module()
+
+  @type key :: atom()
+  @type value :: any()
+  @type source :: binary()
   @type query :: Ecto.Query.t()
   @type queryable :: Ecto.Queryable.t()
+  @type source_queryable :: {source(), queryable()}
 
   @doc """
   Adds an expression to they query given a filter key and value.
@@ -35,7 +38,7 @@ defmodule EctoShorts.QueryBuilder do
   #Ecto.Query<from c0 in EctoShorts.Support.Schemas.Comment, where: c0.id == ^1>
   ```
   """
-  @callback create_schema_filter(query(), filter_key(), filter_value()) :: query()
+  @callback create_schema_filter(query() | queryable() | source_queryable(), key(), value()) :: query()
 
   @doc """
   Invokes the callback function `c:EctoShorts.QueryBuilder.create_schema_filter/3`.
@@ -52,8 +55,8 @@ defmodule EctoShorts.QueryBuilder do
       ...> )
       #Ecto.Query<from c0 in EctoShorts.Support.Schemas.Comment, limit: ^1000>
   """
-  @spec create_schema_filter(adapter(), query(), filter_key(), filter_value()) :: query()
-  def create_schema_filter(adapter, query, filter_key, filter_value) do
-    adapter.create_schema_filter(query, filter_key, filter_value)
+  @spec create_schema_filter(t(), query() | queryable() | source_queryable(), key(), value()) :: query()
+  def create_schema_filter(module, query, key, value) do
+    module.create_schema_filter(query, key, value)
   end
 end

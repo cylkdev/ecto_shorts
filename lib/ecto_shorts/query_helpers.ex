@@ -37,11 +37,9 @@ defmodule EctoShorts.QueryHelpers do
       ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.get_queryable()
       EctoShorts.Support.Schemas.Comment
   """
-  @spec get_queryable(
-    query_or_queryable :: Ecto.Query.t() | Ecto.Queryable.t()
-  ) :: Ecto.Queryable.t()
-  def get_queryable(%{from: %{source: {_, schema}}}), do: get_queryable(schema)
-  def get_queryable(%{from: %{query: %{from: {_, schema}}}}), do: schema
+  @spec get_queryable(query_or_queryable :: Ecto.Query.t() | Ecto.Queryable.t()) :: Ecto.Queryable.t()
+  def get_queryable(%{from: %{source: {_, query}}}), do: get_queryable(query)
+  def get_queryable(%{from: %{query: %{from: {_, schema_module}}}}), do: schema_module
   def get_queryable(queryable), do: queryable
 
   @doc """
@@ -66,14 +64,12 @@ defmodule EctoShorts.QueryHelpers do
       iex> require Ecto.Query
       ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_from_query(schema_prefix: "schema_prefix")
   """
-  @spec build_from_query(
-    queryable :: queryable() | source_queryable(),
-    opts :: keyword()
-  ) :: Ecto.Query.t()
-  def build_from_query(queryable, opts \\ []) do
+  @spec build_from_query(query :: query() | queryable() | source_queryable()) :: Ecto.Query.t()
+  @spec build_from_query(query :: query() | queryable() | source_queryable(), opts :: keyword()) :: Ecto.Query.t()
+  def build_from_query(query, opts \\ []) do
     case opts[:schema_prefix] do
-      nil -> Query.from(queryable)
-      schema_prefix -> Query.from(queryable, prefix: ^schema_prefix)
+      nil -> Query.from(query)
+      schema_prefix -> Query.from(query, prefix: ^schema_prefix)
     end
   end
 
@@ -101,13 +97,11 @@ defmodule EctoShorts.QueryHelpers do
       iex> require Ecto.Query
       ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.QueryHelpers.build_query(query_prefix: "query_prefix")
   """
-  @spec build_query(
-    query :: query() | queryable() | source_queryable(),
-    opts :: keyword()
-  ) :: Ecto.Query.t()
+  @spec build_query(query :: query() | queryable() | source_queryable()) :: Ecto.Query.t()
+  @spec build_query(query :: query() | queryable() | source_queryable(), opts :: keyword()) :: Ecto.Query.t()
   def build_query(query, opts \\ [])
 
-  def build_query(%Ecto.Query{} = query, opts) do
+  def build_query(%_{} = query, opts) do
     case opts[:query_prefix] do
       nil -> query
       query_prefix -> Query.put_query_prefix(query, query_prefix)

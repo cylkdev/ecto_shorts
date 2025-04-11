@@ -25,6 +25,8 @@ defmodule EctoShorts.CommonSchemas do
   @moduledoc since: "2.5.0"
   alias EctoShorts.QueryHelpers
 
+  def queryable_for(%_{__meta__: %{schema: schema_module}}), do: schema_module
+
   @doc """
   This function invokes the `&__schema__/1` callback function.
 
