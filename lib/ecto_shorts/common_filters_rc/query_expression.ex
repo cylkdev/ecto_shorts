@@ -9,79 +9,244 @@ defmodule EctoShorts.CommonFiltersRc.QueryExpression do
 
   require Ecto.Query
 
-  def named_binding_atom(key) do
-    key |> named_binding_string() |> String.to_atom()
-  end
+  def named_binding_atom(key), do: key |> named_binding_string() |> String.to_atom()
 
   def named_binding_string(key), do: "ecto_shorts_#{key}"
 
+  def from(query, opts) do
+    as = opts[:as]
+    limit = opts[:limit]
+    order_by = opts[:order_by]
 
-  # Enum.reduce(params, Query.dynamic(true), fn {key, value}, dyn ->
-  #   Query.dynamic(
-  #     [{^join_binding, q}],
-  #     ^dyn and field(join_binding, ^left_field) == field(parent_as(^alias_atom), ^right_field)
-  #   )
-  #   {key, Query.field(parent_as(^key), ^value)}
-
-  #   # Ecto.Query.dynamic([{^current_binding, q}], field(q, ^key) == field(parent_as(^parent_binding), ^parent_field))
-  # end)
-
-  # def dynamic(dyn, filter, params, current_binding) when is_map(params) do
-  #   Enum.reduce(params, dyn, fn {key, value}, dyn ->
-  #     dynamic(dyn, filter, {key, value}, current_binding)
-  #   end)
-  # end
-
-  # def dynamic(dyn, left_field, {:parent_as, params}, current_binding) when is_map(params) do
-  #   Enum.reduce(params, dyn, fn {parent_as_binding, right_field}, dyn ->
-  #     dynamic(dyn, left_field, {:parent_as, {parent_as_binding, right_field}}, current_binding)
-  #   end)
-  # end
-
-  # def dynamic(dyn, left_field, {:parent_as, {parent_as_binding, right_field}}, current_binding) do
-  #   new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^left_field) == field(parent_as(^parent_as_binding), ^right_field))
-
-  #   merge_dynamic(dyn, new_dyn)
-  # end
-
-  # def dynamic(dyn, left_field, {:self, params}, current_binding) when is_map(params) do
-  #   Enum.reduce(params, dyn, fn {key, value}, dyn ->
-  #     dynamic(dyn, left_field, {:self, {key, value}}, current_binding)
-  #   end)
-  # end
-
-  # def dynamic(dyn, left_field, {:self, {:==, right_field}}, current_binding) do
-  #   new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^left_field) == field(q, ^right_field))
-
-  #   merge_dynamic(dyn, new_dyn)
-  # end
-
-  # def dynamic(dyn, left_field, {:self, right_field}, current_binding) do
-  #   dynamic(dyn, left_field, {:self, {:==, right_field}}, current_binding)
-  # end
-
-  # def dynamic(dyn, key, :==, value, current_binding) do
-  #   new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) == ^value)
-
-  #   merge_dynamic(dyn, new_dyn)
-  # end
-
-  def merge_dynamic(nil, dyn), do: dyn
-  def merge_dynamic(dyn_a, dyn_b), do: Query.dynamic(^dyn_a and ^dyn_b)
-
-  def from(query, params) do
-    as = params[:as]
-
-    Query.from(query, as: ^as)
+    Query.from(query, as: ^as, order_by: ^order_by, limit: ^limit)
   end
 
-  def join(query, :association, assoc_key, params, join_binding, current_binding) do
-    qual = Map.get(params, :qualifier, :left)
+  def exclude(query, field, _current_binding), do: Query.exclude(query, field)
 
-    prefix = Map.get(params, :prefix)
+  def subquery(query, opts), do: Query.subquery(query, opts)
 
-    on = true
+  def limit(query, value, current_binding) do
+    if current_binding do
+      Query.limit(query, [{^current_binding, q}], ^value)
+    else
+      Query.limit(query, [q], ^value)
+    end
+  end
 
+  def offset(query, value, current_binding) do
+    if current_binding do
+      Query.offset(query, [{^current_binding, q}], ^value)
+    else
+      Query.offset(query, [q], ^value)
+    end
+  end
+
+  def order_by(query, value, current_binding) do
+    if current_binding do
+      Query.order_by(query, [{^current_binding, q}], ^value)
+    else
+      Query.order_by(query, [q], ^value)
+    end
+  end
+
+  def preload(query, expr, current_binding) do
+    # TODO: support more of the functionality https://hexdocs.pm/ecto/Ecto.Query.html#preload/3
+    if current_binding do
+      Query.preload(query, [{^current_binding, q}], ^expr)
+    else
+      Query.preload(query, [q], ^expr)
+    end
+  end
+
+  def merge_dynamic(nil, dyn), do: dyn
+
+  def merge_dynamic(dyn_a, dyn_b), do: Query.dynamic(^dyn_a and ^dyn_b)
+
+  def dynamic(params, current_binding) do
+    dynamic(nil, params, current_binding)
+  end
+
+  def dynamic(dyn, {field, {operator, {modifier, values}}}, current_binding) when is_list(values) or is_map(values) do
+    Enum.reduce(values, dyn, fn value, dyn ->
+      dynamic(dyn, field, operator, {modifier, value}, current_binding)
+    end)
+  end
+
+  def dynamic(dyn, {field, {operator, {modifier, value}}}, current_binding) do
+    dynamic(dyn, field, operator, {modifier, value}, current_binding)
+  end
+
+  def dynamic(dyn, {field, {operator, values}}, current_binding) when is_list(values) or is_map(values) do
+    Enum.reduce(values, dyn, fn value, dyn ->
+      dynamic(dyn, {field, {operator, value}}, current_binding)
+    end)
+  end
+
+  def dynamic(dyn, {key, {operator, value}}, current_binding) do
+    dynamic(dyn, key, operator, value, current_binding)
+  end
+
+  def dynamic(dyn, {key, values}, current_binding) when is_list(values) or is_map(values) do
+    Enum.reduce(values, dyn, fn value, dyn ->
+      dynamic(dyn, {key, value}, current_binding)
+    end)
+  end
+
+  def dynamic(dyn, {key, value}, current_binding) do
+    dynamic(dyn, key, :==, value, current_binding)
+  end
+
+  def dynamic(dyn, params, current_binding) do
+    Enum.reduce(params, dyn, fn {key, value}, dyn ->
+      dynamic(dyn, {key, value}, current_binding)
+    end)
+  end
+
+  def dynamic(dyn, key, :!=, {:parent_as, {parent_binding, parent_field}}, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) != field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) != field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :==, {:parent_as, {parent_binding, parent_field}}, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) == field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) == field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :>, {:parent_as, {parent_binding, parent_field}}, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) > field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) > field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :<, {:parent_as, {parent_binding, parent_field}}, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) < field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) < field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :>=, {:parent_as, {parent_binding, parent_field}}, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) > field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) > field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :<=, {:parent_as, {parent_binding, parent_field}}, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) < field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) < field(parent_as(^parent_binding), ^parent_field))
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :!=, value, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) != ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) != ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :==, value, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) == ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) == ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :>, value, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) > ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) > ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :<, value, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) < ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) < ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :>=, value, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) >= ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) >= ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def dynamic(dyn, key, :<=, value, current_binding) do
+    if current_binding do
+      new_dyn = Query.dynamic([{^current_binding, q}], field(q, ^key) <= ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    else
+      new_dyn = Query.dynamic([q], field(q, ^key) <= ^value)
+
+      merge_dynamic(dyn, new_dyn)
+    end
+  end
+
+  def join(query, :association, assoc_key, qual, on, prefix, join_binding, current_binding) do
     if current_binding do
       Query.with_named_binding(query, join_binding, fn query, join_binding ->
         Query.join(query, qual, [{^current_binding, q}], assoc(q, ^assoc_key),
@@ -101,13 +266,7 @@ defmodule EctoShorts.CommonFiltersRc.QueryExpression do
     end
   end
 
-  def join(query, :subquery, from, params, join_binding, current_binding) do
-    qual = Map.get(params, :qualifier, :left)
-
-    prefix = Map.get(params, :prefix)
-
-    on = true
-
+  def join(query, :subquery, from, qual, on, prefix, join_binding, current_binding) do
     cond do
       not_nil?(current_binding) and not_nil?(join_binding) ->
         Query.with_named_binding(query, join_binding, fn query, join_binding ->
@@ -197,6 +356,14 @@ defmodule EctoShorts.CommonFiltersRc.QueryExpression do
 
   # or_where
 
+  def or_where(query, key, :in, {:parent_as, {parent_binding, parent_field}}, current_binding) do
+    if current_binding do
+      Query.or_where(query, [{^current_binding, q}], field(q, ^key) in field(parent_as(^parent_binding), ^parent_field))
+    else
+      Query.or_where(query, [q], field(q, ^key) in field(parent_as(^parent_binding), ^parent_field))
+    end
+  end
+
   def or_where(query, key, :!=, {:parent_as, {parent_binding, parent_field}}, current_binding) do
     if current_binding do
       Query.or_where(query, [{^current_binding, q}], field(q, ^key) != field(parent_as(^parent_binding), ^parent_field))
@@ -242,6 +409,14 @@ defmodule EctoShorts.CommonFiltersRc.QueryExpression do
       Query.or_where(query, [{^current_binding, q}], field(q, ^key) <= field(parent_as(^parent_binding), ^parent_field))
     else
       Query.or_where(query, [q], field(q, ^key) <= field(parent_as(^parent_binding), ^parent_field))
+    end
+  end
+
+  def or_where(query, key, :in, values, current_binding) do
+    if current_binding do
+      Query.or_where(query, [{^current_binding, q}], field(q, ^key) in ^values)
+    else
+      Query.or_where(query, [q], field(q, ^key) in ^values)
     end
   end
 
@@ -311,6 +486,14 @@ defmodule EctoShorts.CommonFiltersRc.QueryExpression do
 
   # where
 
+  def where(query, key, :in, {:parent_as, {parent_binding, parent_field}}, current_binding) do
+    if current_binding do
+      Query.where(query, [{^current_binding, q}], field(q, ^key) in field(parent_as(^parent_binding), ^parent_field))
+    else
+      Query.where(query, [q], field(q, ^key) in field(parent_as(^parent_binding), ^parent_field))
+    end
+  end
+
   def where(query, key, :!=, {:parent_as, {parent_binding, parent_field}}, current_binding) do
     if current_binding do
       Query.where(query, [{^current_binding, q}], field(q, ^key) != field(parent_as(^parent_binding), ^parent_field))
@@ -356,6 +539,14 @@ defmodule EctoShorts.CommonFiltersRc.QueryExpression do
       Query.where(query, [{^current_binding, q}], field(q, ^key) <= field(parent_as(^parent_binding), ^parent_field))
     else
       Query.where(query, [q], field(q, ^key) <= field(parent_as(^parent_binding), ^parent_field))
+    end
+  end
+
+  def where(query, key, :in, values, current_binding) do
+    if current_binding do
+      Query.where(query, [{^current_binding, q}], field(q, ^key) in ^values)
+    else
+      Query.where(query, [q], field(q, ^key) in ^values)
     end
   end
 

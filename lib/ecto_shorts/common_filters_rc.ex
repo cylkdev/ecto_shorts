@@ -2,6 +2,8 @@ defmodule EctoShorts.CommonFiltersRc do
   @moduledoc """
   EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Comment, %{id: 1})
   EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Comment, %{id: %{==: 1}})
+  EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Comment, %{preload: :post})
+  EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Comment, %{preload: [post: :user]})
 
   EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Comment, %{as: :post, with_named_binding: %{post: %{id: %{==: 1}}}})
   EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Comment, %{as: :post, where: %{with_named_binding: %{post: %{id: %{==: 1}}}}})
@@ -24,8 +26,18 @@ defmodule EctoShorts.CommonFiltersRc do
   EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{where: [%{id: %{>: 1}}, %{id: %{<: 3}}]}})
   EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{or_where: %{id: %{>: 1}}}})
   EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{or_where: [%{id: %{>: 1}}, %{id: %{<: 3}}]}})
+
+  EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: :comments}})
+  EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: [:comments, :user]}})
+  EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: %{comments: %{qualifier: :right}}}})
+  EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: %{comments: %{on: %{id: 2}}}}})
+
+  EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: %{comments: %{id: 2}}}})
+
+  EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: %{comments: %{on: %{id: %{==: 3}}}}}})
+  EctoShorts.CommonFiltersRc.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :post, join: %{association: %{comments: %{on: %{id: %{==: %{parent_as: %{post: :id}}}}}}}})
   """
-  alias EctoShorts.CommonFiltersRc.Schema
+  alias EctoShorts.CommonFiltersRc.SchemaQueryBuilder
 
   @doc """
 
@@ -41,7 +53,7 @@ defmodule EctoShorts.CommonFiltersRc do
   end
 
   def convert_params_to_filter(query, params) do
-    Schema.build_query(query, params)
+    SchemaQueryBuilder.build_query(query, params)
   end
 end
 
