@@ -8,19 +8,19 @@ defmodule EctoShorts.QueryBuilder.CommonTest do
   describe "filters: " do
     test "returns expected list" do
       assert [
-        :preload,
-        :start_date,
-        :end_date,
-        :before,
-        :after,
-        :ids,
-        :first,
-        :last,
-        :limit,
-        :offset,
-        :search,
-        :order_by
-      ] = Common.filters()
+               :preload,
+               :start_date,
+               :end_date,
+               :before,
+               :after,
+               :ids,
+               :first,
+               :last,
+               :limit,
+               :offset,
+               :search,
+               :order_by
+             ] = Common.filters()
     end
   end
 

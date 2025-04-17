@@ -4,13 +4,13 @@ defmodule EctoShorts.Support.Schemas.Comment do
   import Ecto.Changeset
 
   schema "comments" do
-    field :body, :string
-    field :count, :integer
-    field :tags, {:array, :string}
+    field(:body, :string)
+    field(:count, :integer)
+    field(:tags, {:array, :string})
 
-    belongs_to :post, EctoShorts.Support.Schemas.Post
+    belongs_to(:post, EctoShorts.Support.Schemas.Post)
 
-    belongs_to :user, EctoShorts.Support.Schemas.User
+    belongs_to(:user, EctoShorts.Support.Schemas.User)
 
     timestamps()
   end

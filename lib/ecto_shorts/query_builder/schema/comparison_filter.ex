@@ -23,11 +23,13 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilter do
   end
 
   def build(_query, _filter_key, nil) do
-    raise ArgumentError, message: "comparison with nil is forbidden as it is unsafe. If you want to check if a value is nil, use %{==: nil} or %{!=: nil} instead"
+    raise ArgumentError,
+      message:
+        "comparison with nil is forbidden as it is unsafe. If you want to check if a value is nil, use %{==: nil} or %{!=: nil} instead"
   end
 
   def build(query, filter_key, filters) when is_map(filters) do
-    Enum.reduce(filters, query, fn ({filter_type, value}, query) ->
+    Enum.reduce(filters, query, fn {filter_type, value}, query ->
       build_schema_field_filters(query, nil, filter_key, filter_type, value)
     end)
   end
@@ -72,7 +74,8 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilter do
     end
   end
 
-  defp build_schema_field_filters(query, binding_alias, filter_key, :!=, filter_value) when is_list(filter_value) do
+  defp build_schema_field_filters(query, binding_alias, filter_key, :!=, filter_value)
+       when is_list(filter_value) do
     if binding_alias do
       Query.where(query, [{^binding_alias, scm}], field(scm, ^filter_key) not in ^filter_value)
     else
@@ -82,7 +85,11 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilter do
 
   defp build_schema_field_filters(query, binding_alias, filter_key, :!=, {:lower, filter_value}) do
     if binding_alias do
-      Query.where(query, [{^binding_alias, scm}], fragment("lower(?)", field(scm, ^filter_key)) != ^filter_value)
+      Query.where(
+        query,
+        [{^binding_alias, scm}],
+        fragment("lower(?)", field(scm, ^filter_key)) != ^filter_value
+      )
     else
       Query.where(query, [scm], fragment("lower(?)", field(scm, ^filter_key)) != ^filter_value)
     end
@@ -90,7 +97,11 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilter do
 
   defp build_schema_field_filters(query, binding_alias, filter_key, :!=, {:upper, filter_value}) do
     if binding_alias do
-      Query.where(query, [{^binding_alias, scm}], fragment("upper(?)", field(scm, ^filter_key)) != ^filter_value)
+      Query.where(
+        query,
+        [{^binding_alias, scm}],
+        fragment("upper(?)", field(scm, ^filter_key)) != ^filter_value
+      )
     else
       Query.where(query, [scm], fragment("upper(?)", field(scm, ^filter_key)) != ^filter_value)
     end
@@ -159,32 +170,50 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilter do
   # Relational Versions
 
   def build_relational(_query, _binding_alias, nil) do
-    raise ArgumentError, message: "comparison with nil is forbidden as it is unsafe. If you want to check if a value is nil, use %{==: nil} or %{!=: nil} instead"
+    raise ArgumentError,
+      message:
+        "comparison with nil is forbidden as it is unsafe. If you want to check if a value is nil, use %{==: nil} or %{!=: nil} instead"
   end
 
-  def build_relational(query, binding_alias, field_filters, relational_schema) when is_map(field_filters) do
-    Enum.reduce(field_filters, query, fn ({field_key, field_value}, query_acc) ->
+  def build_relational(query, binding_alias, field_filters, relational_schema)
+      when is_map(field_filters) do
+    Enum.reduce(field_filters, query, fn {field_key, field_value}, query_acc ->
       build_relational_filter(query_acc, binding_alias, field_key, field_value, relational_schema)
     end)
   end
 
   def build_relational(_query, _binding_alias, value, _relational_schema) do
-    raise ArgumentError, message: "must provide a map for associations to filter on\ngiven #{inspect value}"
+    raise ArgumentError,
+      message: "must provide a map for associations to filter on\ngiven #{inspect(value)}"
   end
 
-  defp build_relational_filter(query, binding_alias, filter_key, filter_value, _relational_schema) when is_list(filter_value) do
+  defp build_relational_filter(query, binding_alias, filter_key, filter_value, _relational_schema)
+       when is_list(filter_value) do
     Query.where(query, [{^binding_alias, scm}], field(scm, ^filter_key) in ^filter_value)
   end
 
-  defp build_relational_filter(query, binding_alias, filter_key, %NaiveDateTime{} = filter_value, _relational_schema) do
+  defp build_relational_filter(
+         query,
+         binding_alias,
+         filter_key,
+         %NaiveDateTime{} = filter_value,
+         _relational_schema
+       ) do
     Query.where(query, [{^binding_alias, scm}], field(scm, ^filter_key) == ^filter_value)
   end
 
-  defp build_relational_filter(query, binding_alias, filter_key, %DateTime{} = filter_value, _relational_schema) do
+  defp build_relational_filter(
+         query,
+         binding_alias,
+         filter_key,
+         %DateTime{} = filter_value,
+         _relational_schema
+       ) do
     Query.where(query, [{^binding_alias, scm}], field(scm, ^filter_key) == ^filter_value)
   end
 
-  defp build_relational_filter(query, binding_alias, field_key, filters, relational_schema) when is_map(filters) do
+  defp build_relational_filter(query, binding_alias, field_key, filters, relational_schema)
+       when is_map(filters) do
     cond do
       field_key in relational_schema.__schema__(:query_fields) ->
         # if the field key is a query field the filters must be
@@ -205,7 +234,9 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilter do
         )
 
       true ->
-        Logger.debug("[EctoShorts] #{Atom.to_string(field_key)} is neither a field nor has a valid association for #{relational_schema.__schema__(:source)} where filter")
+        Logger.debug(
+          "[EctoShorts] #{Atom.to_string(field_key)} is neither a field nor has a valid association for #{relational_schema.__schema__(:source)} where filter"
+        )
 
         query
     end
@@ -224,17 +255,23 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilter do
 
       %{related: related} ->
         related
-
     end
   end
 
   defp build_relational_query_fields_filter(query, binding_alias, field_key, filters) do
-    Enum.reduce(filters, query, fn ({filter_type, value}, query) ->
+    Enum.reduce(filters, query, fn {filter_type, value}, query ->
       build_schema_field_filters(query, binding_alias, field_key, filter_type, value)
     end)
   end
 
-  defp build_relational_association_filter(query, binding_alias, field_key, filters, _relational_schema, sub_relational_schema) do
+  defp build_relational_association_filter(
+         query,
+         binding_alias,
+         field_key,
+         filters,
+         _relational_schema,
+         sub_relational_schema
+       ) do
     sub_binding_alias = :"#{binding_alias}_#{field_key}"
 
     query
@@ -243,8 +280,10 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilter do
         query,
         :inner,
         [{^binding_alias, scm}],
-        assoc in assoc(scm, ^field_key), as: ^sub_binding_alias)
-      end)
+        assoc in assoc(scm, ^field_key),
+        as: ^sub_binding_alias
+      )
+    end)
     |> build_relational(sub_binding_alias, filters, sub_relational_schema)
   end
 end

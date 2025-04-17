@@ -173,10 +173,9 @@ defmodule EctoShorts.CommonParams do
     |> Changeset.apply_action(:update)
   end
 
-  defp apply_change(query, %_{__meta__: %{schema: schema_module}} = struct, opts)
-       when query === schema_module do
+  defp apply_change(query, %_{__meta__: _} = struct, opts) do
     if opts[:validate] === false do
-      {:ok, struct!(struct, %{})}
+      {:ok, struct!(struct)}
     else
       struct
       |> CommonSchemas.get_schema_queryable(query).changeset(%{})

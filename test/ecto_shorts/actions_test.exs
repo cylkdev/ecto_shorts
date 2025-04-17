@@ -3,10 +3,12 @@ defmodule EctoShorts.ActionsTest do
   use EctoShorts.DataCase
 
   alias EctoShorts.Actions
+
   alias EctoShorts.Support.{
     Repo,
     TestRepo
   }
+
   alias EctoShorts.Support.Schemas.{
     Comment,
     Post
@@ -95,24 +97,24 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, post_schema_data} = Actions.create(Post, %{title: "title"})
 
       assert {:ok, _comment_schema_data} =
-        Actions.create(
-          Comment,
-          %{
-            body: "body",
-            post_id: post_schema_data.id
-          }
-        )
+               Actions.create(
+                 Comment,
+                 %{
+                   body: "body",
+                   post_id: post_schema_data.id
+                 }
+               )
 
       assert {:error, error} =
-        post_schema_data
-        |> Post.changeset(%{})
-        |> Actions.delete()
+               post_schema_data
+               |> Post.changeset(%{})
+               |> Actions.delete()
 
       assert %ErrorMessage{
-        code: :internal_server_error,
-        details: %{changeset: changeset},
-        message: "Error deleting EctoShorts.Support.Schemas.Post"
-      } = error
+               code: :internal_server_error,
+               details: %{changeset: changeset},
+               message: "Error deleting EctoShorts.Support.Schemas.Post"
+             } = error
 
       assert %Ecto.Changeset{} = changeset
 
@@ -134,7 +136,8 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:ok, schema_data_2} = Actions.create(Comment, %{count: 2})
 
-      assert [^schema_data_2, ^schema_data_1] = Actions.all(Comment, %{}, order_by: {:desc, :count})
+      assert [^schema_data_2, ^schema_data_1] =
+               Actions.all(Comment, %{}, order_by: {:desc, :count})
     end
 
     test "returns records by map query parameters" do
@@ -153,7 +156,8 @@ defmodule EctoShorts.ActionsTest do
       TestRepo.with_shared_connection(fn ->
         assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"}, repo: TestRepo)
 
-        assert [^schema_data] = Actions.all(Comment, id: schema_data.id, repo: TestRepo, replica: nil)
+        assert [^schema_data] =
+                 Actions.all(Comment, id: schema_data.id, repo: TestRepo, replica: nil)
       end)
     end
 
@@ -161,7 +165,8 @@ defmodule EctoShorts.ActionsTest do
       TestRepo.with_shared_connection(fn ->
         assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"}, repo: TestRepo)
 
-        assert [^schema_data] = Actions.all(Comment, id: schema_data.id, repo: nil, replica: TestRepo)
+        assert [^schema_data] =
+                 Actions.all(Comment, id: schema_data.id, repo: nil, replica: TestRepo)
       end)
     end
   end
@@ -181,13 +186,13 @@ defmodule EctoShorts.ActionsTest do
       assert {:error, error} = Actions.find(Comment, %{id: schema_data.id})
 
       assert %ErrorMessage{
-        code: :not_found,
-        details: %{
-          params: %{id: error_id},
-          query: EctoShorts.Support.Schemas.Comment
-        },
-        message: "no records found"
-      } = error
+               code: :not_found,
+               details: %{
+                 params: %{id: error_id},
+                 query: EctoShorts.Support.Schemas.Comment
+               },
+               message: "no records found"
+             } = error
 
       assert error_id === schema_data.id
     end
@@ -196,13 +201,13 @@ defmodule EctoShorts.ActionsTest do
       assert {:error, error} = Actions.find(Comment, %{})
 
       assert %ErrorMessage{
-        code: :not_found,
-        details: %{
-          params: %{},
-          query: EctoShorts.Support.Schemas.Comment
-        },
-        message: "no records found"
-      } = error
+               code: :not_found,
+               details: %{
+                 params: %{},
+                 query: EctoShorts.Support.Schemas.Comment
+               },
+               message: "no records found"
+             } = error
     end
   end
 
@@ -219,10 +224,10 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, _} = Repo.delete(schema_data)
 
       assert {:ok, created_schema_data} =
-        Actions.find_or_create(Comment, %{
-          id: schema_data.id,
-          body: "created_record"
-        })
+               Actions.find_or_create(Comment, %{
+                 id: schema_data.id,
+                 body: "created_record"
+               })
 
       assert %{body: "created_record"} = created_schema_data
 
@@ -234,7 +239,8 @@ defmodule EctoShorts.ActionsTest do
     test "updates existing record by data" do
       assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
 
-      assert {:ok, updated_schema_data} = Actions.update(Comment, schema_data, %{body: "updated_body"})
+      assert {:ok, updated_schema_data} =
+               Actions.update(Comment, schema_data, %{body: "updated_body"})
 
       assert %{body: "updated_body"} = updated_schema_data
     end
@@ -243,7 +249,7 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
 
       assert {:ok, updated_schema_data} =
-        Actions.update(Comment, schema_data.id, %{body: "updated_body"})
+               Actions.update(Comment, schema_data.id, %{body: "updated_body"})
 
       assert %{body: "updated_body"} = updated_schema_data
     end
@@ -252,7 +258,7 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
 
       assert {:ok, updated_schema_data} =
-        Actions.update(Comment, schema_data.id, [body: "updated_body"])
+               Actions.update(Comment, schema_data.id, body: "updated_body")
 
       assert %{body: "updated_body"} = updated_schema_data
     end
@@ -262,20 +268,19 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:ok, _} = Repo.delete(schema_data)
 
-      assert {:error, error} =
-        Actions.update(Comment, schema_data.id, %{body: "updated_body"})
+      assert {:error, error} = Actions.update(Comment, schema_data.id, %{body: "updated_body"})
 
       assert %ErrorMessage{
-        code: :not_found,
-        details: %{
-          schema: EctoShorts.Support.Schemas.Comment,
-          schema_id: error_id,
-          updates: %{
-            body: "updated_body"
-          }
-        },
-        message: error_message
-      } = error
+               code: :not_found,
+               details: %{
+                 schema: EctoShorts.Support.Schemas.Comment,
+                 schema_id: error_id,
+                 updates: %{
+                   body: "updated_body"
+                 }
+               },
+               message: error_message
+             } = error
 
       assert error_id === schema_data.id
 
@@ -290,11 +295,11 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, _} = Repo.delete(schema_data)
 
       assert {:ok, schema_data} =
-        Actions.find_and_upsert(
-          Comment,
-          %{id: schema_data.id},
-          %{body: "created_record"}
-        )
+               Actions.find_and_upsert(
+                 Comment,
+                 %{id: schema_data.id},
+                 %{body: "created_record"}
+               )
 
       assert %{body: "created_record"} = schema_data
     end
@@ -303,11 +308,11 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
 
       assert {:ok, updated_schema_data} =
-        Actions.find_and_upsert(
-          Comment,
-          %{id: schema_data.id},
-          %{body: "updated_body"}
-        )
+               Actions.find_and_upsert(
+                 Comment,
+                 %{id: schema_data.id},
+                 %{body: "updated_body"}
+               )
 
       assert %{body: "updated_body"} = updated_schema_data
     end
@@ -318,11 +323,11 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, created_schema_data} = Actions.create(Comment, %{body: "body"})
 
       assert {:ok, [returned_schema_data]} =
-        Repo.transaction(fn ->
-          Comment
-          |> Actions.stream(%{})
-          |> Enum.to_list()
-        end)
+               Repo.transaction(fn ->
+                 Comment
+                 |> Actions.stream(%{})
+                 |> Enum.to_list()
+               end)
 
       assert created_schema_data.id === returned_schema_data.id
     end
@@ -370,8 +375,7 @@ defmodule EctoShorts.ActionsTest do
     test "returns existing record" do
       assert {:ok, schema_data} = Actions.create(Comment, %{body: "body"})
 
-      assert {:ok, [^schema_data]} =
-        Actions.find_or_create_many(Comment, [%{id: schema_data.id}])
+      assert {:ok, [^schema_data]} = Actions.find_or_create_many(Comment, [%{id: schema_data.id}])
     end
 
     test "creates a record if matching record not found" do
@@ -380,28 +384,28 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, _} = Repo.delete(schema_data)
 
       assert {:ok, list_of_schema_data} =
-        Actions.find_or_create_many(
-          Comment,
-          [
-            %{
-              id: schema_data.id,
-              body: "created_record"
-            }
-          ]
-        )
+               Actions.find_or_create_many(
+                 Comment,
+                 [
+                   %{
+                     id: schema_data.id,
+                     body: "created_record"
+                   }
+                 ]
+               )
 
       assert [%{body: "created_record"}] = list_of_schema_data
     end
 
     test "returns error when a constraint error occurs" do
       assert {:error, 1, changeset, changes} =
-        Actions.find_or_create_many(
-          Post,
-          [
-            %{unique_identifier: "uid"},
-            %{unique_identifier: "uid"}
-          ]
-        )
+               Actions.find_or_create_many(
+                 Post,
+                 [
+                   %{unique_identifier: "uid"},
+                   %{unique_identifier: "uid"}
+                 ]
+               )
 
       assert %Ecto.Changeset{} = changeset
 

@@ -4,7 +4,7 @@ defmodule EctoShorts.Support.MockSchemas.AbstractSchema do
   import Ecto.Changeset
 
   schema "abstract table: abstract_schemas" do
-    field :body, :string
+    field(:body, :string)
 
     timestamps()
   end

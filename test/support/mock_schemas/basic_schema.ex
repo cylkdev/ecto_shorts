@@ -4,7 +4,7 @@ defmodule EctoShorts.Support.MockSchemas.BasicSchema do
   import Ecto.Changeset
 
   schema "basic_schemas" do
-    field :body, :string
+    field(:body, :string)
 
     timestamps()
   end

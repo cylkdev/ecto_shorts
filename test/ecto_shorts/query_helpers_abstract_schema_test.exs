@@ -3,6 +3,7 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
   doctest EctoShorts.QueryHelpers
 
   alias EctoShorts.QueryHelpers
+
   alias EctoShorts.Support.MockSchemas.{
     AbstractSchema,
     PrefixSchema
@@ -13,11 +14,11 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
       query = QueryHelpers.build_query({"concrete_table", AbstractSchema})
 
       assert %Ecto.Query{
-        from: %Ecto.Query.FromExpr{
-          prefix: nil,
-          source: {"concrete_table", AbstractSchema}
-        }
-      } = query
+               from: %Ecto.Query.FromExpr{
+                 prefix: nil,
+                 source: {"concrete_table", AbstractSchema}
+               }
+             } = query
     end
 
     test "can set query prefix" do
@@ -28,12 +29,12 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
         )
 
       assert %Ecto.Query{
-        from: %Ecto.Query.FromExpr{
-          prefix: nil,
-          source: {"concrete_table", AbstractSchema}
-        },
-        prefix: "query_prefix"
-      } = query
+               from: %Ecto.Query.FromExpr{
+                 prefix: nil,
+                 source: {"concrete_table", AbstractSchema}
+               },
+               prefix: "query_prefix"
+             } = query
     end
 
     test "can set from prefix if schema does not have @schema_prefix module attribute" do
@@ -44,23 +45,23 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
         )
 
       assert %Ecto.Query{
-        from: %Ecto.Query.FromExpr{
-          prefix: "schema_prefix",
-          source: {"concrete_table", AbstractSchema}
-        }
-      } = query
+               from: %Ecto.Query.FromExpr{
+                 prefix: "schema_prefix",
+                 source: {"concrete_table", AbstractSchema}
+               }
+             } = query
     end
 
     test "raises when setting the from prefix if schema has @schema_prefix module attribute" do
-      expected_error_message = "can't apply prefix `\"new_prefix\"`, `from` is already prefixed to `\"mock_schema_prefix\"`"
+      expected_error_message =
+        "can't apply prefix `\"new_prefix\"`, `from` is already prefixed to `\"mock_schema_prefix\"`"
 
-      func =
-        fn ->
-          QueryHelpers.build_query(
-            {"concrete_table", PrefixSchema},
-            schema_prefix: "new_prefix"
-          )
-        end
+      func = fn ->
+        QueryHelpers.build_query(
+          {"concrete_table", PrefixSchema},
+          schema_prefix: "new_prefix"
+        )
+      end
 
       assert_raise Ecto.Query.CompileError, expected_error_message, func
     end

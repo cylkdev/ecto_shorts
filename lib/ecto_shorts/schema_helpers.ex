@@ -36,9 +36,9 @@ defmodule EctoShorts.SchemaHelpers do
   """
   @doc since: "2.5.0"
   @spec build_struct(
-    schema :: Ecto.Queryable.t() | Ecto.Schema.t(),
-    meta :: keyword()
-  ) :: Ecto.Schema.t()
+          schema :: Ecto.Queryable.t() | Ecto.Schema.t(),
+          meta :: keyword()
+        ) :: Ecto.Schema.t()
   def build_struct(%_{} = schema_data, meta) do
     meta = Keyword.put_new(meta, :state, :loaded)
 
@@ -65,7 +65,7 @@ defmodule EctoShorts.SchemaHelpers do
     iex> EctoShorts.SchemaHelpers.schema?([%EctoShorts.Support.Schemas.Comment{}])
     false
   """
-  @spec schema?(Ecto.Schema.t | any) :: boolean
+  @spec schema?(Ecto.Schema.t() | any) :: boolean
   def schema?(%{__meta__: %{schema: _}}), do: true
   def schema?(_), do: false
 
@@ -80,7 +80,7 @@ defmodule EctoShorts.SchemaHelpers do
     iex> EctoShorts.SchemaHelpers.has_schemas?([%{some_map: 1}])
     false
   """
-  @spec has_schemas?(list(Ecto.Schema.t | any)) :: boolean
+  @spec has_schemas?(list(Ecto.Schema.t() | any)) :: boolean
   def has_schemas?(items), do: Enum.any?(items, &schema?/1)
 
   @doc """
@@ -94,7 +94,7 @@ defmodule EctoShorts.SchemaHelpers do
     iex> EctoShorts.SchemaHelpers.all_schemas?([%EctoShorts.Support.Schemas.Comment{}])
     true
   """
-  @spec all_schemas?(list(Ecto.Schema.t | any)) :: boolean
+  @spec all_schemas?(list(Ecto.Schema.t() | any)) :: boolean
   def all_schemas?(items), do: Enum.all?(items, &schema?/1)
 
   @doc """
@@ -112,12 +112,12 @@ defmodule EctoShorts.SchemaHelpers do
     iex> EctoShorts.SchemaHelpers.created?(%{item: 3})
     false
   """
-  @spec created?(Ecto.Schema.t | any) :: boolean
+  @spec created?(Ecto.Schema.t() | any) :: boolean
   def created?(%{id: id}), do: !is_nil(id)
   def created?(%{"id" => id}), do: !is_nil(id)
   def created?(_), do: false
 
-  @spec all_created?(list(Ecto.Schema.t | any)) :: boolean
+  @spec all_created?(list(Ecto.Schema.t() | any)) :: boolean
   @doc """
   Determine if all items in list has been created or not
 
@@ -131,7 +131,7 @@ defmodule EctoShorts.SchemaHelpers do
   """
   def all_created?(items), do: Enum.all?(items, &created?/1)
 
-  @spec any_created?(list(Ecto.Schema.t | any)) :: boolean
+  @spec any_created?(list(Ecto.Schema.t() | any)) :: boolean
   @doc """
   Returns `true` if any of the items passed as an argument to
   `EctoShorts.SchemaHelpers.created?/1` is `true`.

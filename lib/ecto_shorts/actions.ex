@@ -32,6 +32,11 @@ defmodule EctoShorts.Actions do
   @doc """
   ...
   """
+  @spec insert_all(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          params_list :: list(),
+          opts :: keyword()
+        ) :: {non_neg_integer(), nil | [term()]}
   def insert_all(query, params_list, opts) do
     query
     |> CommonParams.convert_to_insert_all_params(params_list, opts)
@@ -42,8 +47,28 @@ defmodule EctoShorts.Actions do
   @doc """
   ...
   """
-  def update_all(query, update_params, opts) do
+  @spec update_all(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          find_params :: map(),
+          update_params :: map()
+        ) :: {non_neg_integer(), nil | [term()]}
+  def update_all(query, find_params, update_params) do
+    update_all(query, find_params, update_params, default_opts())
+  end
+
+  @doc group: "Schema API"
+  @doc """
+  ...
+  """
+  @spec update_all(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          find_params :: map(),
+          update_params :: map(),
+          opts :: keyword()
+        ) :: {non_neg_integer(), nil | [term()]}
+  def update_all(query, find_params, update_params, opts) do
     query
+    |> CommonFilters.convert_params_to_filter(find_params)
     |> maybe_query_select(opts)
     |> Config.repo!(opts).update_all(
       CommonParams.convert_to_update_all_params(query, update_params, opts),
@@ -51,13 +76,7 @@ defmodule EctoShorts.Actions do
     )
   end
 
-  def update_all(query, find_params, update_params, opts) do
-    query
-    |> CommonFilters.convert_params_to_filter(find_params)
-    |> update_all(update_params, opts)
-  end
-
-  @doc group: "Schema API"
+  @doc group: "Query API"
   @doc """
   ...
   """
@@ -69,6 +88,10 @@ defmodule EctoShorts.Actions do
     delete_all(query, params, default_opts())
   end
 
+  @doc group: "Query API"
+  @doc """
+  ...
+  """
   @spec delete_all(
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params :: map(),
@@ -1084,7 +1107,7 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
   def delete(%_{data: struct} = changeset, opts) do
-    queryable = CommonSchemas.queryable_for(struct)
+    queryable = CommonSchemas.get_queryable_from_struct(struct)
 
     with {:error, changeset} <-
            queryable
@@ -1104,11 +1127,9 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  def delete(%_{} = struct, opts) do
-    schema = CommonSchemas.queryable_for(struct)
-
+  def delete(%_{__meta__: %{schema: queryable}} = struct, opts) do
     with {:error, changeset} <-
-           schema
+           queryable
            |> CommonSchemas.build_changeset(struct, %{}, opts)
            |> Config.repo!(opts).delete(opts) do
       {:error,
@@ -1116,7 +1137,7 @@ defmodule EctoShorts.Actions do
          :conflict,
          "Failed to delete the record.",
          %{
-           query: schema,
+           query: queryable,
            changeset: changeset,
            schema_data: struct
          },

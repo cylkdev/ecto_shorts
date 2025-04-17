@@ -6,12 +6,12 @@ defmodule EctoShorts.Support.Schemas.FileInfo do
   require Ecto.Query
 
   schema "abstract table: file_infos" do
-    field :assoc_id, :integer
-    field :name, :string
-    field :content_length, :integer
-    field :unique_identifier, :string
+    field(:assoc_id, :integer)
+    field(:name, :string)
+    field(:content_length, :integer)
+    field(:unique_identifier, :string)
 
-    belongs_to :user, EctoShorts.Support.Schemas.User
+    belongs_to(:user, EctoShorts.Support.Schemas.User)
 
     timestamps()
   end

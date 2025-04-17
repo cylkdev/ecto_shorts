@@ -7,31 +7,31 @@ defmodule EctoShorts.Actions.Error do
   """
 
   @type t :: %{
-    optional(key :: atom()) => value :: term(),
-    code: atom(),
-    message: binary(),
-    details: nil | map()
-  }
+          optional(key :: atom()) => value :: term(),
+          code: atom(),
+          message: binary(),
+          details: nil | map()
+        }
 
-  @callback create_error(atom, String.t, map) :: t()
+  @callback create_error(atom, String.t(), map) :: t()
 
   @default_error_module __MODULE__
 
   @spec call(
-    code :: atom(),
-    message :: binary(),
-    details :: map() | nil
-  ) :: t()
+          code :: atom(),
+          message :: binary(),
+          details :: map() | nil
+        ) :: t()
   def call(code, message, details) do
     call(code, message, details, [])
   end
 
   @spec call(
-    code :: atom(),
-    message :: binary(),
-    details :: map() | nil,
-    opts :: keyword()
-  ) :: t()
+          code :: atom(),
+          message :: binary(),
+          details :: map() | nil,
+          opts :: keyword()
+        ) :: t()
   def call(code, message, details, opts) do
     module = error_module(opts)
 
@@ -60,8 +60,8 @@ defmodule EctoShorts.Actions.Error do
 
   defp error_module(opts) do
     opts[:error_module] ||
-    EctoShorts.Config.from_app_env(:error_module) ||
-    @default_error_module
+      EctoShorts.Config.get_app_env(:error_module) ||
+      @default_error_module
   end
 
   def create_error(code, message, details) do

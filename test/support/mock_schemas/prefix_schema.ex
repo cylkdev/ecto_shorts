@@ -6,7 +6,7 @@ defmodule EctoShorts.Support.MockSchemas.PrefixSchema do
   @schema_prefix "mock_schema_prefix"
 
   schema "prefix_schemas" do
-    field :body, :string
+    field(:body, :string)
 
     timestamps()
   end

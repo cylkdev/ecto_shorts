@@ -78,9 +78,9 @@ defmodule EctoShorts.CommonFilters do
       #Ecto.Query<from c0 in EctoShorts.Support.Schemas.Comment, where: c0.id == ^1>
   """
   @spec convert_params_to_filter(
-    query :: query() | queryable() | source_queryable(),
-    params :: params()
-  ) :: query()
+          query :: query() | queryable() | source_queryable(),
+          params :: params()
+        ) :: query()
   def convert_params_to_filter(queryable, params) when params === %{} do
     CommonSchemas.get_schema_query(queryable)
   end
@@ -118,10 +118,10 @@ defmodule EctoShorts.CommonFilters do
       #Ecto.Query<from p0 in EctoShorts.Support.Schemas.Post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, where: c1.id == ^1>
   """
   @spec create_schema_filter(
-    query :: query(),
-    filter_key :: filter_key(),
-    filter_value :: filter_value()
-  ) :: query()
+          query :: query(),
+          filter_key :: filter_key(),
+          filter_value :: filter_value()
+        ) :: query()
   def create_schema_filter(query, filter_key, filter_value) when filter_key in @common_filters do
     QueryBuilder.create_schema_filter(QueryBuilder.Common, query, filter_key, filter_value)
   end
@@ -134,7 +134,7 @@ defmodule EctoShorts.CommonFilters do
     if Keyword.has_key?(params, :last) do
       params
       |> Keyword.delete(:last)
-      |> Kernel.++([last: params[:last]])
+      |> Kernel.++(last: params[:last])
     else
       params
     end

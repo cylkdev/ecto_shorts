@@ -25,7 +25,7 @@ defmodule EctoShorts.CommonSchemas do
   @moduledoc since: "2.5.0"
   alias EctoShorts.QueryHelpers
 
-  def queryable_for(%_{__meta__: %{schema: schema_module}}), do: schema_module
+  def get_queryable_from_struct(%_{__meta__: %{schema: schema_module}}), do: schema_module
 
   @doc """
   This function invokes the `&__schema__/1` callback function.
@@ -37,9 +37,9 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec get_schema_reflection(
-    query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    arg :: atom()
-  ) :: any()
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          arg :: atom()
+        ) :: any()
   def get_schema_reflection({_, queryable}, arg), do: queryable.__schema__(arg)
   def get_schema_reflection(queryable, arg), do: queryable.__schema__(arg)
 
@@ -53,10 +53,10 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec get_schema_reflection(
-    query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    arg1 :: atom(),
-    arg2 :: atom()
-  ) :: any()
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          arg1 :: atom(),
+          arg2 :: atom()
+        ) :: any()
   def get_schema_reflection({_, queryable}, arg1, arg2), do: queryable.__schema__(arg1, arg2)
   def get_schema_reflection(queryable, arg1, arg2), do: queryable.__schema__(arg1, arg2)
 
@@ -69,7 +69,8 @@ defmodule EctoShorts.CommonSchemas do
       iex> EctoShorts.CommonSchemas.get_schema_struct({"users", MyApp.UserSchema})
   """
   @doc since: "2.5.0"
-  @spec get_schema_struct(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: Ecto.Schema.t()
+  @spec get_schema_struct(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) ::
+          Ecto.Schema.t()
   def get_schema_struct({source, queryable}) do
     prefix = get_schema_prefix(queryable)
 
@@ -89,7 +90,8 @@ defmodule EctoShorts.CommonSchemas do
       iex> EctoShorts.CommonSchemas.get_schema_prefix({"users", MyApp.UserSchema})
   """
   @doc since: "2.5.0"
-  @spec get_schema_prefix(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: binary() | nil
+  @spec get_schema_prefix(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) ::
+          binary() | nil
   def get_schema_prefix({_, queryable}), do: queryable.__schema__(:prefix)
   def get_schema_prefix(queryable), do: queryable.__schema__(:prefix)
 
@@ -102,7 +104,8 @@ defmodule EctoShorts.CommonSchemas do
       iex> EctoShorts.CommonSchemas.get_schema_source({"users", MyApp.UserSchema})
   """
   @doc since: "2.5.0"
-  @spec get_schema_source(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: binary()
+  @spec get_schema_source(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) ::
+          binary()
   def get_schema_source({source, _}), do: source
   def get_schema_source(queryable), do: queryable.__schema__(:source)
 
@@ -117,10 +120,7 @@ defmodule EctoShorts.CommonSchemas do
   @doc since: "2.5.0"
   @spec get_schema_queryable(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) :: Ecto.Queryable.t()
   def get_schema_queryable({_source, queryable}), do: queryable
-
-  def get_schema_queryable(queryable) when is_atom(queryable) do
-    queryable
-  end
+  def get_schema_queryable(query), do: QueryHelpers.get_queryable(query)
 
   @doc """
   Returns an `Ecto.Query`.
@@ -139,14 +139,24 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec get_schema_query(
-    query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}
-  ) :: Ecto.Query.t()
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}
+        ) :: Ecto.Query.t()
   @spec get_schema_query(
-    query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    opts :: keyword()
-  ) :: Ecto.Query.t()
-  def get_schema_query(query, opts \\ []) do
-    QueryHelpers.build_from_query(query, opts)
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          opts :: keyword()
+        ) :: Ecto.Query.t()
+  def get_schema_query(query, opts \\ [])
+
+  def get_schema_query({source, queryable}, opts) do
+    {source, queryable}
+    |> QueryHelpers.build_from_query(schema_prefix: opts[:schema_prefix])
+    |> QueryHelpers.build_query(query_prefix: opts[:query_prefix])
+  end
+
+  def get_schema_query(query, opts) do
+    query
+    |> QueryHelpers.build_from_query(schema_prefix: opts[:schema_prefix])
+    |> QueryHelpers.build_query(query_prefix: opts[:query_prefix])
   end
 
   @doc """
@@ -182,9 +192,10 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec put_meta(
-    query_or_schema_data :: Ecto.Schema.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    meta :: keyword()
-  ) :: Ecto.Schema.t()
+          query_or_schema_data ::
+            Ecto.Schema.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          meta :: keyword()
+        ) :: Ecto.Schema.t()
   def put_meta(%_{__meta__: state} = schema_data, meta) do
     Ecto.put_meta(schema_data,
       source: meta[:source] || state.source,
@@ -205,9 +216,13 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec build_changeset(
-    query_or_struct_or_changeset :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()} | Ecto.Schema.t() | Ecto.Changeset.t(),
-    params :: map()
-  ) :: Ecto.Changeset.t()
+          query_or_struct_or_changeset ::
+            Ecto.Queryable.t()
+            | {binary(), Ecto.Queryable.t()}
+            | Ecto.Schema.t()
+            | Ecto.Changeset.t(),
+          params :: map()
+        ) :: Ecto.Changeset.t()
   def build_changeset(query_or_struct_or_changeset, params) do
     build_changeset(query_or_struct_or_changeset, params, [])
   end
@@ -235,10 +250,14 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec build_changeset(
-    query_or_struct_or_changeset :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()} | Ecto.Schema.t() | Ecto.Changeset.t(),
-    params :: map(),
-    opts :: keyword()
-  ) :: Ecto.Changeset.t()
+          query_or_struct_or_changeset ::
+            Ecto.Queryable.t()
+            | {binary(), Ecto.Queryable.t()}
+            | Ecto.Schema.t()
+            | Ecto.Changeset.t(),
+          params :: map(),
+          opts :: keyword()
+        ) :: Ecto.Changeset.t()
   def build_changeset(%{data: %{__meta__: %{schema: queryable}}} = changeset, params, opts) do
     build_changeset(queryable, changeset, params, opts)
   end
@@ -295,22 +314,22 @@ defmodule EctoShorts.CommonSchemas do
   """
   @doc since: "2.5.0"
   @spec build_changeset(
-    query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-    struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
-    params :: map(),
-    opts :: keyword()
-  ) :: Ecto.Changeset.t()
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          params :: map(),
+          opts :: keyword()
+        ) :: Ecto.Changeset.t()
   def build_changeset(
-    {source, queryable},
-    %{data: %{__meta__: %{schema: _}} = struct} = changeset,
-    params,
-    opts
-  ) do
+        {source, queryable},
+        %{data: %{__meta__: %{schema: _}} = struct} = changeset,
+        params,
+        opts
+      ) do
     build_changeset(
       queryable,
       %{
-        changeset |
-        data: put_meta(struct, source: source)
+        changeset
+        | data: put_meta(struct, source: source)
       },
       params,
       opts
@@ -347,7 +366,6 @@ defmodule EctoShorts.CommonSchemas do
 
       _ ->
         queryable.changeset(struct_or_changeset, params)
-
     end
   end
 end

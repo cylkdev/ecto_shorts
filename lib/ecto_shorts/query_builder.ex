@@ -38,7 +38,8 @@ defmodule EctoShorts.QueryBuilder do
   #Ecto.Query<from c0 in EctoShorts.Support.Schemas.Comment, where: c0.id == ^1>
   ```
   """
-  @callback create_schema_filter(query() | queryable() | source_queryable(), key(), value()) :: query()
+  @callback create_schema_filter(query() | queryable() | source_queryable(), key(), value()) ::
+              query()
 
   @doc """
   Invokes the callback function `c:EctoShorts.QueryBuilder.create_schema_filter/3`.
@@ -55,7 +56,8 @@ defmodule EctoShorts.QueryBuilder do
       ...> )
       #Ecto.Query<from c0 in EctoShorts.Support.Schemas.Comment, limit: ^1000>
   """
-  @spec create_schema_filter(t(), query() | queryable() | source_queryable(), key(), value()) :: query()
+  @spec create_schema_filter(t(), query() | queryable() | source_queryable(), key(), value()) ::
+          query()
   def create_schema_filter(module, query, key, value) do
     module.create_schema_filter(query, key, value)
   end

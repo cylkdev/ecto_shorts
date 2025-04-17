@@ -7,8 +7,8 @@ defmodule EctoShorts.Config do
 
   @app :ecto_shorts
 
-  @spec from_app_env(key :: atom()) :: any()
-  def from_app_env(key), do: Application.get_env(@app, key)
+  @spec get_app_env(key :: atom(), default :: any()) :: any()
+  def get_app_env(key, default \\ nil), do: Application.get_env(@app, key) || default
 
   @doc since: "2.5.0"
   @doc """
@@ -122,7 +122,7 @@ defmodule EctoShorts.Config do
   @spec replica! :: module()
   def replica!(opts \\ []) do
     with nil <- Keyword.get(opts, :replica, replica()),
-      nil <- Keyword.get(opts, :repo, repo()) do
+         nil <- Keyword.get(opts, :repo, repo()) do
       raise """
       EctoShorts replica and repo not configured!
 

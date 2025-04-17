@@ -55,22 +55,23 @@ defmodule EctoShorts.CommonChanges do
   """
   require Logger
 
-  import Ecto.Changeset, only: [
-    get_field: 2,
-    put_assoc: 4,
-    cast_assoc: 2,
-    cast_assoc: 3
-  ]
+  import Ecto.Changeset,
+    only: [
+      get_field: 2,
+      put_assoc: 4,
+      cast_assoc: 2,
+      cast_assoc: 3
+    ]
 
   alias Ecto.Changeset
   alias EctoShorts.{Actions, Config, SchemaHelpers}
 
   @doc "Run's changeset function if when function returns true"
   @spec put_when(
-    Changeset.t,
-    ((Changeset.t) -> boolean),
-    ((Changeset.t) -> Changeset.t)
-  ) :: Changeset.t
+          Changeset.t(),
+          (Changeset.t() -> boolean),
+          (Changeset.t() -> Changeset.t())
+        ) :: Changeset.t()
   def put_when(changeset, when_func, change_func) do
     if when_func.(changeset) do
       change_func.(changeset)
@@ -87,7 +88,7 @@ defmodule EctoShorts.CommonChanges do
 
       iex> EctoShorts.CommonChanges.changeset_field_empty?(changeset, :comments)
   """
-  @spec changeset_field_empty?(Changeset.t, atom) :: boolean
+  @spec changeset_field_empty?(Changeset.t(), atom) :: boolean
   def changeset_field_empty?(changeset, key) do
     get_field(changeset, key) === []
   end
@@ -100,7 +101,7 @@ defmodule EctoShorts.CommonChanges do
 
       iex> EctoShorts.CommonChanges.changeset_field_nil?(changeset, :comments)
   """
-  @spec changeset_field_nil?(Changeset.t, atom) :: boolean
+  @spec changeset_field_nil?(Changeset.t(), atom) :: boolean
   def changeset_field_nil?(changeset, key) do
     changeset |> get_field(key) |> is_nil()
   end
@@ -128,7 +129,7 @@ defmodule EctoShorts.CommonChanges do
     iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required: true)
     iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required_when_missing: :my_relation_id)
   """
-  @spec preload_change_assoc(Changeset.t(), atom(), keyword()) :: Changeset.t
+  @spec preload_change_assoc(Changeset.t(), atom(), keyword()) :: Changeset.t()
   def preload_change_assoc(changeset, key, opts) do
     required? =
       if opts[:required_when_missing] do
@@ -148,7 +149,7 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t
+  @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t()
   def preload_change_assoc(changeset, key) do
     if Map.has_key?(changeset.params, Atom.to_string(key)) do
       changeset
@@ -160,8 +161,8 @@ defmodule EctoShorts.CommonChanges do
   end
 
   @doc "Preloads a changesets association"
-  @spec preload_changeset_assoc(Changeset.t, atom) :: Changeset.t
-  @spec preload_changeset_assoc(Changeset.t, atom, keyword()) :: Changeset.t
+  @spec preload_changeset_assoc(Changeset.t(), atom) :: Changeset.t()
+  @spec preload_changeset_assoc(Changeset.t(), atom, keyword()) :: Changeset.t()
   def preload_changeset_assoc(changeset, key, opts \\ [])
 
   def preload_changeset_assoc(changeset, key, opts) do
@@ -184,7 +185,8 @@ defmodule EctoShorts.CommonChanges do
     else
       %parent_schema{} = changeset.data
 
-      raise ArgumentError, "The key #{inspect(key)} is not an association for the queryable #{inspect(parent_schema)}."
+      raise ArgumentError,
+            "The key #{inspect(key)} is not an association for the queryable #{inspect(parent_schema)}."
     end
   end
 
@@ -200,8 +202,8 @@ defmodule EctoShorts.CommonChanges do
   CommonChanges.put_or_cast_assoc(change(user, fruits: [%{id: 1}, %{id: 3}]), :fruits)
   ```
   """
-  @spec put_or_cast_assoc(Changeset.t, atom) :: Changeset.t
-  @spec put_or_cast_assoc(Changeset.t, atom, Keyword.t) :: Changeset.t
+  @spec put_or_cast_assoc(Changeset.t(), atom) :: Changeset.t()
+  @spec put_or_cast_assoc(Changeset.t(), atom, Keyword.t()) :: Changeset.t()
   def put_or_cast_assoc(changeset, key, opts \\ []) do
     params_data = Map.get(changeset.params, Atom.to_string(key))
 
@@ -238,7 +240,6 @@ defmodule EctoShorts.CommonChanges do
 
       true ->
         cast_assoc(changeset, key, opts)
-
     end
   end
 

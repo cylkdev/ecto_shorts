@@ -47,15 +47,16 @@ defmodule EctoShorts.Utils.Logger do
   end
 
   defp format_message(identifier, message) do
+    "[#{normalize_identifier(identifier)}] #{message}"
+  end
+
+  defp normalize_identifier(identifier) do
     identifier = to_string(identifier)
 
-    identifier =
-      if String.contains?(identifier, "Elixir.") do
-        String.replace(identifier, "Elixir.", "")
-      else
-        identifier
-      end
-
-    "[#{identifier}] #{message}"
+    if String.contains?(identifier, "Elixir.") do
+      String.replace(identifier, "Elixir.", "")
+    else
+      identifier
+    end
   end
 end

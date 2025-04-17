@@ -15,11 +15,11 @@ defmodule EctoShorts.QueryHelpersQueryTest do
         |> QueryHelpers.build_query()
 
       assert %Ecto.Query{
-        from: %Ecto.Query.FromExpr{
-          prefix: nil,
-          source: {"basic_schemas", BasicSchema}
-        }
-      } = query
+               from: %Ecto.Query.FromExpr{
+                 prefix: nil,
+                 source: {"basic_schemas", BasicSchema}
+               }
+             } = query
     end
 
     test "can set query prefix" do
@@ -29,12 +29,12 @@ defmodule EctoShorts.QueryHelpersQueryTest do
         |> QueryHelpers.build_query(query_prefix: "query_prefix")
 
       assert %Ecto.Query{
-        from: %Ecto.Query.FromExpr{
-          prefix: nil,
-          source: {"basic_schemas", BasicSchema}
-        },
-        prefix: "query_prefix"
-      } = query
+               from: %Ecto.Query.FromExpr{
+                 prefix: nil,
+                 source: {"basic_schemas", BasicSchema}
+               },
+               prefix: "query_prefix"
+             } = query
     end
 
     test "can set from prefix if schema does not have @schema_prefix module attribute" do
@@ -47,11 +47,11 @@ defmodule EctoShorts.QueryHelpersQueryTest do
         |> QueryHelpers.build_query()
 
       assert %Ecto.Query{
-        from: %Ecto.Query.FromExpr{
-          prefix: "schema_prefix",
-          source: {"basic_schemas", BasicSchema}
-        }
-      } = query
+               from: %Ecto.Query.FromExpr{
+                 prefix: "schema_prefix",
+                 source: {"basic_schemas", BasicSchema}
+               }
+             } = query
     end
 
     test "option :schema_prefix is not used on query" do
@@ -61,11 +61,11 @@ defmodule EctoShorts.QueryHelpersQueryTest do
         |> QueryHelpers.build_query(schema_prefix: "schema_prefix")
 
       assert %Ecto.Query{
-        from: %Ecto.Query.FromExpr{
-          prefix: nil,
-          source: {"basic_schemas", BasicSchema}
-        }
-      } = query
+               from: %Ecto.Query.FromExpr{
+                 prefix: nil,
+                 source: {"basic_schemas", BasicSchema}
+               }
+             } = query
     end
   end
 end
