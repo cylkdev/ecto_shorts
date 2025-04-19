@@ -1,6 +1,15 @@
 defmodule EctoShorts.Utils do
   @moduledoc false
 
+  def pop(params, keys) do
+    Enum.reduce(keys, {%{}, params}, fn key, {acc, params} ->
+      case Map.pop(params, key) do
+        {nil, params} -> {acc, params}
+        {value, params} -> {Map.put(acc, key, value), params}
+      end
+    end)
+  end
+
   @doc """
   Reduces an enumerable by applying a function that returns `{:ok, value}` or
   `{:error, reason}` to each item, accumulating successes and errors separately.
