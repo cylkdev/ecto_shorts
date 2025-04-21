@@ -6,6 +6,8 @@ defmodule EctoShorts.Support.Schemas.Post do
   require Ecto.Query
 
   schema "posts" do
+    field(:tags, {:array, :string})
+
     field(:title, :string)
     field(:unique_identifier, :string)
     field(:likes, :integer)

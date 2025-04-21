@@ -68,7 +68,7 @@ defmodule EctoShorts.Actions do
         ) :: {non_neg_integer(), nil | [term()]}
   def update_all(query, find_params, update_params, opts) do
     query
-    |> CommonFilters.convert_params_to_filter(find_params)
+    |> CommonFilters.convert_params_to_filter(find_params, opts)
     |> maybe_query_select(opts)
     |> Config.repo!(opts).update_all(
       CommonParams.convert_to_update_all_params(query, update_params, opts),
@@ -99,7 +99,7 @@ defmodule EctoShorts.Actions do
         ) :: {non_neg_integer(), nil | [term()]}
   def delete_all(query, params, opts) do
     query
-    |> CommonFilters.convert_params_to_filter(params)
+    |> CommonFilters.convert_params_to_filter(params, opts)
     |> maybe_query_select(opts)
     |> Config.repo!(opts).delete_all(opts)
   end
@@ -156,7 +156,10 @@ defmodule EctoShorts.Actions do
       {find_params, create_params} = unzip_find_params(args, query, opts)
 
       multi
-      |> Ecto.Multi.one({:one, i}, CommonFilters.convert_params_to_filter(query, find_params))
+      |> Ecto.Multi.one(
+        {:one, i},
+        CommonFilters.convert_params_to_filter(query, find_params, opts)
+      )
       |> Ecto.Multi.insert({:insert, i}, fn changes_so_far ->
         query
         |> normalize_queryable()
@@ -216,7 +219,10 @@ defmodule EctoShorts.Actions do
       {find_params, update_params} = unzip_find_params(args, query, opts)
 
       multi
-      |> Ecto.Multi.one({:one, i}, CommonFilters.convert_params_to_filter(query, find_params))
+      |> Ecto.Multi.one(
+        {:one, i},
+        CommonFilters.convert_params_to_filter(query, find_params, opts)
+      )
       |> Ecto.Multi.update({:update, i}, fn changes_so_far ->
         query
         |> normalize_queryable()
@@ -276,7 +282,10 @@ defmodule EctoShorts.Actions do
       {find_params, upsert_params} = unzip_find_params(args, query, opts)
 
       multi
-      |> Ecto.Multi.one({:one, i}, CommonFilters.convert_params_to_filter(query, find_params))
+      |> Ecto.Multi.one(
+        {:one, i},
+        CommonFilters.convert_params_to_filter(query, find_params, opts)
+      )
       |> Ecto.Multi.insert_or_update({:insert_or_update, i}, fn changes_so_far ->
         query
         |> normalize_queryable()
@@ -381,7 +390,7 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def find_many(query, params_list, opts) do
-    case query |> multi_one(params_list) |> Config.repo!(opts).transaction(opts) do
+    case query |> multi_one(params_list, opts) |> Config.repo!(opts).transaction(opts) do
       {:ok, operations} ->
         {:ok, Map.values(operations)}
 
@@ -390,11 +399,11 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  defp multi_one(query, params_list) do
+  defp multi_one(query, params_list, opts) do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {params, i}, multi ->
-      Ecto.Multi.one(multi, i, CommonFilters.convert_params_to_filter(query, params))
+      Ecto.Multi.one(multi, i, CommonFilters.convert_params_to_filter(query, params, opts))
     end)
   end
 
@@ -409,7 +418,7 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def delete_many(query, params_list, opts) do
-    case query |> multi_delete(params_list) |> Config.repo!(opts).transaction(opts) do
+    case query |> multi_delete(params_list, opts) |> Config.repo!(opts).transaction(opts) do
       {:ok, operations} ->
         {:ok, Map.values(operations)}
 
@@ -418,11 +427,11 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  defp multi_delete(query, params_list) do
+  defp multi_delete(query, params_list, opts) do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {params, i}, multi ->
-      Ecto.Multi.delete(multi, i, CommonFilters.convert_params_to_filter(query, params))
+      Ecto.Multi.delete(multi, i, CommonFilters.convert_params_to_filter(query, params, opts))
     end)
   end
 
@@ -845,7 +854,7 @@ defmodule EctoShorts.Actions do
     opts = Keyword.drop(opts, [:order_by, :group_by])
 
     query
-    |> CommonFilters.convert_params_to_filter(params)
+    |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).all(opts)
   end
 
@@ -957,7 +966,7 @@ defmodule EctoShorts.Actions do
 
     result =
       query
-      |> CommonFilters.convert_params_to_filter(params)
+      |> CommonFilters.convert_params_to_filter(params, opts)
       |> Config.replica!(opts).one(opts)
 
     case result do
@@ -1225,7 +1234,7 @@ defmodule EctoShorts.Actions do
   def stream(query, params, opts) do
     query
     |> CommonSchemas.get_schema_query(opts)
-    |> CommonFilters.convert_params_to_filter(params)
+    |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.repo!(opts).stream(opts)
   end
 
@@ -1294,7 +1303,7 @@ defmodule EctoShorts.Actions do
   def aggregate(query, params, aggregate, field, opts) do
     query
     |> CommonSchemas.get_schema_query(opts)
-    |> CommonFilters.convert_params_to_filter(params)
+    |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).aggregate(aggregate, field, opts)
   end
 

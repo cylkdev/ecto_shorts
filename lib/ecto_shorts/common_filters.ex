@@ -1,133 +1,143 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc """
-  This modules main purpose is to house a collection of common schema filters
-  and functionality to be included in params -> filters
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :post})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{where: %{as: :post}})
 
-  Common filters available include
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: 1})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: [1, 2, 3]})
 
-  - `preload` - Preloads fields onto the query results
-  - `start_date` - Query for items inserted after this date
-  - `end_date` - Query for items inserted before this date
-  - `before` - Get items with ID's before this value
-  - `after` - Get items with ID's after this value
-  - `ids` - Get items with a list of ids
-  - `first` - Gets the first n items
-  - `last` - Gets the last n items
-  - `limit` - Gets the first n items
-  - `offset` - Offsets limit by n items
-  - `order_by` - orders the results in desc or asc order
-  - `search` - ***Warning:*** This requires schemas using this to have a `&by_search(query, val)` function
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{!=: 1}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{!=: [1, 2, 3]}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{!=: %{lower: "example"}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{!=: %{upper: "example"}}})
 
-  ```elixir
-  CommonFilters.convert_params_to_filter(User, %{first: 10})
-  CommonFilters.convert_params_to_filter(User, %{ids: [1, 2, 3, 4]})
-  CommonFilters.convert_params_to_filter(User, %{order_by: {:desc, :email_updated_at})
-  ```
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{==: 1}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{==: [1, 2, 3]}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{==: %{lower: "example"}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{==: %{upper: "example"}}})
 
-  You are also able to filter on any natural field of a model, as well as use
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{>: 1}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{<: 1}})
 
-  - gte/gt
-  - lte/lt
-  - like/ilike
-  - is_nil/not(is_nil)
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{>=: 1}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: %{<=: 1}})
 
-  ```elixir
-  CommonFilters.convert_params_to_filter(User, %{name: "Billy"})
-  CommonFilters.convert_params_to_filter(User, %{name: %{ilike: "steve"}})
-  CommonFilters.convert_params_to_filter(User, %{name: %{age: %{gte: 18, lte: 30}}})
-  CommonFilters.convert_params_to_filter(User, %{name: %{is_banned: %{!=: nil}}})
-  CommonFilters.convert_params_to_filter(User, %{name: %{is_banned: %{==: nil}}})
-  CommonFilters.convert_params_to_filter(User, %{name: %{balance: %{!=: 0}}})
-  ```
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{title: %{ilike: "example"}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{title: %{like: "example"}})
 
-  CommonFilters also supports limited fragment modifiers of natural fields:
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{id: 1}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: %{comments: %{id: %{==: 1}}}}})
 
-  - :lower for "lower(?)"
-  - :upper for "lower(?)"
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :post})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :post, id: %{==: %{parent_as: %{post: :id}}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :post, join: %{association: %{comments: %{post_id: %{==: %{parent_as: %{post: :id}}}}}}})
 
-  ```elixir
-  CommonFilters.convert_params_to_filter(User, %{name: {:lower, "billy"}})
-  CommonFilters.convert_params_to_filter(User, %{name: {:upper, "BILLY"}})
-  CommonFilters.convert_params_to_filter(User, %{name: %{!=: {:lower, "billy"}}})
-  ```
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{subquery: %{from: EctoShorts.Support.Schemas.Comment, on: %{id: 1}}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{subquery: %{from: EctoShorts.Support.Schemas.Comment, on: %{id: %{==: 1}}}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :post, join: %{subquery: %{from: EctoShorts.Support.Schemas.Comment, on: %{post_id: %{==: %{parent_as: %{post: :id}}}}}}})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{preload: :post})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{preload: [post: :user]})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :post, with_named_binding: %{post: %{id: %{==: 1}}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :post, where: %{with_named_binding: %{post: %{id: %{==: 1}}}}})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{where: %{post_id: %{==: %{parent_as: %{post: :id}}}}})
+
+
+
+
+  -----
+
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{where: [%{post_id: %{==: %{parent_as: %{post: :id}}}}]})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{select: true})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{select: [:id, :body]})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{select: [map: [:id, :body]]})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{select: [struct: [:id, :body]]})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{select: %{map: [:id, :body]}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{select: %{struct: [:id, :body]}})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{select: [:post_id], select_merge: [:id]})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{id: 1}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{id: %{>: 1}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{where: %{id: %{>: 1}}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{where: [%{id: %{>: 1}}, %{id: %{<: 3}}]}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{or_where: %{id: %{>: 1}}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{comments: %{or_where: [%{id: %{>: 1}}, %{id: %{<: 3}}]}})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: :comments}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: [:comments, :user]}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: %{comments: %{qualifier: :right}}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: %{comments: %{on: %{id: 2}}}}})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: %{comments: %{id: 2}}}})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{join: %{association: %{comments: %{on: %{id: %{==: 3}}}}}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :post, join: %{association: %{comments: %{on: %{id: %{==: %{parent_as: %{post: :id}}}}}}}})
+
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{as: :comment, title: %{==: %{parent_as: %{comment: %{lower: :title}}}}})
   """
-  alias EctoShorts.{
-    CommonSchemas,
-    QueryBuilder
-  }
 
-  @type params :: map() | keyword()
-  @type adapter :: module()
-  @type filter_key :: atom()
-  @type filter_value :: any()
-  @type source :: binary()
-  @type query :: Ecto.Query.t()
-  @type queryable :: Ecto.Queryable.t()
-  @type source_queryable :: {source(), queryable()}
-
-  @common_filters QueryBuilder.Common.filters()
+  alias EctoShorts.CommonFilters.Common
+  alias EctoShorts.CommonFilters.Schema
+  alias EctoShorts.CommonSchemas
+  alias EctoShorts.QueryBuilder
 
   @behaviour EctoShorts.QueryBuilder
 
+  @common_filters Common.filters()
+
+  @default_opts [query_builder_adapter: __MODULE__]
+
+  def convert_params_to_filter(query, params) do
+    convert_params_to_filter(query, params, @default_opts)
+  end
+
   @doc """
-  Converts filter params into a query.
-
-  ### Examples
-
-      iex> EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Comment, %{id: 1})
-      #Ecto.Query<from c0 in EctoShorts.Support.Schemas.Comment, where: c0.id == ^1>
+  ...
   """
-  @spec convert_params_to_filter(
-          query :: query() | queryable() | source_queryable(),
-          params :: params()
-        ) :: query()
-  def convert_params_to_filter(queryable, params) when params === %{} do
-    CommonSchemas.get_schema_query(queryable)
+  def convert_params_to_filter(query, [], _opts) do
+    query
   end
 
-  def convert_params_to_filter(queryable, params) when is_map(params) do
-    params = Map.to_list(params)
-
-    queryable
-    |> CommonSchemas.get_schema_query()
-    |> convert_params_to_filter(params)
+  def convert_params_to_filter(query, params, opts) do
+    convert_params_to_filter(
+      query,
+      CommonSchemas.get_schema_queryable(query),
+      params,
+      opts
+    )
   end
 
-  def convert_params_to_filter(queryable, params) do
-    query = CommonSchemas.get_schema_query(queryable)
+  @doc """
+  ...
+  """
+  def convert_params_to_filter(query, schema_module, params, opts) when is_map(params) do
+    convert_params_to_filter(query, schema_module, Map.to_list(params), opts)
+  end
 
+  def convert_params_to_filter(query, schema_module, params, opts) do
     params
-    |> ensure_last_is_final_filter
-    |> Enum.reduce(query, &reduce_schema_filter/2)
+    |> ensure_last_is_final_filter()
+    |> Enum.reduce(query, fn {key, value}, query ->
+      QueryBuilder.build_query(query, schema_module, key, value, nil, opts)
+    end)
   end
 
-  defp reduce_schema_filter({filter_key, filter_value}, query) do
-    create_schema_filter(query, filter_key, filter_value)
-  end
-
-  @impl true
+  @impl EctoShorts.QueryBuilder
   @doc """
-  Implementation for `c:EctoShorts.QueryBuilder.create_schema_filter/3`.
-
-  ### Examples
-
-      iex> EctoShorts.CommonFilters.create_schema_filter(EctoShorts.Support.Schemas.Post, :first, 1_000)
-      #Ecto.Query<from p0 in EctoShorts.Support.Schemas.Post, limit: ^1000>
-
-      iex> EctoShorts.CommonFilters.create_schema_filter(EctoShorts.Support.Schemas.Post, :comments, %{id: 1})
-      #Ecto.Query<from p0 in EctoShorts.Support.Schemas.Post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, where: c1.id == ^1>
+  ...
   """
-  @spec create_schema_filter(
-          query :: query(),
-          filter_key :: filter_key(),
-          filter_value :: filter_value()
-        ) :: query()
-  def create_schema_filter(query, filter_key, filter_value) when filter_key in @common_filters do
-    QueryBuilder.create_schema_filter(QueryBuilder.Common, query, filter_key, filter_value)
+  def build_query(query, schema_module, key, value, current_binding)
+      when key in @common_filters do
+    Common.build_query(query, schema_module, key, value, current_binding)
   end
 
-  def create_schema_filter(query, filter_key, filter_value) do
-    QueryBuilder.create_schema_filter(QueryBuilder.Schema, query, filter_key, filter_value)
+  def build_query(query, schema_module, key, value, current_binding) do
+    Schema.build_query(query, schema_module, key, value, current_binding)
   end
 
   defp ensure_last_is_final_filter(params) do
