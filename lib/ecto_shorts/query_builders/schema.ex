@@ -6,7 +6,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
   alias EctoShorts.{
     CommonSchemas,
-    QueryBuilders.DynamicExpression,
+    QueryBuilders.ExpressionBuilder,
     QueryBuilders.Expression
   }
 
@@ -15,6 +15,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   @filters ~w(
     join
     select
+    select_merge
     where
     or
     or_where
@@ -38,13 +39,13 @@ defmodule EctoShorts.QueryBuilders.Schema do
   def build_query(query, current_binding, schema_module, key, value) do
     cond do
       query_filter?(key) ->
-        build_query_filter(query, current_binding, schema_module, key, value)
+        build_query_expression(query, current_binding, schema_module, key, value)
 
       association?(schema_module, key) ->
-        build_assoc_filter(query, current_binding, schema_module, key, value)
+        build_assoc_expressions(query, current_binding, schema_module, key, value)
 
       query_field?(schema_module, key) ->
-        build_schema_filter(query, current_binding, schema_module, key, value)
+        build_schema_expressions(query, current_binding, schema_module, key, value)
 
       true ->
         EctoShorts.Utils.Logger.warning(
@@ -56,81 +57,97 @@ defmodule EctoShorts.QueryBuilders.Schema do
     end
   end
 
-  defp build_schema_filter(query, current_binding, schema_module, key, value) do
-    DynamicExpression.apply_filters(query, value, fn query, value ->
-      apply_dynamic_schema_filter(query, current_binding, schema_module, key, value)
+  defp build_schema_expressions(query, current_binding, schema_module, key, value) do
+    ExpressionBuilder.apply_expressions(query, value, fn query, value ->
+      apply_schema_expression(query, current_binding, schema_module, key, value)
     end)
   end
 
-  defp apply_dynamic_schema_filter(query, current_binding, schema_module, key, {operator, value}) do
+  defp apply_schema_expression(query, current_binding, schema_module, key, {operator, value}) do
     source_key = field_source(schema_module, key)
 
-    DynamicExpression.where(query, current_binding, source_key, operator, value)
+    ExpressionBuilder.where(query, current_binding, source_key, operator, value)
   end
 
-  defp apply_dynamic_schema_filter(query, current_binding, schema_module, key, value) do
-    apply_dynamic_schema_filter(query, current_binding, schema_module, key, {:==, value})
+  defp apply_schema_expression(query, current_binding, schema_module, key, value) do
+    source_key = field_source(schema_module, key)
+
+    ExpressionBuilder.where(query, current_binding, source_key, :==, value)
   end
 
-  defp build_assoc_filter(query, current_binding, schema_module, key, value) do
-    join_association(query, current_binding, schema_module, key, value)
+  defp build_assoc_expressions(query, current_binding, schema_module, key, value) do
+    build_association_expression(query, current_binding, schema_module, key, value)
   end
 
-  defp build_query_filter(query, current_binding, schema_module, :join, value) do
+  defp build_query_expression(query, current_binding, schema_module, :join, value) do
     case value do
       {:association, params} ->
         Enum.reduce(params, query, fn {key, value}, query ->
-          join_association(query, current_binding, schema_module, key, value)
+          build_association_expression(query, current_binding, schema_module, key, value)
         end)
 
       {:subquery, params} ->
-        join_subquery(query, current_binding, schema_module, params)
+        build_subquery_expression(query, current_binding, schema_module, params)
 
       params ->
         Enum.reduce(params, query, fn {key, value}, query ->
-          build_query_filter(query, current_binding, schema_module, :join, {key, value})
+          build_query_expression(query, current_binding, schema_module, :join, {key, value})
         end)
     end
   end
 
-  defp build_query_filter(query, current_binding, schema_module, operator, value)
+  defp build_query_expression(query, current_binding, schema_module, operator, value)
        when operator in [:or, :or_where] do
-    DynamicExpression.apply_filters(query, value, fn query, value ->
+    ExpressionBuilder.apply_expressions(query, value, fn query, value ->
       or_where(query, current_binding, schema_module, value)
     end)
   end
 
-  defp build_query_filter(query, current_binding, _schema_module, :select, value) do
-    Expression.select(query, current_binding, value)
+  defp build_query_expression(query, current_binding, _schema_module, :select, value) do
+    ExpressionBuilder.select(query, current_binding, value)
+  end
+
+  defp build_query_expression(query, current_binding, _schema_module, :select_merge, value) do
+    ExpressionBuilder.select_merge(query, current_binding, value)
   end
 
   defp or_where(query, current_binding, schema_module, {key, {operator, value}}) do
     source_key = field_source(schema_module, key)
 
-    DynamicExpression.or_where(query, current_binding, source_key, operator, value)
+    ExpressionBuilder.or_where(query, current_binding, source_key, operator, value)
   end
 
   defp or_where(query, current_binding, schema_module, {key, value}) do
-    or_where(query, current_binding, schema_module, {key, {:==, value}})
-  end
-
-  defp join_association(query, current_binding, schema_module, key, params) do
     source_key = field_source(schema_module, key)
 
-    assoc_schema_module = ecto_association_schema(schema_module, source_key)
+    ExpressionBuilder.or_where(query, current_binding, source_key, :==, value)
+  end
 
-    {as, join_params} = Map.pop(params, :as)
+  defp build_association_expression(query, current_binding, schema_module, key, params) do
+    source_key = field_source(schema_module, key)
+
+    {as, params} = Map.pop(params, :as)
 
     assoc_binding = as || named_binding(source_key)
 
-    params = Map.drop(params, [:on, :qualifier, :prefix])
-
-    query
-    |> Expression.join({current_binding, assoc_binding}, :association, source_key, join_params)
-    |> build_query(assoc_binding, assoc_schema_module, params)
+    ExpressionBuilder.join_association(
+      query,
+      {current_binding, assoc_binding},
+      schema_module,
+      source_key,
+      params,
+      fn query, assoc_binding, assoc_schema_module, params ->
+        build_query(query, assoc_binding, assoc_schema_module, params)
+      end
+    )
   end
 
-  defp join_subquery(query, current_binding, _schema_module, %{from: from} = params) do
+  defp build_subquery_expression(
+         query,
+         current_binding,
+         _schema_module,
+         %{from: from} = params
+       ) do
     {as, join_params} = Map.pop(params, :as)
 
     subquery_schema_module = CommonSchemas.get_schema_queryable(from)
@@ -145,18 +162,6 @@ defmodule EctoShorts.QueryBuilders.Schema do
     query
     |> Expression.join({current_binding, subquery_binding}, :subquery, from, join_params)
     |> build_query(subquery_binding, subquery_schema_module, params)
-  end
-
-  defp ecto_association_schema(schema_module, key) do
-    case schema_module.__schema__(:association, key) do
-      %{through: [field1, field2]} ->
-        schema_module
-        |> ecto_association_schema(field1)
-        |> ecto_association_schema(field2)
-
-      %{related: related} ->
-        related
-    end
   end
 
   defp named_binding_from_module(module) do

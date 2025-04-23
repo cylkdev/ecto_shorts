@@ -4,7 +4,7 @@ defmodule EctoShorts.QueryBuilders.Common do
   ...
   """
 
-  alias EctoShorts.QueryBuilders.{Expression, DynamicExpression}
+  alias EctoShorts.QueryBuilders.{Expression, ExpressionBuilder}
 
   @filters ~w(
     after
@@ -35,7 +35,7 @@ defmodule EctoShorts.QueryBuilders.Common do
   ...
   """
   def build_query(query, current_binding, _schema_module, :ids, values) do
-    DynamicExpression.where(query, current_binding, :id, :==, values)
+    ExpressionBuilder.where(query, current_binding, :id, :==, values)
   end
 
   def build_query(query, current_binding, _schema_module, :first, value) do
@@ -68,27 +68,27 @@ defmodule EctoShorts.QueryBuilders.Common do
   end
 
   def build_query(query, current_binding, _schema_module, :after, value) do
-    DynamicExpression.where(query, current_binding, :id, :>, value)
+    ExpressionBuilder.where(query, current_binding, :id, :>, value)
   end
 
   def build_query(query, current_binding, _schema_module, :before, value) do
-    DynamicExpression.where(query, current_binding, :id, :<, value)
+    ExpressionBuilder.where(query, current_binding, :id, :<, value)
   end
 
   def build_query(query, current_binding, _schema_module, :since, value) do
-    DynamicExpression.where(query, current_binding, :inserted_at, :>=, value)
+    ExpressionBuilder.where(query, current_binding, :inserted_at, :>=, value)
   end
 
   def build_query(query, current_binding, _schema_module, :until, value) do
-    DynamicExpression.where(query, current_binding, :inserted_at, :<=, value)
+    ExpressionBuilder.where(query, current_binding, :inserted_at, :<=, value)
   end
 
   def build_query(query, current_binding, _schema_module, :start_date, value) do
-    DynamicExpression.where(query, current_binding, :inserted_at, :>=, value)
+    ExpressionBuilder.where(query, current_binding, :inserted_at, :>=, value)
   end
 
   def build_query(query, current_binding, _schema_module, :end_date, value) do
-    DynamicExpression.where(query, current_binding, :inserted_at, :<=, value)
+    ExpressionBuilder.where(query, current_binding, :inserted_at, :<=, value)
   end
 
   def build_query(query, schema_module, :search, value) do

@@ -1,7 +1,7 @@
 defmodule EctoShorts.QueryBuilders.Expression do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  ...
+  Ecto Query expression API
   """
 
   alias Ecto.Query
@@ -56,11 +56,51 @@ defmodule EctoShorts.QueryBuilders.Expression do
     end
   end
 
+  def select(query, current_binding, true) do
+    if current_binding do
+      Query.select(query, [{^current_binding, q}], q)
+    else
+      Query.select(query, [q], q)
+    end
+  end
+
   def select(query, current_binding, value) do
     if current_binding do
       Query.select(query, [{^current_binding, q}], ^value)
     else
       Query.select(query, [q], ^value)
+    end
+  end
+
+  def select(query, current_binding, :map, values) do
+    if current_binding do
+      Query.select(query, [{^current_binding, q}], map(q, ^values))
+    else
+      Query.select(query, [q], map(q, ^values))
+    end
+  end
+
+  def select(query, current_binding, :struct, values) do
+    if current_binding do
+      Query.select(query, [{^current_binding, q}], struct(q, ^values))
+    else
+      Query.select(query, [q], struct(q, ^values))
+    end
+  end
+
+  def select_merge(query, current_binding, true) do
+    if current_binding do
+      Query.select_merge(query, [{^current_binding, q}], q)
+    else
+      Query.select_merge(query, [q], q)
+    end
+  end
+
+  def select_merge(query, current_binding, value) do
+    if current_binding do
+      Query.select_merge(query, [{^current_binding, q}], ^value)
+    else
+      Query.select_merge(query, [q], ^value)
     end
   end
 

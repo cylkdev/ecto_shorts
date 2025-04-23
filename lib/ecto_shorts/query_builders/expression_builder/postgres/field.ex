@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
+defmodule EctoShorts.QueryBuilders.ExpressionBuilder.Postgres.Field do
   @moduledoc since: "2.5.0"
   @moduledoc """
   ...
@@ -8,7 +8,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
 
   require Ecto.Query
 
-  def dynamic_expression(current_binding, true) do
+  def where(current_binding, true) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], q)
     else
@@ -16,7 +16,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :=~, value) do
+  def where(current_binding, schema_field, :=~, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], fragment("? ~* ?", field(q, ^schema_field), ^value))
     else
@@ -24,7 +24,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :ilike, value) do
+  def where(current_binding, schema_field, :ilike, value) do
     pattern = "%#{value}%"
 
     if current_binding do
@@ -34,7 +34,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :like, value) do
+  def where(current_binding, schema_field, :like, value) do
     pattern = "%#{value}%"
 
     if current_binding do
@@ -44,7 +44,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :<, value) do
+  def where(current_binding, schema_field, :<, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) < ^value)
     else
@@ -52,7 +52,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :>, value) do
+  def where(current_binding, schema_field, :>, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) > ^value)
     else
@@ -60,7 +60,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :<=, value) do
+  def where(current_binding, schema_field, :<=, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) <= ^value)
     else
@@ -68,7 +68,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :>=, value) do
+  def where(current_binding, schema_field, :>=, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) >= ^value)
     else
@@ -76,7 +76,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :!=, {:lower, value}) do
+  def where(current_binding, schema_field, :!=, {:lower, value}) do
     if current_binding do
       Query.dynamic(
         [{^current_binding, q}],
@@ -87,7 +87,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :!=, {:upper, value}) do
+  def where(current_binding, schema_field, :!=, {:upper, value}) do
     if current_binding do
       Query.dynamic(
         [{^current_binding, q}],
@@ -98,7 +98,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :==, {:lower, value}) do
+  def where(current_binding, schema_field, :==, {:lower, value}) do
     if current_binding do
       Query.dynamic(
         [{^current_binding, q}],
@@ -109,7 +109,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :==, {:upper, value}) do
+  def where(current_binding, schema_field, :==, {:upper, value}) do
     if current_binding do
       Query.dynamic(
         [{^current_binding, q}],
@@ -120,7 +120,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :!=, nil) do
+  def where(current_binding, schema_field, :!=, nil) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], not is_nil(field(q, ^schema_field)))
     else
@@ -128,7 +128,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :!=, values) when is_list(values) do
+  def where(current_binding, schema_field, :!=, values) when is_list(values) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) not in ^values)
     else
@@ -136,7 +136,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :!=, value) do
+  def where(current_binding, schema_field, :!=, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) != ^value)
     else
@@ -144,7 +144,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :==, nil) do
+  def where(current_binding, schema_field, :==, nil) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], is_nil(field(q, ^schema_field)))
     else
@@ -152,7 +152,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :==, values) when is_list(values) do
+  def where(current_binding, schema_field, :==, values) when is_list(values) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) in ^values)
     else
@@ -160,7 +160,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Field do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :==, value) do
+  def where(current_binding, schema_field, :==, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) == ^value)
     else

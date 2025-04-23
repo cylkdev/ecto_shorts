@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
+defmodule EctoShorts.QueryBuilders.ExpressionBuilder.Postgres.Array do
   @moduledoc since: "2.5.0"
   @moduledoc """
   ...
@@ -8,7 +8,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
 
   require Ecto.Query
 
-  def dynamic_expression(current_binding, value, :=~, schema_field) do
+  def where(current_binding, value, :=~, schema_field) do
     if current_binding do
       Query.dynamic(
         [{^current_binding, q}],
@@ -19,7 +19,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, value, :ilike, schema_field) do
+  def where(current_binding, value, :ilike, schema_field) do
     pattern = "%#{value}%"
 
     if current_binding do
@@ -32,7 +32,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, value, :like, schema_field) do
+  def where(current_binding, value, :like, schema_field) do
     pattern = "%#{value}%"
 
     if current_binding do
@@ -45,7 +45,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :<, values) when is_list(values) do
+  def where(current_binding, schema_field, :<, values) when is_list(values) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) < ^values)
     else
@@ -53,7 +53,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, value, :<, schema_field) when is_atom(schema_field) do
+  def where(current_binding, value, :<, schema_field) when is_atom(schema_field) do
     if current_binding do
       Query.dynamic(
         [{^current_binding, q}],
@@ -64,7 +64,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :>, values) when is_list(values) do
+  def where(current_binding, schema_field, :>, values) when is_list(values) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) > ^values)
     else
@@ -72,7 +72,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, value, :>, schema_field) when is_atom(schema_field) do
+  def where(current_binding, value, :>, schema_field) when is_atom(schema_field) do
     if current_binding do
       Query.dynamic(
         [{^current_binding, q}],
@@ -83,7 +83,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :<=, values) when is_list(values) do
+  def where(current_binding, schema_field, :<=, values) when is_list(values) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) <= ^values)
     else
@@ -91,7 +91,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, value, :<=, schema_field) when is_atom(schema_field) do
+  def where(current_binding, value, :<=, schema_field) when is_atom(schema_field) do
     if current_binding do
       Query.dynamic(
         [{^current_binding, q}],
@@ -102,7 +102,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :>=, values) when is_list(values) do
+  def where(current_binding, schema_field, :>=, values) when is_list(values) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) >= ^values)
     else
@@ -110,7 +110,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, value, :>=, schema_field) when is_atom(schema_field) do
+  def where(current_binding, value, :>=, schema_field) when is_atom(schema_field) do
     if current_binding do
       Query.dynamic(
         [{^current_binding, q}],
@@ -121,7 +121,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :!=, nil) do
+  def where(current_binding, schema_field, :!=, nil) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], not is_nil(field(q, ^schema_field)))
     else
@@ -129,7 +129,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :!=, values) when is_list(values) do
+  def where(current_binding, schema_field, :!=, values) when is_list(values) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) != ^values)
     else
@@ -137,7 +137,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, value, :!=, schema_field) do
+  def where(current_binding, value, :!=, schema_field) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], ^value not in field(q, ^schema_field))
     else
@@ -145,7 +145,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :==, nil) do
+  def where(current_binding, schema_field, :==, nil) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], is_nil(field(q, ^schema_field)))
     else
@@ -153,7 +153,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, schema_field, :==, values) when is_list(values) do
+  def where(current_binding, schema_field, :==, values) when is_list(values) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], field(q, ^schema_field) == ^values)
     else
@@ -161,7 +161,7 @@ defmodule EctoShorts.QueryBuilders.DynamicExpression.Postgres.Array do
     end
   end
 
-  def dynamic_expression(current_binding, value, :==, schema_field) do
+  def where(current_binding, value, :==, schema_field) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], ^value in field(q, ^schema_field))
     else
