@@ -57,17 +57,54 @@ defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
   defp has_params?([head | _]) when is_list(head) or is_map(head), do: true
   defp has_params?(_), do: false
 
-  def join_association(query, {current_binding, assoc_binding}, schema_module, key, params, fun) do
-    assoc_schema_module = get_ecto_association_schema(schema_module, key)
+  def join_association(query, current_binding, schema_module, key, params, fun) do
+    source_key = field_source(schema_module, key)
+
+    assoc_schema_module = get_ecto_association_schema(schema_module, source_key)
+
+    {assoc_binding, params} = Map.pop(params, :as)
+
+    assoc_binding = assoc_binding || named_binding(source_key)
 
     query
     |> Expression.join(
       {current_binding, assoc_binding},
       :association,
-      key,
+      source_key,
       Map.take(params, [:on, :qualifier, :prefix])
     )
     |> fun.(assoc_binding, assoc_schema_module, Map.drop(params, [:on, :qualifier, :prefix]))
+  end
+
+  def join_subquery(
+        query,
+        current_binding,
+        _schema_module,
+        from,
+        params,
+        fun
+      ) do
+    subquery_schema_module = CommonSchemas.get_schema_queryable(from)
+
+    {subquery_binding, params} = Map.pop(params, :as)
+
+    subquery_binding =
+      with nil <- subquery_binding do
+        named_binding_from_module(subquery_schema_module)
+      end
+
+    query
+    |> Expression.join(
+      {current_binding, subquery_binding},
+      :subquery,
+      from,
+      Map.take(params, [:on, :qualifier, :prefix])
+    )
+    |> fun.(
+      subquery_binding,
+      subquery_schema_module,
+      Map.drop(params, [:on, :qualifier, :prefix])
+    )
   end
 
   @doc """
@@ -134,51 +171,59 @@ defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
     end
   end
 
-  defp or_where_array_expr(query, current_binding, _schema_module, key, {operator, value}) do
+  defp or_where_array_expr(query, current_binding, schema_module, key, {operator, value}) do
+    source_key = field_source(schema_module, key)
+
     if is_list(value) do
       Expression.or_where(
         query,
         nil,
-        Postgres.Array.where(current_binding, key, operator, value)
+        Postgres.Array.where(current_binding, source_key, operator, value)
       )
     else
       Expression.or_where(
         query,
         nil,
-        Postgres.Array.where(current_binding, value, operator, key)
+        Postgres.Array.where(current_binding, value, operator, source_key)
       )
     end
   end
 
-  defp or_where_array_expr(query, current_binding, _schema_module, key, value) do
+  defp or_where_array_expr(query, current_binding, schema_module, key, value) do
+    source_key = field_source(schema_module, key)
+
     if is_list(value) do
       Expression.or_where(
         query,
         nil,
-        Postgres.Array.where(current_binding, key, :==, value)
+        Postgres.Array.where(current_binding, source_key, :==, value)
       )
     else
       Expression.or_where(
         query,
         nil,
-        Postgres.Array.where(current_binding, value, :==, key)
+        Postgres.Array.where(current_binding, value, :==, source_key)
       )
     end
   end
 
-  defp or_where_field_expr(query, current_binding, _schema_module, key, {operator, value}) do
+  defp or_where_field_expr(query, current_binding, schema_module, key, {operator, value}) do
+    source_key = field_source(schema_module, key)
+
     Expression.or_where(
       query,
       nil,
-      Postgres.Field.where(current_binding, key, operator, value)
+      Postgres.Field.where(current_binding, source_key, operator, value)
     )
   end
 
-  defp or_where_field_expr(query, current_binding, _schema_module, key, value) do
+  defp or_where_field_expr(query, current_binding, schema_module, key, value) do
+    source_key = field_source(schema_module, key)
+
     Expression.or_where(
       query,
       nil,
-      Postgres.Field.where(current_binding, key, :==, value)
+      Postgres.Field.where(current_binding, source_key, :==, value)
     )
   end
 
@@ -212,52 +257,76 @@ defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
     end
   end
 
-  defp where_array(query, current_binding, _schema_module, key, {operator, value}) do
+  defp where_array(query, current_binding, schema_module, key, {operator, value}) do
+    source_key = field_source(schema_module, key)
+
     if is_list(value) do
       Expression.where(
         query,
         nil,
-        Postgres.Array.where(current_binding, key, operator, value)
+        Postgres.Array.where(current_binding, source_key, operator, value)
       )
     else
       Expression.where(
         query,
         nil,
-        Postgres.Array.where(current_binding, value, operator, key)
+        Postgres.Array.where(current_binding, value, operator, source_key)
       )
     end
   end
 
-  defp where_array(query, current_binding, _schema_module, key, value) do
+  defp where_array(query, current_binding, schema_module, key, value) do
+    source_key = field_source(schema_module, key)
+
     if is_list(value) do
       Expression.where(
         query,
         nil,
-        Postgres.Array.where(current_binding, key, :==, value)
+        Postgres.Array.where(current_binding, source_key, :==, value)
       )
     else
       Expression.where(
         query,
         nil,
-        Postgres.Array.where(current_binding, value, :==, key)
+        Postgres.Array.where(current_binding, value, :==, source_key)
       )
     end
   end
 
-  defp where_field(query, current_binding, _schema_module, key, {operator, value}) do
+  defp where_field(query, current_binding, schema_module, key, {operator, value}) do
+    source_key = field_source(schema_module, key)
+
     Expression.where(
       query,
       nil,
-      Postgres.Field.where(current_binding, key, operator, value)
+      Postgres.Field.where(current_binding, source_key, operator, value)
     )
   end
 
-  defp where_field(query, current_binding, _schema_module, key, value) do
+  defp where_field(query, current_binding, schema_module, key, value) do
+    source_key = field_source(schema_module, key)
+
     Expression.where(
       query,
       nil,
-      Postgres.Field.where(current_binding, key, :==, value)
+      Postgres.Field.where(current_binding, source_key, :==, value)
     )
+  end
+
+  defp field_source(schema_module, key) do
+    schema_module.__schema__(:field_source, key) || key
+  end
+
+  defp named_binding_from_module(module) do
+    module
+    |> Module.split()
+    |> List.last()
+    |> Macro.underscore()
+    |> named_binding()
+  end
+
+  defp named_binding(key) do
+    :"ecto_shorts_#{key}"
   end
 
   defp get_ecto_association_schema(schema_module, key) do

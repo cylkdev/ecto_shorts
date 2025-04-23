@@ -4,11 +4,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   ...
   """
 
-  alias EctoShorts.{
-    CommonSchemas,
-    QueryBuilders.ExpressionBuilder,
-    QueryBuilders.Expression
-  }
+  alias EctoShorts.QueryBuilders.ExpressionBuilder
 
   @behaviour EctoShorts.QueryBuilder
 
@@ -39,13 +35,13 @@ defmodule EctoShorts.QueryBuilders.Schema do
   def build_query(query, current_binding, schema_module, key, value) do
     cond do
       query_filter?(key) ->
-        build_query_expression(query, current_binding, schema_module, key, value)
+        build_query_filters(query, current_binding, schema_module, key, value)
 
       association?(schema_module, key) ->
-        build_assoc_expressions(query, current_binding, schema_module, key, value)
+        build_assoc_filters(query, current_binding, schema_module, key, value)
 
       query_field?(schema_module, key) ->
-        build_schema_expressions(query, current_binding, schema_module, key, value)
+        build_schema_filters(query, current_binding, schema_module, key, value)
 
       true ->
         EctoShorts.Utils.Logger.warning(
@@ -57,84 +53,65 @@ defmodule EctoShorts.QueryBuilders.Schema do
     end
   end
 
-  defp build_schema_expressions(query, current_binding, schema_module, key, value) do
+  defp build_schema_filters(query, current_binding, schema_module, key, value) do
     ExpressionBuilder.apply_expressions(query, value, fn query, value ->
-      apply_schema_expression(query, current_binding, schema_module, key, value)
+      apply_schema_filter(query, current_binding, schema_module, key, value)
     end)
   end
 
-  defp apply_schema_expression(query, current_binding, schema_module, key, {operator, value}) do
-    source_key = field_source(schema_module, key)
-
-    ExpressionBuilder.where(query, current_binding, source_key, operator, value)
+  defp apply_schema_filter(query, current_binding, _schema_module, key, {operator, value}) do
+    ExpressionBuilder.where(query, current_binding, key, operator, value)
   end
 
-  defp apply_schema_expression(query, current_binding, schema_module, key, value) do
-    source_key = field_source(schema_module, key)
-
-    ExpressionBuilder.where(query, current_binding, source_key, :==, value)
+  defp apply_schema_filter(query, current_binding, _schema_module, key, value) do
+    ExpressionBuilder.where(query, current_binding, key, :==, value)
   end
 
-  defp build_assoc_expressions(query, current_binding, schema_module, key, value) do
-    build_association_expression(query, current_binding, schema_module, key, value)
-  end
-
-  defp build_query_expression(query, current_binding, schema_module, :join, value) do
+  defp build_query_filters(query, current_binding, schema_module, :join, value) do
     case value do
       {:association, params} ->
         Enum.reduce(params, query, fn {key, value}, query ->
-          build_association_expression(query, current_binding, schema_module, key, value)
+          build_assoc_filters(query, current_binding, schema_module, key, value)
         end)
 
       {:subquery, params} ->
-        build_subquery_expression(query, current_binding, schema_module, params)
+        build_subquery_filters(query, current_binding, schema_module, params)
 
       params ->
         Enum.reduce(params, query, fn {key, value}, query ->
-          build_query_expression(query, current_binding, schema_module, :join, {key, value})
+          build_query_filters(query, current_binding, schema_module, :join, {key, value})
         end)
     end
   end
 
-  defp build_query_expression(query, current_binding, schema_module, operator, value)
-       when operator in [:or, :or_where] do
+  defp build_query_filters(query, current_binding, schema_module, operator, value) when operator in [:or, :or_where] do
     ExpressionBuilder.apply_expressions(query, value, fn query, value ->
       or_where(query, current_binding, schema_module, value)
     end)
   end
 
-  defp build_query_expression(query, current_binding, _schema_module, :select, value) do
+  defp build_query_filters(query, current_binding, _schema_module, :select, value) do
     ExpressionBuilder.select(query, current_binding, value)
   end
 
-  defp build_query_expression(query, current_binding, _schema_module, :select_merge, value) do
+  defp build_query_filters(query, current_binding, _schema_module, :select_merge, value) do
     ExpressionBuilder.select_merge(query, current_binding, value)
   end
 
-  defp or_where(query, current_binding, schema_module, {key, {operator, value}}) do
-    source_key = field_source(schema_module, key)
-
-    ExpressionBuilder.or_where(query, current_binding, source_key, operator, value)
+  defp or_where(query, current_binding, _schema_module, {key, {operator, value}}) do
+    ExpressionBuilder.or_where(query, current_binding, key, operator, value)
   end
 
-  defp or_where(query, current_binding, schema_module, {key, value}) do
-    source_key = field_source(schema_module, key)
-
-    ExpressionBuilder.or_where(query, current_binding, source_key, :==, value)
+  defp or_where(query, current_binding, _schema_module, {key, value}) do
+    ExpressionBuilder.or_where(query, current_binding, key, :==, value)
   end
 
-  defp build_association_expression(query, current_binding, schema_module, key, params) do
-    source_key = field_source(schema_module, key)
-
-    {as, params} = Map.pop(params, :as)
-
-    assoc_binding = as || named_binding(source_key)
-
+  defp build_assoc_filters(query, current_binding, schema_module, key, params) do
     ExpressionBuilder.join_association(
       query,
-      {current_binding, assoc_binding},
+      current_binding,
       schema_module,
-      source_key,
+      key,
       params,
       fn query, assoc_binding, assoc_schema_module, params ->
         build_query(query, assoc_binding, assoc_schema_module, params)
@@ -142,42 +119,22 @@ defmodule EctoShorts.QueryBuilders.Schema do
     )
   end
 
-  defp build_subquery_expression(
+  defp build_subquery_filters(
          query,
          current_binding,
-         _schema_module,
+         schema_module,
          %{from: from} = params
        ) do
-    {as, join_params} = Map.pop(params, :as)
-
-    subquery_schema_module = CommonSchemas.get_schema_queryable(from)
-
-    subquery_binding =
-      with nil <- as do
-        named_binding_from_module(subquery_schema_module)
+    ExpressionBuilder.join_subquery(
+      query,
+      current_binding,
+      schema_module,
+      from,
+      params,
+      fn query, subquery_binding, subquery_schema_module, params ->
+        build_query(query, subquery_binding, subquery_schema_module, params)
       end
-
-    params = Map.drop(params, [:on, :qualifier, :prefix])
-
-    query
-    |> Expression.join({current_binding, subquery_binding}, :subquery, from, join_params)
-    |> build_query(subquery_binding, subquery_schema_module, params)
-  end
-
-  defp named_binding_from_module(module) do
-    module
-    |> Module.split()
-    |> List.last()
-    |> Macro.underscore()
-    |> named_binding()
-  end
-
-  defp named_binding(key) do
-    :"ecto_shorts_#{key}"
-  end
-
-  defp field_source(schema_module, key) do
-    schema_module.__schema__(:field_source, key) || key
+    )
   end
 
   defp query_filter?(key) do
