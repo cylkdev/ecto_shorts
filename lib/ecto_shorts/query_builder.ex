@@ -1,8 +1,8 @@
 defmodule EctoShorts.QueryBuilder do
+  @moduledoc since: "2.5.0"
   @moduledoc """
   Specifies the query builder API required from adapters.
   """
-  @moduledoc since: "2.5.0"
 
   @type t :: module()
 
@@ -13,15 +13,17 @@ defmodule EctoShorts.QueryBuilder do
   @type queryable :: Ecto.Queryable.t()
   @type source_queryable :: {source(), queryable()}
 
+  @default_adapter EctoShorts.CommonFilters
+
   @doc """
   ...
   """
   @callback build_query(
               query :: query() | queryable() | source_queryable(),
+              current_binding :: atom() | nil,
               schema_module :: module(),
               key :: atom(),
-              value :: any(),
-              current_binding :: atom() | nil
+              value :: any()
             ) :: query() | queryable()
 
   @doc """
@@ -29,26 +31,17 @@ defmodule EctoShorts.QueryBuilder do
   """
   @spec build_query(
           query :: query() | queryable() | source_queryable(),
-          schema_module :: module(),
-          key :: atom(),
-          value :: any(),
-          current_binding :: atom() | nil
-        ) :: query() | queryable()
-  @spec build_query(
-          query :: query() | queryable() | source_queryable(),
-          schema_module :: module(),
-          key :: atom(),
-          value :: any(),
           current_binding :: atom() | nil,
+          schema_module :: module(),
+          key :: atom(),
+          value :: any(),
           opts :: keyword()
         ) :: query() | queryable()
-  def build_query(query, schema_module, key, value, current_binding, opts \\ []) do
-    query_builder_adapter!(opts).build_query(query, schema_module, key, value, current_binding)
+  def build_query(query, current_binding, schema_module, key, value, opts) do
+    adapter(opts).build_query(query, current_binding, schema_module, key, value)
   end
 
-  defp query_builder_adapter!(opts) do
-    with nil <- opts[:query_builder_adapter] do
-      raise KeyError, "key :query_builder_adapter not found in #{inspect(opts)}"
-    end
+  defp adapter(opts) do
+    opts[:query_builder_adapter] || @default_adapter
   end
 end

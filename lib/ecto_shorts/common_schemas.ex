@@ -118,7 +118,9 @@ defmodule EctoShorts.CommonSchemas do
       iex> EctoShorts.CommonSchemas.get_schema_queryable({"users", MyApp.UserSchema})
   """
   @doc since: "2.5.0"
-  @spec get_schema_queryable(query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()}) ::
+  @spec get_schema_queryable(
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()} | Ecto.Query.t()
+        ) ::
           Ecto.Queryable.t()
   def get_schema_queryable({_source, queryable}), do: queryable
   def get_schema_queryable(query), do: QueryHelpers.get_queryable(query)
