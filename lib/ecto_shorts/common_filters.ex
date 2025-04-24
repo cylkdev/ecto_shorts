@@ -3,11 +3,20 @@ defmodule EctoShorts.CommonFilters do
   ...
   """
 
-  alias EctoShorts.CommonSchemas
-  alias EctoShorts.{QueryBuilder, QueryBuilder}
+  alias EctoShorts.{
+    CommonSchemas,
+    QueryBuilder,
+    QueryBuilder.Common,
+    QueryBuilder.Schema
+  }
 
   @behaviour EctoShorts.QueryBuilder
 
+  @common_filters Common.filters()
+
+  @doc """
+  ...
+  """
   def convert_params_to_filter(query, params, opts \\ [])
 
   def convert_params_to_filter(query, params, opts) do
@@ -20,7 +29,12 @@ defmodule EctoShorts.CommonFilters do
   end
 
   def convert_params_to_filter(query, schema_module, params, opts) when is_list(params) do
-    convert_params_to_filter(query, schema_module, Map.new(params), opts)
+    convert_params_to_filter(
+      query,
+      schema_module,
+      Map.new(params),
+      opts
+    )
   end
 
   def convert_params_to_filter(query, _schema_module, params, _opts) when params === %{} do
@@ -47,12 +61,12 @@ defmodule EctoShorts.CommonFilters do
   @doc """
   ...
   """
+  def build_query(query, current_binding, schema_module, key, value) when key in @common_filters do
+    Common.build_query(query, current_binding, schema_module, key, value)
+  end
+
   def build_query(query, current_binding, schema_module, key, value) do
-    if QueryBuilder.common_filter?(key) do
-      QueryBuilder.build_common_query(query, current_binding, schema_module, key, value)
-    else
-      QueryBuilder.build_schema_query(query, current_binding, schema_module, key, value)
-    end
+    Schema.build_query(query, current_binding, schema_module, key, value)
   end
 
   defp ensure_last_is_final_filter(params) do

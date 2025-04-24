@@ -8,6 +8,15 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   require Ecto.Query
 
+  @doc """
+  ...
+  """
+  def merge_dynamic(nil, dyn), do: dyn
+  def merge_dynamic(dyn_a, dyn_b), do: Query.dynamic(^dyn_a and ^dyn_b)
+
+  @doc """
+  ...
+  """
   def dynamic(current_binding \\ nil, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], ^value)
@@ -16,10 +25,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
-  def merge_dynamic(nil, dyn), do: dyn
-
-  def merge_dynamic(dyn_a, dyn_b), do: Query.dynamic(^dyn_a and ^dyn_b)
-
+  @doc """
+  ...
+  """
   def from(query, opts \\ []) do
     as = opts[:as]
 
@@ -43,18 +51,30 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
+  @doc """
+  ...
+  """
   def put_query_prefix(query, prefix) do
     Query.put_query_prefix(query, prefix)
   end
 
+  @doc """
+  ...
+  """
   def subquery(query, opts \\ []) do
     Query.subquery(query, opts)
   end
 
+  @doc """
+  ...
+  """
   def exclude(query, field) do
     Query.exclude(query, field)
   end
 
+  @doc """
+  ...
+  """
   def limit(query, current_binding, value) do
     if current_binding do
       Query.limit(query, [{^current_binding, q}], ^value)
@@ -63,6 +83,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
+  @doc """
+  ...
+  """
   def offset(query, current_binding, value) do
     if current_binding do
       Query.offset(query, [{^current_binding, q}], ^value)
@@ -71,6 +94,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
+  @doc """
+  ...
+  """
   def group_by(query, current_binding, value) do
     if current_binding do
       Query.group_by(query, [{^current_binding, q}], ^value)
@@ -79,6 +105,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
+  @doc """
+  ...
+  """
   def order_by(query, current_binding, value) do
     if current_binding do
       Query.order_by(query, [{^current_binding, q}], ^value)
@@ -87,6 +116,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
+  @doc """
+  ...
+  """
   def preload(query, current_binding, value) do
     if current_binding do
       Query.preload(query, [{^current_binding, q}], ^value)
@@ -95,6 +127,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
+  @doc """
+  ...
+  """
   def select(query, current_binding, true) do
     if current_binding do
       Query.select(query, [{^current_binding, q}], q)
@@ -127,6 +162,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
+  @doc """
+  ...
+  """
   def select_merge(query, current_binding, true) do
     if current_binding do
       Query.select_merge(query, [{^current_binding, q}], q)
@@ -145,6 +183,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   @default_join_opts [qualifier: :inner, on: true]
 
+  @doc """
+  ...
+  """
   def join(query, current_binding, {type, key, opts}) when is_map(opts) do
     join(query, current_binding, {type, key, Map.to_list(opts)})
   end
@@ -231,6 +272,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
+  @doc """
+  ...
+  """
   def or_where(query, current_binding, value) do
     if current_binding do
       Query.or_where(query, [{^current_binding, q}], ^value)
@@ -239,6 +283,9 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
+  @doc """
+  ...
+  """
   def where(query, current_binding, value) do
     if current_binding do
       Query.where(query, [{^current_binding, q}], ^value)
