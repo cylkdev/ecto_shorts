@@ -101,7 +101,7 @@ defmodule EctoShorts.CommonSchemas do
         ) :: queryable()
   def get_schema_queryable(%{__meta__: %{schema: queryable}}), do: queryable
   def get_schema_queryable({_source, queryable}), do: queryable
-  def get_schema_queryable(query), do: QueryHelpers.get_query_source(query)
+  def get_schema_queryable(query), do: QueryHelpers.get_query_schema(query)
 
   @doc """
   Returns a struct for the given schema.
