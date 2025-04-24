@@ -5,7 +5,9 @@ defmodule EctoShorts.QueryBuilder.Schema do
   """
 
   alias EctoShorts.{
+    CommonSchemas,
     QueryBuilder.Helpers,
+    QueryBuilder.QueryAPI,
     QueryBuilder.QueryExpressions
   }
 
@@ -99,7 +101,7 @@ defmodule EctoShorts.QueryBuilder.Schema do
   end
 
   defp build_assoc_filters(query, current_binding, schema_module, key, params) do
-    QueryExpressions.join_association(
+    join_association(
       query,
       current_binding,
       schema_module,
@@ -117,7 +119,7 @@ defmodule EctoShorts.QueryBuilder.Schema do
          schema_module,
          %{from: from} = params
        ) do
-    QueryExpressions.join_subquery(
+    join_subquery(
       query,
       current_binding,
       schema_module,
@@ -127,6 +129,74 @@ defmodule EctoShorts.QueryBuilder.Schema do
         build_query(query, subquery_binding, subquery_schema_module, params)
       end
     )
+  end
+
+  def join_association(query, current_binding, schema_module, key, params, fun) do
+    assoc_schema_module = ecto_association_schema(schema_module, key)
+
+    {assoc_binding, params} = Map.pop(params, :as)
+
+    assoc_binding = assoc_binding || named_binding(key)
+
+    query
+    |> QueryAPI.join(
+      {current_binding, assoc_binding},
+      {:association, key, Map.take(params, [:on, :qualifier, :prefix])}
+    )
+    |> fun.(assoc_binding, assoc_schema_module, Map.drop(params, [:on, :qualifier, :prefix]))
+  end
+
+  def join_subquery(
+        query,
+        current_binding,
+        _schema_module,
+        from,
+        params,
+        fun
+      ) do
+    subquery_schema_module = CommonSchemas.get_schema_queryable(from)
+
+    {subquery_binding, params} = Map.pop(params, :as)
+
+    subquery_binding =
+      with nil <- subquery_binding do
+        named_binding_from_module(subquery_schema_module)
+      end
+
+    query
+    |> QueryAPI.join(
+      {current_binding, subquery_binding},
+      {:subquery, from, Map.take(params, [:on, :qualifier, :prefix])}
+    )
+    |> fun.(
+      subquery_binding,
+      subquery_schema_module,
+      Map.drop(params, [:on, :qualifier, :prefix])
+    )
+  end
+
+  defp named_binding_from_module(module) do
+    module
+    |> Module.split()
+    |> List.last()
+    |> Macro.underscore()
+    |> named_binding()
+  end
+
+  defp named_binding(key) do
+    :"ecto_shorts_#{key}"
+  end
+
+  defp ecto_association_schema(schema_module, key) do
+    case schema_module.__schema__(:association, key) do
+      %{through: [field1, field2]} ->
+        schema_module
+        |> ecto_association_schema(field1)
+        |> ecto_association_schema(field2)
+
+      %{related: related} ->
+        related
+    end
   end
 
   defp query_expression_filter?(key) do
