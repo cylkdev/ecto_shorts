@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.QueryExpression do
+defmodule EctoShorts.QueryBuilder.QueryAPI do
   @moduledoc since: "2.5.0"
   @moduledoc """
   This module provides wrapper functions that simplifies the usage of the `Ecto.Query` api.
@@ -143,10 +143,7 @@ defmodule EctoShorts.QueryBuilder.QueryExpression do
     end
   end
 
-  @default_join_opts [
-    qualifier: :inner,
-    on: true
-  ]
+  @default_join_opts [qualifier: :inner, on: true]
 
   def join(query, current_binding, {type, key, opts}) when is_map(opts) do
     join(query, current_binding, {type, key, Map.to_list(opts)})

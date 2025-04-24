@@ -4,7 +4,10 @@ defmodule EctoShorts.QueryBuilder.Schema do
   ...
   """
 
-  alias EctoShorts.QueryBuilder.ExpressionBuilder
+  alias EctoShorts.{
+    QueryBuilder.Helpers,
+    QueryBuilder.QueryExpressions
+  }
 
   @behaviour EctoShorts.QueryBuilder
 
@@ -53,17 +56,17 @@ defmodule EctoShorts.QueryBuilder.Schema do
   end
 
   defp build_schema_filters(query, current_binding, schema_module, key, value) do
-    ExpressionBuilder.apply_expressions(query, value, fn query, value ->
+    Helpers.apply_expressions(query, value, fn query, value ->
       apply_schema_filter(query, current_binding, schema_module, key, value)
     end)
   end
 
   defp apply_schema_filter(query, current_binding, _schema_module, key, {operator, value}) do
-    ExpressionBuilder.where(query, current_binding, key, operator, value)
+    QueryExpressions.where(query, current_binding, key, operator, value)
   end
 
   defp apply_schema_filter(query, current_binding, _schema_module, key, value) do
-    ExpressionBuilder.where(query, current_binding, key, :==, value)
+    QueryExpressions.where(query, current_binding, key, :==, value)
   end
 
   defp build_query_expression(query, current_binding, schema_module, :join, value) do
@@ -84,19 +87,19 @@ defmodule EctoShorts.QueryBuilder.Schema do
   end
 
   defp build_query_expression(query, current_binding, _schema_module, :or_where, value) do
-    ExpressionBuilder.or_where(query, current_binding, value)
+    QueryExpressions.or_where(query, current_binding, value)
   end
 
   defp build_query_expression(query, current_binding, _schema_module, :select, value) do
-    ExpressionBuilder.select(query, current_binding, value)
+    QueryExpressions.select(query, current_binding, value)
   end
 
   defp build_query_expression(query, current_binding, _schema_module, :select_merge, value) do
-    ExpressionBuilder.select_merge(query, current_binding, value)
+    QueryExpressions.select_merge(query, current_binding, value)
   end
 
   defp build_assoc_filters(query, current_binding, schema_module, key, params) do
-    ExpressionBuilder.join_association(
+    QueryExpressions.join_association(
       query,
       current_binding,
       schema_module,
@@ -114,7 +117,7 @@ defmodule EctoShorts.QueryBuilder.Schema do
          schema_module,
          %{from: from} = params
        ) do
-    ExpressionBuilder.join_subquery(
+    QueryExpressions.join_subquery(
       query,
       current_binding,
       schema_module,

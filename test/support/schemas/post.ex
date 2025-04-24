@@ -8,6 +8,8 @@ defmodule EctoShorts.Support.Schemas.Post do
   schema "posts" do
     field(:tags, {:array, :string})
 
+    field(:expected_name, :string, source: :this_is_the_alias)
+
     field(:title, :string)
     field(:unique_identifier, :string)
     field(:likes, :integer)
