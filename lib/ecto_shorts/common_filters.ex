@@ -4,7 +4,7 @@ defmodule EctoShorts.CommonFilters do
   """
 
   alias EctoShorts.CommonSchemas
-  alias EctoShorts.{QueryBuilder, QueryBuilders}
+  alias EctoShorts.{QueryBuilder, QueryBuilder}
 
   @behaviour EctoShorts.QueryBuilder
 
@@ -48,10 +48,10 @@ defmodule EctoShorts.CommonFilters do
   ...
   """
   def build_query(query, current_binding, schema_module, key, value) do
-    if QueryBuilders.common_filter?(key) do
-      QueryBuilders.build_common_query(query, current_binding, schema_module, key, value)
+    if QueryBuilder.common_filter?(key) do
+      QueryBuilder.build_common_query(query, current_binding, schema_module, key, value)
     else
-      QueryBuilders.build_schema_query(query, current_binding, schema_module, key, value)
+      QueryBuilder.build_schema_query(query, current_binding, schema_module, key, value)
     end
   end
 

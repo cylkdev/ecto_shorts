@@ -1,12 +1,39 @@
-defmodule EctoShorts.QueryBuilders.Expression do
+defmodule EctoShorts.QueryBuilder.Expression do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  Ecto Query expression API
+  This module provides wrapper functions that simplifies the usage of the `Ecto.Query` api.
   """
 
   alias Ecto.Query
 
   require Ecto.Query
+
+  def from(query, opts \\ []) do
+    as = opts[:as]
+
+    prefix = opts[:prefix]
+
+    if as do
+      query
+      |> Query.from(as: ^as, prefix: ^prefix)
+      |> maybe_put_query_prefix(opts)
+    else
+      query
+      |> Query.from(prefix: ^prefix)
+      |> maybe_put_query_prefix(opts)
+    end
+  end
+
+  defp maybe_put_query_prefix(query, opts) do
+    case opts[:query_prefix] do
+      nil -> query
+      prefix -> put_query_prefix(query, prefix)
+    end
+  end
+
+  def put_query_prefix(query, prefix) do
+    Query.put_query_prefix(query, prefix)
+  end
 
   def subquery(query, opts \\ []) do
     Query.subquery(query, opts)
@@ -64,15 +91,7 @@ defmodule EctoShorts.QueryBuilders.Expression do
     end
   end
 
-  def select(query, current_binding, value) do
-    if current_binding do
-      Query.select(query, [{^current_binding, q}], ^value)
-    else
-      Query.select(query, [q], ^value)
-    end
-  end
-
-  def select(query, current_binding, :map, values) do
+  def select(query, current_binding, {:map, values}) do
     if current_binding do
       Query.select(query, [{^current_binding, q}], map(q, ^values))
     else
@@ -80,11 +99,19 @@ defmodule EctoShorts.QueryBuilders.Expression do
     end
   end
 
-  def select(query, current_binding, :struct, values) do
+  def select(query, current_binding, {:struct, values}) do
     if current_binding do
       Query.select(query, [{^current_binding, q}], struct(q, ^values))
     else
       Query.select(query, [q], struct(q, ^values))
+    end
+  end
+
+  def select(query, current_binding, value) do
+    if current_binding do
+      Query.select(query, [{^current_binding, q}], ^value)
+    else
+      Query.select(query, [q], ^value)
     end
   end
 
@@ -104,10 +131,21 @@ defmodule EctoShorts.QueryBuilders.Expression do
     end
   end
 
-  def join(query, {current_binding, join_binding_alias}, :association, key, opts) do
-    qual = opts[:qualifier] || :inner
+  @default_join_opts [
+    qualifier: :inner,
+    on: true
+  ]
 
-    on = opts[:on] || true
+  def join(query, current_binding, {type, key, opts}) when is_map(opts) do
+    join(query, current_binding, {type, key, Map.to_list(opts)})
+  end
+
+  def join(query, {current_binding, join_binding_alias}, {:association, key, opts}) do
+    opts = Keyword.merge(@default_join_opts, opts)
+
+    qual = opts[:qualifier]
+
+    on = opts[:on]
 
     prefix = opts[:prefix]
 
@@ -130,10 +168,12 @@ defmodule EctoShorts.QueryBuilders.Expression do
     end
   end
 
-  def join(query, current_binding, :association, key, opts) do
-    qual = opts[:qualifier] || :inner
+  def join(query, current_binding, {:association, key, opts}) do
+    opts = Keyword.merge(@default_join_opts, opts)
 
-    on = opts[:on] || true
+    qual = opts[:qualifier]
+
+    on = opts[:on]
 
     prefix = opts[:prefix]
 
@@ -144,10 +184,12 @@ defmodule EctoShorts.QueryBuilders.Expression do
     end
   end
 
-  def join(query, {current_binding, join_binding_alias}, :subquery, from, opts) do
-    qual = opts[:qualifier] || :left
+  def join(query, {current_binding, join_binding_alias}, {:subquery, from, opts}) do
+    opts = Keyword.merge(@default_join_opts, opts)
 
-    on = opts[:on] || true
+    qual = opts[:qualifier]
+
+    on = opts[:on]
 
     prefix = opts[:prefix]
 
@@ -164,10 +206,12 @@ defmodule EctoShorts.QueryBuilders.Expression do
     end)
   end
 
-  def join(query, current_binding, :subquery, from, opts) do
-    qual = opts[:qualifier] || :left
+  def join(query, current_binding, {:subquery, from, opts}) do
+    opts = Keyword.merge(@default_join_opts, opts)
 
-    on = opts[:on] || true
+    qual = opts[:qualifier]
+
+    on = opts[:on]
 
     prefix = opts[:prefix]
 

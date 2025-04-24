@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
+defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Ecto Query expression builder API
@@ -7,8 +7,8 @@ defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
   """
   alias EctoShorts.{
     CommonSchemas,
-    QueryBuilders.ExpressionBuilder.Postgres,
-    QueryBuilders.Expression
+    QueryBuilder.ExpressionBuilder.Postgres,
+    QueryBuilder.Expression
   }
 
   @doc """
@@ -69,9 +69,7 @@ defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
     query
     |> Expression.join(
       {current_binding, assoc_binding},
-      :association,
-      source_key,
-      Map.take(params, [:on, :qualifier, :prefix])
+      {:association, source_key, Map.take(params, [:on, :qualifier, :prefix])}
     )
     |> fun.(assoc_binding, assoc_schema_module, Map.drop(params, [:on, :qualifier, :prefix]))
   end
@@ -96,9 +94,7 @@ defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
     query
     |> Expression.join(
       {current_binding, subquery_binding},
-      :subquery,
-      from,
-      Map.take(params, [:on, :qualifier, :prefix])
+      {:subquery, from, Map.take(params, [:on, :qualifier, :prefix])}
     )
     |> fun.(
       subquery_binding,
@@ -112,16 +108,8 @@ defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
   """
   def select(query, current_binding, params) do
     apply_expressions(query, params, fn query, value ->
-      select_expr(query, current_binding, value)
+      Expression.select(query, current_binding, value)
     end)
-  end
-
-  defp select_expr(query, current_binding, {type, values}) do
-    Expression.select(query, current_binding, type, values)
-  end
-
-  defp select_expr(query, current_binding, value) do
-    Expression.select(query, current_binding, value)
   end
 
   @doc """
@@ -129,12 +117,8 @@ defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
   """
   def select_merge(query, current_binding, params) do
     apply_expressions(query, params, fn query, value ->
-      select_merge_expr(query, current_binding, value)
+      Expression.select_merge(query, current_binding, value)
     end)
-  end
-
-  defp select_merge_expr(query, current_binding, value) do
-    Expression.select_merge(query, current_binding, value)
   end
 
   @doc """
@@ -313,8 +297,9 @@ defmodule EctoShorts.QueryBuilders.ExpressionBuilder do
     )
   end
 
-  defp field_source(schema_module, key) do
-    schema_module.__schema__(:field_source, key) || key
+  defp field_source(_schema_module, key) do
+    key
+    # schema_module.__schema__(:field_source, key) || key
   end
 
   defp named_binding_from_module(module) do

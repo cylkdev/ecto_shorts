@@ -53,31 +53,161 @@ defmodule EctoShorts.CommonChanges do
       end
 
   """
-  require Logger
-
-  import Ecto.Changeset,
-    only: [
-      get_field: 2,
-      put_assoc: 4,
-      cast_assoc: 2,
-      cast_assoc: 3
-    ]
-
   alias Ecto.Changeset
-  alias EctoShorts.{Actions, Config, SchemaHelpers}
+
+  alias EctoShorts.{
+    Actions,
+    Config,
+    SchemaHelpers
+  }
+
+  @type changeset :: Ecto.Changeset.t()
+  @type key :: atom()
+
+  @filename_web_safe_regex ~r|^[ A-Za-z0-9\-\_\.\(\)]+$|u
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def validate_filename(changeset, key \\ :filename, opts \\ []) do
+    changeset
+    |> Changeset.validate_change(key, fn
+      ^key, nil ->
+        []
+
+      ^key, change ->
+        message =
+          "Can only contain characters alphanumeric characters " <>
+            "(A-Z, a-z, 0-9) or special characters space, " <>
+            "hyphen (-), underscore(_), and period (.)"
+
+        if Regex.match?(@filename_web_safe_regex, change), do: [], else: [{key, message}]
+    end)
+    |> Changeset.validate_length(key, min: opts[:min] || 1, max: opts[:max] || 255)
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def truncate_naive_datetime_change(changeset, key, precision \\ :second) do
+    Changeset.update_change(changeset, key, fn
+      datetime when is_struct(datetime, NaiveDateTime) ->
+        NaiveDateTime.truncate(datetime, precision)
+
+      term ->
+        term
+    end)
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def truncate_datetime_change(changeset, key, precision \\ :second) do
+    Changeset.update_change(changeset, key, fn
+      datetime when is_struct(datetime, DateTime) ->
+        DateTime.truncate(datetime, precision)
+
+      term ->
+        term
+    end)
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def put_new_change(changeset, key, term) do
+    case Changeset.get_change(changeset, key) do
+      nil -> Changeset.put_change(changeset, key, (is_function(term) && term.()) || term)
+      _ -> changeset
+    end
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def put_when_changed(changeset, when_key, when_fun \\ nil, update_key, update) do
+    change = Changeset.get_change(changeset, when_key)
+
+    change_present? =
+      with true <- not is_nil(change) do
+        (is_function(when_fun) && when_fun.(change)) || true
+      end
+
+    if change_present? do
+      if is_function(update) do
+        Changeset.put_change(changeset, update_key, update.())
+      else
+        Changeset.put_change(changeset, update_key, update)
+      end
+    else
+      changeset
+    end
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def put_new_when_changed(changeset, when_key, when_fun \\ nil, update_key, update) do
+    change = Changeset.get_change(changeset, when_key)
+
+    change_present? =
+      with true <- not is_nil(change) do
+        (is_function(when_fun) && when_fun.(change)) || true
+      end
+
+    if change_present? do
+      if is_function(update) do
+        put_new_change(changeset, update_key, update.())
+      else
+        put_new_change(changeset, update_key, update)
+      end
+    else
+      changeset
+    end
+  end
 
   @doc "Run's changeset function if when function returns true"
   @spec put_when(
-          Changeset.t(),
-          (Changeset.t() -> boolean),
-          (Changeset.t() -> Changeset.t())
-        ) :: Changeset.t()
+          changeset :: changeset(),
+          when_func :: (changeset() -> boolean()),
+          change_func :: (changeset() -> changeset())
+        ) :: changeset()
   def put_when(changeset, when_func, change_func) do
     if when_func.(changeset) do
       change_func.(changeset)
     else
       changeset
     end
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  @spec changeset_change_empty?(Changeset.t(), atom) :: boolean
+  def changeset_change_empty?(changeset, key) do
+    case Changeset.get_change(changeset, key) do
+      change when is_list(change) -> change === []
+      change when is_map(change) -> change === %{}
+      _ -> false
+    end
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  @spec changeset_change_nil?(Changeset.t(), atom) :: boolean
+  def changeset_change_nil?(changeset, key) do
+    changeset
+    |> Changeset.get_change(key)
+    |> is_nil()
   end
 
   @doc """
@@ -88,9 +218,13 @@ defmodule EctoShorts.CommonChanges do
 
       iex> EctoShorts.CommonChanges.changeset_field_empty?(changeset, :comments)
   """
-  @spec changeset_field_empty?(Changeset.t(), atom) :: boolean
+  @spec changeset_field_empty?(changeset :: changeset(), key :: key()) :: boolean
   def changeset_field_empty?(changeset, key) do
-    get_field(changeset, key) === []
+    case Changeset.get_field(changeset, key) do
+      change when is_list(change) -> change === []
+      change when is_map(change) -> change === %{}
+      _ -> false
+    end
   end
 
   @doc """
@@ -103,7 +237,9 @@ defmodule EctoShorts.CommonChanges do
   """
   @spec changeset_field_nil?(Changeset.t(), atom) :: boolean
   def changeset_field_nil?(changeset, key) do
-    changeset |> get_field(key) |> is_nil()
+    changeset
+    |> Changeset.get_field(key)
+    |> is_nil()
   end
 
   @doc """
@@ -145,7 +281,7 @@ defmodule EctoShorts.CommonChanges do
       |> preload_changeset_assoc(key, opts)
       |> put_or_cast_assoc(key, opts)
     else
-      cast_assoc(changeset, key, opts)
+      Changeset.cast_assoc(changeset, key, opts)
     end
   end
 
@@ -156,7 +292,7 @@ defmodule EctoShorts.CommonChanges do
       |> preload_changeset_assoc(key)
       |> put_or_cast_assoc(key)
     else
-      cast_assoc(changeset, key)
+      Changeset.cast_assoc(changeset, key)
     end
   end
 
@@ -211,13 +347,13 @@ defmodule EctoShorts.CommonChanges do
   end
 
   defp find_method_and_put_or_cast(changeset, key, nil, opts) do
-    cast_assoc(changeset, key, opts)
+    Changeset.cast_assoc(changeset, key, opts)
   end
 
   defp find_method_and_put_or_cast(changeset, key, params_data, opts) when is_list(params_data) do
     cond do
       SchemaHelpers.all_schemas?(params_data) ->
-        put_assoc(
+        Changeset.put_assoc(
           changeset,
           key,
           params_data,
@@ -228,7 +364,7 @@ defmodule EctoShorts.CommonChanges do
         schema = changeset_relationship_schema(changeset, key)
         data = Actions.all(schema, ids: data_ids(params_data))
 
-        put_assoc(changeset, key, data, opts)
+        Changeset.put_assoc(changeset, key, data, opts)
 
       SchemaHelpers.any_created?(params_data) ->
         changeset
@@ -236,18 +372,18 @@ defmodule EctoShorts.CommonChanges do
           key,
           Keyword.put(opts, :ids, params_data |> data_ids() |> Enum.reject(&is_nil/1))
         )
-        |> cast_assoc(key, opts)
+        |> Changeset.cast_assoc(key, opts)
 
       true ->
-        cast_assoc(changeset, key, opts)
+        Changeset.cast_assoc(changeset, key, opts)
     end
   end
 
   defp find_method_and_put_or_cast(changeset, key, param_data, opts) do
     if SchemaHelpers.schema?(param_data) do
-      put_assoc(changeset, key, param_data, opts)
+      Changeset.put_assoc(changeset, key, param_data, opts)
     else
-      cast_assoc(changeset, key, opts)
+      Changeset.cast_assoc(changeset, key, opts)
     end
   end
 

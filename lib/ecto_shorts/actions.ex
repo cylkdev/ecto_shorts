@@ -25,7 +25,9 @@ defmodule EctoShorts.Actions do
     CommonFilters,
     CommonParams,
     CommonSchemas,
-    Config
+    Config,
+    QueryBuilder,
+    QueryHelpers
   }
 
   @doc group: "Schema API"
@@ -69,7 +71,6 @@ defmodule EctoShorts.Actions do
   def update_all(query, find_params, update_params, opts) do
     query
     |> CommonFilters.convert_params_to_filter(find_params, opts)
-    |> maybe_query_select(opts)
     |> Config.repo!(opts).update_all(
       CommonParams.convert_to_update_all_params(query, update_params, opts),
       opts
@@ -100,7 +101,6 @@ defmodule EctoShorts.Actions do
   def delete_all(query, params, opts) do
     query
     |> CommonFilters.convert_params_to_filter(params, opts)
-    |> maybe_query_select(opts)
     |> Config.repo!(opts).delete_all(opts)
   end
 
@@ -162,8 +162,8 @@ defmodule EctoShorts.Actions do
       )
       |> Ecto.Multi.insert({:insert, i}, fn changes_so_far ->
         query
-        |> normalize_queryable()
-        |> CommonSchemas.build_changeset(
+        |> QueryHelpers.get_query_source()
+        |> CommonSchemas.prepare_changeset(
           Map.fetch!(changes_so_far, {:one, i}),
           Map.merge(find_params, create_params),
           opts
@@ -225,8 +225,8 @@ defmodule EctoShorts.Actions do
       )
       |> Ecto.Multi.update({:update, i}, fn changes_so_far ->
         query
-        |> normalize_queryable()
-        |> CommonSchemas.build_changeset(
+        |> QueryHelpers.get_query_source()
+        |> CommonSchemas.prepare_changeset(
           Map.fetch!(changes_so_far, {:one, i}),
           Map.merge(find_params, update_params),
           opts
@@ -288,8 +288,8 @@ defmodule EctoShorts.Actions do
       )
       |> Ecto.Multi.insert_or_update({:insert_or_update, i}, fn changes_so_far ->
         query
-        |> normalize_queryable()
-        |> CommonSchemas.build_changeset(
+        |> QueryHelpers.get_query_source()
+        |> CommonSchemas.prepare_changeset(
           Map.fetch!(changes_so_far, {:one, i}),
           Map.merge(find_params, upsert_params),
           opts
@@ -350,7 +350,7 @@ defmodule EctoShorts.Actions do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {params, i}, multi ->
-      Ecto.Multi.insert(multi, i, CommonSchemas.build_changeset(query, params, opts))
+      Ecto.Multi.insert(multi, i, CommonSchemas.prepare_changeset(query, params, opts))
     end)
   end
 
@@ -485,7 +485,7 @@ defmodule EctoShorts.Actions do
     with {:error, %{code: :not_found}} <-
            find(query, maybe_drop_associations(params, query, opts), opts) do
       query
-      |> normalize_queryable()
+      |> QueryHelpers.get_query_source()
       |> create(params, opts)
     end
   end
@@ -525,7 +525,7 @@ defmodule EctoShorts.Actions do
   def find_or_create(query, find_params, create_params, opts) do
     with {:error, %{code: :not_found}} <- find(query, find_params, opts) do
       query
-      |> normalize_queryable()
+      |> QueryHelpers.get_query_source()
       |> create(create_params, opts)
     end
   end
@@ -582,7 +582,7 @@ defmodule EctoShorts.Actions do
   def find_and_update(query, find_params, update_params, opts) do
     with {:ok, struct} <- find(query, find_params, opts) do
       query
-      |> normalize_queryable()
+      |> QueryHelpers.get_query_source()
       |> update(struct, update_params, opts)
     end
   end
@@ -897,7 +897,7 @@ defmodule EctoShorts.Actions do
         ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
   def create(query, params, opts) do
     query
-    |> CommonSchemas.build_changeset(params, opts)
+    |> CommonSchemas.prepare_changeset(params, opts)
     |> Config.repo!(opts).insert(opts)
   end
 
@@ -957,6 +957,8 @@ defmodule EctoShorts.Actions do
   end
 
   def find(query, params, opts) do
+    IO.inspect(binding(), label: "find")
+
     params =
       params
       |> put_order_by(opts)
@@ -1036,7 +1038,7 @@ defmodule EctoShorts.Actions do
   def update(query, id, update_params, opts) when is_integer(id) or is_binary(id) do
     with {:ok, struct} <- find(query, %{id: id}, opts) do
       query
-      |> normalize_queryable()
+      |> QueryHelpers.get_query_source()
       |> update(struct, update_params, opts)
     end
   end
@@ -1047,7 +1049,7 @@ defmodule EctoShorts.Actions do
 
   def update(query, struct, update_params, opts) do
     query
-    |> CommonSchemas.build_changeset(struct, update_params, opts)
+    |> CommonSchemas.prepare_changeset(struct, update_params, opts)
     |> Config.repo!(opts).update(opts)
   end
 
@@ -1115,12 +1117,10 @@ defmodule EctoShorts.Actions do
           struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
           opts :: keyword()
         ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def delete(%_{data: struct} = changeset, opts) do
-    queryable = CommonSchemas.get_queryable_from_struct(struct)
-
+  def delete(%_{data: %_{__meta__: %{schema: queryable}}} = changeset, opts) do
     with {:error, changeset} <-
            queryable
-           |> CommonSchemas.build_changeset(changeset, %{}, opts)
+           |> CommonSchemas.prepare_changeset(changeset, %{}, opts)
            |> Config.repo!(opts).delete(opts) do
       {:error,
        Error.call(
@@ -1139,12 +1139,12 @@ defmodule EctoShorts.Actions do
   def delete(%_{__meta__: %{schema: queryable}} = struct, opts) do
     with {:error, changeset} <-
            queryable
-           |> CommonSchemas.build_changeset(struct, %{}, opts)
+           |> CommonSchemas.prepare_changeset(struct, %{}, opts)
            |> Config.repo!(opts).delete(opts) do
       {:error,
        Error.call(
          :conflict,
-         "Failed to delete the record.",
+         "Failed to delete record.",
          %{
            query: queryable,
            changeset: changeset,
@@ -1233,7 +1233,7 @@ defmodule EctoShorts.Actions do
         ) :: list(any())
   def stream(query, params, opts) do
     query
-    |> CommonSchemas.get_schema_query(opts)
+    |> QueryBuilder.Expression.from(opts[:from] || %{})
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.repo!(opts).stream(opts)
   end
@@ -1302,7 +1302,7 @@ defmodule EctoShorts.Actions do
         ) :: {:ok, any()} | {:error, any()}
   def aggregate(query, params, aggregate, field, opts) do
     query
-    |> CommonSchemas.get_schema_query(opts)
+    |> QueryBuilder.Expression.from(opts[:from] || %{})
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).aggregate(aggregate, field, opts)
   end
@@ -1406,23 +1406,6 @@ defmodule EctoShorts.Actions do
     end
 
     Config.repo!(opts).transaction(op, opts)
-  end
-
-  defp normalize_queryable(query) when is_struct(query, Ecto.Query) do
-    EctoShorts.QueryHelpers.get_source_queryable(query)
-  end
-
-  defp normalize_queryable(query) do
-    query
-  end
-
-  defp maybe_query_select(query, opts) do
-    if opts[:returning] === true do
-      # TODO
-      query
-    else
-      query
-    end
   end
 
   defp maybe_drop_associations(params, query, opts) do

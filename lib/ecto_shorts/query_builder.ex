@@ -3,6 +3,7 @@ defmodule EctoShorts.QueryBuilder do
   @moduledoc """
   Specifies the query builder API required from adapters.
   """
+  alias EctoShorts.QueryBuilder.{Common, Schema}
 
   @type t :: module()
 
@@ -39,6 +40,30 @@ defmodule EctoShorts.QueryBuilder do
         ) :: query() | queryable()
   def build_query(query, current_binding, schema_module, key, value, opts) do
     adapter(opts).build_query(query, current_binding, schema_module, key, value)
+  end
+
+  @doc """
+  ...
+  """
+  def common_filter?(key), do: key in Common.filters()
+
+  @doc """
+  ...
+  """
+  def schema_filter?(key), do: key in Schema.filters()
+
+  @doc """
+  ...
+  """
+  def build_common_query(query, current_binding, schema_module, key, value) do
+    Common.build_query(query, current_binding, schema_module, key, value)
+  end
+
+  @doc """
+  ...
+  """
+  def build_schema_query(query, current_binding, schema_module, key, value) do
+    Schema.build_query(query, current_binding, schema_module, key, value)
   end
 
   defp adapter(opts) do

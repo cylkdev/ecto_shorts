@@ -1,10 +1,13 @@
-defmodule EctoShorts.QueryBuilders.Common do
+defmodule EctoShorts.QueryBuilder.Common do
   @moduledoc since: "2.5.0"
   @moduledoc """
   ...
   """
 
-  alias EctoShorts.QueryBuilders.{Expression, ExpressionBuilder}
+  alias EctoShorts.QueryBuilder.{
+    Expression,
+    ExpressionBuilder
+  }
 
   @filters ~w(
     after
@@ -26,7 +29,7 @@ defmodule EctoShorts.QueryBuilders.Common do
   @behaviour EctoShorts.QueryBuilder
 
   @doc """
-  ...
+  Returns a list of supported filters.
   """
   def filters, do: @filters
 
