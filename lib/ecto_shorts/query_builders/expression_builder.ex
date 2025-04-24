@@ -7,7 +7,6 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
   """
   alias EctoShorts.{
     CommonSchemas,
-    QueryBuilder.ExpressionBuilder.Postgres,
     QueryBuilder.Expression
   }
 
@@ -162,13 +161,13 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
       Expression.or_where(
         query,
         nil,
-        Postgres.Array.where(current_binding, source_key, operator, value)
+        Expression.Postgres.Array.where(current_binding, source_key, operator, value)
       )
     else
       Expression.or_where(
         query,
         nil,
-        Postgres.Array.where(current_binding, value, operator, source_key)
+        Expression.Postgres.Array.where(current_binding, value, operator, source_key)
       )
     end
   end
@@ -180,13 +179,13 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
       Expression.or_where(
         query,
         nil,
-        Postgres.Array.where(current_binding, source_key, :==, value)
+        Expression.Postgres.Array.where(current_binding, source_key, :==, value)
       )
     else
       Expression.or_where(
         query,
         nil,
-        Postgres.Array.where(current_binding, value, :==, source_key)
+        Expression.Postgres.Array.where(current_binding, value, :==, source_key)
       )
     end
   end
@@ -197,7 +196,7 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
     Expression.or_where(
       query,
       nil,
-      Postgres.Field.where(current_binding, source_key, operator, value)
+      Expression.Postgres.Field.where(current_binding, source_key, operator, value)
     )
   end
 
@@ -207,7 +206,7 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
     Expression.or_where(
       query,
       nil,
-      Postgres.Field.where(current_binding, source_key, :==, value)
+      Expression.Postgres.Field.where(current_binding, source_key, :==, value)
     )
   end
 
@@ -248,13 +247,13 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
       Expression.where(
         query,
         nil,
-        Postgres.Array.where(current_binding, source_key, operator, value)
+        Expression.Postgres.Array.where(current_binding, source_key, operator, value)
       )
     else
       Expression.where(
         query,
         nil,
-        Postgres.Array.where(current_binding, value, operator, source_key)
+        Expression.Postgres.Array.where(current_binding, value, operator, source_key)
       )
     end
   end
@@ -266,13 +265,13 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
       Expression.where(
         query,
         nil,
-        Postgres.Array.where(current_binding, source_key, :==, value)
+        Expression.Postgres.Array.where(current_binding, source_key, :==, value)
       )
     else
       Expression.where(
         query,
         nil,
-        Postgres.Array.where(current_binding, value, :==, source_key)
+        Expression.Postgres.Array.where(current_binding, value, :==, source_key)
       )
     end
   end
@@ -283,7 +282,7 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
     Expression.where(
       query,
       nil,
-      Postgres.Field.where(current_binding, source_key, operator, value)
+      Expression.Postgres.Field.where(current_binding, source_key, operator, value)
     )
   end
 
@@ -293,7 +292,7 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
     Expression.where(
       query,
       nil,
-      Postgres.Field.where(current_binding, source_key, :==, value)
+      Expression.Postgres.Field.where(current_binding, source_key, :==, value)
     )
   end
 
