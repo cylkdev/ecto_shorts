@@ -13,7 +13,6 @@ defmodule EctoShorts.QueryBuilder.Schema do
     select
     select_merge
     where
-    or
     or_where
   )a
 
@@ -34,8 +33,8 @@ defmodule EctoShorts.QueryBuilder.Schema do
   """
   def build_query(query, current_binding, schema_module, key, value) do
     cond do
-      api_filter?(key) ->
-        build_api_filters(query, current_binding, schema_module, key, value)
+      query_expression_filter?(key) ->
+        build_query_expression(query, current_binding, schema_module, key, value)
 
       association?(schema_module, key) ->
         build_assoc_filters(query, current_binding, schema_module, key, value)
@@ -67,7 +66,7 @@ defmodule EctoShorts.QueryBuilder.Schema do
     ExpressionBuilder.where(query, current_binding, key, :==, value)
   end
 
-  defp build_api_filters(query, current_binding, schema_module, :join, value) do
+  defp build_query_expression(query, current_binding, schema_module, :join, value) do
     case value do
       {:association, params} ->
         Enum.reduce(params, query, fn {key, value}, query ->
@@ -79,32 +78,21 @@ defmodule EctoShorts.QueryBuilder.Schema do
 
       params ->
         Enum.reduce(params, query, fn {key, value}, query ->
-          build_api_filters(query, current_binding, schema_module, :join, {key, value})
+          build_query_expression(query, current_binding, schema_module, :join, {key, value})
         end)
     end
   end
 
-  defp build_api_filters(query, current_binding, schema_module, operator, value)
-       when operator in [:or, :or_where] do
-    ExpressionBuilder.apply_expressions(query, value, fn query, value ->
-      or_where(query, current_binding, schema_module, value)
-    end)
+  defp build_query_expression(query, current_binding, _schema_module, :or_where, value) do
+    ExpressionBuilder.or_where(query, current_binding, value)
   end
 
-  defp build_api_filters(query, current_binding, _schema_module, :select, value) do
+  defp build_query_expression(query, current_binding, _schema_module, :select, value) do
     ExpressionBuilder.select(query, current_binding, value)
   end
 
-  defp build_api_filters(query, current_binding, _schema_module, :select_merge, value) do
+  defp build_query_expression(query, current_binding, _schema_module, :select_merge, value) do
     ExpressionBuilder.select_merge(query, current_binding, value)
-  end
-
-  defp or_where(query, current_binding, _schema_module, {key, {operator, value}}) do
-    ExpressionBuilder.or_where(query, current_binding, key, operator, value)
-  end
-
-  defp or_where(query, current_binding, _schema_module, {key, value}) do
-    ExpressionBuilder.or_where(query, current_binding, key, :==, value)
   end
 
   defp build_assoc_filters(query, current_binding, schema_module, key, params) do
@@ -138,7 +126,7 @@ defmodule EctoShorts.QueryBuilder.Schema do
     )
   end
 
-  defp api_filter?(key) do
+  defp query_expression_filter?(key) do
     key in @filters
   end
 

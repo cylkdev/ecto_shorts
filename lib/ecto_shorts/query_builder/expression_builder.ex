@@ -5,10 +5,8 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
 
   This module provides an api for composing ecto queries and building dynamic query expressions.
   """
-  alias EctoShorts.{
-    CommonSchemas,
-    QueryBuilder.Expression
-  }
+  alias EctoShorts.CommonSchemas
+  alias EctoShorts.QueryBuilder.QueryExpression
 
   @doc """
   ...
@@ -66,7 +64,7 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
     assoc_binding = assoc_binding || named_binding(source_key)
 
     query
-    |> Expression.join(
+    |> QueryExpression.join(
       {current_binding, assoc_binding},
       {:association, source_key, Map.take(params, [:on, :qualifier, :prefix])}
     )
@@ -91,7 +89,7 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
       end
 
     query
-    |> Expression.join(
+    |> QueryExpression.join(
       {current_binding, subquery_binding},
       {:subquery, from, Map.take(params, [:on, :qualifier, :prefix])}
     )
@@ -107,7 +105,7 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
   """
   def select(query, current_binding, params) do
     apply_expressions(query, params, fn query, value ->
-      Expression.select(query, current_binding, value)
+      QueryExpression.select(query, current_binding, value)
     end)
   end
 
@@ -116,29 +114,33 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
   """
   def select_merge(query, current_binding, params) do
     apply_expressions(query, params, fn query, value ->
-      Expression.select_merge(query, current_binding, value)
+      QueryExpression.select_merge(query, current_binding, value)
     end)
   end
 
   @doc """
   ...
   """
+  def or_where(query, current_binding, params) when is_list(params) do
+    if Keyword.keyword?(params) do
+      or_where(query, current_binding, Map.new(params))
+    else
+      Enum.reduce(params, query, fn p, query ->
+        or_where(query, current_binding, p)
+      end)
+    end
+  end
+
   def or_where(query, current_binding, params) when is_map(params) do
     schema_module = CommonSchemas.get_schema_queryable(query)
 
-    Enum.reduce(params, query, fn value, query ->
-      reduce_or_where(query, current_binding, schema_module, value)
-    end)
+    dyn_expr = apply_expressions(nil, params, &apply_dynamic_where_expr(&1, current_binding, schema_module, &2))
+
+    QueryExpression.or_where(query, nil, dyn_expr)
   end
 
-  defp reduce_or_where(query, current_binding, schema_module, {key, value}) do
-    apply_expressions(query, value, fn query, value ->
-      if field_type_of_array?(schema_module, key) do
-        or_where_array_expr(query, current_binding, schema_module, key, value)
-      else
-        or_where_field_expr(query, current_binding, schema_module, key, value)
-      end
-    end)
+  def or_where(query, current_binding, key, value) do
+    or_where(query, current_binding, key, :==, value)
   end
 
   @doc """
@@ -147,84 +149,30 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
   def or_where(query, current_binding, key, operator, value) do
     schema_module = CommonSchemas.get_schema_queryable(query)
 
-    if field_type_of_array?(schema_module, key) do
-      or_where_array_expr(query, current_binding, schema_module, key, {operator, value})
-    else
-      or_where_field_expr(query, current_binding, schema_module, key, {operator, value})
-    end
-  end
+    dyn_expr = where_expr(nil, current_binding, schema_module, key, operator, value)
 
-  defp or_where_array_expr(query, current_binding, schema_module, key, {operator, value}) do
-    source_key = field_source(schema_module, key)
-
-    if is_list(value) do
-      Expression.or_where(
-        query,
-        nil,
-        Expression.Postgres.Array.where(current_binding, source_key, operator, value)
-      )
-    else
-      Expression.or_where(
-        query,
-        nil,
-        Expression.Postgres.Array.where(current_binding, value, operator, source_key)
-      )
-    end
-  end
-
-  defp or_where_array_expr(query, current_binding, schema_module, key, value) do
-    source_key = field_source(schema_module, key)
-
-    if is_list(value) do
-      Expression.or_where(
-        query,
-        nil,
-        Expression.Postgres.Array.where(current_binding, source_key, :==, value)
-      )
-    else
-      Expression.or_where(
-        query,
-        nil,
-        Expression.Postgres.Array.where(current_binding, value, :==, source_key)
-      )
-    end
-  end
-
-  defp or_where_field_expr(query, current_binding, schema_module, key, {operator, value}) do
-    source_key = field_source(schema_module, key)
-
-    Expression.or_where(
-      query,
-      nil,
-      Expression.Postgres.Field.where(current_binding, source_key, operator, value)
-    )
-  end
-
-  defp or_where_field_expr(query, current_binding, schema_module, key, value) do
-    source_key = field_source(schema_module, key)
-
-    Expression.or_where(
-      query,
-      nil,
-      Expression.Postgres.Field.where(current_binding, source_key, :==, value)
-    )
+    QueryExpression.or_where(query, nil, dyn_expr)
   end
 
   @doc """
   ...
   """
+  def where(query, current_binding, params) when is_list(params) do
+    if Keyword.keyword?(params) do
+      where(query, current_binding, Map.new(params))
+    else
+      Enum.reduce(params, query, fn p, query ->
+        where(query, current_binding, p)
+      end)
+    end
+  end
+
   def where(query, current_binding, params) when is_map(params) do
     schema_module = CommonSchemas.get_schema_queryable(query)
 
-    Enum.reduce(params, query, fn {key, value}, query ->
-      apply_expressions(query, value, fn query, value ->
-        if field_type_of_array?(schema_module, key) do
-          where_array(query, current_binding, schema_module, key, value)
-        else
-          where_field(query, current_binding, schema_module, key, value)
-        end
-      end)
-    end)
+    dyn_expr = apply_expressions(nil, params, &apply_dynamic_where_expr(&1, current_binding, schema_module, &2))
+
+    QueryExpression.where(query, nil, dyn_expr)
   end
 
   @doc """
@@ -233,67 +181,37 @@ defmodule EctoShorts.QueryBuilder.ExpressionBuilder do
   def where(query, current_binding, key, operator, value) do
     schema_module = CommonSchemas.get_schema_queryable(query)
 
+    dyn_expr = where_expr(nil, current_binding, schema_module, key, operator, value)
+
+    QueryExpression.where(query, nil, dyn_expr)
+  end
+
+  defp apply_dynamic_where_expr(dyn, current_binding, schema_module, {key, {operator, value}}) do
+    where_expr(dyn, current_binding, schema_module, key, operator, value)
+  end
+
+  defp apply_dynamic_where_expr(dyn, current_binding, schema_module, {key, value}) do
+    where_expr(dyn, current_binding, schema_module, key, :==, value)
+  end
+
+  defp where_expr(dyn, current_binding, schema_module, key, operator, value) do
     if field_type_of_array?(schema_module, key) do
-      where_array(query, current_binding, schema_module, key, {operator, value})
+      where_array_expr(dyn, current_binding, key, operator, value)
     else
-      where_field(query, current_binding, schema_module, key, {operator, value})
+      where_field_expr(dyn, current_binding, key, operator, value)
     end
   end
 
-  defp where_array(query, current_binding, schema_module, key, {operator, value}) do
-    source_key = field_source(schema_module, key)
-
+  defp where_array_expr(dyn, current_binding, key, operator, value) do
     if is_list(value) do
-      Expression.where(
-        query,
-        nil,
-        Expression.Postgres.Array.where(current_binding, source_key, operator, value)
-      )
+      QueryExpression.merge_dynamic(dyn, QueryExpression.Dynamic.Postgres.Array.where(current_binding, key, operator, value))
     else
-      Expression.where(
-        query,
-        nil,
-        Expression.Postgres.Array.where(current_binding, value, operator, source_key)
-      )
+      QueryExpression.merge_dynamic(dyn, QueryExpression.Dynamic.Postgres.Array.where(current_binding, value, operator, key))
     end
   end
 
-  defp where_array(query, current_binding, schema_module, key, value) do
-    source_key = field_source(schema_module, key)
-
-    if is_list(value) do
-      Expression.where(
-        query,
-        nil,
-        Expression.Postgres.Array.where(current_binding, source_key, :==, value)
-      )
-    else
-      Expression.where(
-        query,
-        nil,
-        Expression.Postgres.Array.where(current_binding, value, :==, source_key)
-      )
-    end
-  end
-
-  defp where_field(query, current_binding, schema_module, key, {operator, value}) do
-    source_key = field_source(schema_module, key)
-
-    Expression.where(
-      query,
-      nil,
-      Expression.Postgres.Field.where(current_binding, source_key, operator, value)
-    )
-  end
-
-  defp where_field(query, current_binding, schema_module, key, value) do
-    source_key = field_source(schema_module, key)
-
-    Expression.where(
-      query,
-      nil,
-      Expression.Postgres.Field.where(current_binding, source_key, :==, value)
-    )
+  defp where_field_expr(dyn, current_binding, value, operator, key) do
+    QueryExpression.merge_dynamic(dyn, QueryExpression.Dynamic.Postgres.Field.where(current_binding, value, operator, key))
   end
 
   defp field_source(_schema_module, key) do

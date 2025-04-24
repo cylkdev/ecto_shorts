@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.Expression.Postgres.Field do
+defmodule EctoShorts.QueryBuilder.QueryExpression.Dynamic.Postgres.Field do
   @moduledoc since: "2.5.0"
   @moduledoc """
   ...

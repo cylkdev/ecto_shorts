@@ -5,7 +5,7 @@ defmodule EctoShorts.QueryBuilder.Common do
   """
 
   alias EctoShorts.QueryBuilder.{
-    Expression,
+    QueryExpression,
     ExpressionBuilder
   }
 
@@ -42,32 +42,32 @@ defmodule EctoShorts.QueryBuilder.Common do
   end
 
   def build_query(query, current_binding, _schema_module, :first, value) do
-    Expression.limit(query, current_binding, value)
+    QueryExpression.limit(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :last, value) do
     query
-    |> Expression.exclude(:order_by)
-    |> Expression.order_by(current_binding, order_by: [desc: :inserted_at])
-    |> Expression.limit(current_binding, value)
-    |> Expression.subquery()
-    |> Expression.order_by(current_binding, :id)
+    |> QueryExpression.exclude(:order_by)
+    |> QueryExpression.order_by(current_binding, order_by: [desc: :inserted_at])
+    |> QueryExpression.limit(current_binding, value)
+    |> QueryExpression.subquery()
+    |> QueryExpression.order_by(current_binding, :id)
   end
 
   def build_query(query, current_binding, _schema_module, :limit, value) do
-    Expression.limit(query, current_binding, value)
+    QueryExpression.limit(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :offset, value) do
-    Expression.offset(query, current_binding, value)
+    QueryExpression.offset(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :order_by, value) do
-    Expression.order_by(query, current_binding, value)
+    QueryExpression.order_by(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :preload, value) do
-    Expression.preload(query, current_binding, value)
+    QueryExpression.preload(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :after, value) do

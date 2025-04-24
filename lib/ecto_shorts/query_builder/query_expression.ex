@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.Expression do
+defmodule EctoShorts.QueryBuilder.QueryExpression do
   @moduledoc since: "2.5.0"
   @moduledoc """
   This module provides wrapper functions that simplifies the usage of the `Ecto.Query` api.
@@ -7,6 +7,18 @@ defmodule EctoShorts.QueryBuilder.Expression do
   alias Ecto.Query
 
   require Ecto.Query
+
+  def dynamic(current_binding \\ nil, value) do
+    if current_binding do
+      Query.dynamic([{^current_binding, q}], ^value)
+    else
+      Query.dynamic([q], ^value)
+    end
+  end
+
+  def merge_dynamic(nil, dyn), do: dyn
+
+  def merge_dynamic(dyn_a, dyn_b), do: Query.dynamic(^dyn_a and ^dyn_b)
 
   def from(query, opts \\ []) do
     as = opts[:as]
