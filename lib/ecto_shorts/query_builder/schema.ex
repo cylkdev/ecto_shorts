@@ -1,7 +1,7 @@
 defmodule EctoShorts.QueryBuilder.Schema do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  ...
+  # EctoShorts.QueryBuilder.Schema
   """
 
   alias EctoShorts.{
@@ -141,7 +141,9 @@ defmodule EctoShorts.QueryBuilder.Schema do
     query
     |> QueryAPI.join(
       {current_binding, assoc_binding},
-      {:association, key, Map.take(params, [:on, :qualifier, :prefix])}
+      :association,
+      key,
+      Map.take(params, [:on, :qualifier, :prefix])
     )
     |> fun.(assoc_binding, assoc_schema_module, Map.drop(params, [:on, :qualifier, :prefix]))
   end
@@ -166,7 +168,9 @@ defmodule EctoShorts.QueryBuilder.Schema do
     query
     |> QueryAPI.join(
       {current_binding, subquery_binding},
-      {:subquery, from, Map.take(params, [:on, :qualifier, :prefix])}
+      :subquery,
+      from,
+      Map.take(params, [:on, :qualifier, :prefix])
     )
     |> fun.(
       subquery_binding,

@@ -1,22 +1,73 @@
 defmodule EctoShorts.QueryBuilder.QueryAPI do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  This module provides wrapper functions that simplifies the usage of the `Ecto.Query` api.
+  # EctoShorts.QueryBuilder.QueryAPI
+
+  Provides wrapper functions to simplify the usage of the `Ecto.Query` API.
+
+  These helpers abstract common patterns for building dynamic queries,
+  handling bindings, and composing query fragments in a way that is reusable
+  and consistent.
   """
 
   alias Ecto.Query
 
   require Ecto.Query
 
+  @type binding() :: atom() | nil
+
+  @type source :: binary()
+
+  @type dynamic_expr :: Ecto.Query.dynamic_expr()
+
+  @type query :: Ecto.Query.t()
+
+  @type queryable :: Ecto.Queryable.t()
+
+  @type source_queryable :: {source(), queryable()}
+
+  @type key :: atom()
+
+  @type value :: value()
+
+  @type join_type :: atom()
+
+  @type field :: atom()
+
+  @type prefix :: binary()
+
+  @type opts :: keyword()
+
+  @default_join_opts [qualifier: :inner, on: true]
+
   @doc """
-  ...
+  Merges two dynamic query expressions using `and`. If the first argument is `nil`, returns the second.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.merge_dynamic(nil, dynamic([q], q.id > 1))
+      #Ecto.Query.DynamicExpr<...>
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.merge_dynamic(dynamic([q], q.id > 1), dynamic([q], q.name == "foo"))
+      #Ecto.Query.DynamicExpr<...>
   """
+  @spec merge_dynamic(dyn_expr :: nil | dynamic_expr(), dyn_expr :: dynamic_expr()) ::
+          dynamic_expr()
   def merge_dynamic(nil, dyn), do: dyn
   def merge_dynamic(dyn_a, dyn_b), do: Query.dynamic(^dyn_a and ^dyn_b)
 
   @doc """
-  ...
+  Builds a dynamic query expression.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.dynamic(:user, user.age > 18)
+      #Ecto.Query.DynamicExpr<...>
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.dynamic(nil, q.id == 1)
+      #Ecto.Query.DynamicExpr<...>
   """
+  @spec dynamic(binding :: binding(), value :: value()) :: dynamic_expr()
   def dynamic(current_binding \\ nil, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], ^value)
@@ -26,8 +77,28 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Sets the `from` clause on a query.
+
+  ## Options
+
+    * `:as` - Sets a binding for the source in the query, allowing you to
+      reference it by name in other query expressions.
+
+    * `:prefix` - Sets the database schema (prefix) for the query source.
+
+    * `:query_prefix` - Sets the prefix for the query itself, which can be
+      used to override the prefix for subqueries or fragments.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.from(MySchema, as: :user)
+      #Ecto.Query<...>
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.from(MySchema, prefix: "custom_schema")
+      #Ecto.Query<...>
   """
+  @spec from(query :: query() | queryable() | source_queryable()) :: query()
+  @spec from(query :: query() | queryable() | source_queryable(), opts :: opts()) :: query()
   def from(query, opts \\ []) do
     as = opts[:as]
 
@@ -52,29 +123,64 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Sets the query prefix (database schema) for the query.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.put_query_prefix(query, "custom_schema")
+      #Ecto.Query<...>
   """
+  @spec put_query_prefix(
+          query :: query() | queryable() | source_queryable(),
+          prefix :: prefix() | nil
+        ) :: query()
   def put_query_prefix(query, prefix) do
     Query.put_query_prefix(query, prefix)
   end
 
   @doc """
-  ...
+  Wraps a query as a subquery.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.subquery(query)
+      #Ecto.Query<...>
   """
+  @spec subquery(query :: query() | queryable() | source_queryable()) :: query()
+  @spec subquery(query :: query() | queryable() | source_queryable(), opts :: opts()) :: query()
   def subquery(query, opts \\ []) do
     Query.subquery(query, opts)
   end
 
   @doc """
-  ...
+  Excludes a field (such as `:order_by`) from the query.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.exclude(query, :order_by)
+      #Ecto.Query<...>
   """
+  @spec exclude(query :: query() | queryable() | source_queryable(), field :: field()) :: query()
   def exclude(query, field) do
     Query.exclude(query, field)
   end
 
   @doc """
-  ...
+  Limits the number of results returned by the query.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.limit(query, nil, 10)
+      #Ecto.Query<...>
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.limit(query, :user, 5)
+      #Ecto.Query<...>
   """
+  @spec limit(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding(),
+          value :: value()
+        ) :: query()
   def limit(query, current_binding, value) do
     if current_binding do
       Query.limit(query, [{^current_binding, q}], ^value)
@@ -84,8 +190,18 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Offsets the results returned by the query.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.offset(query, nil, 20)
+      #Ecto.Query<...>
   """
+  @spec offset(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding(),
+          value :: value()
+        ) :: query()
   def offset(query, current_binding, value) do
     if current_binding do
       Query.offset(query, [{^current_binding, q}], ^value)
@@ -95,8 +211,18 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Groups the results by the given value.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.group_by(query, nil, :category)
+      #Ecto.Query<...>
   """
+  @spec group_by(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding(),
+          value :: value()
+        ) :: query()
   def group_by(query, current_binding, value) do
     if current_binding do
       Query.group_by(query, [{^current_binding, q}], ^value)
@@ -106,8 +232,18 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Orders the results by the given value.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.order_by(query, nil, [asc: :inserted_at])
+      #Ecto.Query<...>
   """
+  @spec order_by(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding(),
+          value :: value()
+        ) :: query()
   def order_by(query, current_binding, value) do
     if current_binding do
       Query.order_by(query, [{^current_binding, q}], ^value)
@@ -117,8 +253,18 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Preloads associations on the query.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.preload(query, nil, :comments)
+      #Ecto.Query<...>
   """
+  @spec preload(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding(),
+          value :: value()
+        ) :: query()
   def preload(query, current_binding, value) do
     if current_binding do
       Query.preload(query, [{^current_binding, q}], ^value)
@@ -128,8 +274,22 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Selects fields or expressions from the query, supporting `true`,
+  `{:map, values}`, `{:struct, values}`, or a custom value.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.select(query, nil, true)
+      #Ecto.Query<...>
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.select(query, nil, {:map, [:id, :name]})
+      #Ecto.Query<...>
   """
+  @spec select(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding(),
+          value :: value()
+        ) :: query()
   def select(query, current_binding, true) do
     if current_binding do
       Query.select(query, [{^current_binding, q}], q)
@@ -163,8 +323,18 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Merges additional fields into the select clause, supporting `true` or a custom value.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.select_merge(query, nil, true)
+      #Ecto.Query<...>
   """
+  @spec select_merge(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding(),
+          value :: value()
+        ) :: query()
   def select_merge(query, current_binding, true) do
     if current_binding do
       Query.select_merge(query, [{^current_binding, q}], q)
@@ -181,16 +351,36 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
-  @default_join_opts [qualifier: :inner, on: true]
-
   @doc """
-  ...
+  Adds a join to the query for an association or subquery.
+
+  ## Options
+
+    * `:qualifier` - Specifies the join type, such as `:inner`, `:left`, or `:right`.
+      Defaults to `:inner`.
+
+    * `:on` - Specifies the join condition. Can be a boolean or a dynamic expression.
+      Defaults to `true` (a cross join).
+
+    * `:prefix` - Sets the database schema (prefix) for the join source.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.join(query, :user, :association, :posts, qualifier: :left)
+      #Ecto.Query<...>
   """
-  def join(query, current_binding, {type, key, opts}) when is_map(opts) do
-    join(query, current_binding, {type, key, Map.to_list(opts)})
+  @spec join(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding() | {current_binding :: binding(), join_binding :: binding()},
+          type :: atom(),
+          key :: atom(),
+          opts()
+        ) :: query()
+  def join(query, current_binding, type, key, opts) when is_map(opts) do
+    join(query, current_binding, type, key, Map.to_list(opts))
   end
 
-  def join(query, {current_binding, join_binding_alias}, {:association, key, opts}) do
+  def join(query, {current_binding, join_binding_alias}, :association, key, opts) do
     opts = Keyword.merge(@default_join_opts, opts)
 
     qual = opts[:qualifier]
@@ -218,7 +408,7 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
-  def join(query, current_binding, {:association, key, opts}) do
+  def join(query, current_binding, :association, key, opts) do
     opts = Keyword.merge(@default_join_opts, opts)
 
     qual = opts[:qualifier]
@@ -234,7 +424,7 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end
   end
 
-  def join(query, {current_binding, join_binding_alias}, {:subquery, from, opts}) do
+  def join(query, {current_binding, join_binding_alias}, :subquery, from, opts) do
     opts = Keyword.merge(@default_join_opts, opts)
 
     qual = opts[:qualifier]
@@ -256,7 +446,7 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
     end)
   end
 
-  def join(query, current_binding, {:subquery, from, opts}) do
+  def join(query, current_binding, :subquery, from, opts) do
     opts = Keyword.merge(@default_join_opts, opts)
 
     qual = opts[:qualifier]
@@ -273,8 +463,18 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Adds an `or_where` condition to the query.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.or_where(query, nil, dynamic([q], q.id > 1))
+      #Ecto.Query<...>
   """
+  @spec or_where(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding(),
+          value :: value()
+        ) :: query()
   def or_where(query, current_binding, value) do
     if current_binding do
       Query.or_where(query, [{^current_binding, q}], ^value)
@@ -284,8 +484,18 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
   end
 
   @doc """
-  ...
+  Adds a `where` condition to the query.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.QueryAPI.where(query, nil, dynamic([q], q.id > 1))
+      #Ecto.Query<...>
   """
+  @spec where(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding(),
+          value :: value()
+        ) :: query()
   def where(query, current_binding, value) do
     if current_binding do
       Query.where(query, [{^current_binding, q}], ^value)

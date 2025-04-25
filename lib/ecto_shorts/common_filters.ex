@@ -61,7 +61,8 @@ defmodule EctoShorts.CommonFilters do
   @doc """
   ...
   """
-  def build_query(query, current_binding, schema_module, key, value) when key in @common_filters do
+  def build_query(query, current_binding, schema_module, key, value)
+      when key in @common_filters do
     Common.build_query(query, current_binding, schema_module, key, value)
   end
 
