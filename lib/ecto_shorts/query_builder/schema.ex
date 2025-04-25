@@ -2,13 +2,65 @@ defmodule EctoShorts.QueryBuilder.Schema do
   @moduledoc since: "2.5.0"
   @moduledoc """
   # EctoShorts.QueryBuilder.Schema
+
+  Provides a schema-centric implementation of the
+  EctoShorts.QueryBuilder behaviour, enabling dynamic and
+  composable query construction for Ecto schemas.
+
+  This module defines a set of supported filters—such as join,
+  select, select_merge, where, and or_where—and provides the
+  build_query/4 function to apply these filters to an Ecto query
+  based on user-supplied parameters.
+
+  The build_query/4 function iterates over the params map or
+  keyword list, applying each filter to the query in sequence.
+  Each filter is dispatched to the appropriate handler based on
+  its type, allowing for composable and dynamic query construction.
+
+  ## Example Usage
+
+  ```elixir
+  params = %{
+    select: %{name: true, profile: %{age: true}},
+    where: %{active: true}
+  }
+
+  query = from(u in User)
+
+  query = EctoShorts.QueryBuilder.Schema.build_query(
+    query, nil, User, params
+  )
+  ```
+
+  This will build a query that selects the user's name and nested
+  profile age field, and applies a where clause for active users.
+
+  See the build_query/4 function for details on supported filters.
   """
 
   alias EctoShorts.{
     CommonSchemas,
-    QueryBuilder.Helpers,
-    QueryBuilder.QueryExpression
+    QueryBuilder,
+    CommonQueryExpressions
   }
+
+  @type source :: binary()
+
+  @type query :: Ecto.Query.t()
+
+  @type queryable :: Ecto.Queryable.t()
+
+  @type source_queryable :: {source(), queryable()}
+
+  @type binding :: atom()
+
+  @type key :: atom()
+
+  @type value :: any()
+
+  @type params :: map() | keyword()
+
+  @type filter :: :join | :select | :select_merge | :or_where
 
   @behaviour EctoShorts.QueryBuilder
 
@@ -16,18 +68,54 @@ defmodule EctoShorts.QueryBuilder.Schema do
     join
     select
     select_merge
-    where
     or_where
   )a
 
   @doc """
-  Returns a list of supported filters.
+  Returns a list of supported filters that can be used to build
+  queries with this schema query builder.
+
+  Supported filters:
+
+    * `:join`: Join associations or related tables.
+
+    * `:select`: Select specific fields or associations.
+
+    * `:select_merge`: Merge additional fields into an existing
+      select.
+
+    * `:where`: Apply standard where clauses.
+
+    * `:or_where`: Apply logical OR-based where clauses.
+
+  ## Examples
+
+      iex> EctoShorts.QueryBuilder.Schema.filters()
   """
+  @spec filters :: [filter()]
   def filters, do: @filters
 
   @doc """
-  ...
+  Builds an Ecto query by applying a series of supported filters
+  from the provided parameters.
+
+  Iterates over the `params` map or keyword list, applying each
+  filter (such as `:select`, `:where`, `:join`, etc.) to the query
+  in sequence.
+  Each filter is dispatched to the appropriate handler based on
+  its type, allowing for composable and dynamic query construction.
+
+  ## Example
+
+      iex> params = %{select: %{name: true}, where: %{active: true}}
+      ...> EctoShorts.QueryBuilder.Schema.build_query(query, :user, User, params)
   """
+  @spec build_query(
+          query :: query() | queryable() | source_queryable(),
+          binding :: binding() | nil,
+          schema_module :: queryable(),
+          params :: params()
+        ) :: query()
   def build_query(query, current_binding, schema_module, params) do
     Enum.reduce(params, query, fn {key, value}, query ->
       build_query(query, current_binding, schema_module, key, value)
@@ -36,8 +124,42 @@ defmodule EctoShorts.QueryBuilder.Schema do
 
   @impl EctoShorts.QueryBuilder
   @doc """
-  ...
+  Applies a single filter to the Ecto query based on the given key
+  and value.
+
+  Determines whether the filter key corresponds to a query
+  expression (such as `:select`, `:where`, etc.) or an association.
+  Dispatches to the appropriate handler for query expressions or
+  recursively applies filters to associations.
+
+  ## Parameters
+
+    * `query`: The Ecto queryable to modify.
+
+    * `current_binding`: The current binding (atom or index) for
+      the query.
+
+    * `schema_module`: The Ecto schema module associated with the
+      query.
+
+    * `key`: The filter key (atom) indicating the type of filter to
+      apply.
+
+    * `value`: The value or parameters for the filter.
+
+  ## Example
+
+      iex> EctoShorts.QueryBuilder.build_query(query, :user, User, :where, %{active: true})
+
+      iex> EctoShorts.QueryBuilder.build_query(query, :user, User, :select, %{name: true})
   """
+  @spec build_query(
+          query() | queryable() | source_queryable(),
+          binding() | nil,
+          queryable(),
+          key(),
+          value()
+        ) :: query() | queryable()
   def build_query(query, current_binding, schema_module, key, value) do
     cond do
       query_expression_filter?(key) ->
@@ -60,17 +182,17 @@ defmodule EctoShorts.QueryBuilder.Schema do
   end
 
   defp build_schema_filters(query, current_binding, schema_module, key, value) do
-    Helpers.apply_expressions(query, value, fn query, value ->
+    QueryBuilder.apply_expressions(query, value, fn query, value ->
       apply_schema_filter(query, current_binding, schema_module, key, value)
     end)
   end
 
   defp apply_schema_filter(query, current_binding, _schema_module, key, {operator, value}) do
-    QueryExpression.where(query, current_binding, key, operator, value)
+    CommonQueryExpressions.where(query, current_binding, key, operator, value)
   end
 
   defp apply_schema_filter(query, current_binding, _schema_module, key, value) do
-    QueryExpression.where(query, current_binding, key, :==, value)
+    CommonQueryExpressions.where(query, current_binding, key, :==, value)
   end
 
   defp build_query_expression(query, current_binding, schema_module, :join, value) do
@@ -91,15 +213,15 @@ defmodule EctoShorts.QueryBuilder.Schema do
   end
 
   defp build_query_expression(query, current_binding, _schema_module, :or_where, value) do
-    QueryExpression.or_where(query, current_binding, value)
+    CommonQueryExpressions.or_where(query, current_binding, value)
   end
 
   defp build_query_expression(query, current_binding, _schema_module, :select, value) do
-    QueryExpression.select(query, current_binding, value)
+    CommonQueryExpressions.select(query, current_binding, value)
   end
 
   defp build_query_expression(query, current_binding, _schema_module, :select_merge, value) do
-    QueryExpression.select_merge(query, current_binding, value)
+    CommonQueryExpressions.select_merge(query, current_binding, value)
   end
 
   defp build_assoc_filters(query, current_binding, schema_module, key, params) do
@@ -133,23 +255,124 @@ defmodule EctoShorts.QueryBuilder.Schema do
     )
   end
 
+  @doc """
+  Generates a default named binding string for a module.
+
+  ## Example
+
+      iex> EctoShorts.QueryBuilder.Schema.named_binding_from_module(MyApp.User)
+      "ecto_shorts_user"
+  """
+  @spec named_binding_from_module(module :: module()) :: binary()
+  def named_binding_from_module(module) do
+    module
+    |> Module.split()
+    |> List.last()
+    |> Macro.underscore()
+    |> named_binding()
+  end
+
+  @doc """
+  Returns a string that can be used as a named binding in Ecto
+  queries for the given key.
+
+  ## Example
+
+      iex> EctoShorts.QueryBuilder.Schema.named_binding(:user)
+      "ecto_shorts_user"
+  """
+  @spec named_binding(key :: atom() | binary()) :: binary()
+  def named_binding(key) do
+    "ecto_shorts_#{key}"
+  end
+
+  @doc """
+  Returns the related schema module for an association field on a
+  schema.
+
+  If the association is a `through` association, recursively
+  resolves the related schema module by traversing the association
+  path. Otherwise, returns the directly related schema module.
+
+  ## Example
+
+      iex> EctoShorts.QueryBuilder.Schema.ecto_association_schema(User, :posts)
+      MyApp.Post
+  """
+  @spec ecto_association_schema(queryable(), key()) :: queryable()
+  def ecto_association_schema(schema_module, key) do
+    case schema_module.__schema__(:association, key) do
+      %{through: [field1, field2]} ->
+        schema_module
+        |> ecto_association_schema(field1)
+        |> ecto_association_schema(field2)
+
+      %{related: related} ->
+        related
+    end
+  end
+
+  @doc """
+  Joins an association on the given key and applies additional
+  filters to the joined association.
+
+  This function determines the schema module for the association,
+  sets up a named binding for the join, and applies the provided
+  filter function (`fun`) to the joined association's queryable,
+  binding, and parameters.
+
+  ## Example
+
+      iex> EctoShorts.QueryBuilder.join_association(query, :user, User, :posts, %{where: %{published: true}}, fn query, assoc_binding, assoc_schema_module, params ->
+        build_query(query, assoc_binding, assoc_schema_module, params)
+      end)
+  """
+  @spec join_association(
+          query() | queryable() | source_queryable(),
+          binding() | nil,
+          queryable(),
+          key(),
+          params(),
+          function()
+        ) :: query()
   def join_association(query, current_binding, schema_module, key, params, fun) do
     assoc_schema_module = ecto_association_schema(schema_module, key)
 
     {assoc_binding, params} = Map.pop(params, :as)
 
-    assoc_binding = assoc_binding || named_binding(key)
+    assoc_binding = assoc_binding || :"#{named_binding(key)}"
+
+    join_opts =
+      params
+      |> Map.take([:on, :qualifier, :prefix])
+      |> Map.to_list()
 
     query
-    |> QueryExpression.join(
-      {current_binding, assoc_binding},
-      :association,
-      key,
-      Map.take(params, [:on, :qualifier, :prefix])
-    )
+    |> CommonQueryExpressions.join({current_binding, assoc_binding}, :association, key, join_opts)
     |> fun.(assoc_binding, assoc_schema_module, Map.drop(params, [:on, :qualifier, :prefix]))
   end
 
+  @doc """
+  Joins a subquery and applies additional filters to it.
+
+  This function extracts the subquery schema module and binding,
+  sets up the join, and applies the provided filter function (`fun`)
+  to the subquery.
+
+  ## Example
+
+      iex> EctoShorts.QueryBuilder.join_subquery(query, :user, User, Post, %{on: ...}, fn query, subquery_binding, subquery_schema_module, params ->
+        build_query(query, subquery_binding, subquery_schema_module, params)
+      end)
+  """
+  @spec join_subquery(
+          query() | queryable() | source_queryable(),
+          binding() | nil,
+          queryable(),
+          query() | queryable() | source_queryable(),
+          params(),
+          function()
+        ) :: query()
   def join_subquery(
         query,
         current_binding,
@@ -164,45 +387,26 @@ defmodule EctoShorts.QueryBuilder.Schema do
 
     subquery_binding =
       with nil <- subquery_binding do
-        named_binding_from_module(subquery_schema_module)
+        :"#{named_binding_from_module(subquery_schema_module)}"
       end
 
+    join_opts =
+      params
+      |> Map.take([:on, :qualifier, :prefix])
+      |> Map.to_list()
+
     query
-    |> QueryExpression.join(
+    |> CommonQueryExpressions.join(
       {current_binding, subquery_binding},
       :subquery,
       from,
-      Map.take(params, [:on, :qualifier, :prefix])
+      join_opts
     )
     |> fun.(
       subquery_binding,
       subquery_schema_module,
       Map.drop(params, [:on, :qualifier, :prefix])
     )
-  end
-
-  defp named_binding_from_module(module) do
-    module
-    |> Module.split()
-    |> List.last()
-    |> Macro.underscore()
-    |> named_binding()
-  end
-
-  defp named_binding(key) do
-    :"ecto_shorts_#{key}"
-  end
-
-  defp ecto_association_schema(schema_module, key) do
-    case schema_module.__schema__(:association, key) do
-      %{through: [field1, field2]} ->
-        schema_module
-        |> ecto_association_schema(field1)
-        |> ecto_association_schema(field2)
-
-      %{related: related} ->
-        related
-    end
   end
 
   defp query_expression_filter?(key) do

@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryHelpersTest do
+defmodule EctoShorts.CommonQueriesTest do
   use ExUnit.Case, async: true
-  doctest EctoShorts.QueryHelpers
+  doctest EctoShorts.CommonQueries
 
-  alias EctoShorts.QueryHelpers
+  alias EctoShorts.CommonQueries
 
   alias EctoShorts.Support.MockSchemas.{
     BasicSchema,
@@ -11,7 +11,7 @@ defmodule EctoShorts.QueryHelpersTest do
 
   describe "build_query/2: " do
     test "can set source" do
-      query = QueryHelpers.build_query(BasicSchema)
+      query = CommonQueries.build_query(BasicSchema)
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
@@ -22,7 +22,7 @@ defmodule EctoShorts.QueryHelpersTest do
     end
 
     test "can set query prefix" do
-      query = QueryHelpers.build_query(BasicSchema, query_prefix: "query_prefix")
+      query = CommonQueries.build_query(BasicSchema, query_prefix: "query_prefix")
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
@@ -34,7 +34,7 @@ defmodule EctoShorts.QueryHelpersTest do
     end
 
     test "can set from prefix if schema does not have @schema_prefix module attribute" do
-      query = QueryHelpers.build_query(BasicSchema, schema_prefix: "schema_prefix")
+      query = CommonQueries.build_query(BasicSchema, schema_prefix: "schema_prefix")
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
@@ -48,7 +48,7 @@ defmodule EctoShorts.QueryHelpersTest do
       expected_error_message = ~r|can't apply prefix (.*) `from` is already prefixed to .*|
 
       func = fn ->
-        QueryHelpers.build_query(PrefixSchema, schema_prefix: "schema_prefix")
+        CommonQueries.build_query(PrefixSchema, schema_prefix: "schema_prefix")
       end
 
       assert_raise Ecto.Query.CompileError, expected_error_message, func

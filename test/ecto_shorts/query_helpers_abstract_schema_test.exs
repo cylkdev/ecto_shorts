@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
+defmodule EctoShorts.CommonQueriesAbstractSchemaTest do
   use ExUnit.Case, async: true
-  doctest EctoShorts.QueryHelpers
+  doctest EctoShorts.CommonQueries
 
-  alias EctoShorts.QueryHelpers
+  alias EctoShorts.CommonQueries
 
   alias EctoShorts.Support.MockSchemas.{
     AbstractSchema,
@@ -11,7 +11,7 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
 
   describe "build_query/2: " do
     test "can set source given" do
-      query = QueryHelpers.build_query({"concrete_table", AbstractSchema})
+      query = CommonQueries.build_query({"concrete_table", AbstractSchema})
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
@@ -23,7 +23,7 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
 
     test "can set query prefix" do
       query =
-        QueryHelpers.build_query(
+        CommonQueries.build_query(
           {"concrete_table", AbstractSchema},
           query_prefix: "query_prefix"
         )
@@ -39,7 +39,7 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
 
     test "can set from prefix if schema does not have @schema_prefix module attribute" do
       query =
-        QueryHelpers.build_query(
+        CommonQueries.build_query(
           {"concrete_table", AbstractSchema},
           schema_prefix: "schema_prefix"
         )
@@ -57,7 +57,7 @@ defmodule EctoShorts.QueryHelpersAbstractSchemaTest do
         "can't apply prefix `\"new_prefix\"`, `from` is already prefixed to `\"mock_schema_prefix\"`"
 
       func = fn ->
-        QueryHelpers.build_query(
+        CommonQueries.build_query(
           {"concrete_table", PrefixSchema},
           schema_prefix: "new_prefix"
         )

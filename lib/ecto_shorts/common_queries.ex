@@ -1,12 +1,15 @@
-defmodule EctoShorts.QueryHelpers do
+defmodule EctoShorts.CommonQueries do
   @moduledoc since: "2.5.0"
   @moduledoc """
   ...
   """
 
   @type source :: binary()
+
   @type query :: Ecto.Query.t()
+
   @type queryable :: Ecto.Queryable.t()
+
   @type source_queryable :: {source(), queryable()}
 
   @doc """

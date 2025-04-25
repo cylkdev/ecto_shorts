@@ -25,9 +25,9 @@ defmodule EctoShorts.Actions do
     CommonFilters,
     CommonParams,
     CommonSchemas,
+    CommonQueryExpressions,
     Config,
-    QueryBuilder,
-    QueryHelpers
+    CommonQueries
   }
 
   @doc group: "Schema API"
@@ -162,7 +162,7 @@ defmodule EctoShorts.Actions do
       )
       |> Ecto.Multi.insert({:insert, i}, fn changes_so_far ->
         query
-        |> QueryHelpers.get_query_source()
+        |> CommonQueries.get_query_source()
         |> CommonSchemas.prepare_changeset(
           Map.fetch!(changes_so_far, {:one, i}),
           Map.merge(find_params, create_params),
@@ -225,7 +225,7 @@ defmodule EctoShorts.Actions do
       )
       |> Ecto.Multi.update({:update, i}, fn changes_so_far ->
         query
-        |> QueryHelpers.get_query_source()
+        |> CommonQueries.get_query_source()
         |> CommonSchemas.prepare_changeset(
           Map.fetch!(changes_so_far, {:one, i}),
           Map.merge(find_params, update_params),
@@ -288,7 +288,7 @@ defmodule EctoShorts.Actions do
       )
       |> Ecto.Multi.insert_or_update({:insert_or_update, i}, fn changes_so_far ->
         query
-        |> QueryHelpers.get_query_source()
+        |> CommonQueries.get_query_source()
         |> CommonSchemas.prepare_changeset(
           Map.fetch!(changes_so_far, {:one, i}),
           Map.merge(find_params, upsert_params),
@@ -485,7 +485,7 @@ defmodule EctoShorts.Actions do
     with {:error, %{code: :not_found}} <-
            find(query, maybe_drop_associations(params, query, opts), opts) do
       query
-      |> QueryHelpers.get_query_source()
+      |> CommonQueries.get_query_source()
       |> create(params, opts)
     end
   end
@@ -525,7 +525,7 @@ defmodule EctoShorts.Actions do
   def find_or_create(query, find_params, create_params, opts) do
     with {:error, %{code: :not_found}} <- find(query, find_params, opts) do
       query
-      |> QueryHelpers.get_query_source()
+      |> CommonQueries.get_query_source()
       |> create(create_params, opts)
     end
   end
@@ -582,7 +582,7 @@ defmodule EctoShorts.Actions do
   def find_and_update(query, find_params, update_params, opts) do
     with {:ok, struct} <- find(query, find_params, opts) do
       query
-      |> QueryHelpers.get_query_source()
+      |> CommonQueries.get_query_source()
       |> update(struct, update_params, opts)
     end
   end
@@ -1038,7 +1038,7 @@ defmodule EctoShorts.Actions do
   def update(query, id, update_params, opts) when is_integer(id) or is_binary(id) do
     with {:ok, struct} <- find(query, %{id: id}, opts) do
       query
-      |> QueryHelpers.get_query_source()
+      |> CommonQueries.get_query_source()
       |> update(struct, update_params, opts)
     end
   end
@@ -1233,7 +1233,7 @@ defmodule EctoShorts.Actions do
         ) :: list(any())
   def stream(query, params, opts) do
     query
-    |> QueryBuilder.QueryExpression.API.from(opts[:from] || %{})
+    |> CommonQueryExpressions.from(opts[:from] || %{})
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.repo!(opts).stream(opts)
   end
@@ -1302,7 +1302,7 @@ defmodule EctoShorts.Actions do
         ) :: {:ok, any()} | {:error, any()}
   def aggregate(query, params, aggregate, field, opts) do
     query
-    |> QueryBuilder.QueryExpression.API.from(opts[:from] || %{})
+    |> CommonQueryExpressions.from(opts[:from] || %{})
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).aggregate(aggregate, field, opts)
   end

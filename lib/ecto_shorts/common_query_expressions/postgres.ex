@@ -1,20 +1,54 @@
-defmodule EctoShorts.QueryBuilder.QueryExpression.Postgres do
+defmodule EctoShorts.CommonQueryExpressions.Postgres do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  ...
+  # EctoShorts.CommonQueryExpressions.Postgres
+
+  Provides Postgres-specific query expression helpers for use in
+  EctoShorts. This module includes functions that leverage Postgres
+  features and operators to enable advanced filtering, searching, and
+  dynamic query construction for Postgres-backed schemas.
+
+  These helpers are used internally by the QueryBuilder to provide
+  robust support for Postgres-specific queries, such as array
+  operations, case-insensitive matching, and custom fragments.
   """
 
   alias EctoShorts.{
     CommonSchemas,
-    QueryBuilder.Helpers,
-    QueryBuilder.QueryExpression.API,
-    QueryBuilder.QueryExpression.Postgres.Array,
-    QueryBuilder.QueryExpression.Postgres.Field
+    QueryBuilder,
+    CommonQueryExpressions.API,
+    CommonQueryExpressions.Postgres.Array,
+    CommonQueryExpressions.Postgres.Field
   }
 
+  @type source :: binary()
+
+  @type query :: Ecto.Query.t()
+
+  @type queryable :: Ecto.Queryable.t()
+
+  @type source_queryable :: {source(), queryable()}
+
+  @type binding() :: atom() | nil
+
+  @type params :: map() | keyword()
+
+  @type key :: atom()
+
+  @type value :: any()
+
+  @type operator :: any()
+
   @doc """
-  ...
+  Adds an OR-based where clause to the query using a list or parameters.
+
+  ## Example
+
+      iex> EctoShorts.CommonQueryExpressions.Postgres.or_where(query, :user, [name: "Alice", age: 30])
+      #Ecto.Query<...>
   """
+  @spec or_where(query() | queryable() | source_queryable(), binding() | nil, params()) ::
+          query() | queryable()
   def or_where(query, current_binding, params) when is_list(params) do
     if Keyword.keyword?(params) do
       or_where(query, current_binding, Map.new(params))
@@ -29,7 +63,7 @@ defmodule EctoShorts.QueryBuilder.QueryExpression.Postgres do
     schema_module = CommonSchemas.get_schema_queryable(query)
 
     dyn_expr =
-      Helpers.apply_expressions(
+      QueryBuilder.apply_expressions(
         nil,
         params,
         &build_where_expr(&1, current_binding, schema_module, &2)
@@ -39,15 +73,34 @@ defmodule EctoShorts.QueryBuilder.QueryExpression.Postgres do
   end
 
   @doc """
-  ...
+  Adds an OR-based where clause for a single field and value.
+
+  ## Example
+
+      iex> EctoShorts.CommonQueryExpressions.Postgres.or_where(query, :user, :name, "Alice")
+      #Ecto.Query<...>
   """
+  @spec or_where(query() | queryable() | source_queryable(), binding() | nil, key(), value()) ::
+          query() | queryable()
   def or_where(query, current_binding, key, value) do
     or_where(query, current_binding, key, :==, value)
   end
 
   @doc """
-  ...
+  Adds an OR-based where clause for a single field, operator, and value.
+
+  ## Example
+
+      iex> EctoShorts.CommonQueryExpressions.Postgres.or_where(query, :user, :age, :>=, 18)
+      #Ecto.Query<...>
   """
+  @spec or_where(
+          query() | queryable() | source_queryable(),
+          binding() | nil,
+          key(),
+          operator(),
+          value()
+        ) :: query() | queryable()
   def or_where(query, current_binding, key, operator, value) do
     schema_module = CommonSchemas.get_schema_queryable(query)
 
@@ -57,8 +110,15 @@ defmodule EctoShorts.QueryBuilder.QueryExpression.Postgres do
   end
 
   @doc """
-  ...
+  Adds a WHERE clause to the query using a list or parameters.
+
+  ## Example
+
+      iex> EctoShorts.CommonQueryExpressions.Postgres.where(query, :user, [name: "Alice", age: 30])
+      #Ecto.Query<...>
   """
+  @spec where(query() | queryable() | source_queryable(), binding() | nil, params()) ::
+          query() | queryable()
   def where(query, current_binding, params) when is_list(params) do
     if Keyword.keyword?(params) do
       where(query, current_binding, Map.new(params))
@@ -73,7 +133,7 @@ defmodule EctoShorts.QueryBuilder.QueryExpression.Postgres do
     schema_module = CommonSchemas.get_schema_queryable(query)
 
     dyn_expr =
-      Helpers.apply_expressions(
+      QueryBuilder.apply_expressions(
         nil,
         params,
         &build_where_expr(&1, current_binding, schema_module, &2)
@@ -83,15 +143,34 @@ defmodule EctoShorts.QueryBuilder.QueryExpression.Postgres do
   end
 
   @doc """
-  ...
+  Adds a WHERE clause for a single field and value.
+
+  ## Example
+
+      iex> EctoShorts.CommonQueryExpressions.Postgres.where(query, :user, :name, "Alice")
+      #Ecto.Query<...>
   """
+  @spec where(query() | queryable() | source_queryable(), binding() | nil, key(), value()) ::
+          query() | queryable()
   def where(query, current_binding, key, value) do
     where(query, current_binding, key, :==, value)
   end
 
   @doc """
-  ...
+  Adds a WHERE clause for a single field, operator, and value.
+
+  ## Example
+
+      iex> EctoShorts.CommonQueryExpressions.Postgres.where(query, :user, :age, :>=, 18)
+      #Ecto.Query<...>
   """
+  @spec where(
+          query() | queryable() | source_queryable(),
+          binding() | nil,
+          key(),
+          operator(),
+          value()
+        ) :: query() | queryable()
   def where(query, current_binding, key, operator, value) do
     schema_module = CommonSchemas.get_schema_queryable(query)
 

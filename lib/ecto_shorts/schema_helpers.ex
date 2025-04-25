@@ -5,6 +5,7 @@ defmodule EctoShorts.SchemaHelpers do
   """
 
   @type schema_struct :: Ecto.Schema.t()
+
   @type schema_metadata :: Ecto.Schema.Metadata.t()
 
   @doc """

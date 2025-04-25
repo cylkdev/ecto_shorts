@@ -3,22 +3,34 @@ defmodule EctoShorts.QueryBuilder.Common do
   @moduledoc """
   # EctoShorts.QueryBuilder.Common
 
-  Provides common query-building functionality for EctoShorts.
+  Provides common query-building functionality for
+  EctoShorts.
 
-  This module implements the `EctoShorts.QueryBuilder` behaviour
-  for filters that are common to most Ecto schemas, such as pagination,
-  ordering, and ID-based filtering.
+  This module implements the `EctoShorts.QueryBuilder`
+  behaviour for filters that are common to most Ecto
+  schemas, such as pagination, ordering, and ID-based
+  filtering.
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.Common.filters()
-      [:after, :before, :end_date, :first, :ids, :last, :limit, :offset, :order_by, :preload, :search, :since, :start_date, :until]
+  ```elixir
 
-      iex> EctoShorts.QueryBuilder.Common.build_query(MySchema, nil, nil, :limit, 10)
+      iex> EctoShorts.QueryBuilder.Common.filters()
+      [
+        :after, :before, :end_date, :first, :ids, :last,
+        :limit, :offset, :order_by, :preload, :search,
+        :since, :start_date, :until
+      ]
+
+      iex> EctoShorts.QueryBuilder.Common.build_query(
+      ...>   MySchema, nil, nil, :limit, 10
+      ...> )
       #Ecto.Query<...>
+
+  ```
   """
 
-  alias EctoShorts.QueryBuilder.QueryExpression
+  alias EctoShorts.CommonQueryExpressions
 
   @filters ~w(
     after
@@ -39,6 +51,16 @@ defmodule EctoShorts.QueryBuilder.Common do
 
   @behaviour EctoShorts.QueryBuilder
 
+  @type source :: binary()
+
+  @type query :: Ecto.Query.t()
+
+  @type queryable :: Ecto.Queryable.t()
+
+  @type source_queryable :: {source(), queryable()}
+
+  @type binding :: atom() | nil
+
   @type filter_key ::
           :after
           | :before
@@ -56,18 +78,6 @@ defmodule EctoShorts.QueryBuilder.Common do
           | :until
 
   @type filter_value :: term()
-
-  @type source :: binary()
-
-  @type query :: Ecto.Query.t()
-
-  @type queryable :: Ecto.Queryable.t()
-
-  @type source_queryable :: {source(), queryable()}
-
-  @type binding :: atom() | nil
-
-  @type schema_module :: module()
 
   @doc """
   Returns the list of supported filters for this query builder.
@@ -121,67 +131,67 @@ defmodule EctoShorts.QueryBuilder.Common do
       #Ecto.Query<...>
   """
   @spec build_query(
-          query :: query() | queryable() | source_queryable(),
-          binding :: binding() | nil,
-          schema_module :: schema_module(),
-          filter_key :: filter_key(),
-          filter_value :: filter_value()
-        ) :: query()
+          query() | queryable() | source_queryable(),
+          binding() | nil,
+          queryable(),
+          filter_key(),
+          filter_value()
+        ) :: query() | queryable()
   def build_query(query, current_binding, _schema_module, :ids, values) do
-    QueryExpression.where(query, current_binding, :id, :==, values)
+    CommonQueryExpressions.where(query, current_binding, :id, :==, values)
   end
 
   def build_query(query, current_binding, _schema_module, :first, value) do
-    QueryExpression.limit(query, current_binding, value)
+    CommonQueryExpressions.limit(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :last, value) do
     query
-    |> QueryExpression.exclude(:order_by)
-    |> QueryExpression.order_by(current_binding, order_by: [desc: :inserted_at])
-    |> QueryExpression.limit(current_binding, value)
-    |> QueryExpression.subquery()
-    |> QueryExpression.order_by(current_binding, :id)
+    |> CommonQueryExpressions.exclude(:order_by)
+    |> CommonQueryExpressions.order_by(current_binding, order_by: [desc: :inserted_at])
+    |> CommonQueryExpressions.limit(current_binding, value)
+    |> CommonQueryExpressions.subquery()
+    |> CommonQueryExpressions.order_by(current_binding, :id)
   end
 
   def build_query(query, current_binding, _schema_module, :limit, value) do
-    QueryExpression.limit(query, current_binding, value)
+    CommonQueryExpressions.limit(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :offset, value) do
-    QueryExpression.offset(query, current_binding, value)
+    CommonQueryExpressions.offset(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :order_by, value) do
-    QueryExpression.order_by(query, current_binding, value)
+    CommonQueryExpressions.order_by(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :preload, value) do
-    QueryExpression.preload(query, current_binding, value)
+    CommonQueryExpressions.preload(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :after, value) do
-    QueryExpression.where(query, current_binding, :id, :>, value)
+    CommonQueryExpressions.where(query, current_binding, :id, :>, value)
   end
 
   def build_query(query, current_binding, _schema_module, :before, value) do
-    QueryExpression.where(query, current_binding, :id, :<, value)
+    CommonQueryExpressions.where(query, current_binding, :id, :<, value)
   end
 
   def build_query(query, current_binding, _schema_module, :since, value) do
-    QueryExpression.where(query, current_binding, :inserted_at, :>=, value)
+    CommonQueryExpressions.where(query, current_binding, :inserted_at, :>=, value)
   end
 
   def build_query(query, current_binding, _schema_module, :until, value) do
-    QueryExpression.where(query, current_binding, :inserted_at, :<=, value)
+    CommonQueryExpressions.where(query, current_binding, :inserted_at, :<=, value)
   end
 
   def build_query(query, current_binding, _schema_module, :start_date, value) do
-    QueryExpression.where(query, current_binding, :inserted_at, :>=, value)
+    CommonQueryExpressions.where(query, current_binding, :inserted_at, :>=, value)
   end
 
   def build_query(query, current_binding, _schema_module, :end_date, value) do
-    QueryExpression.where(query, current_binding, :inserted_at, :<=, value)
+    CommonQueryExpressions.where(query, current_binding, :inserted_at, :<=, value)
   end
 
   def build_query(query, schema_module, :search, value) do

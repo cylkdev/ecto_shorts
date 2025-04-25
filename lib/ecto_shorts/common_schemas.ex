@@ -24,7 +24,7 @@ defmodule EctoShorts.CommonSchemas do
   database table provided it has a matching schema.
   """
 
-  alias EctoShorts.QueryHelpers
+  alias EctoShorts.CommonQueries
 
   @type source :: binary()
   @type query :: Ecto.Query.t()
@@ -101,7 +101,7 @@ defmodule EctoShorts.CommonSchemas do
         ) :: queryable()
   def get_schema_queryable(%{__meta__: %{schema: queryable}}), do: queryable
   def get_schema_queryable({_source, queryable}), do: queryable
-  def get_schema_queryable(query), do: QueryHelpers.get_query_schema(query)
+  def get_schema_queryable(query), do: CommonQueries.get_query_schema(query)
 
   @doc """
   Returns a struct for the given schema.

@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryHelpersQueryTest do
+defmodule EctoShorts.CommonQueriesQueryTest do
   use ExUnit.Case, async: true
-  doctest EctoShorts.QueryHelpers
+  doctest EctoShorts.CommonQueries
 
-  alias EctoShorts.QueryHelpers
+  alias EctoShorts.CommonQueries
   alias EctoShorts.Support.MockSchemas.BasicSchema
 
   require Ecto.Query
@@ -12,7 +12,7 @@ defmodule EctoShorts.QueryHelpersQueryTest do
       query =
         BasicSchema
         |> Ecto.Query.from()
-        |> QueryHelpers.build_query()
+        |> CommonQueries.build_query()
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
@@ -26,7 +26,7 @@ defmodule EctoShorts.QueryHelpersQueryTest do
       query =
         BasicSchema
         |> Ecto.Query.from()
-        |> QueryHelpers.build_query(query_prefix: "query_prefix")
+        |> CommonQueries.build_query(query_prefix: "query_prefix")
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
@@ -44,7 +44,7 @@ defmodule EctoShorts.QueryHelpersQueryTest do
       query =
         BasicSchema
         |> Ecto.Query.from(prefix: "schema_prefix")
-        |> QueryHelpers.build_query()
+        |> CommonQueries.build_query()
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
@@ -58,7 +58,7 @@ defmodule EctoShorts.QueryHelpersQueryTest do
       query =
         BasicSchema
         |> Ecto.Query.from()
-        |> QueryHelpers.build_query(schema_prefix: "schema_prefix")
+        |> CommonQueries.build_query(schema_prefix: "schema_prefix")
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
