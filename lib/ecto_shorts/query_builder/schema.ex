@@ -7,8 +7,7 @@ defmodule EctoShorts.QueryBuilder.Schema do
   alias EctoShorts.{
     CommonSchemas,
     QueryBuilder.Helpers,
-    QueryBuilder.QueryAPI,
-    QueryBuilder.QueryExpressions
+    QueryBuilder.QueryExpression
   }
 
   @behaviour EctoShorts.QueryBuilder
@@ -26,6 +25,9 @@ defmodule EctoShorts.QueryBuilder.Schema do
   """
   def filters, do: @filters
 
+  @doc """
+  ...
+  """
   def build_query(query, current_binding, schema_module, params) do
     Enum.reduce(params, query, fn {key, value}, query ->
       build_query(query, current_binding, schema_module, key, value)
@@ -64,11 +66,11 @@ defmodule EctoShorts.QueryBuilder.Schema do
   end
 
   defp apply_schema_filter(query, current_binding, _schema_module, key, {operator, value}) do
-    QueryExpressions.where(query, current_binding, key, operator, value)
+    QueryExpression.where(query, current_binding, key, operator, value)
   end
 
   defp apply_schema_filter(query, current_binding, _schema_module, key, value) do
-    QueryExpressions.where(query, current_binding, key, :==, value)
+    QueryExpression.where(query, current_binding, key, :==, value)
   end
 
   defp build_query_expression(query, current_binding, schema_module, :join, value) do
@@ -89,15 +91,15 @@ defmodule EctoShorts.QueryBuilder.Schema do
   end
 
   defp build_query_expression(query, current_binding, _schema_module, :or_where, value) do
-    QueryExpressions.or_where(query, current_binding, value)
+    QueryExpression.or_where(query, current_binding, value)
   end
 
   defp build_query_expression(query, current_binding, _schema_module, :select, value) do
-    QueryExpressions.select(query, current_binding, value)
+    QueryExpression.select(query, current_binding, value)
   end
 
   defp build_query_expression(query, current_binding, _schema_module, :select_merge, value) do
-    QueryExpressions.select_merge(query, current_binding, value)
+    QueryExpression.select_merge(query, current_binding, value)
   end
 
   defp build_assoc_filters(query, current_binding, schema_module, key, params) do
@@ -139,7 +141,7 @@ defmodule EctoShorts.QueryBuilder.Schema do
     assoc_binding = assoc_binding || named_binding(key)
 
     query
-    |> QueryAPI.join(
+    |> QueryExpression.join(
       {current_binding, assoc_binding},
       :association,
       key,
@@ -166,7 +168,7 @@ defmodule EctoShorts.QueryBuilder.Schema do
       end
 
     query
-    |> QueryAPI.join(
+    |> QueryExpression.join(
       {current_binding, subquery_binding},
       :subquery,
       from,

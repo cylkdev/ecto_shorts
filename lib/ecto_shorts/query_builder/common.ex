@@ -18,10 +18,7 @@ defmodule EctoShorts.QueryBuilder.Common do
       #Ecto.Query<...>
   """
 
-  alias EctoShorts.QueryBuilder.{
-    QueryAPI,
-    QueryExpressions
-  }
+  alias EctoShorts.QueryBuilder.QueryExpression
 
   @filters ~w(
     after
@@ -125,66 +122,66 @@ defmodule EctoShorts.QueryBuilder.Common do
   """
   @spec build_query(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           schema_module :: schema_module(),
           filter_key :: filter_key(),
           filter_value :: filter_value()
         ) :: query()
   def build_query(query, current_binding, _schema_module, :ids, values) do
-    QueryExpressions.where(query, current_binding, :id, :==, values)
+    QueryExpression.where(query, current_binding, :id, :==, values)
   end
 
   def build_query(query, current_binding, _schema_module, :first, value) do
-    QueryAPI.limit(query, current_binding, value)
+    QueryExpression.limit(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :last, value) do
     query
-    |> QueryAPI.exclude(:order_by)
-    |> QueryAPI.order_by(current_binding, order_by: [desc: :inserted_at])
-    |> QueryAPI.limit(current_binding, value)
-    |> QueryAPI.subquery()
-    |> QueryAPI.order_by(current_binding, :id)
+    |> QueryExpression.exclude(:order_by)
+    |> QueryExpression.order_by(current_binding, order_by: [desc: :inserted_at])
+    |> QueryExpression.limit(current_binding, value)
+    |> QueryExpression.subquery()
+    |> QueryExpression.order_by(current_binding, :id)
   end
 
   def build_query(query, current_binding, _schema_module, :limit, value) do
-    QueryAPI.limit(query, current_binding, value)
+    QueryExpression.limit(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :offset, value) do
-    QueryAPI.offset(query, current_binding, value)
+    QueryExpression.offset(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :order_by, value) do
-    QueryAPI.order_by(query, current_binding, value)
+    QueryExpression.order_by(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :preload, value) do
-    QueryAPI.preload(query, current_binding, value)
+    QueryExpression.preload(query, current_binding, value)
   end
 
   def build_query(query, current_binding, _schema_module, :after, value) do
-    QueryExpressions.where(query, current_binding, :id, :>, value)
+    QueryExpression.where(query, current_binding, :id, :>, value)
   end
 
   def build_query(query, current_binding, _schema_module, :before, value) do
-    QueryExpressions.where(query, current_binding, :id, :<, value)
+    QueryExpression.where(query, current_binding, :id, :<, value)
   end
 
   def build_query(query, current_binding, _schema_module, :since, value) do
-    QueryExpressions.where(query, current_binding, :inserted_at, :>=, value)
+    QueryExpression.where(query, current_binding, :inserted_at, :>=, value)
   end
 
   def build_query(query, current_binding, _schema_module, :until, value) do
-    QueryExpressions.where(query, current_binding, :inserted_at, :<=, value)
+    QueryExpression.where(query, current_binding, :inserted_at, :<=, value)
   end
 
   def build_query(query, current_binding, _schema_module, :start_date, value) do
-    QueryExpressions.where(query, current_binding, :inserted_at, :>=, value)
+    QueryExpression.where(query, current_binding, :inserted_at, :>=, value)
   end
 
   def build_query(query, current_binding, _schema_module, :end_date, value) do
-    QueryExpressions.where(query, current_binding, :inserted_at, :<=, value)
+    QueryExpression.where(query, current_binding, :inserted_at, :<=, value)
   end
 
   def build_query(query, schema_module, :search, value) do

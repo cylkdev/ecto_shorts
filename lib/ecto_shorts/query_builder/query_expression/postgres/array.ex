@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.QueryExpressions.Postgres.Array do
+defmodule EctoShorts.QueryBuilder.QueryExpression.Postgres.Array do
   @moduledoc since: "2.5.0"
   @moduledoc """
   ...

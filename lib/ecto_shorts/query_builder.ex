@@ -3,7 +3,6 @@ defmodule EctoShorts.QueryBuilder do
   @moduledoc """
   Specifies the query builder API required from adapters.
   """
-  alias EctoShorts.QueryBuilder.{Common, Schema}
 
   @type t :: module()
 

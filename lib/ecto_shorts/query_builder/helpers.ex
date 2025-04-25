@@ -18,7 +18,7 @@ defmodule EctoShorts.QueryBuilder.Helpers do
   ## Usage
 
   This helper is most commonly used in modules like `EctoShorts.QueryBuilder.Common`,
-  `EctoShorts.QueryBuilder.Schema`, and `EctoShorts.QueryBuilder.QueryExpressions` to
+  `EctoShorts.QueryBuilder.Schema`, and `EctoShorts.QueryBuilder.QueryExpression` to
   reduce code duplication when building up Ecto queries from dynamic, user-provided
   parameters.
 

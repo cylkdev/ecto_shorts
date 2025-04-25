@@ -1233,7 +1233,7 @@ defmodule EctoShorts.Actions do
         ) :: list(any())
   def stream(query, params, opts) do
     query
-    |> QueryBuilder.QueryAPI.from(opts[:from] || %{})
+    |> QueryBuilder.QueryExpression.API.from(opts[:from] || %{})
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.repo!(opts).stream(opts)
   end
@@ -1302,7 +1302,7 @@ defmodule EctoShorts.Actions do
         ) :: {:ok, any()} | {:error, any()}
   def aggregate(query, params, aggregate, field, opts) do
     query
-    |> QueryBuilder.QueryAPI.from(opts[:from] || %{})
+    |> QueryBuilder.QueryExpression.API.from(opts[:from] || %{})
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).aggregate(aggregate, field, opts)
   end

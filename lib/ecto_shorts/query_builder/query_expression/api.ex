@@ -1,7 +1,7 @@
-defmodule EctoShorts.QueryBuilder.QueryAPI do
+defmodule EctoShorts.QueryBuilder.QueryExpression.API do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  # EctoShorts.QueryBuilder.QueryAPI
+  # EctoShorts.QueryBuilder.QueryExpression.API
 
   Provides wrapper functions to simplify the usage of the `Ecto.Query` API.
 
@@ -45,10 +45,10 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.merge_dynamic(nil, dynamic([q], q.id > 1))
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.merge_dynamic(nil, dynamic([q], q.id > 1))
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.merge_dynamic(dynamic([q], q.id > 1), dynamic([q], q.name == "foo"))
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.merge_dynamic(dynamic([q], q.id > 1), dynamic([q], q.name == "foo"))
       #Ecto.Query.DynamicExpr<...>
   """
   @spec merge_dynamic(dyn_expr :: nil | dynamic_expr(), dyn_expr :: dynamic_expr()) ::
@@ -61,13 +61,13 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.dynamic(:user, user.age > 18)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.dynamic(:user, user.age > 18)
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.dynamic(nil, q.id == 1)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.dynamic(nil, q.id == 1)
       #Ecto.Query.DynamicExpr<...>
   """
-  @spec dynamic(binding :: binding(), value :: value()) :: dynamic_expr()
+  @spec dynamic(binding :: binding() | nil, value :: value()) :: dynamic_expr()
   def dynamic(current_binding \\ nil, value) do
     if current_binding do
       Query.dynamic([{^current_binding, q}], ^value)
@@ -91,10 +91,10 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.from(MySchema, as: :user)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.from(MySchema, as: :user)
       #Ecto.Query<...>
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.from(MySchema, prefix: "custom_schema")
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.from(MySchema, prefix: "custom_schema")
       #Ecto.Query<...>
   """
   @spec from(query :: query() | queryable() | source_queryable()) :: query()
@@ -127,12 +127,12 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.put_query_prefix(query, "custom_schema")
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.put_query_prefix(query, "custom_schema")
       #Ecto.Query<...>
   """
   @spec put_query_prefix(
           query :: query() | queryable() | source_queryable(),
-          prefix :: prefix() | nil
+          prefix :: prefix()
         ) :: query()
   def put_query_prefix(query, prefix) do
     Query.put_query_prefix(query, prefix)
@@ -143,7 +143,7 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.subquery(query)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.subquery(query)
       #Ecto.Query<...>
   """
   @spec subquery(query :: query() | queryable() | source_queryable()) :: query()
@@ -157,7 +157,7 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.exclude(query, :order_by)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.exclude(query, :order_by)
       #Ecto.Query<...>
   """
   @spec exclude(query :: query() | queryable() | source_queryable(), field :: field()) :: query()
@@ -170,15 +170,15 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.limit(query, nil, 10)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.limit(query, nil, 10)
       #Ecto.Query<...>
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.limit(query, :user, 5)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.limit(query, :user, 5)
       #Ecto.Query<...>
   """
   @spec limit(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           value :: value()
         ) :: query()
   def limit(query, current_binding, value) do
@@ -194,12 +194,12 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.offset(query, nil, 20)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.offset(query, nil, 20)
       #Ecto.Query<...>
   """
   @spec offset(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           value :: value()
         ) :: query()
   def offset(query, current_binding, value) do
@@ -215,12 +215,12 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.group_by(query, nil, :category)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.group_by(query, nil, :category)
       #Ecto.Query<...>
   """
   @spec group_by(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           value :: value()
         ) :: query()
   def group_by(query, current_binding, value) do
@@ -236,12 +236,12 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.order_by(query, nil, [asc: :inserted_at])
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.order_by(query, nil, [asc: :inserted_at])
       #Ecto.Query<...>
   """
   @spec order_by(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           value :: value()
         ) :: query()
   def order_by(query, current_binding, value) do
@@ -257,12 +257,12 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.preload(query, nil, :comments)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.preload(query, nil, :comments)
       #Ecto.Query<...>
   """
   @spec preload(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           value :: value()
         ) :: query()
   def preload(query, current_binding, value) do
@@ -279,15 +279,15 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.select(query, nil, true)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.select(query, nil, true)
       #Ecto.Query<...>
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.select(query, nil, {:map, [:id, :name]})
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.select(query, nil, {:map, [:id, :name]})
       #Ecto.Query<...>
   """
   @spec select(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           value :: value()
         ) :: query()
   def select(query, current_binding, true) do
@@ -327,12 +327,12 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.select_merge(query, nil, true)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.select_merge(query, nil, true)
       #Ecto.Query<...>
   """
   @spec select_merge(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           value :: value()
         ) :: query()
   def select_merge(query, current_binding, true) do
@@ -366,15 +366,15 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.join(query, :user, :association, :posts, qualifier: :left)
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.join(query, :user, :association, :posts, qualifier: :left)
       #Ecto.Query<...>
   """
   @spec join(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding() | {current_binding :: binding(), join_binding :: binding()},
+          binding :: binding() | {current_binding :: binding(), join_binding :: binding()} | nil,
           type :: atom(),
           key :: atom(),
-          opts()
+          opts :: keyword() | map()
         ) :: query()
   def join(query, current_binding, type, key, opts) when is_map(opts) do
     join(query, current_binding, type, key, Map.to_list(opts))
@@ -467,12 +467,12 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.or_where(query, nil, dynamic([q], q.id > 1))
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.or_where(query, nil, dynamic([q], q.id > 1))
       #Ecto.Query<...>
   """
   @spec or_where(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           value :: value()
         ) :: query()
   def or_where(query, current_binding, value) do
@@ -488,12 +488,12 @@ defmodule EctoShorts.QueryBuilder.QueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilder.QueryAPI.where(query, nil, dynamic([q], q.id > 1))
+      iex> EctoShorts.QueryBuilder.QueryExpression.API.where(query, nil, dynamic([q], q.id > 1))
       #Ecto.Query<...>
   """
   @spec where(
           query :: query() | queryable() | source_queryable(),
-          binding :: binding(),
+          binding :: binding() | nil,
           value :: value()
         ) :: query()
   def where(query, current_binding, value) do
