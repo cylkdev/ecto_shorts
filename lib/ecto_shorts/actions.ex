@@ -142,14 +142,14 @@ defmodule EctoShorts.Actions do
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def find_or_create_many(query, params_list, opts) do
     case query
-         |> multi_one_or_insert(params_list, opts)
+         |> multi_find_or_create(params_list, opts)
          |> Config.repo!(opts).transaction(opts) do
       {:ok, operations} -> {:ok, Map.values(operations)}
       {:error, _failed_op, _failed_value, _changes_so_far} = e -> e
     end
   end
 
-  defp multi_one_or_insert(query, params_list, opts) do
+  defp multi_find_or_create(query, params_list, opts) do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {args, i}, multi ->
@@ -160,14 +160,16 @@ defmodule EctoShorts.Actions do
         {:one, i},
         CommonFilters.convert_params_to_filter(query, find_params, opts)
       )
-      |> Ecto.Multi.insert({:insert, i}, fn changes_so_far ->
-        query
-        |> CommonQueries.get_query_source()
-        |> CommonSchemas.prepare_changeset(
-          Map.fetch!(changes_so_far, {:one, i}),
-          Map.merge(find_params, create_params),
-          opts
-        )
+      |> Ecto.Multi.run({:insert, i}, fn repo, changes_so_far ->
+        case Map.fetch!(changes_so_far, {:one, i}) do
+          nil ->
+            query
+            |> create_changeset(Map.merge(find_params, create_params), opts)
+            |> repo.insert(opts)
+
+          schema_data ->
+            {:ok, schema_data}
+        end
       end)
     end)
   end
@@ -205,14 +207,14 @@ defmodule EctoShorts.Actions do
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def find_and_update_many(query, params_list, opts) do
     case query
-         |> multi_one_or_update(params_list, opts)
+         |> multi_find_and_update(params_list, opts)
          |> Config.repo!(opts).transaction(opts) do
       {:ok, operations} -> {:ok, Map.values(operations)}
       {:error, _failed_op, _failed_value, _changes_so_far} = e -> e
     end
   end
 
-  defp multi_one_or_update(query, params_list, opts) do
+  defp multi_find_and_update(query, params_list, opts) do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {args, i}, multi ->
@@ -224,9 +226,8 @@ defmodule EctoShorts.Actions do
         CommonFilters.convert_params_to_filter(query, find_params, opts)
       )
       |> Ecto.Multi.update({:update, i}, fn changes_so_far ->
-        query
-        |> CommonQueries.get_query_source()
-        |> CommonSchemas.prepare_changeset(
+        CommonSchemas.prepare_changeset(
+          query,
           Map.fetch!(changes_so_far, {:one, i}),
           Map.merge(find_params, update_params),
           opts
@@ -268,14 +269,14 @@ defmodule EctoShorts.Actions do
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def find_and_upsert_many(query, params_list, opts) do
     case query
-         |> multi_one_and_insert_or_update(params_list, opts)
+         |> multi_find_and_insert_or_update(params_list, opts)
          |> Config.repo!(opts).transaction(opts) do
       {:ok, operations} -> {:ok, Map.values(operations)}
       {:error, _failed_op, _failed_value, _changes_so_far} = e -> e
     end
   end
 
-  defp multi_one_and_insert_or_update(query, params_list, opts) do
+  defp multi_find_and_insert_or_update(query, params_list, opts) do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {args, i}, multi ->
@@ -287,13 +288,18 @@ defmodule EctoShorts.Actions do
         CommonFilters.convert_params_to_filter(query, find_params, opts)
       )
       |> Ecto.Multi.insert_or_update({:insert_or_update, i}, fn changes_so_far ->
-        query
-        |> CommonQueries.get_query_source()
-        |> CommonSchemas.prepare_changeset(
-          Map.fetch!(changes_so_far, {:one, i}),
-          Map.merge(find_params, upsert_params),
-          opts
-        )
+        case Map.fetch!(changes_so_far, {:one, i}) do
+          nil ->
+            create_changeset(query, Map.merge(find_params, upsert_params), opts)
+
+          schema_data ->
+            CommonSchemas.prepare_changeset(
+              query,
+              schema_data,
+              Map.merge(find_params, upsert_params),
+              opts
+            )
+        end
       end)
     end)
   end
@@ -897,7 +903,7 @@ defmodule EctoShorts.Actions do
         ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
   def create(query, params, opts) do
     query
-    |> CommonSchemas.prepare_changeset(params, opts)
+    |> create_changeset(params, opts)
     |> Config.repo!(opts).insert(opts)
   end
 
@@ -957,8 +963,6 @@ defmodule EctoShorts.Actions do
   end
 
   def find(query, params, opts) do
-    IO.inspect(binding(), label: "find")
-
     params =
       params
       |> put_order_by(opts)
@@ -1038,7 +1042,7 @@ defmodule EctoShorts.Actions do
   def update(query, id, update_params, opts) when is_integer(id) or is_binary(id) do
     with {:ok, struct} <- find(query, %{id: id}, opts) do
       query
-      |> CommonQueries.get_query_source()
+      |> CommonSchemas.get_schema_queryable()
       |> update(struct, update_params, opts)
     end
   end
@@ -1406,6 +1410,17 @@ defmodule EctoShorts.Actions do
     end
 
     Config.repo!(opts).transaction(op, opts)
+  end
+
+  defp create_changeset(query, params, opts) do
+    schema_module = CommonSchemas.get_schema_queryable(query)
+
+    if function_exported?(schema_module, :create_changeset, 1) and
+         not Keyword.has_key?(opts, :prepare_changeset) do
+      schema_module.create_changeset(params)
+    else
+      CommonSchemas.prepare_changeset(query, params, opts)
+    end
   end
 
   defp maybe_drop_associations(params, query, opts) do

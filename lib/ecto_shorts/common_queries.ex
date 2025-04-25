@@ -21,11 +21,11 @@ defmodule EctoShorts.CommonQueries do
       ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.CommonSchemas.get_query_source()
       {"comments", EctoShorts.Support.Schemas.Comment}
   """
-  @spec get_query_source(query :: query() | queryable() | source_queryable()) ::
+  @spec get_query_source(query() | queryable() | source_queryable()) ::
           queryable() | source_queryable()
+  def get_query_source(queryable) when is_atom(queryable), do: queryable
   def get_query_source(%{from: %{source: {source, queryable}}}), do: {source, queryable}
   def get_query_source(%{from: %{query: %{from: {source, queryable}}}}), do: {source, queryable}
-  def get_query_source(query), do: query
 
   @doc """
   Returns a `Ecto.Queryable` given an `Ecto.Query` or `Ecto.Queryable`.

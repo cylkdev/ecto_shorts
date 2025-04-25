@@ -132,21 +132,6 @@ defmodule EctoShorts.QueryBuilder.Schema do
   Dispatches to the appropriate handler for query expressions or
   recursively applies filters to associations.
 
-  ## Parameters
-
-    * `query`: The Ecto queryable to modify.
-
-    * `current_binding`: The current binding (atom or index) for
-      the query.
-
-    * `schema_module`: The Ecto schema module associated with the
-      query.
-
-    * `key`: The filter key (atom) indicating the type of filter to
-      apply.
-
-    * `value`: The value or parameters for the filter.
-
   ## Example
 
       iex> EctoShorts.QueryBuilder.build_query(query, :user, User, :where, %{active: true})
@@ -172,10 +157,43 @@ defmodule EctoShorts.QueryBuilder.Schema do
         build_schema_filters(query, current_binding, schema_module, key, value)
 
       true ->
-        EctoShorts.Utils.Logger.warning(
-          __MODULE__,
-          "Expected key to be a query field or association for the schema '#{inspect(schema_module)}', got: #{inspect(key)}"
-        )
+        assoc_warning_message =
+          if schema_module.__schema__(:associations) !== [] do
+            """
+            - Use a valid association, such as:
+
+            #{Enum.map_join(schema_module.__schema__(:associations), "\n", &"* #{&1}")}
+            """
+          else
+            ""
+          end
+
+        message =
+          """
+          Invalid filter key provided.
+
+          The key you passed is not a valid field or supported query filter for the given schema.
+
+            schema: #{inspect(schema_module)}
+
+            key: #{inspect(key)}
+
+          The query will be unchanged and this key will be skipped.
+
+          To resolve this, you can:
+
+          - Remove the key if it’s unnecessary.
+
+          - Use a supported custom filter, such as:
+
+          #{Enum.map_join(@filters, "\n", &"* #{&1}")}
+
+          - Use a valid schema field, such as:
+
+          #{Enum.map_join(schema_module.__schema__(:query_fields), "\n", &"* #{&1}")}
+          """ <> assoc_warning_message
+
+        EctoShorts.Utils.Logger.warning(__MODULE__, message, stacktrace: true)
 
         query
     end
