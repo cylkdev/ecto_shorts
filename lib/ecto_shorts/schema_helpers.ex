@@ -6,8 +6,6 @@ defmodule EctoShorts.SchemaHelpers do
 
   @type schema_struct :: Ecto.Schema.t()
 
-  @type schema_metadata :: Ecto.Schema.Metadata.t()
-
   @doc """
   Determine if item passed in is a Ecto Schema
 
@@ -25,12 +23,6 @@ defmodule EctoShorts.SchemaHelpers do
   @spec schema?(schema_data :: schema_struct() | any()) :: boolean()
   def schema?(%{__meta__: %{schema: _}}), do: true
   def schema?(_), do: false
-
-  @doc """
-  Returns the `Ecto.Schema.Metadata` struct.
-  """
-  @spec get_schema_metadata(struct :: schema_struct()) :: schema_metadata()
-  def get_schema_metadata(%{__meta__: meta}), do: meta
 
   @doc """
   Determine if any items in list are a schema

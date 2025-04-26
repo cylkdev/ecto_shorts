@@ -15,6 +15,20 @@ defmodule EctoShorts.ActionsTest do
     |> repo.insert!()
   end
 
+  describe "delete_all/2" do
+    test "deletes all records matching params" do
+      _post = insert!(Repo, Post, %{title: "post_title"})
+
+      assert {1, nil} = Actions.delete_all(Post, %{})
+    end
+
+    test "deletes all records matching params and returns records with select" do
+      _post = insert!(Repo, Post, %{title: "post_title"})
+
+      assert {1, [%Post{title: "post_title"}]} = Actions.delete_all(Post, %{select: true})
+    end
+  end
+
   describe "find_or_create_many/3" do
     test "creates records" do
       assert {:ok,
@@ -42,6 +56,29 @@ defmodule EctoShorts.ActionsTest do
                  %{title: "post_title_1"},
                  %{title: "post_title_2"}
                ])
+    end
+
+    test "returns error when constraint violation occurs" do
+      assert {:error,
+              %ErrorMessage{
+                code: :conflict,
+                message: "Failed to create record.",
+                details: %{
+                  changes_so_far: [%Post{title: "post_title_1"}],
+                  changeset: changeset,
+                  position: 1,
+                  params: [
+                    %{title: "post_title_1", unique_identifier: "post_unique_identifier"},
+                    %{title: "post_title_2", unique_identifier: "post_unique_identifier"}
+                  ]
+                }
+              }} =
+               Actions.find_or_create_many(Post, [
+                 %{title: "post_title_1", unique_identifier: "post_unique_identifier"},
+                 %{title: "post_title_2", unique_identifier: "post_unique_identifier"}
+               ])
+
+      assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
     end
   end
 

@@ -158,9 +158,19 @@ defmodule EctoShorts.Actions do
              |> CommonFilters.convert_params_to_filter(params, opts)
              |> repo.one(opts) do
           nil ->
-            query
-            |> create_changeset(params, opts)
-            |> repo.insert(opts)
+            with {:error, changeset} <-
+                   query
+                   |> create_changeset(params, opts)
+                   |> repo.insert(opts) do
+              {:error,
+               {:conflict, "Failed to create record.",
+                %{
+                  query: query,
+                  position: 1,
+                  changeset: changeset,
+                  params: params_list
+                }}}
+            end
 
           schema_data ->
             {:ok, schema_data}
@@ -228,13 +238,23 @@ defmodule EctoShorts.Actions do
               }}}
 
           schema_data ->
-            query
-            |> CommonSchemas.prepare_changeset(
-              schema_data,
-              Map.merge(find_params, update_params),
-              opts
-            )
-            |> repo.update(opts)
+            with {:error, changeset} <-
+                   query
+                   |> CommonSchemas.prepare_changeset(
+                     schema_data,
+                     Map.merge(find_params, update_params),
+                     opts
+                   )
+                   |> repo.update(opts) do
+              {:error,
+               {:conflict, "Failed to update record.",
+                %{
+                  query: query,
+                  position: 1,
+                  changeset: changeset,
+                  params: params_list
+                }}}
+            end
         end
       end)
     end)
@@ -289,18 +309,38 @@ defmodule EctoShorts.Actions do
              |> CommonFilters.convert_params_to_filter(find_params, opts)
              |> repo.one(opts) do
           nil ->
-            query
-            |> create_changeset(Map.merge(find_params, upsert_params), opts)
-            |> repo.insert(opts)
+            with {:error, changeset} <-
+                   query
+                   |> create_changeset(Map.merge(find_params, upsert_params), opts)
+                   |> repo.insert(opts) do
+              {:error,
+               {:conflict, "Failed to create record.",
+                %{
+                  query: query,
+                  position: 1,
+                  changeset: changeset,
+                  params: params_list
+                }}}
+            end
 
           schema_data ->
-            query
-            |> CommonSchemas.prepare_changeset(
-              schema_data,
-              Map.merge(find_params, upsert_params),
-              opts
-            )
-            |> repo.update(opts)
+            with {:error, changeset} <-
+                   query
+                   |> CommonSchemas.prepare_changeset(
+                     schema_data,
+                     Map.merge(find_params, upsert_params),
+                     opts
+                   )
+                   |> repo.update(opts) do
+              {:error,
+               {:conflict, "Failed to update record.",
+                %{
+                  query: query,
+                  position: 1,
+                  changeset: changeset,
+                  params: params_list
+                }}}
+            end
         end
       end)
     end)
@@ -356,7 +396,21 @@ defmodule EctoShorts.Actions do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {params, i}, multi ->
-      Ecto.Multi.insert(multi, {:create, i}, CommonSchemas.prepare_changeset(query, params, opts))
+      Ecto.Multi.run(multi, {:create, i}, fn repo, _changes_so_far ->
+        with {:error, changeset} <-
+               query
+               |> CommonSchemas.prepare_changeset(params, opts)
+               |> repo.insert(opts) do
+          {:error,
+           {:conflict, "Failed to create record.",
+            %{
+              query: query,
+              position: 1,
+              changeset: changeset,
+              params: params_list
+            }}}
+        end
+      end)
     end)
   end
 
@@ -416,8 +470,8 @@ defmodule EctoShorts.Actions do
               %{
                 query: query,
                 position: i,
-                params: params_list,
-                failing_value: params
+                failing_value: params,
+                params: params_list
               }}}
 
           schema_data ->
@@ -449,12 +503,38 @@ defmodule EctoShorts.Actions do
     structs_or_changesets
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {struct_or_changeset, i}, multi ->
-      Ecto.Multi.delete(multi, i, struct_or_changeset, opts)
+      Ecto.Multi.run(multi, {:create, i}, fn repo, _changes_so_far ->
+        schema_module =
+          struct_or_changeset
+          |> CommonSchemas.get_schema_metadata()
+          |> Map.fetch!(:schema)
+
+        with {:error, changeset} <-
+               schema_module
+               |> CommonSchemas.prepare_changeset(struct_or_changeset, opts)
+               |> repo.delete(opts) do
+          {:error,
+           {:conflict, "Failed to delete record.",
+            %{
+              query: schema_module,
+              position: 1,
+              changeset: changeset,
+              params: structs_or_changesets
+            }}}
+        end
+      end)
     end)
   end
 
-  defp handle_multi_response({:error, _position, {code, message, details}, changes_so_far}) do
-    {:error, Error.call(code, message, Map.put(details, :changes_so_far, changes_so_far))}
+  defp handle_multi_response(
+         {:error, _failed_operation, {code, message, details}, changes_so_far}
+       ) do
+    {:error,
+     Error.call(
+       code,
+       message,
+       Map.put(details, :changes_so_far, Map.values(changes_so_far))
+     )}
   end
 
   defp handle_multi_response({:ok, operations}) do

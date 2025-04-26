@@ -42,6 +42,14 @@ defmodule EctoShorts.CommonSchemas do
 
   @type opts :: keyword()
 
+  @type schema_metadata :: Ecto.Schema.Metadata.t()
+
+  @doc """
+  Returns the `Ecto.Schema.Metadata` struct.
+  """
+  @spec get_schema_metadata(struct :: schema_struct()) :: schema_metadata()
+  def get_schema_metadata(%{__meta__: meta}), do: meta
+
   @doc """
   This function invokes the `&__schema__/1` callback function.
 
