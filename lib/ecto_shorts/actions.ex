@@ -152,19 +152,14 @@ defmodule EctoShorts.Actions do
   defp multi_find_or_create(query, params_list, opts) do
     params_list
     |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {args, i}, multi ->
-      {find_params, create_params} = unzip_find_params(args, query, opts)
-
-      multi
-      |> Ecto.Multi.one(
-        {:one, i},
-        CommonFilters.convert_params_to_filter(query, find_params, opts)
-      )
-      |> Ecto.Multi.run({:insert, i}, fn repo, changes_so_far ->
-        case Map.fetch!(changes_so_far, {:one, i}) do
+    |> Enum.reduce(Ecto.Multi.new(), fn {params, i}, multi ->
+      Ecto.Multi.run(multi, {:find_or_create, i}, fn repo, _changes_so_far ->
+        case query
+             |> CommonFilters.convert_params_to_filter(params, opts)
+             |> repo.one(opts) do
           nil ->
             query
-            |> create_changeset(Map.merge(find_params, create_params), opts)
+            |> create_changeset(params, opts)
             |> repo.insert(opts)
 
           schema_data ->
@@ -361,7 +356,7 @@ defmodule EctoShorts.Actions do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {params, i}, multi ->
-      Ecto.Multi.insert(multi, i, CommonSchemas.prepare_changeset(query, params, opts))
+      Ecto.Multi.insert(multi, {:create, i}, CommonSchemas.prepare_changeset(query, params, opts))
     end)
   end
 
@@ -411,7 +406,7 @@ defmodule EctoShorts.Actions do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {params, i}, multi ->
-      Ecto.Multi.run(multi, i, fn repo, _changes_so_far ->
+      Ecto.Multi.run(multi, {:find, i}, fn repo, _changes_so_far ->
         case query
              |> CommonFilters.convert_params_to_filter(params, opts)
              |> repo.one() do

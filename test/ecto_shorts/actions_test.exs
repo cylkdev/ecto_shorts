@@ -15,6 +15,36 @@ defmodule EctoShorts.ActionsTest do
     |> repo.insert!()
   end
 
+  describe "find_or_create_many/3" do
+    test "creates records" do
+      assert {:ok,
+              [
+                %Post{title: "post_title_1"},
+                %Post{title: "post_title_2"}
+              ]} =
+               Actions.find_or_create_many(Post, [
+                 %{title: "post_title_1"},
+                 %{title: "post_title_2"}
+               ])
+    end
+
+    test "returns existing records" do
+      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+
+      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+
+      assert {:ok,
+              [
+                %Post{title: "post_title_1"},
+                %Post{title: "post_title_2"}
+              ]} =
+               Actions.find_or_create_many(Post, [
+                 %{title: "post_title_1"},
+                 %{title: "post_title_2"}
+               ])
+    end
+  end
+
   describe "find_and_update_many/3" do
     test "updates existing records" do
       _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
