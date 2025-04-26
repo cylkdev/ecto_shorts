@@ -140,12 +140,10 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def find_or_create_many(query, params_list, opts) do
-    case query
-         |> multi_find_or_create(params_list, opts)
-         |> Config.repo!(opts).transaction(opts) do
-      {:ok, operations} -> {:ok, Map.values(operations)}
-      {:error, _failed_op, _failed_value, _changes_so_far} = e -> e
-    end
+    query
+    |> multi_find_or_create(params_list, opts)
+    |> Config.repo!(opts).transaction(opts)
+    |> handle_multi_response()
   end
 
   defp multi_find_or_create(query, params_list, opts) do
@@ -205,12 +203,10 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def find_and_update_many(query, params_list, opts) do
-    case query
-         |> multi_find_and_update(params_list, opts)
-         |> Config.repo!(opts).transaction(opts) do
-      {:ok, operations} -> {:ok, Map.values(operations)}
-      {:error, _failed_op, _failed_value, _changes_so_far} = e -> e
-    end
+    query
+    |> multi_find_and_update(params_list, opts)
+    |> Config.repo!(opts).transaction(opts)
+    |> handle_multi_response()
   end
 
   defp multi_find_and_update(query, params_list, opts) do
@@ -267,12 +263,10 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def find_and_upsert_many(query, params_list, opts) do
-    case query
-         |> multi_find_and_insert_or_update(params_list, opts)
-         |> Config.repo!(opts).transaction(opts) do
-      {:ok, operations} -> {:ok, Map.values(operations)}
-      {:error, _failed_op, _failed_value, _changes_so_far} = e -> e
-    end
+    query
+    |> multi_find_and_insert_or_update(params_list, opts)
+    |> Config.repo!(opts).transaction(opts)
+    |> handle_multi_response()
   end
 
   defp multi_find_and_insert_or_update(query, params_list, opts) do
@@ -343,12 +337,10 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def create_many(query, params_list, opts) do
-    case query
-         |> multi_insert(params_list, opts)
-         |> Config.repo!(opts).transaction(opts) do
-      {:ok, operations} -> {:ok, Map.values(operations)}
-      {:error, _failed_op, _failed_value, _changes_so_far} = e -> e
-    end
+    query
+    |> multi_insert(params_list, opts)
+    |> Config.repo!(opts).transaction(opts)
+    |> handle_multi_response()
   end
 
   defp multi_insert(query, params_list, opts) do
@@ -395,20 +387,34 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def find_many(query, params_list, opts) do
-    case query |> multi_one(params_list, opts) |> Config.repo!(opts).transaction(opts) do
-      {:ok, operations} ->
-        {:ok, Map.values(operations)}
-
-      {:error, _failed_op, _failed_value, _changes_so_far} = e ->
-        e
-    end
+    query
+    |> multi_find(params_list, opts)
+    |> Config.repo!(opts).transaction(opts)
+    |> handle_multi_response()
   end
 
-  defp multi_one(query, params_list, opts) do
+  defp multi_find(query, params_list, opts) do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {params, i}, multi ->
-      Ecto.Multi.one(multi, i, CommonFilters.convert_params_to_filter(query, params, opts))
+      Ecto.Multi.run(multi, i, fn repo, _changes_so_far ->
+        case query
+             |> CommonFilters.convert_params_to_filter(params, opts)
+             |> repo.one() do
+          nil ->
+            {:error,
+             {:not_found, "Record not found.",
+              %{
+                query: query,
+                position: i,
+                params: params_list,
+                failing_value: params
+              }}}
+
+          schema_data ->
+            {:ok, schema_data}
+        end
+      end)
     end)
   end
 
@@ -424,13 +430,10 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   def delete_many(structs_or_changesets, opts \\ []) do
-    case structs_or_changesets |> multi_delete(opts) |> Config.repo!(opts).transaction(opts) do
-      {:ok, operations} ->
-        {:ok, Map.values(operations)}
-
-      {:error, _failed_op, _failed_value, _changes_so_far} = e ->
-        e
-    end
+    structs_or_changesets
+    |> multi_delete(opts)
+    |> Config.repo!(opts).transaction(opts)
+    |> handle_multi_response()
   end
 
   defp multi_delete(structs_or_changesets, opts) do
@@ -439,6 +442,14 @@ defmodule EctoShorts.Actions do
     |> Enum.reduce(Ecto.Multi.new(), fn {struct_or_changeset, i}, multi ->
       Ecto.Multi.delete(multi, i, struct_or_changeset, opts)
     end)
+  end
+
+  defp handle_multi_response({:error, _position, {code, message, details}, changes_so_far}) do
+    {:error, Error.call(code, message, Map.put(details, :changes_so_far, changes_so_far))}
+  end
+
+  defp handle_multi_response({:ok, operations}) do
+    {:ok, Map.values(operations)}
   end
 
   @doc """
