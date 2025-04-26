@@ -3,7 +3,7 @@ defmodule EctoShorts.CommonChangesTest do
 
   alias EctoShorts.{Actions, CommonChanges}
 
-  alias EctoShorts.Support.Schemas.{
+  alias EctoShorts.Schemas.{
     Comment,
     Post,
     User
@@ -123,7 +123,7 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, comment} =
                %Comment{}
                |> Comment.changeset(%{body: "created_body", post_id: post_id})
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       comment_id = comment.id
 
@@ -172,7 +172,7 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, comment} =
                %Comment{}
                |> Comment.changeset(%{body: "created_body", post_id: post_id})
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       comment_id = comment.id
 
@@ -228,7 +228,7 @@ defmodule EctoShorts.CommonChangesTest do
                %User{}
                |> User.changeset(%{email: "email"})
                |> Ecto.Changeset.put_assoc(:posts, [post])
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       user_id = user.id
 
@@ -307,7 +307,7 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, comment} =
                %Comment{}
                |> Comment.changeset(%{body: "created_body", post_id: post_id})
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       comment_id = comment.id
 
@@ -339,7 +339,7 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, comment} =
                %Comment{}
                |> Comment.changeset(%{body: "created_body"})
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       comment_id = comment.id
 
@@ -411,12 +411,12 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, comment} =
                %Comment{}
                |> Comment.changeset(%{body: "created_body", post_id: post_id})
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       assert {:ok, deleted_comment} =
                comment
                |> Comment.changeset()
-               |> EctoShorts.Support.Repo.delete()
+               |> EctoShorts.Repo.delete()
 
       deleted_comment_id = deleted_comment.id
 
@@ -546,7 +546,7 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, comment} =
                %Comment{}
                |> Comment.changeset(%{body: "created_body", post_id: post_id})
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       comment_id = comment.id
 
@@ -583,7 +583,7 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, comment} =
                %Comment{}
                |> Comment.changeset(%{body: "created_body", post_id: post_id})
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       comment_id = comment.id
 
@@ -623,7 +623,7 @@ defmodule EctoShorts.CommonChangesTest do
                %User{}
                |> User.changeset(%{email: "created_email"})
                |> Ecto.Changeset.put_assoc(:posts, [post])
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       user_id = user.id
 
@@ -662,12 +662,12 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, comment_1} =
                %Comment{}
                |> Comment.changeset(%{body: "comment_1_created_body", post_id: post_id})
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       assert {:ok, comment_2} =
                %Comment{}
                |> Comment.changeset(%{body: "comment_2_created_body", post_id: post_id})
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       comment_1_id = comment_1.id
       comment_2_id = comment_2.id
@@ -711,13 +711,13 @@ defmodule EctoShorts.CommonChangesTest do
                %User{}
                |> User.changeset(%{email: "user_1_created_email"})
                |> Ecto.Changeset.put_assoc(:posts, [post])
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       assert {:ok, user_2} =
                %User{}
                |> User.changeset(%{email: "user_2_created_email"})
                |> Ecto.Changeset.put_assoc(:posts, [post])
-               |> EctoShorts.Support.Repo.insert()
+               |> EctoShorts.Repo.insert()
 
       user_1_id = user_1.id
       user_2_id = user_2.id
@@ -825,7 +825,7 @@ defmodule EctoShorts.CommonChangesTest do
 
     test "raises an error if invalid parameters is passed as the value for an association" do
       expected_error_message =
-        "The key :tags is not an association for the queryable EctoShorts.Support.Schemas.Comment."
+        "The key :tags is not an association for the queryable EctoShorts.Schemas.Comment."
 
       # This is expected to fail because tags expects a list
       # of strings however we are passing in a list of maps
@@ -841,7 +841,7 @@ defmodule EctoShorts.CommonChangesTest do
 
     test "raises an error if the key is not a type of ecto changeset queryable" do
       expected_error_message =
-        "The key :invalid_association is not an association for the queryable EctoShorts.Support.Schemas.Comment."
+        "The key :invalid_association is not an association for the queryable EctoShorts.Schemas.Comment."
 
       func = fn ->
         %Comment{}

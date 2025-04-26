@@ -18,8 +18,8 @@ defmodule EctoShorts.CommonQueries do
   ### Examples
 
       iex> require Ecto.Query
-      ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.CommonSchemas.get_query_source()
-      {"comments", EctoShorts.Support.Schemas.Comment}
+      ...> EctoShorts.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.CommonSchemas.get_query_source()
+      {"comments", EctoShorts.Schemas.Comment}
   """
   @spec get_query_source(query() | queryable() | source_queryable()) ::
           queryable() | source_queryable()
@@ -33,8 +33,8 @@ defmodule EctoShorts.CommonQueries do
   ### Examples
 
   iex> require Ecto.Query
-  ...> EctoShorts.Support.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.CommonSchemas.get_query_schema()
-  EctoShorts.Support.Schemas.Comment
+  ...> EctoShorts.Schemas.Comment |> Ecto.Query.from() |> EctoShorts.CommonSchemas.get_query_schema()
+  EctoShorts.Schemas.Comment
   """
   @spec get_query_schema(query_or_queryable :: query() | queryable()) :: queryable()
   def get_query_schema(%{from: %{source: {_, query}}}), do: get_query_schema(query)

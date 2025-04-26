@@ -34,7 +34,7 @@ defmodule EctoShorts.Config do
   ## Examples
 
       iex> EctoShorts.Config.repo()
-      EctoShorts.Support.Repo
+      EctoShorts.Repo
   """
   @spec repo :: module() | nil
   def repo do
@@ -50,7 +50,7 @@ defmodule EctoShorts.Config do
   ## Examples
 
       iex> EctoShorts.Config.replica()
-      EctoShorts.Support.Repo
+      EctoShorts.Repo
   """
   @spec replica :: module() | nil
   def replica do
@@ -69,7 +69,7 @@ defmodule EctoShorts.Config do
   ## Examples
 
       iex> EctoShorts.Config.repo!()
-      EctoShorts.Support.Repo
+      EctoShorts.Repo
 
       iex> EctoShorts.Config.repo!(repo: MyApp.Repo)
       MyApp.Repo
@@ -113,7 +113,7 @@ defmodule EctoShorts.Config do
   ## Examples
 
       iex> EctoShorts.Config.replica!()
-      EctoShorts.Support.Repo
+      EctoShorts.Repo
 
       iex> EctoShorts.Config.replica!(replica: MyApp.Repo.Replica)
       MyApp.Repo.Replica

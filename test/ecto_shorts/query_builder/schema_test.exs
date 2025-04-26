@@ -6,7 +6,7 @@ defmodule EctoShorts.QueryBuilder.SchemaTest do
   doctest EctoShorts.QueryBuilder.Schema
 
   alias EctoShorts.QueryBuilder.Schema
-  alias EctoShorts.Support.Schemas.{Comment, Post}
+  alias EctoShorts.Schemas.{Comment, Post}
 
   describe "create_schema_filter: " do
     test "returns a query where record matches query field value" do
@@ -17,7 +17,7 @@ defmodule EctoShorts.QueryBuilder.SchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                joins: [],
                wheres: [
@@ -41,7 +41,7 @@ defmodule EctoShorts.QueryBuilder.SchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -86,7 +86,7 @@ defmodule EctoShorts.QueryBuilder.SchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -123,7 +123,7 @@ defmodule EctoShorts.QueryBuilder.SchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [],
                wheres: [

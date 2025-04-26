@@ -9,7 +9,7 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
     TestRepo
   }
 
-  alias EctoShorts.Support.Schemas.{
+  alias EctoShorts.Schemas.{
     FileInfo,
     UserAvatar,
     UserAvatarNoConstraint
@@ -34,12 +34,12 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
 
       schema_data_id = schema_data.id
 
-      assert %EctoShorts.Support.Schemas.FileInfo{
+      assert %EctoShorts.Schemas.FileInfo{
                id: ^schema_data_id,
                __meta__: %Ecto.Schema.Metadata{
                  context: nil,
                  prefix: nil,
-                 schema: EctoShorts.Support.Schemas.FileInfo,
+                 schema: EctoShorts.Schemas.FileInfo,
                  source: "file_info_user_avatars",
                  state: :loaded
                },
@@ -64,11 +64,11 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
       assert {:ok, schema_data} =
                Actions.create({"file_info_user_avatars", FileInfo}, %{name: "example.txt"})
 
-      assert %EctoShorts.Support.Schemas.FileInfo{
+      assert %EctoShorts.Schemas.FileInfo{
                __meta__: %Ecto.Schema.Metadata{
                  context: nil,
                  prefix: nil,
-                 schema: EctoShorts.Support.Schemas.FileInfo,
+                 schema: EctoShorts.Schemas.FileInfo,
                  source: "file_info_user_avatars",
                  state: :loaded
                },
@@ -129,7 +129,7 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
       assert %ErrorMessage{
                code: :internal_server_error,
                details: %{changeset: changeset} = details,
-               message: "Error deleting EctoShorts.Support.Schemas.UserAvatar"
+               message: "Error deleting EctoShorts.Schemas.UserAvatar"
              } = error
 
       assert %{changeset: changeset, schema_data: user_avatar} === details
@@ -157,7 +157,7 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
       assert %ErrorMessage{
                code: :internal_server_error,
                details: %{changeset: changeset} = details,
-               message: "Error deleting EctoShorts.Support.Schemas.UserAvatarNoConstraint"
+               message: "Error deleting EctoShorts.Schemas.UserAvatarNoConstraint"
              } = error
 
       assert %{changeset: changeset, schema_data: user_avatar} === details
@@ -261,7 +261,7 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                code: :not_found,
                details: %{
                  params: %{id: error_id},
-                 query: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 query: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                message: "no records found"
              } = error
@@ -276,7 +276,7 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                code: :not_found,
                details: %{
                  params: %{},
-                 query: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 query: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                message: "no records found"
              } = error
@@ -304,11 +304,11 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                  body: "created_record"
                })
 
-      assert %EctoShorts.Support.Schemas.FileInfo{
+      assert %EctoShorts.Schemas.FileInfo{
                __meta__: %Ecto.Schema.Metadata{
                  context: nil,
                  prefix: nil,
-                 schema: EctoShorts.Support.Schemas.FileInfo,
+                 schema: EctoShorts.Schemas.FileInfo,
                  source: "file_info_user_avatars",
                  state: :loaded
                },
@@ -334,11 +334,11 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                  name: "updated_name.txt"
                })
 
-      assert %EctoShorts.Support.Schemas.FileInfo{
+      assert %EctoShorts.Schemas.FileInfo{
                __meta__: %Ecto.Schema.Metadata{
                  context: nil,
                  prefix: nil,
-                 schema: EctoShorts.Support.Schemas.FileInfo,
+                 schema: EctoShorts.Schemas.FileInfo,
                  source: "file_info_user_avatars",
                  state: :loaded
                },
@@ -360,11 +360,11 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                  name: "updated_name.txt"
                })
 
-      assert %EctoShorts.Support.Schemas.FileInfo{
+      assert %EctoShorts.Schemas.FileInfo{
                __meta__: %Ecto.Schema.Metadata{
                  context: nil,
                  prefix: nil,
-                 schema: EctoShorts.Support.Schemas.FileInfo,
+                 schema: EctoShorts.Schemas.FileInfo,
                  source: "file_info_user_avatars",
                  state: :loaded
                },
@@ -386,11 +386,11 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                  name: "updated_name.txt"
                )
 
-      assert %EctoShorts.Support.Schemas.FileInfo{
+      assert %EctoShorts.Schemas.FileInfo{
                __meta__: %Ecto.Schema.Metadata{
                  context: nil,
                  prefix: nil,
-                 schema: EctoShorts.Support.Schemas.FileInfo,
+                 schema: EctoShorts.Schemas.FileInfo,
                  source: "file_info_user_avatars",
                  state: :loaded
                },
@@ -415,7 +415,7 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
       assert %ErrorMessage{
                code: :not_found,
                details: %{
-                 schema: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo},
+                 schema: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo},
                  schema_id: error_id,
                  updates: %{
                    name: "updated_name.txt"
@@ -444,11 +444,11 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                  %{name: "updated_name.txt"}
                )
 
-      assert assert %EctoShorts.Support.Schemas.FileInfo{
+      assert assert %EctoShorts.Schemas.FileInfo{
                       __meta__: %Ecto.Schema.Metadata{
                         context: nil,
                         prefix: nil,
-                        schema: EctoShorts.Support.Schemas.FileInfo,
+                        schema: EctoShorts.Schemas.FileInfo,
                         source: "file_info_user_avatars",
                         state: :loaded
                       },
@@ -476,7 +476,7 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                code: :not_found,
                details: %{
                  params: %{id: error_id},
-                 query: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 query: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                message: "no records found"
              } = error
@@ -501,11 +501,11 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                  %{body: "created_record"}
                )
 
-      assert %EctoShorts.Support.Schemas.FileInfo{
+      assert %EctoShorts.Schemas.FileInfo{
                __meta__: %Ecto.Schema.Metadata{
                  context: nil,
                  prefix: nil,
-                 schema: EctoShorts.Support.Schemas.FileInfo,
+                 schema: EctoShorts.Schemas.FileInfo,
                  source: "file_info_user_avatars",
                  state: :loaded
                },
@@ -531,11 +531,11 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                  %{name: "updated_name.txt"}
                )
 
-      assert %EctoShorts.Support.Schemas.FileInfo{
+      assert %EctoShorts.Schemas.FileInfo{
                __meta__: %Ecto.Schema.Metadata{
                  context: nil,
                  prefix: nil,
-                 schema: EctoShorts.Support.Schemas.FileInfo,
+                 schema: EctoShorts.Schemas.FileInfo,
                  source: "file_info_user_avatars",
                  state: :loaded
                },
@@ -638,11 +638,11 @@ defmodule EctoShorts.ActionsAbstractSchemaTest do
                  ]
                )
 
-      assert %EctoShorts.Support.Schemas.FileInfo{
+      assert %EctoShorts.Schemas.FileInfo{
                __meta__: %Ecto.Schema.Metadata{
                  context: nil,
                  prefix: nil,
-                 schema: EctoShorts.Support.Schemas.FileInfo,
+                 schema: EctoShorts.Schemas.FileInfo,
                  source: "file_info_user_avatars",
                  state: :loaded
                },

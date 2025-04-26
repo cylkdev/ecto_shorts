@@ -13,13 +13,13 @@ defmodule EctoShorts.SchemaHelpers do
 
   ## Example
 
-    iex> EctoShorts.CommonSchemas.schema?(%EctoShorts.Support.Schemas.Comment{})
+    iex> EctoShorts.CommonSchemas.schema?(%EctoShorts.Schemas.Comment{})
     true
 
     iex> EctoShorts.CommonSchemas.schema?(%{some_map: 1})
     false
 
-    iex> EctoShorts.CommonSchemas.schema?([%EctoShorts.Support.Schemas.Comment{}])
+    iex> EctoShorts.CommonSchemas.schema?([%EctoShorts.Schemas.Comment{}])
     false
   """
   @spec schema?(schema_data :: schema_struct() | any()) :: boolean()
@@ -37,7 +37,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   ## Example
 
-    iex> EctoShorts.SchemaHelpers.has_schemas?([%{some_map: 1}, %EctoShorts.Support.Schemas.Comment{}])
+    iex> EctoShorts.SchemaHelpers.has_schemas?([%{some_map: 1}, %EctoShorts.Schemas.Comment{}])
     true
 
     iex> EctoShorts.SchemaHelpers.has_schemas?([%{some_map: 1}])
@@ -51,10 +51,10 @@ defmodule EctoShorts.SchemaHelpers do
 
   ## Example
 
-    iex> EctoShorts.SchemaHelpers.all_schemas?([%{some_map: 1}, %EctoShorts.Support.Schemas.Comment{}])
+    iex> EctoShorts.SchemaHelpers.all_schemas?([%{some_map: 1}, %EctoShorts.Schemas.Comment{}])
     false
 
-    iex> EctoShorts.SchemaHelpers.all_schemas?([%EctoShorts.Support.Schemas.Comment{}])
+    iex> EctoShorts.SchemaHelpers.all_schemas?([%EctoShorts.Schemas.Comment{}])
     true
   """
   @spec all_schemas?(schema_data :: list(schema_struct() | any())) :: boolean()

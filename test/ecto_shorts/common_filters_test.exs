@@ -3,7 +3,7 @@ defmodule EctoShorts.CommonFiltersTest do
   doctest EctoShorts.CommonFilters
 
   alias EctoShorts.CommonFilters
-  alias EctoShorts.Support.Schemas.Post
+  alias EctoShorts.Schemas.Post
 
   require Ecto.Query
 
@@ -18,7 +18,7 @@ defmodule EctoShorts.CommonFiltersTest do
                  as: nil,
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                prefix: nil,
                wheres: [
@@ -38,7 +38,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                preloads: [:comments]
              } = query
@@ -54,7 +54,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -77,7 +77,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -100,7 +100,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -122,7 +122,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -144,7 +144,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -166,7 +166,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -188,7 +188,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -210,7 +210,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -232,7 +232,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                limit: %Ecto.Query.LimitExpr{
                  expr: {:^, [], [0]},
@@ -281,7 +281,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                limit: %Ecto.Query.LimitExpr{
                  expr: {:^, [], [0]},
@@ -302,7 +302,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                offset: %Ecto.Query.QueryExpr{
                  params: [{^expected_offset, :integer}]
@@ -317,7 +317,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                order_bys: [
                  %Ecto.Query.QueryExpr{
@@ -335,7 +335,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                order_bys: [
                  %Ecto.Query.QueryExpr{
@@ -355,7 +355,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -380,7 +380,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                limit: %Ecto.Query.LimitExpr{
                  expr: {:^, [], [0]},
@@ -404,7 +404,7 @@ defmodule EctoShorts.CommonFiltersTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"posts", EctoShorts.Support.Schemas.Post}
+                 source: {"posts", EctoShorts.Schemas.Post}
                },
                joins: [
                  %Ecto.Query.JoinExpr{

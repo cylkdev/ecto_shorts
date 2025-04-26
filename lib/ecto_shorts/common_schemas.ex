@@ -27,13 +27,19 @@ defmodule EctoShorts.CommonSchemas do
   alias EctoShorts.CommonQueries
 
   @type source :: binary()
+
   @type query :: Ecto.Query.t()
+
   @type queryable :: Ecto.Queryable.t()
+
   @type source_queryable :: {source(), queryable()}
+
   @type changeset :: Ecto.Changeset.t()
+
   @type schema_struct :: Ecto.Schema.t()
 
   @type params :: map()
+
   @type opts :: keyword()
 
   @doc """

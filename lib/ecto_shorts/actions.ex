@@ -25,7 +25,6 @@ defmodule EctoShorts.Actions do
     CommonFilters,
     CommonParams,
     CommonSchemas,
-    CommonQueryExpressions,
     Config,
     CommonQueries
   }
@@ -1237,7 +1236,6 @@ defmodule EctoShorts.Actions do
         ) :: list(any())
   def stream(query, params, opts) do
     query
-    |> CommonQueryExpressions.from(opts[:from] || %{})
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.repo!(opts).stream(opts)
   end
@@ -1256,7 +1254,7 @@ defmodule EctoShorts.Actions do
           params :: map(),
           aggregate :: :avg | :count | :max | :min | :sum,
           field :: atom()
-        ) :: {:ok, any()} | {:error, any()}
+        ) :: any() | nil
   def aggregate(query, params, aggregate, field) do
     aggregate(query, params, aggregate, field, default_opts())
   end
@@ -1303,10 +1301,9 @@ defmodule EctoShorts.Actions do
           aggregate :: :avg | :count | :max | :min | :sum,
           field :: atom(),
           opts :: keyword()
-        ) :: {:ok, any()} | {:error, any()}
+        ) :: any() | nil
   def aggregate(query, params, aggregate, field, opts) do
     query
-    |> CommonQueryExpressions.from(opts[:from] || %{})
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).aggregate(aggregate, field, opts)
   end
@@ -1379,30 +1376,10 @@ defmodule EctoShorts.Actions do
           {:error, reason} ->
             repo.rollback(reason)
 
-          {:ok, _} = res ->
-            res
+          {:ok, value} ->
+            value
 
-          :ok ->
-            :ok
-
-          term ->
-            raise """
-            The function executed within the transaction returned an unexpected result.
-
-            Expected one of:
-
-              - :ok
-              - :error
-              - {:ok, any()}
-              - {:error, any()}
-
-            Got:
-
-            #{inspect(term)}
-
-            If the `:rollback_on_error` option is set to `false`, the function does not need
-            to return one of the expected values.
-            """
+          term -> term
         end
       else
         result

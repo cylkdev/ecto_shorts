@@ -28,7 +28,7 @@ defmodule EctoShorts do
   For example, the following function:
 
   ```elixir
-  Actions.all(EctoShorts.Support.Schemas.Post, %{
+  Actions.all(EctoShorts.Schemas.Post, %{
     title: %{ilike: "blog post"},
     body: "body",
     likes: %{gte: 0, lte: 50},
@@ -41,21 +41,21 @@ defmodule EctoShorts do
 
   ```elixir
   query =
-    from p in EctoShorts.Support.Schemas.Post,
+    from p in EctoShorts.Schemas.Post,
       preload: [:comments],
       limit: 5,
       where: p.body == "body" and
       p.likes >= 0 and p.likes <= 50 and
       ilike(p.title, "%blog post%")
 
-  EctoShorts.Support.Repo.all(query)
+  EctoShorts.Repo.all(query)
   ```
 
   which composes the `Ecto.Query` and `Ecto.Repo` api. This also
   extends to the  `Ecto.Changeset` api. The following function
 
   ```elixir
-  Actions.create(EctoShorts.Support.Schemas.Post, %{
+  Actions.create(EctoShorts.Schemas.Post, %{
     title: "blog post",
     body: "body",
     likes: 10,
@@ -66,16 +66,16 @@ defmodule EctoShorts do
   is equivalent to
 
   ```elixir
-  EctoShorts.Support.Schemas.Post
+  EctoShorts.Schemas.Post
   |> struct()
-  |> EctoShorts.Support.Schemas.Post.changeset(%{
+  |> EctoShorts.Schemas.Post.changeset(%{
     title: "blog post",
     body: "body",
     likes: 10,
     comments: [%{id: 1}]
   })
   |> Ecto.Changeset.cast_assoc(:comments)
-  |> EctoShorts.Support.Repo.insert()
+  |> EctoShorts.Repo.insert()
   ```
 
   All actions can accept an optional argument of a keyword list
@@ -99,22 +99,22 @@ defmodule EctoShorts do
 
   ```elixir
   query =
-    from c in EctoShorts.Support.Schemas.Post,
+    from c in EctoShorts.Schemas.Post,
       where: c.id == 1
 
-  EctoShorts.Support.Repo.one(query)
+  EctoShorts.Repo.one(query)
   ```
 
   you can write it as
 
   ```elixir
-  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: 1})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schemas.Post, %{id: 1})
   ```
 
   This api also works with associations
 
   ```elixir
-  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Support.Schemas.Post, %{id: 1, comments: %{id: 1}})
+  EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schemas.Post, %{id: 1, comments: %{id: 1}})
   ```
 
   See `EctoShorts.CommonFilters` for more info on information on

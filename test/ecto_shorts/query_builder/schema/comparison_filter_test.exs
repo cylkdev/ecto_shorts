@@ -4,7 +4,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
   alias EctoShorts.QueryBuilder.Schema.ComparisonFilter
 
-  alias EctoShorts.Support.Schemas.{
+  alias EctoShorts.Schemas.{
     Comment,
     Post,
     User
@@ -28,7 +28,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -46,7 +46,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -64,7 +64,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -82,7 +82,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -100,7 +100,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -118,7 +118,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -136,7 +136,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -154,7 +154,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -172,7 +172,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -191,7 +191,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -210,7 +210,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -228,7 +228,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -248,7 +248,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -278,7 +278,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -308,7 +308,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -345,7 +345,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -378,7 +378,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -408,7 +408,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -440,7 +440,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -458,7 +458,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -476,7 +476,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
 
       assert %Ecto.Query{
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -537,7 +537,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  as: :comment,
                  params: [],
                  prefix: nil,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [],
                wheres: [
@@ -566,7 +566,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  as: :comment,
                  params: [],
                  prefix: nil,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -610,7 +610,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  as: :comment,
                  params: [],
                  prefix: nil,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -658,7 +658,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  as: :comment,
                  params: [],
                  prefix: nil,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -725,7 +725,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  as: :comment,
                  params: [],
                  prefix: nil,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -781,7 +781,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  as: :comment,
                  params: [],
                  prefix: nil,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [],
                wheres: [
@@ -810,7 +810,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  as: :comment,
                  params: [],
                  prefix: nil,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -855,7 +855,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  as: :comment,
                  params: [],
                  prefix: nil,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -911,7 +911,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                },
                from: %Ecto.Query.FromExpr{
                  as: :comment,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -953,7 +953,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                },
                from: %Ecto.Query.FromExpr{
                  as: :comment,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -995,7 +995,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                },
                from: %Ecto.Query.FromExpr{
                  as: :comment,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1037,7 +1037,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                },
                from: %Ecto.Query.FromExpr{
                  as: :comment,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1079,7 +1079,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                },
                from: %Ecto.Query.FromExpr{
                  as: :comment,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1121,7 +1121,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                },
                from: %Ecto.Query.FromExpr{
                  as: :comment,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1168,7 +1168,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                },
                from: %Ecto.Query.FromExpr{
                  as: :comment,
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1210,7 +1210,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  comment_posts: 1
                },
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1251,7 +1251,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  comment_posts: 1
                },
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1292,7 +1292,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  comment_posts: 1
                },
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1339,7 +1339,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  comment_posts: 1
                },
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1396,7 +1396,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  comment_posts: 1
                },
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1453,7 +1453,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  comment_posts: 1
                },
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1517,7 +1517,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  comment_posts: 1
                },
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1576,7 +1576,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  comment: 0
                },
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{
@@ -1620,7 +1620,7 @@ defmodule EctoShorts.QueryBuilder.Schema.ComparisonFilterTest do
                  comment: 0
                },
                from: %Ecto.Query.FromExpr{
-                 source: {"comments", EctoShorts.Support.Schemas.Comment}
+                 source: {"comments", EctoShorts.Schemas.Comment}
                },
                joins: [
                  %Ecto.Query.JoinExpr{

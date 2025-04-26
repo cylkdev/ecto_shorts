@@ -3,7 +3,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
   doctest EctoShorts.CommonFilters
 
   alias EctoShorts.CommonFilters
-  alias EctoShorts.Support.Schemas.FileInfo
+  alias EctoShorts.Schemas.FileInfo
 
   describe "convert_params_to_filter: " do
     test "returns query with expected defaults" do
@@ -16,7 +16,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                prefix: nil,
                wheres: [
@@ -39,7 +39,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                preloads: [:comments]
              } = query
@@ -57,7 +57,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -83,7 +83,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -109,7 +109,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -134,7 +134,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -159,7 +159,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -184,7 +184,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -209,7 +209,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -234,7 +234,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{
@@ -259,7 +259,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                limit: %Ecto.Query.LimitExpr{
                  expr: {:^, [], [0]},
@@ -314,7 +314,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                limit: %Ecto.Query.LimitExpr{
                  expr: {:^, [], [0]},
@@ -338,7 +338,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                offset: %Ecto.Query.QueryExpr{
                  params: [{^expected_offset, :integer}]
@@ -356,7 +356,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                order_bys: [
                  %Ecto.Query.QueryExpr{
@@ -377,7 +377,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                order_bys: [
                  %Ecto.Query.QueryExpr{
@@ -400,7 +400,7 @@ defmodule EctoShorts.CommonFiltersAbstractSchemaTest do
                from: %Ecto.Query.FromExpr{
                  params: [],
                  prefix: nil,
-                 source: {"file_info_user_avatars", EctoShorts.Support.Schemas.FileInfo}
+                 source: {"file_info_user_avatars", EctoShorts.Schemas.FileInfo}
                },
                wheres: [
                  %Ecto.Query.BooleanExpr{

@@ -1,11 +1,14 @@
-defmodule EctoShorts.Support.Repo.Migrations.CreatePosts do
+defmodule EctoShorts.Repo.Migrations.CreatePosts do
   use Ecto.Migration
 
   def change do
     create table(:posts) do
-      add :title, :text
-      add :unique_identifier, :text
-      add :likes, :integer
+      add :title, :string
+      add :unique_identifier, :string
+      add :views, :integer
+      add :tags, {:array, :string}
+
+      add :custom_string_field, :string
 
       add :user_id, references(:users,
         on_delete: :nilify_all,

@@ -1,4 +1,4 @@
-defmodule EctoShorts.Support.Schemas.Post do
+defmodule EctoShorts.Schemas.Post do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
@@ -6,31 +6,24 @@ defmodule EctoShorts.Support.Schemas.Post do
   require Ecto.Query
 
   schema "posts" do
-    field(:tags, {:array, :string})
+    field :title, :string
+    field :unique_identifier, :string
+    field :views, :integer
+    field :user_data, :string, source: :custom_string_field
+    field :tags, {:array, :string}
 
-    field(:expected_name, :string, source: :this_is_the_alias)
+    belongs_to :user, EctoShorts.Schemas.User
 
-    field(:title, :string)
-    field(:unique_identifier, :string)
-    field(:likes, :integer)
-
-    has_many(:comments, EctoShorts.Support.Schemas.Comment)
-
-    has_many(:authors, through: [:comments, :user])
-
-    belongs_to(:user, EctoShorts.Support.Schemas.User)
-
-    many_to_many(:users, EctoShorts.Support.Schemas.User,
-      join_through: EctoShorts.Support.Schemas.UserPost
-    )
+    has_many :comments, EctoShorts.Schemas.Comment
 
     timestamps()
   end
 
   @available_fields [
-    :likes,
+    :views,
     :title,
     :unique_identifier,
+    :tags,
     :user_id
   ]
 

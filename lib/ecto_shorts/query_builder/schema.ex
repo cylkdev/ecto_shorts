@@ -54,6 +54,8 @@ defmodule EctoShorts.QueryBuilder.Schema do
 
   @type binding :: atom()
 
+  @type binding_key :: atom() | binary()
+
   @type key :: atom()
 
   @type value :: any()
@@ -157,6 +159,30 @@ defmodule EctoShorts.QueryBuilder.Schema do
         build_schema_filters(query, current_binding, schema_module, key, value)
 
       true ->
+        message = """
+        Invalid filter key provided.
+
+        The key you passed is not a valid field or supported query filter for the given schema.
+
+          schema: #{inspect(schema_module)}
+
+          key: #{inspect(key)}
+
+        The query will be unchanged and this key will be skipped.
+
+        To resolve this, you can:
+
+        - Remove the key if it’s unnecessary.
+
+        - Use a supported custom filter, such as:
+
+        #{Enum.map_join(@filters, "\n", &"* #{&1}")}
+
+        - Use a valid schema field, such as:
+
+        #{Enum.map_join(schema_module.__schema__(:query_fields), "\n", &"* #{&1}")}
+        """
+
         assoc_warning_message =
           if schema_module.__schema__(:associations) !== [] do
             """
@@ -168,32 +194,9 @@ defmodule EctoShorts.QueryBuilder.Schema do
             ""
           end
 
-        message =
-          """
-          Invalid filter key provided.
-
-          The key you passed is not a valid field or supported query filter for the given schema.
-
-            schema: #{inspect(schema_module)}
-
-            key: #{inspect(key)}
-
-          The query will be unchanged and this key will be skipped.
-
-          To resolve this, you can:
-
-          - Remove the key if it’s unnecessary.
-
-          - Use a supported custom filter, such as:
-
-          #{Enum.map_join(@filters, "\n", &"* #{&1}")}
-
-          - Use a valid schema field, such as:
-
-          #{Enum.map_join(schema_module.__schema__(:query_fields), "\n", &"* #{&1}")}
-          """ <> assoc_warning_message
-
-        EctoShorts.Utils.Logger.warning(__MODULE__, message, stacktrace: true)
+        EctoShorts.Utils.Logger.warning(__MODULE__, message <> assoc_warning_message,
+          stacktrace: true
+        )
 
         query
     end
@@ -274,63 +277,6 @@ defmodule EctoShorts.QueryBuilder.Schema do
   end
 
   @doc """
-  Generates a default named binding string for a module.
-
-  ## Example
-
-      iex> EctoShorts.QueryBuilder.Schema.named_binding_from_module(MyApp.User)
-      "ecto_shorts_user"
-  """
-  @spec named_binding_from_module(module :: module()) :: binary()
-  def named_binding_from_module(module) do
-    module
-    |> Module.split()
-    |> List.last()
-    |> Macro.underscore()
-    |> named_binding()
-  end
-
-  @doc """
-  Returns a string that can be used as a named binding in Ecto
-  queries for the given key.
-
-  ## Example
-
-      iex> EctoShorts.QueryBuilder.Schema.named_binding(:user)
-      "ecto_shorts_user"
-  """
-  @spec named_binding(key :: atom() | binary()) :: binary()
-  def named_binding(key) do
-    "ecto_shorts_#{key}"
-  end
-
-  @doc """
-  Returns the related schema module for an association field on a
-  schema.
-
-  If the association is a `through` association, recursively
-  resolves the related schema module by traversing the association
-  path. Otherwise, returns the directly related schema module.
-
-  ## Example
-
-      iex> EctoShorts.QueryBuilder.Schema.ecto_association_schema(User, :posts)
-      MyApp.Post
-  """
-  @spec ecto_association_schema(queryable(), key()) :: queryable()
-  def ecto_association_schema(schema_module, key) do
-    case schema_module.__schema__(:association, key) do
-      %{through: [field1, field2]} ->
-        schema_module
-        |> ecto_association_schema(field1)
-        |> ecto_association_schema(field2)
-
-      %{related: related} ->
-        related
-    end
-  end
-
-  @doc """
   Joins an association on the given key and applies additional
   filters to the joined association.
 
@@ -354,7 +300,7 @@ defmodule EctoShorts.QueryBuilder.Schema do
           function()
         ) :: query()
   def join_association(query, current_binding, schema_module, key, params, fun) do
-    assoc_schema_module = ecto_association_schema(schema_module, key)
+    assoc_schema_module = get_association_schema(schema_module, key)
 
     {assoc_binding, params} = Map.pop(params, :as)
 
@@ -425,6 +371,63 @@ defmodule EctoShorts.QueryBuilder.Schema do
       subquery_schema_module,
       Map.drop(params, [:on, :qualifier, :prefix])
     )
+  end
+
+  @doc """
+  Returns the related schema module for an association field on a
+  schema.
+
+  If the association is a `through` association, recursively
+  resolves the related schema module by traversing the association
+  path. Otherwise, returns the directly related schema module.
+
+  ## Example
+
+      iex> EctoShorts.QueryBuilder.Schema.get_association_schema(User, :posts)
+      MyApp.Post
+  """
+  @spec get_association_schema(queryable(), key()) :: queryable()
+  def get_association_schema(schema_module, key) do
+    case schema_module.__schema__(:association, key) do
+      %{through: [field1, field2]} ->
+        schema_module
+        |> get_association_schema(field1)
+        |> get_association_schema(field2)
+
+      %{related: related} ->
+        related
+    end
+  end
+
+  @doc """
+  Generates a default named binding string for a module.
+
+  ## Example
+
+      iex> EctoShorts.QueryBuilder.Schema.named_binding_from_module(MyApp.User)
+      "ecto_shorts_user"
+  """
+  @spec named_binding_from_module(module()) :: binary()
+  def named_binding_from_module(module) do
+    module
+    |> Module.split()
+    |> List.last()
+    |> Macro.underscore()
+    |> named_binding()
+  end
+
+  @doc """
+  Returns a string that can be used as a named binding in Ecto
+  queries for the given key.
+
+  ## Example
+
+      iex> EctoShorts.QueryBuilder.Schema.named_binding(:user)
+      "ecto_shorts_user"
+  """
+  @spec named_binding(binding_key()) :: binary()
+  def named_binding(key) do
+    "ecto_shorts_#{key}"
   end
 
   defp query_expression_filter?(key) do

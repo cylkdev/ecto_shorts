@@ -7,8 +7,8 @@ defmodule EctoShorts.QueryBuilderTest do
 
   alias Ecto.Query
   alias EctoShorts.QueryBuilder
-  alias EctoShorts.Support.Schemas.Comment
-  alias EctoShorts.Support.Repo
+  alias EctoShorts.Schemas.Comment
+  alias EctoShorts.Repo
 
   describe "create_schema_filter: " do
     test "returns the result of the ecto query dsl" do
