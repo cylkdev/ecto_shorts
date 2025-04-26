@@ -20,6 +20,7 @@ defmodule EctoShorts.Actions do
     * `:repo` – Specifies the repo module to use for both read and write
       operations.
   """
+
   alias EctoShorts.{
     Actions.Error,
     CommonFilters,
@@ -28,6 +29,8 @@ defmodule EctoShorts.Actions do
     Config,
     CommonQueries
   }
+
+  @type schema_struct :: Ecto.Schema.t()
 
   @doc group: "Schema API"
   @doc """
@@ -114,7 +117,7 @@ defmodule EctoShorts.Actions do
   @spec find_or_create_many(
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map() | {map(), map()})
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def find_or_create_many(query, params_list) do
     find_or_create_many(query, params_list, default_opts())
   end
@@ -138,7 +141,7 @@ defmodule EctoShorts.Actions do
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map() | {map(), map()}),
           opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def find_or_create_many(query, params_list, opts) do
     query
     |> multi_find_or_create(params_list, opts)
@@ -183,7 +186,7 @@ defmodule EctoShorts.Actions do
   @spec find_and_update_many(
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map() | {map(), map()})
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def find_and_update_many(query, params_list) do
     find_and_update_many(query, params_list, default_opts())
   end
@@ -201,7 +204,7 @@ defmodule EctoShorts.Actions do
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map() | {map(), map()}),
           opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def find_and_update_many(query, params_list, opts) do
     query
     |> multi_find_and_update(params_list, opts)
@@ -215,18 +218,29 @@ defmodule EctoShorts.Actions do
     |> Enum.reduce(Ecto.Multi.new(), fn {args, i}, multi ->
       {find_params, update_params} = unzip_find_params(args, query, opts)
 
-      multi
-      |> Ecto.Multi.one(
-        {:one, i},
-        CommonFilters.convert_params_to_filter(query, find_params, opts)
-      )
-      |> Ecto.Multi.update({:update, i}, fn changes_so_far ->
-        CommonSchemas.prepare_changeset(
-          query,
-          Map.fetch!(changes_so_far, {:one, i}),
-          Map.merge(find_params, update_params),
-          opts
-        )
+      Ecto.Multi.run(multi, {:find_and_update, i}, fn repo, _changes_so_far ->
+        case query
+             |> CommonFilters.convert_params_to_filter(find_params, opts)
+             |> repo.one(opts) do
+          nil ->
+            {:error,
+             {:not_found, "Record not found.",
+              %{
+                query: query,
+                position: i,
+                params: params_list,
+                failing_value: find_params
+              }}}
+
+          schema_data ->
+            query
+            |> CommonSchemas.prepare_changeset(
+              schema_data,
+              Map.merge(find_params, update_params),
+              opts
+            )
+            |> repo.update(opts)
+        end
       end)
     end)
   end
@@ -243,7 +257,7 @@ defmodule EctoShorts.Actions do
   @spec find_and_upsert_many(
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map() | {map(), map()})
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def find_and_upsert_many(query, params_list) do
     find_and_upsert_many(query, params_list, default_opts())
   end
@@ -261,37 +275,37 @@ defmodule EctoShorts.Actions do
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map() | {map(), map()}),
           opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def find_and_upsert_many(query, params_list, opts) do
     query
-    |> multi_find_and_insert_or_update(params_list, opts)
+    |> multi_find_and_upsert(params_list, opts)
     |> Config.repo!(opts).transaction(opts)
     |> handle_multi_response()
   end
 
-  defp multi_find_and_insert_or_update(query, params_list, opts) do
+  defp multi_find_and_upsert(query, params_list, opts) do
     params_list
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {args, i}, multi ->
       {find_params, upsert_params} = unzip_find_params(args, query, opts)
 
-      multi
-      |> Ecto.Multi.one(
-        {:one, i},
-        CommonFilters.convert_params_to_filter(query, find_params, opts)
-      )
-      |> Ecto.Multi.insert_or_update({:insert_or_update, i}, fn changes_so_far ->
-        case Map.fetch!(changes_so_far, {:one, i}) do
+      Ecto.Multi.run(multi, {:find_and_upsert, i}, fn repo, _changes_so_far ->
+        case query
+             |> CommonFilters.convert_params_to_filter(find_params, opts)
+             |> repo.one(opts) do
           nil ->
-            create_changeset(query, Map.merge(find_params, upsert_params), opts)
+            query
+            |> create_changeset(Map.merge(find_params, upsert_params), opts)
+            |> repo.insert(opts)
 
           schema_data ->
-            CommonSchemas.prepare_changeset(
-              query,
+            query
+            |> CommonSchemas.prepare_changeset(
               schema_data,
               Map.merge(find_params, upsert_params),
               opts
             )
+            |> repo.update(opts)
         end
       end)
     end)
@@ -317,7 +331,7 @@ defmodule EctoShorts.Actions do
   @spec create_many(
           query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map())
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def create_many(query, params_list) do
     create_many(query, params_list, default_opts())
   end
@@ -335,7 +349,7 @@ defmodule EctoShorts.Actions do
           query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map()),
           opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def create_many(query, params_list, opts) do
     query
     |> multi_insert(params_list, opts)
@@ -363,7 +377,7 @@ defmodule EctoShorts.Actions do
   @spec find_many(
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map())
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def find_many(query, params_list) do
     find_many(query, params_list, default_opts())
   end
@@ -385,7 +399,7 @@ defmodule EctoShorts.Actions do
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(map()),
           opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def find_many(query, params_list, opts) do
     query
     |> multi_find(params_list, opts)
@@ -424,11 +438,11 @@ defmodule EctoShorts.Actions do
   ...
   """
   @spec delete_many(structs_or_changesets :: list(Ecto.Schema.t() | Ecto.Changeset.t())) ::
-          {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+          {:ok, list(schema_struct())} | {:error, any()}
   @spec delete_many(
           structs_or_changesets :: list(Ecto.Schema.t() | Ecto.Changeset.t()),
           opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
   def delete_many(structs_or_changesets, opts \\ []) do
     structs_or_changesets
     |> multi_delete(opts)
@@ -1091,7 +1105,7 @@ defmodule EctoShorts.Actions do
   @spec delete(struct :: Ecto.Schema.t()) ::
           {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
   @spec delete(structs_or_changesets :: list(Ecto.Schema.t())) ::
-          {:ok, list(Ecto.Schema.t())}
+          {:ok, list(schema_struct())}
           | {:error, list(Ecto.Changeset.t())}
           | {:error, list(any())}
   def delete(%_{} = struct) do
@@ -1132,7 +1146,7 @@ defmodule EctoShorts.Actions do
   @spec delete(
           structs_or_changesets :: list(Ecto.Schema.t()) | list(Ecto.Changeset.t()),
           opts :: keyword()
-        ) :: {:ok, list(Ecto.Schema.t())} | {:error, list(Ecto.Changeset.t())} | {:error, any()}
+        ) :: {:ok, list(schema_struct())} | {:error, list(Ecto.Changeset.t())} | {:error, any()}
   @spec delete(
           struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
           opts :: keyword()
