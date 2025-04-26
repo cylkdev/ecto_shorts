@@ -64,6 +64,7 @@ defmodule EctoShorts.ActionsTest do
                 code: :conflict,
                 message: "Failed to create record.",
                 details: %{
+                  query: EctoShorts.Schemas.Post,
                   changes_so_far: [%Post{title: "post_title_1"}],
                   changeset: changeset,
                   position: 1,
@@ -159,11 +160,11 @@ defmodule EctoShorts.ActionsTest do
                  code: :not_found,
                  message: "Record not found.",
                  details: %{
-                   changes_so_far: %{},
+                   query: EctoShorts.Schemas.Post,
                    params: [%{title: "does_not_exist"}],
                    failing_value: %{title: "does_not_exist"},
                    position: 0,
-                   query: EctoShorts.Schemas.Post
+                   changes_so_far: []
                  }
                }
              } = Actions.find_many(Post, [%{title: "does_not_exist"}])
@@ -348,8 +349,8 @@ defmodule EctoShorts.ActionsTest do
                 code: :not_found,
                 message: "Record not found.",
                 details: %{
-                  params: %{title: "post_title"},
-                  query: EctoShorts.Schemas.Post
+                  query: EctoShorts.Schemas.Post,
+                  params: %{title: "post_title"}
                 }
               }} = Actions.find(Post, %{title: "post_title"})
     end

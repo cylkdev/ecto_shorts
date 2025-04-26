@@ -504,19 +504,14 @@ defmodule EctoShorts.Actions do
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {struct_or_changeset, i}, multi ->
       Ecto.Multi.run(multi, {:create, i}, fn repo, _changes_so_far ->
-        schema_module =
-          struct_or_changeset
-          |> CommonSchemas.get_schema_metadata()
-          |> Map.fetch!(:schema)
-
         with {:error, changeset} <-
-               schema_module
-               |> CommonSchemas.prepare_changeset(struct_or_changeset, opts)
+               struct_or_changeset
+               |> CommonSchemas.prepare_changeset(%{}, opts)
                |> repo.delete(opts) do
           {:error,
            {:conflict, "Failed to delete record.",
             %{
-              query: schema_module,
+              query: CommonSchemas.get_schema_metadata(struct_or_changeset).schema,
               position: 1,
               changeset: changeset,
               params: structs_or_changesets
