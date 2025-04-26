@@ -8,7 +8,6 @@ config :ecto_shorts,
   error_module: EctoShorts.Actions.Error
 
 if Mix.env() === :test do
-  IO.inspect("YO")
   config :ecto_shorts, ecto_repos: [EctoShorts.Repo]
   config :ecto_shorts, repo: EctoShorts.Repo
   config :ecto_shorts, :sql_sandbox, true

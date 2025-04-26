@@ -417,13 +417,14 @@ defmodule EctoShorts.Actions do
   @doc """
   ...
   """
+  @spec delete_many(structs_or_changesets :: list(Ecto.Schema.t() | Ecto.Changeset.t())) ::
+          {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
   @spec delete_many(
-          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          params_list :: list(map()),
+          structs_or_changesets :: list(Ecto.Schema.t() | Ecto.Changeset.t()),
           opts :: keyword()
         ) :: {:ok, list(Ecto.Schema.t())} | Ecto.Multi.failure()
-  def delete_many(query, params_list, opts) do
-    case query |> multi_delete(params_list, opts) |> Config.repo!(opts).transaction(opts) do
+  def delete_many(structs_or_changesets, opts \\ []) do
+    case structs_or_changesets |> multi_delete(opts) |> Config.repo!(opts).transaction(opts) do
       {:ok, operations} ->
         {:ok, Map.values(operations)}
 
@@ -432,67 +433,12 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  defp multi_delete(query, params_list, opts) do
-    params_list
+  defp multi_delete(structs_or_changesets, opts) do
+    structs_or_changesets
     |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {params, i}, multi ->
-      Ecto.Multi.delete(multi, i, CommonFilters.convert_params_to_filter(query, params, opts))
+    |> Enum.reduce(Ecto.Multi.new(), fn {struct_or_changeset, i}, multi ->
+      Ecto.Multi.delete(multi, i, struct_or_changeset, opts)
     end)
-  end
-
-  @doc """
-  Equivalent to `find_or_create(query, params, [])`.
-
-  ## Options
-
-  See `find_or_create/3` for options.
-
-  ## Examples
-
-      iex> EctoShorts.Actions.find_or_create(MyApp.User, %{name: "Fira"})
-  """
-  @spec find_or_create(
-          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          params :: map()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_or_create(query, params) do
-    find_or_create(query, params, default_opts())
-  end
-
-  @doc """
-  Finds a record matching the given parameters, or creates one if none is found.
-
-  ## Options
-
-  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
-
-  Additional options include:
-
-    * `:drop_associations` – If `true` deletes all associations from the
-      parameters before searching for a record. Defaults to `true`.
-
-  For more information, see `&find/3` and `&create/3`.
-
-  ## Examples
-
-      iex> EctoShorts.Actions.find_or_create(MyApp.User, %{name: "Fira"}, repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_or_create(MyApp.User, %{name: "Fira"}, replica: MyApp.Repo.Replica)
-
-      iex> EctoShorts.Actions.find_or_create({"users", MyApp.User}, %{name: "Fira"}, repo: MyApp.Repo)
-      iex> EctoShorts.Actions.find_or_create({"users", MyApp.User}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
-  """
-  @spec find_or_create(
-          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          params :: map(),
-          opts :: keyword()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_or_create(query, params, opts) do
-    with {:error, %{code: :not_found}} <-
-           find(query, maybe_drop_associations(params, query, opts), opts) do
-      query
-      |> CommonQueries.get_query_source()
-      |> create(params, opts)
-    end
   end
 
   @doc """
@@ -513,21 +459,26 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-    iex> EctoShorts.Actions.find_or_create(MyApp.User, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, repo: MyApp.Repo)
-    iex> EctoShorts.Actions.find_or_create(MyApp.User, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, replica: MyApp.Repo.Replica)
-    iex> EctoShorts.Actions.find_or_create(MyApp.User, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, repo: MyApp.Repo, replica: MyApp.Repo.Replica)
+    iex> EctoShorts.Actions.find_and_create(MyApp.User, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, repo: MyApp.Repo)
+    iex> EctoShorts.Actions.find_and_create(MyApp.User, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, replica: MyApp.Repo.Replica)
+    iex> EctoShorts.Actions.find_and_create(MyApp.User, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, repo: MyApp.Repo, replica: MyApp.Repo.Replica)
 
-    iex> EctoShorts.Actions.find_or_create({"users", MyApp.User}, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, repo: MyApp.Repo)
-    iex> EctoShorts.Actions.find_or_create({"users", MyApp.User}, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, replica: MyApp.Repo.Replica)
-    iex> EctoShorts.Actions.find_or_create({"users", MyApp.User}, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, repo: MyApp.Repo, replica: MyApp.Repo.Replica)
+    iex> EctoShorts.Actions.find_and_create({"users", MyApp.User}, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, repo: MyApp.Repo)
+    iex> EctoShorts.Actions.find_and_create({"users", MyApp.User}, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, replica: MyApp.Repo.Replica)
+    iex> EctoShorts.Actions.find_and_create({"users", MyApp.User}, %{email: "fira@example.com"}, %{email: "fira@example.com", name: "Fira"}, repo: MyApp.Repo, replica: MyApp.Repo.Replica)
   """
-  @spec find_or_create(
+  @spec find_and_create(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          find_params :: map(),
+          create_params :: map()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
+  @spec find_and_create(
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           find_params :: map(),
           create_params :: map(),
           opts :: keyword()
         ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_or_create(query, find_params, create_params, opts) do
+  def find_and_create(query, find_params, create_params, opts \\ []) do
     with {:error, %{code: :not_found}} <- find(query, find_params, opts) do
       query
       |> CommonQueries.get_query_source()
@@ -704,6 +655,61 @@ defmodule EctoShorts.Actions do
   def find_and_delete(query, find_params, opts) do
     with {:ok, struct} <- find(query, find_params, opts) do
       delete(struct, opts)
+    end
+  end
+
+  @doc """
+  Equivalent to `find_or_create(query, params, [])`.
+
+  ## Options
+
+  See `find_or_create/3` for options.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.find_or_create(MyApp.User, %{name: "Fira"})
+  """
+  @spec find_or_create(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          params :: map()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
+  def find_or_create(query, params) do
+    find_or_create(query, params, default_opts())
+  end
+
+  @doc """
+  Finds a record matching the given parameters, or creates one if none is found.
+
+  ## Options
+
+  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+
+  Additional options include:
+
+  * `:drop_associations` – If `true` deletes all associations from the
+  parameters before searching for a record. Defaults to `true`.
+
+  For more information, see `&find/3` and `&create/3`.
+
+  ## Examples
+
+  iex> EctoShorts.Actions.find_or_create(MyApp.User, %{name: "Fira"}, repo: MyApp.Repo)
+  iex> EctoShorts.Actions.find_or_create(MyApp.User, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+
+  iex> EctoShorts.Actions.find_or_create({"users", MyApp.User}, %{name: "Fira"}, repo: MyApp.Repo)
+  iex> EctoShorts.Actions.find_or_create({"users", MyApp.User}, %{name: "Fira"}, replica: MyApp.Repo.Replica)
+  """
+  @spec find_or_create(
+          query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          params :: map(),
+          opts :: keyword()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
+  def find_or_create(query, params, opts) do
+    with {:error, %{code: :not_found}} <-
+           find(query, maybe_drop_associations(params, query, opts), opts) do
+      query
+      |> CommonQueries.get_query_source()
+      |> create(params, opts)
     end
   end
 
@@ -1379,14 +1385,19 @@ defmodule EctoShorts.Actions do
           {:ok, value} ->
             value
 
-          term -> term
+          term ->
+            term
         end
       else
         result
       end
     end
 
-    Config.repo!(opts).transaction(op, opts)
+    case Config.repo!(opts).transaction(op, opts) do
+      {:error, :error} -> :error
+      {:ok, :ok} -> :ok
+      result -> result
+    end
   end
 
   defp create_changeset(query, params, opts) do
