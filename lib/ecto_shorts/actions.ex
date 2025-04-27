@@ -298,18 +298,11 @@ defmodule EctoShorts.Actions do
   end
 
   defp maybe_batch_preload(query, params_list, opts) do
-    if opts[:preload] === true or any_preload_batch_values?(params_list, query) do
+    if opts[:preload] === true do
       batch_preload(query, params_list, opts[:batch_key] || :primary_key, opts)
     else
       params_list
     end
-  end
-
-  defp any_preload_batch_values?(params_list, query) do
-    Enum.any?(params_list, fn
-      params when is_map(params) -> has_batch_keys?(params, :primary_key, query)
-      term -> term
-    end)
   end
 
   defp fetch_batch_id!(data, batch_key, query) do
