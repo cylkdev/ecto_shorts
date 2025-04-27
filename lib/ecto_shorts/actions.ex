@@ -112,7 +112,7 @@ defmodule EctoShorts.Actions do
     params_list
     |> Stream.with_index()
     |> Utils.reduce_all(fn {params, i} ->
-      case Map.get(batch_results, build_batch_id!(params, batch_key, query)) do
+      case Map.get(batch_results, batch_key!(params, batch_key, query)) do
         nil ->
           {:error,
            Error.call(:not_found, "Record not found.", %{
@@ -143,9 +143,12 @@ defmodule EctoShorts.Actions do
           opts :: opts()
         ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
   def insert_all(query, params_list, opts \\ []) do
-    params_list = preload_insert(query, params_list, opts)
-
-    with {:ok, insert_params} <- CommonParams.convert_to_insert_params(query, params_list, opts) do
+    with {:ok, insert_params} <-
+           CommonParams.convert_to_insert_params(
+             query,
+             maybe_batch_preload(query, params_list, opts),
+             opts
+           ) do
       {:ok,
        Config.repo!(opts).insert_all(
          query,
@@ -155,9 +158,9 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  defp preload_insert(query, params_list, opts) do
+  defp maybe_batch_preload(query, params_list, opts) do
     if opts[:preload] === true do
-      preload_all(query, params_list, opts[:batch_key] || :primary_key, opts)
+      batch_preload(query, params_list, opts[:batch_key] || :primary_key, opts)
     else
       params_list
     end
@@ -166,23 +169,23 @@ defmodule EctoShorts.Actions do
   @doc """
   ...
   """
-  def preload_all(query, params_list, batch_key \\ :primary_key, opts \\ []) do
-    case take_batch_query_params(params_list, batch_key, query) do
+  def batch_preload(query, params_list, batch_key \\ :primary_key, opts \\ []) do
+    case take_batch_params(params_list, batch_key, query) do
       [] ->
         params_list
 
       todo ->
         query
         |> batch(batch_key, todo, Keyword.delete(opts, :stream))
-        |> zip_preloaded_batch_results(params_list, batch_key, query)
+        |> put_batch_results(params_list, batch_key, query)
     end
   end
 
-  defp zip_preloaded_batch_results(batch_results, params_list, batch_key, query) do
+  defp put_batch_results(batch_results, params_list, batch_key, query) do
     Enum.map(params_list, fn
       {find_params, params} when is_map(find_params) and not is_struct(find_params) ->
-        if has_batch_keys?(find_params, batch_key, query) do
-          case Map.get(batch_results, build_batch_id!(find_params, batch_key, query)) do
+        if has_batch_values?(find_params, batch_key, query) do
+          case Map.get(batch_results, batch_key!(find_params, batch_key, query)) do
             nil -> {find_params, params}
             schema_data -> {schema_data, params}
           end
@@ -191,8 +194,8 @@ defmodule EctoShorts.Actions do
         end
 
       params when is_map(params) and not is_struct(params) ->
-        if has_batch_keys?(params, batch_key, query) do
-          case Map.get(batch_results, build_batch_id!(params, batch_key, query)) do
+        if has_batch_values?(params, batch_key, query) do
+          case Map.get(batch_results, batch_key!(params, batch_key, query)) do
             nil -> params
             schema_data -> {schema_data, params}
           end
@@ -205,17 +208,17 @@ defmodule EctoShorts.Actions do
     end)
   end
 
-  defp take_batch_query_params(params_list, batch_key, query) do
+  defp take_batch_params(params_list, batch_key, query) do
     Enum.reduce(params_list, [], fn
       {find_params, _params}, acc when is_map(find_params) and not is_struct(find_params) ->
-        if has_batch_keys?(find_params, batch_key, query) do
+        if has_batch_values?(find_params, batch_key, query) do
           [find_params | acc]
         else
           acc
         end
 
       params, acc when is_map(params) and not is_struct(params) ->
-        if has_batch_keys?(params, batch_key, query) do
+        if has_batch_values?(params, batch_key, query) do
           [params | acc]
         else
           acc
@@ -328,30 +331,30 @@ defmodule EctoShorts.Actions do
 
       query
       |> stream(%{or_where: params_list}, opts)
-      |> Stream.map(&{build_batch_id!(&1, batch_key, query), &1})
+      |> Stream.map(&{batch_key!(&1, batch_key, query), &1})
       |> Stream.chunk_every(stream_opts[:chunk_every] || 1_000)
       |> Stream.map(&Map.new/1)
     else
       query
       |> all(%{or_where: params_list}, opts)
-      |> Map.new(&{build_batch_id!(&1, batch_key, query), &1})
+      |> Map.new(&{batch_key!(&1, batch_key, query), &1})
     end
   end
 
-  defp build_batch_id!(data, batch_key, query) do
-    with :error <- build_batch_id(data, batch_key, query) do
+  defp batch_key!(data, batch_key, query) do
+    with :error <- batch_key(data, batch_key, query) do
       raise "Batch key required, Primary key disabled for schema #{CommonSchemas.get_schema_queryable(query)}, got: #{inspect(data)}"
     end
   end
 
-  defp build_batch_id(data, batch_key, query) do
+  defp batch_key(data, batch_key, query) do
     case normalize_batch_key(batch_key, query) do
       [] -> :error
       keys -> fetch_batch_values(data, keys)
     end
   end
 
-  defp has_batch_keys?(data, batch_key, query) do
+  defp has_batch_values?(data, batch_key, query) do
     case fetch_batch_values(data, normalize_batch_key(batch_key, query)) do
       :error -> false
       _ -> true
