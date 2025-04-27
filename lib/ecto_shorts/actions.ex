@@ -43,6 +43,8 @@ defmodule EctoShorts.Actions do
 
   @type batch_key :: atom()
 
+  @type stream :: Stream.t()
+
   @type params :: map()
 
   @type opts :: keyword()
@@ -127,18 +129,18 @@ defmodule EctoShorts.Actions do
   @spec batch(
           query :: query() | queryable() | source_queryable(),
           params_list :: list(params())
-        ) :: %{batch_key() => schema_struct()}
+        ) :: %{batch_key() => schema_struct()} | stream()
   @spec batch(
           query :: query() | queryable() | source_queryable(),
           batch_key :: batch_key() | list(batch_key()) | :primary_key,
           params_list :: list(params())
-        ) :: %{batch_key() => schema_struct()}
+        ) :: %{batch_key() => schema_struct()} | stream()
   @spec batch(
           query :: query() | queryable() | source_queryable(),
           batch_key :: batch_key() | list(batch_key()) | :primary_key,
           params_list :: list(params()),
           opts :: opts()
-        ) :: %{batch_key() => schema_struct()}
+        ) :: %{batch_key() => schema_struct()} | stream()
   def batch(query, batch_key \\ :primary_key, params_list, opts \\ []) do
     if Keyword.has_key?(opts, :stream) do
       stream_opts =
