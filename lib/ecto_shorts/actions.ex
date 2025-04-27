@@ -157,7 +157,7 @@ defmodule EctoShorts.Actions do
 
   defp preload_insert(query, params_list, opts) do
     if opts[:preload] === true do
-      batch_preload(query, params_list, opts[:batch_key] || :primary_key, opts)
+      preload_all(query, params_list, opts[:batch_key] || :primary_key, opts)
     else
       params_list
     end
@@ -166,7 +166,7 @@ defmodule EctoShorts.Actions do
   @doc """
   ...
   """
-  def batch_preload(query, params_list, batch_key \\ :primary_key, opts \\ []) do
+  def preload_all(query, params_list, batch_key \\ :primary_key, opts \\ []) do
     case take_batch_query_params(params_list, batch_key, query) do
       [] ->
         params_list

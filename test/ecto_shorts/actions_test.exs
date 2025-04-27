@@ -91,7 +91,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "batch_preload/4" do
+  describe "preload_all/4" do
     test "returns each param alongside its matching Post record" do
       post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
@@ -108,7 +108,7 @@ defmodule EctoShorts.ActionsTest do
                {%Post{title: "post_4_title"}, %{}},
                %{title: "this_should_be_skipped"}
              ] =
-               Actions.batch_preload(
+               Actions.preload_all(
                  Post,
                  [
                    {post_1, %{}},
