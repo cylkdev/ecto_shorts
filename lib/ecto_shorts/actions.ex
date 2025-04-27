@@ -159,7 +159,7 @@ defmodule EctoShorts.Actions do
   end
 
   defp maybe_batch_preload(query, params_list, opts) do
-    if opts[:preload] === true do
+    if opts[:batch_preload] === true do
       batch_preload(query, params_list, opts[:batch_key] || :primary_key, opts)
     else
       params_list
