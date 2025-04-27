@@ -27,7 +27,8 @@ defmodule EctoShorts.Actions do
     CommonParams,
     CommonSchemas,
     Config,
-    CommonQueries
+    CommonQueries,
+    Utils
   }
 
   @type source :: binary()
@@ -40,7 +41,7 @@ defmodule EctoShorts.Actions do
 
   @type schema_struct :: Ecto.Schema.t()
 
-  @type batch_key :: atom() | list(atom())
+  @type batch_key :: atom()
 
   @type params :: map()
 
@@ -48,7 +49,80 @@ defmodule EctoShorts.Actions do
 
   @doc group: "Batch API"
   @doc """
-  ...
+  Returns records as a map where the keys are the batch parameters and
+  values are the matching records.
+
+  When querying records, you often need to maintain the relationship
+  between your search parameters and the records they matched. This function
+  helps by returning a map where each record is keyed by the parameters used to find it.
+
+  For example, if you need to find posts and keep track of which title matched each post:
+
+  ```elixir
+  [
+    %{title: "First Post"},
+    %{title: "Second Post"}
+  ]
+  ```
+
+  This function will return a map like this:
+
+  ```elixir
+  %{
+    %{title: "First Post"} => %Post{title: "First Post"},
+    %{title: "Second Post"} => %Post{title: "Second Post"}
+  }
+  ```
+
+  ## Composite keys
+
+  The function also supports searching by composite keys. This is useful
+  when you need to match records using multiple fields together.
+
+  For instance, finding users in specific organizations:
+
+  ```elixir
+
+  batch_keys = [:org_id, :email]
+
+  params = [
+    %{org_id: 1, email: "user1@example.com"},
+    %{org_id: 2, email: "user2@example.com"}
+  ]
+
+  ```
+
+  If no batch keys are provided, the function will automatically use the
+  schema's primary keys. For example, if your schema has a composite primary
+  key of `:org_id` and `:user_id`, you don't need to specify these as batch
+  keys as they will be used by default.
+
+  This function will raise a `KeyError` if the schema disables primary keys
+  and a batch key is not provided.
+
+  ## Streaming
+
+  The batch function supports streaming results when the `:stream` option
+  is provided. This is particularly useful when dealing with large datasets
+  to manage memory usage.
+
+  For example:
+
+  ```elixir
+
+  iex> EctoShorts.Repo.transaction(fn ->
+  ...>   Post
+  ...>   |> Actions.batch([:title], [%{title: "post_title"}], stream: true)
+  ...>   |> Enum.to_list()
+  ...> end)
+  {:ok, [%{%{title: "post_title"} => %Post{title: "post_title"}}]}
+
+  ```
+
+  ## Examples
+
+      iex> Actions.batch(Post, [:title], [%{title: "post_title"}])
+      {:ok, %Post{title: "title"}}
   """
   @spec batch(
           query :: query() | queryable() | source_queryable(),
@@ -56,28 +130,78 @@ defmodule EctoShorts.Actions do
         ) :: %{batch_key() => schema_struct()}
   @spec batch(
           query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | nil,
+          batch_key :: batch_key() | list(batch_key()) | :primary_key,
           params_list :: list(params())
         ) :: %{batch_key() => schema_struct()}
   @spec batch(
           query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | nil,
+          batch_key :: batch_key() | list(batch_key()) | :primary_key,
           params_list :: list(params()),
           opts :: opts()
         ) :: %{batch_key() => schema_struct()}
-  def batch(query, batch_key \\ nil, params_list, opts \\ []) do
-    query
-    |> all(%{or_where: params_list}, opts)
-    |> Map.new(&{batch_key(&1, batch_key, query), &1})
+  def batch(query, batch_key \\ :primary_key, params_list, opts \\ []) do
+    if Keyword.has_key?(opts, :stream) do
+      stream_opts =
+        case opts[:stream] do
+          true -> []
+          opts -> opts
+        end
+
+      query
+      |> stream(%{or_where: params_list}, opts)
+      |> Stream.map(fn schema_data ->
+        {batch_id!(schema_data, batch_key, query), schema_data}
+      end)
+      |> Stream.chunk_every(stream_opts[:chunk_every] || 1_000)
+      |> Stream.map(&Map.new/1)
+    else
+      query
+      |> all(%{or_where: params_list}, opts)
+      |> Map.new(&{batch_id!(&1, batch_key, query), &1})
+    end
   end
 
   @doc group: "Batch API"
   @doc """
-  Given a list of maps this function will attempt to find all records that match the records by an OR clause.
-  Each individual map defines a singular AND clause query expression. The batch_key argument is an atom or
-  a list of atoms that specify what fields should be used as the primary keys for this operation. The primary
-  key ties the parameters to the results. All parameters
+  Finds multiple records that match a list of params using OR conditions.
 
+  When working with databases, you often need to find multiple records that
+  match different criteria. This function simplifies that process by allowing
+  you to provide a list of parameters, where each set of parameters is used
+  to find matching records. The results are combined into a single list.
+
+  For example, if you need to find users who match ANY of these criteria:
+
+  - Have email "user1@example.com"
+  - Have name "User 2"
+  - Belong to organization 3
+
+  Instead of writing three separate queries or a complex OR clause, you can
+  specify this as a list of parameters:
+
+  ```elixir
+  [
+    %{email: "user1@example.com"},
+    %{name: "User 2"}, %{org_id: 3}
+  ]
+  ```
+
+  ## Composite keys
+
+  See `&batch/4` for information on composite keys.
+
+  ## Options
+
+  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+
+  All options accepted by [`Ecto.Repo.all/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) are also supported.
+
+  See `&batch/4` for more options. This function does not support batch `:stream` option.
+
+  ## Examples
+
+      iex> Actions.find_all(Post, [:title], [%{title: "post_title"}])
+      {:ok, [%Post{title: "post_title"}]}
   """
   @spec find_all(
           query :: query() | queryable() | source_queryable(),
@@ -85,22 +209,22 @@ defmodule EctoShorts.Actions do
         ) :: {:ok, list(schema_struct())} | {:error, any()}
   @spec find_all(
           query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | nil,
+          batch_key :: batch_key() | list(batch_key()) | :primary_key,
           params_list :: list(params())
         ) :: {:ok, list(schema_struct())} | {:error, any()}
   @spec find_all(
           query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | nil,
+          batch_key :: batch_key() | list(batch_key()) | :primary_key,
           params_list :: list(params()),
           opts :: opts()
         ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_all(query, batch_key \\ nil, params_list, opts \\ []) do
-    batch_values = batch(query, batch_key, params_list, opts)
+  def find_all(query, batch_key \\ :primary_key, params_list, opts \\ []) do
+    batch_results = batch(query, batch_key, params_list, Keyword.delete(opts, :stream))
 
     params_list
     |> Stream.with_index()
-    |> EctoShorts.Utils.reduce_all(fn {params, i} ->
-      case Map.get(batch_values, batch_key(params, batch_key, query)) do
+    |> Utils.reduce_all(fn {params, i} ->
+      case Map.get(batch_results, batch_id!(params, batch_key, query)) do
         nil ->
           {:error,
            Error.call(:not_found, "Record not found.", %{
@@ -117,15 +241,39 @@ defmodule EctoShorts.Actions do
     end)
   end
 
-  defp batch_key(data, nil_or_keys, query) do
-    keys =
-      if is_nil(nil_or_keys) do
-        CommonSchemas.get_schema_reflection(query, :primary_key)
-      else
-        List.wrap(nil_or_keys)
-      end
+  defp batch_id!(data, keys, query) do
+    case fetch_batch_results(data, validate_batch_keys!(keys, query)) do
+      {:ok, batch_key} ->
+        Map.new(batch_key)
 
-    Map.take(data, keys)
+      {:error, keys} ->
+        raise KeyError, "Batch keys #{inspect(keys)} not found, got: #{inspect(data)}"
+    end
+  end
+
+  defp validate_batch_keys!(:primary_key, query) do
+    query
+    |> CommonSchemas.get_schema_reflection(:primary_key)
+    |> validate_batch_keys!(query)
+  end
+
+  defp validate_batch_keys!(keys, query) when is_list(keys) do
+    if keys === [] do
+      raise KeyError, "Batch key required for schema #{CommonSchemas.get_schema_queryable(query)}"
+    else
+      keys
+    end
+  end
+
+  defp fetch_batch_results(data, key) do
+    key
+    |> List.wrap()
+    |> Utils.reduce_all(fn key ->
+      case Map.get(data, key) do
+        nil -> {:error, key}
+        value -> {:ok, {key, value}}
+      end
+    end)
   end
 
   @doc group: "Schema API"
@@ -1257,7 +1405,7 @@ defmodule EctoShorts.Actions do
   end
 
   def delete(structs_or_changesets, opts) when is_list(structs_or_changesets) do
-    EctoShorts.Utils.reduce_all(structs_or_changesets, fn struct_or_changeset ->
+    Utils.reduce_all(structs_or_changesets, fn struct_or_changeset ->
       delete(struct_or_changeset, opts)
     end)
   end
