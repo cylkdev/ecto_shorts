@@ -32,6 +32,50 @@ defmodule EctoShorts.Actions do
 
   @type schema_struct :: Ecto.Schema.t()
 
+  def find_all(query, keys, params_list, opts \\ []) do
+    params_list = dedup_params(params_list)
+
+    batch_results =
+      query
+      |> all(%{or_where: params_list}, opts)
+      |> Map.new(fn schema_data -> {batch_key(schema_data, keys), schema_data} end)
+
+    params_list
+    |> Stream.with_index()
+    |> EctoShorts.Utils.reduce_all(fn
+      {params, i} ->
+        case Map.get(batch_results, batch_key(params, keys)) do
+          nil ->
+            {:error,
+             Error.call(:not_found, "Record not found.", %{
+               query: query,
+               params: params_list,
+               failed_value: params,
+               position: i,
+               keys: keys
+             })}
+
+          schema_data ->
+            {:ok, schema_data}
+        end
+    end)
+  end
+
+  defp batch_key(map, keys) do
+    map
+    |> Map.take(keys)
+    |> Enum.sort()
+    |> List.to_tuple()
+  end
+
+  defp dedup_params(params_list) do
+    Enum.uniq_by(params_list, fn params ->
+      params
+      |> Map.to_list()
+      |> Enum.sort()
+    end)
+  end
+
   @doc group: "Schema API"
   @doc """
   ...
@@ -42,11 +86,11 @@ defmodule EctoShorts.Actions do
           opts :: keyword()
         ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
   def insert_all(query, params_list, opts \\ []) do
-    with {:ok, inserts} <- CommonParams.convert_to_insert_params(query, params_list, opts) do
+    with {:ok, insert_params} <- CommonParams.convert_to_insert_params(query, params_list, opts) do
       {:ok,
        Config.repo!(opts).insert_all(
          query,
-         inserts,
+         insert_params,
          CommonParams.put_default_insert_options(opts, query)
        )}
     end
