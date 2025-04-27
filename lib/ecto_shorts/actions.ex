@@ -151,9 +151,7 @@ defmodule EctoShorts.Actions do
 
       query
       |> stream(%{or_where: params_list}, opts)
-      |> Stream.map(fn schema_data ->
-        {batch_id!(schema_data, batch_key, query), schema_data}
-      end)
+      |> Stream.map(&{batch_id!(&1, batch_key, query), &1})
       |> Stream.chunk_every(stream_opts[:chunk_every] || 1_000)
       |> Stream.map(&Map.new/1)
     else
@@ -244,30 +242,30 @@ defmodule EctoShorts.Actions do
   end
 
   defp batch_id!(data, keys, query) do
-    case fetch_batch_results(data, validate_batch_keys!(keys, query)) do
-      {:ok, batch_key} ->
-        Map.new(batch_key)
+    case fetch_batch_values(data, fetch_batch_key!(keys, query)) do
+      {:ok, values} ->
+        Map.new(values)
 
       {:error, keys} ->
-        raise KeyError, "Batch keys #{inspect(keys)} not found, got: #{inspect(data)}"
+        raise KeyError, "keys #{inspect(keys)} not found, got: #{inspect(data)}"
     end
   end
 
-  defp validate_batch_keys!(:primary_key, query) do
+  defp fetch_batch_key!(:primary_key, query) do
     query
     |> CommonSchemas.get_schema_reflection(:primary_key)
-    |> validate_batch_keys!(query)
+    |> fetch_batch_key!(query)
   end
 
-  defp validate_batch_keys!(keys, query) when is_list(keys) do
+  defp fetch_batch_key!(keys, query) when is_list(keys) do
     if keys === [] do
-      raise KeyError, "Batch key required for schema #{CommonSchemas.get_schema_queryable(query)}"
+      raise "Batch key required, Primary key disabled for schema #{CommonSchemas.get_schema_queryable(query)}."
     else
       keys
     end
   end
 
-  defp fetch_batch_results(data, key) do
+  defp fetch_batch_values(data, key) do
     key
     |> List.wrap()
     |> Utils.reduce_all(fn key ->
@@ -284,10 +282,16 @@ defmodule EctoShorts.Actions do
   """
   @spec insert_all(
           query :: query() | queryable() | source_queryable(),
+          params_list :: list(any())
+        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
+  @spec insert_all(
+          query :: query() | queryable() | source_queryable(),
           params_list :: list(any()),
           opts :: opts()
         ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
   def insert_all(query, params_list, opts \\ []) do
+    params_list = maybe_preload_batch(query, params_list, opts)
+
     with {:ok, insert_params} <- CommonParams.convert_to_insert_params(query, params_list, opts) do
       {:ok,
        Config.repo!(opts).insert_all(
@@ -295,6 +299,38 @@ defmodule EctoShorts.Actions do
          insert_params,
          CommonParams.put_default_insert_options(opts, query)
        )}
+    end
+  end
+
+  defp maybe_preload_batch(query, params_list, opts) do
+    if opts[:preload] === true do
+      preload_batch(query, params_list, opts[:batch_key] || :primary_key, opts)
+    else
+      params_list
+    end
+  end
+
+  @doc """
+  ...
+  """
+  def preload_batch(query, params_list, batch_key \\ :primary_key, opts \\ []) do
+    case Enum.filter(params_list, &is_map/1) do
+      [] ->
+        params_list
+
+      todo ->
+        batch_results = batch(query, batch_key, todo, Keyword.delete(opts, :stream))
+
+        Enum.map(params_list, fn
+          params when is_map(params) ->
+            case Map.get(batch_results, batch_id!(params, batch_key, query)) do
+              nil -> params
+              schema_data -> {schema_data, params}
+            end
+
+          term ->
+            term
+        end)
     end
   end
 

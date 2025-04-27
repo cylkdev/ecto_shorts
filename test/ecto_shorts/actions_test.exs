@@ -29,7 +29,7 @@ defmodule EctoShorts.ActionsTest do
     test "raises if schema has no primary key and batch key not provided" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
-      assert_raise KeyError, ~r|Batch key required for schema|, fn ->
+      assert_raise RuntimeError, ~r|Batch key required, Primary key disabled for schema |, fn ->
         Actions.batch(PostNoPrimaryKeySchema, [%{title: "post_title"}])
       end
     end
@@ -52,25 +52,25 @@ defmodule EctoShorts.ActionsTest do
 
   describe "find_all/2" do
     test "retrieves records matching the given params including primary key" do
-      post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
-      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
       post_1_id = post_1.id
 
-      assert {:ok, [%Post{id: ^post_1_id, title: "post_title_1"}]} =
-               Actions.find_all(Post, [%{id: post_1_id, title: "post_title_1"}])
+      assert {:ok, [%Post{id: ^post_1_id, title: "post_1_title"}]} =
+               Actions.find_all(Post, [%{id: post_1_id, title: "post_1_title"}])
     end
   end
 
   describe "find_all/3" do
     test "retrieves records using specified batch keys" do
-      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
-      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
-      assert {:ok, [%Post{title: "post_title_1"}]} =
-               Actions.find_all(Post, [:title], [%{title: "post_title_1"}])
+      assert {:ok, [%Post{title: "post_2_title"}]} =
+               Actions.find_all(Post, [:title], [%{title: "post_2_title"}])
     end
 
     test "returns error when no matching records exist" do
@@ -88,6 +88,22 @@ defmodule EctoShorts.ActionsTest do
                   }
                 }
               ]} = Actions.find_all(Post, [:title], [%{title: "does_not_exist"}])
+    end
+  end
+
+  describe "preload_batch/4" do
+    test "loads data into list of params" do
+      post_1 = insert!(Repo, Post, %{title: "post_1_title"})
+
+      post_2 = insert!(Repo, Post, %{title: "post_2_title"})
+
+      post_3 = insert!(Repo, Post, %{title: "post_3_title"})
+
+      assert [
+               {%Post{title: "post_1_title"}, %{}},
+               {%Post{title: "post_2_title"}, %{}},
+               {%Post{title: "post_3_title"}, %{}}
+             ] = Actions.preload_batch(Post, [{post_1, %{}}, %{id: post_2.id}, %{id: post_3.id}])
     end
   end
 
@@ -135,28 +151,28 @@ defmodule EctoShorts.ActionsTest do
 
   describe "update_all/2" do
     test "updates records matching the filter params" do
-      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
-      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
       assert {1, nil} =
                Actions.update_all(
                  Post,
-                 %{title: "post_title_1"},
-                 %{title: "updated_post_title_1"}
+                 %{title: "post_1_title"},
+                 %{title: "updated_post_1_title"}
                )
     end
 
     test "updates and returns matching records when select: true is specified" do
-      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
-      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
-      assert {1, [%Post{title: "updated_post_title_1"}]} =
+      assert {1, [%Post{title: "updated_post_2_title"}]} =
                Actions.update_all(
                  Post,
-                 %{title: "post_title_1", select: true},
-                 %{title: "updated_post_title_1"}
+                 %{title: "post_2_title", select: true},
+                 %{title: "updated_post_2_title"}
                )
     end
   end
@@ -179,28 +195,28 @@ defmodule EctoShorts.ActionsTest do
     test "creates multiple records when none exist" do
       assert {:ok,
               [
-                %Post{title: "post_title_1"},
-                %Post{title: "post_title_2"}
+                %Post{title: "post_2_title"},
+                %Post{title: "post_2_title"}
               ]} =
                Actions.find_or_create_many(Post, [
-                 %{title: "post_title_1"},
-                 %{title: "post_title_2"}
+                 %{title: "post_2_title"},
+                 %{title: "post_2_title"}
                ])
     end
 
     test "returns existing records when matches are found" do
-      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
-      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
       assert {:ok,
               [
-                %Post{title: "post_title_1"},
-                %Post{title: "post_title_2"}
+                %Post{title: "post_2_title"},
+                %Post{title: "post_2_title"}
               ]} =
                Actions.find_or_create_many(Post, [
-                 %{title: "post_title_1"},
-                 %{title: "post_title_2"}
+                 %{title: "post_2_title"},
+                 %{title: "post_2_title"}
                ])
     end
 
@@ -211,18 +227,18 @@ defmodule EctoShorts.ActionsTest do
                 message: "Failed to create record.",
                 details: %{
                   query: EctoShorts.Schemas.Post,
-                  changes_so_far: [%Post{title: "post_title_1"}],
+                  changes_so_far: [%Post{title: "post_1_title"}],
                   changeset: changeset,
                   position: 1,
                   params: [
-                    %{title: "post_title_1", unique_identifier: "post_unique_identifier"},
-                    %{title: "post_title_2", unique_identifier: "post_unique_identifier"}
+                    %{title: "post_1_title", unique_identifier: "post_unique_identifier"},
+                    %{title: "post_2_title", unique_identifier: "post_unique_identifier"}
                   ]
                 }
               }} =
                Actions.find_or_create_many(Post, [
-                 %{title: "post_title_1", unique_identifier: "post_unique_identifier"},
-                 %{title: "post_title_2", unique_identifier: "post_unique_identifier"}
+                 %{title: "post_1_title", unique_identifier: "post_unique_identifier"},
+                 %{title: "post_2_title", unique_identifier: "post_unique_identifier"}
                ])
 
       assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
@@ -231,18 +247,18 @@ defmodule EctoShorts.ActionsTest do
 
   describe "find_and_update_many/3" do
     test "updates multiple records that match search criteria" do
-      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
-      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
       assert {:ok,
               [
-                %Post{title: "updated_post_title_1"},
-                %Post{title: "updated_post_title_2"}
+                %Post{title: "updated_post_1_title"},
+                %Post{title: "updated_post_2_title"}
               ]} =
                Actions.find_and_update_many(Post, [
-                 {%{title: "post_title_1"}, %{title: "updated_post_title_1"}},
-                 {%{title: "post_title_2"}, %{title: "updated_post_title_2"}}
+                 {%{title: "post_1_title"}, %{title: "updated_post_1_title"}},
+                 {%{title: "post_2_title"}, %{title: "updated_post_2_title"}}
                ])
     end
   end
@@ -251,28 +267,28 @@ defmodule EctoShorts.ActionsTest do
     test "creates multiple records when no matches exist" do
       assert {:ok,
               [
-                %Post{title: "created_post_title_1"},
-                %Post{title: "created_post_title_2"}
+                %Post{title: "created_post_2_title"},
+                %Post{title: "created_post_2_title"}
               ]} =
                Actions.find_and_upsert_many(Post, [
-                 {%{title: "post_1_does_not_exist"}, %{title: "created_post_title_1"}},
-                 {%{title: "post_2_does_not_exist"}, %{title: "created_post_title_2"}}
+                 {%{title: "post_1_does_not_exist"}, %{title: "created_post_2_title"}},
+                 {%{title: "post_2_does_not_exist"}, %{title: "created_post_2_title"}}
                ])
     end
 
     test "updates multiple existing records when matches are found" do
-      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
-      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
       assert {:ok,
               [
-                %Post{title: "updated_post_title_1"},
-                %Post{title: "updated_post_title_2"}
+                %Post{title: "updated_post_1_title"},
+                %Post{title: "updated_post_2_title"}
               ]} =
                Actions.find_and_upsert_many(Post, [
-                 {%{title: "post_title_1"}, %{title: "updated_post_title_1"}},
-                 {%{title: "post_title_2"}, %{title: "updated_post_title_2"}}
+                 {%{title: "post_1_title"}, %{title: "updated_post_1_title"}},
+                 {%{title: "post_2_title"}, %{title: "updated_post_2_title"}}
                ])
     end
   end
@@ -281,12 +297,12 @@ defmodule EctoShorts.ActionsTest do
     test "creates multiple records in a single operation" do
       assert {:ok,
               [
-                %Post{title: "post_title_1"},
-                %Post{title: "post_title_2"}
+                %Post{title: "post_1_title"},
+                %Post{title: "post_2_title"}
               ]} =
                Actions.create_many(Post, [
-                 %{title: "post_title_1"},
-                 %{title: "post_title_2"}
+                 %{title: "post_1_title"},
+                 %{title: "post_2_title"}
                ])
     end
   end
@@ -319,24 +335,24 @@ defmodule EctoShorts.ActionsTest do
 
   describe "delete_many/3" do
     test "deletes multiple records using structs" do
-      post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
-      post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
-      assert {:ok, [%Post{title: "post_title_1"}, %Post{title: "post_title_2"}]} =
+      assert {:ok, [%Post{title: "post_1_title"}, %Post{title: "post_2_title"}]} =
                Actions.delete_many([post_1, post_2])
     end
 
     test "deletes multiple records using changesets" do
-      post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
       post_1_changeset = Post.changeset(post_1)
 
-      post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
       post_2_changeset = Post.changeset(post_2)
 
-      assert {:ok, [%Post{title: "post_title_1"}, %Post{title: "post_title_2"}]} =
+      assert {:ok, [%Post{title: "post_1_title"}, %Post{title: "post_2_title"}]} =
                Actions.delete_many([post_1_changeset, post_2_changeset])
     end
   end
@@ -458,11 +474,11 @@ defmodule EctoShorts.ActionsTest do
 
   describe "all/2" do
     test "returns only records that match the given filter params" do
-      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
-      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
-      assert [%Post{title: "post_title_1"}] = Actions.all(Post, %{title: "post_title_1"})
+      assert [%Post{title: "post_2_title"}] = Actions.all(Post, %{title: "post_2_title"})
     end
   end
 
@@ -537,27 +553,28 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "can delete many structs" do
-      post_1 = insert!(Repo, Post, %{title: "post_title_1"})
-      post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      post_1 = insert!(Repo, Post, %{title: "post_1_title"})
+
+      post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
       assert {:ok,
               [
-                %Post{title: "post_title_1"},
-                %Post{title: "post_title_2"}
+                %Post{title: "post_1_title"},
+                %Post{title: "post_2_title"}
               ]} = Actions.delete([post_1, post_2])
     end
 
     test "can delete many changesets" do
-      post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+      post_1 = insert!(Repo, Post, %{title: "post_1_title"})
       post_1_changeset = Post.changeset(post_1, %{})
 
-      post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+      post_2 = insert!(Repo, Post, %{title: "post_2_title"})
       post_2_changeset = Post.changeset(post_2, %{})
 
       assert {:ok,
               [
-                %Post{title: "post_title_1"},
-                %Post{title: "post_title_2"}
+                %Post{title: "post_1_title"},
+                %Post{title: "post_2_title"}
               ]} = Actions.delete([post_1_changeset, post_2_changeset])
     end
   end
