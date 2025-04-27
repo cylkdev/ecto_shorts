@@ -15,8 +15,36 @@ defmodule EctoShorts.ActionsTest do
     |> repo.insert!()
   end
 
-  describe "&find_all/2" do
-    test "returns record matching params" do
+  describe "batch/3" do
+    test "retrieves records and converts it to a map where each key is the value of the batch_key and the value is a record" do
+      _post = insert!(Repo, Post, %{title: "post_title"})
+
+      assert %{{{:title, "post_title"}} => %Post{title: "post_title"}} =
+               Actions.batch(Post, [:title], [%{title: "post_title"}])
+    end
+  end
+
+  describe "find_all/2" do
+    test "returns record given params" do
+      post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+
+      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+
+      post_1_id = post_1.id
+
+      assert {:ok, [%Post{id: ^post_1_id, title: "post_title_1"}]} =
+               Actions.find_all(Post, [%{id: post_1_id, title: "post_title_1"}])
+    end
+
+    test "raises if primary key not present and batch key not given" do
+      assert_raise KeyError, fn ->
+        Actions.find_all(Post, [%{title: "post_title_1"}])
+      end
+    end
+  end
+
+  describe "find_all/3" do
+    test "returns record given batch keys params" do
       _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
 
       _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
@@ -32,10 +60,8 @@ defmodule EctoShorts.ActionsTest do
                   code: :not_found,
                   message: "Record not found.",
                   details: %{
-                    failed_value: %{
-                      title: "does_not_exist"
-                    },
-                    keys: [:title],
+                    failed_value: %{title: "does_not_exist"},
+                    key: [:title],
                     params: [%{title: "does_not_exist"}],
                     position: 0,
                     query: EctoShorts.Schemas.Post
@@ -45,7 +71,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&insert_all/2" do
+  describe "insert_all/2" do
     test "can create records" do
       assert {:ok, {1, [%Post{title: "post_title"}]}} =
                Actions.insert_all(Post, [%{title: "post_title"}], returning: true)
@@ -87,7 +113,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&update_all/2" do
+  describe "update_all/2" do
     test "updates all records matching params" do
       _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
 
@@ -183,7 +209,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&find_and_update_many/3" do
+  describe "find_and_update_many/3" do
     test "updates existing records" do
       _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
 
@@ -231,7 +257,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&create_many/3" do
+  describe "create_many/3" do
     test "creates multiple records" do
       assert {:ok,
               [
@@ -245,7 +271,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&find_many/3" do
+  describe "find_many/3" do
     test "returns all records matching params" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
@@ -271,7 +297,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&delete_many/3" do
+  describe "delete_many/3" do
     test "successfully deletes multiple struct records" do
       post_1 = insert!(Repo, Post, %{title: "post_title_1"})
 
@@ -295,7 +321,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&find_and_create/3" do
+  describe "find_and_create/3" do
     test "returns existing record when one matches the params" do
       _post = insert!(Repo, Post, %{title: "existing_post_title"})
 
@@ -331,7 +357,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&find_and_upsert/2" do
+  describe "find_and_upsert/2" do
     test "creates a new record when no matching record exists" do
       assert {:ok, %Post{title: "existing_post_title"}} =
                Actions.find_and_upsert(
@@ -353,7 +379,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&find_and_delete/2" do
+  describe "find_and_delete/2" do
     test "successfully deletes an existing record that matches the params" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
@@ -367,7 +393,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&find_or_create/3" do
+  describe "find_or_create/3" do
     test "returns existing record when one matches the search parameters" do
       _post = insert!(Repo, Post, %{title: "existing_post_title"})
 
@@ -381,7 +407,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&get/2" do
+  describe "get/2" do
     test "retrieves a record by its primary key (id)" do
       post = insert!(Repo, Post, %{title: "post_title"})
 
@@ -389,7 +415,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&all/1" do
+  describe "all/1" do
     test "returns all records from the schema with all attributes properly set" do
       post =
         insert!(Repo, Post, %{
@@ -410,7 +436,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&all/2" do
+  describe "all/2" do
     test "returns only records that match the given filter parameters" do
       _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
 
@@ -420,7 +446,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&create/2" do
+  describe "create/2" do
     test "successfully creates a new record with the given parameters" do
       assert {:ok, %Post{title: "post_title"}} = Actions.create(Post, %{title: "post_title"})
     end
@@ -436,7 +462,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&find/2" do
+  describe "find/2" do
     test "successfully retrieves a record matching the search parameters" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
@@ -456,7 +482,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&update/3" do
+  describe "update/3" do
     test "can update record by id" do
       post = insert!(Repo, Post, %{title: "created_title"})
 
@@ -474,7 +500,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&delete/1" do
+  describe "delete/1" do
     test "can delete record by struct" do
       post = insert!(Repo, Post, %{title: "post_title"})
 
@@ -516,7 +542,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&delete/2" do
+  describe "delete/2" do
     test "can delete record by id" do
       post = insert!(Repo, Post, %{title: "post_title"})
 
@@ -524,7 +550,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&stream/2" do
+  describe "stream/2" do
     test "returns all records matching params" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
@@ -537,7 +563,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&aggregate/4" do
+  describe "aggregate/4" do
     test "returns expected value for count" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
@@ -545,7 +571,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "&transaction/2" do
+  describe "transaction/2" do
     test "handles non status tuple response" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 

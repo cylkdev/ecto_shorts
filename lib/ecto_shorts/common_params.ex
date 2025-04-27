@@ -179,7 +179,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp apply_insert(query, params, utc_now, opts) do
-    if has_id?(params) do
+    if has_any_primary_key?(query, params) do
       {:ok, serialize_insert(params, [], utc_now, query, opts)}
     else
       with changeset <- create_changeset(params, query),
@@ -322,7 +322,7 @@ defmodule EctoShorts.CommonParams do
   defp timestamp_type(opts, key, type_source, query) do
     opts[:timestamps][key] ||
       opts[:timestamp_type] ||
-      CommonSchemas.get_schema_queryable(query).__schema__(:type, type_source) ||
+      CommonSchemas.get_schema_reflection(query, :type, type_source) ||
       @utc_datetime
   end
 
@@ -339,7 +339,12 @@ defmodule EctoShorts.CommonParams do
   defp maybe_datetime_to_naive(datetime, @naive_datetime), do: DateTime.to_naive(datetime)
   defp maybe_datetime_to_naive(datetime, @utc_datetime), do: datetime
 
-  defp has_id?(%{id: id}), do: !is_nil(id)
-  defp has_id?(%{"id" => id}), do: !is_nil(id)
-  defp has_id?(_), do: false
+  defp has_any_primary_key?(query, params) do
+    query
+    |> CommonSchemas.get_schema_reflection(:primary_key)
+    |> Enum.any?(fn key ->
+      (Map.has_key?(params, key) and !is_nil(params[key])) or
+        (Map.has_key?(params, to_string(key)) and !is_nil(params[to_string(key)]))
+    end)
+  end
 end
