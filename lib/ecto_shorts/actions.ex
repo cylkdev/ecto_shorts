@@ -271,6 +271,47 @@ defmodule EctoShorts.Actions do
     end)
   end
 
+  @doc group: "Schema API"
+  @doc """
+  TODO...
+  """
+  @spec insert_all(
+          query :: query() | queryable() | source_queryable(),
+          params_list :: list(any())
+        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
+  @spec insert_all(
+          query :: query() | queryable() | source_queryable(),
+          params_list :: list(any()),
+          opts :: opts()
+        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
+  def insert_all(query, params_list, opts \\ []) do
+    params_list = maybe_batch_preload(query, params_list, opts)
+
+    with {:ok, insert_params} <- CommonParams.convert_to_insert_params(query, params_list, opts) do
+      {:ok,
+       Config.repo!(opts).insert_all(
+         query,
+         insert_params,
+         CommonParams.put_default_insert_options(opts, query)
+       )}
+    end
+  end
+
+  defp maybe_batch_preload(query, params_list, opts) do
+    if opts[:preload] === true or any_preload_batch_values?(params_list, query) do
+      batch_preload(query, params_list, opts[:batch_key] || :primary_key, opts)
+    else
+      params_list
+    end
+  end
+
+  defp any_preload_batch_values?(params_list, query) do
+    Enum.any?(params_list, fn
+      params when is_map(params) -> has_batch_keys?(params, :primary_key, query)
+      term -> term
+    end)
+  end
+
   defp fetch_batch_id!(data, batch_key, query) do
     with :error <- fetch_batch_id(data, batch_key, query) do
       raise "Batch key required, Primary key disabled for schema #{CommonSchemas.get_schema_queryable(query)}, got: #{inspect(data)}"
@@ -314,40 +355,6 @@ defmodule EctoShorts.Actions do
 
   defp normalize_batch_key(keys, _query) when is_list(keys) do
     keys
-  end
-
-  @doc group: "Schema API"
-  @doc """
-  TODO...
-  """
-  @spec insert_all(
-          query :: query() | queryable() | source_queryable(),
-          params_list :: list(any())
-        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
-  @spec insert_all(
-          query :: query() | queryable() | source_queryable(),
-          params_list :: list(any()),
-          opts :: opts()
-        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
-  def insert_all(query, params_list, opts \\ []) do
-    params_list = maybe_batch_preload(query, params_list, opts)
-
-    with {:ok, insert_params} <- CommonParams.convert_to_insert_params(query, params_list, opts) do
-      {:ok,
-       Config.repo!(opts).insert_all(
-         query,
-         insert_params,
-         CommonParams.put_default_insert_options(opts, query)
-       )}
-    end
-  end
-
-  defp maybe_batch_preload(query, params_list, opts) do
-    if opts[:preload] === true do
-      batch_preload(query, params_list, opts[:batch_key] || :primary_key, opts)
-    else
-      params_list
-    end
   end
 
   @doc group: "Schema API"
