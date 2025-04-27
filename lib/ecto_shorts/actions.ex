@@ -38,13 +38,18 @@ defmodule EctoShorts.Actions do
   """
   @spec insert_all(
           query :: Ecto.Query.t() | Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          params_list :: list(),
+          params_list :: list(any()),
           opts :: keyword()
-        ) :: {non_neg_integer(), nil | [term()]}
-  def insert_all(query, params_list, opts) do
-    query
-    |> CommonParams.convert_to_insert_all_params(params_list, opts)
-    |> Config.repo!(opts).insert_all(opts)
+        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
+  def insert_all(query, params_list, opts \\ []) do
+    with {:ok, inserts} <- CommonParams.convert_to_insert_params(query, params_list, opts) do
+      {:ok,
+       Config.repo!(opts).insert_all(
+         query,
+         inserts,
+         CommonParams.put_default_insert_options(opts, query)
+       )}
+    end
   end
 
   @doc group: "Schema API"
@@ -74,7 +79,7 @@ defmodule EctoShorts.Actions do
     query
     |> CommonFilters.convert_params_to_filter(find_params, opts)
     |> Config.repo!(opts).update_all(
-      CommonParams.convert_to_update_all_params(query, update_params, opts),
+      CommonParams.convert_to_update_params(query, update_params, opts),
       opts
     )
   end

@@ -6,13 +6,13 @@ defmodule EctoShorts.Schemas.Post do
   require Ecto.Query
 
   schema "posts" do
+    belongs_to :user, EctoShorts.Schemas.User
+
+    field :tags, {:array, :string}
     field :title, :string
     field :unique_identifier, :string
-    field :views, :integer
     field :user_data, :string, source: :custom_string_field
-    field :tags, {:array, :string}
-
-    belongs_to :user, EctoShorts.Schemas.User
+    field :views, :integer
 
     has_many :comments, EctoShorts.Schemas.Comment
 

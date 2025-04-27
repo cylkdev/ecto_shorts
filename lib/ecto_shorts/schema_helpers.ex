@@ -7,6 +7,16 @@ defmodule EctoShorts.SchemaHelpers do
   @type schema_struct :: Ecto.Schema.t()
 
   @doc """
+  ...
+  """
+  def struct_to_jsonable_map(%{__meta__: %{schema: queryable}} = struct) do
+    struct
+    |> Map.from_struct()
+    |> Map.drop([:__schema__, :__meta__])
+    |> Map.drop(queryable.__schema__(:associations))
+  end
+
+  @doc """
   Determine if item passed in is a Ecto Schema
 
   ## Example

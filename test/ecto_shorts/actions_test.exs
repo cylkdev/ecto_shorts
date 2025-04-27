@@ -15,6 +15,81 @@ defmodule EctoShorts.ActionsTest do
     |> repo.insert!()
   end
 
+  describe "insert_all/2" do
+    test "can create records" do
+      assert {:ok, {1, [%Post{title: "post_title"}]}} =
+               Actions.insert_all(Post, [%{title: "post_title"}], returning: true)
+    end
+
+    test "can update existing record with params" do
+      post = insert!(Repo, Post, %{title: "post_title"})
+
+      post_id = post.id
+
+      assert {:ok, {1, [%Post{id: ^post_id, title: "post_title"}]}} =
+               Actions.insert_all(
+                 Post,
+                 [%{id: post_id, title: "post_title"}],
+                 returning: true
+               )
+    end
+
+    test "can update records with struct and params" do
+      post = insert!(Repo, Post, %{title: "post_title"})
+
+      post_id = post.id
+
+      assert {:ok, {1, [%Post{id: ^post_id, title: "post_title"}]}} =
+               Actions.insert_all(Post, [{post, %{title: "post_title"}}], returning: true)
+    end
+
+    test "can update records with changeset and params" do
+      post = insert!(Repo, Post, %{title: "post_title"})
+
+      post_id = post.id
+
+      post_changeset = Post.changeset(post)
+
+      assert {:ok, {1, [%Post{id: ^post_id, title: "post_title"}]}} =
+               Actions.insert_all(Post, [{post_changeset, %{title: "post_title"}}],
+                 returning: true
+               )
+    end
+
+    # test "can create record if not found" do
+    #   assert {:ok, {1, [%Post{id: ^post_id, title: "post_title"}]}} =
+    #     Actions.insert_all(Post, [{post_changeset, %{title: "post_title"}}], returning: true)
+    # end
+  end
+
+  describe "update_all/2" do
+    test "updates all records matching params" do
+      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+
+      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+
+      assert {1, nil} =
+               Actions.update_all(
+                 Post,
+                 %{title: "post_title_1"},
+                 %{title: "updated_post_title_1"}
+               )
+    end
+
+    test "updates and returns all records matching params with select: true" do
+      _post_1 = insert!(Repo, Post, %{title: "post_title_1"})
+
+      _post_2 = insert!(Repo, Post, %{title: "post_title_2"})
+
+      assert {1, [%Post{title: "updated_post_title_1"}]} =
+               Actions.update_all(
+                 Post,
+                 %{title: "post_title_1", select: true},
+                 %{title: "updated_post_title_1"}
+               )
+    end
+  end
+
   describe "delete_all/2" do
     test "deletes all records matching params" do
       _post = insert!(Repo, Post, %{title: "post_title"})
