@@ -91,8 +91,8 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "preload_batch/4" do
-    test "loads data into list of params" do
+  describe "batch_preload/4" do
+    test "returns each param alongside its matching Post record" do
       post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
       post_2 = insert!(Repo, Post, %{title: "post_2_title"})
@@ -102,8 +102,18 @@ defmodule EctoShorts.ActionsTest do
       assert [
                {%Post{title: "post_1_title"}, %{}},
                {%Post{title: "post_2_title"}, %{}},
-               {%Post{title: "post_3_title"}, %{}}
-             ] = Actions.preload_batch(Post, [{post_1, %{}}, %{id: post_2.id}, %{id: post_3.id}])
+               {%Post{title: "post_3_title"}, %{}},
+               %{title: "this_should_be_skipped"}
+             ] =
+               Actions.batch_preload(
+                 Post,
+                 [
+                   {post_1, %{}},
+                   %{id: post_2.id},
+                   %{id: post_3.id},
+                   %{title: "this_should_be_skipped"}
+                 ]
+               )
     end
   end
 
