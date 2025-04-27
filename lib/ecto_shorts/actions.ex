@@ -51,6 +51,183 @@ defmodule EctoShorts.Actions do
 
   @doc group: "Batch API"
   @doc """
+  Finds multiple records that match a list of params using OR conditions.
+
+  When working with databases, you often need to find multiple records that
+  match different criteria. This function simplifies that process by allowing
+  you to provide a list of parameters, where each set of parameters is used
+  to find matching records. The results are combined into a single list.
+
+  For example, if you need to find users who match ANY of these criteria:
+
+  - Have email "user1@example.com"
+  - Have name "User 2"
+  - Belong to organization 3
+
+  Instead of writing three separate queries or a complex OR clause, you can
+  specify this as a list of parameters:
+
+  ```elixir
+  [
+    %{email: "user1@example.com"},
+    %{name: "User 2"}, %{org_id: 3}
+  ]
+  ```
+
+  ## Composite keys
+
+  See `&batch/4` for information on composite keys.
+
+  ## Options
+
+  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+
+  All options accepted by [`Ecto.Repo.all/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) are also supported.
+
+  See `&batch/4` for more options. This function does not support batch `:stream` option.
+
+  ## Examples
+
+      iex> Actions.find_all(Post, [:title], [%{title: "post_title"}])
+      {:ok, [%Post{title: "post_title"}]}
+  """
+  @spec find_all(
+          query :: query() | queryable() | source_queryable(),
+          params_list :: list(params())
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
+  @spec find_all(
+          query :: query() | queryable() | source_queryable(),
+          batch_key :: batch_key() | list(batch_key()) | :primary_key,
+          params_list :: list(params())
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
+  @spec find_all(
+          query :: query() | queryable() | source_queryable(),
+          batch_key :: batch_key() | list(batch_key()) | :primary_key,
+          params_list :: list(params()),
+          opts :: opts()
+        ) :: {:ok, list(schema_struct())} | {:error, any()}
+  def find_all(query, batch_key \\ :primary_key, params_list, opts \\ []) do
+    batch_results = batch(query, batch_key, params_list, Keyword.delete(opts, :stream))
+
+    params_list
+    |> Stream.with_index()
+    |> Utils.reduce_all(fn {params, i} ->
+      case Map.get(batch_results, build_batch_id!(params, batch_key, query)) do
+        nil ->
+          {:error,
+           Error.call(:not_found, "Record not found.", %{
+             query: query,
+             params: params_list,
+             failed_value: params,
+             position: i,
+             key: batch_key
+           })}
+
+        schema_data ->
+          {:ok, schema_data}
+      end
+    end)
+  end
+
+  @doc group: "Schema API"
+  @doc """
+  TODO...
+  """
+  @spec insert_all(
+          query :: query() | queryable() | source_queryable(),
+          params_list :: list(any())
+        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
+  @spec insert_all(
+          query :: query() | queryable() | source_queryable(),
+          params_list :: list(any()),
+          opts :: opts()
+        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
+  def insert_all(query, params_list, opts \\ []) do
+    params_list = preload_insert(query, params_list, opts)
+
+    with {:ok, insert_params} <- CommonParams.convert_to_insert_params(query, params_list, opts) do
+      {:ok,
+       Config.repo!(opts).insert_all(
+         query,
+         insert_params,
+         CommonParams.put_default_insert_options(opts, query)
+       )}
+    end
+  end
+
+  defp preload_insert(query, params_list, opts) do
+    if opts[:preload] === true do
+      batch_preload(query, params_list, opts[:batch_key] || :primary_key, opts)
+    else
+      params_list
+    end
+  end
+
+  @doc """
+  ...
+  """
+  def batch_preload(query, params_list, batch_key \\ :primary_key, opts \\ []) do
+    case take_batch_query_params(params_list, batch_key, query) do
+      [] ->
+        params_list
+
+      todo ->
+        query
+        |> batch(batch_key, todo, Keyword.delete(opts, :stream))
+        |> zip_preloaded_batch_results(params_list, batch_key, query)
+    end
+  end
+
+  defp zip_preloaded_batch_results(batch_results, params_list, batch_key, query) do
+    Enum.map(params_list, fn
+      {find_params, params} when is_map(find_params) and not is_struct(find_params) ->
+        if has_batch_keys?(find_params, batch_key, query) do
+          case Map.get(batch_results, build_batch_id!(find_params, batch_key, query)) do
+            nil -> {find_params, params}
+            schema_data -> {schema_data, params}
+          end
+        else
+          params
+        end
+
+      params when is_map(params) and not is_struct(params) ->
+        if has_batch_keys?(params, batch_key, query) do
+          case Map.get(batch_results, build_batch_id!(params, batch_key, query)) do
+            nil -> params
+            schema_data -> {schema_data, params}
+          end
+        else
+          params
+        end
+
+      term ->
+        term
+    end)
+  end
+
+  defp take_batch_query_params(params_list, batch_key, query) do
+    Enum.reduce(params_list, [], fn
+      {find_params, _params}, acc when is_map(find_params) and not is_struct(find_params) ->
+        if has_batch_keys?(find_params, batch_key, query) do
+          [find_params | acc]
+        else
+          acc
+        end
+
+      params, acc when is_map(params) and not is_struct(params) ->
+        if has_batch_keys?(params, batch_key, query) do
+          [params | acc]
+        else
+          acc
+        end
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  @doc group: "Batch API"
+  @doc """
   Returns records as a map where the keys are the batch parameters and
   values are the matching records.
 
@@ -151,167 +328,23 @@ defmodule EctoShorts.Actions do
 
       query
       |> stream(%{or_where: params_list}, opts)
-      |> Stream.map(&{fetch_batch_id!(&1, batch_key, query), &1})
+      |> Stream.map(&{build_batch_id!(&1, batch_key, query), &1})
       |> Stream.chunk_every(stream_opts[:chunk_every] || 1_000)
       |> Stream.map(&Map.new/1)
     else
       query
       |> all(%{or_where: params_list}, opts)
-      |> Map.new(&{fetch_batch_id!(&1, batch_key, query), &1})
+      |> Map.new(&{build_batch_id!(&1, batch_key, query), &1})
     end
   end
 
-  @doc """
-  ...
-  """
-  def batch_preload(query, params_list, batch_key \\ :primary_key, opts \\ []) do
-    case Enum.filter(params_list, fn params ->
-           is_map(params) and has_batch_keys?(params, batch_key, query)
-         end) do
-      [] ->
-        params_list
-
-      todo ->
-        batch_results = batch(query, batch_key, todo, Keyword.delete(opts, :stream))
-
-        Enum.map(params_list, fn
-          params when is_map(params) ->
-            if has_batch_keys?(params, batch_key, query) do
-              case Map.get(batch_results, fetch_batch_id!(params, batch_key, query)) do
-                nil -> params
-                schema_data -> {schema_data, params}
-              end
-            else
-              params
-            end
-
-          term ->
-            term
-        end)
-    end
-  end
-
-  @doc group: "Batch API"
-  @doc """
-  Finds multiple records that match a list of params using OR conditions.
-
-  When working with databases, you often need to find multiple records that
-  match different criteria. This function simplifies that process by allowing
-  you to provide a list of parameters, where each set of parameters is used
-  to find matching records. The results are combined into a single list.
-
-  For example, if you need to find users who match ANY of these criteria:
-
-  - Have email "user1@example.com"
-  - Have name "User 2"
-  - Belong to organization 3
-
-  Instead of writing three separate queries or a complex OR clause, you can
-  specify this as a list of parameters:
-
-  ```elixir
-  [
-    %{email: "user1@example.com"},
-    %{name: "User 2"}, %{org_id: 3}
-  ]
-  ```
-
-  ## Composite keys
-
-  See `&batch/4` for information on composite keys.
-
-  ## Options
-
-  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
-
-  All options accepted by [`Ecto.Repo.all/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) are also supported.
-
-  See `&batch/4` for more options. This function does not support batch `:stream` option.
-
-  ## Examples
-
-      iex> Actions.find_all(Post, [:title], [%{title: "post_title"}])
-      {:ok, [%Post{title: "post_title"}]}
-  """
-  @spec find_all(
-          query :: query() | queryable() | source_queryable(),
-          params_list :: list(params())
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  @spec find_all(
-          query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | list(batch_key()) | :primary_key,
-          params_list :: list(params())
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  @spec find_all(
-          query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | list(batch_key()) | :primary_key,
-          params_list :: list(params()),
-          opts :: opts()
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_all(query, batch_key \\ :primary_key, params_list, opts \\ []) do
-    batch_results = batch(query, batch_key, params_list, Keyword.delete(opts, :stream))
-
-    params_list
-    |> Stream.with_index()
-    |> Utils.reduce_all(fn {params, i} ->
-      case Map.get(batch_results, fetch_batch_id!(params, batch_key, query)) do
-        nil ->
-          {:error,
-           Error.call(:not_found, "Record not found.", %{
-             query: query,
-             params: params_list,
-             failed_value: params,
-             position: i,
-             key: batch_key
-           })}
-
-        schema_data ->
-          {:ok, schema_data}
-      end
-    end)
-  end
-
-  @doc group: "Schema API"
-  @doc """
-  TODO...
-  """
-  @spec insert_all(
-          query :: query() | queryable() | source_queryable(),
-          params_list :: list(any())
-        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
-  @spec insert_all(
-          query :: query() | queryable() | source_queryable(),
-          params_list :: list(any()),
-          opts :: opts()
-        ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
-  def insert_all(query, params_list, opts \\ []) do
-    params_list = maybe_batch_preload(query, params_list, opts)
-
-    with {:ok, insert_params} <- CommonParams.convert_to_insert_params(query, params_list, opts) do
-      {:ok,
-       Config.repo!(opts).insert_all(
-         query,
-         insert_params,
-         CommonParams.put_default_insert_options(opts, query)
-       )}
-    end
-  end
-
-  defp maybe_batch_preload(query, params_list, opts) do
-    if opts[:preload] === true do
-      batch_preload(query, params_list, opts[:batch_key] || :primary_key, opts)
-    else
-      params_list
-    end
-  end
-
-  defp fetch_batch_id!(data, batch_key, query) do
-    with :error <- fetch_batch_id(data, batch_key, query) do
+  defp build_batch_id!(data, batch_key, query) do
+    with :error <- build_batch_id(data, batch_key, query) do
       raise "Batch key required, Primary key disabled for schema #{CommonSchemas.get_schema_queryable(query)}, got: #{inspect(data)}"
     end
   end
 
-  defp fetch_batch_id(data, batch_key, query) do
+  defp build_batch_id(data, batch_key, query) do
     case normalize_batch_key(batch_key, query) do
       [] -> :error
       keys -> fetch_batch_values(data, keys)

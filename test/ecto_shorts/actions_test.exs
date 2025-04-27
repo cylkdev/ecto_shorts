@@ -99,18 +99,22 @@ defmodule EctoShorts.ActionsTest do
 
       post_3 = insert!(Repo, Post, %{title: "post_3_title"})
 
+      post_4 = insert!(Repo, Post, %{title: "post_4_title"})
+
       assert [
                {%Post{title: "post_1_title"}, %{}},
                {%Post{title: "post_2_title"}, %{}},
                {%Post{title: "post_3_title"}, %{}},
+               {%Post{title: "post_4_title"}, %{}},
                %{title: "this_should_be_skipped"}
              ] =
                Actions.batch_preload(
                  Post,
                  [
                    {post_1, %{}},
-                   %{id: post_2.id},
+                   {%{id: post_2.id}, %{}},
                    %{id: post_3.id},
+                   %{id: post_4.id},
                    %{title: "this_should_be_skipped"}
                  ]
                )
