@@ -68,7 +68,7 @@ defmodule EctoShorts.Actions do
   def batch(query, batch_key \\ nil, params_list, opts \\ []) do
     query
     |> all(%{or_where: params_list}, opts)
-    |> Map.new(&{batch_key!(&1, batch_key, query), &1})
+    |> Map.new(&{batch_key(&1, batch_key, query), &1})
   end
 
   @doc group: "Batch API"
@@ -100,7 +100,7 @@ defmodule EctoShorts.Actions do
     params_list
     |> Stream.with_index()
     |> EctoShorts.Utils.reduce_all(fn {params, i} ->
-      case Map.get(batch_values, batch_key!(params, batch_key, query)) do
+      case Map.get(batch_values, batch_key(params, batch_key, query)) do
         nil ->
           {:error,
            Error.call(:not_found, "Record not found.", %{
@@ -117,7 +117,7 @@ defmodule EctoShorts.Actions do
     end)
   end
 
-  defp batch_key!(data, nil_or_keys, query) do
+  defp batch_key(data, nil_or_keys, query) do
     keys =
       if is_nil(nil_or_keys) do
         CommonSchemas.get_schema_reflection(query, :primary_key)
@@ -125,15 +125,7 @@ defmodule EctoShorts.Actions do
         List.wrap(nil_or_keys)
       end
 
-    keys
-    |> Enum.reduce([], fn key, acc ->
-      case Map.get(data, key) do
-        nil -> raise KeyError, "key #{inspect(key)} not found, got: #{inspect(data)}"
-        val -> [{key, val} | acc]
-      end
-    end)
-    |> Enum.sort()
-    |> List.to_tuple()
+    Map.take(data, keys)
   end
 
   @doc group: "Schema API"
