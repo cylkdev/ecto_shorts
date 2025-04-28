@@ -96,25 +96,25 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> Actions.find_all(Post, [:title], [%{title: "post_title"}])
+      iex> Actions.batch_find(Post, [:title], [%{title: "post_title"}])
       {:ok, [%Post{title: "post_title"}]}
   """
-  @spec find_all(
+  @spec batch_find(
           query :: query() | queryable() | source_queryable(),
           params_list :: list(params())
         ) :: {:ok, list(schema_data())} | {:error, any()}
-  @spec find_all(
+  @spec batch_find(
           query :: query() | queryable() | source_queryable(),
           batch_key :: :primary_key | batch_key() | list(batch_key()),
           params_list :: list(params())
         ) :: {:ok, list(schema_data())} | {:error, any()}
-  @spec find_all(
+  @spec batch_find(
           query :: query() | queryable() | source_queryable(),
           batch_key :: :primary_key | batch_key() | list(batch_key()),
           params_list :: list(params()),
           opts :: opts()
         ) :: {:ok, list(schema_data())} | {:error, any()}
-  def find_all(query, batch_key \\ :primary_key, params_list, opts \\ []) do
+  def batch_find(query, batch_key \\ :primary_key, params_list, opts \\ []) do
     batch_results = batch(query, batch_key, params_list, Keyword.delete(opts, :stream))
 
     params_list

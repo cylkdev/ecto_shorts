@@ -50,7 +50,7 @@ defmodule EctoShorts.ActionsTest do
     end
   end
 
-  describe "find_all/2" do
+  describe "batch_find/2" do
     test "retrieves records matching the given params including primary key" do
       post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
@@ -59,18 +59,18 @@ defmodule EctoShorts.ActionsTest do
       post_1_id = post_1.id
 
       assert {:ok, [%Post{id: ^post_1_id, title: "post_1_title"}]} =
-               Actions.find_all(Post, [%{id: post_1_id, title: "post_1_title"}])
+               Actions.batch_find(Post, [%{id: post_1_id, title: "post_1_title"}])
     end
   end
 
-  describe "find_all/3" do
+  describe "batch_find/3" do
     test "retrieves records using specified batch keys" do
       _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
       _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
 
       assert {:ok, [%Post{title: "post_2_title"}]} =
-               Actions.find_all(Post, [:title], [%{title: "post_2_title"}])
+               Actions.batch_find(Post, [:title], [%{title: "post_2_title"}])
     end
 
     test "returns error when no matching records exist" do
@@ -87,7 +87,7 @@ defmodule EctoShorts.ActionsTest do
                     query: EctoShorts.Schemas.Post
                   }
                 }
-              ]} = Actions.find_all(Post, [:title], [%{title: "does_not_exist"}])
+              ]} = Actions.batch_find(Post, [:title], [%{title: "does_not_exist"}])
     end
   end
 
