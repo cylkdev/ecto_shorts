@@ -160,18 +160,22 @@ defmodule EctoShorts.Actions do
           opts :: opts()
         ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
   def insert_all(query, params_list, opts \\ []) do
-    with {:ok, {insert_params, insert_opts}} <-
+    with {:ok, inserts} <-
            CommonParams.convert_to_insert_all_params(
              query,
              maybe_batch_preload(query, params_list, opts),
              opts
            ) do
-      {:ok,
-       Config.repo!(opts).insert_all(
-         query,
-         insert_params,
-         Keyword.merge(insert_opts, opts)
-       )}
+      opts =
+        if CommonParams.any_has_primary_key?(query, inserts) do
+          opts
+          |> CommonParams.build_upsert_options(query)
+          |> Keyword.merge(opts)
+        else
+          opts
+        end
+
+      {:ok, Config.repo!(opts).insert_all(query, inserts, opts)}
     end
   end
 

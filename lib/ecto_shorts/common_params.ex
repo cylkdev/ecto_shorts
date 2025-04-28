@@ -145,68 +145,69 @@ defmodule EctoShorts.CommonParams do
   def convert_to_insert_all_params(query, params_list, opts) do
     utc_now = datetime_utc_now()
 
-    case reduce_inserts(query, params_list, utc_now, opts) do
-      {oks, [], :upsert} ->
-        {:ok, {Enum.reverse(oks), build_upsert_options(query, opts)}}
-
-      {oks, [], _action} ->
-        {:ok, {Enum.reverse(oks), []}}
-
-      {_oks, errors, _action} ->
-        {:error, Enum.reverse(errors)}
-    end
-  end
-
-  defp reduce_inserts(query, params_list, utc_now, opts) do
-    Enum.reduce(params_list, {[], [], :insert}, fn arg, {oks, errors, action} ->
+    EctoShorts.Utils.reduce_all(params_list, fn arg ->
       changeset = build_changeset(arg, query)
 
-      if has_any_primary_key?(query, changeset) do
-        case Changeset.apply_action(changeset, :update) do
-          {:ok, schema_data} ->
-            data =
-              serialize_insert(
-                query,
-                schema_data,
-                Map.keys(changeset.changes),
-                utc_now,
-                opts
-              )
-
-            {[data | oks], errors, :upsert}
-
-          {:error, changeset} ->
-            {oks, [changeset | errors], action}
+      if has_primary_key?(query, changeset) do
+        with {:ok, schema_data} <- Changeset.apply_action(changeset, :update) do
+          {:ok,
+           serialize_insert(
+             query,
+             schema_data,
+             Map.keys(changeset.changes),
+             utc_now,
+             opts
+           )}
         end
       else
-        case Changeset.apply_action(changeset, :insert) do
-          {:ok, schema_data} ->
-            data =
-              serialize_insert(
-                query,
-                schema_data,
-                Map.keys(changeset.changes),
-                utc_now,
-                opts
-              )
-
-            {[data | oks], errors, action}
-
-          {:error, changeset} ->
-            {oks, [changeset | errors], action}
+        with {:ok, schema_data} <- Changeset.apply_action(changeset, :insert) do
+          {:ok,
+           serialize_insert(
+             query,
+             schema_data,
+             Map.keys(changeset.changes),
+             utc_now,
+             opts
+           )}
         end
       end
     end)
   end
 
-  defp build_upsert_options(query, opts) do
+  @doc """
+  ...
+  """
+  def any_has_primary_key?(query, inserts) do
+    Enum.any?(inserts, &has_primary_key?(query, &1))
+  end
+
+  @doc """
+  ...
+  """
+  def has_primary_key?(query, %{data: %{__meta__: _} = schema_data}) do
+    has_primary_key?(query, schema_data)
+  end
+
+  def has_primary_key?(query, data) do
+    query
+    |> CommonSchemas.get_schema_reflection(:primary_key)
+    |> Enum.all?(fn key ->
+      (Map.has_key?(data, key) and !nil_value?(data, key)) or
+        (Map.has_key?(data, to_string(key)) and !nil_value?(data, to_string(key)))
+    end)
+  end
+
+  @doc """
+  ...
+  """
+  def build_upsert_options(opts, query) do
     [
       conflict_target: CommonSchemas.get_schema_reflection(query, :primary_key),
-      on_conflict: {:replace, build_replace_keys(query, opts)}
+      on_conflict: {:replace, schema_replace_keys(query, opts)}
     ]
   end
 
-  defp build_replace_keys(query, opts) do
+  defp schema_replace_keys(query, opts) do
     query
     |> CommonSchemas.get_schema_reflection(:query_fields)
     |> Kernel.--(CommonSchemas.get_schema_reflection(query, :primary_key))
@@ -239,7 +240,7 @@ defmodule EctoShorts.CommonParams do
 
   defp build_changeset(params, query) do
     attrs =
-      if has_any_primary_key?(query, params) do
+      if has_primary_key?(query, params) do
         Map.take(params, CommonSchemas.get_schema_reflection(query, :primary_key))
       else
         %{}
@@ -249,19 +250,6 @@ defmodule EctoShorts.CommonParams do
     |> CommonSchemas.get_schema_queryable()
     |> struct!(attrs)
     |> CommonSchemas.get_schema_queryable(query).changeset(params)
-  end
-
-  defp has_any_primary_key?(query, %{data: %{__meta__: _} = schema_data}) do
-    has_any_primary_key?(query, schema_data)
-  end
-
-  defp has_any_primary_key?(query, data) do
-    query
-    |> CommonSchemas.get_schema_reflection(:primary_key)
-    |> Enum.any?(fn key ->
-      (Map.has_key?(data, key) and !nil_value?(data, key)) or
-        (Map.has_key?(data, to_string(key)) and !nil_value?(data, to_string(key)))
-    end)
   end
 
   defp drop_nil_if_not_changed(data, changed_keys) do
