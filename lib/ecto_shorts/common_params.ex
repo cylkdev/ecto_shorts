@@ -161,7 +161,7 @@ defmodule EctoShorts.CommonParams do
     Enum.reduce(params_list, {[], [], :insert}, fn arg, {oks, errors, action} ->
       changeset = build_changeset(arg, query)
 
-      if has_primary_key?(query, changeset) do
+      if has_any_primary_key?(query, changeset) do
         case Changeset.apply_action(changeset, :update) do
           {:ok, schema_data} ->
             data =
@@ -239,7 +239,7 @@ defmodule EctoShorts.CommonParams do
 
   defp build_changeset(params, query) do
     attrs =
-      if has_primary_key?(query, params) do
+      if has_any_primary_key?(query, params) do
         Map.take(params, CommonSchemas.get_schema_reflection(query, :primary_key))
       else
         %{}
@@ -251,14 +251,14 @@ defmodule EctoShorts.CommonParams do
     |> CommonSchemas.get_schema_queryable(query).changeset(params)
   end
 
-  defp has_primary_key?(query, %{data: %{__meta__: _} = schema_data}) do
-    has_primary_key?(query, schema_data)
+  defp has_any_primary_key?(query, %{data: %{__meta__: _} = schema_data}) do
+    has_any_primary_key?(query, schema_data)
   end
 
-  defp has_primary_key?(query, data) do
+  defp has_any_primary_key?(query, data) do
     query
     |> CommonSchemas.get_schema_reflection(:primary_key)
-    |> Enum.all?(fn key ->
+    |> Enum.any?(fn key ->
       (Map.has_key?(data, key) and !nil_value?(data, key)) or
         (Map.has_key?(data, to_string(key)) and !nil_value?(data, to_string(key)))
     end)
