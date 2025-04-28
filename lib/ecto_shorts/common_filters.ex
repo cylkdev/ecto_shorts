@@ -1,7 +1,5 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc """
-  # EctoShorts.CommonFilters
-
   Data-driven query composition for Ecto.
 
   `EctoShorts.CommonFilters` provides a declarative interface for building

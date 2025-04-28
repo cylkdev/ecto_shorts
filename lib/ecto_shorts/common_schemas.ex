@@ -1,8 +1,6 @@
 defmodule EctoShorts.CommonSchemas do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  # EctoShorts.CommonSchemas
-
   This API provides helper functions for building ecto schemas.
 
   ## Polymorphic Associations

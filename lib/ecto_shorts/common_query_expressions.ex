@@ -1,8 +1,6 @@
 defmodule EctoShorts.CommonQueryExpressions do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  # EctoShorts.CommonQueryExpressions
-
   This module defines functions for building dynamic Ecto queries,
   supporting a wide range of filters, ordering, and logical
   expressions.

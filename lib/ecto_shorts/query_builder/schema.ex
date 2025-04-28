@@ -1,8 +1,6 @@
 defmodule EctoShorts.QueryBuilder.Schema do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  # EctoShorts.QueryBuilder.Schema
-
   Provides a schema-centric implementation of the
   EctoShorts.QueryBuilder behaviour, enabling dynamic and
   composable query construction for Ecto schemas.

@@ -1,12 +1,17 @@
 defmodule EctoShorts.Config do
-  @moduledoc """
-  # EctoShorts.Config
-
-  Provides a simple API for accessing EctoShorts configuration.
-  """
+  @moduledoc false
 
   @app :ecto_shorts
 
+  @doc since: "2.5.0"
+  @doc """
+  Returns a value from the application environment by `key`.
+
+  ## Examples
+
+      iex> EctoShorts.Config.get_app_env(:repo)
+      EctoShorts.Repo
+  """
   @spec get_app_env(key :: atom(), default :: any()) :: any()
   def get_app_env(key, default \\ nil), do: Application.get_env(@app, key) || default
 

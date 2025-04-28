@@ -1,8 +1,6 @@
 defmodule EctoShorts.CommonQueryExpressions.Postgres.Field do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  # EctoShorts.CommonQueryExpressions.Postgres.Field
-
   Provides helper functions for building Postgres-specific field query
   expressions in Ecto. These helpers enable advanced filtering and
   comparison operations on individual fields, supporting various Postgres

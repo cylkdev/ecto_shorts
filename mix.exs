@@ -72,21 +72,29 @@ defmodule EctoShorts.MixProject do
       main: "EctoShorts",
       source_url: "https://github.com/MikaAK/ecto_shorts",
       groups_for_modules: [
-        "Main Modules": [
-          EctoShorts.Actions,
-          EctoShorts.CommonChanges
-        ],
-        "Support Modules": [
-          EctoShorts.CommonFilters,
-          EctoShorts.SchemaHelpers
-        ],
-        "Misc Modules": [
+        "Actions API": [
           EctoShorts.Actions.Error
         ],
-        "Query Builder Modules": [
+        "Changeset API": [
+          EctoShorts.CommonChanges
+        ],
+        "Query Builder API": [
           EctoShorts.QueryBuilder,
           EctoShorts.QueryBuilder.Schema,
           EctoShorts.QueryBuilder.Common
+        ],
+        "Query API": [
+          EctoShorts.CommonQueries,
+          EctoShorts.CommonQueryExpressions,
+          EctoShorts.CommonQueryExpressions.API,
+          EctoShorts.CommonQueryExpressions.Postgres,
+          EctoShorts.CommonQueryExpressions.Postgres.Array,
+          EctoShorts.CommonQueryExpressions.Postgres.Field
+        ],
+        "Schema API": [
+          EctoShorts.CommonSchemas,
+          EctoShorts.CommonParams,
+          EctoShorts.SchemaHelpers
         ]
       ]
     ]

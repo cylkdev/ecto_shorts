@@ -1,8 +1,6 @@
 defmodule EctoShorts.CommonQueryExpressions.Postgres do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  # EctoShorts.CommonQueryExpressions.Postgres
-
   Provides Postgres-specific query expression helpers for use in
   EctoShorts. This module includes functions that leverage Postgres
   features and operators to enable advanced filtering, searching, and

@@ -1,8 +1,6 @@
 defmodule EctoShorts.CommonQueryExpressions.API do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  # EctoShorts.CommonQueryExpressions.API
-
   Provides wrapper functions to simplify the usage of the
   `Ecto.Query` API. These helpers abstract common patterns
   for building dynamic queries, handling bindings, and

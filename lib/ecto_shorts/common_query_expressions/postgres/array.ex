@@ -1,8 +1,6 @@
 defmodule EctoShorts.CommonQueryExpressions.Postgres.Array do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  # EctoShorts.CommonQueryExpressions.Postgres.Array
-
   Provides helper functions for building Postgres-specific array field
   query expressions in Ecto. These helpers enable pattern matching,
   case-insensitive matching, and partial matching on array fields using

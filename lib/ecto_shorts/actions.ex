@@ -1,7 +1,5 @@
 defmodule EctoShorts.Actions do
   @moduledoc """
-  # EctoShorts.Actions
-
   Provides a standardized API for simplifying Ecto repo operations
   and reducing boilerplate.
 
@@ -39,15 +37,25 @@ defmodule EctoShorts.Actions do
 
   @type source_queryable :: {source(), queryable()}
 
-  @type schema_struct :: Ecto.Schema.t()
+  @type changeset :: Ecto.Changeset.t()
+
+  @type schema_data :: Ecto.Schema.t()
+
+  @type aggregate_options :: :avg | :count | :max | :min | :sum
+
+  @type multi :: Ecto.Multi.t()
+
+  @type multi_failure :: Ecto.Multi.failure()
+
+  @type id :: integer() | binary()
 
   @type batch_key :: atom()
-
-  @type stream :: Stream.t()
 
   @type params :: map()
 
   @type opts :: keyword()
+
+  @type stream :: %Stream{}
 
   @doc group: "Batch API"
   @doc """
@@ -94,18 +102,18 @@ defmodule EctoShorts.Actions do
   @spec find_all(
           query :: query() | queryable() | source_queryable(),
           params_list :: list(params())
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
+        ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec find_all(
           query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | list(batch_key()) | :primary_key,
+          batch_key :: :primary_key | batch_key() | list(batch_key()),
           params_list :: list(params())
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
+        ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec find_all(
           query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | list(batch_key()) | :primary_key,
+          batch_key :: :primary_key | batch_key() | list(batch_key()),
           params_list :: list(params()),
           opts :: opts()
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
+        ) :: {:ok, list(schema_data())} | {:error, any()}
   def find_all(query, batch_key \\ :primary_key, params_list, opts \\ []) do
     batch_results = batch(query, batch_key, params_list, Keyword.delete(opts, :stream))
 
@@ -131,24 +139,71 @@ defmodule EctoShorts.Actions do
 
   @doc group: "Schema API"
   @doc """
-  Inserts a list of records with schema validations and
-  optional conflict handling.
+  Inserts multiple records into the database.
 
-  This is a wrapper around `Repo.insert_all/3` that first
-  validates each entry with the schema's `changeset/2` before
-  performing a bulk insert. If any entry is invalid, the
-  insert is halted and `{:error, list(changeset)}` is returned.
+  ## Data Validation
 
-  The function also supports upsert behavior by passing the
-  `:on_conflict` and `:conflict_target` options, just like the
-  Ecto native version.
+  By default, each entry in `params_list` is validated using the schema’s
+  `changeset/2` function. If any entry fails validation, the operation is
+  halted and the corresponding errors are returned.
 
-  If no `:on_conflict` or `:conflict_target` options are given,
-  the function defaults to performing an upsert. It sets the
-  `:conflict_target` to the schema's primary key(s), and uses
-  `{:replace, keys}` as the `:on_conflict` option. The `keys`
-  are all queryable fields on the schema, excluding any primary
-  key fields and the `inserted_at` timestamp.
+  If this behaviour is not desired you can set the option `:validate` to
+  `false`.
+
+  ## Conflict Handling
+
+  When a complete primary key is present in an entry, this function treats
+  it as an upsert. It automatically sets:
+
+    - `:conflict_target` to the schema’s primary key
+
+    - `:on_conflict` to `{:replace, keys}`
+
+  Where `keys` are all queryable fields on the schema, excluding the
+  primary key and the `:inserted_at` timestamp field.
+
+  This ensures existing records are updated cleanly with minimal setup.
+
+  ## Preloading Existing Records
+
+  To fetch existing records before inserting, enable the `:batch_preload`
+  option.
+
+  If an entry is a map with a complete primary key, the function will:
+
+    - Fetch the existing record from the database
+
+    - Replace the map with a `{record, params}` tuple
+
+  If the entry is already a tuple `{find_params, params}`, and the
+  `find_params` contain the full primary key, it will:
+
+    - Query the existing record using `find_params`
+
+    - Return `{record, params}`
+
+  This allows you to preload existing rows and apply new params against
+  them before validation.
+
+  See `batch_preload/4` for more details.
+
+  ## Options
+
+  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+
+  Additional options include:
+
+      * `:batch_preload` - ...
+
+      * `:batch_key` - ...
+
+  See `c:EctoShorts.CommonParams.convert_to_insert_all_params/3` for more options.
+
+  All options accepted by [`Ecto.Repo.get/3`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:get/3) are also supported.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.insert_all(Post, [%{title: "post_title"}])
   """
   @spec insert_all(
           query :: query() | queryable() | source_queryable(),
@@ -330,18 +385,18 @@ defmodule EctoShorts.Actions do
   @spec batch(
           query :: query() | queryable() | source_queryable(),
           params_list :: list(params())
-        ) :: %{batch_key() => schema_struct()} | stream()
+        ) :: %{batch_key() => schema_data()} | stream()
   @spec batch(
           query :: query() | queryable() | source_queryable(),
           batch_key :: batch_key() | list(batch_key()) | :primary_key,
           params_list :: list(params())
-        ) :: %{batch_key() => schema_struct()} | stream()
+        ) :: %{batch_key() => schema_data()} | stream()
   @spec batch(
           query :: query() | queryable() | source_queryable(),
           batch_key :: batch_key() | list(batch_key()) | :primary_key,
           params_list :: list(params()),
           opts :: opts()
-        ) :: %{batch_key() => schema_struct()} | stream()
+        ) :: %{batch_key() => schema_data()} | stream()
   def batch(query, batch_key \\ :primary_key, params_list, opts \\ []) do
     if Keyword.has_key?(opts, :stream) do
       stream_opts =
@@ -409,28 +464,22 @@ defmodule EctoShorts.Actions do
 
   @doc group: "Schema API"
   @doc """
-  Updates all records matching the find parameters with the given update parameters.
-  """
-  @spec update_all(
-          query :: query() | queryable() | source_queryable(),
-          find_params :: map(),
-          update_params :: map()
-        ) :: {non_neg_integer(), nil | [term()]}
-  def update_all(query, find_params, update_params) do
-    update_all(query, find_params, update_params, default_opts())
-  end
-
-  @doc group: "Schema API"
-  @doc """
   ...
   """
   @spec update_all(
           query :: query() | queryable() | source_queryable(),
-          find_params :: map(),
-          update_params :: map(),
+          find_params :: params(),
+          update_params :: params()
+        ) :: {non_neg_integer(), nil | [term()]}
+  @spec update_all(
+          query :: query() | queryable() | source_queryable(),
+          find_params :: params(),
+          update_params :: params(),
           opts :: opts()
         ) :: {non_neg_integer(), nil | [term()]}
-  def update_all(query, find_params, update_params, opts) do
+  def update_all(query, find_params, update_params, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> CommonFilters.convert_params_to_filter(find_params, opts)
     |> Config.repo!(opts).update_all(
@@ -441,41 +490,23 @@ defmodule EctoShorts.Actions do
 
   @doc group: "Query API"
   @doc """
-  Deletes all records matching the given parameters.
-  """
-  @spec delete_all(
-          query :: query() | queryable() | source_queryable(),
-          params :: map()
-        ) :: {non_neg_integer(), nil | [term()]}
-  def delete_all(query, params) do
-    delete_all(query, params, default_opts())
-  end
-
-  @doc group: "Query API"
-  @doc """
   ...
   """
   @spec delete_all(
           query :: query() | queryable() | source_queryable(),
-          params :: map(),
+          params :: params()
+        ) :: {non_neg_integer(), nil | [term()]}
+  @spec delete_all(
+          query :: query() | queryable() | source_queryable(),
+          params :: params(),
           opts :: opts()
         ) :: {non_neg_integer(), nil | [term()]}
-  def delete_all(query, params, opts) do
+  def delete_all(query, params, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.repo!(opts).delete_all(opts)
-  end
-
-  @doc group: "Multi API"
-  @doc """
-  ...
-  """
-  @spec find_or_create_many(
-          query :: query() | queryable() | source_queryable(),
-          params_list :: list(map() | {map(), map()})
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_or_create_many(query, params_list) do
-    find_or_create_many(query, params_list, default_opts())
   end
 
   @doc group: "Multi API"
@@ -489,10 +520,16 @@ defmodule EctoShorts.Actions do
   """
   @spec find_or_create_many(
           query :: query() | queryable() | source_queryable(),
+          params_list :: list(map() | {map(), map()})
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  @spec find_or_create_many(
+          query :: query() | queryable() | source_queryable(),
           params_list :: list(map() | {map(), map()}),
           opts :: opts()
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_or_create_many(query, params_list, opts) do
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  def find_or_create_many(query, params_list, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> multi_find_or_create(params_list, opts)
     |> Config.repo!(opts).transaction(opts)
@@ -534,22 +571,15 @@ defmodule EctoShorts.Actions do
   @spec find_and_update_many(
           query :: query() | queryable() | source_queryable(),
           params_list :: list(map() | {map(), map()})
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_and_update_many(query, params_list) do
-    find_and_update_many(query, params_list, default_opts())
-  end
-
-  @doc group: "Multi API"
-  @doc since: "2.5.0"
-  @doc """
-  ...
-  """
+        ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec find_and_update_many(
           query :: query() | queryable() | source_queryable(),
           params_list :: list(map() | {map(), map()}),
           opts :: opts()
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_and_update_many(query, params_list, opts) do
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  def find_and_update_many(query, params_list, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> multi_find_and_update(params_list, opts)
     |> Config.repo!(opts).transaction(opts)
@@ -607,22 +637,15 @@ defmodule EctoShorts.Actions do
   @spec find_and_upsert_many(
           query :: query() | queryable() | source_queryable(),
           params_list :: list(map() | {map(), map()})
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_and_upsert_many(query, params_list) do
-    find_and_upsert_many(query, params_list, default_opts())
-  end
-
-  @doc group: "Multi API"
-  @doc since: "2.5.0"
-  @doc """
-  ...
-  """
+        ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec find_and_upsert_many(
           query :: query() | queryable() | source_queryable(),
           params_list :: list(map() | {map(), map()}),
           opts :: opts()
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_and_upsert_many(query, params_list, opts) do
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  def find_and_upsert_many(query, params_list, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> multi_find_and_upsert(params_list, opts)
     |> Config.repo!(opts).transaction(opts)
@@ -688,19 +711,6 @@ defmodule EctoShorts.Actions do
   @doc group: "Multi API"
   @doc since: "2.5.0"
   @doc """
-  ...
-  """
-  @spec create_many(
-          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          params_list :: list(params())
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def create_many(query, params_list) do
-    create_many(query, params_list, default_opts())
-  end
-
-  @doc group: "Multi API"
-  @doc since: "2.5.0"
-  @doc """
   Creates many records sequentially in a transaction.
 
   ### Examples
@@ -709,10 +719,16 @@ defmodule EctoShorts.Actions do
   """
   @spec create_many(
           query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          params_list :: list(params())
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  @spec create_many(
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
           params_list :: list(params()),
           opts :: opts()
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def create_many(query, params_list, opts) do
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  def create_many(query, params_list, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> multi_insert(params_list, opts)
     |> Config.repo!(opts).transaction(opts)
@@ -744,19 +760,6 @@ defmodule EctoShorts.Actions do
   @doc group: "Multi API"
   @doc since: "2.5.0"
   @doc """
-  ...
-  """
-  @spec find_many(
-          query :: query() | queryable() | source_queryable(),
-          params_list :: list(params())
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_many(query, params_list) do
-    find_many(query, params_list, default_opts())
-  end
-
-  @doc group: "Multi API"
-  @doc since: "2.5.0"
-  @doc """
   Retrieves many records matching the parameters sequentially in a transaction.
 
   ### Examples
@@ -765,10 +768,16 @@ defmodule EctoShorts.Actions do
   """
   @spec find_many(
           query :: query() | queryable() | source_queryable(),
+          params_list :: list(params())
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  @spec find_many(
+          query :: query() | queryable() | source_queryable(),
           params_list :: list(params()),
           opts :: opts()
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def find_many(query, params_list, opts) do
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  def find_many(query, params_list, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> multi_find(params_list, opts)
     |> Config.repo!(opts).transaction(opts)
@@ -804,21 +813,23 @@ defmodule EctoShorts.Actions do
   @doc """
   ...
   """
-  @spec delete_many(structs_or_changesets :: list(Ecto.Schema.t() | Ecto.Changeset.t())) ::
-          {:ok, list(schema_struct())} | {:error, any()}
+  @spec delete_many(schema_data_or_changesets :: list(schema_data() | changeset())) ::
+          {:ok, list(schema_data())} | {:error, any()}
   @spec delete_many(
-          structs_or_changesets :: list(Ecto.Schema.t() | Ecto.Changeset.t()),
+          schema_data_or_changesets :: list(schema_data() | changeset()),
           opts :: opts()
-        ) :: {:ok, list(schema_struct())} | {:error, any()}
-  def delete_many(structs_or_changesets, opts \\ []) do
-    structs_or_changesets
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  def delete_many(schema_data_or_changesets, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
+    schema_data_or_changesets
     |> multi_delete(opts)
     |> Config.repo!(opts).transaction(opts)
     |> handle_multi_response()
   end
 
-  defp multi_delete(structs_or_changesets, opts) do
-    structs_or_changesets
+  defp multi_delete(schema_data_or_changesets, opts) do
+    schema_data_or_changesets
     |> Enum.with_index()
     |> Enum.reduce(Ecto.Multi.new(), fn {struct_or_changeset, i}, multi ->
       Ecto.Multi.run(multi, {:create, i}, fn repo, _changes_so_far ->
@@ -832,7 +843,7 @@ defmodule EctoShorts.Actions do
               query: CommonSchemas.get_schema_metadata(struct_or_changeset).schema,
               position: 1,
               changeset: changeset,
-              params: structs_or_changesets
+              params: schema_data_or_changesets
             }}}
         end
       end)
@@ -882,34 +893,21 @@ defmodule EctoShorts.Actions do
   """
   @spec find_and_create(
           query :: query() | queryable() | source_queryable(),
-          find_params :: map(),
-          create_params :: map()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
+          find_params :: params(),
+          create_params :: params()
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   @spec find_and_create(
           query :: query() | queryable() | source_queryable(),
-          find_params :: map(),
-          create_params :: map(),
+          find_params :: params(),
+          create_params :: params(),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   def find_and_create(query, find_params, create_params, opts \\ []) do
     with {:error, %{code: :not_found}} <- find(query, find_params, opts) do
       query
       |> CommonQueries.get_query_source()
       |> create(create_params, opts)
     end
-  end
-
-  @doc group: "Query API"
-  @doc """
-  ...
-  """
-  @spec find_and_update(
-          query :: query() | queryable() | source_queryable(),
-          find_params :: map(),
-          update_params :: map()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_and_update(query, find_params, update_params) do
-    find_and_update(query, find_params, update_params, default_opts())
   end
 
   @doc group: "Query API"
@@ -939,29 +937,21 @@ defmodule EctoShorts.Actions do
   """
   @spec find_and_update(
           query :: query() | queryable() | source_queryable(),
-          find_params :: map(),
-          update_params :: map(),
+          find_params :: params(),
+          update_params :: params()
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  @spec find_and_update(
+          query :: query() | queryable() | source_queryable(),
+          find_params :: params(),
+          update_params :: params(),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_and_update(query, find_params, update_params, opts) do
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  def find_and_update(query, find_params, update_params, opts \\ []) do
     with {:ok, struct} <- find(query, find_params, opts) do
       query
       |> CommonQueries.get_query_source()
       |> update(struct, update_params, opts)
     end
-  end
-
-  @doc group: "Query API"
-  @doc """
-  ...
-  """
-  @spec find_and_upsert(
-          query :: query() | queryable() | source_queryable(),
-          find_params :: map(),
-          update_params :: map()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_and_upsert(query, find_params, update_params) do
-    find_and_upsert(query, find_params, update_params, default_opts())
   end
 
   @doc group: "Query API"
@@ -993,11 +983,16 @@ defmodule EctoShorts.Actions do
   """
   @spec find_and_upsert(
           query :: query() | queryable() | source_queryable(),
-          find_params :: map(),
-          update_params :: map(),
+          find_params :: params(),
+          update_params :: params()
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  @spec find_and_upsert(
+          query :: query() | queryable() | source_queryable(),
+          find_params :: params(),
+          update_params :: params(),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_and_upsert(query, find_params, update_params, opts) do
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  def find_and_upsert(query, find_params, update_params, opts \\ []) do
     case find(query, find_params, opts) do
       {:ok, struct} ->
         update(query, struct, update_params, opts)
@@ -1016,44 +1011,17 @@ defmodule EctoShorts.Actions do
   """
   @spec find_and_delete(
           query :: query() | queryable() | source_queryable(),
-          find_params :: map()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_and_delete(query, find_params) do
-    find_and_delete(query, find_params, default_opts())
-  end
-
-  @doc group: "Query API"
-  @doc """
-  ...
-  """
+          find_params :: params()
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   @spec find_and_delete(
           query :: query() | queryable() | source_queryable(),
-          find_params :: map(),
+          find_params :: params(),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_and_delete(query, find_params, opts) do
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  def find_and_delete(query, find_params, opts \\ []) do
     with {:ok, struct} <- find(query, find_params, opts) do
       delete(struct, opts)
     end
-  end
-
-  @doc """
-  Equivalent to `find_or_create(query, params, [])`.
-
-  ## Options
-
-  See `find_or_create/3` for options.
-
-  ## Examples
-
-      iex> EctoShorts.Actions.find_or_create(MyApp.User, %{name: "Fira"})
-  """
-  @spec find_or_create(
-          query :: query() | queryable() | source_queryable(),
-          params :: map()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_or_create(query, params) do
-    find_or_create(query, params, default_opts())
   end
 
   @doc """
@@ -1080,28 +1048,20 @@ defmodule EctoShorts.Actions do
   """
   @spec find_or_create(
           query :: query() | queryable() | source_queryable(),
-          params :: map(),
+          params :: params()
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  @spec find_or_create(
+          query :: query() | queryable() | source_queryable(),
+          params :: params(),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def find_or_create(query, params, opts) do
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  def find_or_create(query, params, opts \\ []) do
     with {:error, %{code: :not_found}} <-
            find(query, maybe_drop_associations(params, query, opts), opts) do
       query
       |> CommonQueries.get_query_source()
       |> create(params, opts)
     end
-  end
-
-  @doc group: "Query API"
-  @doc """
-  ...
-  """
-  @spec get(
-          query :: query() | queryable() | source_queryable(),
-          id :: integer() | binary()
-        ) :: Ecto.Schema.t() | nil
-  def get(query, id) do
-    get(query, id, default_opts())
   end
 
   @doc group: "Query API"
@@ -1126,21 +1086,17 @@ defmodule EctoShorts.Actions do
   """
   @spec get(
           query :: query() | queryable() | source_queryable(),
-          id :: integer() | binary(),
+          id :: id()
+        ) :: schema_data() | nil
+  @spec get(
+          query :: query() | queryable() | source_queryable(),
+          id :: id(),
           opts :: opts()
-        ) :: Ecto.Schema.t() | nil
-  def get(query, id, opts) do
-    Config.replica!(opts).get(query, id, opts)
-  end
+        ) :: schema_data() | nil
+  def get(query, id, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
 
-  @doc group: "Query API"
-  @doc """
-  ...
-  """
-  @spec all(query :: query() | queryable() | source_queryable()) ::
-          list(Ecto.Schema.t())
-  def all(query) do
-    all(query, %{})
+    Config.replica!(opts).get(query, id, opts)
   end
 
   @doc group: "Query API"
@@ -1149,10 +1105,10 @@ defmodule EctoShorts.Actions do
 
   This function accepts either a map or a keyword list as the second argument:
 
-    * **Map** – Used to specify filter parameters. These are applied to the query. See
-      `EctoShorts.CommonFilters` for supported filters.
+  When a map is given it is treated as filter parameters and are applied to the query.
 
-    * **Keyword list** – Used to pass options such as `:repo` or `:replica`.
+  When a keyword list is given it can be used to pass options such as `:repo` or `:replica`
+  and all other keys are treated as filter parameters and are applied to the query.
 
   ## Options
 
@@ -1168,16 +1124,15 @@ defmodule EctoShorts.Actions do
       iex> EctoShorts.Actions.all({"users", MyApp.User}, id: 1, repo: MyApp.Repo)
       iex> EctoShorts.Actions.all({"users", MyApp.User}, id: 1, replica: MyApp.Repo)
   """
-  @spec all(
-          query :: query() | queryable() | source_queryable(),
-          params :: map()
-        ) :: list(Ecto.Schema.t())
-  @spec all(
-          query :: query() | queryable() | source_queryable(),
-          opts :: opts()
-        ) :: list(Ecto.Schema.t())
+  @spec all(query :: query() | queryable() | source_queryable()) :: list(schema_data())
+  @spec all(query :: query() | queryable() | source_queryable(), params :: params()) ::
+          list(schema_data())
+  @spec all(query :: query() | queryable() | source_queryable(), opts :: opts()) ::
+          list(schema_data())
+  def all(query, params_or_opts \\ [])
+
   def all(query, params) when is_map(params) do
-    all(query, params, default_opts())
+    all(query, params, [])
   end
 
   def all(query, opts) do
@@ -1203,8 +1158,9 @@ defmodule EctoShorts.Actions do
 
   Additional options include:
 
-  * `:group_by` – Group results by one or more fields.
-  * `:order_by` – Sort results based on one or more fields.
+    * `:group_by` – Group results by one or more fields.
+
+    * `:order_by` – Sort results based on one or more fields.
 
   All options accepted by [`Ecto.Repo.all/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) are also supported.
 
@@ -1222,10 +1178,12 @@ defmodule EctoShorts.Actions do
   """
   @spec all(
           query :: query() | queryable() | source_queryable(),
-          params :: map(),
+          params :: params(),
           opts :: opts()
-        ) :: list(Ecto.Schema.t())
+        ) :: list(schema_data())
   def all(query, params, opts) do
+    opts = Keyword.merge(default_opts(), opts)
+
     params =
       params
       |> put_order_by(opts)
@@ -1236,18 +1194,6 @@ defmodule EctoShorts.Actions do
     query
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).all(opts)
-  end
-
-  @doc group: "Schema API"
-  @doc """
-  ...
-  """
-  @spec create(
-          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          params :: map()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def create(query, params) do
-    create(query, params, default_opts())
   end
 
   @doc group: "Schema API"
@@ -1267,25 +1213,19 @@ defmodule EctoShorts.Actions do
   """
   @spec create(
           query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
-          params :: map(),
+          params :: params()
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  @spec create(
+          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          params :: params(),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def create(query, params, opts) do
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  def create(query, params, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> create_changeset(params, opts)
     |> Config.repo!(opts).insert(opts)
-  end
-
-  @doc group: "Query API"
-  @doc """
-  ...
-  """
-  @spec find(
-          query :: query() | queryable() | source_queryable(),
-          params :: map()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, any()}
-  def find(query, params) do
-    find(query, params, default_opts())
   end
 
   @doc group: "Query API"
@@ -1310,9 +1250,15 @@ defmodule EctoShorts.Actions do
   """
   @spec find(
           query :: query() | queryable() | source_queryable(),
-          params :: map(),
+          params :: params()
+        ) :: {:ok, schema_data()} | {:error, any()}
+  @spec find(
+          query :: query() | queryable() | source_queryable(),
+          params :: params(),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, any()}
+        ) :: {:ok, schema_data()} | {:error, any()}
+  def find(query, params, opts \\ [])
+
   def find(query, params, opts) when params === %{} do
     {:error,
      Error.call(
@@ -1327,6 +1273,8 @@ defmodule EctoShorts.Actions do
   end
 
   def find(query, params, opts) do
+    opts = Keyword.merge(default_opts(), opts)
+
     params =
       params
       |> put_order_by(opts)
@@ -1359,19 +1307,6 @@ defmodule EctoShorts.Actions do
 
   @doc group: "Schema API"
   @doc """
-  ...
-  """
-  @spec update(
-          query :: query() | queryable() | source_queryable(),
-          id_or_struct :: integer() | binary() | Ecto.Schema.t(),
-          update_params :: map()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  def update(query, id_or_struct, update_params) do
-    update(query, id_or_struct, update_params, default_opts())
-  end
-
-  @doc group: "Schema API"
-  @doc """
   Updates a record by its primary key, or struct.
 
   This function retrieves a record by its primary key, or accepts
@@ -1391,10 +1326,17 @@ defmodule EctoShorts.Actions do
   """
   @spec update(
           query :: query() | queryable() | source_queryable(),
-          id_or_struct :: integer() | binary() | Ecto.Schema.t(),
-          update_params :: map(),
+          id_or_struct :: integer() | binary() | schema_data(),
+          update_params :: params()
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  @spec update(
+          query :: query() | queryable() | source_queryable(),
+          id_or_struct :: integer() | binary() | schema_data(),
+          update_params :: params(),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  def update(query, id_or_struct, update_params, opts \\ [])
+
   def update(query, id, update_params, opts) when is_integer(id) or is_binary(id) do
     with {:ok, struct} <- find(query, %{id: id}, opts) do
       query
@@ -1408,38 +1350,11 @@ defmodule EctoShorts.Actions do
   end
 
   def update(query, struct, update_params, opts) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> CommonSchemas.prepare_changeset(struct, update_params, opts)
     |> Config.repo!(opts).update(opts)
-  end
-
-  @doc """
-  Deletes a record given existing data.
-
-  Note: When a list of parameters are specified they are deleted in order
-  and are not wrapped in a transaction.
-
-  ## Options
-
-  This uses the default options defined in your configuration.
-
-  ## Examples
-
-      iex> EctoShorts.Actions.delete(%MyApp.User{})
-      iex> EctoShorts.Actions.delete([%MyApp.User{}])
-  """
-  @spec delete(struct :: Ecto.Schema.t()) ::
-          {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
-  @spec delete(structs_or_changesets :: list(Ecto.Schema.t())) ::
-          {:ok, list(schema_struct())}
-          | {:error, list(Ecto.Changeset.t())}
-          | {:error, list(any())}
-  def delete(%_{} = struct) do
-    delete(struct, default_opts())
-  end
-
-  def delete(structs_or_changesets) when is_list(structs_or_changesets) do
-    delete(structs_or_changesets, default_opts())
   end
 
   @doc """
@@ -1456,6 +1371,9 @@ defmodule EctoShorts.Actions do
     * `(struct, opts)` — where `struct` is a loaded schema
       struct, and `opts` is a keyword list of options.
 
+  When a list of parameters are specified they are deleted in order
+  and are not wrapped in a transaction.
+
   ## Options
 
   This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
@@ -1470,14 +1388,19 @@ defmodule EctoShorts.Actions do
       iex> EctoShorts.Actions.create(%MyApp.User{}, repo: MyApp.Repo)
   """
   @spec delete(
-          structs_or_changesets :: list(Ecto.Schema.t()) | list(Ecto.Changeset.t()),
-          opts :: opts()
-        ) :: {:ok, list(schema_struct())} | {:error, list(Ecto.Changeset.t())} | {:error, any()}
+          schema_data_or_changesets ::
+            schema_data() | changeset() | list(schema_data() | changeset())
+        ) :: {:ok, list(schema_data())} | {:error, list(changeset())} | {:error, any()}
   @spec delete(
-          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          struct_or_changeset ::
+            schema_data() | changeset() | list(schema_data() | changeset()),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
+  def delete(schema_data_or_changesets, opts \\ [])
+
   def delete(%_{data: %_{__meta__: %{schema: queryable}}} = changeset, opts) do
+    opts = Keyword.merge(default_opts(), opts)
+
     with {:error, changeset} <-
            queryable
            |> CommonSchemas.prepare_changeset(changeset, %{}, opts)
@@ -1497,6 +1420,8 @@ defmodule EctoShorts.Actions do
   end
 
   def delete(%_{__meta__: %{schema: queryable}} = struct, opts) do
+    opts = Keyword.merge(default_opts(), opts)
+
     with {:error, changeset} <-
            queryable
            |> CommonSchemas.prepare_changeset(struct, %{}, opts)
@@ -1515,14 +1440,14 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  def delete(structs_or_changesets, opts) when is_list(structs_or_changesets) do
-    Utils.reduce_all(structs_or_changesets, fn struct_or_changeset ->
+  def delete(schema_data_or_changesets, opts) when is_list(schema_data_or_changesets) do
+    Utils.reduce_all(schema_data_or_changesets, fn struct_or_changeset ->
       delete(struct_or_changeset, opts)
     end)
   end
 
   def delete(query, id) when is_binary(id) or is_integer(id) do
-    delete(query, id, default_opts())
+    delete(query, id, [])
   end
 
   @doc """
@@ -1544,24 +1469,13 @@ defmodule EctoShorts.Actions do
   """
   @spec delete(
           query :: query() | queryable() | source_queryable(),
-          id :: integer() | binary(),
+          id :: id(),
           opts :: opts()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()} | {:error, any()}
+        ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   def delete(query, id, opts) when is_integer(id) or is_binary(id) do
     with {:ok, struct} <- find(query, %{id: id}, opts) do
       delete(struct, opts)
     end
-  end
-
-  @doc """
-  ...
-  """
-  @spec stream(
-          query :: query() | queryable() | source_queryable(),
-          params :: map()
-        ) :: list(any())
-  def stream(query, params) do
-    stream(query, params, default_opts())
   end
 
   @doc """
@@ -1583,26 +1497,19 @@ defmodule EctoShorts.Actions do
   """
   @spec stream(
           query :: query() | queryable() | source_queryable(),
-          params :: map(),
+          params :: params()
+        ) :: stream()
+  @spec stream(
+          query :: query() | queryable() | source_queryable(),
+          params :: params(),
           opts :: opts()
-        ) :: list(any())
-  def stream(query, params, opts) do
+        ) :: stream()
+  def stream(query, params, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.repo!(opts).stream(opts)
-  end
-
-  @doc """
-  ...
-  """
-  @spec aggregate(
-          query :: query() | queryable() | source_queryable(),
-          params :: map(),
-          aggregate :: :avg | :count | :max | :min | :sum,
-          field :: atom()
-        ) :: any() | nil
-  def aggregate(query, params, aggregate, field) do
-    aggregate(query, params, aggregate, field, default_opts())
   end
 
   @doc """
@@ -1613,7 +1520,7 @@ defmodule EctoShorts.Actions do
 
   ## Supported Aggregates
 
-  The following aggregate types are supported (same as `Ecto.Repo.aggregate/4`):
+  This function supports all ecto repo aggregate types, for example:
 
     * `:count` – Counts the number of matching rows.
 
@@ -1643,24 +1550,23 @@ defmodule EctoShorts.Actions do
   """
   @spec aggregate(
           query :: query() | queryable() | source_queryable(),
-          params :: map(),
-          aggregate :: :avg | :count | :max | :min | :sum,
+          params :: params(),
+          aggregate :: aggregate_options(),
+          field :: atom()
+        ) :: any() | nil
+  @spec aggregate(
+          query :: query() | queryable() | source_queryable(),
+          params :: params(),
+          aggregate :: aggregate_options(),
           field :: atom(),
           opts :: opts()
         ) :: any() | nil
-  def aggregate(query, params, aggregate, field, opts) do
+  def aggregate(query, params, aggregate, field, opts \\ []) do
+    opts = Keyword.merge(default_opts(), opts)
+
     query
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).aggregate(aggregate, field, opts)
-  end
-
-  @doc group: "Transaction API"
-  @doc since: "2.5.0"
-  @doc """
-  ...
-  """
-  def transaction(fun_or_multi) do
-    transaction(fun_or_multi, default_opts())
   end
 
   @doc group: "Transaction API"
@@ -1697,15 +1603,23 @@ defmodule EctoShorts.Actions do
       iex> EctoShorts.Actions.transaction({"users", MyApp.User}, fn -> :ok end, repo: MyApp.Repo)
       iex> EctoShorts.Actions.transaction({"users", MyApp.User}, fn -> :error end, rollback_on_error: false)
   """
+  @spec transaction(fun_or_multi :: function() | multi()) ::
+          {:ok, any()} | {:error, any()} | multi_failure()
   @spec transaction(
-          fun_or_multi :: function() | Ecto.Multi.t(),
+          fun_or_multi :: function() | multi(),
           opts :: opts()
-        ) :: {:ok, any()} | {:error, any()} | Ecto.Multi.failure()
+        ) :: {:ok, any()} | {:error, any()} | multi_failure()
+  def transaction(fun_or_multi, opts \\ [])
+
   def transaction(%_{} = multi, opts) do
+    opts = Keyword.merge(default_opts(), opts)
+
     Config.repo!(opts).transaction(multi, opts)
   end
 
   def transaction(fun, opts) do
+    opts = Keyword.merge(default_opts(), opts)
+
     op = fn repo ->
       result = if is_function(fun, 1), do: fun.(repo), else: fun.()
 

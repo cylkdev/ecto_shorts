@@ -1,8 +1,6 @@
 defmodule EctoShorts.QueryBuilder.Common do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  # EctoShorts.QueryBuilder.Common
-
   Provides common query-building functionality for
   EctoShorts.
 

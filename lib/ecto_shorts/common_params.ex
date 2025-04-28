@@ -1,5 +1,8 @@
 defmodule EctoShorts.CommonParams do
-  @moduledoc false
+  @moduledoc since: "2.5.0"
+  @moduledoc """
+  ...
+  """
 
   alias Ecto.Changeset
   alias EctoShorts.CommonSchemas
@@ -151,7 +154,7 @@ defmodule EctoShorts.CommonParams do
       if has_primary_key?(query, changeset) do
         with {:ok, schema_data} <- Changeset.apply_action(changeset, :update) do
           {:ok,
-           serialize_insert(
+           serialize_schema_data(
              query,
              schema_data,
              Map.keys(changeset.changes),
@@ -162,7 +165,7 @@ defmodule EctoShorts.CommonParams do
       else
         with {:ok, schema_data} <- Changeset.apply_action(changeset, :insert) do
           {:ok,
-           serialize_insert(
+           serialize_schema_data(
              query,
              schema_data,
              Map.keys(changeset.changes),
@@ -214,7 +217,7 @@ defmodule EctoShorts.CommonParams do
     |> Kernel.--([inserted_at_source(opts)])
   end
 
-  defp serialize_insert(query, data, changed_keys, utc_now, opts) do
+  defp serialize_schema_data(query, data, changed_keys, utc_now, opts) do
     data
     |> Map.take(CommonSchemas.get_schema_reflection(query, :query_fields))
     |> drop_nil_if_not_changed(changed_keys)
