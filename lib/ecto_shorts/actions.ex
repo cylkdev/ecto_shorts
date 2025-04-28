@@ -120,7 +120,7 @@ defmodule EctoShorts.Actions do
     params_list
     |> Stream.with_index()
     |> Utils.reduce_all(fn {params, i} ->
-      case Map.get(batch_results, batch_key!(params, batch_key, query)) do
+      case Map.get(batch_results, build_batch_key!(params, batch_key, query)) do
         nil ->
           {:error,
            Error.call(:not_found, "Record not found.", %{
@@ -193,11 +193,10 @@ defmodule EctoShorts.Actions do
 
   Additional options include:
 
-      * `:batch_preload` - Can be the atom `:primary_key`, the boolean
-        `true` or a list of keys. when set to `true` it is the equivalent
-        to calling batch_preload with `:primary_key` as the batch key.
+      * `:batch_preload` - Can be the atom `:primary_key` or a list of keys
+      used to determine the uniqueness of of each record in the set.
 
-  See `c:EctoShorts.CommonParams.convert_to_insert_all_params/3` for more options.
+  See `EctoShorts.CommonParams.convert_to_insert_all_params/3` for more options.
 
   All options accepted by [`Ecto.Repo.get/3`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:get/3) are also supported.
 
@@ -236,13 +235,7 @@ defmodule EctoShorts.Actions do
 
   defp maybe_batch_preload(query, params_list, opts) do
     if Keyword.has_key?(opts, :batch_preload) do
-      preload_keys =
-        case opts[:batch_preload] do
-          true -> :primary_key
-          keys -> keys
-        end
-
-      batch_preload(query, params_list, preload_keys, opts)
+      batch_preload(query, opts[:batch_preload] || :primary_key, params_list, opts)
     else
       params_list
     end
@@ -251,7 +244,7 @@ defmodule EctoShorts.Actions do
   @doc """
   ...
   """
-  def batch_preload(query, params_list, batch_key \\ :primary_key, opts \\ []) do
+  def batch_preload(query, batch_key \\ :primary_key, params_list, opts \\ []) do
     case take_batch_preload_params(params_list, batch_key, query) do
       [] ->
         params_list
@@ -267,7 +260,7 @@ defmodule EctoShorts.Actions do
     Enum.map(params_list, fn
       {find_params, params} when is_map(find_params) and not is_struct(find_params) ->
         if has_batch_values?(find_params, batch_key, query) do
-          case Map.get(batch_results, batch_key!(find_params, batch_key, query)) do
+          case Map.get(batch_results, build_batch_key!(find_params, batch_key, query)) do
             nil -> {find_params, params}
             schema_data -> {schema_data, params}
           end
@@ -277,7 +270,7 @@ defmodule EctoShorts.Actions do
 
       params when is_map(params) and not is_struct(params) ->
         if has_batch_values?(params, batch_key, query) do
-          case Map.get(batch_results, batch_key!(params, batch_key, query)) do
+          case Map.get(batch_results, build_batch_key!(params, batch_key, query)) do
             nil -> params
             schema_data -> {schema_data, params}
           end
@@ -424,31 +417,31 @@ defmodule EctoShorts.Actions do
 
       query
       |> stream(%{or_where: params_list}, opts)
-      |> Stream.map(&{batch_key!(&1, batch_key, query), &1})
+      |> Stream.map(&{build_batch_key!(&1, batch_key, query), &1})
       |> Stream.chunk_every(stream_opts[:chunk_every] || 1_000)
       |> Stream.map(&Map.new/1)
     else
       query
       |> all(%{or_where: params_list}, opts)
-      |> Map.new(&{batch_key!(&1, batch_key, query), &1})
+      |> Map.new(&{build_batch_key!(&1, batch_key, query), &1})
     end
   end
 
-  defp batch_key!(data, batch_key, query) do
-    with :error <- batch_key(data, batch_key, query) do
+  defp build_batch_key!(data, arg, query) do
+    with :error <- build_batch_key(data, arg, query) do
       raise "Batch key required, Primary key disabled for schema #{CommonSchemas.get_schema_queryable(query)}, got: #{inspect(data)}"
     end
   end
 
-  defp batch_key(data, batch_key, query) do
-    case normalize_batch_key(batch_key, query) do
+  defp build_batch_key(data, arg, query) do
+    case normalize_batch_key(arg, query) do
       [] -> :error
       keys -> fetch_batch_values(data, keys)
     end
   end
 
-  defp has_batch_values?(data, batch_key, query) do
-    case fetch_batch_values(data, normalize_batch_key(batch_key, query)) do
+  defp has_batch_values?(data, arg, query) do
+    case fetch_batch_values(data, normalize_batch_key(arg, query)) do
       :error -> false
       _ -> true
     end
