@@ -131,7 +131,24 @@ defmodule EctoShorts.Actions do
 
   @doc group: "Schema API"
   @doc """
-  TODO...
+  Inserts a list of records with schema validations and
+  optional conflict handling.
+
+  This is a wrapper around `Repo.insert_all/3` that first
+  validates each entry with the schema's `changeset/2` before
+  performing a bulk insert. If any entry is invalid, the
+  insert is halted and `{:error, list(changeset)}` is returned.
+
+  The function also supports upsert behavior by passing the
+  `:on_conflict` and `:conflict_target` options, just like the
+  Ecto native version.
+
+  If no `:on_conflict` or `:conflict_target` options are given,
+  the function defaults to performing an upsert. It sets the
+  `:conflict_target` to the schema's primary key(s), and uses
+  `{:replace, keys}` as the `:on_conflict` option. The `keys`
+  are all queryable fields on the schema, excluding any primary
+  key fields and the `inserted_at` timestamp.
   """
   @spec insert_all(
           query :: query() | queryable() | source_queryable(),
@@ -143,8 +160,8 @@ defmodule EctoShorts.Actions do
           opts :: opts()
         ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
   def insert_all(query, params_list, opts \\ []) do
-    with {:ok, insert_params} <-
-           CommonParams.convert_to_insert_params(
+    with {:ok, {insert_params, insert_opts}} <-
+           CommonParams.convert_to_insert_all_params(
              query,
              maybe_batch_preload(query, params_list, opts),
              opts
@@ -153,7 +170,7 @@ defmodule EctoShorts.Actions do
        Config.repo!(opts).insert_all(
          query,
          insert_params,
-         CommonParams.put_default_insert_options(opts, query)
+         Keyword.merge(insert_opts, opts)
        )}
     end
   end
@@ -170,18 +187,18 @@ defmodule EctoShorts.Actions do
   ...
   """
   def batch_preload(query, params_list, batch_key \\ :primary_key, opts \\ []) do
-    case take_batch_params(params_list, batch_key, query) do
+    case take_batch_preload_params(params_list, batch_key, query) do
       [] ->
         params_list
 
       todo ->
         query
         |> batch(batch_key, todo, Keyword.delete(opts, :stream))
-        |> put_batch_results(params_list, batch_key, query)
+        |> put_batch_preload_results(params_list, batch_key, query)
     end
   end
 
-  defp put_batch_results(batch_results, params_list, batch_key, query) do
+  defp put_batch_preload_results(batch_results, params_list, batch_key, query) do
     Enum.map(params_list, fn
       {find_params, params} when is_map(find_params) and not is_struct(find_params) ->
         if has_batch_values?(find_params, batch_key, query) do
@@ -208,7 +225,7 @@ defmodule EctoShorts.Actions do
     end)
   end
 
-  defp take_batch_params(params_list, batch_key, query) do
+  defp take_batch_preload_params(params_list, batch_key, query) do
     Enum.reduce(params_list, [], fn
       {find_params, _params}, acc when is_map(find_params) and not is_struct(find_params) ->
         if has_batch_values?(find_params, batch_key, query) do
@@ -413,7 +430,7 @@ defmodule EctoShorts.Actions do
     query
     |> CommonFilters.convert_params_to_filter(find_params, opts)
     |> Config.repo!(opts).update_all(
-      CommonParams.convert_to_update_params(query, update_params, opts),
+      CommonParams.convert_to_update_all_params(query, update_params, opts),
       opts
     )
   end

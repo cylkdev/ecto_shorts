@@ -19,10 +19,9 @@ defmodule EctoShorts.Utils do
       iex> SharedUtils.Enum.reduce_all(["error"], fn v -> {:error, v} end)
       {:error, ["error"]}
   """
-  @spec reduce_all(enum :: Enum.t(), fun :: function(), value_acc :: list(), error_acc :: list()) ::
-          {:ok, list()} | {:error, list()}
-  def reduce_all(enum, fun, value_acc \\ [], error_acc \\ []) do
-    case Enum.reduce(enum, {value_acc, error_acc}, &reduce_eval(&1, fun, &2)) do
+  @spec reduce_all(enum :: Enum.t(), fun :: function()) :: {:ok, list()} | {:error, list()}
+  def reduce_all(enum, fun) do
+    case Enum.reduce(enum, {[], []}, &reduce_eval(&1, fun, &2)) do
       {values, []} -> {:ok, Enum.reverse(values)}
       {_, errors} -> {:error, Enum.reverse(errors)}
     end
