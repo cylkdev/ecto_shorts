@@ -193,9 +193,9 @@ defmodule EctoShorts.Actions do
 
   Additional options include:
 
-      * `:batch_preload` - ...
-
-      * `:batch_key` - ...
+      * `:batch_preload` - Can be the atom `:primary_key`, the boolean
+        `true` or a list of keys. when set to `true` it is the equivalent
+        to calling batch_preload with `:primary_key` as the batch key.
 
   See `c:EctoShorts.CommonParams.convert_to_insert_all_params/3` for more options.
 
@@ -235,8 +235,14 @@ defmodule EctoShorts.Actions do
   end
 
   defp maybe_batch_preload(query, params_list, opts) do
-    if opts[:batch_preload] === true do
-      batch_preload(query, params_list, opts[:batch_key] || :primary_key, opts)
+    if Keyword.has_key?(opts, :batch_preload) do
+      preload_keys =
+        case opts[:batch_preload] do
+          true -> :primary_key
+          keys -> keys
+        end
+
+      batch_preload(query, params_list, preload_keys, opts)
     else
       params_list
     end
@@ -317,19 +323,23 @@ defmodule EctoShorts.Actions do
   For example, if you need to find posts and keep track of which title matched each post:
 
   ```elixir
-  [
-    %{title: "First Post"},
-    %{title: "Second Post"}
-  ]
+
+    EctoShorts.Actions.batch(Post, [:title], [
+      %{title: "First Post"},
+      %{title: "Second Post"}
+    ])
+
   ```
 
   This function will return a map like this:
 
   ```elixir
-  %{
-    %{title: "First Post"} => %Post{title: "First Post"},
-    %{title: "Second Post"} => %Post{title: "Second Post"}
-  }
+
+    %{
+      %{title: "First Post"} => %Post{title: "First Post"},
+      %{title: "Second Post"} => %Post{title: "Second Post"}
+    }
+
   ```
 
   ## Composite keys
@@ -341,12 +351,21 @@ defmodule EctoShorts.Actions do
 
   ```elixir
 
-  batch_keys = [:org_id, :email]
+    EctoShorts.Actions.batch(User, [:organization_id, :email], [
+      %{organization_id: 1, email: "user_one@email.com"},
+      %{organization_id: 2, email: "user_two@email.com"}
+    ])
 
-  params = [
-    %{org_id: 1, email: "user1@example.com"},
-    %{org_id: 2, email: "user2@example.com"}
-  ]
+  ```
+
+  This function will return a map like this:
+
+  ```elixir
+
+    %{
+      %{organization_id: 1, email: "user_one@email.com"} => %User{id: 1, organization_id: 1, email: "user_one@my-app.com"},
+      %{organization_id: 2, email: "user_two@email.com"} => %User{id: 2, organization_id: 2, email: "user_two@my-app.com"}
+    }
 
   ```
 
@@ -367,14 +386,12 @@ defmodule EctoShorts.Actions do
   For example:
 
   ```elixir
-
-  iex> EctoShorts.Repo.transaction(fn ->
-  ...>   Post
-  ...>   |> Actions.batch([:title], [%{title: "post_title"}], stream: true)
-  ...>   |> Enum.to_list()
-  ...> end)
-  {:ok, [%{%{title: "post_title"} => %Post{title: "post_title"}}]}
-
+    iex> EctoShorts.Repo.transaction(fn ->
+    ...>   Post
+    ...>   |> Actions.batch([:title], [%{title: "post_title"}], stream: true)
+    ...>   |> Enum.to_list()
+    ...> end)
+    {:ok, [%{%{title: "post_title"} => %Post{title: "post_title"}}]}
   ```
 
   ## Examples
@@ -388,12 +405,12 @@ defmodule EctoShorts.Actions do
         ) :: %{batch_key() => schema_data()} | stream()
   @spec batch(
           query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | list(batch_key()) | :primary_key,
+          batch_key :: :primary_key | batch_key() | list(batch_key()),
           params_list :: list(params())
         ) :: %{batch_key() => schema_data()} | stream()
   @spec batch(
           query :: query() | queryable() | source_queryable(),
-          batch_key :: batch_key() | list(batch_key()) | :primary_key,
+          batch_key :: :primary_key | batch_key() | list(batch_key()),
           params_list :: list(params()),
           opts :: opts()
         ) :: %{batch_key() => schema_data()} | stream()
