@@ -203,7 +203,7 @@ defmodule EctoShorts.CommonParams do
   @doc """
   ...
   """
-  def build_upsert_options(opts, query) do
+  def build_insert_all_conflict_options(opts, query) do
     [
       conflict_target: CommonSchemas.get_schema_reflection(query, :primary_key),
       on_conflict: {:replace, schema_replace_keys(query, opts)}

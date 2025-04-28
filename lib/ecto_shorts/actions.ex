@@ -57,86 +57,6 @@ defmodule EctoShorts.Actions do
 
   @type stream :: %Stream{}
 
-  @doc group: "Batch API"
-  @doc """
-  Finds multiple records that match a list of params using OR conditions.
-
-  When working with databases, you often need to find multiple records that
-  match different criteria. This function simplifies that process by allowing
-  you to provide a list of parameters, where each set of parameters is used
-  to find matching records. The results are combined into a single list.
-
-  For example, if you need to find users who match ANY of these criteria:
-
-  - Have email "user1@example.com"
-  - Have name "User 2"
-  - Belong to organization 3
-
-  Instead of writing three separate queries or a complex OR clause, you can
-  specify this as a list of parameters:
-
-  ```elixir
-  [
-    %{email: "user1@example.com"},
-    %{name: "User 2"}, %{org_id: 3}
-  ]
-  ```
-
-  ## Composite keys
-
-  See `&batch/4` for information on composite keys.
-
-  ## Options
-
-  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
-
-  All options accepted by [`Ecto.Repo.all/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) are also supported.
-
-  See `&batch/4` for more options. This function does not support batch `:stream` option.
-
-  ## Examples
-
-      iex> Actions.batch_find(Post, [:title], [%{title: "post_title"}])
-      {:ok, [%Post{title: "post_title"}]}
-  """
-  @spec batch_find(
-          query :: query() | queryable() | source_queryable(),
-          params_list :: list(params())
-        ) :: {:ok, list(schema_data())} | {:error, any()}
-  @spec batch_find(
-          query :: query() | queryable() | source_queryable(),
-          batch_key :: :primary_key | batch_key() | list(batch_key()),
-          params_list :: list(params())
-        ) :: {:ok, list(schema_data())} | {:error, any()}
-  @spec batch_find(
-          query :: query() | queryable() | source_queryable(),
-          batch_key :: :primary_key | batch_key() | list(batch_key()),
-          params_list :: list(params()),
-          opts :: opts()
-        ) :: {:ok, list(schema_data())} | {:error, any()}
-  def batch_find(query, batch_key \\ :primary_key, params_list, opts \\ []) do
-    batch_results = batch(query, batch_key, params_list, Keyword.delete(opts, :stream))
-
-    params_list
-    |> Stream.with_index()
-    |> Utils.reduce_all(fn {params, i} ->
-      case Map.get(batch_results, build_batch_key!(params, batch_key, query)) do
-        nil ->
-          {:error,
-           Error.call(:not_found, "Record not found.", %{
-             query: query,
-             params: params_list,
-             failed_value: params,
-             position: i,
-             key: batch_key
-           })}
-
-        schema_data ->
-          {:ok, schema_data}
-      end
-    end)
-  end
-
   @doc group: "Schema API"
   @doc """
   Inserts multiple records into the database.
@@ -223,7 +143,7 @@ defmodule EctoShorts.Actions do
       opts =
         if CommonParams.any_has_primary_key?(query, inserts) do
           opts
-          |> CommonParams.build_upsert_options(query)
+          |> CommonParams.build_insert_all_conflict_options(query)
           |> Keyword.merge(opts)
         else
           opts
@@ -301,6 +221,86 @@ defmodule EctoShorts.Actions do
 
       _, acc ->
         acc
+    end)
+  end
+
+  @doc group: "Batch API"
+  @doc """
+  Finds multiple records that match a list of params using OR conditions.
+
+  When working with databases, you often need to find multiple records that
+  match different criteria. This function simplifies that process by allowing
+  you to provide a list of parameters, where each set of parameters is used
+  to find matching records. The results are combined into a single list.
+
+  For example, if you need to find users who match ANY of these criteria:
+
+  - Have email "user1@example.com"
+  - Have name "User 2"
+  - Belong to organization 3
+
+  Instead of writing three separate queries or a complex OR clause, you can
+  specify this as a list of parameters:
+
+  ```elixir
+  [
+    %{email: "user1@example.com"},
+    %{name: "User 2"}, %{org_id: 3}
+  ]
+  ```
+
+  ## Composite keys
+
+  See `&batch/4` for information on composite keys.
+
+  ## Options
+
+  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+
+  All options accepted by [`Ecto.Repo.all/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) are also supported.
+
+  See `&batch/4` for more options. This function does not support batch `:stream` option.
+
+  ## Examples
+
+      iex> Actions.batch_find(Post, [:title], [%{title: "post_title"}])
+      {:ok, [%Post{title: "post_title"}]}
+  """
+  @spec batch_find(
+          query :: query() | queryable() | source_queryable(),
+          params_list :: list(params())
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  @spec batch_find(
+          query :: query() | queryable() | source_queryable(),
+          batch_key :: :primary_key | batch_key() | list(batch_key()),
+          params_list :: list(params())
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  @spec batch_find(
+          query :: query() | queryable() | source_queryable(),
+          batch_key :: :primary_key | batch_key() | list(batch_key()),
+          params_list :: list(params()),
+          opts :: opts()
+        ) :: {:ok, list(schema_data())} | {:error, any()}
+  def batch_find(query, batch_key \\ :primary_key, params_list, opts \\ []) do
+    batch_results = batch(query, batch_key, params_list, Keyword.delete(opts, :stream))
+
+    params_list
+    |> Stream.with_index()
+    |> Utils.reduce_all(fn {params, i} ->
+      case Map.get(batch_results, build_batch_key!(params, batch_key, query)) do
+        nil ->
+          {:error,
+           Error.call(:not_found, "Record not found.", %{
+             query: query,
+             params: params_list,
+             failed_value: params,
+             position: i,
+             key: batch_key
+           })}
+
+        schema_data ->
+          {:ok, schema_data}
+      end
     end)
   end
 
