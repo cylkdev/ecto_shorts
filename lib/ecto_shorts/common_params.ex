@@ -16,20 +16,20 @@ defmodule EctoShorts.CommonParams do
   @doc """
   ...
   """
-  def convert_to_update_all_params(query, params, opts \\ []) do
+  def convert_to_update_all_params(schema_module, params, opts \\ []) do
     utc_now = datetime_utc_now()
 
     params
-    |> normalize_updates(query)
+    |> normalize_updates(schema_module)
     |> group_updates_by_action()
     |> flatten_updates()
-    |> maybe_set_updated_at(utc_now, query, opts)
+    |> maybe_set_updated_at(utc_now, schema_module, opts)
   end
 
-  defp maybe_set_updated_at(keyword, datetime, query, opts) do
+  defp maybe_set_updated_at(keyword, datetime, schema_module, opts) do
     updated_at_source = opts[:updated_at] || opts[:updated_at_source] || @updated_at
 
-    datetime = dump_timestamp_updated_at(datetime, updated_at_source, query, opts)
+    datetime = dump_timestamp_updated_at(datetime, updated_at_source, schema_module, opts)
 
     Keyword.update(
       keyword,
@@ -49,12 +49,13 @@ defmodule EctoShorts.CommonParams do
     Enum.group_by(tuples, fn {action, _field, _value} -> action end)
   end
 
-  defp normalize_updates(params, query) do
-    Enum.reduce(params, [], &normalize_update(&1, query, &2))
+  defp normalize_updates(params, schema_module) do
+    Enum.reduce(params, [], &normalize_update(&1, schema_module, &2))
   end
 
-  defp normalize_update({field, params}, query, acc) when is_list(params) or is_map(params) do
-    if field in CommonSchemas.get_schema_reflection(query, :query_fields) do
+  defp normalize_update({field, params}, schema_module, acc)
+       when is_list(params) or is_map(params) do
+    if field in schema_module.__schema__(:query_fields) do
       params
       |> Enum.reduce(acc, fn {action, value}, acc ->
         [update_invoc(action, field, value) | acc]
@@ -63,33 +64,33 @@ defmodule EctoShorts.CommonParams do
     else
       EctoShorts.Utils.Logger.warning(
         __MODULE__,
-        "The field '#{inspect(field)}' is not a query field on the schema '#{CommonSchemas.get_schema_queryable(query)}'."
+        "The field '#{inspect(field)}' is not a query field on the schema '#{schema_module}'."
       )
 
       acc
     end
   end
 
-  defp normalize_update({field, {action, value}}, query, acc) do
-    if field in CommonSchemas.get_schema_reflection(query, :query_fields) do
+  defp normalize_update({field, {action, value}}, schema_module, acc) do
+    if field in schema_module.__schema__(:query_fields) do
       [update_invoc(action, field, value) | acc]
     else
       EctoShorts.Utils.Logger.warning(
         __MODULE__,
-        "The field '#{inspect(field)}' is not a query field on the schema '#{CommonSchemas.get_schema_queryable(query)}'."
+        "The field '#{inspect(field)}' is not a query field on the schema '#{schema_module}'."
       )
 
       acc
     end
   end
 
-  defp normalize_update({field, value}, query, acc) do
-    if field in CommonSchemas.get_schema_reflection(query, :query_fields) do
+  defp normalize_update({field, value}, schema_module, acc) do
+    if field in schema_module.__schema__(:query_fields) do
       [update_invoc(:set, field, value) | acc]
     else
       EctoShorts.Utils.Logger.warning(
         __MODULE__,
-        "The field '#{inspect(field)}' is not a query field on the schema '#{CommonSchemas.get_schema_queryable(query)}'."
+        "The field '#{inspect(field)}' is not a query field on the schema '#{schema_module}'."
       )
 
       acc
@@ -147,23 +148,27 @@ defmodule EctoShorts.CommonParams do
 
     * `:validate` - ...
   """
-  def convert_to_insert_all_params(query, params_list, opts \\ []) do
+  def convert_to_insert_all_params(schema_module, params_list, opts \\ []) do
     opts = Keyword.merge(@default_insert_all_options, opts)
 
     utc_now = datetime_utc_now()
 
     EctoShorts.Utils.reduce_all(params_list, fn arg ->
-      with {:ok, schema_data, changed_keys} <- apply_change(query, arg, opts) do
-        {:ok, serialize_insert(query, schema_data, changed_keys, utc_now, opts)}
+      with {:ok, schema_data, changed_keys} <- apply_change(schema_module, arg, opts) do
+        {:ok, serialize_insert(schema_module, schema_data, changed_keys, utc_now, opts)}
       end
     end)
   end
 
-  defp apply_change(query, {%{data: %{__meta__: _} = schema_data} = changeset, params}, opts) do
+  defp apply_change(
+         schema_module,
+         {%{data: %{__meta__: _} = schema_data} = changeset, params},
+         opts
+       ) do
     if opts[:validate] do
-      action = if has_primary_key?(query, schema_data), do: :update, else: :insert
+      action = if has_primary_key?(schema_module, schema_data), do: :update, else: :insert
 
-      changeset = CommonSchemas.get_schema_queryable(query).changeset(changeset, params)
+      changeset = schema_module.changeset(changeset, params)
 
       with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
         {:ok, schema_data, Map.keys(changeset.changes)}
@@ -173,11 +178,11 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp apply_change(query, {%{__meta__: _} = schema_data, params}, opts) do
+  defp apply_change(schema_module, {%{__meta__: _} = schema_data, params}, opts) do
     if opts[:validate] do
-      action = if has_primary_key?(query, schema_data), do: :update, else: :insert
+      action = if has_primary_key?(schema_module, schema_data), do: :update, else: :insert
 
-      changeset = CommonSchemas.get_schema_queryable(query).changeset(schema_data, params)
+      changeset = schema_module.changeset(schema_data, params)
 
       with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
         {:ok, schema_data, Map.keys(changeset.changes)}
@@ -187,11 +192,11 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp apply_change(query, %{data: %{__meta__: _} = schema_data} = changeset, opts) do
+  defp apply_change(schema_module, %{data: %{__meta__: _} = schema_data} = changeset, opts) do
     if opts[:validate] do
-      action = if has_primary_key?(query, schema_data), do: :update, else: :insert
+      action = if has_primary_key?(schema_module, schema_data), do: :update, else: :insert
 
-      changeset = CommonSchemas.get_schema_queryable(query).changeset(changeset, %{})
+      changeset = schema_module.changeset(changeset, %{})
 
       with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
         {:ok, schema_data, Map.keys(changeset.changes)}
@@ -206,18 +211,18 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp apply_change(query, %{__meta__: %{schema: queryable}} = schema_data, opts) do
+  defp apply_change(schema_module, %{__meta__: _} = schema_data, opts) do
     if opts[:validate] do
-      action = if has_primary_key?(query, schema_data), do: :update, else: :insert
+      action = if has_primary_key?(schema_module, schema_data), do: :update, else: :insert
 
-      changeset = CommonSchemas.get_schema_queryable(query).changeset(schema_data, %{})
+      changeset = schema_module.changeset(schema_data, %{})
 
       with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
         {:ok, schema_data, Map.keys(changeset.changes)}
       end
     else
       changed_keys =
-        queryable
+        schema_module
         |> struct()
         |> EctoShorts.SchemaHelpers.struct_to_jsonable_map()
         |> Map.keys()
@@ -226,31 +231,27 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp apply_change(query, params, opts) do
+  defp apply_change(schema_module, params, opts) do
     if opts[:validate] do
-      action = if has_primary_key?(query, params), do: :update, else: :insert
+      action = if has_primary_key?(schema_module, params), do: :update, else: :insert
 
       attrs =
-        if has_primary_key?(query, params) do
-          Map.take(params, CommonSchemas.get_schema_reflection(query, :primary_key))
+        if has_primary_key?(schema_module, params) do
+          Map.take(params, CommonSchemas.get_schema_reflection(schema_module, :primary_key))
         else
           %{}
         end
 
       changeset =
-        query
-        |> CommonSchemas.get_schema_queryable()
+        schema_module
         |> struct!(attrs)
-        |> CommonSchemas.get_schema_queryable(query).changeset(params)
+        |> schema_module.changeset(params)
 
       with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
         {:ok, schema_data, Map.keys(changeset.changes)}
       end
     else
-      schema_data =
-        query
-        |> CommonSchemas.get_schema_queryable()
-        |> struct(params)
+      schema_data = struct(schema_module, params)
 
       {:ok, schema_data, Map.keys(params)}
     end
@@ -266,32 +267,30 @@ defmodule EctoShorts.CommonParams do
     end)
   end
 
-  defp serialize_insert(query, data, changed_keys, utc_now, opts) do
+  defp serialize_insert(schema_module, data, changed_keys, utc_now, opts) do
     data
-    |> Map.take(CommonSchemas.get_schema_reflection(query, :query_fields))
+    |> Map.take(schema_module.__schema__(:query_fields))
     |> drop_nil_if_not_changed(changed_keys)
-    |> maybe_put_placeholders(opts[:placeholders] || %{}, opts)
-    |> put_timestamps(utc_now, query, opts)
+    |> reduce_placeholders(opts[:placeholders] || %{}, opts)
+    |> put_timestamps(utc_now, schema_module, opts)
   end
 
   @doc """
   ...
   """
-  def any_has_primary_key?(query, inserts) do
-    Enum.any?(inserts, &has_primary_key?(query, &1))
+  def any_has_primary_key?(schema_module, inserts) do
+    Enum.any?(inserts, &has_primary_key?(schema_module, &1))
   end
 
   @doc """
   ...
   """
-  def has_primary_key?(query, %{data: %{__meta__: _} = schema_data}) do
-    has_primary_key?(query, schema_data)
+  def has_primary_key?(schema_module, %{data: %{__meta__: _} = schema_data}) do
+    has_primary_key?(schema_module, schema_data)
   end
 
-  def has_primary_key?(query, data) do
-    query
-    |> CommonSchemas.get_schema_reflection(:primary_key)
-    |> Enum.all?(fn key ->
+  def has_primary_key?(schema_module, data) do
+    Enum.all?(schema_module.__schema__(:primary_key), fn key ->
       (Map.has_key?(data, key) and !nil_value?(data, key)) or
         (Map.has_key?(data, to_string(key)) and !nil_value?(data, to_string(key)))
     end)
@@ -300,17 +299,16 @@ defmodule EctoShorts.CommonParams do
   @doc """
   ...
   """
-  def build_insert_all_options(opts, query) do
+  def on_conflict_options(opts, schema_module) do
     [
-      conflict_target: CommonSchemas.get_schema_reflection(query, :primary_key),
-      on_conflict: {:replace, schema_replace_keys(query, opts)}
+      conflict_target: schema_module.__schema__(:primary_key),
+      on_conflict: {:replace, schema_replace_keys(schema_module, opts)}
     ]
   end
 
-  defp schema_replace_keys(query, opts) do
-    query
-    |> CommonSchemas.get_schema_reflection(:query_fields)
-    |> Kernel.--(CommonSchemas.get_schema_reflection(query, :primary_key))
+  defp schema_replace_keys(schema_module, opts) do
+    schema_module.__schema__(:query_fields)
+    |> Kernel.--(schema_module.__schema__(:primary_key))
     |> Kernel.--([inserted_at_source(opts)])
   end
 
@@ -320,11 +318,11 @@ defmodule EctoShorts.CommonParams do
     |> Map.new()
   end
 
-  defp maybe_put_placeholders(data, placeholders, opts) do
-    Enum.reduce(placeholders, data, &maybe_put_placeholder(&1, &2, opts))
+  defp reduce_placeholders(data, placeholders, opts) do
+    Enum.reduce(placeholders, data, &reduce_placeholder(&1, &2, opts))
   end
 
-  defp maybe_put_placeholder({key, placeholder}, data, opts) do
+  defp reduce_placeholder({key, placeholder}, data, opts) do
     case Map.get(data, key) do
       nil ->
         put_placeholder(data, key)
@@ -348,13 +346,13 @@ defmodule EctoShorts.CommonParams do
 
   defp put_placeholder(data, key), do: Map.put(data, key, {:placeholder, key})
 
-  defp put_timestamps(data, datetime, query, opts) do
+  defp put_timestamps(data, datetime, schema_module, opts) do
     data
-    |> maybe_put_inserted_at(datetime, query, opts)
-    |> put_timestamp_updated_at(datetime, query, opts)
+    |> maybe_put_inserted_at(datetime, schema_module, opts)
+    |> put_timestamp_updated_at(datetime, schema_module, opts)
   end
 
-  defp maybe_put_inserted_at(data, datetime, query, opts) do
+  defp maybe_put_inserted_at(data, datetime, schema_module, opts) do
     inserted_at_source = inserted_at_source(opts)
 
     if inserted_at_source === false do
@@ -365,7 +363,7 @@ defmodule EctoShorts.CommonParams do
           Map.put(
             data,
             inserted_at_source,
-            dump_timestamp_inserted_at(datetime, inserted_at_source, query, opts)
+            dump_timestamp_inserted_at(datetime, inserted_at_source, schema_module, opts)
           )
 
         _ ->
@@ -374,7 +372,7 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp put_timestamp_updated_at(data, datetime, query, opts) do
+  defp put_timestamp_updated_at(data, datetime, schema_module, opts) do
     updated_at_source = updated_at_source(opts)
 
     if updated_at_source === false do
@@ -383,20 +381,24 @@ defmodule EctoShorts.CommonParams do
       Map.put(
         data,
         updated_at_source,
-        dump_timestamp_updated_at(datetime, updated_at_source, query, opts)
+        dump_timestamp_updated_at(datetime, updated_at_source, schema_module, opts)
       )
     end
   end
 
-  defp dump_timestamp_inserted_at(datetime, inserted_at_source, query, opts) do
+  defp dump_timestamp_inserted_at(datetime, inserted_at_source, schema_module, opts) do
     datetime
-    |> maybe_datetime_to_naive(timestamp_type(opts, :inserted_at, inserted_at_source, query))
+    |> maybe_datetime_to_naive(
+      timestamp_type(opts, :inserted_at, inserted_at_source, schema_module)
+    )
     |> truncate_datetime()
   end
 
-  defp dump_timestamp_updated_at(datetime, updated_at_source, query, opts) do
+  defp dump_timestamp_updated_at(datetime, updated_at_source, schema_module, opts) do
     datetime
-    |> maybe_datetime_to_naive(timestamp_type(opts, :updated_at, updated_at_source, query))
+    |> maybe_datetime_to_naive(
+      timestamp_type(opts, :updated_at, updated_at_source, schema_module)
+    )
     |> truncate_datetime()
   end
 
@@ -408,10 +410,10 @@ defmodule EctoShorts.CommonParams do
     opts[:updated_at] || opts[:updated_at_source] || @updated_at
   end
 
-  defp timestamp_type(opts, key, type_source, query) do
+  defp timestamp_type(opts, key, type_source, schema_module) do
     opts[:timestamps][key] ||
       opts[:timestamp_type] ||
-      CommonSchemas.get_schema_reflection(query, :type, type_source) ||
+      schema_module.__schema__(:type, type_source) ||
       @utc_datetime
   end
 

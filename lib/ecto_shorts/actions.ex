@@ -133,22 +133,24 @@ defmodule EctoShorts.Actions do
           opts :: opts()
         ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
   def insert_all(query, params_list, opts \\ []) do
+    schema_module = CommonSchemas.get_schema_queryable(query)
+
     with {:ok, inserts} <-
            CommonParams.convert_to_insert_all_params(
-             query,
+             schema_module,
              maybe_batch_preload(query, params_list, opts),
              opts
            ) do
       opts =
-        if CommonParams.any_has_primary_key?(query, inserts) do
+        if CommonParams.any_has_primary_key?(schema_module, inserts) do
           opts
-          |> CommonParams.build_insert_all_options(query)
+          |> CommonParams.on_conflict_options(schema_module)
           |> Keyword.merge(opts)
         else
           opts
         end
 
-      {:ok, Config.repo!(opts).insert_all(query, inserts, opts)}
+      {:ok, Config.repo!(opts).insert_all(schema_module, inserts, opts)}
     end
   end
 
@@ -318,23 +320,19 @@ defmodule EctoShorts.Actions do
   For example, if you need to find posts and keep track of which title matched each post:
 
   ```elixir
-
-    EctoShorts.Actions.batch(Post, [:title], [
-      %{title: "First Post"},
-      %{title: "Second Post"}
-    ])
-
+  iex> EctoShorts.Actions.batch(Post, [:title], [
+  ...>   %{title: "First Post"},
+  ...>   %{title: "Second Post"}
+  ...> ])
   ```
 
   This function will return a map like this:
 
   ```elixir
-
-    %{
-      %{title: "First Post"} => %Post{title: "First Post"},
-      %{title: "Second Post"} => %Post{title: "Second Post"}
-    }
-
+  %{
+    %{title: "First Post"} => %Post{title: "First Post"},
+    %{title: "Second Post"} => %Post{title: "Second Post"}
+  }
   ```
 
   ## Composite keys
@@ -345,23 +343,19 @@ defmodule EctoShorts.Actions do
   For instance, finding users in specific organizations:
 
   ```elixir
-
-    EctoShorts.Actions.batch(User, [:organization_id, :email], [
-      %{organization_id: 1, email: "user_one@email.com"},
-      %{organization_id: 2, email: "user_two@email.com"}
-    ])
-
+  iex> EctoShorts.Actions.batch(User, [:organization_id, :email], [
+  ...>   %{organization_id: 1, email: "user_one@email.com"},
+  ...>   %{organization_id: 2, email: "user_two@email.com"}
+  ...> ])
   ```
 
   This function will return a map like this:
 
   ```elixir
-
-    %{
-      %{organization_id: 1, email: "user_one@email.com"} => %User{id: 1, organization_id: 1, email: "user_one@my-app.com"},
-      %{organization_id: 2, email: "user_two@email.com"} => %User{id: 2, organization_id: 2, email: "user_two@my-app.com"}
-    }
-
+  %{
+    %{organization_id: 1, email: "user_one@email.com"} => %User{id: 1, organization_id: 1, email: "user_one@my-app.com"},
+    %{organization_id: 2, email: "user_two@email.com"} => %User{id: 2, organization_id: 2, email: "user_two@my-app.com"}
+  }
   ```
 
   If no batch keys are provided, the function will automatically use the
@@ -381,12 +375,12 @@ defmodule EctoShorts.Actions do
   For example:
 
   ```elixir
-    iex> EctoShorts.Repo.transaction(fn ->
-    ...>   Post
-    ...>   |> Actions.batch([:title], [%{title: "post_title"}], stream: true)
-    ...>   |> Enum.to_list()
-    ...> end)
-    {:ok, [%{%{title: "post_title"} => %Post{title: "post_title"}}]}
+  iex> EctoShorts.Repo.transaction(fn ->
+  ...>   Post
+  ...>   |> Actions.batch([:title], [%{title: "post_title"}], stream: true)
+  ...>   |> Enum.to_list()
+  ...> end)
+  {:ok, [%{%{title: "post_title"} => %Post{title: "post_title"}}]}
   ```
 
   ## Examples
@@ -492,12 +486,14 @@ defmodule EctoShorts.Actions do
   def update_all(query, find_params, update_params, opts \\ []) do
     opts = Keyword.merge(default_opts(), opts)
 
+    updates =
+      query
+      |> CommonSchemas.get_schema_queryable()
+      |> CommonParams.convert_to_update_all_params(update_params, opts)
+
     query
     |> CommonFilters.convert_params_to_filter(find_params, opts)
-    |> Config.repo!(opts).update_all(
-      CommonParams.convert_to_update_all_params(query, update_params, opts),
-      opts
-    )
+    |> Config.repo!(opts).update_all(updates, opts)
   end
 
   @doc group: "Query API"
@@ -556,7 +552,9 @@ defmodule EctoShorts.Actions do
         case query |> CommonFilters.convert_params_to_filter(params, opts) |> repo.one(opts) do
           nil ->
             with {:error, changeset} <-
-                   query |> create_changeset(params, opts) |> repo.insert(opts) do
+                   query
+                   |> create_changeset(params, opts)
+                   |> repo.insert(opts) do
               {:error,
                {:conflict, "Failed to create record.",
                 %{

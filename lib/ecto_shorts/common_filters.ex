@@ -123,13 +123,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   @doc """
-  Converts filter parameters into an Ecto query with an explicit schema
-  module.
-
-  This function is similar to `convert_params_to_filter/3` but allows
-  explicitly specifying the schema module to use for building the query.
-  This is useful when working with complex queries that involve multiple
-  schemas or when the schema cannot be automatically inferred.
+  Converts a map or keyword list of parameters into an Ecto query.
 
   ## Examples
 
