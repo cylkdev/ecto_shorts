@@ -107,6 +107,8 @@ defmodule EctoShorts.CommonParams do
 
   defp update_invoc(:set, field, value), do: {:set, field, value}
 
+  @default_insert_all_options [validate: true]
+
   @doc """
 
   ## Placeholders
@@ -145,36 +147,131 @@ defmodule EctoShorts.CommonParams do
 
     * `:validate` - ...
   """
-  def convert_to_insert_all_params(query, params_list, opts) do
+  def convert_to_insert_all_params(query, params_list, opts \\ []) do
+    opts = Keyword.merge(@default_insert_all_options, opts)
+
     utc_now = datetime_utc_now()
 
     EctoShorts.Utils.reduce_all(params_list, fn arg ->
-      changeset = build_changeset(arg, query)
-
-      if has_primary_key?(query, changeset) do
-        with {:ok, schema_data} <- Changeset.apply_action(changeset, :update) do
-          {:ok,
-           serialize_schema_data(
-             query,
-             schema_data,
-             Map.keys(changeset.changes),
-             utc_now,
-             opts
-           )}
-        end
-      else
-        with {:ok, schema_data} <- Changeset.apply_action(changeset, :insert) do
-          {:ok,
-           serialize_schema_data(
-             query,
-             schema_data,
-             Map.keys(changeset.changes),
-             utc_now,
-             opts
-           )}
-        end
+      with {:ok, schema_data, changed_keys} <- apply_change(query, arg, opts) do
+        {:ok, serialize_insert(query, schema_data, changed_keys, utc_now, opts)}
       end
     end)
+  end
+
+  defp apply_change(query, {%{data: %{__meta__: _} = schema_data} = changeset, params}, opts) do
+    if opts[:validate] do
+      action = if has_primary_key?(query, schema_data), do: :update, else: :insert
+
+      changeset = CommonSchemas.get_schema_queryable(query).changeset(changeset, params)
+
+      with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
+        {:ok, schema_data, Map.keys(changeset.changes)}
+      end
+    else
+      {:ok, struct(schema_data, params), get_changed_keys(schema_data, params)}
+    end
+  end
+
+  defp apply_change(query, {%{__meta__: _} = schema_data, params}, opts) do
+    if opts[:validate] do
+      action = if has_primary_key?(query, schema_data), do: :update, else: :insert
+
+      changeset = CommonSchemas.get_schema_queryable(query).changeset(schema_data, params)
+
+      with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
+        {:ok, schema_data, Map.keys(changeset.changes)}
+      end
+    else
+      {:ok, struct(schema_data, params), get_changed_keys(schema_data, params)}
+    end
+  end
+
+  defp apply_change(query, %{data: %{__meta__: _} = schema_data} = changeset, opts) do
+    if opts[:validate] do
+      action = if has_primary_key?(query, schema_data), do: :update, else: :insert
+
+      changeset = CommonSchemas.get_schema_queryable(query).changeset(changeset, %{})
+
+      with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
+        {:ok, schema_data, Map.keys(changeset.changes)}
+      end
+    else
+      changed_keys =
+        schema_data
+        |> EctoShorts.SchemaHelpers.struct_to_jsonable_map()
+        |> Map.keys()
+
+      {:ok, schema_data, changed_keys}
+    end
+  end
+
+  defp apply_change(query, %{__meta__: %{schema: queryable}} = schema_data, opts) do
+    if opts[:validate] do
+      action = if has_primary_key?(query, schema_data), do: :update, else: :insert
+
+      changeset = CommonSchemas.get_schema_queryable(query).changeset(schema_data, %{})
+
+      with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
+        {:ok, schema_data, Map.keys(changeset.changes)}
+      end
+    else
+      changed_keys =
+        queryable
+        |> struct()
+        |> EctoShorts.SchemaHelpers.struct_to_jsonable_map()
+        |> Map.keys()
+
+      {:ok, schema_data, changed_keys}
+    end
+  end
+
+  defp apply_change(query, params, opts) do
+    if opts[:validate] do
+      action = if has_primary_key?(query, params), do: :update, else: :insert
+
+      attrs =
+        if has_primary_key?(query, params) do
+          Map.take(params, CommonSchemas.get_schema_reflection(query, :primary_key))
+        else
+          %{}
+        end
+
+      changeset =
+        query
+        |> CommonSchemas.get_schema_queryable()
+        |> struct!(attrs)
+        |> CommonSchemas.get_schema_queryable(query).changeset(params)
+
+      with {:ok, schema_data} <- Changeset.apply_action(changeset, action) do
+        {:ok, schema_data, Map.keys(changeset.changes)}
+      end
+    else
+      schema_data =
+        query
+        |> CommonSchemas.get_schema_queryable()
+        |> struct(params)
+
+      {:ok, schema_data, Map.keys(params)}
+    end
+  end
+
+  defp get_changed_keys(schema_data, params) do
+    Enum.reduce(params, [], fn {key, value}, acc ->
+      if Map.get(schema_data, key) !== value do
+        [key | acc]
+      else
+        acc
+      end
+    end)
+  end
+
+  defp serialize_insert(query, data, changed_keys, utc_now, opts) do
+    data
+    |> Map.take(CommonSchemas.get_schema_reflection(query, :query_fields))
+    |> drop_nil_if_not_changed(changed_keys)
+    |> maybe_put_placeholders(opts[:placeholders] || %{}, opts)
+    |> put_timestamps(utc_now, query, opts)
   end
 
   @doc """
@@ -203,7 +300,7 @@ defmodule EctoShorts.CommonParams do
   @doc """
   ...
   """
-  def build_insert_all_conflict_options(opts, query) do
+  def build_insert_all_options(opts, query) do
     [
       conflict_target: CommonSchemas.get_schema_reflection(query, :primary_key),
       on_conflict: {:replace, schema_replace_keys(query, opts)}
@@ -215,44 +312,6 @@ defmodule EctoShorts.CommonParams do
     |> CommonSchemas.get_schema_reflection(:query_fields)
     |> Kernel.--(CommonSchemas.get_schema_reflection(query, :primary_key))
     |> Kernel.--([inserted_at_source(opts)])
-  end
-
-  defp serialize_schema_data(query, data, changed_keys, utc_now, opts) do
-    data
-    |> Map.take(CommonSchemas.get_schema_reflection(query, :query_fields))
-    |> drop_nil_if_not_changed(changed_keys)
-    |> maybe_put_placeholders(opts[:placeholders] || %{}, opts)
-    |> put_timestamps(utc_now, query, opts)
-  end
-
-  defp build_changeset({%{data: %{__meta__: _}} = changeset, params}, query) do
-    CommonSchemas.get_schema_queryable(query).changeset(changeset, params)
-  end
-
-  defp build_changeset({%{__meta__: _} = schema_data, params}, query) do
-    CommonSchemas.get_schema_queryable(query).changeset(schema_data, params)
-  end
-
-  defp build_changeset(%{data: %{__meta__: _}} = changeset, query) do
-    CommonSchemas.get_schema_queryable(query).changeset(changeset, %{})
-  end
-
-  defp build_changeset(%{__meta__: _} = schema_data, query) do
-    CommonSchemas.get_schema_queryable(query).changeset(schema_data, %{})
-  end
-
-  defp build_changeset(params, query) do
-    attrs =
-      if has_primary_key?(query, params) do
-        Map.take(params, CommonSchemas.get_schema_reflection(query, :primary_key))
-      else
-        %{}
-      end
-
-    query
-    |> CommonSchemas.get_schema_queryable()
-    |> struct!(attrs)
-    |> CommonSchemas.get_schema_queryable(query).changeset(params)
   end
 
   defp drop_nil_if_not_changed(data, changed_keys) do

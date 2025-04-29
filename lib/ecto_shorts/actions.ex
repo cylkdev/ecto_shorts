@@ -72,8 +72,8 @@ defmodule EctoShorts.Actions do
 
   ## Conflict Handling
 
-  When a complete primary key is present in an entry, this function treats
-  it as an upsert. It automatically sets:
+  When a complete primary key is present in an entry, this function
+  treats it as an upsert. It automatically sets:
 
     - `:conflict_target` to the schema’s primary key
 
@@ -84,7 +84,7 @@ defmodule EctoShorts.Actions do
 
   This ensures existing records are updated cleanly with minimal setup.
 
-  ## Preloading Existing Records
+  ## Preloading
 
   To fetch existing records before inserting, enable the `:batch_preload`
   option.
@@ -93,14 +93,14 @@ defmodule EctoShorts.Actions do
 
     - Fetch the existing record from the database
 
-    - Replace the map with a `{record, params}` tuple
+    - Replace the map with a `{schema_data(), params()}` tuple
 
   If the entry is already a tuple `{find_params, params}`, and the
-  `find_params` contain the full primary key, it will:
+  `find_params` contain the complete primary key, it will:
 
     - Query the existing record using `find_params`
 
-    - Return `{record, params}`
+    - Return `{schema_data(), params()}`
 
   This allows you to preload existing rows and apply new params against
   them before validation.
@@ -109,20 +109,19 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+    * `:repo` – Specifies the repo module to use for both read and write
+      operations.
 
-  Additional options include:
-
-      * `:batch_preload` - Can be the atom `:primary_key` or a list of keys
-      used to determine the uniqueness of of each record in the set.
+    * `:batch_preload` - Can be the atom `:primary_key` or a list of
+      keys used to determine the uniqueness of of each record in the
+      set.
 
   See `EctoShorts.CommonParams.convert_to_insert_all_params/3` for more options.
 
-  All options accepted by [`Ecto.Repo.get/3`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:get/3) are also supported.
-
   ## Examples
 
-      iex> EctoShorts.Actions.insert_all(Post, [%{title: "post_title"}])
+      iex> EctoShorts.Actions.insert_all(Post, [%{title: "post_title"}], returning: true)
+      {:ok, {1, [%Post{title: "post_title"}]}}
   """
   @spec insert_all(
           query :: query() | queryable() | source_queryable(),
@@ -143,7 +142,7 @@ defmodule EctoShorts.Actions do
       opts =
         if CommonParams.any_has_primary_key?(query, inserts) do
           opts
-          |> CommonParams.build_insert_all_conflict_options(query)
+          |> CommonParams.build_insert_all_options(query)
           |> Keyword.merge(opts)
         else
           opts
@@ -226,40 +225,43 @@ defmodule EctoShorts.Actions do
 
   @doc group: "Batch API"
   @doc """
-  Finds multiple records that match a list of params using OR conditions.
+  Finds all records matching the given parameter sets.
 
-  When working with databases, you often need to find multiple records that
-  match different criteria. This function simplifies that process by allowing
-  you to provide a list of parameters, where each set of parameters is used
-  to find matching records. The results are combined into a single list.
+  Each map in the provided list of parameters is used to build an `OR`
+  condition. This allows you to find all records where any parameter set
+  matches, without manually constructing complex OR queries.
 
-  For example, if you need to find users who match ANY of these criteria:
+  For example, to find users who match any of the following:
 
-  - Have email "user1@example.com"
-  - Have name "User 2"
-  - Belong to organization 3
+    - Has the email "user1@example.com"
+    - Has the name "User 2"
+    - Belongs to organization 3
 
-  Instead of writing three separate queries or a complex OR clause, you can
-  specify this as a list of parameters:
+  You can pass:
 
   ```elixir
   [
     %{email: "user1@example.com"},
-    %{name: "User 2"}, %{org_id: 3}
+    %{name: "User 2"},
+    %{org_id: 3}
   ]
   ```
 
+  Instead of writing multiple queries, a single query will return all
+  matching records.
+
   ## Composite keys
 
-  See `&batch/4` for information on composite keys.
+  For cases where a single lookup requires matching multiple fields
+  (composite keys), see `batch/4` for details.
 
   ## Options
 
-  This function supports the [Shared Options](EctoShorts.Actions.html#module-shared-options) in the module docs.
+    * `:replica` – Specifies the repo module to use for read operations.
+      Takes precedence over the `:repo` option when set.
 
-  All options accepted by [`Ecto.Repo.all/2`](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) are also supported.
-
-  See `&batch/4` for more options. This function does not support batch `:stream` option.
+    * `:repo` – Specifies the repo module to use for both read and write
+      operations.
 
   ## Examples
 
@@ -1505,16 +1507,15 @@ defmodule EctoShorts.Actions do
       iex> EctoShorts.Actions.stream({"users", MyApp.User}, %{id: 1}, repo: MyApp.Repo)
       iex> EctoShorts.Actions.stream({"users", MyApp.User}, %{id: 1}, replica: MyApp.Repo)
   """
-  @spec stream(
-          query :: query() | queryable() | source_queryable(),
-          params :: params()
-        ) :: stream()
+  @spec stream(query :: query() | queryable() | source_queryable()) :: stream()
+  @spec stream(query :: query() | queryable() | source_queryable(), params :: params()) ::
+          stream()
   @spec stream(
           query :: query() | queryable() | source_queryable(),
           params :: params(),
           opts :: opts()
         ) :: stream()
-  def stream(query, params, opts \\ []) do
+  def stream(query, params \\ %{}, opts \\ []) do
     opts = Keyword.merge(default_opts(), opts)
 
     query
