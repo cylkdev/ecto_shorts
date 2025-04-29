@@ -430,7 +430,7 @@ defmodule EctoShorts.Actions do
 
   defp fetch_batch_id!(data, primary_key_or_keys, query) do
     with :error <- fetch_batch_id(data, primary_key_or_keys, query) do
-      raise "Batch key required, Primary key disabled for schema #{CommonSchemas.get_schema_queryable(query)}, got: #{inspect(data)}"
+      raise "Batch key not found for schema #{CommonSchemas.get_schema_queryable(query)}: #{inspect(data)}"
     end
   end
 
