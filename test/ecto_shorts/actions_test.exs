@@ -33,21 +33,6 @@ defmodule EctoShorts.ActionsTest do
         Actions.batch(PostNoPrimaryKeySchema, [%{title: "post_title"}])
       end
     end
-
-    test "returns stream when option :stream is true" do
-      assert %Stream{} = Actions.batch(Post, :primary_key, [%{title: "post_title"}], stream: true)
-    end
-
-    test "returns records with option :stream" do
-      _post = insert!(Repo, Post, %{title: "post_title"})
-
-      assert {:ok, [%{%{title: "post_title"} => %Post{title: "post_title"}}]} =
-               Repo.transaction(fn ->
-                 Post
-                 |> Actions.batch([:title], [%{title: "post_title"}], stream: true)
-                 |> Enum.to_list()
-               end)
-    end
   end
 
   describe "batch_find/2" do
@@ -81,7 +66,7 @@ defmodule EctoShorts.ActionsTest do
                   message: "Record not found.",
                   details: %{
                     failed_value: %{title: "does_not_exist"},
-                    key: [:title],
+                    batch_key: [:title],
                     params: [%{title: "does_not_exist"}],
                     position: 0,
                     query: EctoShorts.Schemas.Post
