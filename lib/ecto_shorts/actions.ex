@@ -183,7 +183,7 @@ defmodule EctoShorts.Actions do
     Enum.map(params_list, fn
       {find_params, params} when is_map(find_params) and not is_struct(find_params) ->
         if has_batch_key?(find_params, batch_key, query) do
-          case Map.get(batch_results, fetch_batch_id!(find_params, batch_key, query)) do
+          case Map.get(batch_results, batch_id!(find_params, batch_key, query)) do
             nil -> {find_params, params}
             schema_data -> {schema_data, drop_batch_keys(params, batch_key, query)}
           end
@@ -193,7 +193,7 @@ defmodule EctoShorts.Actions do
 
       params when is_map(params) and not is_struct(params) ->
         if has_batch_key?(params, batch_key, query) do
-          case Map.get(batch_results, fetch_batch_id!(params, batch_key, query)) do
+          case Map.get(batch_results, batch_id!(params, batch_key, query)) do
             nil -> params
             schema_data -> {schema_data, drop_batch_keys(params, batch_key, query)}
           end
@@ -300,7 +300,7 @@ defmodule EctoShorts.Actions do
     params_list
     |> Stream.with_index()
     |> Utils.reduce_all(fn {params, i} ->
-      case Map.get(batch_results, fetch_batch_id!(params, batch_key, query)) do
+      case Map.get(batch_results, batch_id!(params, batch_key, query)) do
         nil ->
           {:error,
            Error.call(:not_found, "Record not found.", %{
@@ -415,7 +415,7 @@ defmodule EctoShorts.Actions do
   def batch(query, batch_key \\ :primary_key, params_list, opts \\ []) do
     query
     |> all(%{or_where: params_list}, opts)
-    |> Enum.group_by(&fetch_batch_id!(&1, batch_key, query))
+    |> Enum.group_by(&batch_id!(&1, batch_key, query))
     |> Map.new(fn
       {batch_id, []} ->
         {batch_id, []}
@@ -428,13 +428,13 @@ defmodule EctoShorts.Actions do
     end)
   end
 
-  defp fetch_batch_id!(data, primary_key_or_keys, query) do
-    with :error <- fetch_batch_id(data, primary_key_or_keys, query) do
+  defp batch_id!(data, primary_key_or_keys, query) do
+    with :error <- batch_id(data, primary_key_or_keys, query) do
       raise "Batch key not found for schema #{CommonSchemas.get_schema_queryable(query)}: #{inspect(data)}"
     end
   end
 
-  defp fetch_batch_id(data, primary_key_or_keys, query) do
+  defp batch_id(data, primary_key_or_keys, query) do
     case normalize_batch_key(primary_key_or_keys, query) do
       [] -> :error
       keys -> fetch_keys(data, keys)
