@@ -247,7 +247,7 @@ query = EctoShorts.CommonFilters.convert_params_to_filter(User, %{age: %{gte: 18
 users = MyApp.Repo.all(query)
 ```
 
-See also: `EctoShorts.QueryBuilder.Schema`, `EctoShorts.QueryBuilder.Common`
+See also: `EctoShorts.QueryBuilders.Schema`, `EctoShorts.QueryBuilders.Common`
 
 ## `EctoShorts.CommonChanges`
 

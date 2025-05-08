@@ -1,15 +1,17 @@
-defmodule EctoShorts.Support.MockSchemas.BasicSchema do
+defmodule EctoShorts.Schema.User do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "basic_schemas" do
-    field :body, :string
+  schema "users" do
+    field(:first_name, :string)
+
+    has_many(:comments, EctoShorts.Schema.Comment)
 
     timestamps()
   end
 
-  @available_fields [:body]
+  @available_fields [:first_name]
 
   def changeset(model_or_changeset, attrs \\ %{}) do
     cast(model_or_changeset, attrs, @available_fields)

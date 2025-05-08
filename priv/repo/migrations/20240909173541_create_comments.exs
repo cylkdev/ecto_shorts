@@ -1,11 +1,10 @@
-defmodule EctoShorts.Support.Repo.Migrations.CreateComments do
+defmodule EctoShorts.Repo.Migrations.CreateComments do
   use Ecto.Migration
 
   def change do
     create table(:comments) do
       add :body, :text
-      add :count, :integer
-      add :tags, {:array, :text}
+      add :replies, :integer
 
       add :post_id, references(:posts,
         on_delete: :restrict,

@@ -10,7 +10,7 @@ Ecto Shorts provides many built-in filters through the `EctoShorts.CommonFilters
 
 ### Implementing `by_search/2`
 
-The simplest way to add custom filtering is to implement the `by_search/2` function in your schema module. This function is called by the `EctoShorts.QueryBuilder.Common` module when you use the `:search` filter parameter in your queries.
+The simplest way to add custom filtering is to implement the `by_search/2` function in your schema module. This function is called by the `EctoShorts.QueryBuilders.Common` module when you use the `:search` filter parameter in your queries.
 
 ```elixir
 defmodule MyApp.User do

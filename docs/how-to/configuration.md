@@ -258,7 +258,7 @@ defmodule MyApp.MultiTenant do
 end
 ```
 
-#### Approach 2: Using Postgres Schemas with the prefix option
+#### Approach 2: Using Postgres Schema with the prefix option
 
 ```elixir
 defmodule MyApp.MultiTenant do

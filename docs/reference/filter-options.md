@@ -50,11 +50,11 @@ EctoShorts.Actions.all(User, %{id: [1, 2, 3]})
 from u in User, where: u.id in [1, 2, 3]
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build/3`
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build/3`
 
 ## Comparison Operators
 
-Comparison operators allow you to filter records based on field values using various comparison conditions. These are implemented in `EctoShorts.QueryBuilder.Schema.ComparisonFilter`.
+Comparison operators allow you to filter records based on field values using various comparison conditions. These are implemented in `EctoShorts.QueryBuilders.Schema.ComparisonFilter`.
 
 ### Greater Than
 
@@ -76,7 +76,7 @@ EctoShorts.Actions.all(User, %{age: %{gt: 30}})
 from u in User, where: u.age > 30
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_schema_field_filters/5` with `:gt` operator
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_schema_field_filters/5` with `:gt` operator
 
 ### Greater Than or Equal To
 
@@ -98,7 +98,7 @@ EctoShorts.Actions.all(User, %{age: %{gte: 30}})
 from u in User, where: u.age >= 30
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_schema_field_filters/5` with `:gte` operator
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_schema_field_filters/5` with `:gte` operator
 
 ### Less Than
 
@@ -120,7 +120,7 @@ EctoShorts.Actions.all(User, %{age: %{lt: 30}})
 from u in User, where: u.age < 30
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_schema_field_filters/5` with `:lt` operator
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_schema_field_filters/5` with `:lt` operator
 
 ### Less Than or Equal To
 
@@ -142,7 +142,7 @@ EctoShorts.Actions.all(User, %{age: %{lte: 30}})
 from u in User, where: u.age <= 30
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_schema_field_filters/5` with `:lte` operator
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_schema_field_filters/5` with `:lte` operator
 
 ### Combined Comparison Operators
 
@@ -164,7 +164,7 @@ EctoShorts.Actions.all(User, %{age: %{gte: 20, lte: 30}})
 from u in User, where: u.age >= 20 and u.age <= 30
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build/3` which processes each comparison operator in the map
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build/3` which processes each comparison operator in the map
 
 ## Text Search Filters
 
@@ -190,7 +190,7 @@ EctoShorts.Actions.all(User, %{name: %{like: "John"}})
 from u in User, where: like(u.name, "%John%")
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_schema_field_filters/5` with `:like` operator
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_schema_field_filters/5` with `:like` operator
 
 ### ILike (Case-Insensitive)
 
@@ -212,11 +212,11 @@ EctoShorts.Actions.all(User, %{name: %{ilike: "john"}})
 from u in User, where: ilike(u.name, "%john%")
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_schema_field_filters/5` with `:ilike` operator
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_schema_field_filters/5` with `:ilike` operator
 
 ## Date Filters
 
-Date filters allow you to filter records based on their `inserted_at` timestamp. These filters are implemented in `EctoShorts.QueryBuilder.Common`.
+Date filters allow you to filter records based on their `inserted_at` timestamp. These filters are implemented in `EctoShorts.QueryBuilders.Common`.
 
 ### Start Date
 
@@ -238,7 +238,7 @@ EctoShorts.Actions.all(User, %{start_date: ~D[2023-01-01]})
 from u in User, where: u.inserted_at >= ^~N[2023-01-01 00:00:00]
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:start_date` key
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:start_date` key
 
 ### End Date
 
@@ -260,7 +260,7 @@ EctoShorts.Actions.all(User, %{end_date: ~D[2023-12-31]})
 from u in User, where: u.inserted_at <= ^~N[2023-12-31 23:59:59.999999]
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:end_date` key
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:end_date` key
 
 ### Date Range
 
@@ -291,7 +291,7 @@ from u in User,
 
 ## Pagination Filters
 
-Pagination filters allow you to limit the number of records returned and implement cursor-based pagination. These filters are implemented in `EctoShorts.QueryBuilder.Common`.
+Pagination filters allow you to limit the number of records returned and implement cursor-based pagination. These filters are implemented in `EctoShorts.QueryBuilders.Common`.
 
 ### First N Records
 
@@ -313,7 +313,7 @@ EctoShorts.Actions.all(User, %{first: 10})
 from u in User, order_by: [asc: u.id], limit: 10
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:first` key
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:first` key
 
 ### Last N Records
 
@@ -335,7 +335,7 @@ EctoShorts.Actions.all(User, %{last: 10})
 from u in User, order_by: [desc: u.id], limit: 10
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:last` key
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:last` key
 
 ### Before ID
 
@@ -357,7 +357,7 @@ EctoShorts.Actions.all(User, %{before: 100})
 from u in User, where: u.id < 100
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:before` key
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:before` key
 
 ### After ID
 
@@ -379,11 +379,11 @@ EctoShorts.Actions.all(User, %{after: 100})
 from u in User, where: u.id > 100
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:after` key
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:after` key
 
 ## Association Filters
 
-Association filters allow you to filter records based on their relationships with other schemas. These are implemented in `EctoShorts.QueryBuilder.Schema`.
+Association filters allow you to filter records based on their relationships with other schemas. These are implemented in `EctoShorts.QueryBuilders.Schema`.
 
 ### Filter by Association Field
 
@@ -407,7 +407,7 @@ from p in Post,
   where: u.name == "John"
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.create_schema_assocation_filter/5` and `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_relational/4`
+**Implementation:** `EctoShorts.QueryBuilders.Schema.create_schema_assocation_filter/5` and `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_relational/4`
 
 ### Filter by Association List
 
@@ -431,11 +431,11 @@ from u in User,
   where: r.code in ["admin", "moderator"]
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.create_schema_assocation_filter/5` and `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_relational_filter/5`
+**Implementation:** `EctoShorts.QueryBuilders.Schema.create_schema_assocation_filter/5` and `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_relational_filter/5`
 
 ## Array Field Filters
 
-Array field filters allow you to query PostgreSQL array fields. These are implemented in `EctoShorts.QueryBuilder.Schema.ComparisonFilter`.
+Array field filters allow you to query PostgreSQL array fields. These are implemented in `EctoShorts.QueryBuilders.Schema.ComparisonFilter`.
 
 ### Array Equality
 
@@ -457,7 +457,7 @@ EctoShorts.Actions.all(User, %{tags: ["elixir", "phoenix"]})
 from u in User, where: u.tags == ["elixir", "phoenix"]
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_array/3` when passed a list
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_array/3` when passed a list
 
 ### Array Contains
 
@@ -479,11 +479,11 @@ EctoShorts.Actions.all(User, %{tags: "elixir"})
 from u in User, where: "elixir" in u.tags
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Schema.ComparisonFilter.build_array/3` when passed a single value
+**Implementation:** `EctoShorts.QueryBuilders.Schema.ComparisonFilter.build_array/3` when passed a single value
 
 ## Preloading
 
-Preloading allows you to load associated data in a single query, reducing the N+1 query problem. This is implemented in `EctoShorts.QueryBuilder.Common`.
+Preloading allows you to load associated data in a single query, reducing the N+1 query problem. This is implemented in `EctoShorts.QueryBuilders.Common`.
 
 ### Preload Single Association
 
@@ -505,7 +505,7 @@ EctoShorts.Actions.all(User, %{preload: :posts})
 from u in User, preload: [:posts]
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:preload` key
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:preload` key
 
 ### Preload Multiple Associations
 
@@ -527,7 +527,7 @@ EctoShorts.Actions.all(User, %{preload: [:posts, :comments]})
 from u in User, preload: [:posts, :comments]
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:preload` key and a list value
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:preload` key and a list value
 
 ### Preload Nested Associations
 
@@ -549,11 +549,11 @@ EctoShorts.Actions.all(User, %{preload: [posts: :comments]})
 from u in User, preload: [posts: :comments]
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:preload` key and a keyword list value
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:preload` key and a keyword list value
 
 ## Custom Search
 
-The custom search filter allows you to implement your own search logic in your schemas. This is implemented in `EctoShorts.QueryBuilder.Common`.
+The custom search filter allows you to implement your own search logic in your schemas. This is implemented in `EctoShorts.QueryBuilders.Common`.
 
 ### Search
 
@@ -570,7 +570,7 @@ Use the schema's `by_search/2` function to perform a custom search.
 EctoShorts.Actions.all(User, %{search: "john"})
 ```
 
-**Implementation:** `EctoShorts.QueryBuilder.Common.create_schema_filter/3` with `:search` key
+**Implementation:** `EctoShorts.QueryBuilders.Common.create_schema_filter/3` with `:search` key
 
 **Note:** This requires the schema to implement a `by_search/2` function:
 

@@ -38,7 +38,7 @@ post_params = %{
   "user" => %{id: 1}  # Reference to existing user
 }
 
-post_changeset = Post.changeset(%Post{}, post_params)
+post_changeset = Post.changeset(%EctoShorts.Schema.Post{}, post_params)
 post_changeset = CommonChanges.put_or_cast_assoc(post_changeset, :user)
 ```
 
@@ -138,7 +138,7 @@ defmodule MyApp.Blog do
 
   def create_post_with_user(post_params) do
     # Start with an empty post
-    %Post{}
+    %EctoShorts.Schema.Post{}
     # Apply the post params
     |> Post.changeset(post_params)
     # Handle the user association

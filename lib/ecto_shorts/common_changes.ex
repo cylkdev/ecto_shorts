@@ -1,221 +1,274 @@
 defmodule EctoShorts.CommonChanges do
   @moduledoc """
-  Simplifies working with associations in Ecto changesets.
+  `EctoShorts.CommonChanges` provides helper functions to
+  simplify working with Ecto changesets.
 
-  The `EctoShorts.CommonChanges` module provides functions that intelligently handle
-  associations in Ecto changesets, making it easier to work with relationships
-  between schemas. It automatically determines whether to use `put_assoc/4` or
-  `cast_assoc/3` based on the data provided.
+  This module focuses on making common tasks easier, such as
+  handling the difference between `put_assoc/4` and
+  `cast_assoc/3`, automatically preloading data when needed,
+  and conditionally validating or transforming fields.
 
-  ## Key Features
+  For example, when working with nested associations, you can
+  delegate the logic of choosing whether to cast or put the
+  association based on how the input is shaped:
 
-  * **Intelligent association handling** - Automatically chooses between `put_assoc/4` and `cast_assoc/3`
-  * **Many-to-many relationship support** - Easily update many-to-many relationships with just a list of IDs
-  * **Preloading associations** - Preload associations before applying changes
-  * **Conditional changeset functions** - Apply changes only when specific conditions are met
-  * **Association validation** - Ensure associations are properly provided
-
-  ## Preloading Associations on Change
-
-  When working with associations in changesets, you often need to preload the
-  association before applying changes. The `preload_change_assoc/3` function
-  simplifies this process:
-
-  ```elixir
-  defmodule MyApp.Accounts.User do
-    import Ecto.Changeset
-    alias EctoShorts.CommonChanges
-
-    def changeset(user, params) do
-      user
-      |> cast(params, [:name, :email])
-      |> validate_required([:name, :email])
-      |> CommonChanges.preload_change_assoc(:address)
-    end
-  end
-  ```
-
-  This allows you to pass an address as a map or as a struct directly in the params.
-
-  ## Validating Relations
-
-  You can ensure that a relation is provided either via an ID or as a nested map:
-
-  ```elixir
-  defmodule MyApp.Accounts.User do
-    import Ecto.Changeset
-    alias EctoShorts.CommonChanges
-
-    def changeset(user, params) do
-      user
-      |> cast(params, [:name, :email, :address_id])
-      |> validate_required([:name, :email])
-      |> CommonChanges.preload_change_assoc(:address,
-        required_when_missing: :address_id
-      )
-    end
-  end
-  ```
-
-  ## Conditional Functions
-  We can also run functions when something happens by defining conditional functions like so:
-
-      defmodule MyApp.Accounts.User do
-        alias EctoShorts.CommonChanges
-
-        def changeset(changeset, params) do
-          changeset
-            |> cast([:name, :email, :address_id])
-            |> validate_required([:name, :email])
-            |> CommonChanges.put_when(
-              &CommonChanges.changeset_field_nil?(&1, :email),
-              &put_change(&1, :email, "some_default@gmail.com")
-            )
-        end
+      def changeset(changeset, params) do
+        changeset
+        |> cast(params, [:name, :email])
+        |> EctoShorts.CommonChanges.preload_change_assoc(:address)
       end
 
-  """
-  require Logger
+  You can also apply logic only when needed. For instance,
+  if a field is nil and you want to provide a fallback value:
 
-  import Ecto.Changeset, only: [
-    get_field: 2,
-    put_assoc: 4,
-    cast_assoc: 2,
-    cast_assoc: 3
-  ]
+      EctoShorts.CommonChanges.put_when(
+        &EctoShorts.CommonChanges.changeset_field_nil?(&1, :email),
+        &put_change(&1, :email, "default@email.com")
+      )
+
+  Or you can require a related record based on whether a
+  foreign key is missing:
+
+      EctoShorts.CommonChanges.preload_change_assoc(
+        changeset,
+        :address,
+        required_when_missing: :address_id
+      )
+
+  These utilities help keep your changeset logic clean,
+  readable, and adaptable to a variety of input shapes
+  without having to handle all edge cases manually.
+  """
 
   alias Ecto.Changeset
-  alias EctoShorts.{Actions, Config, SchemaHelpers}
 
+  alias EctoShorts.{
+    Actions,
+    SchemaHelpers
+  }
+
+  @typedoc "An Ecto changeset being transformed or validated."
+  @type changeset :: Ecto.Changeset.t()
+
+  @typedoc "A field name (typically an atom)."
+  @type key :: atom()
+
+  @type precision :: :microsecond | :millisecond | :second
+
+  @typedoc """
+  A keyword-list of options.
+  """
+  @type opts :: keyword()
+
+  @filename_web_safe_regex ~r|^[ A-Za-z0-9\-\_\.\(\)]+$|u
+
+  @doc since: "2.5.0"
   @doc """
-  Runs a changeset function only if the specified condition function returns true.
+  Validates that a field contains only characters safe for filenames.
 
-  This function provides a clean way to conditionally apply changes to a changeset
-  based on a predicate function.
+  Accepts letters (A–Z, a–z), numbers (0–9), space, hyphen (-),
+  underscore (_), period (.), and parentheses.
 
-  ## Parameters
-
-  * `changeset` - The Ecto changeset to potentially modify
-  * `when_func` - A function that takes a changeset and returns a boolean
-  * `change_func` - A function that takes a changeset and returns a modified changeset
-
-  ## Returns
-
-  * The modified changeset if the condition was true
-  * The original changeset if the condition was false
+  You may also pass `:min` and `:max` options to set length constraints.
 
   ## Examples
 
-      iex> CommonChanges.put_when(
-      ...>   changeset,
-      ...>   &CommonChanges.changeset_field_nil?(&1, :email),
-      ...>   &put_change(&1, :email, "default@example.com")
-      ...> )
+      iex> EctoShorts.CommonChanges.validate_filename(changeset, :filename)
+      iex> EctoShorts.CommonChanges.validate_filename(changeset, :name, min: 3, max: 50)
+  """
+  @spec validate_filename(changeset(), key()) :: changeset()
+  @spec validate_filename(changeset(), key(), opts()) :: changeset()
+  def validate_filename(changeset, key \\ :filename, opts \\ []) do
+    changeset
+    |> Changeset.validate_change(key, fn
+      ^key, nil ->
+        []
+
+      ^key, change ->
+        message =
+          "Can only contain characters alphanumeric characters " <>
+            "(A-Z, a-z, 0-9) or special characters space, hyphen (-), " <>
+            "underscore(_), and period (.)."
+
+        if Regex.match?(@filename_web_safe_regex, change), do: [], else: [{key, message}]
+    end)
+    |> Changeset.validate_length(key, min: opts[:min] || 1, max: opts[:max] || 255)
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  Truncates a `NaiveDateTime` value in a field to a specified precision.
+
+  ## Examples
+
+      iex> EctoShorts.CommonChanges.truncate_naive_datetime_change(changeset, :started_at)
+  """
+  @spec truncate_naive_datetime_change(changeset(), key(), precision()) :: changeset()
+  def truncate_naive_datetime_change(changeset, key, precision \\ :second) do
+    Changeset.update_change(changeset, key, fn
+      datetime when is_struct(datetime, NaiveDateTime) ->
+        NaiveDateTime.truncate(datetime, precision)
+
+      term ->
+        term
+    end)
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  Truncates a `DateTime` value in a field to a specified precision.
+
+  ## Examples
+
+      iex> EctoShorts.CommonChanges.truncate_datetime_change(changeset, :expires_at)
+  """
+  @spec truncate_datetime_change(changeset(), key(), precision()) :: changeset()
+  def truncate_datetime_change(changeset, key, precision \\ :second) do
+    Changeset.update_change(changeset, key, fn
+      datetime when is_struct(datetime, DateTime) ->
+        DateTime.truncate(datetime, precision)
+
+      term ->
+        term
+    end)
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  Applies the given function if the field hasn’t already been changed.
+
+  ## Example
+
+      EctoShorts.CommonChanges.put_new_change(changeset, :slug, fn cs ->
+        put_change(cs, :slug, generate_slug(cs))
+      end)
+  """
+  @spec put_new_change(changeset(), key(), function()) :: changeset()
+  def put_new_change(changeset, key, fun) do
+    case Changeset.get_change(changeset, key) do
+      nil -> fun.(changeset)
+      _ -> changeset
+    end
+  end
+
+  @doc """
+  Applies a transformation function only if a condition is true.
+
+  ## Example
+
+      EctoShorts.CommonChanges.put_when(
+        &EctoShorts.CommonChanges.changeset_field_empty?(&1, :tags),
+        &put_change(&1, :tags, ["default"])
+      )
   """
   @spec put_when(
-    Changeset.t,
-    ((Changeset.t) -> boolean),
-    ((Changeset.t) -> Changeset.t)
-  ) :: Changeset.t
-  def put_when(changeset, when_func, change_func) do
+          changeset(),
+          (changeset() -> boolean()),
+          (changeset() -> changeset())
+        ) :: changeset()
+  def put_when(changeset, when_func, func) do
     if when_func.(changeset) do
-      change_func.(changeset)
+      func.(changeset)
     else
       changeset
     end
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  Returns true if the field on the changeset is an empty list or map.
+  """
+  @spec changeset_change_empty?(changeset(), key()) :: boolean()
+  def changeset_change_empty?(changeset, key) do
+    case Changeset.get_change(changeset, key) do
+      change when is_list(change) -> change === []
+      change when is_map(change) -> change === %{}
+      _ -> false
+    end
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  Returns true if the change for the given key is nil.
+  """
+  @spec changeset_change_nil?(changeset(), key()) :: boolean()
+  def changeset_change_nil?(changeset, key) do
+    changeset
+    |> Changeset.get_change(key)
+    |> is_nil()
   end
 
   @doc """
   Returns true if the field on the changeset is an empty list in
   the data or changes.
 
-  Useful for conditional logic based on whether a collection association is empty.
-
-  ## Parameters
-
-  * `changeset` - The Ecto changeset to check
-  * `key` - The field name to check for emptiness
-
-  ## Returns
-
-  * `true` if the field is an empty list
-  * `false` otherwise
-
-  ## Examples
+  ### Examples
 
       iex> EctoShorts.CommonChanges.changeset_field_empty?(changeset, :comments)
   """
-  @spec changeset_field_empty?(Changeset.t, atom) :: boolean
+  @spec changeset_field_empty?(changeset(), key()) :: boolean()
   def changeset_field_empty?(changeset, key) do
-    get_field(changeset, key) === []
+    case Changeset.get_field(changeset, key) do
+      change when is_list(change) -> change === []
+      change when is_map(change) -> change === %{}
+      _ -> false
+    end
   end
 
   @doc """
-  Returns true if the field on the changeset is nil in the data
-  or changes.
+  Returns true if the field on the changeset is nil in the data or changes.
 
-  Useful for conditional logic based on whether a field or association is nil.
-
-  ## Parameters
-
-  * `changeset` - The Ecto changeset to check
-  * `key` - The field name to check for nil value
-
-  ## Returns
-
-  * `true` if the field is nil
-  * `false` otherwise
-
-  ## Examples
+  ### Examples
 
       iex> EctoShorts.CommonChanges.changeset_field_nil?(changeset, :comments)
   """
-  @spec changeset_field_nil?(Changeset.t, atom) :: boolean
+  @spec changeset_field_nil?(changeset(), key()) :: boolean()
   def changeset_field_nil?(changeset, key) do
-    changeset |> get_field(key) |> is_nil()
+    changeset
+    |> Changeset.get_field(key)
+    |> is_nil()
   end
 
   @doc """
-  Preloads an association and then intelligently applies put_or_cast_assoc.
+  Shortcut version of `preload_change_assoc/3` that uses default options.
 
-  This function is the primary entry point for association handling. It preloads
-  the association if a change is made to it, and then determines whether to use
-  `put_assoc/4` or `cast_assoc/3` based on the data.
+  Only preloads and casts if the key is present in the params. Otherwise,
+  falls back to a regular `cast_assoc/3`.
+  """
+  @spec preload_change_assoc(changeset(), key()) :: changeset()
+  def preload_change_assoc(changeset, key) do
+    if Map.has_key?(changeset.params, Atom.to_string(key)) do
+      changeset
+      |> preload_changeset_assoc(key)
+      |> put_or_cast_assoc(key)
+    else
+      Changeset.cast_assoc(changeset, key)
+    end
+  end
 
-  ## Parameters
+  @doc """
+  Preloads an association if present in the changeset params and applies
+  either `cast_assoc/3` or `put_assoc/3`, depending on the data shape.
 
-  * `changeset` - The Ecto changeset to modify
-  * `key` - The association field name
-  * `opts` - Options for controlling the behavior
+  This function allows direct usage of embedded maps or structs in the params
+  without requiring manual preload in your controller or context logic.
 
   ## Options
 
-  * `required_when_missing` - Sets `:required` to true if the
-    field is `nil` in both changes and data. This is useful when
-    you have both an association and a foreign key field, and you
-    want to ensure one of them is provided.
+    * `:required` - If set to `true`, validates that the association is not nil.
 
-  * `:required` - Indicates if the association is mandatory.
-    For one-to-one associations, a non-nil value satisfies
-    this validation. For many associations, a non-empty list
-    is sufficient. See [Ecto.Changeset.cast_assoc/3](https://hexdocs.pm/ecto/Ecto.Changeset.html#cast_assoc/3)
-    for more information.
+    * `:required_when_missing` - If the given field is `nil` in both changes and data, `:required` will be set to true.
 
-  * `:ids` - A list of IDs to preload for the association. Useful when
-    working with many-to-many relationships.
+    * `:repo` - Optional. Overrides the default repo used for preloading.
 
-  ## Returns
+  ## Example
 
-  * The modified changeset with the association preloaded and properly cast or put
-
-  ## Examples
-
-      iex> CommonChanges.preload_change_assoc(changeset, :my_relation)
-      iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required_when_missing: :my_relation_id)
-      iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required: true)
-      iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required_when_missing: :my_relation_id)
+    iex> EctoShorts.CommonChanges.preload_change_assoc(changeset, :profile)
+    iex> EctoShorts.CommonChanges.preload_change_assoc(changeset, :account, required: true)
+    iex> EctoShorts.CommonChanges.preload_change_assoc(changeset, :settings, required_when_missing: :settings_id)
+    iex> EctoShorts.CommonChanges.preload_change_assoc(changeset, :tags, repo: MyApp.CustomRepo)
   """
-  @spec preload_change_assoc(Changeset.t(), atom(), keyword()) :: Changeset.t
+  @spec preload_change_assoc(changeset(), key(), opts()) :: changeset()
   def preload_change_assoc(changeset, key, opts) do
     required? =
       if opts[:required_when_missing] do
@@ -231,179 +284,186 @@ defmodule EctoShorts.CommonChanges do
       |> preload_changeset_assoc(key, opts)
       |> put_or_cast_assoc(key, opts)
     else
-      cast_assoc(changeset, key, opts)
-    end
-  end
-
-  @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t
-  def preload_change_assoc(changeset, key) do
-    if Map.has_key?(changeset.params, Atom.to_string(key)) do
-      changeset
-      |> preload_changeset_assoc(key)
-      |> put_or_cast_assoc(key)
-    else
-      cast_assoc(changeset, key)
+      Changeset.cast_assoc(changeset, key, opts)
     end
   end
 
   @doc """
-  Preloads an association on a changeset's data.
+  Preloads the specified association onto the changeset `data`
+  before calling `put_assoc/3` or `cast_assoc/3`. This is used
+  internally by `preload_change_assoc/3` when a key is present
+  in the changeset params.
 
-  This function preloads the specified association on the changeset's data,
-  making it available for further operations.
-
-  ## Parameters
-
-  * `changeset` - The Ecto changeset to modify
-  * `key` - The association field name
-  * `opts` - Options for controlling the preload behavior
+  If the `:ids` option is provided, the association is loaded using
+  `Actions.all/3` and matched by those IDs. Otherwise, it uses the
+  configured or provided Repo to preload the association.
 
   ## Options
 
-  * `:ids` - A list of IDs to preload for the association. When provided,
-    only records with these IDs will be preloaded.
+    * `:ids` - A list of IDs to fetch the associated records directly.
+    * `:repo` - An optional custom Repo module to override default repo resolution.
 
-  ## Returns
-
-  * The modified changeset with the association preloaded
-
-  ## Examples
-
-      iex> CommonChanges.preload_changeset_assoc(changeset, :posts)
-      iex> CommonChanges.preload_changeset_assoc(changeset, :roles, ids: [1, 2, 3])
+  This is useful when working with nested input data that must be hydrated
+  into structs before being validated.
   """
-  @spec preload_changeset_assoc(Changeset.t, atom) :: Changeset.t
-  @spec preload_changeset_assoc(Changeset.t, atom, keyword()) :: Changeset.t
-  def preload_changeset_assoc(changeset, key, opts \\ [])
-
-  def preload_changeset_assoc(changeset, key, opts) do
-    if opts[:ids] do
-      schema = changeset_relationship_schema(changeset, key)
-
-      preloaded_data = Actions.all(schema, %{ids: opts[:ids]}, opts)
-
-      Map.update!(changeset, :data, &Map.put(&1, key, preloaded_data))
-    else
-      Map.update!(changeset, :data, &Config.repo!(opts).preload(&1, key, opts))
-    end
-  end
-
-  defp changeset_relationship_schema(changeset, key) do
-    if Map.has_key?(changeset.types, key) and relationship_exists?(changeset.types[key]) do
-      {:assoc, assoc} = Map.get(changeset.types, key)
-
-      assoc.queryable
-    else
-      %parent_schema{} = changeset.data
-
-      raise ArgumentError, "The key #{inspect(key)} is not an association for the queryable #{inspect(parent_schema)}."
-    end
+  @spec preload_changeset_assoc(changeset(), key()) :: changeset()
+  @spec preload_changeset_assoc(changeset(), key(), opts()) :: changeset()
+  def preload_changeset_assoc(changeset, key, opts \\ []) do
+    Map.update!(changeset, :data, &Actions.preload(&1, key, opts))
   end
 
   @doc """
-  Intelligently determines whether to use put_assoc or cast_assoc based on the data.
+  Determines how to apply an association change based on the shape
+  of the input in `changeset.params[key]`.
 
-  This function examines the data in the changeset and automatically chooses the
-  appropriate Ecto function to handle the association:
-  * Uses `put_assoc/4` when the association data is already a struct or list of structs
-  * Uses `cast_assoc/3` when the association data is a map or list of maps that needs to be cast
+  This function decides whether to use `put_assoc/4` or `cast_assoc/3`
+  depending on what kind of data was passed in. This makes it easier
+  to work with many-to-many relationships, nested data, or lists of IDs.
 
-  ## Special Handling for Many-to-Many Relationships
+  ## Behavior
 
-  When working with many-to-many relationships, you can pass a list of IDs or maps with IDs,
-  and this function will update the association to match exactly what you provide:
-  1. Keep records with the specified IDs in the association
-  2. Remove any other records that were previously associated
-  3. Add any new records that weren't previously associated
+    * If given a list of structs, it uses `put_assoc/4`.
+    * If given a list of maps with only `:id` fields, it fetches from the DB and replaces the relation.
+    * If given a list of maps with new data, it preloads the existing relation and uses `cast_assoc/3`.
+    * If given a single struct, it uses `put_assoc/4`.
+    * Otherwise, it defaults to `cast_assoc/3`.
 
-  ## Parameters
+  ## Example
 
-  * `changeset` - The Ecto changeset to modify
-  * `key` - The association field name
-  * `opts` - Options to pass to the underlying put_assoc or cast_assoc function
-
-  ## Returns
-
-  * The modified changeset with the association properly handled
-
-  ## Examples
-
-  With a belongs_to association:
-
-      iex> EctoShorts.CommonChanges.put_or_cast_assoc(post_changeset, :user)
-
-  With a has_many association:
-
-      iex> EctoShorts.CommonChanges.put_or_cast_assoc(user_changeset, :posts)
-
-  With a many_to_many association using IDs:
-
-      iex> EctoShorts.CommonChanges.put_or_cast_assoc(user_changeset, :roles)
-      # When params contain: "roles" => [1, 2, 3]
-
-  With a many_to_many association using maps with IDs:
-
-      iex> EctoShorts.CommonChanges.put_or_cast_assoc(change(user, fruits: [%{id: 1}, %{id: 3}]), :fruits)
+      iex> EctoShorts.CommonChanges.put_or_cast_assoc(changeset, :tags)
   """
-  @spec put_or_cast_assoc(Changeset.t, atom) :: Changeset.t
-  @spec put_or_cast_assoc(Changeset.t, atom, Keyword.t) :: Changeset.t
+  @spec put_or_cast_assoc(changeset(), key()) :: changeset()
+  @spec put_or_cast_assoc(changeset(), key(), opts()) :: changeset()
   def put_or_cast_assoc(changeset, key, opts \\ []) do
     params_data = Map.get(changeset.params, Atom.to_string(key))
 
-    find_method_and_put_or_cast(changeset, key, params_data, opts)
+    apply_put_or_cast_assoc(changeset, key, params_data, opts)
   end
 
-  defp find_method_and_put_or_cast(changeset, key, nil, opts) do
-    cast_assoc(changeset, key, opts)
+  defp apply_put_or_cast_assoc(changeset, key, nil, opts) do
+    Changeset.cast_assoc(changeset, key, opts)
   end
 
-  defp find_method_and_put_or_cast(changeset, key, params_data, opts) when is_list(params_data) do
+  defp apply_put_or_cast_assoc(changeset, key, params_data, opts) when is_list(params_data) do
+    schema_module = get_changeset_queryable(changeset)
+
     cond do
-      SchemaHelpers.all_schemas?(params_data) ->
-        put_assoc(
-          changeset,
-          key,
-          params_data,
-          opts
-        )
+      SchemaHelpers.all_schema?(params_data) ->
+        Changeset.put_assoc(changeset, key, params_data, opts)
 
-      member_update?(params_data) ->
-        schema = changeset_relationship_schema(changeset, key)
-        data = Actions.all(schema, ids: data_ids(params_data))
+      only_primary_keys?(schema_module, params_data) ->
+        assoc_schema_module = fetch_association_schema!(changeset, key)
 
-        put_assoc(changeset, key, data, opts)
+        query_params = prepare_query_params(schema_module, params_data)
 
-      SchemaHelpers.any_created?(params_data) ->
+        results = Actions.all(assoc_schema_module, query_params, opts)
+
+        Changeset.put_assoc(changeset, key, results, opts)
+
+      SchemaHelpers.any_created?(schema_module, params_data) ->
+        assoc_schema_module = fetch_association_schema!(changeset, key)
+
+        query_params = prepare_query_params(schema_module, params_data)
+
+        results = Actions.all(assoc_schema_module, query_params, opts)
+
         changeset
-        |> preload_changeset_assoc(
-          key,
-          Keyword.put(opts, :ids, params_data |> data_ids() |> Enum.reject(&is_nil/1))
-        )
-        |> cast_assoc(key, opts)
+        |> Map.update!(:data, fn schema_data ->
+          if SchemaHelpers.association_not_loaded?(schema_data, key) do
+            Map.put(schema_data, key, results)
+          else
+            if opts[:force] === true do
+              Map.put(schema_data, key, results)
+            else
+              EctoShorts.Utils.Logger.warning(
+                __MODULE__,
+                "Changeset association #{inspect(key)} has loaded data."
+              )
+
+              schema_data
+            end
+          end
+        end)
+        |> Changeset.cast_assoc(key, opts)
 
       true ->
-        cast_assoc(changeset, key, opts)
-
+        Changeset.cast_assoc(changeset, key, opts)
     end
   end
 
-  defp find_method_and_put_or_cast(changeset, key, param_data, opts) do
-    if SchemaHelpers.schema?(param_data) do
-      put_assoc(changeset, key, param_data, opts)
+  defp apply_put_or_cast_assoc(changeset, key, params_data, opts) do
+    if SchemaHelpers.schema?(params_data) do
+      Changeset.put_assoc(changeset, key, params_data, opts)
     else
-      cast_assoc(changeset, key, opts)
+      Changeset.cast_assoc(changeset, key, opts)
     end
   end
 
-  defp member_update?(schemas) do
-    Enum.all?(schemas, fn
-      %{id: id} = item when item === %{id: id} -> true
-      _ -> false
+  defp prepare_query_params(schema_module, params_data) do
+    case SchemaHelpers.primary_key(schema_module) do
+      [_] ->
+        schema_module
+        |> SchemaHelpers.filter_primary_key(params_data)
+        |> flatten_query_params()
+
+      _ ->
+        %{or_where: SchemaHelpers.filter_primary_key(schema_module, params_data)}
+    end
+  end
+
+  defp flatten_query_params(params_list) do
+    Enum.reduce(params_list, %{}, fn params, acc ->
+      Enum.reduce(params, acc, fn {key, value}, acc ->
+        Map.update(acc, key, [value], &(&1 ++ [value]))
+      end)
     end)
   end
 
-  defp data_ids(data), do: Enum.map(data, &Map.get(&1, :id))
+  defp only_primary_keys?(schema_module, params_data) do
+    Enum.all?(params_data, fn params ->
+      SchemaHelpers.filter_primary_key(schema_module, params) === params
+    end)
+  end
 
-  defp relationship_exists?({:assoc, _}), do: true
-  defp relationship_exists?(_), do: false
+  defp fetch_association_schema!(changeset, key) do
+    with :ok <- validate_member_of_changeset_types!(changeset, key) do
+      changeset
+      |> fetch_changeset_assoc_type!(key)
+      |> Map.fetch!(:queryable)
+    end
+  end
+
+  defp validate_member_of_changeset_types!(changeset, key) do
+    schema_module = get_changeset_queryable(changeset)
+
+    if member_of_changeset_types?(changeset, key) do
+      :ok
+    else
+      raise KeyError,
+            "key not found in schema #{inspect(schema_module)} " <>
+              "changeset types, got: #{inspect(key)}"
+    end
+  end
+
+  defp member_of_changeset_types?(%{types: types}, key) do
+    Map.has_key?(types, key)
+  end
+
+  defp fetch_changeset_assoc_type!(%{types: types} = changeset, key) do
+    schema_module = get_changeset_queryable(changeset)
+
+    case Map.get(types, key) do
+      {:assoc, value} ->
+        value
+
+      _ ->
+        raise KeyError,
+              "key not found in schema #{inspect(schema_module)} " <>
+                "changeset types, got: #{inspect(key)}"
+    end
+  end
+
+  defp get_changeset_queryable(%{data: %{__meta__: %{schema: queryable}}}) do
+    queryable
+  end
 end
