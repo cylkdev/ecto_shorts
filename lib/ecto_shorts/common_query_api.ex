@@ -48,7 +48,7 @@ defmodule EctoShorts.CommonQueryAPI do
 
   alias EctoShorts.{
     DynamicBuilder,
-    QueryHelpers
+    ExpressionBuilder
   }
 
   require Ecto.Query
@@ -143,7 +143,7 @@ defmodule EctoShorts.CommonQueryAPI do
     params
     |> normalize_conditions()
     |> Enum.reduce(dynamic_source, fn {condition, params}, dynamic_source ->
-      QueryHelpers.apply_expression(
+      ExpressionBuilder.apply_expression(
         dynamic_source,
         params,
         fn {key, value}, dyn ->
@@ -156,7 +156,8 @@ defmodule EctoShorts.CommonQueryAPI do
             value,
             opts
           )
-        end
+        end,
+        opts
       )
     end)
   end
@@ -364,19 +365,24 @@ defmodule EctoShorts.CommonQueryAPI do
 
   See: `EctoShorts.CommonQueryAPI.select/3`
   """
-  @spec select(query_source(), binding_alias(), params() | value()) :: query()
-  def select(query, binding_alias, params) when is_map(params) do
-    select(query, binding_alias, Map.to_list(params))
+  @spec select(query_source(), binding_alias(), params() | value(), opts()) :: query()
+  def select(query, binding_alias, params, opts) when is_map(params) do
+    select(query, binding_alias, Map.to_list(params), opts)
   end
 
-  def select(query, binding_alias, params) when is_list(params) do
+  def select(query, binding_alias, params, opts) when is_list(params) do
     if Keyword.keyword?(params) do
       if Keyword.has_key?(params, :expression) do
         query_select(query, binding_alias, params[:expression])
       else
-        QueryHelpers.apply_expression(query, params, fn {key, value}, query ->
-          query_select(query, binding_alias, {key, value})
-        end)
+        ExpressionBuilder.apply_expression(
+          query,
+          params,
+          fn {key, value}, query ->
+            query_select(query, binding_alias, {key, value})
+          end,
+          opts
+        )
       end
     else
       query_select(query, binding_alias, params)
@@ -426,20 +432,25 @@ defmodule EctoShorts.CommonQueryAPI do
 
   See: `EctoShorts.CommonQueryAPI.select_merge/3`
   """
-  @spec select_merge(query_source(), binding_alias(), params() | value()) ::
+  @spec select_merge(query_source(), binding_alias(), params() | value(), opts()) ::
           query()
-  def select_merge(query, binding_alias, params) when is_map(params) do
-    select_merge(query, binding_alias, Map.to_list(params))
+  def select_merge(query, binding_alias, params, opts) when is_map(params) do
+    select_merge(query, binding_alias, Map.to_list(params), opts)
   end
 
-  def select_merge(query, binding_alias, params) when is_list(params) do
+  def select_merge(query, binding_alias, params, opts) when is_list(params) do
     if Keyword.keyword?(params) do
       if Keyword.has_key?(params, :expression) do
         query_select_merge(query, binding_alias, params[:expression])
       else
-        QueryHelpers.apply_expression(query, params, fn {key, value}, query ->
-          query_select_merge(query, binding_alias, {key, value})
-        end)
+        ExpressionBuilder.apply_expression(
+          query,
+          params,
+          fn {key, value}, query ->
+            query_select_merge(query, binding_alias, {key, value})
+          end,
+          opts
+        )
       end
     else
       query_select_merge(query, binding_alias, params)

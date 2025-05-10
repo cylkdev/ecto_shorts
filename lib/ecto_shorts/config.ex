@@ -4,21 +4,6 @@ defmodule EctoShorts.Config do
   @app :ecto_shorts
 
   @doc """
-  Returns the configured `:dynamic_adapters` value from the `:ecto_shorts` application environment.
-
-  Defaults to `nil` if not set.
-
-  ## Examples
-
-      iex> EctoShorts.Config.dynamic_adapters()
-      nil
-  """
-  @spec dynamic_adapters :: map() | keyword() | nil
-  def dynamic_adapters do
-    Application.get_env(@app, :dynamic_adapters)
-  end
-
-  @doc """
   Returns the configured `:error_module` value from the `:ecto_shorts` application environment.
 
   Defaults to `nil` if not set.
@@ -31,6 +16,21 @@ defmodule EctoShorts.Config do
   @spec error_module :: module() | nil
   def error_module do
     Application.get_env(@app, :error_module)
+  end
+
+  @doc """
+  Returns the configured `:ordered_expressions` value from the `:ecto_shorts` application environment.
+
+  Defaults to `nil` if not set.
+
+  ## Examples
+
+      iex> EctoShorts.Config.ordered_expressions()
+      nil
+  """
+  @spec ordered_expressions :: module() | nil
+  def ordered_expressions do
+    Application.get_env(@app, :ordered_expressions)
   end
 
   @doc """
@@ -48,20 +48,19 @@ defmodule EctoShorts.Config do
     Application.get_env(@app, :query_builder_adapter)
   end
 
-  @doc since: "2.5.0"
   @doc """
-  Returns the configured `:primary_key` value from the `:ecto_shorts` application environment.
+  Returns the configured `:dynamic_adapters` value from the `:ecto_shorts` application environment.
 
   Defaults to `nil` if not set.
 
   ## Examples
 
-      iex> EctoShorts.Config.primary_key()
+      iex> EctoShorts.Config.dynamic_adapters()
       nil
   """
-  @spec primary_key :: atom() | nil
-  def primary_key do
-    Application.get_env(@app, :primary_key)
+  @spec dynamic_adapters :: map() | keyword() | nil
+  def dynamic_adapters do
+    Application.get_env(@app, :dynamic_adapters)
   end
 
   @doc """

@@ -7,7 +7,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   alias EctoShorts.{
     CommonQuery,
     CommonQueryAPI,
-    QueryHelpers,
+    ExpressionBuilder,
     SchemaHelpers
   }
 
@@ -178,9 +178,14 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp build_schema_filter(query, binding_alias, schema_module, key, value, opts) do
-    QueryHelpers.apply_expression(query, value, fn value, query ->
-      apply_schema_filter(query, binding_alias, schema_module, key, value, opts)
-    end)
+    ExpressionBuilder.apply_expression(
+      query,
+      value,
+      fn value, query ->
+        apply_schema_filter(query, binding_alias, schema_module, key, value, opts)
+      end,
+      opts
+    )
   end
 
   defp apply_schema_filter(query, binding_alias, _schema_module, key, {operator, value}, opts) do
