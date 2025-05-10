@@ -99,7 +99,7 @@ defmodule EctoShorts.MixProject do
           EctoShorts.QueryBuilders.Common
         ],
         "Schema API": [
-          EctoShorts.CommonSchema,
+          EctoShorts.CommonSchemas,
           EctoShorts.CommonParams,
           EctoShorts.SchemaHelpers
         ],

@@ -61,7 +61,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
   """
 
   alias EctoShorts.{
-    CommonQueries,
+    CommonQueryAPI,
     DynamicBuilders.Postgres.Array,
     DynamicBuilders.Postgres.Field,
     SchemaHelpers
@@ -117,21 +117,21 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
       ) do
     cond do
       SchemaHelpers.field_type_of_array?(schema_module, key) and is_list(value) ->
-        CommonQueries.merge_dynamic(
+        CommonQueryAPI.merge_dynamic(
           dyn,
           condition,
           Array.dynamic(binding_alias, key, operator, value)
         )
 
       SchemaHelpers.field_type_of_array?(schema_module, key) ->
-        CommonQueries.merge_dynamic(
+        CommonQueryAPI.merge_dynamic(
           dyn,
           condition,
           Array.dynamic(binding_alias, value, operator, key)
         )
 
       true ->
-        CommonQueries.merge_dynamic(
+        CommonQueryAPI.merge_dynamic(
           dyn,
           condition,
           Field.dynamic(binding_alias, key, operator, value)

@@ -6,7 +6,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
   alias EctoShorts.{
     CommonQuery,
-    CommonQueries,
+    CommonQueryAPI,
     QueryHelpers,
     SchemaHelpers
   }
@@ -15,6 +15,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   @type schema_module :: Ecto.Queryable.t()
   @type schema_source :: binary()
   @type sourceable :: schema_module() | {schema_source(), schema_module()}
+  @type query_source :: query() | sourceable()
   @type binding_alias :: atom()
 
   @type key :: atom()
@@ -39,7 +40,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   @doc """
   Returns the list of supported filters that can be used in schema-aware queries.
 
-  These filters delegate to `EctoShorts.CommonQueries` and enable dynamic,
+  These filters delegate to `EctoShorts.CommonQueryAPI` and enable dynamic,
   field-driven construction of queries in a composable and reusable way.
 
   ### Filter behaviors
@@ -66,7 +67,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
     * If the key matches a supported filter (e.g., `:select`, `:join`),
       it applies the appropriate query transformation using
-      `EctoShorts.CommonQueries`.
+      `EctoShorts.CommonQueryAPI`.
 
     * If the key matches an association in the schema, the query will be
       joined and any nested filters applied to that association.
@@ -107,7 +108,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in subquery(from c0 in EctoShorts.Schema.Comment), as: :comments, on: true, where: c1.id == ^2>
   """
   @spec build_query(
-          query() | sourceable(),
+          query_source(),
           binding_alias(),
           schema_module(),
           key(),
@@ -116,24 +117,6 @@ defmodule EctoShorts.QueryBuilders.Schema do
         ) :: query() | schema_module()
   def build_query(query, binding_alias, schema_module, key, value, opts) do
     cond do
-      function_exported?(schema_module, :filters, 0) and key in schema_module.filters() ->
-        if function_exported?(schema_module, :build_query, 4) do
-          schema_module.build_query(
-            query,
-            binding_alias,
-            key,
-            value
-          )
-        else
-          EctoShorts.Utils.Logger.warning(
-            __MODULE__,
-            "callback function build_query/4 not found in schema: #{inspect(schema_module)}"
-          )
-
-          # fallback to the schema filter
-          build_schema_filter(query, binding_alias, schema_module, key, value, opts)
-        end
-
       key in @query_api_filters ->
         build_query_api_filter(query, binding_alias, schema_module, key, value, opts)
 
@@ -192,7 +175,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp apply_schema_filter(query, binding_alias, _schema_module, key, {operator, value}, opts) do
-    CommonQueries.where(query, binding_alias, %{key => %{operator => value}}, opts)
+    CommonQueryAPI.where(query, binding_alias, %{key => %{operator => value}}, opts)
   end
 
   defp apply_schema_filter(query, binding_alias, schema_module, key, value, opts) do
@@ -200,27 +183,27 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp build_query_api_filter(query, _binding_alias, _schema_module, :from, params, _opts) do
-    CommonQueries.from(query, params)
+    CommonQueryAPI.from(query, params)
   end
 
   defp build_query_api_filter(query, binding_alias, _schema_module, :select, value, _opts) do
-    CommonQueries.select(query, binding_alias, value)
+    CommonQueryAPI.select(query, binding_alias, value)
   end
 
   defp build_query_api_filter(query, binding_alias, _schema_module, :select_merge, value, _opts) do
-    CommonQueries.select_merge(query, binding_alias, value)
+    CommonQueryAPI.select_merge(query, binding_alias, value)
   end
 
   defp build_query_api_filter(query, binding_alias, _schema_module, :or, value, opts) do
-    CommonQueries.or_where(query, binding_alias, value, opts)
+    CommonQueryAPI.or_where(query, binding_alias, value, opts)
   end
 
   defp build_query_api_filter(query, binding_alias, _schema_module, :or_where, value, opts) do
-    CommonQueries.or_where(query, binding_alias, value, opts)
+    CommonQueryAPI.or_where(query, binding_alias, value, opts)
   end
 
   defp build_query_api_filter(query, binding_alias, _schema_module, :where, value, opts) do
-    CommonQueries.where(query, binding_alias, value, opts)
+    CommonQueryAPI.where(query, binding_alias, value, opts)
   end
 
   defp build_query_api_filter(query, binding_alias, schema_module, :join, params, opts) do
@@ -262,17 +245,17 @@ defmodule EctoShorts.QueryBuilders.Schema do
     params = Keyword.put(params, :as, as)
 
     query
-    |> CommonQueries.join(
+    |> CommonQueryAPI.join(
       binding_alias,
       :association,
       key,
-      Keyword.take(params, [:as, :qualifier, :on, :prefix]),
+      take_join_keys(params),
       opts
     )
     |> reduce_filters(
       as,
       assoc_schema_module,
-      Keyword.drop(params, [:as, :qualifier, :on, :prefix]),
+      drop_join_keys(params),
       opts
     )
   end
@@ -310,19 +293,27 @@ defmodule EctoShorts.QueryBuilders.Schema do
     params = Keyword.put(params, :as, as)
 
     query
-    |> CommonQueries.join(
+    |> CommonQueryAPI.join(
       binding_alias,
       :subquery,
       subquery_data,
-      Keyword.take(params, [:as, :qualifier, :on, :prefix]),
+      take_join_keys(params),
       opts
     )
     |> reduce_filters(
       as,
       subquery_schema_module,
-      Keyword.drop(params, [:as, :qualifier, :on, :prefix]),
+      drop_join_keys(params),
       opts
     )
+  end
+
+  defp take_join_keys(params) do
+    Keyword.take(params, [:as, :qualifier, :on, :prefix])
+  end
+
+  defp drop_join_keys(params) do
+    Keyword.drop(params, [:as, :qualifier, :on, :prefix])
   end
 
   defp reduce_filters(query, binding_alias, schema_module, params, opts) do

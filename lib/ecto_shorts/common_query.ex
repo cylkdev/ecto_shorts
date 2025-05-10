@@ -12,6 +12,7 @@ defmodule EctoShorts.CommonQuery do
   @type schema_module :: Ecto.Queryable.t()
   @type schema_source :: binary()
   @type sourceable :: schema_module() | {schema_source(), schema_module()}
+  @type query_source :: query() | sourceable()
   @type from_expr :: %Ecto.Query.FromExpr{}
   @type join_expr :: %Ecto.Query.JoinExpr{}
   @type binding_alias :: atom()
@@ -33,7 +34,7 @@ defmodule EctoShorts.CommonQuery do
       ...> EctoShorts.CommonQuery.to_query(query)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post>
   """
-  @spec to_query(query() | sourceable()) :: query()
+  @spec to_query(query_source()) :: query()
   def to_query(query) when is_struct(query, Ecto.Query) do
     query
   end

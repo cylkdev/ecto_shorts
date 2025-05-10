@@ -60,72 +60,22 @@ defmodule EctoShorts.CommonFilters do
   """
 
   alias EctoShorts.{
-    CommonSchema,
+    CommonSchemas,
     QueryBuilder,
     QueryBuilders.Common,
     QueryBuilders.Schema
   }
 
-  @typedoc """
-  The source name for a queryable, typically the name of a database table.
-  Used in `{schema_source, schema_module}` tuples for abstract or dynamic schemas.
-  """
-  @type sourceable :: binary()
-
-  @typedoc """
-  An Ecto query struct (`%Ecto.Query{}`) representing a composed query.
-  """
-  @type query :: Ecto.Query.t()
-
-  @typedoc """
-  An Ecto queryable, such as a schema module or an existing query.
-  This is typically the starting point for query composition.
-  """
-  @type queryable :: Ecto.Queryable.t()
-
-  @typedoc """
-  A tuple combining a custom source name and a queryable, used for abstract schemas.
-  Example: `{"my_posts", MyApp.Post}`.
-  """
-  @type source_queryable :: {sourceable(), queryable()}
-
-  @typedoc """
-  An optional alias used to refer to a binding in the query.
-  Often derived from the `:as` field in filter parameters.
-  """
-  @type binding_alias :: atom()
-
-  @typedoc """
-  A database prefix, used to namespace queries (e.g. for multi-tenancy).
-  """
   @type prefix :: binary()
-
-  @typedoc """
-  A schema module representing an Ecto schema, e.g. `MyApp.Post`.
-  """
+  @type query :: Ecto.Query.t()
   @type schema_module :: Ecto.Queryable.t()
-
-  @typedoc """
-  A filter key used in param-based query building. This may be a field name,
-  a virtual key (like `:limit`), or an association name.
-  """
+  @type schema_source :: binary()
+  @type sourceable :: schema_module() | {schema_source(), schema_module()}
+  @type query_source :: query_source()
+  @type binding_alias :: atom()
   @type key :: atom()
-
-  @typedoc """
-  The value associated with a filter key. May be a scalar, list, map (e.g. `%{ilike: ...}`),
-  or nested structure.
-  """
   @type value :: any()
-
-  @typedoc """
-  Parameters used to construct the query. May be a map or keyword list, and
-  can include nested fields and filter expressions.
-  """
   @type params :: keyword() | map()
-
-  @typedoc """
-  A keyword-list of options.
-  """
   @type opts :: keyword()
 
   @behaviour EctoShorts.QueryBuilder
@@ -137,59 +87,104 @@ defmodule EctoShorts.CommonFilters do
   @filters @common_filters ++ @schema_filters
 
   @doc """
-  Converts a map or keyword list of filter parameters into an Ecto query.
-
-  This function handles both flat and nested filtering expressions. Parameters
-  can include association filters, `ilike` conditions, range comparisons, and
-  other supported expressions.
-
-  Keyword lists are internally converted to maps.
+  Converts a map or keyword list of parameters into an Ecto query.
   """
   @spec convert_params_to_filter(
-          query() | queryable() | source_queryable(),
-          params()
-        ) :: query() | queryable()
-  @spec convert_params_to_filter(
-          query() | queryable() | source_queryable(),
+          query_source() | nil,
           params(),
           opts()
-        ) :: query() | queryable()
-  def convert_params_to_filter(query, params, opts \\ [])
-
-  def convert_params_to_filter(query, params, _opts) when params === %{} or params === [] do
-    query
+        ) :: query_source()
+  def convert_params_to_filter(query_source, params, _opts)
+      when params === %{} or params === [] do
+    query_source
   end
 
-  def convert_params_to_filter(query, values, opts) when is_list(values) do
-    convert_params_to_filter(query, Map.new(values), opts)
+  def convert_params_to_filter(query_source, params, opts) when is_map(params) do
+    convert_params_to_filter(query_source, Map.to_list(params), opts)
   end
 
-  def convert_params_to_filter(query, params, opts) do
-    schema_module = CommonSchema.module_for_schema(query)
+  def convert_params_to_filter(query_source, params, opts) do
+    base = Keyword.take(params, [:as, :query])
 
-    {query, params} = Map.pop(params, :query, query)
+    query_source =
+      case base[:query] do
+        nil -> query_source
+        base_query -> base_query
+      end
 
-    {current_binding, params} = Map.pop(params, :as)
+    if is_nil(query_source) do
+      raise ArgumentError,
+            "A query must be provided either as the query argument or as the :query key in params. Both cannot be nil."
+    end
 
-    params
-    |> Map.to_list()
-    |> ensure_last_is_final_filter()
-    |> Enum.reduce(query, fn {key, value}, query ->
-      reduce_filter(query, current_binding, schema_module, key, value, opts)
+    binding_alias = base[:as]
+
+    schema_module = CommonSchemas.module_for_schema(query_source)
+
+    params =
+      params
+      |> Keyword.drop([:as, :query])
+      |> ensure_last_is_final_filter()
+
+    reduce_filters(query_source, binding_alias, schema_module, params, opts)
+  end
+
+  defp reduce_filters(query_source, binding_alias, schema_module, params, opts) do
+    Enum.reduce(params, query_source, fn {key, value}, query_source ->
+      reduce_filter(query_source, binding_alias, schema_module, key, value, opts)
     end)
   end
 
-  defp reduce_filter(query, current_binding, schema_module, key, value, opts) do
-    opts
-    |> query_builder_adapter()
-    |> QueryBuilder.build_query(
-      query,
-      current_binding,
-      schema_module,
-      key,
-      value,
+  defp reduce_filter(query_source, binding_alias, schema_module, key, value, opts) do
+    with query_source <-
+           maybe_apply_exported_filter(
+             query_source,
+             binding_alias,
+             schema_module,
+             key,
+             value
+           ) do
       opts
-    )
+      |> query_builder_adapter()
+      |> QueryBuilder.build_query(
+        query_source,
+        binding_alias,
+        schema_module,
+        key,
+        value,
+        opts
+      )
+    end
+  end
+
+  defp maybe_apply_exported_filter(query_source, binding_alias, schema_module, key, value) do
+    if schema_exported_filter?(schema_module, key) do
+      if function_exported?(schema_module, :build_query_source, 4) do
+        schema_module.build_query(
+          query_source,
+          binding_alias,
+          key,
+          value
+        )
+      else
+        EctoShorts.Utils.Logger.warning(
+          __MODULE__,
+          "callback function build_query/4 not found in schema module #{inspect(schema_module)} for filter: #{inspect(key)}"
+        )
+
+        query_source
+      end
+    else
+      query_source
+    end
+  end
+
+  defp schema_exported_filter?(schema_module, key) do
+    schema_exported_filters?(schema_module) and key in schema_module.filters()
+  end
+
+  defp schema_exported_filters?(schema_module) do
+    function_exported?(schema_module, :filters, 0)
   end
 
   defp query_builder_adapter(opts) do
@@ -221,9 +216,9 @@ defmodule EctoShorts.CommonFilters do
   Builds a query based on a single filter key and value.
 
   The schema module given as an argument must be the schema module
-  for the query being targeted by the current_binding argument.
-  If the current_binding is nil then the binding is the root query
-  and the schema module must be for the root query. If the current_binding
+  for the query being targeted by the binding_alias argument.
+  If the binding_alias is nil then the binding is the root query
+  and the schema module must be for the root query. If the binding_alias
   given is an association then the schema module must be for that
   association schema module.
 
@@ -236,28 +231,28 @@ defmodule EctoShorts.CommonFilters do
       #Ecto.Query<from p in Post, where: p.title == "Hello">
   """
   @spec build_query(
-          query() | queryable() | source_queryable(),
+          query_source(),
           binding_alias(),
           schema_module(),
           key(),
           value()
-        ) :: query() | queryable()
+        ) :: query_source()
   @spec build_query(
-          query() | queryable() | source_queryable(),
+          query_source(),
           binding_alias(),
           schema_module(),
           key(),
           value(),
           opts()
-        ) :: query() | queryable()
-  def build_query(query, current_binding, schema_module, key, value, opts \\ [])
+        ) :: query_source()
+  def build_query(query_source, binding_alias, schema_module, key, value, opts \\ [])
 
-  def build_query(query, current_binding, schema_module, key, value, opts)
+  def build_query(query_source, binding_alias, schema_module, key, value, opts)
       when key in @common_filters do
     QueryBuilder.build_query(
       Common,
-      query,
-      current_binding,
+      query_source,
+      binding_alias,
       schema_module,
       key,
       value,
@@ -265,11 +260,11 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  def build_query(query, current_binding, schema_module, key, value, opts) do
+  def build_query(query_source, binding_alias, schema_module, key, value, opts) do
     QueryBuilder.build_query(
       Schema,
-      query,
-      current_binding,
+      query_source,
+      binding_alias,
       schema_module,
       key,
       value,

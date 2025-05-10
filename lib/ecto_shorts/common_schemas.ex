@@ -1,4 +1,4 @@
-defmodule EctoShorts.CommonSchema do
+defmodule EctoShorts.CommonSchemas do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Provides utility functions for working with Ecto schemas,
@@ -31,6 +31,7 @@ defmodule EctoShorts.CommonSchema do
   @type schema_data :: Ecto.Schema.t()
   @type schema_metadata :: Ecto.Schema.Metadata.t()
   @type sourceable :: schema_module() | {schema_source(), schema_module()}
+  @type query_source :: query() | sourceable()
   @type changeset :: Ecto.Changeset.t()
   @type prefix :: binary() | nil
 
@@ -50,8 +51,8 @@ defmodule EctoShorts.CommonSchema do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchema.reflection_for_schema(MyApp.UserSchema, :fields)
-      iex> EctoShorts.CommonSchema.reflection_for_schema({"posts", MyApp.UserSchema}, :fields)
+      iex> EctoShorts.CommonSchemas.reflection_for_schema(MyApp.UserSchema, :fields)
+      iex> EctoShorts.CommonSchemas.reflection_for_schema({"posts", MyApp.UserSchema}, :fields)
   """
   @spec reflection_for_schema(sourceable(), any()) :: any()
   def reflection_for_schema({_, schema_module}, arg), do: schema_module.__schema__(arg)
@@ -63,10 +64,10 @@ defmodule EctoShorts.CommonSchema do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchema.reflection_for_schema(EctoShorts.Schema.Post, :type, :id)
+      iex> EctoShorts.CommonSchemas.reflection_for_schema(EctoShorts.Schema.Post, :type, :id)
       :id
 
-      iex> EctoShorts.CommonSchema.reflection_for_schema({"posts", EctoShorts.Schema.Post}, :type, :id)
+      iex> EctoShorts.CommonSchemas.reflection_for_schema({"posts", EctoShorts.Schema.Post}, :type, :id)
       :id
   """
   @spec reflection_for_schema(sourceable(), any(), any()) :: any()
@@ -81,10 +82,10 @@ defmodule EctoShorts.CommonSchema do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchema.prefix_for_schema(EctoShorts.Schema.Post)
+      iex> EctoShorts.CommonSchemas.prefix_for_schema(EctoShorts.Schema.Post)
       nil
 
-      iex> EctoShorts.CommonSchema.prefix_for_schema({"posts", EctoShorts.Schema.Post})
+      iex> EctoShorts.CommonSchemas.prefix_for_schema({"posts", EctoShorts.Schema.Post})
       nil
   """
   @spec prefix_for_schema(sourceable()) :: prefix()
@@ -97,10 +98,10 @@ defmodule EctoShorts.CommonSchema do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchema.source_for_schema(EctoShorts.Schema.Post)
+      iex> EctoShorts.CommonSchemas.source_for_schema(EctoShorts.Schema.Post)
       "posts"
 
-      iex> EctoShorts.CommonSchema.source_for_schema({"posts", EctoShorts.Schema.Post})
+      iex> EctoShorts.CommonSchemas.source_for_schema({"posts", EctoShorts.Schema.Post})
       "posts"
   """
   @spec source_for_schema(sourceable()) :: schema_source()
@@ -113,17 +114,17 @@ defmodule EctoShorts.CommonSchema do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchema.module_for_schema(EctoShorts.Schema.Post)
+      iex> EctoShorts.CommonSchemas.module_for_schema(EctoShorts.Schema.Post)
       EctoShorts.Schema.Post
 
-      iex> EctoShorts.CommonSchema.module_for_schema({"posts", EctoShorts.Schema.Post})
+      iex> EctoShorts.CommonSchemas.module_for_schema({"posts", EctoShorts.Schema.Post})
       EctoShorts.Schema.Post
 
       iex> require Ecto.Query
-      ...> EctoShorts.CommonSchema.module_for_schema(Ecto.Query.from(p in EctoShorts.Schema.Post))
+      ...> EctoShorts.CommonSchemas.module_for_schema(Ecto.Query.from(p in EctoShorts.Schema.Post))
       EctoShorts.Schema.Post
   """
-  @spec module_for_schema(query() | sourceable() | schema_data()) :: schema_module()
+  @spec module_for_schema(query_source() | schema_data()) :: schema_module()
   def module_for_schema({_schema_source, schema_module}), do: schema_module
   def module_for_schema(%{__meta__: %{schema: schema_module}}), do: schema_module
   def module_for_schema(query), do: CommonQuery.schema_module_for_query(query)
@@ -134,12 +135,12 @@ defmodule EctoShorts.CommonSchema do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchema.build_struct(EctoShorts.Schema.Post)
+      iex> EctoShorts.CommonSchemas.build_struct(EctoShorts.Schema.Post)
       %EctoShorts.Schema.Post{
         __meta__: %Ecto.Schema.Metadata{source: "posts"}
       }
 
-      iex> EctoShorts.CommonSchema.build_struct({"custom_source", EctoShorts.Schema.Post})
+      iex> EctoShorts.CommonSchemas.build_struct({"custom_source", EctoShorts.Schema.Post})
       %EctoShorts.Schema.Post{
         __meta__: %Ecto.Schema.Metadata{source: "custom_source"}
       }
@@ -165,7 +166,7 @@ defmodule EctoShorts.CommonSchema do
 
   ### Examples
 
-      iex> EctoShorts.CommonSchema.put_schema_meta(%EctoShorts.Schema.Post{}, state: :loaded, source: "custom_source", prefix: "custom_prefix")
+      iex> EctoShorts.CommonSchemas.put_schema_meta(%EctoShorts.Schema.Post{}, state: :loaded, source: "custom_source", prefix: "custom_prefix")
       %EctoShorts.Schema.Post{
         __meta__: %Ecto.Schema.Metadata{
           state: :loaded,
@@ -174,7 +175,7 @@ defmodule EctoShorts.CommonSchema do
         }
       }
 
-      iex> EctoShorts.CommonSchema.put_schema_meta(EctoShorts.Schema.Post, state: :loaded, source: "custom_source", prefix: "custom_prefix")
+      iex> EctoShorts.CommonSchemas.put_schema_meta(EctoShorts.Schema.Post, state: :loaded, source: "custom_source", prefix: "custom_prefix")
       %EctoShorts.Schema.Post{
         __meta__: %Ecto.Schema.Metadata{
           state: :loaded,
@@ -184,7 +185,7 @@ defmodule EctoShorts.CommonSchema do
       }
 
       # the source given in the tuple takes precedence
-      iex> EctoShorts.CommonSchema.put_schema_meta({"posts", EctoShorts.Schema.Post}, state: :loaded, source: "custom_source", prefix: "custom_prefix")
+      iex> EctoShorts.CommonSchemas.put_schema_meta({"posts", EctoShorts.Schema.Post}, state: :loaded, source: "custom_source", prefix: "custom_prefix")
       %EctoShorts.Schema.Post{
         __meta__: %Ecto.Schema.Metadata{
           state: :loaded,

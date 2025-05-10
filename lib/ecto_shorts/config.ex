@@ -4,18 +4,18 @@ defmodule EctoShorts.Config do
   @app :ecto_shorts
 
   @doc """
-  Returns the configured `:dynamic_expression_adapters` value from the `:ecto_shorts` application environment.
+  Returns the configured `:dynamic_adapters` value from the `:ecto_shorts` application environment.
 
   Defaults to `nil` if not set.
 
   ## Examples
 
-      iex> EctoShorts.Config.dynamic_expression_adapters()
+      iex> EctoShorts.Config.dynamic_adapters()
       nil
   """
-  @spec dynamic_expression_adapters :: map() | keyword() | nil
-  def dynamic_expression_adapters do
-    Application.get_env(@app, :dynamic_expression_adapters)
+  @spec dynamic_adapters :: map() | keyword() | nil
+  def dynamic_adapters do
+    Application.get_env(@app, :dynamic_adapters)
   end
 
   @doc """

@@ -170,7 +170,7 @@ defmodule EctoShorts.DynamicBuilder do
 
   It receives:
     - `dyn`: the current dynamic expression being built or `nil`.
-    - `current_binding`: the binding index (e.g. 0 for the main schema)
+    - `binding_alias`: the binding index (e.g. 0 for the main schema)
     - `schema_module`: the module for the schema being queried
     - `key`: the field name (e.g. `:name`)
     - `value`: the filter value (e.g. a string or a special operator like `%{ilike: "foo"}`)
@@ -209,7 +209,7 @@ defmodule EctoShorts.DynamicBuilder do
   def build_dynamic(
         schema_module,
         dyn,
-        current_binding,
+        binding_alias,
         condition,
         key,
         value,
@@ -218,7 +218,7 @@ defmodule EctoShorts.DynamicBuilder do
     adapter_for_repo!(opts).build_dynamic(
       schema_module,
       dyn,
-      current_binding,
+      binding_alias,
       condition,
       key,
       value
@@ -226,29 +226,25 @@ defmodule EctoShorts.DynamicBuilder do
   end
 
   defp adapter_for_repo!(opts) do
-    repo = Config.repo!(opts)
-
-    if Keyword.has_key?(opts, :dynamic_expression_adapter) do
-      opts[:dynamic_expression_adapter]
+    if Keyword.has_key?(opts, :dynamic_adapter) do
+      opts[:dynamic_adapter]
     else
-      repo_adapter = repo.__adapter__()
-
-      case find_repo_dynamic_expression_adapter(repo_adapter, opts) do
+      case get_repo_dynamic_adapter(Config.repo!(opts).__adapter__(), opts) do
         nil -> @default_adapter
         {_, adapter_config} -> Keyword.fetch!(adapter_config, :adapter)
       end
     end
   end
 
-  defp find_repo_dynamic_expression_adapter(repo_adapter, opts) do
+  defp get_repo_dynamic_adapter(repo_adapter, opts) do
     opts
-    |> dynamic_expression_adapters()
+    |> dynamic_adapters()
     |> Enum.find(fn {key, _} -> key === repo_adapter end)
   end
 
-  defp dynamic_expression_adapters(opts) do
-    opts[:dynamic_expression_adapters] ||
-      Config.dynamic_expression_adapters() ||
+  defp dynamic_adapters(opts) do
+    opts[:dynamic_adapters] ||
+      Config.dynamic_adapters() ||
       @adapters
   end
 end

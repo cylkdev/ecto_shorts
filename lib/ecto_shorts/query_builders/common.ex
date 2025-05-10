@@ -19,7 +19,7 @@ defmodule EctoShorts.QueryBuilders.Common do
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, limit: ^10>
   """
 
-  alias EctoShorts.CommonQueries
+  alias EctoShorts.CommonQueryAPI
 
   @filters ~w(
     after
@@ -123,60 +123,60 @@ defmodule EctoShorts.QueryBuilders.Common do
   def build_query(query, binding_alias, schema_module, key, value, opts \\ [])
 
   def build_query(query, binding_alias, _schema_module, :ids, values, opts) do
-    CommonQueries.where(query, binding_alias, %{id: %{==: values}}, opts)
+    CommonQueryAPI.where(query, binding_alias, %{id: %{==: values}}, opts)
   end
 
   def build_query(query, binding_alias, _schema_module, :first, value, _opts) do
-    CommonQueries.limit(query, binding_alias, value)
+    CommonQueryAPI.limit(query, binding_alias, value)
   end
 
   def build_query(query, binding_alias, _schema_module, :last, value, opts) do
     query
-    |> CommonQueries.exclude(:order_by)
-    |> CommonQueries.order_by(binding_alias, order_by: [desc: :inserted_at])
-    |> CommonQueries.limit(binding_alias, value)
-    |> CommonQueries.subquery(opts[:subquery_options] || [])
-    |> CommonQueries.order_by(binding_alias, :id)
+    |> CommonQueryAPI.exclude(:order_by)
+    |> CommonQueryAPI.order_by(binding_alias, order_by: [desc: :inserted_at])
+    |> CommonQueryAPI.limit(binding_alias, value)
+    |> CommonQueryAPI.subquery(opts[:subquery_options] || [])
+    |> CommonQueryAPI.order_by(binding_alias, :id)
   end
 
   def build_query(query, binding_alias, _schema_module, :limit, value, _opts) do
-    CommonQueries.limit(query, binding_alias, value)
+    CommonQueryAPI.limit(query, binding_alias, value)
   end
 
   def build_query(query, binding_alias, _schema_module, :offset, value, _opts) do
-    CommonQueries.offset(query, binding_alias, value)
+    CommonQueryAPI.offset(query, binding_alias, value)
   end
 
   def build_query(query, binding_alias, _schema_module, :order_by, value, _opts) do
-    CommonQueries.order_by(query, binding_alias, value)
+    CommonQueryAPI.order_by(query, binding_alias, value)
   end
 
   def build_query(query, binding_alias, _schema_module, :preload, value, _opts) do
-    CommonQueries.preload(query, binding_alias, value)
+    CommonQueryAPI.preload(query, binding_alias, value)
   end
 
   def build_query(query, binding_alias, _schema_module, :after, value, opts) do
-    CommonQueries.where(query, binding_alias, %{id: %{>: value}}, opts)
+    CommonQueryAPI.where(query, binding_alias, %{id: %{>: value}}, opts)
   end
 
   def build_query(query, binding_alias, _schema_module, :before, value, opts) do
-    CommonQueries.where(query, binding_alias, %{id: %{<: value}}, opts)
+    CommonQueryAPI.where(query, binding_alias, %{id: %{<: value}}, opts)
   end
 
   def build_query(query, binding_alias, _schema_module, :since, value, opts) do
-    CommonQueries.where(query, binding_alias, %{inserted_at: %{>=: value}}, opts)
+    CommonQueryAPI.where(query, binding_alias, %{inserted_at: %{>=: value}}, opts)
   end
 
   def build_query(query, binding_alias, _schema_module, :until, value, opts) do
-    CommonQueries.where(query, binding_alias, %{inserted_at: %{<=: value}}, opts)
+    CommonQueryAPI.where(query, binding_alias, %{inserted_at: %{<=: value}}, opts)
   end
 
   def build_query(query, binding_alias, _schema_module, :start_date, value, opts) do
-    CommonQueries.where(query, binding_alias, %{inserted_at: %{>=: value}}, opts)
+    CommonQueryAPI.where(query, binding_alias, %{inserted_at: %{>=: value}}, opts)
   end
 
   def build_query(query, binding_alias, _schema_module, :end_date, value, opts) do
-    CommonQueries.where(query, binding_alias, %{inserted_at: %{<=: value}}, opts)
+    CommonQueryAPI.where(query, binding_alias, %{inserted_at: %{<=: value}}, opts)
   end
 
   def build_query(query, binding_alias, schema_module, :search, value, _opts) do

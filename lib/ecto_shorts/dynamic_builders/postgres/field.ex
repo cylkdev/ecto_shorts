@@ -72,70 +72,70 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Field do
       iex> Field.dynamic(:user, :role, :==, ["admin", "guest"])
   """
   @spec dynamic(binding_alias(), any(), operator(), any()) :: dynamic_expr()
-  def dynamic(current_binding, key, :=~, value) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], fragment("? ~* ?", field(q, ^key), ^value))
+  def dynamic(binding_alias, key, :=~, value) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], fragment("? ~* ?", field(q, ^key), ^value))
     else
       Query.dynamic([q], fragment("? ~* ?", field(q, ^key), ^value))
     end
   end
 
-  def dynamic(current_binding, key, :ilike, value) do
+  def dynamic(binding_alias, key, :ilike, value) do
     pattern = "%#{value}%"
 
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], ilike(field(q, ^key), ^pattern))
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], ilike(field(q, ^key), ^pattern))
     else
       Query.dynamic([q], ilike(field(q, ^key), ^pattern))
     end
   end
 
-  def dynamic(current_binding, key, :like, value) do
+  def dynamic(binding_alias, key, :like, value) do
     pattern = "%#{value}%"
 
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], like(field(q, ^key), ^pattern))
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], like(field(q, ^key), ^pattern))
     else
       Query.dynamic([q], like(field(q, ^key), ^pattern))
     end
   end
 
-  def dynamic(current_binding, key, :<, value) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], field(q, ^key) < ^value)
+  def dynamic(binding_alias, key, :<, value) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
     else
       Query.dynamic([q], field(q, ^key) < ^value)
     end
   end
 
-  def dynamic(current_binding, key, :>, value) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], field(q, ^key) > ^value)
+  def dynamic(binding_alias, key, :>, value) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
     else
       Query.dynamic([q], field(q, ^key) > ^value)
     end
   end
 
-  def dynamic(current_binding, key, :<=, value) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], field(q, ^key) <= ^value)
+  def dynamic(binding_alias, key, :<=, value) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], field(q, ^key) <= ^value)
     else
       Query.dynamic([q], field(q, ^key) <= ^value)
     end
   end
 
-  def dynamic(current_binding, key, :>=, value) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], field(q, ^key) >= ^value)
+  def dynamic(binding_alias, key, :>=, value) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
     else
       Query.dynamic([q], field(q, ^key) >= ^value)
     end
   end
 
-  def dynamic(current_binding, key, :!=, {:lower, value}) do
-    if current_binding do
+  def dynamic(binding_alias, key, :!=, {:lower, value}) do
+    if binding_alias do
       Query.dynamic(
-        [{^current_binding, q}],
+        [{^binding_alias, q}],
         fragment("LOWER(?)", field(q, ^key)) != ^value
       )
     else
@@ -143,10 +143,10 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Field do
     end
   end
 
-  def dynamic(current_binding, key, :!=, {:upper, value}) do
-    if current_binding do
+  def dynamic(binding_alias, key, :!=, {:upper, value}) do
+    if binding_alias do
       Query.dynamic(
-        [{^current_binding, q}],
+        [{^binding_alias, q}],
         fragment("UPPER(?)", field(q, ^key)) != ^value
       )
     else
@@ -154,10 +154,10 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Field do
     end
   end
 
-  def dynamic(current_binding, key, :==, {:lower, value}) do
-    if current_binding do
+  def dynamic(binding_alias, key, :==, {:lower, value}) do
+    if binding_alias do
       Query.dynamic(
-        [{^current_binding, q}],
+        [{^binding_alias, q}],
         fragment("LOWER(?)", field(q, ^key)) == ^value
       )
     else
@@ -165,10 +165,10 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Field do
     end
   end
 
-  def dynamic(current_binding, key, :==, {:upper, value}) do
-    if current_binding do
+  def dynamic(binding_alias, key, :==, {:upper, value}) do
+    if binding_alias do
       Query.dynamic(
-        [{^current_binding, q}],
+        [{^binding_alias, q}],
         fragment("UPPER(?)", field(q, ^key)) == ^value
       )
     else
@@ -176,49 +176,49 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Field do
     end
   end
 
-  def dynamic(current_binding, key, :!=, nil) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], not is_nil(field(q, ^key)))
+  def dynamic(binding_alias, key, :!=, nil) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
     else
       Query.dynamic([q], not is_nil(field(q, ^key)))
     end
   end
 
-  def dynamic(current_binding, key, :!=, values) when is_list(values) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], field(q, ^key) not in ^values)
+  def dynamic(binding_alias, key, :!=, values) when is_list(values) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], field(q, ^key) not in ^values)
     else
       Query.dynamic([q], field(q, ^key) not in ^values)
     end
   end
 
-  def dynamic(current_binding, key, :!=, value) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], field(q, ^key) != ^value)
+  def dynamic(binding_alias, key, :!=, value) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
     else
       Query.dynamic([q], field(q, ^key) != ^value)
     end
   end
 
-  def dynamic(current_binding, key, :==, nil) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], is_nil(field(q, ^key)))
+  def dynamic(binding_alias, key, :==, nil) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
     else
       Query.dynamic([q], is_nil(field(q, ^key)))
     end
   end
 
-  def dynamic(current_binding, key, :==, values) when is_list(values) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], field(q, ^key) in ^values)
+  def dynamic(binding_alias, key, :==, values) when is_list(values) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], field(q, ^key) in ^values)
     else
       Query.dynamic([q], field(q, ^key) in ^values)
     end
   end
 
-  def dynamic(current_binding, key, :==, value) do
-    if current_binding do
-      Query.dynamic([{^current_binding, q}], field(q, ^key) == ^value)
+  def dynamic(binding_alias, key, :==, value) do
+    if binding_alias do
+      Query.dynamic([{^binding_alias, q}], field(q, ^key) == ^value)
     else
       Query.dynamic([q], field(q, ^key) == ^value)
     end

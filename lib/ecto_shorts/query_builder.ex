@@ -152,10 +152,10 @@ defmodule EctoShorts.QueryBuilder do
           value(),
           opts()
         ) :: query() | queryable()
-  def build_query(adapter, query, current_binding, schema_module, key, value, opts \\ []) do
+  def build_query(adapter, query, binding_alias, schema_module, key, value, opts \\ []) do
     adapter.build_query(
       query,
-      current_binding,
+      binding_alias,
       schema_module,
       key,
       value,
