@@ -70,7 +70,7 @@ defmodule EctoShorts.CommonFilters do
   The source name for a queryable, typically the name of a database table.
   Used in `{schema_source, schema_module}` tuples for abstract or dynamic schemas.
   """
-  @type query_source :: binary()
+  @type sourceable :: binary()
 
   @typedoc """
   An Ecto query struct (`%Ecto.Query{}`) representing a composed query.
@@ -87,7 +87,7 @@ defmodule EctoShorts.CommonFilters do
   A tuple combining a custom source name and a queryable, used for abstract schemas.
   Example: `{"my_posts", MyApp.Post}`.
   """
-  @type source_queryable :: {query_source(), queryable()}
+  @type source_queryable :: {sourceable(), queryable()}
 
   @typedoc """
   An optional alias used to refer to a binding in the query.

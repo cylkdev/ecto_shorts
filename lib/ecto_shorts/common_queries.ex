@@ -1,9 +1,9 @@
-defmodule EctoShorts.CommonQueryAPI do
+defmodule EctoShorts.CommonQueries do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Build Ecto queries dynamically without needing to import `Ecto.Query`.
 
-  `EctoShorts.CommonQueryAPI` makes it easier to compose `Ecto`
+  `EctoShorts.CommonQueries` makes it easier to compose `Ecto`
   queries by providing a clean, data-driven interface for building
   query expressions.
 
@@ -15,20 +15,20 @@ defmodule EctoShorts.CommonQueryAPI do
 
   Here’s a simple example:
 
-      alias EctoShorts.CommonQueryAPI
+      alias EctoShorts.CommonQueries
 
       User
-      |> CommonQueryAPI.from(as: :user)
-      |> CommonQueryAPI.where(:user, %{active: true})
-      |> CommonQueryAPI.order_by(:user, [asc: :inserted_at])
-      |> CommonQueryAPI.limit(nil, 10)
+      |> CommonQueries.from(as: :user)
+      |> CommonQueries.where(:user, %{active: true})
+      |> CommonQueries.order_by(:user, [asc: :inserted_at])
+      |> CommonQueries.limit(nil, 10)
 
   You don’t need to `import Ecto.Query`, and there are no macros to learn,
   just use functions that work with data.
 
   This API is split into the following components:
 
-    * `EctoShorts.CommonQueryAPI.API` - Core helpers for building Ecto queries
+    * `EctoShorts.CommonQueries.API` - Core helpers for building Ecto queries
       using bindings, `select`, `join`, `limit`, and other common clauses. Acts as a
       lightweight wrapper around `Ecto.Query` with runtime-friendly syntax.
 
@@ -59,7 +59,7 @@ defmodule EctoShorts.CommonQueryAPI do
   @type schema_source :: binary()
   @type schema_data :: Ecto.Schema.t()
   @type schema_metadata :: Ecto.Schema.Metadata.t()
-  @type query_source :: schema_module() | {schema_source(), schema_module()}
+  @type sourceable :: schema_module() | {schema_source(), schema_module()}
   @type prefix :: binary() | nil
   @type changeset :: Ecto.Changeset.t()
   @type dynamic_expr :: %Ecto.Query.DynamicExpr{}
@@ -84,12 +84,12 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.merge_dynamic(nil, dynamic([q], q.id > 1))
+      iex> EctoShorts.CommonQueries.merge_dynamic(nil, dynamic([q], q.id > 1))
       #Ecto.Query.DynamicExpr<...>
 
       iex> dyn1 = dynamic([q], q.id > 1)
       ...> dyn2 = dynamic([q], q.active == true)
-      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn1, dyn2)
+      ...> EctoShorts.CommonQueries.merge_dynamic(dyn1, dyn2)
       #Ecto.Query.DynamicExpr<...>
   """
   @spec merge_dynamic(maybe_dynamic_expr(), condition(), dynamic_expr()) :: dynamic_expr()
@@ -105,10 +105,10 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.dynamic(:user, dynamic([user], user.age > 18))
+      iex> EctoShorts.CommonQueries.dynamic(:user, dynamic([user], user.age > 18))
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.CommonQueryAPI.dynamic(nil, dynamic([q], q.id == 1))
+      iex> EctoShorts.CommonQueries.dynamic(nil, dynamic([q], q.id == 1))
       #Ecto.Query.DynamicExpr<...>
   """
   @spec dynamic(binding_alias(), value()) :: dynamic_expr()
@@ -170,9 +170,9 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Example
 
-      iex> EctoShorts.CommonQueryAPI.from(User, as: :user)
+      iex> EctoShorts.CommonQueries.from(User, as: :user)
   """
-  @spec from(query() | query_source(), params()) :: query()
+  @spec from(query() | sourceable(), params()) :: query()
   def from(query, params) do
     as = params[:as]
 
@@ -201,10 +201,10 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Example
 
-      iex> EctoShorts.CommonQueryAPI.put_query_prefix(query, "tenant_123")
+      iex> EctoShorts.CommonQueries.put_query_prefix(query, "tenant_123")
   """
   @spec put_query_prefix(
-          query() | query_source(),
+          query() | sourceable(),
           prefix()
         ) :: query()
   def put_query_prefix(query, prefix) do
@@ -216,10 +216,10 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.subquery(query)
+      iex> EctoShorts.CommonQueries.subquery(query)
       #Ecto.Query<...>
   """
-  @spec subquery(query() | query_source() | subquery(), opts()) :: subquery()
+  @spec subquery(query() | sourceable() | subquery(), opts()) :: subquery()
   def subquery(query, opts) do
     Query.subquery(query, opts)
   end
@@ -229,10 +229,10 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.exclude(query, :order_by)
+      iex> EctoShorts.CommonQueries.exclude(query, :order_by)
       #Ecto.Query<...>
   """
-  @spec exclude(query() | query_source(), key()) :: query()
+  @spec exclude(query() | sourceable(), key()) :: query()
   def exclude(query, key) do
     Query.exclude(query, key)
   end
@@ -242,14 +242,14 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.limit(query, nil, 10)
+      iex> EctoShorts.CommonQueries.limit(query, nil, 10)
       #Ecto.Query<...>
 
-      iex> EctoShorts.CommonQueryAPI.limit(query, :user, 5)
+      iex> EctoShorts.CommonQueries.limit(query, :user, 5)
       #Ecto.Query<...>
   """
   @spec limit(
-          query() | query_source(),
+          query() | sourceable(),
           binding_alias(),
           value()
         ) :: query()
@@ -266,11 +266,11 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.offset(query, nil, 20)
+      iex> EctoShorts.CommonQueries.offset(query, nil, 20)
       #Ecto.Query<...>
   """
   @spec offset(
-          query() | query_source(),
+          query() | sourceable(),
           binding_alias(),
           value()
         ) :: query()
@@ -287,11 +287,11 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.group_by(query, nil, :category)
+      iex> EctoShorts.CommonQueries.group_by(query, nil, :category)
       #Ecto.Query<...>
   """
   @spec group_by(
-          query() | query_source(),
+          query() | sourceable(),
           binding_alias(),
           value()
         ) :: query()
@@ -308,11 +308,11 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.order_by(query, nil, [asc: :inserted_at])
+      iex> EctoShorts.CommonQueries.order_by(query, nil, [asc: :inserted_at])
       #Ecto.Query<...>
   """
   @spec order_by(
-          query() | query_source(),
+          query() | sourceable(),
           binding_alias(),
           value()
         ) :: query()
@@ -329,11 +329,11 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.preload(query, nil, :comments)
+      iex> EctoShorts.CommonQueries.preload(query, nil, :comments)
       #Ecto.Query<...>
   """
   @spec preload(
-          query() | query_source(),
+          query() | sourceable(),
           binding_alias(),
           value()
         ) :: query()
@@ -353,9 +353,9 @@ defmodule EctoShorts.CommonQueryAPI do
 
   Applies selection recursively via `CommonQuery`.
 
-  See: `EctoShorts.CommonQueryAPI.select/3`
+  See: `EctoShorts.CommonQueries.select/3`
   """
-  @spec select(query() | query_source(), binding_alias(), params() | value()) :: query()
+  @spec select(query() | sourceable(), binding_alias(), params() | value()) :: query()
   def select(query, binding_alias, params) when is_map(params) do
     select(query, binding_alias, Map.to_list(params))
   end
@@ -415,9 +415,9 @@ defmodule EctoShorts.CommonQueryAPI do
 
   Behaves like `select/3` but uses `select_merge/3` internally.
 
-  See: `EctoShorts.CommonQueryAPI.select_merge/3`
+  See: `EctoShorts.CommonQueries.select_merge/3`
   """
-  @spec select_merge(query() | query_source(), binding_alias(), params() | value()) ::
+  @spec select_merge(query() | sourceable(), binding_alias(), params() | value()) ::
           query()
   def select_merge(query, binding_alias, params) when is_map(params) do
     select_merge(query, binding_alias, Map.to_list(params))
@@ -468,19 +468,19 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments)
+      iex> EctoShorts.CommonQueries.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments)>
 
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments, %{as: :comments})
+      iex> EctoShorts.CommonQueries.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments, %{as: :comments})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :comments>
 
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments, %{on: true})
+      iex> EctoShorts.CommonQueries.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments, %{on: true})
       Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments)>
 
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments, %{as: :comments, on: %{id: 2}})
+      iex> EctoShorts.CommonQueries.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments, %{as: :comments, on: %{id: 2}})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), on: c1.id == ^2>
 
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments, %{as: :comments, on: %{id: %{>=: 2}}})
+      iex> EctoShorts.CommonQueries.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments, %{as: :comments, on: %{id: %{>=: 2}}})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), on: c1.id >= ^2>
   """
   def join(query, binding_alias, join_type, key, params, opts) when is_map(params) do

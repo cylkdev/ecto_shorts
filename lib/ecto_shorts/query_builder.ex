@@ -19,7 +19,7 @@ defmodule EctoShorts.QueryBuilder do
   @typedoc """
   The source name of a queryable (e.g., table name). Used in `{schema_source, schema_module}`.
   """
-  @type query_source :: binary()
+  @type sourceable :: binary()
 
   @typedoc """
   An Ecto query struct (`%Ecto.Query{}`) built through filter transformations.
@@ -34,7 +34,7 @@ defmodule EctoShorts.QueryBuilder do
   @typedoc """
   A tuple of `{schema_source, schema_module}` used for dynamic or abstract schemas.
   """
-  @type source_queryable :: {query_source(), queryable()}
+  @type source_queryable :: {sourceable(), queryable()}
 
   @typedoc """
   An alias used to refer to a named binding in a query (typically the `:as` value).

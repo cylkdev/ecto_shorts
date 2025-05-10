@@ -30,7 +30,7 @@ defmodule EctoShorts.CommonSchema do
   @type schema_source :: binary()
   @type schema_data :: Ecto.Schema.t()
   @type schema_metadata :: Ecto.Schema.Metadata.t()
-  @type query_source :: schema_module() | {schema_source(), schema_module()}
+  @type sourceable :: schema_module() | {schema_source(), schema_module()}
   @type changeset :: Ecto.Changeset.t()
   @type prefix :: binary() | nil
 
@@ -53,7 +53,7 @@ defmodule EctoShorts.CommonSchema do
       iex> EctoShorts.CommonSchema.reflection_for_schema(MyApp.UserSchema, :fields)
       iex> EctoShorts.CommonSchema.reflection_for_schema({"posts", MyApp.UserSchema}, :fields)
   """
-  @spec reflection_for_schema(query_source(), any()) :: any()
+  @spec reflection_for_schema(sourceable(), any()) :: any()
   def reflection_for_schema({_, schema_module}, arg), do: schema_module.__schema__(arg)
   def reflection_for_schema(schema_module, arg), do: schema_module.__schema__(arg)
 
@@ -69,7 +69,7 @@ defmodule EctoShorts.CommonSchema do
       iex> EctoShorts.CommonSchema.reflection_for_schema({"posts", EctoShorts.Schema.Post}, :type, :id)
       :id
   """
-  @spec reflection_for_schema(query_source(), any(), any()) :: any()
+  @spec reflection_for_schema(sourceable(), any(), any()) :: any()
   def reflection_for_schema({_, schema_module}, arg1, arg2),
     do: schema_module.__schema__(arg1, arg2)
 
@@ -87,7 +87,7 @@ defmodule EctoShorts.CommonSchema do
       iex> EctoShorts.CommonSchema.prefix_for_schema({"posts", EctoShorts.Schema.Post})
       nil
   """
-  @spec prefix_for_schema(query_source()) :: prefix()
+  @spec prefix_for_schema(sourceable()) :: prefix()
   def prefix_for_schema({_, schema_module}), do: schema_module.__schema__(:prefix)
   def prefix_for_schema(schema_module), do: schema_module.__schema__(:prefix)
 
@@ -103,7 +103,7 @@ defmodule EctoShorts.CommonSchema do
       iex> EctoShorts.CommonSchema.source_for_schema({"posts", EctoShorts.Schema.Post})
       "posts"
   """
-  @spec source_for_schema(query_source()) :: schema_source()
+  @spec source_for_schema(sourceable()) :: schema_source()
   def source_for_schema({schema_source, _}), do: schema_source
   def source_for_schema(schema_module), do: schema_module.__schema__(:source)
 
@@ -123,7 +123,7 @@ defmodule EctoShorts.CommonSchema do
       ...> EctoShorts.CommonSchema.module_for_schema(Ecto.Query.from(p in EctoShorts.Schema.Post))
       EctoShorts.Schema.Post
   """
-  @spec module_for_schema(query() | query_source() | schema_data()) :: schema_module()
+  @spec module_for_schema(query() | sourceable() | schema_data()) :: schema_module()
   def module_for_schema({_schema_source, schema_module}), do: schema_module
   def module_for_schema(%{__meta__: %{schema: schema_module}}), do: schema_module
   def module_for_schema(query), do: CommonQuery.schema_module_for_query(query)
@@ -144,7 +144,7 @@ defmodule EctoShorts.CommonSchema do
         __meta__: %Ecto.Schema.Metadata{source: "custom_source"}
       }
   """
-  @spec build_struct(query_source()) :: schema_data()
+  @spec build_struct(sourceable()) :: schema_data()
   def build_struct({schema_source, schema_module}) do
     prefix = prefix_for_schema(schema_module)
 
@@ -193,10 +193,10 @@ defmodule EctoShorts.CommonSchema do
         }
       }
   """
-  @spec put_schema_meta(query_source() | schema_data()) ::
+  @spec put_schema_meta(sourceable() | schema_data()) ::
           schema_data()
   @spec put_schema_meta(
-          query_source() | schema_data(),
+          sourceable() | schema_data(),
           opts()
         ) :: schema_data()
   def put_schema_meta(schema_data, opts \\ [])
@@ -231,11 +231,11 @@ defmodule EctoShorts.CommonSchema do
   type, and delegates to `build_changeset/4`.
   """
   @spec build_changeset(
-          query_source() | schema_data() | changeset(),
+          sourceable() | schema_data() | changeset(),
           params()
         ) :: changeset()
   @spec build_changeset(
-          query_source() | schema_data() | changeset(),
+          sourceable() | schema_data() | changeset(),
           params(),
           opts()
         ) :: changeset()
@@ -282,7 +282,7 @@ defmodule EctoShorts.CommonSchema do
   Raises if the result is not an `Ecto.Changeset`.
   """
   @spec build_changeset(
-          query_source(),
+          sourceable(),
           schema_data() | changeset(),
           params(),
           opts()

@@ -133,38 +133,28 @@ defmodule EctoShorts.Actions do
     Utils
   }
 
-  @type query_source :: binary()
-
   @type query :: Ecto.Query.t()
-
-  @type queryable :: Ecto.Queryable.t()
-
-  @type source_queryable :: {query_source(), queryable()}
-
-  @type aggregate_options :: :avg | :count | :max | :min | :sum
-
+  @type schema_module :: Ecto.Queryable.t()
+  @type schema_source :: binary()
+  @type sourceable :: schema_module() | {schema_source(), schema_module()}
   @type changeset :: Ecto.Changeset.t()
-
   @type schema_data :: Ecto.Schema.t()
 
   @type multi :: Ecto.Multi.t()
-
   @type multi_failure :: Ecto.Multi.failure()
-
-  @type id :: integer() | binary()
-
-  @type field :: atom()
+  @type multi_params :: list(map() | {map(), map()})
 
   @type batch_key :: atom() | list(atom())
-
   @type batch_id :: map()
-
-  @type params :: map()
-
-  @type opts :: keyword()
+  @type batch_params :: params() | {params(), params()} | {schema_data(), params()}
 
   @type stream :: Enumerable.t()
+  @type id :: integer() | binary()
+  @type key :: atom()
+  @type params :: map()
+  @type opts :: keyword()
 
+  @type aggregate_options :: :avg | :count | :max | :min | :sum
   @type preloads :: list() | keyword()
 
   @doc since: "2.5.0"
@@ -235,16 +225,16 @@ defmodule EctoShorts.Actions do
       ]
   """
   @spec batch_load(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           batch_key() | :primary_key,
-          list(params() | {params(), params()} | {schema_data(), params()})
-        ) :: list(params() | {params(), params()} | {schema_data(), params()})
+          list(batch_params())
+        ) :: list(batch_params())
   @spec batch_load(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           batch_key() | :primary_key,
-          list(params() | {params(), params()} | {schema_data(), params()}),
+          list(batch_params()),
           opts()
-        ) :: list(params() | {params(), params()} | {schema_data(), params()})
+        ) :: list(batch_params())
   def batch_load(query, batch_key \\ :primary_key, params_list, opts \\ []) do
     batch_key = normalize_batch_key(query, batch_key)
 
@@ -335,12 +325,12 @@ defmodule EctoShorts.Actions do
       [%User{}, %User{}, ...]
   """
   @spec batch_find(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           batch_key() | :primary_key,
           list(params())
         ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec batch_find(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           batch_key() | :primary_key,
           list(params()),
           opts()
@@ -419,12 +409,12 @@ defmodule EctoShorts.Actions do
       %{%{title: "post_title"} => %EctoShorts.Schema.Post{title: "post_title"}}
   """
   @spec batch(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           batch_key() | :primary_key,
           list(params())
         ) :: %{batch_id() => schema_data()}
   @spec batch(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           batch_key() | :primary_key,
           list(params()),
           opts()
@@ -529,11 +519,11 @@ defmodule EctoShorts.Actions do
       {:ok, {1, [%User{id: 1, name: "Jane"}]}}
   """
   @spec insert_all(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           list(params())
         ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
   @spec insert_all(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           list(params()),
           opts()
         ) :: {:ok, {non_neg_integer(), nil | [term()]}} | {:error, any()}
@@ -595,12 +585,12 @@ defmodule EctoShorts.Actions do
       {12, nil}
   """
   @spec update_all(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           params()
         ) :: {non_neg_integer(), nil | [term()]}
   @spec update_all(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           params(),
           opts()
@@ -646,11 +636,11 @@ defmodule EctoShorts.Actions do
       {7, nil}
   """
   @spec delete_all(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params()
         ) :: {non_neg_integer(), nil | [term()]}
   @spec delete_all(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           opts()
         ) :: {non_neg_integer(), nil | [term()]}
@@ -686,12 +676,12 @@ defmodule EctoShorts.Actions do
     {:ok, [%User{}, %User{}]}
   """
   @spec find_or_create_many(
-          query() | queryable() | source_queryable(),
-          params_list :: list(map() | {map(), map()})
+          query() | sourceable(),
+          list(multi_params())
         ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec find_or_create_many(
-          query() | queryable() | source_queryable(),
-          params_list :: list(map() | {map(), map()}),
+          query() | sourceable(),
+          list(multi_params()),
           opts()
         ) :: {:ok, list(schema_data())} | {:error, any()}
   def find_or_create_many(query, params_list, opts \\ []) do
@@ -757,12 +747,12 @@ defmodule EctoShorts.Actions do
       {:ok, [%User{}, %User{}]}
   """
   @spec find_and_update_many(
-          query() | queryable() | source_queryable(),
-          params_list :: list(map() | {map(), map()})
+          query() | sourceable(),
+          list(multi_params())
         ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec find_and_update_many(
-          query() | queryable() | source_queryable(),
-          params_list :: list(map() | {map(), map()}),
+          query() | sourceable(),
+          list(multi_params()),
           opts()
         ) :: {:ok, list(schema_data())} | {:error, any()}
   def find_and_update_many(query, params_list, opts \\ []) do
@@ -845,12 +835,12 @@ defmodule EctoShorts.Actions do
       {:ok, [%User{}, %User{}]}
   """
   @spec find_and_upsert_many(
-          query() | queryable() | source_queryable(),
-          params_list :: list(map() | {map(), map()})
+          query() | sourceable(),
+          list(multi_params())
         ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec find_and_upsert_many(
-          query() | queryable() | source_queryable(),
-          params_list :: list(map() | {map(), map()}),
+          query() | sourceable(),
+          list(multi_params()),
           opts()
         ) :: {:ok, list(schema_data())} | {:error, any()}
   def find_and_upsert_many(query, params_list, opts \\ []) do
@@ -915,7 +905,7 @@ defmodule EctoShorts.Actions do
   end
 
   defp unzip_find_params(params, query, opts) do
-    {maybe_filter_query_field_params(params, query, opts), params}
+    {maybe_filter_queryable_params(params, query, opts), params}
   end
 
   @doc group: "Multi API"
@@ -937,11 +927,11 @@ defmodule EctoShorts.Actions do
       {:ok, [%User{}, %User{}]}
   """
   @spec create_many(
-          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          sourceable(),
           list(params())
         ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec create_many(
-          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          sourceable(),
           list(params()),
           opts()
         ) :: {:ok, list(schema_data())} | {:error, any()}
@@ -995,11 +985,11 @@ defmodule EctoShorts.Actions do
       {:ok, [%User{}, %User{}]}
   """
   @spec find_many(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           list(params())
         ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec find_many(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           list(params()),
           opts()
         ) :: {:ok, list(schema_data())} | {:error, any()}
@@ -1052,10 +1042,10 @@ defmodule EctoShorts.Actions do
       ...> EctoShorts.Actions.delete_many(users)
       {:ok, [%User{}, %User{}]}
   """
-  @spec delete_many(entries :: list(schema_data() | changeset())) ::
+  @spec delete_many(list(schema_data() | changeset())) ::
           {:ok, list(schema_data())} | {:error, any()}
   @spec delete_many(
-          entries :: list(schema_data() | changeset()),
+          list(schema_data() | changeset()),
           opts()
         ) :: {:ok, list(schema_data())} | {:error, any()}
   def delete_many(entries, opts \\ []) do
@@ -1125,10 +1115,10 @@ defmodule EctoShorts.Actions do
       ...> EctoShorts.Actions.find_and_create(MyApp.User, find_params, create_params)
       {:ok, %User{}}
   """
-  @spec find_and_create(query() | queryable() | source_queryable(), params(), params()) ::
+  @spec find_and_create(query() | sourceable(), params(), params()) ::
           {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   @spec find_and_create(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           params(),
           opts()
@@ -1158,12 +1148,12 @@ defmodule EctoShorts.Actions do
       {:ok, %User{name: "Updated Name"}}
   """
   @spec find_and_update(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           params()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   @spec find_and_update(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           params(),
           opts()
@@ -1195,12 +1185,12 @@ defmodule EctoShorts.Actions do
       {:ok, %User{}}
   """
   @spec find_and_upsert(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           params()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   @spec find_and_upsert(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           params(),
           opts()
@@ -1239,11 +1229,11 @@ defmodule EctoShorts.Actions do
       {:ok, %User{}}
   """
   @spec find_and_delete(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   @spec find_and_delete(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           opts()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
@@ -1280,11 +1270,11 @@ defmodule EctoShorts.Actions do
       {:ok, %User{}}
   """
   @spec find_or_create(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   @spec find_or_create(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           opts()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
@@ -1292,7 +1282,7 @@ defmodule EctoShorts.Actions do
     with {:error, %{code: :not_found}} <-
            find(
              query,
-             maybe_filter_query_field_params(params, query, opts),
+             maybe_filter_queryable_params(params, query, opts),
              opts
            ) do
       query
@@ -1326,11 +1316,11 @@ defmodule EctoShorts.Actions do
       %User{id: "abc-123"}
   """
   @spec get(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           id :: id()
         ) :: schema_data() | nil
   @spec get(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           id :: id(),
           opts()
         ) :: schema_data() | nil
@@ -1367,10 +1357,10 @@ defmodule EctoShorts.Actions do
       iex> EctoShorts.Actions.all(MyApp.User, id: 1, replica: MyApp.Repo.Replica)
       [%User{id: 1}]
   """
-  @spec all(query() | queryable() | source_queryable()) :: list(schema_data())
-  @spec all(query() | queryable() | source_queryable(), params()) ::
+  @spec all(query() | sourceable()) :: list(schema_data())
+  @spec all(query() | sourceable(), params()) ::
           list(schema_data())
-  @spec all(query() | queryable() | source_queryable(), opts()) ::
+  @spec all(query() | sourceable(), opts()) ::
           list(schema_data())
   def all(query, params_or_opts \\ [])
 
@@ -1414,7 +1404,7 @@ defmodule EctoShorts.Actions do
       [%User{role: "admin"}]
   """
   @spec all(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           opts()
         ) :: list(schema_data())
@@ -1458,11 +1448,11 @@ defmodule EctoShorts.Actions do
       {:ok, %User{name: "Fira"}}
   """
   @spec create(
-          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          sourceable(),
           params()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   @spec create(
-          query :: Ecto.Queryable.t() | {binary(), Ecto.Queryable.t()},
+          sourceable(),
           params(),
           opts()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
@@ -1497,11 +1487,11 @@ defmodule EctoShorts.Actions do
       {:ok, %User{id: 1}}
   """
   @spec find(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params()
         ) :: {:ok, schema_data()} | {:error, any()}
   @spec find(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           opts()
         ) :: {:ok, schema_data()} | {:error, any()}
@@ -1592,13 +1582,13 @@ defmodule EctoShorts.Actions do
       {:ok, %User{name: "Updated"}}
   """
   @spec update(
-          query() | queryable() | source_queryable(),
-          id_or_schema_data :: integer() | binary() | schema_data(),
+          query() | sourceable(),
+          id() | schema_data(),
           params()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   @spec update(
-          query() | queryable() | source_queryable(),
-          id_or_schema_data :: integer() | binary() | schema_data(),
+          query() | sourceable(),
+          id() | schema_data(),
           params(),
           opts()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
@@ -1646,13 +1636,10 @@ defmodule EctoShorts.Actions do
       iex> EctoShorts.Actions.delete({"users", MyApp.User}, 1)
       {:ok, %User{}}
   """
+  @spec delete(schema_data() | changeset() | list(schema_data() | changeset())) ::
+          {:ok, list(schema_data())} | {:error, list(changeset())} | {:error, any()}
   @spec delete(
-          entries ::
-            schema_data() | changeset() | list(schema_data() | changeset())
-        ) :: {:ok, list(schema_data())} | {:error, list(changeset())} | {:error, any()}
-  @spec delete(
-          schema_data_or_changeset ::
-            schema_data() | changeset() | list(schema_data() | changeset()),
+          schema_data() | changeset() | list(schema_data() | changeset()),
           opts()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   def delete(entries, opts \\ [])
@@ -1734,8 +1721,8 @@ defmodule EctoShorts.Actions do
       {:ok, %User{}}
   """
   @spec delete(
-          query() | queryable() | source_queryable(),
-          id :: id(),
+          query() | sourceable(),
+          id(),
           opts()
         ) :: {:ok, schema_data()} | {:error, changeset()} | {:error, any()}
   def delete(query, id, opts) when is_integer(id) or is_binary(id) do
@@ -1769,9 +1756,9 @@ defmodule EctoShorts.Actions do
       ...> Enum.take(stream, 10)
       [%User{}, ...]
   """
-  @spec stream(query() | queryable() | source_queryable()) :: stream()
-  @spec stream(query() | queryable() | source_queryable(), params()) :: stream()
-  @spec stream(query() | queryable() | source_queryable(), params(), opts()) :: stream()
+  @spec stream(query() | sourceable()) :: stream()
+  @spec stream(query() | sourceable(), params()) :: stream()
+  @spec stream(query() | sourceable(), params(), opts()) :: stream()
   def stream(query, params \\ %{}, opts \\ []) do
     opts = Keyword.merge(default_opts(), opts)
 
@@ -1811,24 +1798,24 @@ defmodule EctoShorts.Actions do
       5.75
   """
   @spec aggregate(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           aggregate_options(),
-          field()
+          key()
         ) :: any() | nil
   @spec aggregate(
-          query() | queryable() | source_queryable(),
+          query() | sourceable(),
           params(),
           aggregate_options(),
-          field(),
+          key(),
           opts()
         ) :: any() | nil
-  def aggregate(query, params, aggregate, field, opts \\ []) do
+  def aggregate(query, params, aggregate, key, opts \\ []) do
     opts = Keyword.merge(default_opts(), opts)
 
     query
     |> CommonFilters.convert_params_to_filter(params, opts)
-    |> Config.replica!(opts).aggregate(aggregate, field, opts)
+    |> Config.replica!(opts).aggregate(aggregate, key, opts)
   end
 
   @doc group: "Transaction API"
@@ -1879,12 +1866,10 @@ defmodule EctoShorts.Actions do
       ...> |> Ecto.Multi.insert(:user, MyApp.User.changeset(%MyApp.User{}, %{name: "Jane"}))
       ...> EctoShorts.Actions.transaction(multi)
   """
-  @spec transaction(fun_or_multi :: function() | multi()) ::
+  @spec transaction(function() | multi()) ::
           {:ok, any()} | {:error, any()} | multi_failure()
-  @spec transaction(
-          fun_or_multi :: function() | multi(),
-          opts()
-        ) :: {:ok, any()} | {:error, any()} | multi_failure()
+  @spec transaction(function() | multi(), opts()) ::
+          {:ok, any()} | {:error, any()} | multi_failure()
   def transaction(fun_or_multi, opts \\ [])
 
   def transaction(%_{} = multi, opts) do
@@ -1936,15 +1921,15 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  defp maybe_filter_query_field_params(params, query, opts) do
-    if Keyword.get(opts, :filter_query_field_params, true) do
-      filter_query_field_params(params, query)
+  defp maybe_filter_queryable_params(params, query, opts) do
+    if Keyword.get(opts, :filter_queryable_params, true) do
+      filter_queryable_params(params, query)
     else
       params
     end
   end
 
-  defp filter_query_field_params(params, query) do
+  defp filter_queryable_params(params, query) do
     query_fields = CommonSchema.module_for_schema(query).__schema__(:query_fields)
 
     params
