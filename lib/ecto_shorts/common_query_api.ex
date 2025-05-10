@@ -121,30 +121,29 @@ defmodule EctoShorts.CommonQueryAPI do
   end
 
   @spec dynamic(
+          schema_module(),
           binding_alias(),
           params(),
           opts()
         ) :: dynamic_expr()
-  def dynamic(binding_alias, params, opts) when is_map(params) do
-    dynamic(binding_alias, Map.to_list(params), opts)
+  def dynamic(schema_module, binding_alias, params, opts) when is_map(params) do
+    dynamic(schema_module, binding_alias, Map.to_list(params), opts)
   end
 
-  def dynamic(binding_alias, params, opts) do
-    with nil <- query_dynamic(binding_alias, params, opts) do
+  def dynamic(schema_module, binding_alias, params, opts) do
+    with nil <- query_dynamic(schema_module, binding_alias, params, opts) do
       dynamic(binding_alias, true)
     end
   end
 
-  defp query_dynamic(binding_alias, params, opts) do
-    schema_module = Keyword.fetch!(params, :queryable)
-
+  defp query_dynamic(schema_module, binding_alias, params, opts) do
     binding_alias = params[:as] || binding_alias
 
     condition = params[:condition] || :and
 
     params
     |> Keyword.get(:source)
-    |> QueryHelpers.apply_expressions(
+    |> QueryHelpers.apply_expression(
       params,
       fn {key, value}, dyn ->
         DynamicBuilder.build_dynamic(
@@ -366,7 +365,7 @@ defmodule EctoShorts.CommonQueryAPI do
       if Keyword.has_key?(params, :expression) do
         query_select(query, binding_alias, params[:expression])
       else
-        QueryHelpers.apply_expressions(query, params, fn {key, value}, query ->
+        QueryHelpers.apply_expression(query, params, fn {key, value}, query ->
           query_select(query, binding_alias, {key, value})
         end)
       end
@@ -429,7 +428,7 @@ defmodule EctoShorts.CommonQueryAPI do
       if Keyword.has_key?(params, :expression) do
         query_select_merge(query, binding_alias, params[:expression])
       else
-        QueryHelpers.apply_expressions(query, params, fn {key, value}, query ->
+        QueryHelpers.apply_expression(query, params, fn {key, value}, query ->
           query_select_merge(query, binding_alias, {key, value})
         end)
       end
@@ -639,9 +638,7 @@ defmodule EctoShorts.CommonQueryAPI do
   end
 
   defp join_on_dynamic(params, binding_alias, schema_module, opts) do
-    params = Keyword.put(params, :queryable, schema_module)
-
-    dynamic(binding_alias, params, opts)
+    dynamic(schema_module, binding_alias, params, opts)
   end
 
   def or_where(query, binding_alias, params, opts) when is_map(params) do
@@ -662,18 +659,16 @@ defmodule EctoShorts.CommonQueryAPI do
     if Keyword.has_key?(params, :expression) do
       query_or_where(query, binding_alias, params[:expression])
     else
+      {schema_module, params} = Keyword.pop(params, :queryable)
+
       schema_module =
-        if Keyword.has_key?(params, :queryable) do
-          params[:queryable]
-        else
+        with nil <- schema_module do
           query
           |> CommonQuery.to_query()
           |> CommonQuery.schema_module_for_query_expression!(binding_alias)
         end
 
-      params = Keyword.put(params, :queryable, schema_module)
-
-      expr = dynamic(binding_alias, params, opts)
+      expr = dynamic(schema_module, binding_alias, params, opts)
 
       query_or_where(query, nil, expr)
     end
@@ -705,18 +700,16 @@ defmodule EctoShorts.CommonQueryAPI do
     if Keyword.has_key?(params, :expression) do
       query_where(query, binding_alias, params[:expression])
     else
+      {schema_module, params} = Keyword.pop(params, :queryable)
+
       schema_module =
-        if Keyword.has_key?(params, :queryable) do
-          params[:queryable]
-        else
+        with nil <- schema_module do
           query
           |> CommonQuery.to_query()
           |> CommonQuery.schema_module_for_query_expression!(binding_alias)
         end
 
-      params = Keyword.put(params, :queryable, schema_module)
-
-      expr = dynamic(binding_alias, params, opts)
+      expr = dynamic(schema_module, binding_alias, params, opts)
 
       query_where(query, nil, expr)
     end

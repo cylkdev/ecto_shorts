@@ -138,7 +138,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
         build_query_api_filter(query, binding_alias, schema_module, key, value, opts)
 
       key in schema_module.__schema__(:associations) ->
-        build_association_filter(query, binding_alias, schema_module, key, value, opts)
+        join_association(query, binding_alias, schema_module, key, value, opts)
 
       key in schema_module.__schema__(:query_fields) ->
         build_schema_filter(query, binding_alias, schema_module, key, value, opts)
@@ -186,7 +186,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp build_schema_filter(query, binding_alias, schema_module, key, value, opts) do
-    QueryHelpers.apply_expressions(query, value, fn value, query ->
+    QueryHelpers.apply_expression(query, value, fn value, query ->
       apply_schema_filter(query, binding_alias, schema_module, key, value, opts)
     end)
   end
@@ -231,7 +231,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
   defp build_join_filter(query, binding_alias, schema_module, :association, params, opts) do
     Enum.reduce(params, query, fn {key, value}, query ->
-      build_association_filter(query, binding_alias, schema_module, key, value, opts)
+      join_association(query, binding_alias, schema_module, key, value, opts)
     end)
   end
 
@@ -239,16 +239,17 @@ defmodule EctoShorts.QueryBuilders.Schema do
     params
     |> List.wrap()
     |> Enum.reduce(query, fn params, query ->
-      build_subquery_filter(query, binding_alias, schema_module, params, opts)
+      join_subquery(query, binding_alias, schema_module, params, opts)
     end)
   end
 
-  defp build_association_filter(query, binding_alias, schema_module, key, params, opts)
-       when is_map(params) do
-    build_association_filter(query, binding_alias, schema_module, key, Map.to_list(params), opts)
+  @doc false
+  def join_association(query, binding_alias, schema_module, key, params, opts)
+      when is_map(params) do
+    join_association(query, binding_alias, schema_module, key, Map.to_list(params), opts)
   end
 
-  defp build_association_filter(query, binding_alias, schema_module, key, params, opts) do
+  def join_association(query, binding_alias, schema_module, key, params, opts) do
     assoc_schema_module = SchemaHelpers.schema_module_for_association(schema_module, key)
 
     as =
@@ -276,12 +277,12 @@ defmodule EctoShorts.QueryBuilders.Schema do
     )
   end
 
-  defp build_subquery_filter(query, binding_alias, schema_module, params, opts)
-       when is_map(params) do
-    build_subquery_filter(query, binding_alias, schema_module, Map.to_list(params), opts)
+  @doc false
+  def join_subquery(query, binding_alias, schema_module, params, opts) when is_map(params) do
+    join_subquery(query, binding_alias, schema_module, Map.to_list(params), opts)
   end
 
-  defp build_subquery_filter(query, binding_alias, _schema_module, params, opts) do
+  def join_subquery(query, binding_alias, _schema_module, params, opts) do
     {subquery_data, params} = Keyword.pop(params, :query)
 
     if is_nil(subquery_data) do

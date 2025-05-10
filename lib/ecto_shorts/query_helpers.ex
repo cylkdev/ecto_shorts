@@ -22,7 +22,7 @@ defmodule EctoShorts.QueryHelpers do
 
   ## Examples
 
-      iex> EctoShorts.DynamicBuilders.apply_expressions(
+      iex> EctoShorts.DynamicBuilders.apply_expression(
       ...>   [],
       ...>   %{a: %{b: 1}, c: 2, d: [4, 5, 6], e: %{f: %{g: 7}}},
       ...>   fn pair, acc -> [pair | acc] end
@@ -34,12 +34,12 @@ defmodule EctoShorts.QueryHelpers do
         {:c, 2}
       ]
   """
-  @spec apply_expressions(
+  @spec apply_expression(
           any(),
           map() | keyword() | any(),
           (acc :: any(), value :: any() -> any())
         ) :: any()
-  def apply_expressions(acc, value, fun) do
+  def apply_expression(acc, value, fun) do
     value
     |> flatten_params()
     |> Enum.reduce(acc, &fun.(&1, &2))
