@@ -83,22 +83,22 @@
 #     end
 #   end
 
-#   describe "prefix_for_schema/2: " do
+#   describe "prefix_for/2: " do
 #     test "returns @schema_prefix module attribute value if set in schema" do
-#       assert "mock_schema_prefix" = CommonSchemas.prefix_for_schema(PrefixSchema)
+#       assert "mock_schema_prefix" = CommonSchemas.prefix_for(PrefixSchema)
 #     end
 
 #     test "returns nil if schema does not have @schema_prefix module attribute set" do
-#       assert nil === CommonSchemas.prefix_for_schema(AbstractSchema)
+#       assert nil === CommonSchemas.prefix_for(AbstractSchema)
 #     end
 
 #     test "returns @schema_prefix module attribute value if set in schema and {schema_source, schema_module} tuple is given" do
 #       assert "mock_schema_prefix" =
-#                CommonSchemas.prefix_for_schema({"concrete_table", PrefixSchema})
+#                CommonSchemas.prefix_for({"concrete_table", PrefixSchema})
 #     end
 
 #     test "returns nil if schema does not have @schema_prefix module attribute set and {schema_source, schema_module} tuple is given" do
-#       assert nil === CommonSchemas.prefix_for_schema({"concrete_table", AbstractSchema})
+#       assert nil === CommonSchemas.prefix_for({"concrete_table", AbstractSchema})
 #     end
 #   end
 

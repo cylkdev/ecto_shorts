@@ -27,7 +27,6 @@ defmodule EctoShorts.QueryBuilders.Schema do
   @behaviour EctoShorts.QueryBuilder
 
   @query_api_filters ~w(
-    from
     join
     select
     select_merge
@@ -190,12 +189,6 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
   defp apply_schema_filter(query, binding_alias, schema_module, key, value, opts) do
     apply_schema_filter(query, binding_alias, schema_module, key, {:==, value}, opts)
-  end
-
-  defp build_query_api_filter(query, _binding_alias, _schema_module, :from, params, _opts) do
-    {from_binding_alias, params} = Keyword.pop(params, :as)
-
-    CommonQueryAPI.from(query, from_binding_alias, params)
   end
 
   defp build_query_api_filter(query, binding_alias, _schema_module, :select, value, _opts) do

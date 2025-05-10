@@ -44,6 +44,24 @@ defmodule EctoShorts.CommonQuery do
   end
 
   @doc """
+  Returns the schema module (queryable) from the given `query`.
+
+  ## Examples
+
+      iex> import Ecto.Query
+      ...> query = from p in EctoShorts.Schema.Post
+      ...> EctoShorts.CommonQuery.schema_module_for_query(query)
+      EctoShorts.Schema.Post
+  """
+  @spec schema_module_for_query(query() | schema_module()) :: schema_module()
+  def schema_module_for_query(query) do
+    case source_for_query(query) do
+      {_schema_source, schema_module} -> schema_module
+      schema_module -> schema_module
+    end
+  end
+
+  @doc """
   Returns a tuple of `{schema_source, schema_module}` for a given
   query or subquery.
 
@@ -76,7 +94,11 @@ defmodule EctoShorts.CommonQuery do
   """
   @spec source_for_query(query() | schema_module() | subquery()) :: sourceable()
   def source_for_query(%{from: %{source: {schema_source, schema_module}}} = _query) do
-    {schema_source, schema_module}
+    if is_nil(schema_source) do
+      schema_module
+    else
+      {schema_source, schema_module}
+    end
   end
 
   def source_for_query(%{from: %{source: %{query: query} = _subquery}}) do
@@ -90,21 +112,6 @@ defmodule EctoShorts.CommonQuery do
   def source_for_query(schema_module) when is_atom(schema_module) do
     schema_module
   end
-
-  @doc """
-  Returns the schema module (queryable) from the given `query`.
-
-  ## Examples
-
-      iex> import Ecto.Query
-      ...> query = from p in EctoShorts.Schema.Post
-      ...> EctoShorts.CommonQuery.schema_module_for_query(query)
-      EctoShorts.Schema.Post
-  """
-  @spec schema_module_for_query(query() | schema_module()) :: schema_module()
-  def schema_module_for_query(%{from: %{source: {_, query}}}), do: schema_module_for_query(query)
-  def schema_module_for_query(%{from: %{query: %{from: {_, schema_module}}}}), do: schema_module
-  def schema_module_for_query(schema_module) when is_atom(schema_module), do: schema_module
 
   @doc """
   Returns the schema module (queryable) for the given named binding

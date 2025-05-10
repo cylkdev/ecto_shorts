@@ -11,59 +11,20 @@ defmodule EctoShorts.QueryBuilder do
   recursively applying transformations across nested filter structures.
   """
 
-  @typedoc """
-  The behavior module responsible for generating queries from filters.
-  """
-  @type t :: module()
-
-  @typedoc """
-  The source name of a queryable (e.g., table name). Used in `{schema_source, schema_module}`.
-  """
-  @type sourceable :: binary()
-
-  @typedoc """
-  An Ecto query struct (`%Ecto.Query{}`) built through filter transformations.
-  """
   @type query :: Ecto.Query.t()
-
-  @typedoc """
-  An Ecto-compatible queryable, such as a schema module or existing query.
-  """
-  @type queryable :: Ecto.Queryable.t()
-
-  @typedoc """
-  A tuple of `{schema_source, schema_module}` used for dynamic or abstract schemas.
-  """
-  @type source_queryable :: {sourceable(), queryable()}
-
-  @typedoc """
-  An alias used to refer to a named binding in a query (typically the `:as` value).
-  """
+  @type schema_module :: Ecto.Queryable.t()
+  @type schema_source :: binary()
+  @type sourceable :: schema_module() | {schema_source(), schema_module()}
+  @type queryable_source :: query() | schema_module()
+  @type query_source :: query() | sourceable()
   @type binding_alias :: atom()
 
-  @typedoc """
-  A schema module representing an Ecto schema, e.g. `MyApp.Post`.
-  """
-  @type schema_module :: Ecto.Queryable.t()
-
-  @typedoc """
-  A single filter key (field name or custom directive like `:limit`).
-  """
+  @type adapter :: module()
   @type key :: atom()
-
-  @typedoc """
-  A value associated with a filter key. May be a scalar, list, map, etc.
-  """
   @type value :: any()
-
+  @type params :: map() | keyword()
   @type filter :: atom()
-
   @type filters :: list(filter())
-
-  @typedoc """
-  Options passed to the query builder. May include `:query_builder_adapter`,
-  `:prefix`, or other adapter-specific flags.
-  """
   @type opts :: keyword()
 
   @doc """
@@ -102,19 +63,19 @@ defmodule EctoShorts.QueryBuilder do
       end
   """
   @callback build_query(
-              query() | queryable() | source_queryable(),
+              query_source(),
               binding_alias(),
               schema_module(),
               key(),
               value(),
               opts()
-            ) :: query() | queryable()
+            ) :: queryable_source()
 
   @doc """
   Returns a list of supported filters that can be used with the
   configured query builder.
   """
-  @spec filters(t()) :: filters()
+  @spec filters(adapter()) :: filters()
   def filters(adapter), do: adapter.filters()
 
   @doc """
@@ -136,22 +97,22 @@ defmodule EctoShorts.QueryBuilder do
       #Ecto.Query<from p in Post, limit: 10>
   """
   @spec build_query(
-          t(),
-          query() | queryable() | source_queryable(),
+          adapter(),
+          query_source(),
           binding_alias(),
           schema_module(),
           key(),
           value()
-        ) :: query() | queryable()
+        ) :: queryable_source()
   @spec build_query(
-          t(),
-          query() | queryable() | source_queryable(),
+          adapter(),
+          query_source(),
           binding_alias(),
           schema_module(),
           key(),
           value(),
           opts()
-        ) :: query() | queryable()
+        ) :: queryable_source()
   def build_query(adapter, query, binding_alias, schema_module, key, value, opts \\ []) do
     adapter.build_query(
       query,

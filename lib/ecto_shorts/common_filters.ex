@@ -60,7 +60,6 @@ defmodule EctoShorts.CommonFilters do
   """
 
   alias EctoShorts.{
-    CommonQuery,
     CommonQueryAPI,
     CommonSchemas,
     QueryBuilder,
@@ -88,6 +87,35 @@ defmodule EctoShorts.CommonFilters do
   @schema_filters Schema.filters()
   @filters @common_filters ++ @schema_filters
 
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def convert_params_to_filter(params, opts) when is_list(params) do
+    params
+    |> Map.new()
+    |> convert_params_to_filter(opts)
+  end
+
+  def convert_params_to_filter(%{query: query_source} = params, opts) do
+    {schema_module, params} = Map.pop(params, :queryable)
+
+    schema_module =
+      with nil <- schema_module do
+        CommonSchemas.schema_module_for(query_source)
+      end
+
+    binding_alias = params[:as]
+
+    query_source = CommonQueryAPI.from(query_source, binding_alias, params)
+
+    params
+    |> Map.drop([:as, :queryable, :prefix, :options])
+    |> Enum.reduce(query_source, fn {key, value}, query_source ->
+      QueryBuilder.build_query(query_source, binding_alias, schema_module, key, value, opts)
+    end)
+  end
+
   @doc """
   Converts a map or keyword list of parameters into an Ecto query.
 
@@ -99,13 +127,7 @@ defmodule EctoShorts.CommonFilters do
       iex> EctoShorts.CommonFilters.convert_params_to_filter(%{query: EctoShorts.Schema.Post, as: :post, where: %{id: 1}})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, where: p0.id == ^1>
   """
-  @spec convert_params_to_filter(
-          query_source() | nil,
-          params(),
-          opts()
-        ) :: query_source()
-  def convert_params_to_filter(query_source \\ nil, params, opts \\ [])
-
+  @spec convert_params_to_filter(query_source() | nil, params(), opts()) :: query_source()
   def convert_params_to_filter(query_source, params, _opts)
       when params === %{} or params === [] do
     query_source
@@ -116,32 +138,16 @@ defmodule EctoShorts.CommonFilters do
   end
 
   def convert_params_to_filter(nil, params, opts) do
-    {query_source, params} = Keyword.pop(params, :query)
-
-    {binding_alias, params} = Keyword.pop(params, :as)
-
-    {schema_module, params} = Keyword.pop(params, :schema)
-
-    query_source = CommonQueryAPI.from(query_source, binding_alias, params)
-
-    schema_module =
-      with nil <- schema_module do
-        CommonQuery.schema_module_for_query(query_source)
-      end
-
-    apply_filters(params, query_source, binding_alias, schema_module, opts)
+    convert_params_to_filter(params, opts)
   end
 
   def convert_params_to_filter(query_source, params, opts) do
-    schema_module = CommonSchemas.module_for_schema(query_source)
+    schema_module = CommonSchemas.schema_module_for(query_source)
 
     {binding_alias, params} = Keyword.pop(params, :as)
 
-    apply_filters(params, query_source, binding_alias, schema_module, opts)
-  end
-
-  defp apply_filters(params, query_source, binding_alias, schema_module, opts) do
     params
+    |> Keyword.new()
     |> ensure_last_is_final_filter()
     |> Enum.reduce(query_source, fn {key, value}, query_source ->
       with query_source <-
@@ -202,13 +208,6 @@ defmodule EctoShorts.CommonFilters do
       @default_query_builder_adapter
   end
 
-  @impl EctoShorts.QueryBuilder
-  @doc since: "2.5.0"
-  @doc """
-  ...
-  """
-  def filters, do: @filters
-
   @doc since: "2.5.0"
   @doc """
   ...
@@ -218,6 +217,13 @@ defmodule EctoShorts.CommonFilters do
     |> query_builder_adapter()
     |> QueryBuilder.filters()
   end
+
+  @impl EctoShorts.QueryBuilder
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def filters, do: @filters
 
   @impl EctoShorts.QueryBuilder
   @doc since: "2.5.0"
