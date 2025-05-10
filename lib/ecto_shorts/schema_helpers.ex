@@ -5,10 +5,34 @@ defmodule EctoShorts.SchemaHelpers do
   Ecto schema data.
   """
 
-  @type queryable :: Ecto.Queryable.t()
+  @type schema_module :: Ecto.Queryable.t()
   @type schema_data :: Ecto.Schema.t()
-  @type params :: map()
+
   @type key :: atom()
+  @type params :: map()
+
+  def schema_module_for_association(schema_module, key) do
+    case schema_module.__schema__(:association, key) do
+      %{through: [field1, field2]} ->
+        schema_module
+        |> schema_module_for_association(field1)
+        |> schema_module_for_association(field2)
+
+      %{related: related} ->
+        related
+    end
+  end
+
+  def field_type_of_array?(schema_module, key) do
+    case field_type(schema_module, key) do
+      {:array, _} -> true
+      _ -> false
+    end
+  end
+
+  def field_type(schema_module, key) do
+    schema_module.__schema__(:type, key)
+  end
 
   @doc """
   Returns `true` if the value of `key` is not an
@@ -75,7 +99,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.all_created?(EctoShorts.Schema.Post, posts_all_saved)
       true
   """
-  @spec all_created?(queryable(), list(schema_data() | params() | any())) :: boolean()
+  @spec all_created?(schema_module(), list(schema_data() | params() | any())) :: boolean()
   def all_created?(schema_module, values), do: Enum.all?(values, &created?(schema_module, &1))
 
   @doc """
@@ -103,7 +127,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.any_created?(EctoShorts.Schema.Post, new_data)
       false
   """
-  @spec any_created?(queryable(), list(schema_data() | params() | any())) :: boolean()
+  @spec any_created?(schema_module(), list(schema_data() | params() | any())) :: boolean()
   def any_created?(schema_module, values), do: Enum.any?(values, &created?(schema_module, &1))
 
   @doc """
@@ -142,7 +166,7 @@ defmodule EctoShorts.SchemaHelpers do
       iex> EctoShorts.SchemaHelpers.created?(EctoShorts.Schema.Post, %{title: "example"})
       false
   """
-  @spec created?(queryable(), schema_data() | params() | any()) :: boolean()
+  @spec created?(schema_module(), schema_data() | params() | any()) :: boolean()
   def created?(schema_module, data) when is_map(data), do: primary_key?(schema_module, data)
   def created?(_schema_module, _term), do: false
 
@@ -237,7 +261,8 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.filter_primary_key(EctoShorts.Schema.Post, list)
       [%{id: 1}, %{id: 2}, %{}]
   """
-  @spec filter_primary_key(queryable(), params() | list(params())) :: params() | list(params())
+  @spec filter_primary_key(schema_module(), params() | list(params())) ::
+          params() | list(params())
   def filter_primary_key(schema_module, params_list) when is_list(params_list) do
     Enum.map(params_list, &filter_primary_key(schema_module, &1))
   end
@@ -281,7 +306,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.all_primary_key?(EctoShorts.Schema.Post, records)
       true
   """
-  @spec all_primary_key?(queryable(), list(params() | schema_data())) :: boolean()
+  @spec all_primary_key?(schema_module(), list(params() | schema_data())) :: boolean()
   def all_primary_key?(schema_module, values) do
     Enum.all?(values, &primary_key?(schema_module, &1))
   end
@@ -309,7 +334,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.any_primary_key?(EctoShorts.Schema.Post, list2)
       false
   """
-  @spec any_primary_key?(queryable(), list(params() | schema_data())) :: boolean()
+  @spec any_primary_key?(schema_module(), list(params() | schema_data())) :: boolean()
   def any_primary_key?(schema_module, values) do
     Enum.any?(values, &primary_key?(schema_module, &1))
   end

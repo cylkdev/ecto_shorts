@@ -4,21 +4,6 @@ defmodule EctoShorts.Config do
   @app :ecto_shorts
 
   @doc """
-  Returns the configured `:named_binding_enabled` value from the `:ecto_shorts` application environment.
-
-  Defaults to `nil` if not set.
-
-  ## Examples
-
-      iex> EctoShorts.Config.named_binding_enabled()
-      nil
-  """
-  @spec named_binding_enabled :: boolean() | nil
-  def named_binding_enabled do
-    Application.get_env(@app, :named_binding_enabled)
-  end
-
-  @doc """
   Returns the configured `:dynamic_expression_adapters` value from the `:ecto_shorts` application environment.
 
   Defaults to `nil` if not set.
@@ -41,7 +26,7 @@ defmodule EctoShorts.Config do
   ## Examples
 
       iex> EctoShorts.Config.error_module()
-      nil
+      EctoShorts.Actions.Error
   """
   @spec error_module :: module() | nil
   def error_module do
@@ -103,7 +88,7 @@ defmodule EctoShorts.Config do
   ## Examples
 
       iex> EctoShorts.Config.replica()
-      EctoShorts.Repo
+      nil
   """
   @spec replica :: module() | nil
   def replica do

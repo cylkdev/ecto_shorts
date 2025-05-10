@@ -169,7 +169,7 @@ Some projects extend Ecto.Query.API with custom macros to simplify query buildin
 ### Ecto.Query.API Extension Approach
 
 ```elixir
-defmodule MyApp.QueryHelpers do
+defmodule MyApp.CommonQuery do
   import Ecto.Query
   
   defmacro search(field, value) do
@@ -208,7 +208,7 @@ end
 
 defmodule MyApp.Accounts do
   import Ecto.Query
-  import MyApp.QueryHelpers
+  import MyApp.CommonQuery
   alias MyApp.{Repo, User}
   
   def list_users(filters \\ []) do

@@ -1,61 +1,79 @@
 defmodule EctoShorts.QueryHelpers do
   @moduledoc since: "2.5.0"
-  @moduledoc """
-  Provides utility functions for extracting the underlying schema or source
-  from Ecto queries or queryable values.
-
-  These functions are useful when you need to introspect a query and determine
-  which schema or database table it references, often as part of a dynamic or
-  reusable query-building pipeline.
-
-  ## Examples
-
-      iex> require Ecto.Query
-      ...> EctoShorts.QueryHelpers.get_query_source(Ecto.Query.from(EctoShorts.Schema.Post))
-      {"posts", EctoShorts.Schema.Post}
-
-      iex> EctoShorts.QueryHelpers.get_query_schema(EctoShorts.Schema.Post)
-      EctoShorts.Schema.Post
-  """
-
-  @type source :: binary()
-  @type query :: Ecto.Query.t()
-  @type queryable :: Ecto.Queryable.t()
-  @type source_queryable :: {source(), queryable()}
+  @moduledoc false
 
   @doc """
-  Returns a tuple of `{source, schema}` given a query or queryable value.
+  Applies a function to each flattened key-value expression from the
+  input value.
 
-  If the input is already a schema module (atom), it is returned as-is.
-  If the input is a query, this function attempts to extract the table source
-  name and the associated schema module.
+  The `expr` input can be any term. This function will recursively
+  flatten it deeply nested maps or keyword lists and apply the given
+  function to each pair.
 
-  ## Examples
+  The order of traversal ensures nested values are grouped by their
+  top-level keys, preserving enough structure to retain context
+  (e.g., `{:a, {:b, 1}}`).
 
-      iex> require Ecto.Query
-      ...> EctoShorts.QueryHelpers.get_query_source(Ecto.Query.from(EctoShorts.Schema.Post))
-      {"posts", EctoShorts.Schema.Post}
-  """
-  @spec get_query_source(query() | queryable() | source_queryable()) ::
-          queryable() | source_queryable()
-  def get_query_source(queryable) when is_atom(queryable), do: queryable
-  def get_query_source(%{from: %{source: {source, queryable}}}), do: {source, queryable}
-  def get_query_source(%{from: %{query: %{from: {source, queryable}}}}), do: {source, queryable}
+  This function accepts:
 
-  @doc """
-  Extracts and returns the schema module from a query or queryable value.
-
-  This is a simplified version of `get_query_source/1` that always returns
-  the schema module, whether it's extracted from a query or returned directly.
+    * A starting accumulator
+    * Some input (like a map, keyword list or integer)
+    * A function that is called for each item
 
   ## Examples
 
-      iex> require Ecto.Query
-      ...> EctoShorts.QueryHelpers.get_query_schema(Ecto.Query.from(EctoShorts.Schema.Post))
-      EctoShorts.Schema.Post
+      iex> EctoShorts.DynamicBuilders.apply_expressions(
+      ...>   [],
+      ...>   %{a: %{b: 1}, c: 2, d: [4, 5, 6], e: %{f: %{g: 7}}},
+      ...>   fn pair, acc -> [pair | acc] end
+      ...> )
+      [
+        {:e, {:f, {:g, 7}}},
+        {:d, [4, 5, 6]},
+        {:a, {:b, 1}},
+        {:c, 2}
+      ]
   """
-  @spec get_query_schema(query_or_queryable :: query() | queryable()) :: queryable()
-  def get_query_schema(%{from: %{source: {_, query}}}), do: get_query_schema(query)
-  def get_query_schema(%{from: %{query: %{from: {_, schema_module}}}}), do: schema_module
-  def get_query_schema(queryable) when is_atom(queryable), do: queryable
+  @spec apply_expressions(
+          any(),
+          map() | keyword() | any(),
+          (acc :: any(), value :: any() -> any())
+        ) :: any()
+  def apply_expressions(acc, value, fun) do
+    value
+    |> flatten_params()
+    |> Enum.reduce(acc, &fun.(&1, &2))
+  end
+
+  defp flatten_params({key, [{_, _} | _] = list}) do
+    list
+    |> flatten_params()
+    |> Enum.map(&{key, &1})
+  end
+
+  defp flatten_params({key, data}) when is_struct(data) do
+    flatten_params({key, data})
+  end
+
+  defp flatten_params({key, params}) when is_map(params) do
+    flatten_params({key, Map.to_list(params)})
+  end
+
+  defp flatten_params([head | tail]) do
+    flatten_params(head) ++ flatten_params(tail)
+  end
+
+  defp flatten_params(data) when is_struct(data) do
+    data
+  end
+
+  defp flatten_params(params) when is_map(params) do
+    params
+    |> Map.to_list()
+    |> flatten_params()
+  end
+
+  defp flatten_params(value) do
+    List.wrap(value)
+  end
 end

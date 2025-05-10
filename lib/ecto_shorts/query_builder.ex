@@ -17,9 +17,9 @@ defmodule EctoShorts.QueryBuilder do
   @type t :: module()
 
   @typedoc """
-  The source name of a queryable (e.g., table name). Used in `{source, queryable}`.
+  The source name of a queryable (e.g., table name). Used in `{schema_source, schema_module}`.
   """
-  @type source :: binary()
+  @type query_source :: binary()
 
   @typedoc """
   An Ecto query struct (`%Ecto.Query{}`) built through filter transformations.
@@ -32,9 +32,9 @@ defmodule EctoShorts.QueryBuilder do
   @type queryable :: Ecto.Queryable.t()
 
   @typedoc """
-  A tuple of `{source, queryable}` used for dynamic or abstract schemas.
+  A tuple of `{schema_source, schema_module}` used for dynamic or abstract schemas.
   """
-  @type source_queryable :: {source(), queryable()}
+  @type source_queryable :: {query_source(), queryable()}
 
   @typedoc """
   An alias used to refer to a named binding in a query (typically the `:as` value).
@@ -80,7 +80,7 @@ defmodule EctoShorts.QueryBuilder do
 
   ## Parameters
 
-    * `query` — An existing query, queryable, or `{source, queryable}` tuple.
+    * `query` — An existing query, queryable, or `{schema_source, schema_module}` tuple.
 
     * `binding` — An optional alias used to refer to the query binding (e.g. `:post`).
 
@@ -103,7 +103,7 @@ defmodule EctoShorts.QueryBuilder do
   """
   @callback build_query(
               query() | queryable() | source_queryable(),
-              binding_alias() | nil,
+              binding_alias(),
               schema_module(),
               key(),
               value(),
@@ -138,7 +138,7 @@ defmodule EctoShorts.QueryBuilder do
   @spec build_query(
           t(),
           query() | queryable() | source_queryable(),
-          binding_alias() | nil,
+          binding_alias(),
           schema_module(),
           key(),
           value()
@@ -146,7 +146,7 @@ defmodule EctoShorts.QueryBuilder do
   @spec build_query(
           t(),
           query() | queryable() | source_queryable(),
-          binding_alias() | nil,
+          binding_alias(),
           schema_module(),
           key(),
           value(),

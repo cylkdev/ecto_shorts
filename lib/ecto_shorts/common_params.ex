@@ -466,10 +466,17 @@ defmodule EctoShorts.CommonParams do
     if function_exported?(schema_module, :on_conflict_options, 0) do
       schema_module.on_conflict_options()
     else
-      [
-        conflict_target: schema_module.__schema__(:primary_key),
-        on_conflict: {:replace, changed_keys}
+      insert_opts = [
+        conflict_target: schema_module.__schema__(:primary_key)
       ]
+
+      # setting on_conflict to {:replace, []} causes an ecto error
+      # so don't add that option if changed keys is empty.
+      if changed_keys === [] do
+        insert_opts
+      else
+        Keyword.put(insert_opts, :on_conflict, {:replace, changed_keys})
+      end
     end
   end
 

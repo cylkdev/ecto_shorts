@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicExpression.Postgres do
+defmodule EctoShorts.DynamicBuilders.Postgres do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Build dynamic `where` and `or_where` filters for Postgres without
@@ -33,11 +33,11 @@ defmodule EctoShorts.DynamicExpression.Postgres do
       filters = %{active: true, age: {:>=, 30}}
 
       User
-      |> EctoShorts.DynamicExpression.Postgres.where(:user, filters)
+      |> EctoShorts.DynamicBuilders.Postgres.dynamic(:user, filters)
 
   You can also use `or_where/3` to combine filters with `OR` logic:
 
-      EctoShorts.DynamicExpression.Postgres.or_where(User, :user, [
+      EctoShorts.DynamicBuilders.Postgres.or_dynamic(User, :user, [
         %{status: "archived"},
         %{status: "disabled"}
       ])
@@ -61,91 +61,99 @@ defmodule EctoShorts.DynamicExpression.Postgres do
   """
 
   alias EctoShorts.{
-    CommonQuery,
-    DynamicExpression.Postgres.Array,
-    DynamicExpression.Postgres.Field
+    CommonQueryAPI,
+    DynamicBuilders.Postgres.Array,
+    DynamicBuilders.Postgres.Field,
+    SchemaHelpers
   }
 
-  @behaviour EctoShorts.DynamicExpression
+  @behaviour EctoShorts.DynamicBuilder
 
-  @type source :: binary()
-  @type queryable :: Ecto.Queryable.t()
+  @type schema_module :: Ecto.Queryable.t()
+  @type schema_source :: binary()
+  @type dynamic_expr :: %Ecto.Query.DynamicExpr{}
+  @type maybe_dynamic_expr :: dynamic_expr() | nil
   @type binding_alias :: atom()
-  @type params :: map()
+
+  @type condition :: :and | :or
+
   @type key :: atom()
   @type value :: any()
   @type operator :: any()
-  @type dyn :: Ecto.Query.DynamicExpr.t()
+  @type params :: map()
 
-  @impl EctoShorts.DynamicExpression
+  @impl EctoShorts.DynamicBuilder
   @doc """
   ## Examples
 
       # create a dynamic expression
-      iex> EctoShorts.DynamicExpression.Postgres.build_dynamic_expression(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
+      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
       dynamic([q], q.id == ^2)
 
       # create a dynamic expression using an operator
-      iex> EctoShorts.DynamicExpression.Postgres.build_dynamic_expression(nil, nil, :and, EctoShorts.Schema.Post, :id, {:>=, 2})
+      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, {:>=, 2})
       dynamic([q], q.id >= ^2)
 
       # add a new expression using an OR condition
-      iex> dyn_a = EctoShorts.DynamicExpression.Postgres.build_dynamic_expression(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
-      ...> EctoShorts.DynamicExpression.Postgres.build_dynamic_expression(dyn_a, nil, :or, EctoShorts.Schema.Post, :id, {:>=, 2})
+      iex> dyn_a = EctoShorts.DynamicBuilders.Postgres.build_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
+      ...> EctoShorts.DynamicBuilders.Postgres.build_dynamic(dyn_a, nil, :or, EctoShorts.Schema.Post, :id, {:>=, 2})
       dynamic([q], q.id == ^2 or q.id >= ^2)
   """
-  @spec build_dynamic_expression(
-          dynamic :: dyn() | nil,
-          current_binding :: binding_alias() | nil,
-          condition :: :and | :or,
-          schema_module :: queryable(),
-          key :: key(),
-          value :: value()
-        ) :: dyn()
-  def build_dynamic_expression(
-        dyn,
-        current_binding,
-        condition,
+  @spec build_dynamic(
+          schema_module(),
+          maybe_dynamic_expr(),
+          binding_alias(),
+          condition(),
+          key(),
+          value()
+        ) :: dynamic_expr()
+  def build_dynamic(
         schema_module,
+        dyn,
+        binding_alias,
+        condition,
         key,
         {operator, value}
       ) do
     cond do
-      field_type_of_array?(schema_module, key) and is_list(value) ->
-        CommonQuery.merge_dynamic(
+      SchemaHelpers.field_type_of_array?(schema_module, key) and is_list(value) ->
+        CommonQueryAPI.merge_dynamic(
           dyn,
           condition,
-          Array.where(current_binding, key, operator, value)
+          Array.dynamic(binding_alias, key, operator, value)
         )
 
-      field_type_of_array?(schema_module, key) ->
-        CommonQuery.merge_dynamic(
+      SchemaHelpers.field_type_of_array?(schema_module, key) ->
+        CommonQueryAPI.merge_dynamic(
           dyn,
           condition,
-          Array.where(current_binding, value, operator, key)
+          Array.dynamic(binding_alias, value, operator, key)
         )
 
       true ->
-        CommonQuery.merge_dynamic(
+        CommonQueryAPI.merge_dynamic(
           dyn,
           condition,
-          Field.where(current_binding, key, operator, value)
+          Field.dynamic(binding_alias, key, operator, value)
         )
     end
   end
 
-  def build_dynamic_expression(dyn, current_binding, condition, schema_module, key, value) do
-    build_dynamic_expression(dyn, current_binding, condition, schema_module, key, {:==, value})
-  end
-
-  defp field_type_of_array?(schema_module, key) do
-    case field_type(schema_module, key) do
-      {:array, _} -> true
-      _ -> false
-    end
-  end
-
-  defp field_type(schema_module, key) do
-    schema_module.__schema__(:type, key)
+  def build_dynamic(
+        dyn,
+        binding_alias,
+        condition,
+        schema_module,
+        key,
+        value
+      ) do
+    build_dynamic(
+      dyn,
+      binding_alias,
+      condition,
+      schema_module,
+      key,
+      {:==, value}
+    )
   end
 end

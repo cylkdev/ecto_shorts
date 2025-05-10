@@ -28,7 +28,7 @@ defmodule EctoShorts.QueryBuilders.CommonTest do
 
   describe "build_query: " do
     test "returns query without changes when passed {:search, term()}" do
-      assert Comment = Common.build_query(Comment, nil, Comment, :search, %{id: 1})
+      assert Comment = Common.build_query(Comment, nil, Comment, :search, %{id: 1}, [])
     end
   end
 end

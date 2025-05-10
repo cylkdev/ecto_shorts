@@ -60,7 +60,7 @@ defmodule EctoShorts.CommonFilters do
   """
 
   alias EctoShorts.{
-    CommonSchemas,
+    CommonSchema,
     QueryBuilder,
     QueryBuilders.Common,
     QueryBuilders.Schema
@@ -68,9 +68,9 @@ defmodule EctoShorts.CommonFilters do
 
   @typedoc """
   The source name for a queryable, typically the name of a database table.
-  Used in `{source, queryable}` tuples for abstract or dynamic schemas.
+  Used in `{schema_source, schema_module}` tuples for abstract or dynamic schemas.
   """
-  @type source :: binary()
+  @type query_source :: binary()
 
   @typedoc """
   An Ecto query struct (`%Ecto.Query{}`) representing a composed query.
@@ -87,7 +87,7 @@ defmodule EctoShorts.CommonFilters do
   A tuple combining a custom source name and a queryable, used for abstract schemas.
   Example: `{"my_posts", MyApp.Post}`.
   """
-  @type source_queryable :: {source(), queryable()}
+  @type source_queryable :: {query_source(), queryable()}
 
   @typedoc """
   An optional alias used to refer to a binding in the query.
@@ -165,10 +165,9 @@ defmodule EctoShorts.CommonFilters do
   end
 
   def convert_params_to_filter(query, params, opts) do
-    {query, params} = Map.pop(params, :query, query)
+    schema_module = CommonSchema.module_for_schema(query)
 
-    {schema_module, params} =
-      Map.pop(params, :queryable, CommonSchemas.get_schema_queryable(query))
+    {query, params} = Map.pop(params, :query, query)
 
     {current_binding, params} = Map.pop(params, :as)
 
@@ -238,14 +237,14 @@ defmodule EctoShorts.CommonFilters do
   """
   @spec build_query(
           query() | queryable() | source_queryable(),
-          binding_alias() | nil,
+          binding_alias(),
           schema_module(),
           key(),
           value()
         ) :: query() | queryable()
   @spec build_query(
           query() | queryable() | source_queryable(),
-          binding_alias() | nil,
+          binding_alias(),
           schema_module(),
           key(),
           value(),
