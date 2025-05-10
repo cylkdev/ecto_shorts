@@ -6,7 +6,7 @@ defmodule EctoShorts.SchemaHelpers do
   """
 
   @type schema_module :: Ecto.Queryable.t()
-  @type schema_data :: Ecto.Schema.t()
+  @type schema_struct :: Ecto.Schema.t()
 
   @type key :: atom()
   @type params :: map()
@@ -50,9 +50,9 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.association_loaded?(post_with_comments, :comments)
       true
   """
-  @spec association_loaded?(schema_data(), key()) :: boolean()
-  def association_loaded?(schema_data, key) do
-    not association_not_loaded?(schema_data, key)
+  @spec association_loaded?(schema_struct(), key()) :: boolean()
+  def association_loaded?(schema_struct, key) do
+    not association_not_loaded?(schema_struct, key)
   end
 
   @doc """
@@ -66,9 +66,9 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.association_not_loaded?(post, :comments)
       true
   """
-  @spec association_not_loaded?(schema_data(), key()) :: boolean()
-  def association_not_loaded?(schema_data, key) do
-    case Map.get(schema_data, key) do
+  @spec association_not_loaded?(schema_struct(), key()) :: boolean()
+  def association_not_loaded?(schema_struct, key) do
+    case Map.get(schema_struct, key) do
       not_loaded when is_struct(not_loaded, Ecto.Association.NotLoaded) -> true
       _ -> false
     end
@@ -99,7 +99,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.all_created?(EctoShorts.Schema.Post, posts_all_saved)
       true
   """
-  @spec all_created?(schema_module(), list(schema_data() | params() | any())) :: boolean()
+  @spec all_created?(schema_module(), list(schema_struct() | params() | any())) :: boolean()
   def all_created?(schema_module, values), do: Enum.all?(values, &created?(schema_module, &1))
 
   @doc """
@@ -127,7 +127,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.any_created?(EctoShorts.Schema.Post, new_data)
       false
   """
-  @spec any_created?(schema_module(), list(schema_data() | params() | any())) :: boolean()
+  @spec any_created?(schema_module(), list(schema_struct() | params() | any())) :: boolean()
   def any_created?(schema_module, values), do: Enum.any?(values, &created?(schema_module, &1))
 
   @doc """
@@ -153,8 +153,8 @@ defmodule EctoShorts.SchemaHelpers do
   ## Examples
 
       # An Ecto schema struct with an id (persisted record)
-      iex> schema_data = %EctoShorts.Schema.Post{id: 42}
-      ...> EctoShorts.SchemaHelpers.created?(EctoShorts.Schema.Post, schema_data)
+      iex> schema_struct = %EctoShorts.Schema.Post{id: 42}
+      ...> EctoShorts.SchemaHelpers.created?(EctoShorts.Schema.Post, schema_struct)
       true
 
       # A changeset for an existing record (id present in data)
@@ -166,7 +166,7 @@ defmodule EctoShorts.SchemaHelpers do
       iex> EctoShorts.SchemaHelpers.created?(EctoShorts.Schema.Post, %{title: "example"})
       false
   """
-  @spec created?(schema_module(), schema_data() | params() | any()) :: boolean()
+  @spec created?(schema_module(), schema_struct() | params() | any()) :: boolean()
   def created?(schema_module, data) when is_map(data), do: primary_key?(schema_module, data)
   def created?(_schema_module, _term), do: false
 
@@ -186,7 +186,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.all_schema?(mixed_list)
       false
   """
-  @spec all_schema?(list(schema_data() | any())) :: boolean()
+  @spec all_schema?(list(schema_struct() | any())) :: boolean()
   def all_schema?(values), do: Enum.all?(values, &schema?/1)
 
   @doc """
@@ -205,7 +205,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.any_schema?(maps)
       false
   """
-  @spec any_schema?(list(schema_data() | any())) :: boolean()
+  @spec any_schema?(list(schema_struct() | any())) :: boolean()
   def any_schema?(values), do: Enum.any?(values, &schema?/1)
 
   @doc """
@@ -220,7 +220,7 @@ defmodule EctoShorts.SchemaHelpers do
       iex> EctoShorts.SchemaHelpers.schema?(%{title: "Not a schema"})
       false
   """
-  @spec schema?(schema_data() | any()) :: boolean()
+  @spec schema?(schema_struct() | any()) :: boolean()
   def schema?(%{__meta__: %{schema: _}}), do: true
   def schema?(_), do: false
 
@@ -263,8 +263,8 @@ defmodule EctoShorts.SchemaHelpers do
   """
   @spec filter_primary_key(schema_module(), params() | list(params())) ::
           params() | list(params())
-  def filter_primary_key(schema_module, params_list) when is_list(params_list) do
-    Enum.map(params_list, &filter_primary_key(schema_module, &1))
+  def filter_primary_key(schema_module, list_of_params) when is_list(list_of_params) do
+    Enum.map(list_of_params, &filter_primary_key(schema_module, &1))
   end
 
   def filter_primary_key(schema_module, params) do
@@ -306,7 +306,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.all_primary_key?(EctoShorts.Schema.Post, records)
       true
   """
-  @spec all_primary_key?(schema_module(), list(params() | schema_data())) :: boolean()
+  @spec all_primary_key?(schema_module(), list(params() | schema_struct())) :: boolean()
   def all_primary_key?(schema_module, values) do
     Enum.all?(values, &primary_key?(schema_module, &1))
   end
@@ -334,7 +334,7 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.any_primary_key?(EctoShorts.Schema.Post, list2)
       false
   """
-  @spec any_primary_key?(schema_module(), list(params() | schema_data())) :: boolean()
+  @spec any_primary_key?(schema_module(), list(params() | schema_struct())) :: boolean()
   def any_primary_key?(schema_module, values) do
     Enum.any?(values, &primary_key?(schema_module, &1))
   end
@@ -395,13 +395,13 @@ defmodule EctoShorts.SchemaHelpers do
   """
   @spec primary_key?(Ecto.Queryable.t(), Ecto.Changeset.t() | Ecto.Schema.t() | map()) ::
           boolean()
-  def primary_key?(schema_module, %{data: %{__meta__: _} = schema_data}) do
-    primary_key?(schema_module, schema_data)
+  def primary_key?(schema_module, %{data: %{__meta__: _} = schema_struct}) do
+    primary_key?(schema_module, schema_struct)
   end
 
-  def primary_key?(schema_module, %{__meta__: _} = schema_data) do
+  def primary_key?(schema_module, %{__meta__: _} = schema_struct) do
     Enum.all?(schema_module.__schema__(:primary_key), fn key ->
-      Map.fetch!(schema_data, key) !== nil
+      Map.fetch!(schema_struct, key) !== nil
     end)
   end
 

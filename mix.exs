@@ -89,11 +89,14 @@ defmodule EctoShorts.MixProject do
         ],
         "Query API": [
           EctoShorts.CommonQuery,
+          EctoShorts.CommonQueryAPI
+        ],
+        "Query Builder API": [
           EctoShorts.DynamicBuilder,
           EctoShorts.DynamicBuilders.Postgres,
           EctoShorts.DynamicBuilders.Postgres.Array,
           EctoShorts.DynamicBuilders.Postgres.Field,
-          EctoShorts.CommonQuery,
+          EctoShorts.ExpressionBuilder,
           EctoShorts.QueryBuilder,
           EctoShorts.QueryBuilders.Schema,
           EctoShorts.QueryBuilders.Common
@@ -102,9 +105,6 @@ defmodule EctoShorts.MixProject do
           EctoShorts.CommonSchemas,
           EctoShorts.CommonParams,
           EctoShorts.SchemaHelpers
-        ],
-        "Utility API": [
-          EctoShorts.Serializer
         ]
       ]
     ]

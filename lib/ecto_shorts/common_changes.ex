@@ -368,19 +368,19 @@ defmodule EctoShorts.CommonChanges do
         results = Actions.all(assoc_schema_module, query_params, opts)
 
         changeset
-        |> Map.update!(:data, fn schema_data ->
-          if SchemaHelpers.association_not_loaded?(schema_data, key) do
-            Map.put(schema_data, key, results)
+        |> Map.update!(:data, fn schema_struct ->
+          if SchemaHelpers.association_not_loaded?(schema_struct, key) do
+            Map.put(schema_struct, key, results)
           else
             if opts[:force] === true do
-              Map.put(schema_data, key, results)
+              Map.put(schema_struct, key, results)
             else
               EctoShorts.Utils.Logger.warning(
                 __MODULE__,
                 "Changeset association #{inspect(key)} has loaded data."
               )
 
-              schema_data
+              schema_struct
             end
           end
         end)
@@ -411,8 +411,8 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  defp flatten_query_params(params_list) do
-    Enum.reduce(params_list, %{}, fn params, acc ->
+  defp flatten_query_params(list_of_params) do
+    Enum.reduce(list_of_params, %{}, fn params, acc ->
       Enum.reduce(params, acc, fn {key, value}, acc ->
         Map.update(acc, key, [value], &(&1 ++ [value]))
       end)

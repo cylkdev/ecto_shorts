@@ -29,7 +29,7 @@ defmodule EctoShorts.ActionsTest do
     test "raises if schema has no primary key and batch key not provided" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
-      assert_raise KeyError, ~r|Batch key not found for schema |, fn ->
+      assert_raise KeyError, ~r|keys not found |, fn ->
         Actions.batch(PostNoPrimaryKeySchema, [%{title: "post_title"}])
       end
     end
@@ -66,7 +66,7 @@ defmodule EctoShorts.ActionsTest do
                   message: "Record not found.",
                   details: %{
                     failed_value: %{title: "does_not_exist"},
-                    batch_key: [:title],
+                    match_keys: [:title],
                     params: [%{title: "does_not_exist"}],
                     position: 0,
                     query: EctoShorts.Schema.Post

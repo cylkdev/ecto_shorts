@@ -242,7 +242,7 @@ defmodule EctoShorts.CommonQuery do
   end
 
   @doc """
-  Returns the `Ecto.Query.FromExpr` struct if the name matches the
+  Returns an Ecto query `FromExpr` struct if the name matches the
   given named binding.
 
   This function returns `{:ok, from_expr}` if the from expression
@@ -295,10 +295,10 @@ defmodule EctoShorts.CommonQuery do
   end
 
   @doc """
-  Returns a `Ecto.Query.JoinExpr` struct for the given named binding.
+  Returns an Ecto query `JoinExpr` struct for the given named binding.
 
-  This function returns `join_expr` if a join expression is
-  found with a name that matches `binding_alias` otherwise `:error`.
+  This function returns `join_expr` if a join expression is found with
+  a name that matches `binding_alias` otherwise `:error`.
 
   ## Examples
 

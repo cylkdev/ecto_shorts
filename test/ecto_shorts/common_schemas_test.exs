@@ -6,30 +6,30 @@
 
 #   require Ecto.Query
 
-#   describe "reflection_for_schema/1: " do
+#   describe "reflection/1: " do
 #     test "returns expected value given schema" do
 #       assert [:id, :body, :inserted_at, :updated_at] =
-#                EctoShorts.CommonSchemas.reflection_for_schema(EctoShorts.Schema.Post, :fields)
+#                EctoShorts.CommonSchemas.reflection(EctoShorts.Schema.Post, :fields)
 #     end
 
 #     test "returns expected value given {schema_source, schema_module}" do
 #       assert [:id, :body, :inserted_at, :updated_at] =
-#                EctoShorts.CommonSchemas.reflection_for_schema(
+#                EctoShorts.CommonSchemas.reflection(
 #                  {"concrete_table", AbstractSchema},
 #                  :fields
 #                )
 #     end
 #   end
 
-#   describe "reflection_for_schema/2: " do
+#   describe "reflection/2: " do
 #     test "returns expected value given schema" do
 #       assert :string =
-#                EctoShorts.CommonSchemas.reflection_for_schema(EctoShorts.Schema.Post, :type, :body)
+#                EctoShorts.CommonSchemas.reflection(EctoShorts.Schema.Post, :type, :body)
 #     end
 
 #     test "returns expected value given {schema_source, schema_module}" do
 #       assert :string =
-#                EctoShorts.CommonSchemas.reflection_for_schema(
+#                EctoShorts.CommonSchemas.reflection(
 #                  {"concrete_table", AbstractSchema},
 #                  :type,
 #                  :body

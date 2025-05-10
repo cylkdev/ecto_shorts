@@ -107,7 +107,12 @@ defmodule EctoShorts.CommonFilters do
 
     binding_alias = params[:as]
 
-    query_source = CommonQueryAPI.from(query_source, binding_alias, params)
+    query_source =
+      CommonQueryAPI.from(
+        query_source,
+        binding_alias,
+        Map.take(params, [:as, :queryable, :prefix, :options])
+      )
 
     params
     |> Map.drop([:as, :queryable, :prefix, :options])
@@ -147,11 +152,10 @@ defmodule EctoShorts.CommonFilters do
     {binding_alias, params} = Keyword.pop(params, :as)
 
     params
-    |> Keyword.new()
     |> ensure_last_is_final_filter()
     |> Enum.reduce(query_source, fn {key, value}, query_source ->
       with query_source <-
-             maybe_apply_schema_exported_filter(
+             apply_exported_schema_filter(
                query_source,
                binding_alias,
                schema_module,
@@ -172,9 +176,9 @@ defmodule EctoShorts.CommonFilters do
     end)
   end
 
-  defp maybe_apply_schema_exported_filter(query_source, binding_alias, schema_module, key, value) do
+  defp apply_exported_schema_filter(query_source, binding_alias, schema_module, key, value) do
     if schema_exported_filter?(schema_module, key) do
-      if function_exported?(schema_module, :build_query_source, 4) do
+      if function_exported?(schema_module, :build_query, 4) do
         schema_module.build_query(
           query_source,
           binding_alias,
@@ -202,11 +206,12 @@ defmodule EctoShorts.CommonFilters do
     function_exported?(schema_module, :filters, 0)
   end
 
-  defp query_builder_adapter(opts) do
-    opts[:query_builder_adapter] ||
-      EctoShorts.Config.query_builder_adapter() ||
-      @default_query_builder_adapter
-  end
+  @impl EctoShorts.QueryBuilder
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def filters, do: @filters
 
   @doc since: "2.5.0"
   @doc """
@@ -217,13 +222,6 @@ defmodule EctoShorts.CommonFilters do
     |> query_builder_adapter()
     |> QueryBuilder.filters()
   end
-
-  @impl EctoShorts.QueryBuilder
-  @doc since: "2.5.0"
-  @doc """
-  ...
-  """
-  def filters, do: @filters
 
   @impl EctoShorts.QueryBuilder
   @doc since: "2.5.0"
@@ -285,6 +283,12 @@ defmodule EctoShorts.CommonFilters do
       value,
       opts
     )
+  end
+
+  defp query_builder_adapter(opts) do
+    opts[:query_builder_adapter] ||
+      EctoShorts.Config.query_builder_adapter() ||
+      @default_query_builder_adapter
   end
 
   defp ensure_last_is_final_filter(params) do

@@ -57,7 +57,6 @@ defmodule EctoShorts.CommonQueryAPI do
   @type query :: Ecto.Query.t()
   @type schema_module :: Ecto.Queryable.t()
   @type schema_source :: binary()
-  @type schema_data :: Ecto.Schema.t()
   @type schema_metadata :: Ecto.Schema.Metadata.t()
   @type sourceable :: schema_module() | {schema_source(), schema_module()}
   @type query_source :: query() | sourceable()
@@ -127,38 +126,39 @@ defmodule EctoShorts.CommonQueryAPI do
           params(),
           opts()
         ) :: dynamic_expr()
-  def dynamic(schema_module, binding_alias, params, opts) when is_map(params) do
-    dynamic(schema_module, binding_alias, Map.to_list(params), opts)
+  def dynamic(schema_module, binding_alias, params, opts) when is_list(params) do
+    dynamic(schema_module, binding_alias, Map.new(params), opts)
   end
 
   def dynamic(schema_module, binding_alias, params, opts) do
-    with nil <- query_dynamic(schema_module, binding_alias, params, opts) do
+    with nil <- do_dynamic(schema_module, binding_alias, params, opts) do
       dynamic(binding_alias, true)
     end
   end
 
-  defp query_dynamic(schema_module, binding_alias, params, opts) do
-    {dynamic_source, params} = Keyword.pop(params, :source)
+  defp do_dynamic(schema_module, binding_alias, params, opts) do
+    {dynamic_source, params} = Map.pop(params, :source)
 
     params
     |> normalize_conditions()
-    |> Enum.reduce(dynamic_source, fn {condition, params}, dynamic_source ->
-      ExpressionBuilder.apply_expression(
-        dynamic_source,
-        params,
-        fn {key, value}, dyn ->
-          DynamicBuilder.build_dynamic(
-            schema_module,
-            dyn,
-            binding_alias,
-            condition,
-            key,
-            value,
-            opts
-          )
-        end,
-        opts
-      )
+    |> Enum.reduce(dynamic_source, fn
+      {condition, params}, dynamic_source ->
+        ExpressionBuilder.apply_expression(
+          dynamic_source,
+          params,
+          fn {key, value}, dyn ->
+            DynamicBuilder.build_dynamic(
+              schema_module,
+              dyn,
+              binding_alias,
+              condition,
+              key,
+              value,
+              opts
+            )
+          end,
+          opts
+        )
     end)
   end
 
@@ -366,26 +366,26 @@ defmodule EctoShorts.CommonQueryAPI do
   See: `EctoShorts.CommonQueryAPI.select/3`
   """
   @spec select(query_source(), binding_alias(), params() | value(), opts()) :: query()
-  def select(query, binding_alias, params, opts) when is_map(params) do
-    select(query, binding_alias, Map.to_list(params), opts)
-  end
-
   def select(query, binding_alias, params, opts) when is_list(params) do
     if Keyword.keyword?(params) do
-      if Keyword.has_key?(params, :expression) do
-        query_select(query, binding_alias, params[:expression])
-      else
-        ExpressionBuilder.apply_expression(
-          query,
-          params,
-          fn {key, value}, query ->
-            query_select(query, binding_alias, {key, value})
-          end,
-          opts
-        )
-      end
+      select(query, binding_alias, Map.new(params), opts)
     else
       query_select(query, binding_alias, params)
+    end
+  end
+
+  def select(query, binding_alias, params, opts) do
+    if Map.has_key?(params, :expression) do
+      query_select(query, binding_alias, params[:expression])
+    else
+      ExpressionBuilder.apply_expression(
+        query,
+        params,
+        fn {key, value}, query ->
+          query_select(query, binding_alias, {key, value})
+        end,
+        opts
+      )
     end
   end
 
@@ -434,26 +434,26 @@ defmodule EctoShorts.CommonQueryAPI do
   """
   @spec select_merge(query_source(), binding_alias(), params() | value(), opts()) ::
           query()
-  def select_merge(query, binding_alias, params, opts) when is_map(params) do
-    select_merge(query, binding_alias, Map.to_list(params), opts)
-  end
-
   def select_merge(query, binding_alias, params, opts) when is_list(params) do
     if Keyword.keyword?(params) do
-      if Keyword.has_key?(params, :expression) do
-        query_select_merge(query, binding_alias, params[:expression])
-      else
-        ExpressionBuilder.apply_expression(
-          query,
-          params,
-          fn {key, value}, query ->
-            query_select_merge(query, binding_alias, {key, value})
-          end,
-          opts
-        )
-      end
+      select_merge(query, binding_alias, Map.new(params), opts)
     else
       query_select_merge(query, binding_alias, params)
+    end
+  end
+
+  def select_merge(query, binding_alias, params, opts) do
+    if Map.has_key?(params, :expression) do
+      query_select_merge(query, binding_alias, params[:expression])
+    else
+      ExpressionBuilder.apply_expression(
+        query,
+        params,
+        fn {key, value}, query ->
+          query_select_merge(query, binding_alias, {key, value})
+        end,
+        opts
+      )
     end
   end
 
@@ -516,7 +516,7 @@ defmodule EctoShorts.CommonQueryAPI do
 
     on =
       params
-      |> Keyword.get(:on, true)
+      |> Map.get(:on, true)
       |> join_on(assoc_as, schema_module, opts)
 
     query_join_assoc(query, binding_alias, assoc_as, key, {qual, on, prefix})
@@ -533,7 +533,7 @@ defmodule EctoShorts.CommonQueryAPI do
 
     on =
       params
-      |> Keyword.get(:on, true)
+      |> Map.get(:on, true)
       |> join_on(subquery_as, schema_module, opts)
 
     query_join_subquery(
@@ -659,27 +659,23 @@ defmodule EctoShorts.CommonQueryAPI do
     dynamic(schema_module, binding_alias, params, opts)
   end
 
-  def or_where(query, binding_alias, params, opts) when is_map(params) do
-    or_where(query, binding_alias, Map.to_list(params), opts)
-  end
-
   def or_where(query, binding_alias, params, opts) when is_list(params) do
     if Keyword.keyword?(params) do
-      apply_or_where(query, binding_alias, params, opts)
+      or_where(query, binding_alias, Map.new(params), opts)
     else
-      Enum.reduce(params, query, fn p, query ->
-        or_where(query, binding_alias, p, opts)
+      Enum.reduce(params, query, fn param, query ->
+        or_where(query, binding_alias, param, opts)
       end)
     end
   end
 
-  defp apply_or_where(query, binding_alias, params, opts) do
-    {binding_alias, params} = Keyword.pop(params, :as, binding_alias)
+  def or_where(query, binding_alias, params, opts) do
+    {binding_alias, params} = Map.pop(params, :as, binding_alias)
 
-    if Keyword.has_key?(params, :expression) do
-      query_or_where(query, binding_alias, params[:expression])
+    if Map.has_key?(params, :expression) do
+      do_or_where(query, binding_alias, params[:expression])
     else
-      {schema_module, params} = Keyword.pop(params, :schema)
+      {schema_module, params} = Map.pop(params, :schema)
 
       schema_module =
         with nil <- schema_module do
@@ -690,11 +686,11 @@ defmodule EctoShorts.CommonQueryAPI do
 
       expr = dynamic(schema_module, binding_alias, params, opts)
 
-      query_or_where(query, nil, expr)
+      do_or_where(query, nil, expr)
     end
   end
 
-  defp query_or_where(query, binding_alias, expr) do
+  defp do_or_where(query, binding_alias, expr) do
     if binding_alias do
       Query.or_where(query, [{^binding_alias, q}], ^expr)
     else
@@ -702,27 +698,23 @@ defmodule EctoShorts.CommonQueryAPI do
     end
   end
 
-  def where(query, binding_alias, params, opts) when is_map(params) do
-    where(query, binding_alias, Map.to_list(params), opts)
-  end
-
   def where(query, binding_alias, params, opts) when is_list(params) do
     if Keyword.keyword?(params) do
-      apply_where(query, binding_alias, params, opts)
+      where(query, binding_alias, Map.new(params), opts)
     else
-      Enum.reduce(params, query, fn p, query ->
-        where(query, binding_alias, p, opts)
+      Enum.reduce(params, query, fn param, query ->
+        where(query, binding_alias, param, opts)
       end)
     end
   end
 
-  defp apply_where(query, binding_alias, params, opts) do
-    {binding_alias, params} = Keyword.pop(params, :as, binding_alias)
+  def where(query, binding_alias, params, opts) do
+    {binding_alias, params} = Map.pop(params, :as, binding_alias)
 
-    if Keyword.has_key?(params, :expression) do
-      query_where(query, binding_alias, params[:expression])
+    if Map.has_key?(params, :expression) do
+      do_where(query, binding_alias, params[:expression])
     else
-      {schema_module, params} = Keyword.pop(params, :schema)
+      {schema_module, params} = Map.pop(params, :schema)
 
       schema_module =
         with nil <- schema_module do
@@ -733,11 +725,11 @@ defmodule EctoShorts.CommonQueryAPI do
 
       expr = dynamic(schema_module, binding_alias, params, opts)
 
-      query_where(query, nil, expr)
+      do_where(query, nil, expr)
     end
   end
 
-  defp query_where(query, binding_alias, expr) do
+  defp do_where(query, binding_alias, expr) do
     if binding_alias do
       Query.where(query, [{^binding_alias, q}], ^expr)
     else
@@ -746,7 +738,7 @@ defmodule EctoShorts.CommonQueryAPI do
   end
 
   defp schema_module_for_query_expression!(query, binding_alias, params) do
-    if Keyword.has_key?(params, :queryable) do
+    if Map.has_key?(params, :queryable) do
       params[:queryable]
     else
       query
