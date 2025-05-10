@@ -121,7 +121,17 @@ defmodule EctoShorts.QueryBuilders.Schema do
         build_query_api_filter(query, binding_alias, schema_module, key, value, opts)
 
       key in schema_module.__schema__(:associations) ->
-        join_association(query, binding_alias, schema_module, key, value, opts)
+        {assoc_as, params} = Keyword.pop(value, :as)
+
+        join_association(
+          query,
+          binding_alias,
+          assoc_as,
+          schema_module,
+          key,
+          params,
+          opts
+        )
 
       key in schema_module.__schema__(:query_fields) ->
         build_schema_filter(query, binding_alias, schema_module, key, value, opts)
@@ -183,7 +193,9 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp build_query_api_filter(query, _binding_alias, _schema_module, :from, params, _opts) do
-    CommonQueryAPI.from(query, params)
+    {from_binding_alias, params} = Keyword.pop(params, :as)
+
+    CommonQueryAPI.from(query, from_binding_alias, params)
   end
 
   defp build_query_api_filter(query, binding_alias, _schema_module, :select, value, _opts) do
@@ -213,47 +225,67 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp build_join_filter(query, binding_alias, schema_module, :association, params, opts) do
-    Enum.reduce(params, query, fn {key, value}, query ->
-      join_association(query, binding_alias, schema_module, key, value, opts)
-    end)
+    join_associations(query, binding_alias, schema_module, params, opts)
   end
 
   defp build_join_filter(query, binding_alias, schema_module, :subquery, params, opts) do
-    params
-    |> List.wrap()
-    |> Enum.reduce(query, fn params, query ->
-      join_subquery(query, binding_alias, schema_module, params, opts)
+    Enum.reduce(params, query, fn {subquery_as, params}, query ->
+      join_subquery(query, binding_alias, subquery_as, schema_module, params, opts)
     end)
   end
 
   @doc false
-  def join_association(query, binding_alias, schema_module, key, params, opts)
-      when is_map(params) do
-    join_association(query, binding_alias, schema_module, key, Map.to_list(params), opts)
+  def join_associations(query, binding_alias, schema_module, params, opts) do
+    Enum.reduce(params, query, fn {assoc_as, params}, query ->
+      Enum.reduce(params, query, fn {assoc_key, value}, query ->
+        join_association(
+          query,
+          binding_alias,
+          assoc_as,
+          schema_module,
+          assoc_key,
+          value,
+          opts
+        )
+      end)
+    end)
   end
 
-  def join_association(query, binding_alias, schema_module, key, params, opts) do
-    assoc_schema_module = SchemaHelpers.schema_module_for_association(schema_module, key)
+  @doc false
+  def join_association(query, binding_alias, assoc_as, schema_module, assoc_key, params, opts)
+      when is_map(params) do
+    join_association(
+      query,
+      binding_alias,
+      assoc_as,
+      schema_module,
+      assoc_key,
+      Map.to_list(params),
+      opts
+    )
+  end
 
-    as =
-      with nil <- params[:as] do
-        key
+  def join_association(query, binding_alias, assoc_as, schema_module, assoc_key, params, opts) do
+    assoc_schema_module = SchemaHelpers.schema_module_for_association(schema_module, assoc_key)
+
+    assoc_as =
+      with nil <- assoc_as do
+        assoc_key
         |> named_binding()
         |> String.to_atom()
       end
 
-    params = Keyword.put(params, :as, as)
-
     query
     |> CommonQueryAPI.join(
       binding_alias,
+      assoc_as,
       :association,
-      key,
+      assoc_key,
       take_join_keys(params),
       opts
     )
     |> reduce_filters(
-      as,
+      assoc_as,
       assoc_schema_module,
       drop_join_keys(params),
       opts
@@ -261,47 +293,47 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   @doc false
-  def join_subquery(query, binding_alias, schema_module, params, opts) when is_map(params) do
-    join_subquery(query, binding_alias, schema_module, Map.to_list(params), opts)
+  def join_subquery(query, binding_alias, subquery_as, schema_module, params, opts)
+      when is_map(params) do
+    join_subquery(query, binding_alias, subquery_as, schema_module, Map.to_list(params), opts)
   end
 
-  def join_subquery(query, binding_alias, _schema_module, params, opts) do
+  def join_subquery(query, binding_alias, subquery_as, _schema_module, params, opts) do
     {subquery_data, params} = Keyword.pop(params, :query)
 
     if is_nil(subquery_data) do
       raise KeyError, "key :query not found: #{inspect(params)}"
     end
 
-    {subquery_schema_module, params} = Keyword.pop(params, :queryable)
+    {subquery_schema_module, params} = Keyword.pop(params, :schema)
 
     subquery_schema_module =
       if is_nil(subquery_schema_module) do
         subquery_data
         |> CommonQuery.to_query()
-        |> CommonQuery.schema_module_for_query_expression!(params[:as])
+        |> CommonQuery.schema_module_for_query_expression!(subquery_as)
       else
         subquery_schema_module
       end
 
-    as =
-      with nil <- params[:as] do
+    subquery_as =
+      with nil <- subquery_as do
         subquery_schema_module
         |> named_binding_from_module()
         |> String.to_atom()
       end
 
-    params = Keyword.put(params, :as, as)
-
     query
     |> CommonQueryAPI.join(
       binding_alias,
+      subquery_as,
       :subquery,
       subquery_data,
       take_join_keys(params),
       opts
     )
     |> reduce_filters(
-      as,
+      subquery_as,
       subquery_schema_module,
       drop_join_keys(params),
       opts

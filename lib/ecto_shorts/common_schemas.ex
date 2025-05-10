@@ -38,12 +38,32 @@ defmodule EctoShorts.CommonSchemas do
   @type params :: map()
   @type opts :: keyword()
 
-  @doc group: "Schema Reflection API"
+  @doc group: "Struct API"
   @doc """
-  Returns the `Ecto.Schema.Metadata` struct from the given schema struct.
+  Builds a struct from a queryable, optionally overriding its source.
+
+  ### Examples
+
+      iex> EctoShorts.CommonSchemas.build_struct(EctoShorts.Schema.Post)
+      %EctoShorts.Schema.Post{
+        __meta__: %Ecto.Schema.Metadata{source: "posts"}
+      }
+
+      iex> EctoShorts.CommonSchemas.build_struct({"custom_source", EctoShorts.Schema.Post})
+      %EctoShorts.Schema.Post{
+        __meta__: %Ecto.Schema.Metadata{source: "custom_source"}
+      }
   """
-  @spec metadata_for_schema(schema_data()) :: schema_metadata()
-  def metadata_for_schema(%{__meta__: meta}), do: meta
+  @spec build_struct(sourceable()) :: schema_data()
+  def build_struct({schema_source, schema_module}) do
+    prefix = prefix_for_schema(schema_module)
+
+    schema_module
+    |> struct()
+    |> put_schema_meta(state: :loaded, source: schema_source, prefix: prefix)
+  end
+
+  def build_struct(schema_module), do: struct(schema_module)
 
   @doc group: "Schema Reflection API"
   @doc """
@@ -76,7 +96,7 @@ defmodule EctoShorts.CommonSchemas do
 
   def reflection_for_schema(schema_module, arg1, arg2), do: schema_module.__schema__(arg1, arg2)
 
-  @doc group: "Schema Reflection API"
+  @doc group: "Schema Resolution API"
   @doc """
   Returns the `prefix` defined in the schema, if any.
 
@@ -92,7 +112,7 @@ defmodule EctoShorts.CommonSchemas do
   def prefix_for_schema({_, schema_module}), do: schema_module.__schema__(:prefix)
   def prefix_for_schema(schema_module), do: schema_module.__schema__(:prefix)
 
-  @doc group: "Schema Reflection API"
+  @doc group: "Schema Resolution API"
   @doc """
   Returns the source (table name) for the schema.
 
@@ -108,7 +128,7 @@ defmodule EctoShorts.CommonSchemas do
   def source_for_schema({schema_source, _}), do: schema_source
   def source_for_schema(schema_module), do: schema_module.__schema__(:source)
 
-  @doc group: "Schema Reflection API"
+  @doc group: "Schema Introspection API"
   @doc """
   Returns the schema module given {schema_source, schema_module}, a schema struct, or query struct.
 
@@ -129,34 +149,14 @@ defmodule EctoShorts.CommonSchemas do
   def module_for_schema(%{__meta__: %{schema: schema_module}}), do: schema_module
   def module_for_schema(query), do: CommonQuery.schema_module_for_query(query)
 
-  @doc group: "Schema API"
+  @doc group: "Schema Metadata API"
   @doc """
-  Builds a struct from a queryable, optionally overriding its source.
-
-  ### Examples
-
-      iex> EctoShorts.CommonSchemas.build_struct(EctoShorts.Schema.Post)
-      %EctoShorts.Schema.Post{
-        __meta__: %Ecto.Schema.Metadata{source: "posts"}
-      }
-
-      iex> EctoShorts.CommonSchemas.build_struct({"custom_source", EctoShorts.Schema.Post})
-      %EctoShorts.Schema.Post{
-        __meta__: %Ecto.Schema.Metadata{source: "custom_source"}
-      }
+  Returns the `Ecto.Schema.Metadata` struct from the given schema struct.
   """
-  @spec build_struct(sourceable()) :: schema_data()
-  def build_struct({schema_source, schema_module}) do
-    prefix = prefix_for_schema(schema_module)
+  @spec metadata_for_schema(schema_data()) :: schema_metadata()
+  def metadata_for_schema(%{__meta__: meta}), do: meta
 
-    schema_module
-    |> struct()
-    |> put_schema_meta(state: :loaded, source: schema_source, prefix: prefix)
-  end
-
-  def build_struct(schema_module), do: struct(schema_module)
-
-  @doc group: "Schema API"
+  @doc group: "Schema Metadata API"
   @doc """
   Updates the `__meta__` field on an Ecto schema struct.
 

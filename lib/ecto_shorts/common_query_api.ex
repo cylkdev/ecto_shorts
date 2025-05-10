@@ -138,60 +138,68 @@ defmodule EctoShorts.CommonQueryAPI do
   end
 
   defp query_dynamic(schema_module, binding_alias, params, opts) do
-    binding_alias = params[:as] || binding_alias
-
-    condition = params[:condition] || :and
+    {dynamic_source, params} = Keyword.pop(params, :source)
 
     params
-    |> Keyword.get(:source)
-    |> QueryHelpers.apply_expression(
-      params,
-      fn {key, value}, dyn ->
-        DynamicBuilder.build_dynamic(
-          schema_module,
-          dyn,
-          binding_alias,
-          condition,
-          key,
-          value,
-          opts
-        )
-      end
-    )
+    |> normalize_conditions()
+    |> Enum.reduce(dynamic_source, fn {condition, params}, dynamic_source ->
+      QueryHelpers.apply_expression(
+        dynamic_source,
+        params,
+        fn {key, value}, dyn ->
+          DynamicBuilder.build_dynamic(
+            schema_module,
+            dyn,
+            binding_alias,
+            condition,
+            key,
+            value,
+            opts
+          )
+        end
+      )
+    end)
+  end
+
+  defp normalize_conditions(params) do
+    {cons, acc} =
+      Enum.reduce(params, {[], []}, fn
+        {:and, params}, {cons, acc} -> {[{:and, params} | cons], acc}
+        {:or, params}, {cons, acc} -> {[{:or, params} | cons], acc}
+        {key, value}, {cons, acc} -> {cons, [{key, value} | acc]}
+      end)
+
+    cons
+    |> Kernel.++(and: acc)
+    |> Enum.sort()
   end
 
   @doc """
   Sets the `from` clause on a query.
 
-  ## Options
-
-    * `:as` — Sets a binding for the source
-    * `:prefix` — Schema prefix for the table
-    * `:query_prefix` — Prefix for subqueries or fragments
-
   ## Example
 
-      iex> EctoShorts.CommonQueryAPI.from(User, as: :user)
+      iex> EctoShorts.CommonQueryAPI.from(User, :user)
   """
-  @spec from(query_source(), params()) :: query()
-  def from(query, params) do
-    as = params[:as]
-
+  @spec from(query_source(), binding_alias(), params()) :: query()
+  def from(query, binding_alias, params) do
     prefix = params[:prefix]
 
-    if as do
+    opts = params[:options] || []
+
+    if binding_alias do
       query
-      |> Query.from(as: ^as, prefix: ^prefix)
-      |> maybe_put_query_prefix(params)
+      |> Query.from(as: ^binding_alias, prefix: ^prefix)
+      |> maybe_put_query_prefix(opts)
     else
       query
       |> Query.from(prefix: ^prefix)
-      |> maybe_put_query_prefix(params)
+      |> maybe_put_query_prefix(opts)
     end
   end
 
-  defp maybe_put_query_prefix(query, params) do
-    case params[:query_prefix] do
+  defp maybe_put_query_prefix(query, opts) do
+    case opts[:query_prefix] do
       nil -> query
       prefix -> put_query_prefix(query, prefix)
     end
@@ -484,54 +492,51 @@ defmodule EctoShorts.CommonQueryAPI do
       iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :association, :comments, %{as: :comments, on: %{id: %{>=: 2}}})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), on: c1.id >= ^2>
   """
-  def join(query, binding_alias, join_type, key, params, opts) when is_map(params) do
-    join(query, binding_alias, join_type, key, Map.to_list(params), opts)
+  def join(query, binding_alias, join_as, join_type, key, params, opts) when is_map(params) do
+    join(query, binding_alias, join_as, join_type, key, Map.to_list(params), opts)
   end
 
-  def join(query, binding_alias, :association, key, params, opts) do
+  def join(query, binding_alias, assoc_as, :association, key, params, opts) do
     schema_module = schema_module_for_query_expression!(query, binding_alias, params)
 
     qual = params[:qualifier] || :inner
 
     prefix = params[:prefix]
-
-    as = params[:as]
 
     on =
       params
       |> Keyword.get(:on, true)
-      |> join_on_dynamic(as, schema_module, opts)
+      |> join_on(assoc_as, schema_module, opts)
 
-    query_join_assoc(query, binding_alias, key, {as, qual, on, prefix})
+    query_join_assoc(query, binding_alias, assoc_as, key, {qual, on, prefix})
   end
 
-  def join(query, binding_alias, :subquery, subquery_data, params, opts) do
+  def join(query, binding_alias, subquery_as, :subquery, subquery_data, params, opts) do
     schema_module = schema_module_for_query_expression!(query, binding_alias, params)
 
     qual = params[:qualifier] || :inner
 
     prefix = params[:prefix]
-
-    as = params[:as]
 
     subquery_opts = params[:options] || []
 
     on =
       params
       |> Keyword.get(:on, true)
-      |> join_on_dynamic(as, schema_module, opts)
+      |> join_on(subquery_as, schema_module, opts)
 
     query_join_subquery(
       query,
       binding_alias,
+      subquery_as,
       subquery_data,
       subquery_opts,
-      {as, qual, on, prefix}
+      {qual, on, prefix}
     )
   end
 
-  defp query_join_assoc(query, binding_alias, key, {as, qual, on, prefix}) do
-    if is_nil(as) or as === false do
+  defp query_join_assoc(query, binding_alias, assoc_as, key, {qual, on, prefix}) do
+    if is_nil(assoc_as) or assoc_as === false do
       if binding_alias do
         Query.join(
           query,
@@ -552,14 +557,14 @@ defmodule EctoShorts.CommonQueryAPI do
         )
       end
     else
-      Query.with_named_binding(query, as, fn query, as ->
+      Query.with_named_binding(query, assoc_as, fn query, assoc_as ->
         if binding_alias do
           Query.join(
             query,
             qual,
             [{^binding_alias, q}],
             assoc(q, ^key),
-            as: ^as,
+            as: ^assoc_as,
             on: ^on,
             prefix: ^prefix
           )
@@ -569,7 +574,7 @@ defmodule EctoShorts.CommonQueryAPI do
             qual,
             [q],
             assoc(q, ^key),
-            as: ^as,
+            as: ^assoc_as,
             on: ^on,
             prefix: ^prefix
           )
@@ -581,13 +586,14 @@ defmodule EctoShorts.CommonQueryAPI do
   defp query_join_subquery(
          query,
          binding_alias,
+         subquery_as,
          subquery_data,
          subquery_opts,
-         {as, qual, on, prefix}
+         {qual, on, prefix}
        ) do
     subquery = subquery(subquery_data, subquery_opts)
 
-    if is_nil(as) or as === false do
+    if is_nil(subquery_as) or subquery_as === false do
       if binding_alias do
         Query.join(
           query,
@@ -608,14 +614,14 @@ defmodule EctoShorts.CommonQueryAPI do
         )
       end
     else
-      Query.with_named_binding(query, as, fn query, as ->
+      Query.with_named_binding(query, subquery_as, fn query, subquery_as ->
         if binding_alias do
           Query.join(
             query,
             qual,
             [{^binding_alias, q}],
             ^subquery,
-            as: ^as,
+            as: ^subquery_as,
             on: ^on,
             prefix: ^prefix
           )
@@ -625,7 +631,7 @@ defmodule EctoShorts.CommonQueryAPI do
             qual,
             [q],
             ^subquery,
-            as: ^as,
+            as: ^subquery_as,
             on: ^on,
             prefix: ^prefix
           )
@@ -634,11 +640,11 @@ defmodule EctoShorts.CommonQueryAPI do
     end
   end
 
-  defp join_on_dynamic(true, _binding_alias, _schema_module, _opts) do
+  defp join_on(true, _binding_alias, _schema_module, _opts) do
     true
   end
 
-  defp join_on_dynamic(params, binding_alias, schema_module, opts) do
+  defp join_on(params, binding_alias, schema_module, opts) do
     dynamic(schema_module, binding_alias, params, opts)
   end
 
@@ -662,7 +668,7 @@ defmodule EctoShorts.CommonQueryAPI do
     if Keyword.has_key?(params, :expression) do
       query_or_where(query, binding_alias, params[:expression])
     else
-      {schema_module, params} = Keyword.pop(params, :queryable)
+      {schema_module, params} = Keyword.pop(params, :schema)
 
       schema_module =
         with nil <- schema_module do
@@ -705,7 +711,7 @@ defmodule EctoShorts.CommonQueryAPI do
     if Keyword.has_key?(params, :expression) do
       query_where(query, binding_alias, params[:expression])
     else
-      {schema_module, params} = Keyword.pop(params, :queryable)
+      {schema_module, params} = Keyword.pop(params, :schema)
 
       schema_module =
         with nil <- schema_module do

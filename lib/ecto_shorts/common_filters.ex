@@ -60,6 +60,8 @@ defmodule EctoShorts.CommonFilters do
   """
 
   alias EctoShorts.{
+    CommonQuery,
+    CommonQueryAPI,
     CommonSchemas,
     QueryBuilder,
     QueryBuilders.Common,
@@ -88,12 +90,22 @@ defmodule EctoShorts.CommonFilters do
 
   @doc """
   Converts a map or keyword list of parameters into an Ecto query.
+
+  ## Examples
+
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{id: 1})
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, where: p0.id == ^1>
+
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(%{query: EctoShorts.Schema.Post, as: :post, where: %{id: 1}})
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, where: p0.id == ^1>
   """
   @spec convert_params_to_filter(
           query_source() | nil,
           params(),
           opts()
         ) :: query_source()
+  def convert_params_to_filter(query_source \\ nil, params, opts \\ [])
+
   def convert_params_to_filter(query_source, params, _opts)
       when params === %{} or params === [] do
     query_source
@@ -103,61 +115,58 @@ defmodule EctoShorts.CommonFilters do
     convert_params_to_filter(query_source, Map.to_list(params), opts)
   end
 
-  def convert_params_to_filter(query_source, params, opts) do
-    base = Keyword.take(params, [:as, :query])
+  def convert_params_to_filter(nil, params, opts) do
+    {query_source, params} = Keyword.pop(params, :query)
 
-    query_source =
-      case base[:query] do
-        nil -> query_source
-        base_query -> base_query
+    {binding_alias, params} = Keyword.pop(params, :as)
+
+    {schema_module, params} = Keyword.pop(params, :schema)
+
+    query_source = CommonQueryAPI.from(query_source, binding_alias, params)
+
+    schema_module =
+      with nil <- schema_module do
+        CommonQuery.schema_module_for_query(query_source)
       end
 
-    if is_nil(query_source) do
-      raise ArgumentError,
-            "A query must be provided either as the query argument or as the :query key in params. Both cannot be nil."
-    end
-
-    binding_alias = base[:as]
-
-    schema_module = CommonSchemas.module_for_schema(query_source)
-
-    params =
-      params
-      |> Keyword.drop([:as, :query])
-      |> ensure_last_is_final_filter()
-
-    reduce_filters(query_source, binding_alias, schema_module, params, opts)
+    apply_filters(params, query_source, binding_alias, schema_module, opts)
   end
 
-  defp reduce_filters(query_source, binding_alias, schema_module, params, opts) do
-    Enum.reduce(params, query_source, fn {key, value}, query_source ->
-      reduce_filter(query_source, binding_alias, schema_module, key, value, opts)
+  def convert_params_to_filter(query_source, params, opts) do
+    schema_module = CommonSchemas.module_for_schema(query_source)
+
+    {binding_alias, params} = Keyword.pop(params, :as)
+
+    apply_filters(params, query_source, binding_alias, schema_module, opts)
+  end
+
+  defp apply_filters(params, query_source, binding_alias, schema_module, opts) do
+    params
+    |> ensure_last_is_final_filter()
+    |> Enum.reduce(query_source, fn {key, value}, query_source ->
+      with query_source <-
+             maybe_apply_schema_exported_filter(
+               query_source,
+               binding_alias,
+               schema_module,
+               key,
+               value
+             ) do
+        opts
+        |> query_builder_adapter()
+        |> QueryBuilder.build_query(
+          query_source,
+          binding_alias,
+          schema_module,
+          key,
+          value,
+          opts
+        )
+      end
     end)
   end
 
-  defp reduce_filter(query_source, binding_alias, schema_module, key, value, opts) do
-    with query_source <-
-           maybe_apply_exported_filter(
-             query_source,
-             binding_alias,
-             schema_module,
-             key,
-             value
-           ) do
-      opts
-      |> query_builder_adapter()
-      |> QueryBuilder.build_query(
-        query_source,
-        binding_alias,
-        schema_module,
-        key,
-        value,
-        opts
-      )
-    end
-  end
-
-  defp maybe_apply_exported_filter(query_source, binding_alias, schema_module, key, value) do
+  defp maybe_apply_schema_exported_filter(query_source, binding_alias, schema_module, key, value) do
     if schema_exported_filter?(schema_module, key) do
       if function_exported?(schema_module, :build_query_source, 4) do
         schema_module.build_query(
