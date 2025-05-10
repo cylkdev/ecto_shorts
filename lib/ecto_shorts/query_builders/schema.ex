@@ -227,13 +227,10 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp build_join_filter(query, binding_alias, schema_module, :subquery, params, opts) do
-    Enum.reduce(params, query, fn {subquery_as, params}, query ->
-      join_subquery(query, binding_alias, subquery_as, schema_module, params, opts)
-    end)
+    join_subqueries(query, binding_alias, schema_module, params, opts)
   end
 
-  @doc false
-  def join_associations(query, binding_alias, schema_module, params, opts) do
+  defp join_associations(query, binding_alias, schema_module, params, opts) do
     Enum.reduce(params, query, fn {assoc_as, params}, query ->
       Enum.reduce(params, query, fn {assoc_key, value}, query ->
         join_association(
@@ -249,9 +246,8 @@ defmodule EctoShorts.QueryBuilders.Schema do
     end)
   end
 
-  @doc false
-  def join_association(query, binding_alias, assoc_as, schema_module, assoc_key, params, opts)
-      when is_map(params) do
+  defp join_association(query, binding_alias, assoc_as, schema_module, assoc_key, params, opts)
+       when is_map(params) do
     join_association(
       query,
       binding_alias,
@@ -263,7 +259,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
     )
   end
 
-  def join_association(query, binding_alias, assoc_as, schema_module, assoc_key, params, opts) do
+  defp join_association(query, binding_alias, assoc_as, schema_module, assoc_key, params, opts) do
     assoc_schema_module = SchemaHelpers.schema_module_for_association(schema_module, assoc_key)
 
     assoc_as =
@@ -290,13 +286,18 @@ defmodule EctoShorts.QueryBuilders.Schema do
     )
   end
 
-  @doc false
-  def join_subquery(query, binding_alias, subquery_as, schema_module, params, opts)
-      when is_map(params) do
+  defp join_subqueries(query, binding_alias, schema_module, params, opts) do
+    Enum.reduce(params, query, fn {subquery_as, params}, query ->
+      join_subquery(query, binding_alias, subquery_as, schema_module, params, opts)
+    end)
+  end
+
+  defp join_subquery(query, binding_alias, subquery_as, schema_module, params, opts)
+       when is_map(params) do
     join_subquery(query, binding_alias, subquery_as, schema_module, Map.to_list(params), opts)
   end
 
-  def join_subquery(query, binding_alias, subquery_as, _schema_module, params, opts) do
+  defp join_subquery(query, binding_alias, subquery_as, _schema_module, params, opts) do
     {subquery_data, params} = Keyword.pop(params, :query)
 
     if is_nil(subquery_data) do

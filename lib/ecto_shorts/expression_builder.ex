@@ -72,7 +72,7 @@ defmodule EctoShorts.ExpressionBuilder do
         {:age, 30}
       ]
 
-  Use it to build up a dynamic expression:
+  Use it to build up a expression:
 
       iex> import Ecto.Query
       ...> EctoShorts.ExpressionBuilder.apply_expression(

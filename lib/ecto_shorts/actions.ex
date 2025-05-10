@@ -145,6 +145,7 @@ defmodule EctoShorts.Actions do
   @type multi_params :: list(map() | {map(), map()})
 
   @type batch_key :: atom() | list(atom())
+  @type batch_key_arg :: batch_key_arg()
   @type batch_id :: map()
   @type batch_params :: params() | {params(), params()} | {schema_data(), params()}
 
@@ -226,79 +227,77 @@ defmodule EctoShorts.Actions do
   """
   @spec batch_load(
           query_source(),
-          batch_key() | :primary_key,
+          batch_key_arg(),
           list(batch_params())
         ) :: list(batch_params())
   @spec batch_load(
           query_source(),
-          batch_key() | :primary_key,
+          batch_key_arg(),
           list(batch_params()),
           opts()
         ) :: list(batch_params())
   def batch_load(query_source, batch_key \\ :primary_key, params_list, opts \\ []) do
     batch_key = normalize_batch_key(query_source, batch_key)
 
-    case filter_batch_params(params_list, batch_key) do
-      [] ->
+    case filter_and_index_batch_params(params_list, query_source, batch_key) do
+      {[], _} ->
         params_list
 
-      batch_params ->
-        with batch_results <- batch(query_source, batch_key, batch_params, opts) do
-          merge_batch_results(params_list, batch_results, batch_key, query_source)
+      {batch_params, batch_lookup} ->
+        with batch_results <-
+               batch(query_source, batch_key, batch_params, opts) do
+          merge_batch_results(
+            params_list,
+            batch_lookup,
+            batch_results
+          )
         end
     end
   end
 
-  defp merge_batch_results(params_list, batch_results, batch_key, query_source) do
-    Enum.map(params_list, fn
-      {find_params, params} when is_map(find_params) and not is_struct(find_params) ->
-        if all_keys?(batch_key, find_params) do
-          batch_id = batch_id!(query_source, batch_key, find_params)
+  defp merge_batch_results(params_list, batch_lookup, batch_results) do
+    Enum.reduce(batch_lookup, params_list, fn {batch_id, idx}, params_list ->
+      schema_data = Map.fetch!(batch_results, batch_id)
 
-          case Map.get(batch_results, batch_id) do
-            nil -> {find_params, params}
-            schema_data -> {schema_data, params}
-          end
-        else
-          params
-        end
-
-      params when is_map(params) and not is_struct(params) ->
-        if all_keys?(batch_key, params) do
-          batch_id = batch_id!(query_source, batch_key, params)
-
-          case Map.get(batch_results, batch_id) do
-            nil -> params
-            schema_data -> {schema_data, params}
-          end
-        else
-          params
-        end
-
-      value ->
-        value
+      case get_in(params_list, [Access.at!(idx)]) do
+        {_, params} -> put_in(params_list, [Access.at!(idx)], {schema_data, params})
+        params -> put_in(params_list, [Access.at!(idx)], {schema_data, params})
+      end
     end)
   end
 
-  defp filter_batch_params(params_list, batch_key) do
-    Enum.reduce(params_list, [], fn
-      {params, _}, acc when is_map(params) and not is_struct(params) ->
-        if all_keys?(batch_key, params) do
-          [params | acc]
-        else
-          acc
-        end
+  defp filter_and_index_batch_params(params_list, query_source, batch_key) do
+    params_list
+    |> Enum.with_index()
+    |> Enum.reduce({[], %{}}, &accumulate_batch_params(&1, query_source, batch_key, &2))
+  end
 
-      params, acc when is_map(params) and not is_struct(params) ->
-        if all_keys?(batch_key, params) do
-          [params | acc]
-        else
-          acc
-        end
+  defp accumulate_batch_params({{data, _}, _idx}, _query_source, _batch_key, {acc, metadata})
+       when is_struct(data) do
+    {acc, metadata}
+  end
 
-      _, acc ->
-        acc
-    end)
+  defp accumulate_batch_params({{params, _}, idx}, query_source, batch_key, {acc, metadata}) do
+    accumulate_batch_params({params, idx}, query_source, batch_key, {acc, metadata})
+  end
+
+  defp accumulate_batch_params({data, _idx}, _query_source, _batch_key, {acc, metadata})
+       when is_struct(data) do
+    {acc, metadata}
+  end
+
+  defp accumulate_batch_params({params, idx}, query_source, batch_key, {acc, metadata}) do
+    if all_keys?(batch_key, params) do
+      batch_id = batch_id!(query_source, batch_key, params)
+
+      {[params | acc], Map.put(metadata, batch_id, idx)}
+    else
+      {acc, metadata}
+    end
+  end
+
+  defp accumulate_batch_params(_term, _query_source, _batch_key, {acc, metadata}) do
+    {acc, metadata}
   end
 
   @doc group: "Batch API"
@@ -326,12 +325,12 @@ defmodule EctoShorts.Actions do
   """
   @spec batch_find(
           query_source(),
-          batch_key() | :primary_key,
+          batch_key_arg(),
           list(params())
         ) :: {:ok, list(schema_data())} | {:error, any()}
   @spec batch_find(
           query_source(),
-          batch_key() | :primary_key,
+          batch_key_arg(),
           list(params()),
           opts()
         ) :: {:ok, list(schema_data())} | {:error, any()}
@@ -363,6 +362,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Batch API"
+  @spec batch(any(), [map()]) :: %{optional(map()) => %{optional(atom()) => any()}}
   @doc """
   Performs a batched query and returns a map of results keyed by input parameters.
 
@@ -410,27 +410,46 @@ defmodule EctoShorts.Actions do
   """
   @spec batch(
           query_source(),
-          batch_key() | :primary_key,
+          batch_key_arg(),
           list(params())
         ) :: %{batch_id() => schema_data()}
   @spec batch(
           query_source(),
-          batch_key() | :primary_key,
+          batch_key_arg(),
           list(params()),
           opts()
         ) :: %{batch_id() => schema_data()}
   def batch(query_source, batch_key \\ :primary_key, params_list, opts \\ []) do
     batch_key = normalize_batch_key(query_source, batch_key)
 
-    query_source
-    |> all(%{or_where: params_list}, opts)
-    |> Enum.group_by(fn schema_data -> batch_id!(query_source, batch_key, schema_data) end)
-    |> Enum.filter(fn
-      {_batch_id, []} -> false
-      {_batch_id, [_schema_data]} -> true
-      {_batch_id, records} -> raise "Expected one record for, got #{length(records)}"
-    end)
-    |> Map.new(fn {batch_id, [schema_data]} -> {batch_id, schema_data} end)
+    {batch_results, duplicates} =
+      query_source
+      |> all(%{or_where: params_list}, opts)
+      |> Enum.reduce({%{}, []}, fn schema_data, {batch_results, duplicates} ->
+        batch_id = batch_id!(query_source, batch_key, schema_data)
+
+        case Map.get(batch_results, batch_id) do
+          nil -> {Map.put(batch_results, batch_id, schema_data), duplicates}
+          _ -> {batch_results, [batch_id | duplicates]}
+        end
+      end)
+
+    if duplicates === [] do
+      batch_results
+    else
+      formatted_duplicates =
+        duplicates
+        |> Enum.group_by(& &1)
+        |> Enum.map_join("\n", fn {k, v} -> "   - key=#{k}, count=#{length(v)}" end)
+
+      raise """
+      Expected one record to match the batch id.
+
+      got:
+
+      #{formatted_duplicates}
+      """
+    end
   end
 
   defp batch_id!(query_source, batch_key, data) do
@@ -452,14 +471,16 @@ defmodule EctoShorts.Actions do
   end
 
   defp normalize_batch_key(query_source, :primary_key) do
-    with [] <- CommonSchemas.reflection_for_schema(query_source, :primary_key) do
-      [:id]
+    case CommonSchemas.reflection_for_schema(query_source, :primary_key) do
+      [] -> [:id]
+      key -> key
     end
   end
 
   defp normalize_batch_key(_query_source, value) do
-    with [] <- List.wrap(value) do
-      [:id]
+    case List.wrap(value) do
+      [] -> [:id]
+      key -> key
     end
   end
 
@@ -1910,7 +1931,6 @@ defmodule EctoShorts.Actions do
   end
 
   defp create_changeset(query_source, params, opts) do
-    IO.inspect(binding(), label: "FOO")
     schema_module = CommonSchemas.schema_module_for(query_source)
 
     if function_exported?(schema_module, :create_changeset, 1) and
