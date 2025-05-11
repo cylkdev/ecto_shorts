@@ -1,10 +1,10 @@
 defmodule EctoShorts.Testing do
+  @doc """
+  Asserts that two dynamic expressions are identical.
+  """
   defmacro assert_dynamic(dyn_a, dyn_b) do
     quote do
-      dyn_a = Macro.to_string(unquote(dyn_a))
-      dyn_b = Macro.to_string(unquote(dyn_b))
-
-      assert dyn_a === dyn_b
+      assert Macro.to_string(unquote(dyn_a)) === Macro.to_string(unquote(dyn_b))
     end
   end
 end

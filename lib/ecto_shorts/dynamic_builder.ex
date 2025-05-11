@@ -1,11 +1,12 @@
 defmodule EctoShorts.DynamicBuilder do
+  @moduledoc since: "2.5.0"
   @moduledoc """
-  Defines a behavior and interface for building dynamic Ecto query expressions
-  based on the adapter in use (e.g., Postgres).
+  Defines a behavior and interface for building dynamic Ecto query
+  expressions based on the adapter in use (e.g., Postgres).
 
   In Ecto, the `dynamic/2` macro is used to build flexible queries where
-  parts of the expression depend on input at runtime . This module provides an
-  API for building these expressions for different database backends.
+  parts of the expression depend on input at runtime . This module provides
+  an API for building these expressions for different database backends.
 
   You can implement the `EctoShorts.DynamicBuilder` behavior in your own
   adapter module to customize how dynamic conditions are generated based
@@ -13,8 +14,8 @@ defmodule EctoShorts.DynamicBuilder do
 
   ## Example
 
-  Suppose you want to filter a field using Postgres-specific operators like
-  `ILIKE`. You could write a custom adapter like:
+  Suppose you want to filter a field using Postgres-specific operators
+  like `ILIKE`. You could write a custom adapter like:
 
       defmodule MyApp.DynamicPostgresAdapter do
         @behaviour EctoShorts.DynamicBuilder
@@ -38,11 +39,11 @@ defmodule EctoShorts.DynamicBuilder do
 
       EctoShorts.DynamicBuilder.create_dynamic(
         MyApp.DynamicPostgresAdapter,
-        true,
-        0,
-        MyApp.User,
+        nil,
+        nil,
+        :and,
         :name,
-        %{ilike: "john"}
+        {:ilike, "john"}
       )
 
   This returns a dynamic expression like:
@@ -82,7 +83,7 @@ defmodule EctoShorts.DynamicBuilder do
   To see the expression it contains:
 
       iex> import Ecto.Query
-      ...> dyn = dynamic([], as(:post).id == 1)
+      ...> dyn = dynamic([], as(:comments).id == 1)
       ...> Macro.to_string(dyn)
       "dynamic([], as(:comments).id == 1)"
 
@@ -106,12 +107,17 @@ defmodule EctoShorts.DynamicBuilder do
   deferred parts of a query that are validated and injected during
   query normalization.
 
-  For example:
+  For example, this will raise an error because the named binding is not declared:
 
-      iex> import Ecto.Query
-      ...> dyn = dynamic([{:comments, c}], c.id == 1)
-      ...> from c in EctoShorts.Schema.Comment, where: ^dyn
-      ** (Ecto.QueryError) unknown bind name `:comments` in query
+      import Ecto.Query
+      dyn = dynamic([{:comments, c}], c.id == 1)
+      from c in EctoShorts.Schema.Comment, where: ^dyn
+
+  This raises:
+
+      ** (Ecto.QueryError) unknown bind name `:comments` in query:
+
+      from c0 in EctoShorts.Schema.Comment
 
   This error occurs because the dynamic expression refers to a named
   binding `:comments`, but the query did not define one. When from is
@@ -123,27 +129,31 @@ defmodule EctoShorts.DynamicBuilder do
       iex> import Ecto.Query
       ...> dyn = dynamic([{:comments, c}], c.id == 1)
       ...> from c in EctoShorts.Schema.Comment, as: :comments, where: ^dyn
-      #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :comments, where: p0.id == 1>
+      #Ecto.Query<from c0 in EctoShorts.Schema.Comment, as: :comments, where: c0.id == 1>
 
   You can also use the `as/1` macro to reference a named binding:
 
-      iex> dyn = dynamic([], as(:comments).id == 1)
+      iex> import Ecto.Query
+      ...> dyn = dynamic([], as(:comments).id == 1)
+      ...> from c in EctoShorts.Schema.Comment, as: :comments, where: ^dyn
+      #Ecto.Query<from c0 in EctoShorts.Schema.Comment, as: :comments, where: as(:comments).id == 1>
 
   The `as/1` macro defers binding resolution by injecting a placeholder
   into the AST. Ecto typically validates the existence of that binding
-  during query normalization which happens when macros like from or join
-  are expanded. However, Ecto does not immediately validate the existence
-  of the named binding when the `dynamic/2` is created.
+  during query normalization which happens when macros like from or
+  join are expanded. However, Ecto does not immediately validate the
+  existence of the named binding when the `dynamic/2` is created.
 
   For example:
 
         iex> import Ecto.Query
         ...> dynamic(as(:does_not_exist).id == 1)
 
-  If that dynamic expression is injected into a query via pin (`^dyn`), the
-  validation is deferred until the query is compiled to SQL - for example,
-  when passed to `Repo.all/1` or another Repo function. If `:comments` is
-  not declared by that point, Ecto will raise an error during SQL generation.
+  If that dynamic expression is injected into a query via pin (`^dyn`),
+  the validation is deferred until the query is compiled to SQL by
+  calling a Repo function (e.g `Repo.all/1`). If `:comments` is not
+  declared by that point, Ecto will raise an error during SQL
+  generation.
   """
 
   alias EctoShorts.Config
@@ -194,8 +204,7 @@ defmodule EctoShorts.DynamicBuilder do
 
   ## Examples
 
-        iex> EctoShorts.DynamicBuilder.create_dynamic(nil, nil, EctoShorts.Schema.Post, :tags, {:==, "blog"})
-        dynamic([q], ^"blog" in q.tags)
+        iex> EctoShorts.DynamicBuilder.create_dynamic(EctoShorts.Schema.Post, nil, nil, :and, :tags, {:==, "blog"}, [])
   """
   @spec create_dynamic(
           schema_module(),

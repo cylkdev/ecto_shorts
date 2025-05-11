@@ -13,51 +13,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
   expressions for each field based on its type—so you don’t need to
   worry about whether a field is a string, number, or array.
 
-  This api allows you to:
-
-    * Add filters based on a map of parameters (like controller input)
-
-    * Support flexible operators (`:==`, `:!=`, `:<`, `:ilike`, etc.)
-
-    * Match values inside Postgres array fields (e.g., `tags`)
-
-    * Compose multiple filters using `where` and `or_where`
-
-  You get all this without needing to use `Ecto.Query` macros or worry
-  about query bindings.
-
-  ## Example
-
-  Here's a query that filters users who are active and over 30:
-
-      filters = %{active: true, age: {:>=, 30}}
-
-      User
-      |> EctoShorts.DynamicBuilders.Postgres.dynamic(:user, filters)
-
-  You can also use `or_where/3` to combine filters with `OR` logic:
-
-      EctoShorts.DynamicBuilders.Postgres.or_dynamic(User, :user, [
-        %{status: "archived"},
-        %{status: "disabled"}
-      ])
-
-  ## How It Works
-
-  This module decides what kind of filter to apply based on the field’s type:
-
-    * If the field is an array, it uses Postgres array operators (like `ILIKE ANY`).
-
-    * If the field is a regular value, it uses standard comparisons or pattern matches.
-
-  It delegates the actual filtering to these helpers:
-
-    * `Postgres.Array` – For filters on array fields
-
-    * `Postgres.Field` – For filters on regular (scalar) fields
-
-  In most cases, you won’t need to think about these directly and just
-  use the `where/3` and `or_where/3` functions and pass in your data.
+  ...
   """
 
   alias EctoShorts.{
@@ -84,20 +40,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
 
   @impl EctoShorts.DynamicBuilder
   @doc """
-  ## Examples
-
-      # create a dynamic expression
-      iex> EctoShorts.DynamicBuilders.Postgres.create_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
-      dynamic([q], q.id == ^2)
-
-      # create a dynamic expression using an operator
-      iex> EctoShorts.DynamicBuilders.Postgres.create_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, {:>=, 2})
-      dynamic([q], q.id >= ^2)
-
-      # add a new expression using an OR condition
-      iex> dyn_a = EctoShorts.DynamicBuilders.Postgres.create_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
-      ...> EctoShorts.DynamicBuilders.Postgres.create_dynamic(dyn_a, nil, :or, EctoShorts.Schema.Post, :id, {:>=, 2})
-      dynamic([q], q.id == ^2 or q.id >= ^2)
+  ...
   """
   @spec create_dynamic(
           schema_module(),

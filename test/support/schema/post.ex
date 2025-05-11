@@ -6,22 +6,25 @@ defmodule EctoShorts.Schema.Post do
   require Ecto.Query
 
   schema "posts" do
-    belongs_to(:user, EctoShorts.Schema.User)
+    belongs_to :user, EctoShorts.Schema.User
 
-    field(:tags, {:array, :string})
-    field(:title, :string)
-    field(:unique_identifier, :string)
-    field(:user_data, :string, source: :custom_string_field)
-    field(:views, :integer)
+    field :tags, {:array, :string}
+    field :title, :string
+    field :description, :string
+    field :unique_identifier, :string
 
-    has_many(:comments, EctoShorts.Schema.Comment)
+    field :user_data, :string, source: :custom_string_field
+    field :views, :integer
+
+    has_many :comments, EctoShorts.Schema.Comment
 
     timestamps()
   end
 
   @available_fields [
-    :views,
     :title,
+    :description,
+    :views,
     :unique_identifier,
     :tags,
     :user_id

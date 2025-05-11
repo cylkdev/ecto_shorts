@@ -1,37 +1,7 @@
 defmodule EctoShorts.DynamicBuilders.Postgres.Array do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  Provides dynamic filter expressions for Postgres array fields using
-  Ecto's query DSL.
-
-  This module supports both element-wise pattern matching and array
-  comparison operators. It's used by the `QueryBuilder` layer to
-  compose dynamic `where` and `or_where` clauses involving array fields.
-
-  ## Supported operations
-
-  - Pattern matches:
-    * `:like` — case-sensitive substring match on any array element
-    * `:ilike` — case-insensitive substring match on any array element
-    * `:=~` — case-insensitive regex match on any array element
-
-  - Comparisons:
-    * `:==`, `:!=` — equality and inequality, supports `nil`, lists, or single values
-    * `:<`, `:>`, `:<=`, `:>=` — scalar-to-array or array-to-array comparisons
-
-  ## Examples
-
-      iex> Array.create_dynamic(:user, "foo", :ilike, :tags)
-      # matches if any tag ILIKE '%foo%'
-
-      iex> Array.create_dynamic(:user, 2, :==, :roles)
-      # true if 2 is in roles
-
-      iex> Array.create_dynamic(:user, :roles, :!=, [1, 2])
-      # true if roles != [1, 2]
-
-      iex> Array.create_dynamic(:user, :tags, :==, nil)
-      # true if tags is null
+  ...
   """
 
   alias Ecto.Query
@@ -44,31 +14,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Array do
   @type operator :: atom()
 
   @doc """
-  Builds a dynamic expression for comparing or pattern-matching values against a
-  Postgres array field.
-
-  This function handles scalar-to-array comparisons (`value in array`),
-  array-to-array comparisons (`array == array`), null checks, and
-  `LIKE`/`ILIKE`/regex matches on array elements.
-
-  ## Operator behavior
-
-    * `:==`, `:!=` — Supports `nil`, single values, and full array comparisons
-    * `:<`, `:>`, `:<=`, `:>=` — Can compare scalar to any element or full arrays
-    * `:like`, `:ilike`, `:=~` — Perform `LIKE ANY`, `ILIKE ANY`, or `~* ANY`
-
-  ## Binding behavior
-
-  If `binding` is provided, a named binding is used in the query;
-  otherwise the default `[q]` is used.
-
-  ## Examples
-
-      iex> Array.create_dynamic(:user, "foo", :ilike, :tags)
-      iex> Array.create_dynamic(:user, :roles, :!=, [1, 2])
-      iex> Array.create_dynamic(nil, :tags, :==, nil)
-      iex> Array.create_dynamic(nil, 3, :==, :permissions)
-
+  ...
   """
   @spec create_dynamic(binding_alias(), any(), operator(), any()) :: dynamic_expr()
   def create_dynamic(binding_alias, value, :=~, key) do
@@ -184,6 +130,50 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Array do
     end
   end
 
+  def create_dynamic(binding_alias, key, :!=, {:lower, value}) do
+    if binding_alias do
+      Query.dynamic(
+        [{^binding_alias, q}],
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS value WHERE LOWER(value) != LOWER(?))",
+          field(q, ^key),
+          ^value
+        )
+      )
+    else
+      Query.dynamic(
+        [q],
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS value WHERE LOWER(value) != LOWER(?))",
+          field(q, ^key),
+          ^value
+        )
+      )
+    end
+  end
+
+  def create_dynamic(binding_alias, key, :!=, {:upper, value}) do
+    if binding_alias do
+      Query.dynamic(
+        [{^binding_alias, q}],
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS value WHERE UPPER(value) != UPPER(?))",
+          field(q, ^key),
+          ^value
+        )
+      )
+    else
+      Query.dynamic(
+        [q],
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS value WHERE UPPER(value) != UPPER(?))",
+          field(q, ^key),
+          ^value
+        )
+      )
+    end
+  end
+
   def create_dynamic(binding_alias, key, :!=, nil) do
     if binding_alias do
       Query.dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
@@ -205,6 +195,50 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Array do
       Query.dynamic([{^binding_alias, q}], ^value not in field(q, ^key))
     else
       Query.dynamic([q], ^value not in field(q, ^key))
+    end
+  end
+
+  def create_dynamic(binding_alias, key, :==, {:lower, value}) do
+    if binding_alias do
+      Query.dynamic(
+        [{^binding_alias, q}],
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS value WHERE LOWER(value) = LOWER(?))",
+          field(q, ^key),
+          ^value
+        )
+      )
+    else
+      Query.dynamic(
+        [q],
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS value WHERE LOWER(value) = LOWER(?))",
+          field(q, ^key),
+          ^value
+        )
+      )
+    end
+  end
+
+  def create_dynamic(binding_alias, key, :==, {:upper, value}) do
+    if binding_alias do
+      Query.dynamic(
+        [{^binding_alias, q}],
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS value WHERE UPPER(value) = UPPER(?))",
+          field(q, ^key),
+          ^value
+        )
+      )
+    else
+      Query.dynamic(
+        [q],
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS value WHERE UPPER(value) = UPPER(?))",
+          field(q, ^key),
+          ^value
+        )
+      )
     end
   end
 

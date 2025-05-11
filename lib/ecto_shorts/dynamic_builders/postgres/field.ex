@@ -98,28 +98,6 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Field do
     end
   end
 
-  def create_dynamic(binding_alias, key, :==, {:lower, value}) do
-    if binding_alias do
-      Query.dynamic(
-        [{^binding_alias, q}],
-        fragment("LOWER(?)", field(q, ^key)) == ^value
-      )
-    else
-      Query.dynamic([q], fragment("LOWER(?)", field(q, ^key)) == ^value)
-    end
-  end
-
-  def create_dynamic(binding_alias, key, :==, {:upper, value}) do
-    if binding_alias do
-      Query.dynamic(
-        [{^binding_alias, q}],
-        fragment("UPPER(?)", field(q, ^key)) == ^value
-      )
-    else
-      Query.dynamic([q], fragment("UPPER(?)", field(q, ^key)) == ^value)
-    end
-  end
-
   def create_dynamic(binding_alias, key, :!=, nil) do
     if binding_alias do
       Query.dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
@@ -141,6 +119,28 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Field do
       Query.dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
     else
       Query.dynamic([q], field(q, ^key) != ^value)
+    end
+  end
+
+  def create_dynamic(binding_alias, key, :==, {:lower, value}) do
+    if binding_alias do
+      Query.dynamic(
+        [{^binding_alias, q}],
+        fragment("LOWER(?)", field(q, ^key)) == ^value
+      )
+    else
+      Query.dynamic([q], fragment("LOWER(?)", field(q, ^key)) == ^value)
+    end
+  end
+
+  def create_dynamic(binding_alias, key, :==, {:upper, value}) do
+    if binding_alias do
+      Query.dynamic(
+        [{^binding_alias, q}],
+        fragment("UPPER(?)", field(q, ^key)) == ^value
+      )
+    else
+      Query.dynamic([q], fragment("UPPER(?)", field(q, ^key)) == ^value)
     end
   end
 
