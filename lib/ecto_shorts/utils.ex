@@ -14,11 +14,11 @@ defmodule EctoShorts.Utils do
 
       iex> to_jsonable_map(%User{
       ...>   id: 1,
-      ...>   name: "Alice",
+      ...>   name: "Fira",
       ...>   __meta__: #Ecto.Schema.Metadata<>,
       ...>   posts: [%EctoShorts.Schema.Post{title: "First"}]
       ...> })
-      %{id: 1, name: "Alice"}
+      %{id: 1, name: "Fira"}
   """
   @spec to_jsonable_map(schema_data()) :: map()
   def to_jsonable_map(%{__meta__: %{schema: queryable}} = struct) do

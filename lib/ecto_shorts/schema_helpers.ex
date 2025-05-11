@@ -253,7 +253,7 @@ defmodule EctoShorts.SchemaHelpers do
   ## Examples
 
       # Filtering primary key from a single params map
-      iex> EctoShorts.SchemaHelpers.filter_primary_key(EctoShorts.Schema.Post, %{id: 10, title: "Alice", age: 30})
+      iex> EctoShorts.SchemaHelpers.filter_primary_key(EctoShorts.Schema.Post, %{id: 10, title: "Fira", age: 30})
       %{id: 10}
 
       # Filtering primary keys from a list of maps

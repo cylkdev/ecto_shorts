@@ -87,19 +87,19 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
   ## Examples
 
       # create a dynamic expression
-      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
+      iex> EctoShorts.DynamicBuilders.Postgres.create_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
       dynamic([q], q.id == ^2)
 
       # create a dynamic expression using an operator
-      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, {:>=, 2})
+      iex> EctoShorts.DynamicBuilders.Postgres.create_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, {:>=, 2})
       dynamic([q], q.id >= ^2)
 
       # add a new expression using an OR condition
-      iex> dyn_a = EctoShorts.DynamicBuilders.Postgres.build_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
-      ...> EctoShorts.DynamicBuilders.Postgres.build_dynamic(dyn_a, nil, :or, EctoShorts.Schema.Post, :id, {:>=, 2})
+      iex> dyn_a = EctoShorts.DynamicBuilders.Postgres.create_dynamic(nil, nil, :and, EctoShorts.Schema.Post, :id, 2)
+      ...> EctoShorts.DynamicBuilders.Postgres.create_dynamic(dyn_a, nil, :or, EctoShorts.Schema.Post, :id, {:>=, 2})
       dynamic([q], q.id == ^2 or q.id >= ^2)
   """
-  @spec build_dynamic(
+  @spec create_dynamic(
           schema_module(),
           maybe_dynamic_expr(),
           binding_alias(),
@@ -107,7 +107,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
           key(),
           value()
         ) :: dynamic_expr()
-  def build_dynamic(
+  def create_dynamic(
         schema_module,
         dyn,
         binding_alias,
@@ -120,26 +120,26 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
         CommonQueryAPI.merge_dynamic(
           dyn,
           condition,
-          Array.dynamic(binding_alias, key, operator, value)
+          Array.create_dynamic(binding_alias, key, operator, value)
         )
 
       SchemaHelpers.field_type_of_array?(schema_module, key) ->
         CommonQueryAPI.merge_dynamic(
           dyn,
           condition,
-          Array.dynamic(binding_alias, value, operator, key)
+          Array.create_dynamic(binding_alias, value, operator, key)
         )
 
       true ->
         CommonQueryAPI.merge_dynamic(
           dyn,
           condition,
-          Field.dynamic(binding_alias, key, operator, value)
+          Field.create_dynamic(binding_alias, key, operator, value)
         )
     end
   end
 
-  def build_dynamic(
+  def create_dynamic(
         dyn,
         binding_alias,
         condition,
@@ -147,7 +147,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
         key,
         value
       ) do
-    build_dynamic(
+    create_dynamic(
       dyn,
       binding_alias,
       condition,

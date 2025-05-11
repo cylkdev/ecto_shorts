@@ -84,13 +84,23 @@ defmodule EctoShorts.CommonQueryAPI do
 
   ## Examples
 
-      iex> EctoShorts.CommonQueryAPI.merge_dynamic(nil, dynamic([q], q.id > 1))
-      #Ecto.Query.DynamicExpr<...>
+      iex> import Ecto.Query
+      ...> dyn_a = nil
+      ...> dyn_b = dynamic([q], q.id > 1)
+      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :and, dyn_b)
+      dynamic([q], q.id > 1)
 
-      iex> dyn1 = dynamic([q], q.id > 1)
-      ...> dyn2 = dynamic([q], q.active == true)
-      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn1, dyn2)
-      #Ecto.Query.DynamicExpr<...>
+      iex> import Ecto.Query
+      ...> dyn_a = dynamic([q], q.name == "Fira")
+      ...> dyn_b = dynamic([q], q.id > 1)
+      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :and, dyn_b)
+      dynamic([q], q.name == "Fira" and q.id > 1)
+
+      iex> import Ecto.Query
+      ...> dyn_a = dynamic([q], q.name == "Fira")
+      ...> dyn_b = dynamic([q], q.id > 1)
+      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :or, dyn_b)
+      dynamic([q], q.name == "Fira" or q.id > 1)
   """
   @spec merge_dynamic(maybe_dynamic_expr(), condition(), dynamic_expr()) :: dynamic_expr()
   def merge_dynamic(nil, _operator, dyn), do: dyn
@@ -147,7 +157,7 @@ defmodule EctoShorts.CommonQueryAPI do
           dynamic_source,
           params,
           fn {key, value}, dyn ->
-            DynamicBuilder.build_dynamic(
+            DynamicBuilder.create_dynamic(
               schema_module,
               dyn,
               binding_alias,

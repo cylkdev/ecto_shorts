@@ -26,7 +26,7 @@ defmodule EctoShorts.CommonParams do
   ## Example
 
       iex> params = [
-      ...>   %{name: "Alice", slug: "alice"},
+      ...>   %{name: "Fira", slug: "alice"},
       ...>   %{name: "Bob", slug: nil}
       ...> ]
 
@@ -38,7 +38,7 @@ defmodule EctoShorts.CommonParams do
 
       iex> EctoShorts.CommonParams.convert_to_insert_all_params(MyApp.User, params, opts)
       {:ok, [
-        %{name: "Alice", slug: "alice", inserted_at: ..., updated_at: ...},
+        %{name: "Fira", slug: "alice", inserted_at: ..., updated_at: ...},
         %{name: "Bob", slug: {:placeholder, :slug}, inserted_at: ..., updated_at: ...}
       ]}
   """
@@ -362,7 +362,11 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp apply_insert_change(schema_module, %{data: %{__meta__: _} = schema_struct} = changeset, opts) do
+  defp apply_insert_change(
+         schema_module,
+         %{data: %{__meta__: _} = schema_struct} = changeset,
+         opts
+       ) do
     changed_keys = get_struct_changed_keys(schema_struct, schema_module, opts)
 
     if opts[:validate] === false do

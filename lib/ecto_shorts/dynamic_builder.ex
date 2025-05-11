@@ -19,14 +19,14 @@ defmodule EctoShorts.DynamicBuilder do
       defmodule MyApp.DynamicPostgresAdapter do
         @behaviour EctoShorts.DynamicBuilder
 
-        def build_dynamic(dyn, binding, condition, schema, key, {:ilike, val}) do
+        def create_dynamic(dyn, binding, condition, schema, key, {:ilike, val}) do
           case condition do
             :and -> dynamic([q], ^dyn and ilike(field(^binding, ^key), ^val))
             :or -> dynamic([q], ^dyn or ilike(field(^binding, ^key), ^val))
           end
         end
 
-        def build_dynamic(dyn, binding, condition, schema, key, val) do
+        def create_dynamic(dyn, binding, condition, schema, key, val) do
           case condition do
             :and -> dynamic([q], ^dyn and field(^binding, ^key) == ^val)
             :or -> dynamic([q], ^dyn or field(^binding, ^key) == ^val)
@@ -36,7 +36,7 @@ defmodule EctoShorts.DynamicBuilder do
 
   Then you can call:
 
-      EctoShorts.DynamicBuilder.build_dynamic(
+      EctoShorts.DynamicBuilder.create_dynamic(
         MyApp.DynamicPostgresAdapter,
         true,
         0,
@@ -177,7 +177,7 @@ defmodule EctoShorts.DynamicBuilder do
 
   Returns an updated dynamic expression.
   """
-  @callback build_dynamic(
+  @callback create_dynamic(
               schema_module(),
               maybe_dynamic_expr(),
               binding_alias(),
@@ -187,17 +187,17 @@ defmodule EctoShorts.DynamicBuilder do
             ) :: dynamic_expr()
 
   @doc """
-  Delegates to the adapter module’s `build_dynamic/5` function.
+  Delegates to the adapter module’s `create_dynamic/5` function.
 
   This is the main entry point used by `EctoShorts` to apply adapter-specific
   dynamic filter logic.
 
   ## Examples
 
-        iex> EctoShorts.DynamicBuilder.build_dynamic(nil, nil, EctoShorts.Schema.Post, :tags, {:==, "blog"})
+        iex> EctoShorts.DynamicBuilder.create_dynamic(nil, nil, EctoShorts.Schema.Post, :tags, {:==, "blog"})
         dynamic([q], ^"blog" in q.tags)
   """
-  @spec build_dynamic(
+  @spec create_dynamic(
           schema_module(),
           maybe_dynamic_expr(),
           binding_alias(),
@@ -206,7 +206,7 @@ defmodule EctoShorts.DynamicBuilder do
           value(),
           opts()
         ) :: dynamic_expr()
-  def build_dynamic(
+  def create_dynamic(
         schema_module,
         dyn,
         binding_alias,
@@ -215,7 +215,7 @@ defmodule EctoShorts.DynamicBuilder do
         value,
         opts
       ) do
-    adapter_for_repo!(opts).build_dynamic(
+    adapter!(opts).create_dynamic(
       schema_module,
       dyn,
       binding_alias,
@@ -225,26 +225,26 @@ defmodule EctoShorts.DynamicBuilder do
     )
   end
 
-  defp adapter_for_repo!(opts) do
-    if Keyword.has_key?(opts, :dynamic_adapter) do
-      opts[:dynamic_adapter]
+  defp adapter!(opts) do
+    if Keyword.has_key?(opts, :dynamic_builder_adapter) do
+      opts[:dynamic_builder_adapter]
     else
-      case get_repo_dynamic_adapter(Config.repo!(opts).__adapter__(), opts) do
+      case find_adapter_for_repo(Config.repo!(opts).__adapter__(), opts) do
         nil -> @default_adapter
         {_, adapter_config} -> Keyword.fetch!(adapter_config, :adapter)
       end
     end
   end
 
-  defp get_repo_dynamic_adapter(repo_adapter, opts) do
+  defp find_adapter_for_repo(repo_adapter, opts) do
     opts
-    |> dynamic_adapters()
+    |> dynamic_builder_adapters()
     |> Enum.find(fn {key, _} -> key === repo_adapter end)
   end
 
-  defp dynamic_adapters(opts) do
-    opts[:dynamic_adapters] ||
-      Config.dynamic_adapters() ||
+  defp dynamic_builder_adapters(opts) do
+    opts[:dynamic_builder_adapters] ||
+      Config.dynamic_builder_adapters() ||
       @adapters
   end
 end
