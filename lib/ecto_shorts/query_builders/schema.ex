@@ -120,7 +120,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
         build_query_api_filter(query, binding_alias, schema_module, key, value, opts)
 
       key in schema_module.__schema__(:associations) ->
-        {assoc_as, params} = Keyword.pop(value, :as)
+        {assoc_as, params} = Map.pop(value, :as)
 
         join_association(
           query,
@@ -178,7 +178,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp build_schema_filter(query, binding_alias, schema_module, key, value, opts) do
-    ExpressionBuilder.apply_expression(
+    ExpressionBuilder.apply_expressions(
       query,
       value,
       fn value, query ->
@@ -247,20 +247,20 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp join_association(query, binding_alias, assoc_as, schema_module, assoc_key, params, opts)
-       when is_map(params) do
+       when is_list(params) do
     join_association(
       query,
       binding_alias,
       assoc_as,
       schema_module,
       assoc_key,
-      Map.to_list(params),
+      Map.new(params),
       opts
     )
   end
 
   defp join_association(query, binding_alias, assoc_as, schema_module, assoc_key, params, opts) do
-    assoc_schema_module = SchemaHelpers.schema_module_for_association(schema_module, assoc_key)
+    assoc_schema_module = SchemaHelpers.get_association_schema_module(schema_module, assoc_key)
 
     assoc_as =
       with nil <- assoc_as do
@@ -293,24 +293,24 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp join_subquery(query, binding_alias, subquery_as, schema_module, params, opts)
-       when is_map(params) do
-    join_subquery(query, binding_alias, subquery_as, schema_module, Map.to_list(params), opts)
+       when is_list(params) do
+    join_subquery(query, binding_alias, subquery_as, schema_module, Map.new(params), opts)
   end
 
   defp join_subquery(query, binding_alias, subquery_as, _schema_module, params, opts) do
-    {subquery_data, params} = Keyword.pop(params, :query)
+    {subquery_data, params} = Map.pop(params, :query)
 
     if is_nil(subquery_data) do
       raise KeyError, "key :query not found: #{inspect(params)}"
     end
 
-    {subquery_schema_module, params} = Keyword.pop(params, :schema)
+    {subquery_schema_module, params} = Map.pop(params, :schema)
 
     subquery_schema_module =
       if is_nil(subquery_schema_module) do
         subquery_data
         |> CommonQuery.to_query()
-        |> CommonQuery.schema_module_for_query_expression!(subquery_as)
+        |> CommonQuery.fetch_query_expression_schema_module!(subquery_as)
       else
         subquery_schema_module
       end
@@ -340,11 +340,11 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp take_join_keys(params) do
-    Keyword.take(params, [:as, :qualifier, :on, :prefix])
+    Map.take(params, [:as, :qualifier, :on, :prefix])
   end
 
   defp drop_join_keys(params) do
-    Keyword.drop(params, [:as, :qualifier, :on, :prefix])
+    Map.drop(params, [:as, :qualifier, :on, :prefix])
   end
 
   defp reduce_filters(query, binding_alias, schema_module, params, opts) do

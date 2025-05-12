@@ -1,17 +1,18 @@
 defmodule EctoShorts.CommonQuery do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  `EctoShorts.CommonQuery` provides helper functions
-  for introspecting Ecto queries.
+  `EctoShorts.CommonQuery` provides helper functions for introspecting Ecto queries.
   """
 
   alias Ecto.Queryable
+  alias EctoShorts.SchemaHelpers
 
   @type subquery :: Ecto.SubQuery.t()
   @type query :: Ecto.Query.t()
   @type schema_module :: Ecto.Queryable.t()
   @type schema_source :: binary()
-  @type sourceable :: schema_module() | {schema_source(), schema_module()}
+  @type source_and_schema :: {schema_source(), schema_module()}
+  @type sourceable :: schema_module() | source_and_schema()
   @type query_source :: query() | sourceable()
   @type from_expr :: %Ecto.Query.FromExpr{}
   @type join_expr :: %Ecto.Query.JoinExpr{}
@@ -55,7 +56,7 @@ defmodule EctoShorts.CommonQuery do
   """
   @spec schema_module_for_query(query() | schema_module()) :: schema_module()
   def schema_module_for_query(query) do
-    case source_for_query(query) do
+    case get_query_source(query) do
       {_schema_source, schema_module} -> schema_module
       schema_module -> schema_module
     end
@@ -68,20 +69,20 @@ defmodule EctoShorts.CommonQuery do
   ## Examples
 
       # returns modules as-is
-      iex> EctoShorts.CommonQuery.source_for_query(EctoShorts.Schema.Post)
+      iex> EctoShorts.CommonQuery.get_query_source(EctoShorts.Schema.Post)
       EctoShorts.Schema.Post
 
       # get source from top-level query
       iex> import Ecto.Query
       ...> query = from p in EctoShorts.Schema.Post
-      ...> EctoShorts.CommonQuery.source_for_query(query)
+      ...> EctoShorts.CommonQuery.get_query_source(query)
       {"posts", EctoShorts.Schema.Post}
 
       # get source from subquery
       iex> import Ecto.Query
       ...> inner = from p in EctoShorts.Schema.Post, where: p.id in [1, 2, 3]
       ...> outer = from p in subquery(inner), select: %{id: p.id}
-      ...> EctoShorts.CommonQuery.source_for_query(outer)
+      ...> EctoShorts.CommonQuery.get_query_source(outer)
       {"posts", EctoShorts.Schema.Post}
 
       # get source from nested subquery
@@ -89,11 +90,11 @@ defmodule EctoShorts.CommonQuery do
       ...> base = from p in EctoShorts.Schema.Post, where: p.published == true
       ...> mid = from p in subquery(base), where: p.id > 10
       ...> outer = from p in subquery(mid), select: %{id: p.id, title: p.title}
-      ...> EctoShorts.CommonQuery.source_for_query(outer)
+      ...> EctoShorts.CommonQuery.get_query_source(outer)
       {"posts", EctoShorts.Schema.Post}
   """
-  @spec source_for_query(query() | schema_module() | subquery()) :: sourceable()
-  def source_for_query(%{from: %{source: {schema_source, schema_module}}} = _query) do
+  @spec get_query_source(query() | schema_module() | subquery()) :: sourceable()
+  def get_query_source(%{from: %{source: {schema_source, schema_module}}} = _query) do
     if is_nil(schema_source) do
       schema_module
     else
@@ -101,15 +102,15 @@ defmodule EctoShorts.CommonQuery do
     end
   end
 
-  def source_for_query(%{from: %{source: %{query: query} = _subquery}}) do
-    source_for_query(query)
+  def get_query_source(%{from: %{source: %{query: query} = _subquery}}) do
+    get_query_source(query)
   end
 
-  def source_for_query(%{query: query} = _subquery) do
-    source_for_query(query)
+  def get_query_source(%{query: query} = _subquery) do
+    get_query_source(query)
   end
 
-  def source_for_query(schema_module) when is_atom(schema_module) do
+  def get_query_source(schema_module) when is_atom(schema_module) do
     schema_module
   end
 
@@ -124,12 +125,13 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post
-        ...> EctoShorts.CommonQuery.schema_module_for_query_expression!(query, :post)
+        ...> EctoShorts.CommonQuery.fetch_query_expression_schema_module!(query, :post)
         ...> EctoShorts.Schema.Post
   """
-  @spec schema_module_for_query_expression!(query(), binding_alias()) :: schema_module() | :error
-  def schema_module_for_query_expression!(query, binding_alias) do
-    with :error <- schema_module_for_query_expression(query, binding_alias) do
+  @spec fetch_query_expression_schema_module!(query(), binding_alias()) ::
+          schema_module() | :error
+  def fetch_query_expression_schema_module!(query, binding_alias) do
+    with :error <- fetch_query_expression_schema_module(query, binding_alias) do
       raise ArgumentError,
             "named binding alias '#{inspect(binding_alias)}' not found, got: #{inspect(query)}"
     end
@@ -144,22 +146,22 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post
-        ...> EctoShorts.CommonQuery.schema_module_for_query_expression(query, :post)
+        ...> EctoShorts.CommonQuery.fetch_query_expression_schema_module(query, :post)
         ...> EctoShorts.Schema.Post
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post
-        ...> EctoShorts.CommonQuery.schema_module_for_query_expression(query, nil)
+        ...> EctoShorts.CommonQuery.fetch_query_expression_schema_module(query, nil)
         ...> EctoShorts.Schema.Post
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post
-        ...> EctoShorts.CommonQuery.schema_module_for_query_expression(query, nil)
+        ...> EctoShorts.CommonQuery.fetch_query_expression_schema_module(query, nil)
         ...> :error
   """
-  @spec schema_module_for_query_expression(query(), binding_alias()) :: schema_module() | :error
-  def schema_module_for_query_expression(query, binding_alias) do
-    case source_for_query(query, binding_alias) do
+  @spec fetch_query_expression_schema_module(query(), binding_alias()) :: schema_module() | :error
+  def fetch_query_expression_schema_module(query, binding_alias) do
+    case get_query_source(query, binding_alias) do
       :error -> :error
       {_schema_source, schema_module} -> schema_module
       schema_module -> schema_module
@@ -173,25 +175,33 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post, join: EctoShorts.Schema.Comment, as: :comments, on: true
-        ...> EctoShorts.CommonQuery.source_for_query(query, :post)
+        ...> EctoShorts.CommonQuery.get_query_source(query, :post)
         ...> {"posts", EctoShorts.Schema.Post}
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post, join: EctoShorts.Schema.Comment, as: :comments, on: true
-        ...> EctoShorts.CommonQuery.source_for_query(query, :comments)
+        ...> EctoShorts.CommonQuery.get_query_source(query, :comments)
         EctoShorts.Schema.Comment
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post, join: {"comments", EctoShorts.Schema.Comment}, as: :comments, on: true
-        ...> EctoShorts.CommonQuery.source_for_query(query, :comments)
+        ...> EctoShorts.CommonQuery.get_query_source(query, :comments)
         {"comments", EctoShorts.Schema.Comment}
   """
-  @spec source_for_query(query(), binding_alias()) :: sourceable() | :error
-  def source_for_query(query, binding_alias) do
-    case query_expression_for(query, binding_alias) do
-      :error -> :error
-      %{source: {nil, schema_module}} -> schema_module
-      %{source: {schema_source, schema_module}} -> {schema_source, schema_module}
+  @spec get_query_source(query(), binding_alias()) :: sourceable() | :error
+  def get_query_source(query, binding_alias) do
+    case fetch_query_expression(query, binding_alias) do
+      :error ->
+        :error
+
+      %{source: {nil, schema_module}} ->
+        schema_module
+
+      %{source: {schema_source, schema_module}} ->
+        {schema_source, schema_module}
+
+      %{assoc: {_binding_position, assoc_key}} ->
+        get_query_from_expression_assoc_schema_module(query, assoc_key)
     end
   end
 
@@ -205,7 +215,7 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post, join: EctoShorts.Schema.Comment, as: :comments, on: true
-        ...> EctoShorts.CommonQuery.query_expression_for(query, :post)
+        ...> EctoShorts.CommonQuery.fetch_query_expression(query, :post)
         ...> {:ok, %Ecto.Query.FromExpr{
         ...>   source: {"posts", EctoShorts.Schema.Post},
         ...>   file: "iex",
@@ -218,7 +228,7 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post, join: EctoShorts.Schema.Comment, as: :comments, on: true
-        ...> EctoShorts.CommonQuery.query_expression_for(query, :comments)
+        ...> EctoShorts.CommonQuery.fetch_query_expression(query, :comments)
         ...> {:ok,
         ...>     %Ecto.Query.JoinExpr{
         ...>     qual: :inner,
@@ -234,11 +244,36 @@ defmodule EctoShorts.CommonQuery do
         ...>     hints: []
         ...> }}
   """
-  @spec query_expression_for(query(), binding_alias()) :: from_expr() | join_expr() | :error
-  def query_expression_for(query, binding_alias) do
-    with :error <- query_from_expression_for(query, binding_alias) do
-      query_join_expression_for(query, binding_alias)
+  @spec fetch_query_expression(query(), binding_alias()) :: from_expr() | join_expr() | :error
+  def fetch_query_expression(query, binding_alias) do
+    with :error <- fetch_query_from_expression(query, binding_alias) do
+      fetch_query_join_expression(query, binding_alias)
     end
+  end
+
+  def get_query_from_expression_assoc_schema_module(query, assoc_key) do
+    query
+    |> get_query_from_expression_schema_module()
+    |> SchemaHelpers.get_association_schema_module(assoc_key)
+  end
+
+  @spec get_query_from_expression_schema_module(query()) :: schema_module()
+  def get_query_from_expression_schema_module(query) do
+    %{source: {_schema_source, schema_module}} = get_query_from_expression(query)
+
+    schema_module
+  end
+
+  @spec get_query_from_expression_source(query()) :: source_and_schema()
+  def get_query_from_expression_source(query) do
+    %{source: source} = get_query_from_expression(query)
+
+    source
+  end
+
+  @spec get_query_from_expression(query()) :: from_expr()
+  def get_query_from_expression(%{from: from}) do
+    from
   end
 
   @doc """
@@ -252,7 +287,7 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post
-        ...> EctoShorts.CommonQuery.query_from_expression_for(query, nil)
+        ...> EctoShorts.CommonQuery.fetch_query_from_expression(query, nil)
         ...> %Ecto.Query.FromExpr{
         ...>   source: {"posts", EctoShorts.Schema.Post},
         ...>   file: "iex",
@@ -265,7 +300,7 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post
-        ...> EctoShorts.CommonQuery.query_from_expression_for(query, :post)
+        ...> EctoShorts.CommonQuery.fetch_query_from_expression(query, :post)
         ...> %Ecto.Query.FromExpr{
         ...>   source: {"posts", EctoShorts.Schema.Post},
         ...>   file: "iex",
@@ -278,15 +313,11 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post
-        ...> EctoShorts.CommonQuery.query_from_expression_for(query, :post)
+        ...> EctoShorts.CommonQuery.fetch_query_from_expression(query, :post)
         :error
   """
-  @spec query_from_expression_for(query(), binding_alias()) :: from_expr() | :error
-  def query_from_expression_for(%{from: from}, nil) do
-    from
-  end
-
-  def query_from_expression_for(%{from: %{as: as} = from}, binding_alias) do
+  @spec fetch_query_from_expression(query(), binding_alias()) :: from_expr() | :error
+  def fetch_query_from_expression(%{from: %{as: as} = from}, binding_alias) do
     if as === binding_alias do
       from
     else
@@ -304,7 +335,7 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, join: EctoShorts.Schema.Comment, as: :comments, on: true
-        ...> EctoShorts.CommonQuery.query_join_expression_for(query, :comments)
+        ...> EctoShorts.CommonQuery.fetch_query_join_expression(query, :comments)
         ...> %Ecto.Query.JoinExpr{
         ...>    qual: :inner,
         ...>    source: {nil, EctoShorts.Schema.Comment},
@@ -321,11 +352,11 @@ defmodule EctoShorts.CommonQuery do
 
         iex> import Ecto.Query
         ...> query = from p in EctoShorts.Schema.Post, as: :post
-        ...> EctoShorts.CommonQuery.query_join_expression_for(query, :comments)
+        ...> EctoShorts.CommonQuery.fetch_query_join_expression(query, :comments)
         :error
   """
-  @spec query_join_expression_for(query(), binding_alias()) :: join_expr() | :error
-  def query_join_expression_for(%{joins: joins}, binding_alias) do
+  @spec fetch_query_join_expression(query(), binding_alias()) :: join_expr() | :error
+  def fetch_query_join_expression(%{joins: joins}, binding_alias) do
     case Enum.find(joins, &(&1.as === binding_alias)) do
       nil -> :error
       join -> join

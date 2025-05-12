@@ -32,7 +32,10 @@ defmodule EctoShorts.ExpressionBuilder do
   having their internal fields traversed or transformed.
   """
 
-  alias EctoShorts.Config
+  @type acc :: any()
+  @type input :: any()
+  @type callback :: (any(), any() -> any())
+  @type opts :: keyword()
 
   @ordered_expressions false
 
@@ -60,9 +63,9 @@ defmodule EctoShorts.ExpressionBuilder do
 
   ## Examples
 
-  Collect all key-value pairs into a list:
+      # Collect all key-value pairs into a list.
 
-      iex> EctoShorts.ExpressionBuilder.apply_expression(
+      iex> EctoShorts.ExpressionBuilder.apply_expressions(
       ...>   [],
       ...>   %{post: %{title: "hello_world"}, age: 30},
       ...>   fn pair, acc -> [pair | acc] end
@@ -72,10 +75,10 @@ defmodule EctoShorts.ExpressionBuilder do
         {:age, 30}
       ]
 
-  Use it to build up a expression:
+      # Use it to build up a expression.
 
       iex> import Ecto.Query
-      ...> EctoShorts.ExpressionBuilder.apply_expression(
+      ...> EctoShorts.ExpressionBuilder.apply_expressions(
       ...>    EctoShorts.Schema.Post,
       ...>    %{id: 1, title: "hello_world"},
       ...>    fn {key, val}, query ->
@@ -84,9 +87,9 @@ defmodule EctoShorts.ExpressionBuilder do
       ...> )
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.title == ^"hello_world", where: p0.id == ^1>
 
-  Structs are preserved as-is:
+      # Structs are preserved as-is.
 
-      iex> EctoShorts.ExpressionBuilder.apply_expression(
+      iex> EctoShorts.ExpressionBuilder.apply_expressions(
       ...>   [],
       ...>   %{post: %EctoShorts.Schema.Post{id: 1}},
       ...>   fn pair, acc -> [pair | acc] end
@@ -94,60 +97,107 @@ defmodule EctoShorts.ExpressionBuilder do
       [
         {:post, %EctoShorts.Schema.Post{id: 1}}
       ]
+
+      # Keyword lists are flattened.
+
+      iex> EctoShorts.ExpressionBuilder.apply_expressions(
+      ...>   [],
+      ...>   [title: "hello", author: "admin"],
+      ...>   fn pair, acc -> [pair | acc] end
+      ...> )
+      [
+        {:author, "admin"},
+        {:title, "hello"}
+      ]
+
+      # Non-keyword lists are preserved.
+
+      iex> EctoShorts.ExpressionBuilder.apply_expressions(
+      ...>   [],
+      ...>   %{tags: ["elixir", "ecto"]},
+      ...>   fn pair, acc -> [pair | acc] end
+      ...> )
+      [
+        {:tags, ["elixir", "ecto"]}
+      ]
   """
-  @spec apply_expression(
-          any(),
-          map() | keyword() | any(),
-          (any(), any() -> any())
-        ) :: any()
-  @spec apply_expression(
-          any(),
-          map() | keyword() | any(),
-          (any(), any() -> any()),
-          keyword()
-        ) :: any()
-  def apply_expression(acc, data, fun, opts \\ []) do
-    data
-    |> flatten_params(opts)
-    |> Enum.reduce(acc, &fun.(&1, &2))
+  @spec apply_expressions(acc(), input(), callback()) :: acc()
+  @spec apply_expressions(acc(), input(), callback(), opts()) :: acc()
+  def apply_expressions(acc, input, fun, opts \\ []) when is_function(fun, 2) do
+    input
+    |> flatten_input(opts)
+    |> do_apply(acc, fun)
   end
 
-  defp flatten_params(data, opts) do
-    with res <- do_flatten(data, []) do
+  defp do_apply([], acc, _fun) do
+    acc
+  end
+
+  defp do_apply([head | todo], acc, fun) do
+    with acc <- fun.(head, acc) do
+      do_apply(todo, acc, fun)
+    end
+  end
+
+  defp flatten_input(input, opts) do
+    with acc <- do_flatten(input, []) do
       if ordered_expressions?(opts) do
-        Enum.reverse(res)
+        Enum.reverse(acc)
       else
-        res
+        acc
       end
     end
   end
 
-  defp do_flatten([], acc), do: acc
+  # stop expansion
+  defp do_flatten([], acc) do
+    acc
+  end
 
-  defp do_flatten([head | tail], acc),
-    do: do_flatten(tail, do_flatten(head, acc))
+  # flatten keyword lists
+  defp do_flatten([{_, _} = head | tail] = _kwd, acc) do
+    do_flatten(tail, do_flatten(head, acc))
+  end
 
-  defp do_flatten({key, %_{} = struct}, acc),
-    do: [{key, struct} | acc]
+  # flatten single tuples
+  defp do_flatten({key, %_{} = struct}, acc) do
+    [{key, struct} | acc]
+  end
 
-  defp do_flatten({key, map}, acc) when is_map(map),
-    do: map |> Map.to_list() |> Enum.reduce(acc, fn kv, acc -> do_flatten({key, kv}, acc) end)
+  defp do_flatten({key, map}, acc) when is_map(map) do
+    do_flatten({key, Map.to_list(map)}, acc)
+  end
 
-  defp do_flatten({key, [{_, _} | _] = list}, acc),
-    do: Enum.reduce(list, acc, fn item, acc -> do_flatten({key, item}, acc) end)
+  # stop expansion
+  defp do_flatten({_key, []}, acc) do
+    acc
+  end
 
-  defp do_flatten({key, val}, acc),
-    do: [{key, val} | acc]
+  # flatten list of keyword tuples
+  defp do_flatten({key, [{_, _} = head | tail]}, acc) do
+    with acc <- do_flatten({key, head}, acc) do
+      do_flatten({key, tail}, acc)
+    end
+  end
 
-  defp do_flatten(map, acc) when is_map(map),
-    do: map |> Map.to_list() |> do_flatten(acc)
+  # return any other value as-is
+  defp do_flatten({key, val}, acc) do
+    [{key, val} | acc]
+  end
 
-  defp do_flatten(val, acc),
-    do: [val | acc]
+  # flatten top-level maps
+  defp do_flatten(map, acc) when is_map(map) do
+    map
+    |> Map.to_list()
+    |> do_flatten(acc)
+  end
+
+  # for all other types include them as-is
+  defp do_flatten(val, acc) do
+    [val | acc]
+  end
 
   defp ordered_expressions?(opts) do
-    opts[:ordered_expressions] ||
-      Config.ordered_expressions() ||
-      @ordered_expressions
+    opts[:ordered_expressions] || @ordered_expressions
   end
 end

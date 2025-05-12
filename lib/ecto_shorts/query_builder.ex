@@ -7,7 +7,7 @@ defmodule EctoShorts.QueryBuilder do
   generating query expressions based on filter keys and values. This allows
   filtering logic to be customized per schema or application context.
 
-  This module also provides utility functions like `apply_expression/3` for
+  This module also provides utility functions like `apply_expressions/3` for
   recursively applying transformations across nested filter structures.
   """
 

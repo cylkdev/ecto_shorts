@@ -1,3 +1,106 @@
+defmodule EctoShorts.CommonFiltersTest do
+  use ExUnit.Case, async: true
+  doctest EctoShorts.CommonFilters
+
+  alias EctoShorts.{
+    CommonFilters,
+    # Repo,
+    Schema.Post
+  }
+
+  import Ecto.Query
+  import EctoShorts.Testing, only: [assert_query: 2]
+
+  describe "&convert_params_to_filter/3" do
+    test "returns the base query when params are empty" do
+      expected_query = Post
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{}, [])
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query using equality when given a direct value" do
+      expected_query = from p in Post, where: p.id == ^1
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
+      assert_query actual_query, expected_query
+
+      # the field tags is an array string field
+      expected_query = from p in Post, where: ^"example" in p.tags
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{tags: "example"}, [])
+      assert_query actual_query, expected_query
+
+      expected_query = from p in Post, where: p.tags == ^["example"]
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{tags: ["example"]}, [])
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query using :== operator" do
+      expected_query = from p in Post, where: p.id == ^1
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{id: %{==: 1}}, [])
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query using :!= operator" do
+      expected_query = from p in Post, where: p.id != ^1
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{id: %{!=: 1}}, [])
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query using :> operator" do
+      expected_query = from p in Post, where: p.id > ^1
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{id: %{>: 1}}, [])
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query using :< operator" do
+      expected_query = from p in Post, where: p.id < ^1
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{id: %{<: 1}}, [])
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query using :>= operator" do
+      expected_query = from p in Post, where: p.id >= ^1
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{id: %{>=: 1}}, [])
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query using :<= operator" do
+      expected_query = from p in Post, where: p.id <= ^1
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{id: %{<=: 1}}, [])
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query using :ilike operator" do
+      expected_query = from p in Post, where: ilike(p.title, ^"%example%")
+
+      actual_query =
+        CommonFilters.convert_params_to_filter(Post, %{title: %{ilike: "example"}}, [])
+
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query using :like operator" do
+      expected_query = from p in Post, where: like(p.title, ^"%example%")
+
+      actual_query =
+        CommonFilters.convert_params_to_filter(Post, %{title: %{like: "example"}}, [])
+
+      assert_query actual_query, expected_query
+    end
+
+    test "builds a query with a join expression when the key is an association" do
+      expected_query =
+        from p in Post,
+          join: c in assoc(p, :comments),
+          as: :ecto_shorts_comments,
+          where: c.id == ^1
+
+      actual_query = CommonFilters.convert_params_to_filter(Post, %{comments: %{id: 1}}, [])
+
+      assert_query actual_query, expected_query
+    end
+  end
+end
+
 # defmodule EctoShorts.CommonFiltersTest do
 #   use ExUnit.Case, async: true
 #   doctest EctoShorts.CommonFilters

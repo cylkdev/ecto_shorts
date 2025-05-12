@@ -11,12 +11,12 @@ defmodule EctoShorts.SchemaHelpers do
   @type key :: atom()
   @type params :: map()
 
-  def schema_module_for_association(schema_module, key) do
+  def get_association_schema_module(schema_module, key) do
     case schema_module.__schema__(:association, key) do
       %{through: [field1, field2]} ->
         schema_module
-        |> schema_module_for_association(field1)
-        |> schema_module_for_association(field2)
+        |> get_association_schema_module(field1)
+        |> get_association_schema_module(field2)
 
       %{related: related} ->
         related

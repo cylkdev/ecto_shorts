@@ -109,12 +109,12 @@ defmodule EctoShorts.CommonSchemas do
     if function_exported?(module, :__schema__, 1) do
       module.__schema__(:source)
     else
-      CommonQuery.source_for_query(module)
+      CommonQuery.get_query_source(module)
     end
   end
 
   def schema_source_for(query) do
-    CommonQuery.source_for_query(query)
+    CommonQuery.get_query_source(query)
   end
 
   @doc group: "Introspection API"

@@ -3,60 +3,49 @@ defmodule EctoShorts.CommonFilters do
   Data-driven query composition for Ecto.
 
   `EctoShorts.CommonFilters` provides a declarative interface for building
-  Ecto queries using maps or keyword lists. It enables dynamic query generation
-  without requiring direct use of Ecto’s query DSL.
+  Ecto queries using maps or keyword lists. It enables dynamic query
+  generation without requiring direct use of Ecto’s query DSL.
 
-  This reduces boilerplate and makes it easier to build data-driven APIs where
-  filters are derived from user input or external sources.
+  This reduces boilerplate and makes it easier to build data-driven APIs
+  where filters are derived from user input or external sources.
 
   For example, rather than writing:
 
-  ```elixir
-  from p in Post,
-    where: p.id == 1,
-    join: c in assoc(p, :comments),
-    where: c.body == "example"
-  ```
+      from p in Post,
+        where: p.id == 1,
+        join: c in assoc(p, :comments),
+        where: c.body == "example"
 
   You can represent the same logic with:
 
-  ```elixir
-  %{id: 1, comments: %{body: "example"}}
-  ```
+      %{id: 1, comments: %{body: "example"}}
 
-  and pass it to convert_params_to_filter/2.
+  and pass it to `convert_params_to_filter/2`.
 
   ## Example Usage
 
   Find a post by ID:
 
-  ```elixir
-  iex> EctoShorts.CommonFilters.convert_params_to_filter(MyApp.Post, %{id: 1})
-  #Ecto.Query<from p in MyApp.Post, where: p.id == 1>
-  ```
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{id: 1})
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.id == ^1>
 
   Join on an association and filter nested fields:
 
-  ```elixir
-  iex> EctoShorts.CommonFilters.convert_params_to_filter(MyApp.Post, %{
-  ...>   id: 1,
-  ...>   comments: %{id: [1, 2], body: %{ilike: "example"}}
-  ...> })
-  #Ecto.Query<from p in MyApp.Post,
-    join: c in assoc(p, :comments),
-    where: p.id == 1 and c.id in [1, 2]
-      and ilike(c.body, "%example%")>
-  ```
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{
+      ...>   id: 1,
+      ...>   comments: %{id: [1, 2], body: %{ilike: "example"}}
+      ...> })
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, where: p0.id == ^1, where: c1.id in ^[1, 2], where: ilike(c1.body, ^"%example%")>
 
   ## Filters
 
   The filter API is split into two components:
 
     * `EctoShorts.QueryBuilders.Common` — Handles common filters like
-    pagination, ordering, and range-based conditions.
+      pagination, ordering, and range based conditions.
 
-    * `EctoShorts.QueryBuilders.Schema` — Handles schema-specific filters and
-    joins on associations or subqueries.
+    * `EctoShorts.QueryBuilders.Schema` — Handles schema specific
+      filters and joins on associations or subqueries.
   """
 
   alias EctoShorts.{
@@ -90,14 +79,41 @@ defmodule EctoShorts.CommonFilters do
   @doc since: "2.5.0"
   @doc """
   ...
+
+  ## Examples
+
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{id: 1})
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.id == ^1>
+
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(%{
+      ...>   query: EctoShorts.Schema.Post,
+      ...>   as: :post,
+      ...>   where: %{id: 1}
+      ...> })
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, where: p0.id == ^1>
   """
+  @spec convert_params_to_filter(query_source() | params()) :: query_source()
+  @spec convert_params_to_filter(query_source() | params(), params() | opts()) :: query_source()
+  def convert_params_to_filter(params, opts \\ [])
+
+  def convert_params_to_filter(query_source, params)
+      when is_atom(query_source) or is_struct(query_source) or is_tuple(query_source) do
+    convert_params_to_filter(query_source, params, [])
+  end
+
   def convert_params_to_filter(params, opts) when is_list(params) do
     params
     |> Map.new()
     |> convert_params_to_filter(opts)
   end
 
-  def convert_params_to_filter(%{query: query_source} = params, opts) do
+  def convert_params_to_filter(params, opts) do
+    {query_source, params} = Map.pop(params, :query)
+
+    if is_nil(query_source) do
+      raise KeyError, "key :query not found, got: #{inspect(params)}"
+    end
+
     {schema_module, params} = Map.pop(params, :queryable)
 
     schema_module =
@@ -111,13 +127,22 @@ defmodule EctoShorts.CommonFilters do
       CommonQueryAPI.from(
         query_source,
         binding_alias,
-        Map.take(params, [:as, :queryable, :prefix, :options])
+        Map.take(params, [:as, :prefix, :options])
       )
 
     params
-    |> Map.drop([:as, :queryable, :prefix, :options])
+    |> Map.drop([:as, :prefix, :options])
     |> Enum.reduce(query_source, fn {key, value}, query_source ->
-      QueryBuilder.build_query(query_source, binding_alias, schema_module, key, value, opts)
+      opts
+      |> query_builder_adapter()
+      |> QueryBuilder.build_query(
+        query_source,
+        binding_alias,
+        schema_module,
+        key,
+        value,
+        opts
+      )
     end)
   end
 
@@ -127,12 +152,13 @@ defmodule EctoShorts.CommonFilters do
   ## Examples
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{id: 1})
-      #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, where: p0.id == ^1>
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.id == ^1>
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(%{query: EctoShorts.Schema.Post, as: :post, where: %{id: 1}})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, where: p0.id == ^1>
   """
-  @spec convert_params_to_filter(query_source() | nil, params(), opts()) :: query_source()
+  @spec convert_params_to_filter(query_source(), params()) :: query_source()
+  @spec convert_params_to_filter(query_source(), params(), opts()) :: query_source()
   def convert_params_to_filter(query_source, params, _opts)
       when params === %{} or params === [] do
     query_source
@@ -140,10 +166,6 @@ defmodule EctoShorts.CommonFilters do
 
   def convert_params_to_filter(query_source, params, opts) when is_map(params) do
     convert_params_to_filter(query_source, Map.to_list(params), opts)
-  end
-
-  def convert_params_to_filter(nil, params, opts) do
-    convert_params_to_filter(params, opts)
   end
 
   def convert_params_to_filter(query_source, params, opts) do
@@ -210,12 +232,22 @@ defmodule EctoShorts.CommonFilters do
   @doc since: "2.5.0"
   @doc """
   ...
+
+  ## Examples
+
+      iex> EctoShorts.CommonFilters.filters()
+      [:after, :before, :end_date, :first, :ids, :last, :limit, :offset, :order_by, :preload, :search, :since, :start_date, :until, :join, :select, :select_merge, :or, :or_where, :where]
   """
   def filters, do: @filters
 
   @doc since: "2.5.0"
   @doc """
   ...
+
+  ## Examples
+
+      iex> EctoShorts.CommonFilters.filters([])
+      [:after, :before, :end_date, :first, :ids, :last, :limit, :offset, :order_by, :preload, :search, :since, :start_date, :until, :join, :select, :select_merge, :or, :or_where, :where]
   """
   def filters(opts) do
     opts
@@ -228,20 +260,23 @@ defmodule EctoShorts.CommonFilters do
   @doc """
   Builds a query based on a single filter key and value.
 
-  The schema module given as an argument must be the schema module
-  for the query being targeted by the binding_alias argument.
-  If the binding_alias is nil then the binding is the root query
-  and the schema module must be for the root query. If the binding_alias
-  given is an association then the schema module must be for that
-  association schema module.
+  The schema module given as an argument must be the schema module for the
+  query being targeted by the binding_alias argument. If the binding_alias
+  is nil then the binding is the root query and the schema module must be
+  for the root query. If the binding_alias given is an association then
+  the schema module must be for that association schema module.
 
   ## Examples
 
-      iex> build_query(Post, :post, Post, :limit, 10)
-      #Ecto.Query<from p in Post, limit: 10>
+      iex> import Ecto.Query
+      ...> query = from p in EctoShorts.Schema.Post, as: :post
+      ...> EctoShorts.CommonFilters.build_query(query, :post, EctoShorts.Schema.Post, :limit, 10)
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, limit: ^10>
 
-      iex> build_query(Post, :post, Post, :title, "Hello")
-      #Ecto.Query<from p in Post, where: p.title == "Hello">
+      iex> import Ecto.Query
+      ...> query = from p in EctoShorts.Schema.Post, as: :post
+      ...> EctoShorts.CommonFilters.build_query(query, :post, EctoShorts.Schema.Post, :title, "Hello")
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, where: p0.title == ^"Hello">
   """
   @spec build_query(
           query_source(),
