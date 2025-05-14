@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.Schema do
+defmodule EctoShorts.CommonFilters.Schema do
   @moduledoc since: "2.5.0"
   @moduledoc """
   ...
@@ -7,7 +7,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   alias EctoShorts.{
     CommonQuery,
     CommonQueryAPI,
-    ExpressionBuilder,
+    Utils,
     SchemaHelpers
   }
 
@@ -54,7 +54,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilders.Schema.filters()
+      iex> EctoShorts.CommonFilters.Schema.filters()
       [:from, :join, :select, :select_merge, :or, :or_where, :where]
   """
   @spec filters :: [filter()]
@@ -81,31 +81,31 @@ defmodule EctoShorts.QueryBuilders.Schema do
   ## Examples
 
       # joins association key
-      iex> EctoShorts.QueryBuilders.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :comments, %{id: 1}, [])
+      iex> EctoShorts.CommonFilters.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :comments, %{id: 1}, [])
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, where: c1.id == ^1>
 
       # joins association key with operator
-      iex> EctoShorts.QueryBuilders.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :comments, %{id: %{>=: 2}}, [])
+      iex> EctoShorts.CommonFilters.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :comments, %{id: %{>=: 2}}, [])
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, where: c1.id >= ^2>
 
       # join on association using query filter and on clause
-      iex> EctoShorts.QueryBuilders.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{association: %{comments: %{on: %{id: 2}}}}, [])
+      iex> EctoShorts.CommonFilters.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{association: %{comments: %{on: %{id: 2}}}}, [])
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, on: c1.id == ^2>
 
       # join on association using query filter, on clause and operator
-      iex> EctoShorts.QueryBuilders.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{association: %{comments: %{on: %{id: %{>=: 2}}}}}, [])
+      iex> EctoShorts.CommonFilters.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{association: %{comments: %{on: %{id: %{>=: 2}}}}}, [])
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, on: c1.id >= ^2>
 
       # join on association using query filter, where clause and operator
-      iex> EctoShorts.QueryBuilders.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{association: %{comments: %{id: %{>=: 2}}}}, [])
+      iex> EctoShorts.CommonFilters.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{association: %{comments: %{id: %{>=: 2}}}}, [])
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, where: c1.id >= ^2>
 
       # join one subquery
-      iex> EctoShorts.QueryBuilders.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{subquery: %{query: EctoShorts.Schema.Comment, where: %{id: 2}}}, [])
+      iex> EctoShorts.CommonFilters.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{subquery: %{query: EctoShorts.Schema.Comment, where: %{id: 2}}}, [])
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in subquery(from c0 in EctoShorts.Schema.Comment), as: :ecto_shorts_comment, on: true, where: c1.id == ^2>
 
       # join a list of subqueries
-      iex> EctoShorts.QueryBuilders.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{subquery: [%{query: EctoShorts.Schema.Comment, where: %{id: 2}}]}, [])
+      iex> EctoShorts.CommonFilters.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{subquery: [%{query: EctoShorts.Schema.Comment, where: %{id: 2}}]}, [])
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in subquery(from c0 in EctoShorts.Schema.Comment), as: :ecto_shorts_comment, on: true, where: c1.id == ^2>
   """
   @spec build_query(
@@ -190,7 +190,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   end
 
   defp build_schema_filter(query, binding_alias, schema_module, key, value, opts) do
-    ExpressionBuilder.apply_expressions(
+    Utils.apply_expressions(
       query,
       value,
       fn value, query ->

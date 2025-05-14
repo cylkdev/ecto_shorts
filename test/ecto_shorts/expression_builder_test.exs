@@ -1,4 +1,4 @@
-defmodule EctoShorts.ExpressionBuilderTest do
+defmodule EctoShorts.UtilsTest do
   use EctoShorts.DataCase, async: true
-  doctest EctoShorts.ExpressionBuilder
+  doctest EctoShorts.Utils
 end

@@ -21,8 +21,8 @@ Detailed API documentation for each module is automatically generated from the s
 ### Query Builder Modules
 
 - `EctoShorts.QueryBuilder` - Functions for building Ecto queries
-- `EctoShorts.QueryBuilders.Schema` - Schema-related query building functions
-- `EctoShorts.QueryBuilders.Common` - Common query building functions
+- `EctoShorts.CommonFilters.Schema` - Schema-related query building functions
+- `EctoShorts.CommonFilters.Common` - Common query building functions
 
 ## Filter Options
 

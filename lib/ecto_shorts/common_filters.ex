@@ -46,10 +46,10 @@ defmodule EctoShorts.CommonFilters do
 
   The filtering API is split between the following modules:
 
-    * `EctoShorts.QueryBuilders.Common` — Handles common filters like
+    * `EctoShorts.CommonFilters.Common` — Handles common filters like
       pagination, ordering, and range based conditions.
 
-    * `EctoShorts.QueryBuilders.Schema` — Handles schema specific
+    * `EctoShorts.CommonFilters.Schema` — Handles schema specific
       filters and joins on associations or subqueries.
 
   ## Query Builder adapter
@@ -62,8 +62,8 @@ defmodule EctoShorts.CommonFilters do
     CommonQueryAPI,
     CommonSchemas,
     QueryBuilder,
-    QueryBuilders.Common,
-    QueryBuilders.Schema
+    CommonFilters.Common,
+    CommonFilters.Schema
   }
 
   @type prefix :: binary()

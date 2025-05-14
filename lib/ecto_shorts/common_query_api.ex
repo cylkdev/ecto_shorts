@@ -29,8 +29,8 @@ defmodule EctoShorts.CommonQueryAPI do
   alias Ecto.Query
 
   alias EctoShorts.{
-    DynamicBuilder,
-    ExpressionBuilder
+    DynamicExpressionBuilder,
+    Utils
   }
 
   require Ecto.Query
@@ -136,11 +136,11 @@ defmodule EctoShorts.CommonQueryAPI do
     |> normalize_conditions()
     |> Enum.reduce(dynamic_source, fn
       {condition, params}, dynamic_source ->
-        ExpressionBuilder.apply_expressions(
+        Utils.apply_expressions(
           dynamic_source,
           params,
           fn {key, value}, dyn ->
-            DynamicBuilder.create_dynamic(
+            DynamicExpressionBuilder.create_dynamic(
               schema_module,
               dyn,
               binding_alias,
@@ -371,7 +371,7 @@ defmodule EctoShorts.CommonQueryAPI do
     if Map.has_key?(params, :expression) do
       query_select(query, binding_alias, params[:expression])
     else
-      ExpressionBuilder.apply_expressions(
+      Utils.apply_expressions(
         query,
         params,
         fn {key, value}, query ->
@@ -453,7 +453,7 @@ defmodule EctoShorts.CommonQueryAPI do
     if Map.has_key?(params, :expression) do
       query_select_merge(query, binding_alias, params[:expression])
     else
-      ExpressionBuilder.apply_expressions(
+      Utils.apply_expressions(
         query,
         params,
         fn {key, value}, query ->

@@ -536,7 +536,7 @@ defmodule EctoShorts.Actions do
            ) do
       {:ok,
        Config.repo!(opts).insert_all(
-         schema_module,
+         query_source,
          inserts,
          Keyword.merge(insert_opts, opts)
        )}
@@ -1063,9 +1063,7 @@ defmodule EctoShorts.Actions do
           {:ok, schema_struct()} | {:error, changeset() | any()}
   def find_and_create(query_source, find_params, create_params, opts \\ []) do
     with {:error, %{code: :not_found}} <- find(query_source, find_params, opts) do
-      query_source
-      |> CommonSchemas.get_schema_module()
-      |> create(create_params, opts)
+      create(query_source, create_params, opts)
     end
   end
 
@@ -1091,9 +1089,7 @@ defmodule EctoShorts.Actions do
           {:ok, schema_struct()} | {:error, changeset() | any()}
   def find_and_update(query_source, find_params, update_params, opts \\ []) do
     with {:ok, record} <- find(query_source, find_params, opts) do
-      query_source
-      |> CommonSchemas.get_schema_module()
-      |> update(record, update_params, opts)
+      update(query_source, record, update_params, opts)
     end
   end
 
@@ -1199,9 +1195,7 @@ defmodule EctoShorts.Actions do
              maybe_filter_queryable_params(params, query_source, opts),
              opts
            ) do
-      query_source
-      |> CommonSchemas.get_schema_module()
-      |> create(params, opts)
+      create(query_source, params, opts)
     end
   end
 
@@ -1475,9 +1469,7 @@ defmodule EctoShorts.Actions do
 
   def update(query_source, id, update_params, opts) when is_integer(id) or is_binary(id) do
     with {:ok, record} <- find(query_source, %{id: id}, opts) do
-      query_source
-      |> CommonSchemas.get_schema_module()
-      |> update(record, update_params, opts)
+      update(query_source, record, update_params, opts)
     end
   end
 
@@ -1816,14 +1808,21 @@ defmodule EctoShorts.Actions do
   end
 
   @doc false
-  def create_changeset(query_source, params, opts) do
-    schema_module = CommonSchemas.get_schema_module(query_source)
+  def create_changeset({schema_source, schema_module}, params, opts) do
+    if function_exported?(schema_module, :create_changeset, 1) and
+         not Keyword.has_key?(opts, :build_changeset) do
+      schema_module.create_changeset({schema_source, params})
+    else
+      CommonSchemas.build_changeset({schema_source, schema_module}, params, opts)
+    end
+  end
 
+  def create_changeset(schema_module, params, opts) do
     if function_exported?(schema_module, :create_changeset, 1) and
          not Keyword.has_key?(opts, :build_changeset) do
       schema_module.create_changeset(params)
     else
-      CommonSchemas.build_changeset(query_source, params, opts)
+      CommonSchemas.build_changeset(schema_module, params, opts)
     end
   end
 

@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicBuilders.Postgres do
+defmodule EctoShorts.DynamicExpressionBuilders.Postgres do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Build dynamic `where` and `or_where` filters for Postgres without
@@ -18,12 +18,12 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
 
   alias EctoShorts.{
     CommonQueryAPI,
-    DynamicBuilders.Postgres.Array,
-    DynamicBuilders.Postgres.Field,
+    DynamicExpressionBuilders.Postgres.Array,
+    DynamicExpressionBuilders.Postgres.Field,
     SchemaHelpers
   }
 
-  @behaviour EctoShorts.DynamicBuilder
+  @behaviour EctoShorts.DynamicExpressionBuilder
 
   @type schema_module :: Ecto.Queryable.t()
   @type schema_source :: binary()
@@ -38,7 +38,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
   @type operator :: any()
   @type params :: map()
 
-  @impl EctoShorts.DynamicBuilder
+  @impl EctoShorts.DynamicExpressionBuilder
   @doc """
   ...
   """

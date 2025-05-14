@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.Common do
+defmodule EctoShorts.CommonFilters.Common do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Provides common query-building functionality for `EctoShorts`.
@@ -8,14 +8,14 @@ defmodule EctoShorts.QueryBuilders.Common do
   ID filtering, and temporal filters.
 
   It is designed to be composable and reusable, working alongside
-  schema-specific query builders such as `EctoShorts.QueryBuilders.Schema`.
+  schema-specific query builders such as `EctoShorts.CommonFilters.Schema`.
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilders.Common.filters()
+      iex> EctoShorts.CommonFilters.Common.filters()
       [:after, :before, :end_date, :first, :ids, :last, :limit, :offset, :order_by, :preload, :search, :since, :start_date, :until]
 
-      iex> EctoShorts.QueryBuilders.Common.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :limit, 10)
+      iex> EctoShorts.CommonFilters.Common.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :limit, 10)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, limit: ^10>
   """
 
@@ -74,7 +74,7 @@ defmodule EctoShorts.QueryBuilders.Common do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilders.Common.filters()
+      iex> EctoShorts.CommonFilters.Common.filters()
       [:after, :before, :end_date, :first, :ids, :last, :limit, :offset, :order_by, :preload, :search, :since, :start_date, :until]
   """
   @spec filters() :: [filter()]
@@ -101,27 +101,27 @@ defmodule EctoShorts.QueryBuilders.Common do
 
   ## Examples
 
-      iex> EctoShorts.QueryBuilders.Common.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :ids, [1, 2, 3])
+      iex> EctoShorts.CommonFilters.Common.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :ids, [1, 2, 3])
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.id in ^[1, 2, 3]>
 
-      iex> EctoShorts.QueryBuilders.Common.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :limit, 5)
+      iex> EctoShorts.CommonFilters.Common.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :limit, 5)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, limit: ^5>
   """
   @spec build_query(
-    query_source(),
-    binding_alias() | nil,
-    schema_module(),
-    filter(),
-    value()
-  ) :: query() | schema_module()
+          query_source(),
+          binding_alias() | nil,
+          schema_module(),
+          filter(),
+          value()
+        ) :: query() | schema_module()
   @spec build_query(
-    query_source(),
-    binding_alias() | nil,
-    schema_module(),
-    filter(),
-    value(),
-    opts()
-  ) :: query() | schema_module()
+          query_source(),
+          binding_alias() | nil,
+          schema_module(),
+          filter(),
+          value(),
+          opts()
+        ) :: query() | schema_module()
   def build_query(query, binding_alias, schema_module, key, value, opts \\ [])
 
   def build_query(query, binding_alias, _schema_module, :ids, values, opts) do

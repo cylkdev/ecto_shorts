@@ -7,9 +7,18 @@ defmodule EctoShorts.ActionsTest do
   alias EctoShorts.Repo
 
   alias EctoShorts.Schema.{
+    AbstractPost,
     Post,
     PostNoPrimaryKeySchema
   }
+
+  def insert!(repo, {schema_source, schema_module}, params) do
+    schema_module
+    |> struct!()
+    |> Ecto.put_meta(source: schema_source)
+    |> schema_module.changeset(params)
+    |> repo.insert!()
+  end
 
   def insert!(repo, schema_module, params) do
     schema_module
@@ -24,6 +33,13 @@ defmodule EctoShorts.ActionsTest do
 
       assert %{%{title: "post_title"} => %EctoShorts.Schema.Post{title: "post_title"}} =
                Actions.batch(Post, [:title], [%{title: "post_title"}])
+    end
+
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert %{%{title: "post_title"} => %EctoShorts.Schema.AbstractPost{title: "post_title"}} =
+               Actions.batch({"posts", AbstractPost}, [:title], [%{title: "post_title"}])
     end
 
     test "raises if schema has no primary key and batch key not provided" do
@@ -46,6 +62,20 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, [%EctoShorts.Schema.Post{id: ^post_1_id, title: "post_1_title"}]} =
                Actions.batch_find(Post, [%{id: post_1_id, title: "post_1_title"}])
     end
+
+    test "can call with abstract source tuple" do
+      post_1 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_1_title"})
+
+      _post_2 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_2_title"})
+
+      post_1_id = post_1.id
+
+      assert {:ok, [%EctoShorts.Schema.AbstractPost{id: ^post_1_id, title: "post_1_title"}]} =
+               Actions.batch_find(
+                 {"posts", AbstractPost},
+                 [%{id: post_1_id, title: "post_1_title"}]
+               )
+    end
   end
 
   describe "batch_find/3" do
@@ -56,6 +86,15 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:ok, [%EctoShorts.Schema.Post{title: "post_2_title"}]} =
                Actions.batch_find(Post, [:title], [%{title: "post_2_title"}])
+    end
+
+    test "can call with abstract source tuple" do
+      _post_1 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_1_title"})
+
+      _post_2 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_2_title"})
+
+      assert {:ok, [%EctoShorts.Schema.AbstractPost{title: "post_2_title"}]} =
+               Actions.batch_find({"posts", AbstractPost}, [:title], [%{title: "post_2_title"}])
     end
 
     test "returns error when no matching records exist" do
@@ -74,10 +113,32 @@ defmodule EctoShorts.ActionsTest do
                 }
               ]} = Actions.batch_find(Post, [:title], [%{title: "does_not_exist"}])
     end
+
+    test "returns error message with abstract source tuple" do
+      assert {:error,
+              [
+                %ErrorMessage{
+                  code: :not_found,
+                  message: "Record not found.",
+                  details: %{
+                    failed_value: %{title: "does_not_exist"},
+                    match_keys: [:title],
+                    params: [%{title: "does_not_exist"}],
+                    position: 0,
+                    query: {"posts", AbstractPost}
+                  }
+                }
+              ]} =
+               Actions.batch_find(
+                 {"posts", AbstractPost},
+                 [:title],
+                 [%{title: "does_not_exist"}]
+               )
+    end
   end
 
   describe "batch_load/4" do
-    test "returns each param alongside its matching Post record" do
+    test "returns each param alongside its matching record" do
       post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
       post_2 = insert!(Repo, Post, %{title: "post_2_title"})
@@ -104,12 +165,45 @@ defmodule EctoShorts.ActionsTest do
                  ]
                )
     end
+
+    test "can call with abstract source tuple" do
+      post_1 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_1_title"})
+
+      post_2 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_2_title"})
+
+      post_3 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_3_title"})
+
+      post_4 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_4_title"})
+
+      assert [
+               {%EctoShorts.Schema.AbstractPost{title: "post_1_title"}, %{}},
+               {%EctoShorts.Schema.AbstractPost{title: "post_2_title"}, %{}},
+               {%EctoShorts.Schema.AbstractPost{title: "post_3_title"}, %{}},
+               {%EctoShorts.Schema.AbstractPost{title: "post_4_title"}, %{}},
+               %{title: "this_should_be_skipped"}
+             ] =
+               Actions.batch_load(
+                 {"posts", AbstractPost},
+                 [
+                   {post_1, %{}},
+                   {%{id: post_2.id}, %{}},
+                   %{id: post_3.id},
+                   %{id: post_4.id},
+                   %{title: "this_should_be_skipped"}
+                 ]
+               )
+    end
   end
 
   describe "insert_all/2" do
     test "creates new records and returns them with returning: true option" do
       assert {:ok, {1, [%EctoShorts.Schema.Post{title: "post_title"}]}} =
                Actions.insert_all(Post, [%{title: "post_title"}], returning: true)
+    end
+
+    test "can call with abstract source tuple" do
+      assert {:ok, {1, nil}} =
+               Actions.insert_all({"posts", AbstractPost}, [%{title: "post_title"}])
     end
 
     test "updates existing record when primary key is provided" do
@@ -162,6 +256,19 @@ defmodule EctoShorts.ActionsTest do
                )
     end
 
+    test "can call with abstract source tuple" do
+      _post_1 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_1_title"})
+
+      _post_2 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_2_title"})
+
+      assert {1, nil} =
+               Actions.update_all(
+                 {"posts", AbstractPost},
+                 %{title: "post_1_title"},
+                 %{title: "updated_post_1_title"}
+               )
+    end
+
     test "updates and returns matching records when select: true is specified" do
       _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
 
@@ -183,6 +290,12 @@ defmodule EctoShorts.ActionsTest do
       assert {1, nil} = Actions.delete_all(Post, %{})
     end
 
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert {1, nil} = Actions.delete_all({"posts", AbstractPost}, %{})
+    end
+
     test "deletes and returns matching records when select: true is specified" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
@@ -202,6 +315,21 @@ defmodule EctoShorts.ActionsTest do
                  %{title: "post_2_title"},
                  %{title: "post_2_title"}
                ])
+    end
+
+    test "can call with abstract source tuple" do
+      assert {:ok,
+              [
+                %EctoShorts.Schema.AbstractPost{title: "post_2_title"},
+                %EctoShorts.Schema.AbstractPost{title: "post_2_title"}
+              ]} =
+               Actions.find_or_create_many(
+                 {"posts", AbstractPost},
+                 [
+                   %{title: "post_2_title"},
+                   %{title: "post_2_title"}
+                 ]
+               )
     end
 
     test "returns existing records when matches are found" do
@@ -248,6 +376,38 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:permalink, ["has already been taken"]} in errors_on(changeset)
     end
+
+    test "returns error message with abstract source tuple" do
+      assert {:error,
+              %ErrorMessage{
+                code: :conflict,
+                message: "Failed to create record.",
+                details: %{
+                  query: {"posts", AbstractPost},
+                  changes_so_far: [
+                    %EctoShorts.Schema.AbstractPost{
+                      title: "post_1_title",
+                      permalink: "this_is_a_unique_field"
+                    }
+                  ],
+                  changeset: changeset,
+                  position: 1,
+                  params: [
+                    %{title: "post_1_title", permalink: "this_is_a_unique_field"},
+                    %{title: "post_2_title", permalink: "this_is_a_unique_field"}
+                  ]
+                }
+              }} =
+               Actions.find_or_create_many(
+                 {"posts", AbstractPost},
+                 [
+                   %{title: "post_1_title", permalink: "this_is_a_unique_field"},
+                   %{title: "post_2_title", permalink: "this_is_a_unique_field"}
+                 ]
+               )
+
+      assert {:permalink, ["has already been taken"]} in errors_on(changeset)
+    end
   end
 
   describe "find_and_update_many/3" do
@@ -265,6 +425,25 @@ defmodule EctoShorts.ActionsTest do
                  {%{title: "post_1_title"}, %{title: "updated_post_1_title"}},
                  {%{title: "post_2_title"}, %{title: "updated_post_2_title"}}
                ])
+    end
+
+    test "can call with abstract source tuple" do
+      _post_1 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_1_title"})
+
+      _post_2 = insert!(Repo, {"posts", AbstractPost}, %{title: "post_2_title"})
+
+      assert {:ok,
+              [
+                %EctoShorts.Schema.AbstractPost{title: "updated_post_1_title"},
+                %EctoShorts.Schema.AbstractPost{title: "updated_post_2_title"}
+              ]} =
+               Actions.find_and_update_many(
+                 {"posts", AbstractPost},
+                 [
+                   {%{title: "post_1_title"}, %{title: "updated_post_1_title"}},
+                   {%{title: "post_2_title"}, %{title: "updated_post_2_title"}}
+                 ]
+               )
     end
   end
 
@@ -296,6 +475,21 @@ defmodule EctoShorts.ActionsTest do
                  {%{title: "post_2_title"}, %{title: "updated_post_2_title"}}
                ])
     end
+
+    test "can call with abstract source tuple" do
+      assert {:ok,
+              [
+                %EctoShorts.Schema.AbstractPost{title: "created_post_2_title"},
+                %EctoShorts.Schema.AbstractPost{title: "created_post_2_title"}
+              ]} =
+               Actions.find_and_upsert_many(
+                 {"posts", AbstractPost},
+                 [
+                   {%{title: "post_1_does_not_exist"}, %{title: "created_post_2_title"}},
+                   {%{title: "post_2_does_not_exist"}, %{title: "created_post_2_title"}}
+                 ]
+               )
+    end
   end
 
   describe "create_many/3" do
@@ -310,6 +504,21 @@ defmodule EctoShorts.ActionsTest do
                  %{title: "post_2_title"}
                ])
     end
+
+    test "can call with abstract source tuple" do
+      assert {:ok,
+              [
+                %EctoShorts.Schema.AbstractPost{title: "post_1_title"},
+                %EctoShorts.Schema.AbstractPost{title: "post_2_title"}
+              ]} =
+               Actions.create_many(
+                 {"posts", AbstractPost},
+                 [
+                   %{title: "post_1_title"},
+                   %{title: "post_2_title"}
+                 ]
+               )
+    end
   end
 
   describe "find_many/3" do
@@ -318,6 +527,16 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:ok, [%EctoShorts.Schema.Post{title: "post_title"}]} =
                Actions.find_many(Post, [%{title: "post_title"}])
+    end
+
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert {:ok, [%EctoShorts.Schema.AbstractPost{title: "post_title"}]} =
+               Actions.find_many(
+                 {"posts", AbstractPost},
+                 [%{title: "post_title"}]
+               )
     end
 
     test "returns error when no matches exist" do
@@ -335,6 +554,27 @@ defmodule EctoShorts.ActionsTest do
                  }
                }
              } = Actions.find_many(Post, [%{title: "does_not_exist"}])
+    end
+
+    test "returns error message with abstract source tuple" do
+      assert {
+               :error,
+               %ErrorMessage{
+                 code: :not_found,
+                 message: "Record not found.",
+                 details: %{
+                   query: {"posts", AbstractPost},
+                   params: [%{title: "does_not_exist"}],
+                   failing_value: %{title: "does_not_exist"},
+                   position: 0,
+                   changes_so_far: []
+                 }
+               }
+             } =
+               Actions.find_many(
+                 {"posts", AbstractPost},
+                 [%{title: "does_not_exist"}]
+               )
     end
   end
 
@@ -380,6 +620,17 @@ defmodule EctoShorts.ActionsTest do
                })
     end
 
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "existing_post_title"})
+
+      assert {:ok, %EctoShorts.Schema.AbstractPost{title: "existing_post_title"}} =
+               Actions.find_and_create(
+                 {"posts", AbstractPost},
+                 %{title: "existing_post_title"},
+                 %{title: "created_post_title"}
+               )
+    end
+
     test "creates new record when no match exists" do
       assert {:ok, %EctoShorts.Schema.Post{title: "created_post_title"}} =
                Actions.find_and_create(Post, %{title: "existing_post_title"}, %{
@@ -400,9 +651,29 @@ defmodule EctoShorts.ActionsTest do
                )
     end
 
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "existing_post_title"})
+
+      assert {:ok, %EctoShorts.Schema.AbstractPost{title: "updated_post_title"}} =
+               Actions.find_and_update(
+                 {"posts", AbstractPost},
+                 %{title: "existing_post_title"},
+                 %{title: "updated_post_title"}
+               )
+    end
+
     test "returns error when no match exists" do
       assert {:error, %{code: :not_found}} =
                Actions.find_and_update(Post, %{title: "does_not_exist"}, %{})
+    end
+
+    test "returns error message with abstract source tuple" do
+      assert {:error, %{code: :not_found}} =
+               Actions.find_and_update(
+                 {"posts", AbstractPost},
+                 %{title: "does_not_exist"},
+                 %{}
+               )
     end
   end
 
@@ -411,6 +682,15 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, %EctoShorts.Schema.Post{title: "existing_post_title"}} =
                Actions.find_and_upsert(
                  Post,
+                 %{title: "existing_post_title"},
+                 %{title: "existing_post_title"}
+               )
+    end
+
+    test "can call with abstract source tuple" do
+      assert {:ok, %EctoShorts.Schema.AbstractPost{title: "existing_post_title"}} =
+               Actions.find_and_upsert(
+                 {"posts", AbstractPost},
                  %{title: "existing_post_title"},
                  %{title: "existing_post_title"}
                )
@@ -436,9 +716,21 @@ defmodule EctoShorts.ActionsTest do
                Actions.find_and_delete(Post, %{title: "post_title"})
     end
 
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert {:ok, %EctoShorts.Schema.AbstractPost{title: "post_title"}} =
+               Actions.find_and_delete({"posts", AbstractPost}, %{title: "post_title"})
+    end
+
     test "returns error when no matching record exists" do
       assert {:error, %{code: :not_found}} =
                Actions.find_and_delete(Post, %{title: "does_not_exist"})
+    end
+
+    test "returns error message with abstract source tuple" do
+      assert {:error, %{code: :not_found}} =
+               Actions.find_and_delete({"posts", AbstractPost}, %{title: "does_not_exist"})
     end
   end
 
@@ -448,6 +740,13 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:ok, %EctoShorts.Schema.Post{title: "post_title"}} =
                Actions.find_or_create(Post, %{title: "post_title"})
+    end
+
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "existing_post_title"})
+
+      assert {:ok, %EctoShorts.Schema.AbstractPost{title: "post_title"}} =
+               Actions.find_or_create({"posts", AbstractPost}, %{title: "post_title"})
     end
 
     test "creates a new record with given params when no match is found" do
@@ -461,6 +760,13 @@ defmodule EctoShorts.ActionsTest do
       post = insert!(Repo, Post, %{title: "post_title"})
 
       assert %EctoShorts.Schema.Post{title: "post_title"} = Actions.get(Post, post.id)
+    end
+
+    test "can call with abstract source tuple" do
+      post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert %EctoShorts.Schema.AbstractPost{title: "post_title"} =
+               Actions.get({"posts", AbstractPost}, post.id)
     end
   end
 
@@ -481,6 +787,23 @@ defmodule EctoShorts.ActionsTest do
 
       assert [^post] = Actions.all(Post)
     end
+
+    test "can call with abstract source tuple" do
+      post =
+        insert!(Repo, {"posts", AbstractPost}, %{
+          title: "post_title",
+          tags: ["post_tag"],
+          views: 1
+        })
+
+      assert %EctoShorts.Schema.AbstractPost{
+               title: "post_title",
+               tags: ["post_tag"],
+               views: 1
+             } = post
+
+      assert [^post] = Actions.all({"posts", AbstractPost})
+    end
   end
 
   describe "all/2" do
@@ -492,6 +815,15 @@ defmodule EctoShorts.ActionsTest do
       assert [%EctoShorts.Schema.Post{title: "post_2_title"}] =
                Actions.all(Post, %{title: "post_2_title"})
     end
+
+    test "can call with abstract source tuple" do
+      _post_1 = insert!(Repo, Post, %{title: "post_1_title"})
+
+      _post_2 = insert!(Repo, Post, %{title: "post_2_title"})
+
+      assert [%EctoShorts.Schema.AbstractPost{title: "post_2_title"}] =
+               Actions.all({"posts", AbstractPost}, %{title: "post_2_title"})
+    end
   end
 
   describe "create/2" do
@@ -500,12 +832,30 @@ defmodule EctoShorts.ActionsTest do
                Actions.create(Post, %{title: "post_title"})
     end
 
+    test "can call with abstract source tuple" do
+      assert {:ok, %EctoShorts.Schema.AbstractPost{title: "post_title"}} =
+               Actions.create({"posts", AbstractPost}, %{title: "post_title"})
+    end
+
     test "returns changeset errors when unique constraint is violated" do
       assert {:ok, %EctoShorts.Schema.Post{permalink: "this_is_a_unique_field"}} =
                Actions.create(Post, %{permalink: "this_is_a_unique_field"})
 
       assert {:error, changeset} =
                Actions.create(Post, %{permalink: "this_is_a_unique_field"})
+
+      assert {:permalink, ["has already been taken"]} in errors_on(changeset)
+    end
+
+    test "returns error message with abstract source tuple" do
+      assert {:ok, %EctoShorts.Schema.AbstractPost{permalink: "this_is_a_unique_field"}} =
+               Actions.create({"posts", AbstractPost}, %{permalink: "this_is_a_unique_field"})
+
+      assert {:error, changeset} =
+               Actions.create(
+                 {"posts", AbstractPost},
+                 %{permalink: "this_is_a_unique_field"}
+               )
 
       assert {:permalink, ["has already been taken"]} in errors_on(changeset)
     end
@@ -519,6 +869,13 @@ defmodule EctoShorts.ActionsTest do
                Actions.find(Post, %{title: "post_title"})
     end
 
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert {:ok, %EctoShorts.Schema.AbstractPost{title: "post_title"}} =
+               Actions.find({"posts", AbstractPost}, %{title: "post_title"})
+    end
+
     test "returns detailed not_found error when no record matches params" do
       assert {:error,
               %ErrorMessage{
@@ -530,6 +887,18 @@ defmodule EctoShorts.ActionsTest do
                 }
               }} = Actions.find(Post, %{title: "post_title"})
     end
+
+    test "returns error message with abstract source tuple" do
+      assert {:error,
+              %ErrorMessage{
+                code: :not_found,
+                message: "Record not found.",
+                details: %{
+                  query: {"posts", AbstractPost},
+                  params: %{title: "post_title"}
+                }
+              }} = Actions.find({"posts", AbstractPost}, %{title: "post_title"})
+    end
   end
 
   describe "update/3" do
@@ -540,6 +909,15 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:ok, %EctoShorts.Schema.Post{id: ^post_id, title: "updated_title"}} =
                Actions.update(Post, post_id, %{title: "updated_title"})
+    end
+
+    test "can call with abstract source tuple" do
+      post = insert!(Repo, {"posts", AbstractPost}, %{title: "created_title"})
+
+      post_id = post.id
+
+      assert {:ok, %EctoShorts.Schema.AbstractPost{id: ^post_id, title: "updated_title"}} =
+               Actions.update({"posts", AbstractPost}, post_id, %{title: "updated_title"})
     end
 
     test "can update record by struct" do
@@ -599,6 +977,13 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:ok, %EctoShorts.Schema.Post{title: "post_title"}} = Actions.delete(Post, post.id)
     end
+
+    test "can call with abstract source tuple" do
+      post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert {:ok, %EctoShorts.Schema.AbstractPost{title: "post_title"}} =
+               Actions.delete({"posts", AbstractPost}, post.id)
+    end
   end
 
   describe "stream/2" do
@@ -612,6 +997,17 @@ defmodule EctoShorts.ActionsTest do
                  |> Enum.to_list()
                end)
     end
+
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert {:ok, [%EctoShorts.Schema.AbstractPost{title: "post_title"}]} =
+               Repo.transaction(fn ->
+                 {"posts", AbstractPost}
+                 |> Actions.stream(%{})
+                 |> Enum.to_list()
+               end)
+    end
   end
 
   describe "aggregate/4" do
@@ -619,6 +1015,12 @@ defmodule EctoShorts.ActionsTest do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
       assert 1 = Actions.aggregate(Post, %{}, :count, :id)
+    end
+
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert 1 = Actions.aggregate({"posts", AbstractPost}, %{}, :count, :id)
     end
   end
 
@@ -674,6 +1076,15 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:error, %{code: :not_found}} =
                Actions.find(Post, %{permalink: "this_is_a_unique_field"})
+    end
+
+    test "can call with abstract source tuple" do
+      _post = insert!(Repo, {"posts", AbstractPost}, %{title: "post_title"})
+
+      assert {:ok, [%EctoShorts.Schema.AbstractPost{title: "post_title"}]} =
+               Actions.transaction(fn ->
+                 Actions.all({"posts", AbstractPost}, %{})
+               end)
     end
   end
 end

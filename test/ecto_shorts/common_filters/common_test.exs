@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryBuilders.CommonTest do
+defmodule EctoShorts.CommonFilters.CommonTest do
   use ExUnit.Case, async: true
-  doctest EctoShorts.QueryBuilders.Common
+  doctest EctoShorts.CommonFilters.Common
 
-  alias EctoShorts.QueryBuilders.Common
+  alias EctoShorts.CommonFilters.Common
   alias EctoShorts.Support.Schema.Comment
 
   describe "filters: " do

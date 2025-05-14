@@ -1,8 +1,8 @@
-defmodule EctoShorts.DynamicBuilders.PostgresTest do
+defmodule EctoShorts.DynamicExpressionBuilders.PostgresTest do
   use ExUnit.Case, async: true
-  doctest EctoShorts.DynamicBuilders.Postgres
+  doctest EctoShorts.DynamicExpressionBuilders.Postgres
 
-  alias EctoShorts.DynamicBuilders.Postgres
+  alias EctoShorts.DynamicExpressionBuilders.Postgres
   alias EctoShorts.Schema.Post
 
   import Ecto.Query, only: [dynamic: 2]

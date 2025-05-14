@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicBuilders.Postgres.Array do
+defmodule EctoShorts.DynamicExpressionBuilders.Postgres.Array do
   @moduledoc since: "2.5.0"
   @moduledoc """
   ...
