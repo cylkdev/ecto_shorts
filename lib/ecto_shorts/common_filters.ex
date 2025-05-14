@@ -32,20 +32,30 @@ defmodule EctoShorts.CommonFilters do
   Join on an association and filter nested fields:
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{
-      ...>   id: 1,
-      ...>   comments: %{id: [1, 2], body: %{ilike: "example"}}
+      ...>    id: 1,
+      ...>    comments: %{
+      ...>      id: [1, 2],
+      ...>      body: %{
+      ...>        ilike: "example"
+      ...>      }
+      ...>    }
       ...> })
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, where: p0.id == ^1, where: c1.id in ^[1, 2], where: ilike(c1.body, ^"%example%")>
 
-  ## Filters
+  ## Filter API
 
-  The filter API is split into two components:
+  The filtering API is split between the following modules:
 
     * `EctoShorts.QueryBuilders.Common` — Handles common filters like
       pagination, ordering, and range based conditions.
 
     * `EctoShorts.QueryBuilders.Schema` — Handles schema specific
       filters and joins on associations or subqueries.
+
+  ## Query Builder adapter
+
+  This module is an implementation of the `EctoShorts.QueryBuilder` adapter.
+  See the module documentation for information on building your own.
   """
 
   alias EctoShorts.{
@@ -324,14 +334,14 @@ defmodule EctoShorts.CommonFilters do
   """
   @spec build_query(
           query_source(),
-          binding_alias(),
+          binding_alias() | nil,
           schema_module(),
           key(),
           value()
         ) :: query_source()
   @spec build_query(
           query_source(),
-          binding_alias(),
+          binding_alias() | nil,
           schema_module(),
           key(),
           value(),

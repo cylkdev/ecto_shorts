@@ -16,7 +16,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Array do
   @doc """
   ...
   """
-  @spec create_dynamic(binding_alias(), any(), operator(), any()) :: dynamic_expr()
+  @spec create_dynamic(binding_alias() | nil, any(), operator(), any()) :: dynamic_expr()
   def create_dynamic(binding_alias, value, :=~, key) do
     if binding_alias do
       Query.dynamic(

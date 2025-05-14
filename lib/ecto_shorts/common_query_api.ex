@@ -104,7 +104,7 @@ defmodule EctoShorts.CommonQueryAPI do
       iex>  import Ecto.Query
       ...>  EctoShorts.CommonQueryAPI.dynamic(nil, dynamic([q], q.id == 1))
   """
-  @spec dynamic(binding_alias(), value()) :: dynamic_expr()
+  @spec dynamic(binding_alias() | nil, value()) :: dynamic_expr()
   def dynamic(binding_alias, value) do
     if binding_alias do
       Query.dynamic([{^binding_alias, q}], ^value)
@@ -115,7 +115,7 @@ defmodule EctoShorts.CommonQueryAPI do
 
   @spec dynamic(
           schema_module(),
-          binding_alias(),
+          binding_alias() | nil,
           params(),
           opts()
         ) :: dynamic_expr()
@@ -177,7 +177,7 @@ defmodule EctoShorts.CommonQueryAPI do
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post>
   """
   @spec from(query_source(), binding_alias()) :: query()
-  @spec from(query_source(), binding_alias(), params()) :: query()
+  @spec from(query_source(), binding_alias() | nil, params()) :: query()
   def from(query, binding_alias, params \\ %{}) do
     prefix = params[:prefix]
 
@@ -252,7 +252,7 @@ defmodule EctoShorts.CommonQueryAPI do
 
       iex> EctoShorts.CommonQueryAPI.limit(EctoShorts.Schema.Post, nil, 10)
   """
-  @spec limit(query_source(), binding_alias(), value()) :: query()
+  @spec limit(query_source(), binding_alias() | nil, value()) :: query()
   def limit(query, binding_alias, value) do
     if binding_alias do
       Query.limit(query, [{^binding_alias, q}], ^value)
@@ -269,7 +269,7 @@ defmodule EctoShorts.CommonQueryAPI do
       iex> EctoShorts.CommonQueryAPI.offset(EctoShorts.Schema.Post, nil, 20)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, offset: ^20>
   """
-  @spec offset(query_source(), binding_alias(), value()) :: query()
+  @spec offset(query_source(), binding_alias() | nil, value()) :: query()
   def offset(query, binding_alias, value) do
     if binding_alias do
       Query.offset(query, [{^binding_alias, q}], ^value)
@@ -286,7 +286,7 @@ defmodule EctoShorts.CommonQueryAPI do
       iex> EctoShorts.CommonQueryAPI.group_by(EctoShorts.Schema.Post, nil, :id)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, group_by: [p0.id]>
   """
-  @spec group_by(query_source(), binding_alias(), value()) :: query()
+  @spec group_by(query_source(), binding_alias() | nil, value()) :: query()
   def group_by(query, binding_alias, value) do
     if binding_alias do
       Query.group_by(query, [{^binding_alias, q}], ^value)
@@ -303,7 +303,7 @@ defmodule EctoShorts.CommonQueryAPI do
       iex> EctoShorts.CommonQueryAPI.order_by(EctoShorts.Schema.Post, nil, [asc: :inserted_at])
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, order_by: [asc: p0.inserted_at]>
   """
-  @spec order_by(query_source(), binding_alias(), value()) :: query()
+  @spec order_by(query_source(), binding_alias() | nil, value()) :: query()
   def order_by(query, binding_alias, value) do
     if binding_alias do
       Query.order_by(query, [{^binding_alias, q}], ^value)
@@ -320,7 +320,7 @@ defmodule EctoShorts.CommonQueryAPI do
       iex> EctoShorts.CommonQueryAPI.preload(EctoShorts.Schema.Post, nil, :comments)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, preload: [:comments]>
   """
-  @spec preload(query_source(), binding_alias(), value()) :: query()
+  @spec preload(query_source(), binding_alias() | nil, value()) :: query()
   def preload(query, binding_alias, value) do
     if binding_alias do
       Query.preload(query, [{^binding_alias, q}], ^value)
@@ -352,7 +352,7 @@ defmodule EctoShorts.CommonQueryAPI do
       ...> EctoShorts.CommonQueryAPI.select(query, nil, %{expression: expr})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, select: [:id, :title]>
   """
-  @spec select(query_source(), binding_alias(), params() | true, opts()) :: query()
+  @spec select(query_source(), binding_alias() | nil, params() | true, opts()) :: query()
   def select(query, binding_alias, value, opts \\ [])
 
   def select(query, binding_alias, true, _opts) do
@@ -434,7 +434,7 @@ defmodule EctoShorts.CommonQueryAPI do
       ...> EctoShorts.CommonQueryAPI.select_merge(query, nil, %{expression: expr})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, select: map(p0, [:id, :title])>
   """
-  @spec select_merge(query_source(), binding_alias(), params() | true, opts()) :: query()
+  @spec select_merge(query_source(), binding_alias() | nil, params() | true, opts()) :: query()
   def select_merge(query, binding_alias, value, opts \\ [])
 
   def select_merge(query, binding_alias, true, _opts) do

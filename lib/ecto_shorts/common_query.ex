@@ -141,44 +141,45 @@ defmodule EctoShorts.CommonQuery do
 
   Ecto queries can be composed using different layers like schemas,
   subqueries, or pre-built query structs. This function walks through
-  any of those forms and returns the final `%Ecto.Query.FromExpr{}`
-  that describes the base table and schema.
+  any of those forms and returns the final Ecto Query from expression
+  struct that describes the base table and schema.
 
-  In an `Ecto.Query.FromExpr`, the `:source` field can be one of the
-  following types:
+  In an Ecto Query from expression struct, the `:source` field can be
+  one of the following types:
 
-  1. `{binary(), queryable()} Tuple`
+  1. A tuple of `{schema_source(), schema_module()}` tuple:
 
-  This is the most common form:
+    This is the most common form:
 
-      {"posts", MyApp.Post}
+        {"posts", MyApp.Post}
 
-  The binary represents the table name (e.g. "posts").
+    The `schema_source` represents the database table name (e.g. "posts")
+    and can be `nil`.
 
-  The second element is a `queryable`, typically a schema module like
-  `MyApp.Post`.
+    The second element is a module that implements the `Ecto.Queryable`
+    protocol (this is usually the module where you define `use Ecto.Schema`).
 
-  This format appears when you build queries directly from schema
-  modules or explicitly specify a source.
+    This format appears when you build queries directly from schema modules
+    or explicitly specify a source.
 
-  2. An Ecto.Query.t()
+  2. An Ecto.Query Struct:
 
-  This can happen when you pass a base query directly into another
-  from expression:
+    This can happen when you pass a base query directly into another
+    from expression:
 
-      query = from p in Post, where: p.published == true
-      outer = from p in query
+        query = from p in Post, where: p.published == true
+        outer = from p in query
 
-  Here, `outer.from.source` will hold the inner Ecto.Query struct.
+    Here, `outer.from.source` will hold the inner `Ecto.Query` struct.
 
-  3. An %Ecto.SubQuery{} Struct
+  3. An Ecto SubQuery Struct:
 
   This occurs when you wrap a query with subquery/1:
 
       inner = from p in Post, where: p.published == true
       outer = from p in subquery(inner), as: :post
 
-  In this case, `outer.from.source` will be a %Ecto.SubQuery{} struct.
+  In this case, `outer.from.source` will be a `Ecto.SubQuery` struct.
   """
   @spec get_from_expr(query_input()) :: from_expr()
   def get_from_expr(%{source: {_, _}} = from_expr), do: from_expr

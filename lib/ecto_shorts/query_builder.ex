@@ -1,14 +1,58 @@
 defmodule EctoShorts.QueryBuilder do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  Defines the query builder behavior for custom filter adapters.
+  `EctoShorts.QueryBuilder` defines the behavior for building custom
+  filters into Ecto queries.
 
-  Modules implementing `EctoShorts.QueryBuilder` are responsible for
-  generating query expressions based on filter keys and values. This allows
-  filtering logic to be customized per schema or application context.
+  A query builder is responsible for interpreting parameters like
+  `%{id: 1}` or `%{limit: 5}` and implementing the filtering logic
+  like `where` or `limit` clauses.
 
-  This module also provides utility functions like `apply_expressions/3` for
-  recursively applying transformations across nested filter structures.
+  This module lets you plug in your own adapter that knows how to
+  turn those filter parameters into real Ecto queries giving you
+  full control of how your queries are composed.
+
+  This allows you to:
+
+    - Build queries based on parameters you define which can be
+      changed at any time.
+
+    - Apply filters consistently across different parts of your app.
+
+    - Extend Ecto's filtering capabilities using things such as
+      fragments to access the underlying database functionality.
+
+  ## Creating your own Adapter
+
+  Suppose you want `limit` the amount of records returned in the result.
+
+  You could implement your own adapter like this:
+
+      defmodule MyApp.QueryBuilder do
+        @behaviour EctoShorts.QueryBuilder
+
+        alias Ecto.Query
+
+        require Ecto.Query
+
+        def filters, do: [:limit]
+
+        def build_query(query, _binding_alias, _schema_module, :limit, value, _opts) do
+          if binding_alias do
+            Query.limit(query, [{^binding_alias, q}], ^value)
+          else
+            Query.limit(query, [q], ^value)
+          end
+        end
+      end
+
+  Then use it like this:
+
+      EctoShorts.QueryBuilder.build_query(MyApp.QueryBuilder, Post, nil, Post, :limit, 5)
+
+  which returns the new query with the filter applied:
+
+      #Ecto.Query<from p0 in Post, limit: ^5>
   """
 
   @type query :: Ecto.Query.t()
@@ -29,7 +73,7 @@ defmodule EctoShorts.QueryBuilder do
   @type opts :: keyword()
 
   @doc """
-  Returns a list of supported filters that can be used with this query builder.
+  Returns a list of supported filters for the adapter.
   """
   @callback filters :: filters()
 
@@ -55,17 +99,30 @@ defmodule EctoShorts.QueryBuilder do
 
   ## Return
 
-  A new query with the filter applied.
+  This function must return the given the new query with the filter applied,
+  for example:
 
-  ## Example
+      defmodule MyApp.QueryBuilder do
+        @behaviour EctoShorts.QueryBuilder
 
-      def build_query(query, :post, Post, :title, %{ilike: "hello"}) do
-        where(query, [post: p], ilike(p.title, ^"%hello%"))
+        alias Ecto.Query
+
+        require Ecto.Query
+
+        def filters, do: [:limit]
+
+        def build_query(query, _binding_alias, _schema_module, :limit, value, _opts) do
+          if binding_alias do
+            Query.limit(query, [{^binding_alias, q}], ^value)
+          else
+            Query.limit(query, [q], ^value)
+          end
+        end
       end
   """
   @callback build_query(
               query_source(),
-              binding_alias(),
+              binding_alias() | nil,
               schema_module(),
               key(),
               value(),
@@ -87,8 +144,8 @@ defmodule EctoShorts.QueryBuilder do
 
     * If `:query_builder_adapter` is present in the options, it is used.
 
-    * Otherwise, the `:query_builder_adapter` option configured in application
-      environment is checked.
+    * Otherwise, the `:query_builder_adapter` option configured in
+      application environment is checked.
 
     * If neither is set, the default is `EctoShorts.CommonFilters`.
 
@@ -100,7 +157,7 @@ defmodule EctoShorts.QueryBuilder do
   @spec build_query(
           adapter(),
           query_source(),
-          binding_alias(),
+          binding_alias() | nil,
           schema_module(),
           key(),
           value()
@@ -108,7 +165,7 @@ defmodule EctoShorts.QueryBuilder do
   @spec build_query(
           adapter(),
           query_source(),
-          binding_alias(),
+          binding_alias() | nil,
           schema_module(),
           key(),
           value(),

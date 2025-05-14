@@ -45,7 +45,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
   @spec create_dynamic(
           schema_module(),
           maybe_dynamic_expr(),
-          binding_alias(),
+          binding_alias() | nil,
           condition(),
           key(),
           value()

@@ -110,14 +110,14 @@ defmodule EctoShorts.QueryBuilders.Schema do
   """
   @spec build_query(
           query_source(),
-          binding_alias(),
+          binding_alias() | nil,
           schema_module(),
           key(),
           value()
         ) :: query() | schema_module()
   @spec build_query(
           query_source(),
-          binding_alias(),
+          binding_alias() | nil,
           schema_module(),
           key(),
           value(),

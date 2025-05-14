@@ -15,7 +15,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Field do
   @doc """
   ...
   """
-  @spec create_dynamic(binding_alias(), any(), operator(), any()) :: dynamic_expr()
+  @spec create_dynamic(binding_alias() | nil, any(), operator(), any()) :: dynamic_expr()
   def create_dynamic(binding_alias, key, :=~, value) do
     if binding_alias do
       Query.dynamic([{^binding_alias, q}], fragment("? ~* ?", field(q, ^key), ^value))

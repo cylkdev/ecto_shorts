@@ -107,10 +107,21 @@ defmodule EctoShorts.QueryBuilders.Common do
       iex> EctoShorts.QueryBuilders.Common.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :limit, 5)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, limit: ^5>
   """
-  @spec build_query(query_source(), binding_alias(), schema_module(), filter(), value()) ::
-          query() | schema_module()
-  @spec build_query(query_source(), binding_alias(), schema_module(), filter(), value(), opts()) ::
-          query() | schema_module()
+  @spec build_query(
+    query_source(),
+    binding_alias() | nil,
+    schema_module(),
+    filter(),
+    value()
+  ) :: query() | schema_module()
+  @spec build_query(
+    query_source(),
+    binding_alias() | nil,
+    schema_module(),
+    filter(),
+    value(),
+    opts()
+  ) :: query() | schema_module()
   def build_query(query, binding_alias, schema_module, key, value, opts \\ [])
 
   def build_query(query, binding_alias, _schema_module, :ids, values, opts) do
