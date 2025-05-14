@@ -534,14 +534,14 @@ defmodule EctoShorts.CommonQuery do
         case from_expr.source do
           {_schema_source, schema_module} ->
             schema_module
-            |> SchemaHelpers.get_association_schema_module(assoc_key)
+            |> SchemaHelpers.fetch_association_schema_module!(assoc_key)
             |> normalize_source_and_schema_tuple()
 
           %{source: _} = _query ->
             from_expr
             |> get_from_expr(:source)
             |> elem(1)
-            |> SchemaHelpers.get_association_schema_module(assoc_key)
+            |> SchemaHelpers.fetch_association_schema_module!(assoc_key)
             |> normalize_source_and_schema_tuple()
 
           %{query: query} = _subquery ->
@@ -549,7 +549,7 @@ defmodule EctoShorts.CommonQuery do
             |> get_source_subquery(:query)
             |> get_from_expr(:source)
             |> elem(1)
-            |> SchemaHelpers.get_association_schema_module(assoc_key)
+            |> SchemaHelpers.fetch_association_schema_module!(assoc_key)
             |> normalize_source_and_schema_tuple()
         end
 

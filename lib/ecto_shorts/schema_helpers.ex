@@ -5,12 +5,80 @@ defmodule EctoShorts.SchemaHelpers do
   Ecto schema data.
   """
 
+  @type ecto_type :: Ecto.Type.t()
   @type schema_module :: Ecto.Queryable.t()
   @type schema_struct :: Ecto.Schema.t()
 
   @type key :: atom()
   @type params :: map()
 
+  @doc """
+  This is a simple wrapper function for `get_association_schema_module/2`
+  that returns the atom `:error` if the association key is not found on
+  the given Ecto schema module.
+
+  ## Examples
+
+      iex> EctoShorts.SchemaHelpers.fetch_association_schema_module!(EctoShorts.Schema.Post, :comments)
+      EctoShorts.Schema.Comment
+
+      iex> EctoShorts.SchemaHelpers.fetch_association_schema_module!(EctoShorts.Schema.Post, :comments_authors)
+      EctoShorts.Schema.User
+
+      iex> EctoShorts.SchemaHelpers.fetch_association_schema_module!(EctoShorts.Schema.Post, :does_not_exist)
+      ** (ArgumentError) association key not found for the schema EctoShorts.Schema.Post, got: :does_not_exist
+  """
+  @spec fetch_association_schema_module!(schema_module(), key()) :: schema_module()
+  def fetch_association_schema_module!(schema_module, key) do
+    with :error <- fetch_association_schema_module(schema_module, key) do
+      raise ArgumentError,
+            "association key not found for the schema #{inspect(schema_module)}, got: #{inspect(key)}"
+    end
+  end
+
+  @doc """
+  This is a simple wrapper function for `get_association_schema_module/2`
+  that returns the atom `:error` if the association key is not found on
+  the given Ecto schema module.
+
+  ## Examples
+
+      iex> EctoShorts.SchemaHelpers.fetch_association_schema_module(EctoShorts.Schema.Post, :comments)
+      EctoShorts.Schema.Comment
+
+      iex> EctoShorts.SchemaHelpers.fetch_association_schema_module(EctoShorts.Schema.Post, :comments_authors)
+      EctoShorts.Schema.User
+
+      iex> EctoShorts.SchemaHelpers.fetch_association_schema_module(EctoShorts.Schema.Post, :does_not_exist)
+      :error
+  """
+  @spec fetch_association_schema_module(schema_module(), key()) :: schema_module() | :error
+  def fetch_association_schema_module(schema_module, key) do
+    with nil <- get_association_schema_module(schema_module, key) do
+      :error
+    end
+  end
+
+  @doc """
+  Recursively resolves the related schema module for an association
+  key on a given schema module.
+
+  This function handles both direct and `:through` associations.
+  For `:through` associations, it recursively follows the
+  association path until it reaches the final related schema.
+
+  ## Examples
+
+      iex> EctoShorts.SchemaHelpers.get_association_schema_module(EctoShorts.Schema.Post, :comments)
+      EctoShorts.Schema.Comment
+
+      iex> EctoShorts.SchemaHelpers.get_association_schema_module(EctoShorts.Schema.Post, :comments_authors)
+      EctoShorts.Schema.User
+
+      iex> EctoShorts.SchemaHelpers.get_association_schema_module(EctoShorts.Schema.Post, :does_not_exist)
+      nil
+  """
+  @spec get_association_schema_module(schema_module(), key()) :: schema_module() | nil
   def get_association_schema_module(schema_module, key) do
     case schema_module.__schema__(:association, key) do
       %{through: [field1, field2]} ->
@@ -20,9 +88,29 @@ defmodule EctoShorts.SchemaHelpers do
 
       %{related: related} ->
         related
+
+      nil ->
+        nil
     end
   end
 
+  @doc """
+  Checks if the type of a given field on a schema is an array type.
+
+  This is useful when you want to handle fields differently based
+  on whether they store multiple values (e.g. `{:array, :string}`)
+  or a single value.
+
+  ## Examples
+
+      iex> EctoShorts.SchemaHelpers.field_type_of_array?(EctoShorts.Schema.Post, :tags)
+      true
+
+      iex> EctoShorts.SchemaHelpers.field_type_of_array?(EctoShorts.Schema.Post, :title)
+      false
+
+  """
+  @spec field_type_of_array?(schema_module(), key()) :: boolean()
   def field_type_of_array?(schema_module, key) do
     case field_type(schema_module, key) do
       {:array, _} -> true
@@ -30,6 +118,24 @@ defmodule EctoShorts.SchemaHelpers do
     end
   end
 
+  @doc """
+  Returns the declared Ecto type of a given field in a schema.
+
+  This uses the schema's `__schema__/2` introspection to
+  retrieve the field type, which can be a primitive type
+  (e.g. `:string`, `:integer`) or a composite like
+  `{:array, :string}`.
+
+  ## Examples
+
+      iex> EctoShorts.SchemaHelpers.field_type(EctoShorts.Schema.Post, :title)
+      :string
+
+      iex> EctoShorts.SchemaHelpers.field_type(EctoShorts.Schema.Post, :tags)
+      {:array, :string}
+
+  """
+  @spec field_type(schema_module(), key()) :: ecto_type() | nil
   def field_type(schema_module, key) do
     schema_module.__schema__(:type, key)
   end
@@ -68,10 +174,9 @@ defmodule EctoShorts.SchemaHelpers do
   """
   @spec association_not_loaded?(schema_struct(), key()) :: boolean()
   def association_not_loaded?(schema_struct, key) do
-    case Map.get(schema_struct, key) do
-      not_loaded when is_struct(not_loaded, Ecto.Association.NotLoaded) -> true
-      _ -> false
-    end
+    schema_struct
+    |> Map.get(key)
+    |> is_struct(Ecto.Association.NotLoaded)
   end
 
   @doc """
@@ -439,7 +544,7 @@ defmodule EctoShorts.SchemaHelpers do
 
       # Example for a schema with composite primary keys (for illustration)
       iex> EctoShorts.SchemaHelpers.primary_key(EctoShorts.Schema.CompositePrimaryKey)
-      [:post_id, :comment_id]
+      [:comment_id, :post_id]
   """
   def primary_key(schema_module) do
     schema_module.__schema__(:primary_key)

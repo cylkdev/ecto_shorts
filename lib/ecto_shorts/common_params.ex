@@ -105,7 +105,8 @@ defmodule EctoShorts.CommonParams do
     |> put_update_command_set_updated_at(utc_now, schema_module, opts)
   end
 
-  defp put_update_command_set_updated_at(keyword, datetime, schema_module, opts) do
+  @doc false
+  def put_update_command_set_updated_at(keyword, datetime, schema_module, opts) do
     updated_at_source = opts[:updated_at] || opts[:updated_at_source] || @updated_at
 
     datetime = prepare_timestamp_updated_at(datetime, updated_at_source, schema_module, opts)
@@ -118,17 +119,20 @@ defmodule EctoShorts.CommonParams do
     )
   end
 
-  defp flatten_update_commands(grouped_tuples) do
+  @doc false
+  def flatten_update_commands(grouped_tuples) do
     Enum.map(grouped_tuples, fn {action, tuples} ->
       {action, Keyword.new(tuples, fn {_action, field, value} -> {field, value} end)}
     end)
   end
 
-  defp group_update_commands_by_action(tuples) do
+  @doc false
+  def group_update_commands_by_action(tuples) do
     Enum.group_by(tuples, fn {action, _field, _value} -> action end)
   end
 
-  defp normalize_update_commands(params, schema_module) do
+  @doc false
+  def normalize_update_commands(params, schema_module) do
     Enum.reduce(params, [], &normalize_update_commands(&1, schema_module, &2))
   end
 
@@ -263,7 +267,8 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp serialize_insert(schema_module, data, changed_keys, utc_now, opts) do
+  @doc false
+  def serialize_insert(schema_module, data, changed_keys, utc_now, opts) do
     data
     |> Map.take(schema_module.__schema__(:query_fields))
     |> drop_if_value_nil_and_not_a_change(changed_keys)
@@ -437,7 +442,8 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp changeset_action(schema_module, data) do
+  @doc false
+  def changeset_action(schema_module, data) do
     if SchemaHelpers.primary_key?(schema_module, data) do
       :update
     else
@@ -445,28 +451,32 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp get_struct_changed_keys(struct, schema_module, opts) do
+  @doc false
+  def get_struct_changed_keys(struct, schema_module, opts) do
     struct
     |> Utils.to_jsonable_map()
     |> Map.keys()
     |> filter_supported_insert_fields(schema_module, opts)
   end
 
-  defp get_params_changed_keys(params, schema_module, opts) do
+  @doc false
+  def get_params_changed_keys(params, schema_module, opts) do
     params
     |> atomize_keys!()
     |> Map.keys()
     |> filter_supported_insert_fields(schema_module, opts)
   end
 
-  defp filter_supported_insert_fields(keys, schema_module, opts) do
+  @doc false
+  def filter_supported_insert_fields(keys, schema_module, opts) do
     keys
     |> Enum.filter(&(&1 in schema_module.__schema__(:query_fields)))
     |> Kernel.--(schema_module.__schema__(:primary_key))
     |> Kernel.--([inserted_at_source(opts)])
   end
 
-  defp on_conflict_options(schema_module, changed_keys) do
+  @doc false
+  def on_conflict_options(schema_module, changed_keys) do
     if function_exported?(schema_module, :on_conflict_options, 0) do
       schema_module.on_conflict_options()
     else
@@ -490,11 +500,12 @@ defmodule EctoShorts.CommonParams do
     |> Map.new()
   end
 
-  defp put_placeholders(data, placeholders, opts) do
+  @doc false
+  def put_placeholders(data, placeholders, opts) do
     Enum.reduce(placeholders, data, &put_placeholder(&1, &2, opts))
   end
 
-  defp put_placeholder({key, placeholder}, data, opts) do
+  def put_placeholder({key, placeholder}, data, opts) do
     case Map.get(data, key) do
       nil ->
         put_placeholder(data, key)
@@ -518,7 +529,8 @@ defmodule EctoShorts.CommonParams do
 
   defp put_placeholder(data, key), do: Map.put(data, key, {:placeholder, key})
 
-  defp put_timestamps(data, datetime, schema_module, opts) do
+  @doc false
+  def put_timestamps(data, datetime, schema_module, opts) do
     data
     |> maybe_put_inserted_at(datetime, schema_module, opts)
     |> put_timestamp_updated_at(datetime, schema_module, opts)

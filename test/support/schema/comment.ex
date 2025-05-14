@@ -5,11 +5,13 @@ defmodule EctoShorts.Schema.Comment do
   import Ecto.Changeset
 
   schema "comments" do
+    belongs_to :author, EctoShorts.Schema.User
+    belongs_to :post, EctoShorts.Schema.Post
+
     field :body, :string
     field :replies, :integer
 
-    belongs_to :post, EctoShorts.Schema.Post
-    belongs_to :user, EctoShorts.Schema.User
+    # has_one :post_permalink, through: [:post, :permalink]
 
     timestamps()
   end
@@ -18,7 +20,7 @@ defmodule EctoShorts.Schema.Comment do
     :body,
     :replies,
     :post_id,
-    :user_id
+    :author_id
   ]
 
   def changeset(model_or_changeset, attrs \\ %{}) do

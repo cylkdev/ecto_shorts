@@ -399,7 +399,8 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  defp prepare_query_params(schema_module, params_data) do
+  @doc false
+  def prepare_query_params(schema_module, params_data) do
     case SchemaHelpers.primary_key(schema_module) do
       [_] ->
         schema_module
@@ -411,7 +412,8 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  defp flatten_query_params(list_of_params) do
+  @doc false
+  def flatten_query_params(list_of_params) do
     Enum.reduce(list_of_params, %{}, fn params, acc ->
       Enum.reduce(params, acc, fn {key, value}, acc ->
         Map.update(acc, key, [value], &(&1 ++ [value]))
@@ -419,13 +421,15 @@ defmodule EctoShorts.CommonChanges do
     end)
   end
 
-  defp only_primary_keys?(schema_module, params_data) do
+  @doc false
+  def only_primary_keys?(schema_module, params_data) do
     Enum.all?(params_data, fn params ->
       SchemaHelpers.filter_primary_key(schema_module, params) === params
     end)
   end
 
-  defp fetch_association_schema!(changeset, key) do
+  @doc false
+  def fetch_association_schema!(changeset, key) do
     with :ok <- validate_member_of_changeset_types!(changeset, key) do
       changeset
       |> fetch_changeset_assoc_type!(key)
@@ -433,7 +437,8 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  defp validate_member_of_changeset_types!(changeset, key) do
+  @doc false
+  def validate_member_of_changeset_types!(changeset, key) do
     schema_module = get_changeset_queryable(changeset)
 
     if member_of_changeset_types?(changeset, key) do
@@ -445,11 +450,13 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  defp member_of_changeset_types?(%{types: types}, key) do
+  @doc false
+  def member_of_changeset_types?(%{types: types}, key) do
     Map.has_key?(types, key)
   end
 
-  defp fetch_changeset_assoc_type!(%{types: types} = changeset, key) do
+  @doc false
+  def fetch_changeset_assoc_type!(%{types: types} = changeset, key) do
     schema_module = get_changeset_queryable(changeset)
 
     case Map.get(types, key) do
@@ -463,7 +470,8 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
-  defp get_changeset_queryable(%{data: %{__meta__: %{schema: queryable}}}) do
+  @doc false
+  def get_changeset_queryable(%{data: %{__meta__: %{schema: queryable}}}) do
     queryable
   end
 end

@@ -312,7 +312,7 @@ defmodule EctoShorts.CommonFilters.Schema do
   defp join_association(query, binding_alias, schema_module, assoc_key, params, opts) do
     {assoc_as, params} = Map.pop(params, :as)
 
-    assoc_schema_module = SchemaHelpers.get_association_schema_module(schema_module, assoc_key)
+    assoc_schema_module = SchemaHelpers.fetch_association_schema_module!(schema_module, assoc_key)
 
     assoc_as =
       with nil <- assoc_as do

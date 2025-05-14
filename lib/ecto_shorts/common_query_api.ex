@@ -29,7 +29,7 @@ defmodule EctoShorts.CommonQueryAPI do
   alias Ecto.Query
 
   alias EctoShorts.{
-    DynamicExpressionBuilder,
+    DynamicExpression,
     Utils
   }
 
@@ -140,7 +140,7 @@ defmodule EctoShorts.CommonQueryAPI do
           dynamic_source,
           params,
           fn {key, value}, dyn ->
-            DynamicExpressionBuilder.create_dynamic(
+            DynamicExpression.create_dynamic(
               schema_module,
               dyn,
               binding_alias,

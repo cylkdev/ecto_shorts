@@ -255,27 +255,27 @@ defmodule EctoShorts.CommonSchemas do
   Ecto changeset.
 
   This function resolves how to build the changeset based on the input
-  type, and delegates to `build_changeset/4`.
+  type, and delegates to `create_changeset/4`.
   """
-  @spec build_changeset(sourceable() | schema_struct() | changeset(), params()) :: changeset()
-  @spec build_changeset(sourceable() | schema_struct() | changeset(), params(), opts()) ::
+  @spec create_changeset(sourceable() | schema_struct() | changeset(), params()) :: changeset()
+  @spec create_changeset(sourceable() | schema_struct() | changeset(), params(), opts()) ::
           changeset()
-  def build_changeset(query_or_schema_or_changeset, params, opts \\ [])
+  def create_changeset(query_or_schema_or_changeset, params, opts \\ [])
 
-  def build_changeset(%{data: %{__meta__: %{schema: schema_module}}} = changeset, params, opts) do
-    build_changeset(schema_module, changeset, params, opts)
+  def create_changeset(%{data: %{__meta__: %{schema: schema_module}}} = changeset, params, opts) do
+    create_changeset(schema_module, changeset, params, opts)
   end
 
-  def build_changeset(%{__meta__: %{schema: schema_module}} = struct, params, opts) do
-    build_changeset(schema_module, struct, params, opts)
+  def create_changeset(%{__meta__: %{schema: schema_module}} = struct, params, opts) do
+    create_changeset(schema_module, struct, params, opts)
   end
 
-  def build_changeset({schema_source, schema_module}, params, opts) do
-    build_changeset(schema_module, build_struct({schema_source, schema_module}), params, opts)
+  def create_changeset({schema_source, schema_module}, params, opts) do
+    create_changeset(schema_module, build_struct({schema_source, schema_module}), params, opts)
   end
 
-  def build_changeset(schema_module, params, opts) do
-    build_changeset(schema_module, build_struct(schema_module), params, opts)
+  def create_changeset(schema_module, params, opts) do
+    create_changeset(schema_module, build_struct(schema_module), params, opts)
   end
 
   @doc group: "Changeset API"
@@ -288,7 +288,7 @@ defmodule EctoShorts.CommonSchemas do
 
   ## Options
 
-    - `:build_changeset` - Customizes how the changeset is constructed. Accepted values:
+    - `:create_changeset` - Customizes how the changeset is constructed. Accepted values:
 
       - `{mod, fun, args}` – Calls `apply(mod, fun, [struct_or_changeset, params] ++ args)`.
 
@@ -302,19 +302,19 @@ defmodule EctoShorts.CommonSchemas do
 
   Raises if the result is not an `Ecto.Changeset`.
   """
-  @spec build_changeset(
+  @spec create_changeset(
           sourceable(),
           schema_struct() | changeset(),
           params(),
           opts()
         ) :: changeset()
-  def build_changeset(
+  def create_changeset(
         {schema_source, schema_module},
         %{data: %{__meta__: %{schema: _}} = struct} = changeset,
         params,
         opts
       ) do
-    build_changeset(
+    create_changeset(
       schema_module,
       %{
         changeset
@@ -325,8 +325,8 @@ defmodule EctoShorts.CommonSchemas do
     )
   end
 
-  def build_changeset({schema_source, schema_module}, struct, params, opts) do
-    build_changeset(
+  def create_changeset({schema_source, schema_module}, struct, params, opts) do
+    create_changeset(
       schema_module,
       put_metadata(struct, source: schema_source),
       params,
@@ -334,8 +334,8 @@ defmodule EctoShorts.CommonSchemas do
     )
   end
 
-  def build_changeset(schema_module, struct_or_changeset, params, opts) do
-    case opts[:build_changeset] do
+  def create_changeset(schema_module, struct_or_changeset, params, opts) do
+    case opts[:create_changeset] do
       {mod, fun, args} ->
         apply(mod, fun, [struct_or_changeset, params] ++ args)
 

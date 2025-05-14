@@ -7,17 +7,16 @@ defmodule EctoShorts.Schema.Post do
 
   schema "posts" do
     belongs_to :user, EctoShorts.Schema.User
+    has_many :comments, EctoShorts.Schema.Comment
+    has_many :comments_authors, through: [:comments, :author]
 
     field :title, :string
     field :body, :string
     field :published, :boolean
+    field :notes, :string, source: :custom_string_field
     field :tags, {:array, :string}
     field :views, :integer
     field :permalink, :string
-
-    field :notes, :string, source: :custom_string_field
-
-    has_many :comments, EctoShorts.Schema.Comment
 
     timestamps()
   end

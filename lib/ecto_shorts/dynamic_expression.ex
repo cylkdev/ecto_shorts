@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicExpressionBuilder do
+defmodule EctoShorts.DynamicExpression do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Defines a behavior and interface for building dynamic Ecto query
@@ -8,7 +8,7 @@ defmodule EctoShorts.DynamicExpressionBuilder do
   parts of the expression depend on input at runtime . This module provides
   an API for building these expressions for different database backends.
 
-  You can implement the `EctoShorts.DynamicExpressionBuilder` behavior in your own
+  You can implement the `EctoShorts.DynamicExpression` behavior in your own
   adapter module to customize how dynamic conditions are generated based
   on things like schema, field name, and value type.
 
@@ -18,7 +18,7 @@ defmodule EctoShorts.DynamicExpressionBuilder do
   like `ILIKE`. You could write a custom adapter like:
 
       defmodule MyApp.DynamicPostgresAdapter do
-        @behaviour EctoShorts.DynamicExpressionBuilder
+        @behaviour EctoShorts.DynamicExpression
 
         def create_dynamic(dyn, binding, condition, schema, key, {:ilike, val}) do
           case condition do
@@ -37,7 +37,7 @@ defmodule EctoShorts.DynamicExpressionBuilder do
 
   Then you can call:
 
-      EctoShorts.DynamicExpressionBuilder.create_dynamic(
+      EctoShorts.DynamicExpression.create_dynamic(
         MyApp.DynamicPostgresAdapter,
         nil,
         nil,
@@ -64,10 +64,10 @@ defmodule EctoShorts.DynamicExpressionBuilder do
   @type value :: any()
   @type opts :: keyword()
 
-  @default_adapter EctoShorts.DynamicExpressionBuilders.Postgres
+  @default_adapter EctoShorts.DynamicExpressions.Postgres
 
   @default_adapters [
-    {Ecto.Adapters.Postgres, adapter: EctoShorts.DynamicExpressionBuilders.Postgres}
+    {Ecto.Adapters.Postgres, adapter: EctoShorts.DynamicExpressions.Postgres}
   ]
 
   @doc false
@@ -103,18 +103,18 @@ defmodule EctoShorts.DynamicExpressionBuilder do
 
   ## Options
 
-      * `:dynamic_builder_adapter` - Specifies the dynamic builder adapter
+      * `:dynamic_expression_adapter` - Specifies the dynamic builder adapter
         to use.
 
-      * `:dynamic_builder_adapters` - Specifies the dynamic builder adapter
+      * `:dynamic_expression_adapters` - Specifies the dynamic builder adapter
         to associate with each ecto repo adapter in your application. This
         can be a enumerable of key-value pairs where the `key` is the repo
         adapter module and the value is a keyword list of options that must
-        contain the `:adapter` key. (e.g. `[{Ecto.Adapters.Postgres, adapter: EctoShorts.DynamicExpressionBuilders.Postgres}]`).
+        contain the `:adapter` key. (e.g. `[{Ecto.Adapters.Postgres, adapter: EctoShorts.DynamicExpressions.Postgres}]`).
 
   ## Examples
 
-        iex> EctoShorts.DynamicExpressionBuilder.create_dynamic(EctoShorts.Schema.Post, nil, nil, :and, :tags, {:==, "blog"}, [])
+        iex> EctoShorts.DynamicExpression.create_dynamic(EctoShorts.Schema.Post, nil, nil, :and, :tags, {:==, "blog"}, [])
   """
   @spec create_dynamic(
           schema_module(),
@@ -145,8 +145,8 @@ defmodule EctoShorts.DynamicExpressionBuilder do
   end
 
   defp adapter!(opts) do
-    if Keyword.has_key?(opts, :dynamic_builder_adapter) do
-      opts[:dynamic_builder_adapter]
+    if Keyword.has_key?(opts, :dynamic_expression_adapter) do
+      opts[:dynamic_expression_adapter]
     else
       case find_adapter_for_repo(Config.repo!(opts).__adapter__(), opts) do
         nil -> @default_adapter
@@ -157,13 +157,13 @@ defmodule EctoShorts.DynamicExpressionBuilder do
 
   defp find_adapter_for_repo(repo_adapter, opts) do
     opts
-    |> dynamic_builder_adapters()
+    |> dynamic_expression_adapters()
     |> Enum.find(fn {key, _} -> key === repo_adapter end)
   end
 
-  defp dynamic_builder_adapters(opts) do
-    opts[:dynamic_builder_adapters] ||
-      Config.dynamic_builder_adapters() ||
+  defp dynamic_expression_adapters(opts) do
+    opts[:dynamic_expression_adapters] ||
+      Config.dynamic_expression_adapters() ||
       @default_adapters
   end
 end

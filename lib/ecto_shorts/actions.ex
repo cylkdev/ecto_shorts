@@ -761,7 +761,7 @@ defmodule EctoShorts.Actions do
           record ->
             with {:error, changeset} <-
                    query_source
-                   |> CommonSchemas.build_changeset(
+                   |> CommonSchemas.create_changeset(
                      record,
                      Map.merge(find_params, update_params),
                      opts
@@ -849,7 +849,7 @@ defmodule EctoShorts.Actions do
           record ->
             with {:error, changeset} <-
                    query_source
-                   |> CommonSchemas.build_changeset(
+                   |> CommonSchemas.create_changeset(
                      record,
                      Map.merge(find_params, upsert_params),
                      opts
@@ -915,7 +915,7 @@ defmodule EctoShorts.Actions do
       Ecto.Multi.run(multi, {:create, idx}, fn repo, _changes_so_far ->
         with {:error, changeset} <-
                query_source
-               |> CommonSchemas.build_changeset(params, opts)
+               |> CommonSchemas.create_changeset(params, opts)
                |> repo.insert(opts) do
           {:error,
            {:conflict, "Failed to create record.",
@@ -1021,7 +1021,7 @@ defmodule EctoShorts.Actions do
       Ecto.Multi.run(multi, {:create, idx}, fn repo, _changes_so_far ->
         with {:error, changeset} <-
                entry
-               |> CommonSchemas.build_changeset(%{}, opts)
+               |> CommonSchemas.create_changeset(%{}, opts)
                |> repo.delete(opts) do
           {:error,
            {:conflict, "Failed to delete record.",
@@ -1481,7 +1481,7 @@ defmodule EctoShorts.Actions do
     opts = Keyword.merge(default_opts(), opts)
 
     query_source
-    |> CommonSchemas.build_changeset(schema_struct, update_params, opts)
+    |> CommonSchemas.create_changeset(schema_struct, update_params, opts)
     |> Config.repo!(opts).update(opts)
   end
 
@@ -1536,7 +1536,7 @@ defmodule EctoShorts.Actions do
 
     with {:error, changeset} <-
            queryable
-           |> CommonSchemas.build_changeset(changeset, %{}, opts)
+           |> CommonSchemas.create_changeset(changeset, %{}, opts)
            |> Config.repo!(opts).delete(opts) do
       {:error,
        Error.call(
@@ -1556,7 +1556,7 @@ defmodule EctoShorts.Actions do
 
     with {:error, changeset} <-
            queryable
-           |> CommonSchemas.build_changeset(schema_struct, %{}, opts)
+           |> CommonSchemas.create_changeset(schema_struct, %{}, opts)
            |> Config.repo!(opts).delete(opts) do
       {:error,
        Error.call(
@@ -1810,19 +1810,19 @@ defmodule EctoShorts.Actions do
   @doc false
   def create_changeset({schema_source, schema_module}, params, opts) do
     if function_exported?(schema_module, :create_changeset, 1) and
-         not Keyword.has_key?(opts, :build_changeset) do
+         not Keyword.has_key?(opts, :create_changeset) do
       schema_module.create_changeset({schema_source, params})
     else
-      CommonSchemas.build_changeset({schema_source, schema_module}, params, opts)
+      CommonSchemas.create_changeset({schema_source, schema_module}, params, opts)
     end
   end
 
   def create_changeset(schema_module, params, opts) do
     if function_exported?(schema_module, :create_changeset, 1) and
-         not Keyword.has_key?(opts, :build_changeset) do
+         not Keyword.has_key?(opts, :create_changeset) do
       schema_module.create_changeset(params)
     else
-      CommonSchemas.build_changeset(schema_module, params, opts)
+      CommonSchemas.create_changeset(schema_module, params, opts)
     end
   end
 
@@ -1855,11 +1855,14 @@ defmodule EctoShorts.Actions do
   end
 
   defp default_opts do
-    []
-    |> maybe_put_opt(:repo, Config.repo())
-    |> maybe_put_opt(:replica, Config.replica())
+    reject_nil_values(
+      repo: Config.repo(),
+      replica: Config.replica()
+    )
   end
 
-  defp maybe_put_opt(opts, _key, nil), do: opts
-  defp maybe_put_opt(opts, key, val), do: Keyword.put(opts, key, val)
+  defp reject_nil_values(enum), do: Enum.reject(enum, &value_is_nil?/1)
+
+  defp value_is_nil?({_key, nil}), do: true
+  defp value_is_nil?({_key, _val}), do: false
 end

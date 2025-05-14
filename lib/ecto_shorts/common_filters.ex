@@ -196,7 +196,7 @@ defmodule EctoShorts.CommonFilters do
          {key, value},
          opts
        ) do
-    if schema_exported_filter?(schema_module, key) do
+    if schema_exports_filter?(schema_module, key) do
       if function_exported?(schema_module, :build_query, 4) do
         schema_module.build_query(
           query_source,
@@ -231,14 +231,15 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp build_query_with_adapter(
-         query_source,
-         binding_alias,
-         schema_module,
-         key,
-         value,
-         opts
-       ) do
+  @doc false
+  def build_query_with_adapter(
+        query_source,
+        binding_alias,
+        schema_module,
+        key,
+        value,
+        opts
+      ) do
     opts
     |> query_builder_adapter()
     |> QueryBuilder.build_query(
@@ -251,11 +252,12 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp schema_exported_filter?(schema_module, key) do
-    schema_exported_filters?(schema_module) and key in schema_module.filters()
+  @doc false
+  def schema_exports_filter?(schema_module, key) do
+    schema_has_filters?(schema_module) and key in schema_module.filters()
   end
 
-  defp schema_exported_filters?(schema_module) do
+  def schema_has_filters?(schema_module) do
     function_exported?(schema_module, :filters, 0)
   end
 
@@ -278,7 +280,7 @@ defmodule EctoShorts.CommonFilters do
   @impl EctoShorts.QueryBuilder
   @doc since: "2.5.0"
   @doc """
-  ...
+  Returns the list of support filters.
 
   ## Examples
 
