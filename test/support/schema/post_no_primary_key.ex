@@ -4,6 +4,6 @@ defmodule EctoShorts.Schema.PostNoPrimaryKeySchema do
   @primary_key false
 
   schema "posts" do
-    field(:title, :string)
+    field :title, :string
   end
 end

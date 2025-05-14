@@ -8,13 +8,13 @@ defmodule EctoShorts.Schema.Post do
   schema "posts" do
     belongs_to :user, EctoShorts.Schema.User
 
-    field :tags, {:array, :string}
     field :title, :string
-    field :description, :string
-    field :unique_identifier, :string
-
-    field :user_data, :string, source: :custom_string_field
+    field :body, :string
+    field :published, :boolean
+    field :tags, {:array, :string}
     field :views, :integer
+
+    field :notes, :string, source: :custom_string_field
 
     has_many :comments, EctoShorts.Schema.Comment
 
@@ -23,10 +23,10 @@ defmodule EctoShorts.Schema.Post do
 
   @available_fields [
     :title,
-    :description,
+    :body,
     :views,
-    :unique_identifier,
     :tags,
+    :notes,
     :user_id
   ]
 

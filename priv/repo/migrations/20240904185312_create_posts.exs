@@ -4,9 +4,10 @@ defmodule EctoShorts.Repo.Migrations.CreatePosts do
   def change do
     create table(:posts) do
       add :title, :string
-      add :unique_identifier, :string
-      add :views, :integer
+      add :body, :string
+      add :published, :boolean
       add :tags, {:array, :string}
+      add :views, :integer
 
       add :custom_string_field, :string
 
@@ -17,7 +18,5 @@ defmodule EctoShorts.Repo.Migrations.CreatePosts do
 
       timestamps()
     end
-
-    create unique_index(:posts, :unique_identifier)
   end
 end

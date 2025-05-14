@@ -60,7 +60,8 @@ defmodule EctoShorts.CommonFilters do
   @type query :: Ecto.Query.t()
   @type schema_module :: Ecto.Queryable.t()
   @type schema_source :: binary()
-  @type sourceable :: schema_module() | {schema_source(), schema_module()}
+  @type source_and_schema :: {schema_source(), schema_module()}
+  @type sourceable :: schema_module() | source_and_schema()
   @type query_source :: query_source()
   @type binding_alias :: atom()
   @type key :: atom()
@@ -73,8 +74,10 @@ defmodule EctoShorts.CommonFilters do
   @default_query_builder_adapter __MODULE__
 
   @common_filters Common.filters()
+
   @schema_filters Schema.filters()
-  @filters @common_filters ++ @schema_filters
+
+  @filters Enum.sort(@common_filters ++ @schema_filters)
 
   @doc since: "2.5.0"
   @doc """
@@ -118,32 +121,16 @@ defmodule EctoShorts.CommonFilters do
 
     schema_module =
       with nil <- schema_module do
-        CommonSchemas.schema_module_for(query_source)
+        CommonSchemas.get_schema_module(query_source)
       end
 
     binding_alias = params[:as]
+    base_params = Map.take(params, [:as, :prefix, :options])
+    params = Map.drop(params, [:as, :prefix, :options])
 
-    query_source =
-      CommonQueryAPI.from(
-        query_source,
-        binding_alias,
-        Map.take(params, [:as, :prefix, :options])
-      )
-
-    params
-    |> Map.drop([:as, :prefix, :options])
-    |> Enum.reduce(query_source, fn {key, value}, query_source ->
-      opts
-      |> query_builder_adapter()
-      |> QueryBuilder.build_query(
-        query_source,
-        binding_alias,
-        schema_module,
-        key,
-        value,
-        opts
-      )
-    end)
+    query_source
+    |> CommonQueryAPI.from(binding_alias, base_params)
+    |> reduce_params_to_filters(binding_alias, schema_module, params, opts)
   end
 
   @doc """
@@ -169,36 +156,36 @@ defmodule EctoShorts.CommonFilters do
   end
 
   def convert_params_to_filter(query_source, params, opts) do
-    schema_module = CommonSchemas.schema_module_for(query_source)
+    schema_module = CommonSchemas.get_schema_module(query_source)
 
     {binding_alias, params} = Keyword.pop(params, :as)
 
-    params
-    |> ensure_last_is_final_filter()
-    |> Enum.reduce(query_source, fn {key, value}, query_source ->
-      with query_source <-
-             apply_exported_schema_filter(
-               query_source,
-               binding_alias,
-               schema_module,
-               key,
-               value
-             ) do
-        opts
-        |> query_builder_adapter()
-        |> QueryBuilder.build_query(
-          query_source,
-          binding_alias,
-          schema_module,
-          key,
-          value,
-          opts
-        )
-      end
-    end)
+    params = ensure_last_is_final_filter(params)
+
+    reduce_params_to_filters(query_source, binding_alias, schema_module, params, opts)
   end
 
-  defp apply_exported_schema_filter(query_source, binding_alias, schema_module, key, value) do
+  defp reduce_params_to_filters(query_source, binding_alias, schema_module, params, opts) do
+    Enum.reduce(
+      params,
+      query_source,
+      &build_with_schema_or_adapter(
+        &2,
+        binding_alias,
+        schema_module,
+        &1,
+        opts
+      )
+    )
+  end
+
+  defp build_with_schema_or_adapter(
+         query_source,
+         binding_alias,
+         schema_module,
+         {key, value},
+         opts
+       ) do
     if schema_exported_filter?(schema_module, key) do
       if function_exported?(schema_module, :build_query, 4) do
         schema_module.build_query(
@@ -213,11 +200,45 @@ defmodule EctoShorts.CommonFilters do
           "callback function build_query/4 not found in schema module #{inspect(schema_module)} for filter: #{inspect(key)}"
         )
 
-        query_source
+        build_query_with_adapter(
+          query_source,
+          binding_alias,
+          schema_module,
+          key,
+          value,
+          opts
+        )
       end
     else
-      query_source
+      build_query_with_adapter(
+        query_source,
+        binding_alias,
+        schema_module,
+        key,
+        value,
+        opts
+      )
     end
+  end
+
+  defp build_query_with_adapter(
+         query_source,
+         binding_alias,
+         schema_module,
+         key,
+         value,
+         opts
+       ) do
+    opts
+    |> query_builder_adapter()
+    |> QueryBuilder.build_query(
+      query_source,
+      binding_alias,
+      schema_module,
+      key,
+      value,
+      opts
+    )
   end
 
   defp schema_exported_filter?(schema_module, key) do
@@ -228,6 +249,22 @@ defmodule EctoShorts.CommonFilters do
     function_exported?(schema_module, :filters, 0)
   end
 
+  defp ensure_last_is_final_filter(params) do
+    if Keyword.has_key?(params, :last) do
+      params
+      |> Keyword.delete(:last)
+      |> Kernel.++(last: params[:last])
+    else
+      params
+    end
+  end
+
+  defp query_builder_adapter(opts) do
+    opts[:query_builder_adapter] ||
+      EctoShorts.Config.query_builder_adapter() ||
+      @default_query_builder_adapter
+  end
+
   @impl EctoShorts.QueryBuilder
   @doc since: "2.5.0"
   @doc """
@@ -236,24 +273,31 @@ defmodule EctoShorts.CommonFilters do
   ## Examples
 
       iex> EctoShorts.CommonFilters.filters()
-      [:after, :before, :end_date, :first, :ids, :last, :limit, :offset, :order_by, :preload, :search, :since, :start_date, :until, :join, :select, :select_merge, :or, :or_where, :where]
+      [
+        :after,
+        :before,
+        :end_date,
+        :first,
+        :from,
+        :ids,
+        :join,
+        :last,
+        :limit,
+        :offset,
+        :or,
+        :or_where,
+        :order_by,
+        :preload,
+        :search,
+        :select,
+        :select_merge,
+        :since,
+        :start_date,
+        :until,
+        :where
+      ]
   """
   def filters, do: @filters
-
-  @doc since: "2.5.0"
-  @doc """
-  ...
-
-  ## Examples
-
-      iex> EctoShorts.CommonFilters.filters([])
-      [:after, :before, :end_date, :first, :ids, :last, :limit, :offset, :order_by, :preload, :search, :since, :start_date, :until, :join, :select, :select_merge, :or, :or_where, :where]
-  """
-  def filters(opts) do
-    opts
-    |> query_builder_adapter()
-    |> QueryBuilder.filters()
-  end
 
   @impl EctoShorts.QueryBuilder
   @doc since: "2.5.0"
@@ -318,21 +362,5 @@ defmodule EctoShorts.CommonFilters do
       value,
       opts
     )
-  end
-
-  defp query_builder_adapter(opts) do
-    opts[:query_builder_adapter] ||
-      EctoShorts.Config.query_builder_adapter() ||
-      @default_query_builder_adapter
-  end
-
-  defp ensure_last_is_final_filter(params) do
-    if Keyword.has_key?(params, :last) do
-      params
-      |> Keyword.delete(:last)
-      |> Kernel.++(last: params[:last])
-    else
-      params
-    end
   end
 end

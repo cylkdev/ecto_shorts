@@ -106,8 +106,8 @@ defmodule EctoShorts.ExpressionBuilder do
       ...>   fn pair, acc -> [pair | acc] end
       ...> )
       [
+        {:title, "hello"},
         {:author, "admin"},
-        {:title, "hello"}
       ]
 
       # Non-keyword lists are preserved.
@@ -198,6 +198,6 @@ defmodule EctoShorts.ExpressionBuilder do
   end
 
   defp ordered_expressions?(opts) do
-    opts[:ordered_expressions] || @ordered_expressions
+    (opts[:ordered_expressions] || @ordered_expressions) === true
   end
 end

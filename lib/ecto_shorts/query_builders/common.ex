@@ -40,10 +40,12 @@ defmodule EctoShorts.QueryBuilders.Common do
 
   @behaviour EctoShorts.QueryBuilder
 
-  @type sourceable :: binary()
   @type query :: Ecto.Query.t()
-  @type queryable :: Ecto.Queryable.t()
-  @type source_queryable :: {sourceable(), queryable()}
+  @type schema_module :: Ecto.Queryable.t()
+  @type schema_source :: binary()
+  @type source_and_schema :: {schema_source(), schema_module()}
+  @type sourceable :: schema_module() | source_and_schema()
+  @type query_source :: query() | sourceable()
   @type binding_alias :: atom()
   @type value :: any()
   @type opts :: keyword()
@@ -105,21 +107,10 @@ defmodule EctoShorts.QueryBuilders.Common do
       iex> EctoShorts.QueryBuilders.Common.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :limit, 5)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, limit: ^5>
   """
-  @spec build_query(
-          query() | queryable() | source_queryable(),
-          binding_alias(),
-          queryable(),
-          filter(),
-          value()
-        ) :: query() | queryable()
-  @spec build_query(
-          query() | queryable() | source_queryable(),
-          binding_alias(),
-          queryable(),
-          filter(),
-          value(),
-          opts()
-        ) :: query() | queryable()
+  @spec build_query(query_source(), binding_alias(), schema_module(), filter(), value()) ::
+          query() | schema_module()
+  @spec build_query(query_source(), binding_alias(), schema_module(), filter(), value(), opts()) ::
+          query() | schema_module()
   def build_query(query, binding_alias, schema_module, key, value, opts \\ [])
 
   def build_query(query, binding_alias, _schema_module, :ids, values, opts) do

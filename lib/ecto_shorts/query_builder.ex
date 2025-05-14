@@ -14,7 +14,8 @@ defmodule EctoShorts.QueryBuilder do
   @type query :: Ecto.Query.t()
   @type schema_module :: Ecto.Queryable.t()
   @type schema_source :: binary()
-  @type sourceable :: schema_module() | {schema_source(), schema_module()}
+  @type source_and_schema :: {schema_source(), schema_module()}
+  @type sourceable :: schema_module() | source_and_schema()
   @type queryable_source :: query() | schema_module()
   @type query_source :: query() | sourceable()
   @type binding_alias :: atom()

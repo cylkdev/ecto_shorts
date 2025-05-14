@@ -1,4 +1,260 @@
 defmodule EctoShorts.CommonQueryTest do
   use ExUnit.Case, async: true
   doctest EctoShorts.CommonQuery
+
+  alias EctoShorts.CommonQuery
+  alias EctoShorts.Schema.{Comment, Post}
+
+  import Ecto.Query
+
+  describe "&get_from_expr" do
+    test "returns FromExpr for a simple schema module" do
+      assert %Ecto.Query.FromExpr{source: {"posts", EctoShorts.Schema.Post}} =
+               CommonQuery.get_from_expr(Post)
+    end
+
+    test "returns FromExpr for a schema source and module tuple" do
+      assert %Ecto.Query.FromExpr{source: {"posts", EctoShorts.Schema.Post}} =
+               CommonQuery.get_from_expr({"posts", Post})
+    end
+
+    test "returns FromExpr for a basic inline query" do
+      inner_query = from p in Post, where: p.published == true
+      outer_query = from p in inner_query, as: :post
+
+      assert %Ecto.Query.FromExpr{source: {"posts", EctoShorts.Schema.Post}} =
+               CommonQuery.get_from_expr(outer_query)
+    end
+
+    test "returns FromExpr from a subquery wrapper" do
+      inner_query = from p in Post, where: p.published == true
+      outer_query = from p in subquery(inner_query), as: :post
+
+      assert %Ecto.Query.FromExpr{source: {"posts", EctoShorts.Schema.Post}} =
+               CommonQuery.get_from_expr(outer_query)
+    end
+
+    test "returns FromExpr after multiple levels of nested query wrapping" do
+      first_query = from p in Post, where: p.published == true
+      second_query = from p in subquery(first_query), as: :post
+      third_query = from p in second_query, where: p.id in [1, 2, 3]
+
+      assert %Ecto.Query.FromExpr{source: {"posts", EctoShorts.Schema.Post}} =
+               CommonQuery.get_from_expr(third_query)
+    end
+
+    test "returns FromExpr after subquerying a subquery" do
+      first_query = from p in Post, where: p.published == true
+      second_query = from p in subquery(first_query), as: :post
+      third_query = from p in subquery(second_query), where: p.id in [1, 2, 3]
+
+      assert %Ecto.Query.FromExpr{source: {"posts", EctoShorts.Schema.Post}} =
+               CommonQuery.get_from_expr(third_query)
+    end
+  end
+
+  describe "has_source_subquery?/1" do
+    test "returns false for a schema module" do
+      refute CommonQuery.has_source_subquery?(Post)
+    end
+
+    test "returns true for a query that wraps a subquery once" do
+      inner_query = from p in Post, where: p.published == true
+      outer_query = from p in subquery(inner_query), as: :post
+
+      assert CommonQuery.has_source_subquery?(outer_query)
+    end
+
+    test "returns true for a query that wraps a subquery inside another query" do
+      first_query = from p in Post, where: p.published == true
+      second_query = from p in subquery(first_query), as: :post
+      third_query = from p in second_query, where: p.id in [1, 2, 3]
+
+      assert CommonQuery.has_source_subquery?(third_query)
+    end
+
+    test "returns true for a query with multiple nested subqueries" do
+      first_query = from p in Post, where: p.published == true
+      second_query = from p in subquery(first_query), as: :post
+      third_query = from p in subquery(second_query), where: p.id in [1, 2, 3]
+
+      assert CommonQuery.has_source_subquery?(third_query)
+    end
+  end
+
+  describe "get_source_subquery/1" do
+    test "returns nil when source is a schema (not a subquery)" do
+      assert nil === CommonQuery.get_source_subquery(Post)
+    end
+
+    test "returns the subquery when given a query directly wrapping a subquery" do
+      # source query is the value being wrapped by a query
+      source_query = from p in Post, where: p.published == true
+      outer_query = from p in subquery(source_query), as: :post
+
+      assert subquery(source_query) === CommonQuery.get_source_subquery(outer_query)
+    end
+
+    test "returns the original subquery when nested one level deeper" do
+      # source query is the value being wrapped by a query
+      source_query = from p in Post, where: p.published == true
+      outer_query = from p in subquery(source_query), as: :post
+      final_query = from p in outer_query, where: p.id in [1, 2, 3]
+
+      assert subquery(source_query) === CommonQuery.get_source_subquery(final_query)
+    end
+
+    test "returns the original subquery when nested multiple layers deep" do
+      base_query = from p in Post, where: p.published == true
+      # source query is the value being wrapped by a query
+      source_query = from p in subquery(base_query), as: :post
+      outer_query = from p in subquery(source_query), where: p.id in [1, 2, 3]
+      final_query = from p in outer_query, where: p.id in [1, 2, 3]
+
+      assert subquery(source_query) === CommonQuery.get_source_subquery(final_query)
+    end
+  end
+
+  describe "&find_binding_expr/2" do
+    test "returns from expression when binding is nil" do
+      query = from p in EctoShorts.Schema.Post, where: p.published == true
+
+      assert %Ecto.Query.FromExpr{
+               source: {"posts", EctoShorts.Schema.Post}
+             } = EctoShorts.CommonQuery.find_binding_expr(query, nil)
+    end
+
+    test "returns from expression for named binding on a subquery (binding assigned in outer query)" do
+      base_query = from p in EctoShorts.Schema.Post, where: p.published == true
+      final_query = from p in subquery(base_query), as: :post, where: p.id == 1
+
+      assert %Ecto.Query.FromExpr{
+               source: %Ecto.SubQuery{query: ^base_query}
+             } = EctoShorts.CommonQuery.find_binding_expr(final_query, :post)
+    end
+
+    test "returns from expression for named binding from inner query (binding assigned in subquery)" do
+      base_query = from p in EctoShorts.Schema.Post, as: :post, where: p.published == true
+      final_query = from p in subquery(base_query), where: p.id == 1
+
+      assert %Ecto.Query.FromExpr{
+               source: {"posts", EctoShorts.Schema.Post},
+               as: :post
+             } = EctoShorts.CommonQuery.find_binding_expr(final_query, :post)
+    end
+
+    test "returns join and from expressions for named binding with subquery join" do
+      posts_query = from p in EctoShorts.Schema.Post, where: p.published == true
+
+      comments_query =
+        from c in EctoShorts.Schema.Comment,
+          join: p in subquery(posts_query),
+          as: :comments,
+          on: c.post_id == p.id
+
+      assert {
+               %Ecto.Query.JoinExpr{
+                 qual: :inner,
+                 source: %Ecto.SubQuery{query: ^posts_query},
+                 assoc: nil
+               },
+               %Ecto.Query.FromExpr{
+                 source: {"comments", EctoShorts.Schema.Comment}
+               }
+             } = EctoShorts.CommonQuery.find_binding_expr(comments_query, :comments)
+    end
+
+    test "returns join and from expressions for named binding using schema join" do
+      query =
+        from p in Post,
+          as: :post,
+          join: c in Comment,
+          as: :comments,
+          on: c.post_id == p.id
+
+      assert {
+               %Ecto.Query.JoinExpr{
+                 qual: :inner,
+                 as: :comments,
+                 source: {nil, EctoShorts.Schema.Comment},
+                 assoc: nil
+               },
+               %Ecto.Query.FromExpr{
+                 source: {"posts", EctoShorts.Schema.Post},
+                 as: :post
+               }
+             } = CommonQuery.find_binding_expr(query, :comments)
+    end
+
+    test "returns join and from expressions for named binding using assoc/2 join" do
+      query =
+        from p in Post,
+          as: :post,
+          join: assoc(p, :comments),
+          as: :comments,
+          on: true
+
+      assert {
+               %Ecto.Query.JoinExpr{
+                 qual: :inner,
+                 as: :comments,
+                 source: nil,
+                 assoc: {0, :comments}
+               },
+               %Ecto.Query.FromExpr{
+                 source: {"posts", EctoShorts.Schema.Post},
+                 as: :post
+               }
+             } = CommonQuery.find_binding_expr(query, :comments)
+    end
+
+    test "returns from expression for inner subquery binding" do
+      posts_query = from p in EctoShorts.Schema.Post, as: :post, where: p.published == true
+
+      comments_query =
+        from c in EctoShorts.Schema.Comment,
+          join: p in subquery(posts_query),
+          as: :comments,
+          on: c.post_id == p.id
+
+      assert %Ecto.Query.FromExpr{
+               source: {"posts", EctoShorts.Schema.Post},
+               as: :post
+             } = CommonQuery.find_binding_expr(comments_query, :post)
+    end
+  end
+
+  describe "&find_binding_expr_source_and_schema/2" do
+    test "1" do
+      query = from(p in Post)
+
+      assert {"posts", EctoShorts.Schema.Post} =
+               CommonQuery.find_binding_expr_source_and_schema(Post, nil)
+    end
+
+    test "2" do
+      query =
+        from p in Post,
+          as: :post,
+          join: assoc(p, :comments),
+          as: :comments,
+          on: true
+
+      assert {"comments", EctoShorts.Schema.Comment} =
+               CommonQuery.find_binding_expr_source_and_schema(query, :comments)
+    end
+
+    test "3" do
+      posts_query = from p in EctoShorts.Schema.Post, where: p.published == true
+
+      comments_query =
+        from c in EctoShorts.Schema.Comment,
+          join: p in subquery(posts_query),
+          as: :comments,
+          on: c.post_id == p.id
+
+      assert {"comments", EctoShorts.Schema.Comment} =
+               CommonQuery.find_binding_expr_source_and_schema(comments_query, :comments)
+    end
+  end
 end

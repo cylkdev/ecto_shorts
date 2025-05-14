@@ -8,10 +8,10 @@ defmodule EctoShorts.Schema.CompositePrimaryKey do
   @primary_key false
 
   schema "composite_primary_keys" do
-    field(:post_id, :id, primary_key: true)
-    field(:comment_id, :id, primary_key: true)
+    field :post_id, :id, primary_key: true
+    field :comment_id, :id, primary_key: true
 
-    field(:role, :string)
+    field :role, :string
 
     timestamps()
   end

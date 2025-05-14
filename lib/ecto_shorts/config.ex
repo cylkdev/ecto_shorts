@@ -19,21 +19,6 @@ defmodule EctoShorts.Config do
   end
 
   @doc """
-  Returns the configured `:ordered_expressions` value from the `:ecto_shorts` application environment.
-
-  Defaults to `nil` if not set.
-
-  ## Examples
-
-      iex> EctoShorts.Config.ordered_expressions()
-      nil
-  """
-  @spec ordered_expressions :: module() | nil
-  def ordered_expressions do
-    Application.get_env(@app, :ordered_expressions)
-  end
-
-  @doc """
   Returns the configured `:query_builder_adapter` value from the `:ecto_shorts` application environment.
 
   Defaults to `nil` if not set.

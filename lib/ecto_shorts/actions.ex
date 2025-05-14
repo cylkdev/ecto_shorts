@@ -135,7 +135,8 @@ defmodule EctoShorts.Actions do
   @type query :: Ecto.Query.t()
   @type schema_module :: Ecto.Queryable.t()
   @type schema_source :: binary()
-  @type sourceable :: schema_module() | {schema_source(), schema_module()}
+  @type source_and_schema :: {schema_source(), schema_module()}
+  @type sourceable :: schema_module() | source_and_schema()
   @type query_source :: query() | sourceable()
   @type changeset :: Ecto.Changeset.t()
   @type schema_struct :: Ecto.Schema.t()
@@ -440,7 +441,7 @@ defmodule EctoShorts.Actions do
 
   @doc false
   def match_id(query_source, match_keys, data) do
-    schema_module = CommonSchemas.schema_module_for(query_source)
+    schema_module = CommonSchemas.get_schema_module(query_source)
 
     if has_all_keys?(match_keys, data) do
       Map.take(data, match_keys)
@@ -452,7 +453,7 @@ defmodule EctoShorts.Actions do
 
   @doc false
   def normalize_match_keys(query_source, :primary_key) do
-    case CommonSchemas.reflection(query_source, :primary_key) do
+    case CommonSchemas.get_reflection(query_source, :primary_key) do
       [] -> [:id]
       key -> key
     end
@@ -525,7 +526,7 @@ defmodule EctoShorts.Actions do
   @spec insert_all(query_source(), list(params()), opts()) ::
           {:ok, insert_all_response()} | {:error, any()}
   def insert_all(query_source, list_of_params, opts \\ []) do
-    schema_module = CommonSchemas.schema_module_for(query_source)
+    schema_module = CommonSchemas.get_schema_module(query_source)
 
     with {:ok, inserts, insert_opts} <-
            CommonParams.convert_to_insert_all_params(
@@ -588,7 +589,7 @@ defmodule EctoShorts.Actions do
 
     updates =
       query_source
-      |> CommonSchemas.schema_module_for()
+      |> CommonSchemas.get_schema_module()
       |> CommonParams.convert_to_update_all_params(update_params, opts)
 
     query_source
@@ -1025,7 +1026,7 @@ defmodule EctoShorts.Actions do
           {:error,
            {:conflict, "Failed to delete record.",
             %{
-              query: CommonSchemas.schema_module_from_metadata(entry),
+              query: CommonSchemas.get_metadata(entry),
               params: entries,
               changeset: changeset,
               position: idx
@@ -1063,7 +1064,7 @@ defmodule EctoShorts.Actions do
   def find_and_create(query_source, find_params, create_params, opts \\ []) do
     with {:error, %{code: :not_found}} <- find(query_source, find_params, opts) do
       query_source
-      |> CommonSchemas.schema_module_for()
+      |> CommonSchemas.get_schema_module()
       |> create(create_params, opts)
     end
   end
@@ -1091,7 +1092,7 @@ defmodule EctoShorts.Actions do
   def find_and_update(query_source, find_params, update_params, opts \\ []) do
     with {:ok, record} <- find(query_source, find_params, opts) do
       query_source
-      |> CommonSchemas.schema_module_for()
+      |> CommonSchemas.get_schema_module()
       |> update(record, update_params, opts)
     end
   end
@@ -1199,7 +1200,7 @@ defmodule EctoShorts.Actions do
              opts
            ) do
       query_source
-      |> CommonSchemas.schema_module_for()
+      |> CommonSchemas.get_schema_module()
       |> create(params, opts)
     end
   end
@@ -1475,7 +1476,7 @@ defmodule EctoShorts.Actions do
   def update(query_source, id, update_params, opts) when is_integer(id) or is_binary(id) do
     with {:ok, record} <- find(query_source, %{id: id}, opts) do
       query_source
-      |> CommonSchemas.schema_module_for()
+      |> CommonSchemas.get_schema_module()
       |> update(record, update_params, opts)
     end
   end
@@ -1816,7 +1817,7 @@ defmodule EctoShorts.Actions do
 
   @doc false
   def create_changeset(query_source, params, opts) do
-    schema_module = CommonSchemas.schema_module_for(query_source)
+    schema_module = CommonSchemas.get_schema_module(query_source)
 
     if function_exported?(schema_module, :create_changeset, 1) and
          not Keyword.has_key?(opts, :build_changeset) do
@@ -1837,7 +1838,7 @@ defmodule EctoShorts.Actions do
 
   @doc false
   def filter_queryable_params(params, query_source) do
-    Map.take(params, CommonSchemas.reflection(query_source, :query_fields))
+    Map.take(params, CommonSchemas.get_reflection(query_source, :query_fields))
   end
 
   defp put_order_by(params, opts) do

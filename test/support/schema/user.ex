@@ -4,9 +4,9 @@ defmodule EctoShorts.Schema.User do
   import Ecto.Changeset
 
   schema "users" do
-    field(:first_name, :string)
+    field :first_name, :string
 
-    has_many(:comments, EctoShorts.Schema.Comment)
+    has_many :comments, EctoShorts.Schema.Comment
 
     timestamps()
   end

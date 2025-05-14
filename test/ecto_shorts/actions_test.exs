@@ -231,14 +231,14 @@ defmodule EctoShorts.ActionsTest do
                   changeset: changeset,
                   position: 1,
                   params: [
-                    %{title: "post_1_title", unique_identifier: "post_unique_identifier"},
-                    %{title: "post_2_title", unique_identifier: "post_unique_identifier"}
+                    %{title: "post_1_title", body: "post_body"},
+                    %{title: "post_2_title", body: "post_body"}
                   ]
                 }
               }} =
                Actions.find_or_create_many(Post, [
-                 %{title: "post_1_title", unique_identifier: "post_unique_identifier"},
-                 %{title: "post_2_title", unique_identifier: "post_unique_identifier"}
+                 %{title: "post_1_title", body: "post_body"},
+                 %{title: "post_2_title", body: "post_body"}
                ])
 
       assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
@@ -464,14 +464,12 @@ defmodule EctoShorts.ActionsTest do
       post =
         insert!(Repo, Post, %{
           title: "post_title",
-          unique_identifier: "post_unique_identifier",
           tags: ["post_tag"],
           views: 1
         })
 
       assert %EctoShorts.Schema.Post{
                title: "post_title",
-               unique_identifier: "post_unique_identifier",
                tags: ["post_tag"],
                views: 1
              } = post
@@ -498,11 +496,11 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "returns changeset errors when unique constraint is violated" do
-      assert {:ok, %EctoShorts.Schema.Post{unique_identifier: "post_unique_identifier"}} =
-               Actions.create(Post, %{unique_identifier: "post_unique_identifier"})
+      assert {:ok, %EctoShorts.Schema.Post{body: "post_body"}} =
+               Actions.create(Post, %{body: "post_body"})
 
       assert {:error, changeset} =
-               Actions.create(Post, %{unique_identifier: "post_unique_identifier"})
+               Actions.create(Post, %{body: "post_body"})
 
       assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
     end
@@ -651,26 +649,26 @@ defmodule EctoShorts.ActionsTest do
       assert {:error, "message"} =
                Actions.transaction(fn ->
                  with {:ok, _} <-
-                        Actions.create(Post, %{unique_identifier: "post_unique_identifier"}) do
+                        Actions.create(Post, %{body: "post_body"}) do
                    {:error, "message"}
                  end
                end)
 
       assert {:error, %{code: :not_found}} =
-               Actions.find(Post, %{unique_identifier: "post_unique_identifier"})
+               Actions.find(Post, %{body: "post_body"})
     end
 
     test "rolls back on constraint violations" do
       assert {:error, %Ecto.Changeset{}} =
                Actions.transaction(fn ->
                  with {:ok, _} <-
-                        Actions.create(Post, %{unique_identifier: "post_unique_identifier"}) do
-                   Actions.create(Post, %{unique_identifier: "post_unique_identifier"})
+                        Actions.create(Post, %{body: "post_body"}) do
+                   Actions.create(Post, %{body: "post_body"})
                  end
                end)
 
       assert {:error, %{code: :not_found}} =
-               Actions.find(Post, %{unique_identifier: "post_unique_identifier"})
+               Actions.find(Post, %{body: "post_body"})
     end
   end
 end

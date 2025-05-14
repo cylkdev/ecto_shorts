@@ -1,15 +1,15 @@
 defmodule EctoShorts.Schema.Comment do
   @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
 
   schema "comments" do
-    field(:body, :string)
-    field(:replies, :integer)
+    field :body, :string
+    field :replies, :integer
 
-    belongs_to(:post, EctoShorts.Schema.Post)
-
-    belongs_to(:user, EctoShorts.Schema.User)
+    belongs_to :post, EctoShorts.Schema.Post
+    belongs_to :user, EctoShorts.Schema.User
 
     timestamps()
   end
