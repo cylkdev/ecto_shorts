@@ -227,21 +227,26 @@ defmodule EctoShorts.ActionsTest do
                 message: "Failed to create record.",
                 details: %{
                   query: EctoShorts.Schema.Post,
-                  changes_so_far: [%EctoShorts.Schema.Post{title: "post_1_title"}],
+                  changes_so_far: [
+                    %EctoShorts.Schema.Post{
+                      title: "post_1_title",
+                      permalink: "this_is_a_unique_field"
+                    }
+                  ],
                   changeset: changeset,
                   position: 1,
                   params: [
-                    %{title: "post_1_title", body: "post_body"},
-                    %{title: "post_2_title", body: "post_body"}
+                    %{title: "post_1_title", permalink: "this_is_a_unique_field"},
+                    %{title: "post_2_title", permalink: "this_is_a_unique_field"}
                   ]
                 }
               }} =
                Actions.find_or_create_many(Post, [
-                 %{title: "post_1_title", body: "post_body"},
-                 %{title: "post_2_title", body: "post_body"}
+                 %{title: "post_1_title", permalink: "this_is_a_unique_field"},
+                 %{title: "post_2_title", permalink: "this_is_a_unique_field"}
                ])
 
-      assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
+      assert {:permalink, ["has already been taken"]} in errors_on(changeset)
     end
   end
 
@@ -496,13 +501,13 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "returns changeset errors when unique constraint is violated" do
-      assert {:ok, %EctoShorts.Schema.Post{body: "post_body"}} =
-               Actions.create(Post, %{body: "post_body"})
+      assert {:ok, %EctoShorts.Schema.Post{permalink: "this_is_a_unique_field"}} =
+               Actions.create(Post, %{permalink: "this_is_a_unique_field"})
 
       assert {:error, changeset} =
-               Actions.create(Post, %{body: "post_body"})
+               Actions.create(Post, %{permalink: "this_is_a_unique_field"})
 
-      assert {:unique_identifier, ["has already been taken"]} in errors_on(changeset)
+      assert {:permalink, ["has already been taken"]} in errors_on(changeset)
     end
   end
 
@@ -662,13 +667,13 @@ defmodule EctoShorts.ActionsTest do
       assert {:error, %Ecto.Changeset{}} =
                Actions.transaction(fn ->
                  with {:ok, _} <-
-                        Actions.create(Post, %{body: "post_body"}) do
-                   Actions.create(Post, %{body: "post_body"})
+                        Actions.create(Post, %{permalink: "this_is_a_unique_field"}) do
+                   Actions.create(Post, %{permalink: "this_is_a_unique_field"})
                  end
                end)
 
       assert {:error, %{code: :not_found}} =
-               Actions.find(Post, %{body: "post_body"})
+               Actions.find(Post, %{permalink: "this_is_a_unique_field"})
     end
   end
 end

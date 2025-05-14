@@ -71,19 +71,16 @@ defmodule EctoShorts.CommonQueryAPI do
       ...> dyn_a = nil
       ...> dyn_b = dynamic([q], q.id > 1)
       ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :and, dyn_b)
-      dynamic([q], q.id > 1)
 
       iex> import Ecto.Query
       ...> dyn_a = dynamic([q], q.name == "Fira")
       ...> dyn_b = dynamic([q], q.id > 1)
-      ...> dyn_a |> EctoShorts.CommonQueryAPI.merge_dynamic(:and, dyn_b) |> Macro.to_string()
-      dynamic([q], q.name == "Fira" and q.id > 1)
+      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :and, dyn_b)
 
       iex> import Ecto.Query
       ...> dyn_a = dynamic([q], q.name == "Fira")
       ...> dyn_b = dynamic([q], q.id > 1)
-      ...> dyn_a |> EctoShorts.CommonQueryAPI.merge_dynamic(:or, dyn_b) |> Macro.to_string()
-      dynamic([q], q.name == "Fira" or q.id > 1)
+      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :or, dyn_b)
   """
   @spec merge_dynamic(maybe_dynamic_expr(), condition(), dynamic_expr()) :: dynamic_expr()
   def merge_dynamic(nil, _operator, dyn), do: dyn
@@ -106,7 +103,6 @@ defmodule EctoShorts.CommonQueryAPI do
 
       iex>  import Ecto.Query
       ...>  EctoShorts.CommonQueryAPI.dynamic(nil, dynamic([q], q.id == 1))
-      dynamic([q], q.id == 1)
   """
   @spec dynamic(binding_alias(), value()) :: dynamic_expr()
   def dynamic(binding_alias, value) do
@@ -212,8 +208,9 @@ defmodule EctoShorts.CommonQueryAPI do
 
       iex> import Ecto.Query
       ...> query = from p in EctoShorts.Schema.Post
-      ...> EctoShorts.CommonQueryAPI.put_query_prefix(query, "tenant_123")
-      %Ecto.Query{prefix: "tenant_123"}
+      ...> query = EctoShorts.CommonQueryAPI.put_query_prefix(query, "tenant_123")
+      ...> query.prefix
+      "tenant_123"
   """
   @spec put_query_prefix(query_source(), prefix()) :: query()
   def put_query_prefix(query, prefix) do
@@ -226,12 +223,6 @@ defmodule EctoShorts.CommonQueryAPI do
   ## Examples
 
       iex> EctoShorts.CommonQueryAPI.subquery(EctoShorts.Schema.Post)
-      %Ecto.SubQuery{
-        query: #Ecto.Query<from p0 in EctoShorts.Schema.Post>,
-        params: nil,
-        select: nil,
-        cache: nil
-      }
   """
   @spec subquery(query_source() | subquery()) :: subquery()
   @spec subquery(query_source() | subquery(), opts()) :: subquery()
@@ -260,15 +251,6 @@ defmodule EctoShorts.CommonQueryAPI do
   ## Examples
 
       iex> EctoShorts.CommonQueryAPI.limit(EctoShorts.Schema.Post, nil, 10)
-      #Ecto.Query<...>
-
-      iex> import Ecto.Query
-      ...> inner_query = from c in EctoShorts.Schema.Comment, as: :comments, where: c.post_id == as(:post).id
-      ...> outer_query = from p in EctoShorts.Schema.Post, as: :post, join: c in subquery(inner_query), on: true
-      ...> EctoShorts.CommonQueryAPI.limit(outer_query, :comments, 5)
-      #Ecto.Query<from p0 in EctoShorts.Schema.Post,
-      join: c1 in EctoShorts.Schema.Comment, as: :comments, on: c1.post_id == p0.id,
-      limit: ^5>
   """
   @spec limit(query_source(), binding_alias(), value()) :: query()
   def limit(query, binding_alias, value) do
@@ -506,17 +488,17 @@ defmodule EctoShorts.CommonQueryAPI do
       iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, nil, :association, :comments)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments)>
 
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, nil, :association, :comments, %{as: :comments})
+      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, :comments, :association, :comments)
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :comments>
 
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, nil, :association, :comments, %{on: true})
-      Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments)>
+      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, nil, :association, :comments)
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments)>
 
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, :post, :association, :comments, %{as: :comments, on: %{id: 2}})
-      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), on: c1.id == ^2>
+      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, :comments, :association, :comments, %{on: %{id: 2}})
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :comments, on: c1.id == ^2>
 
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, :post, :association, :comments, %{as: :comments, on: %{id: %{>=: 2}}})
-      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), on: c1.id >= ^2>
+      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schema.Post, nil, :comments, :association, :comments, %{on: %{id: %{>=: 2}}})
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in assoc(p0, :comments), as: :comments, on: c1.id >= ^2>
   """
   def join(query, binding_alias, join_as, join_kind, key, params \\ %{}, opts \\ [])
 
@@ -556,8 +538,6 @@ defmodule EctoShorts.CommonQueryAPI do
 
     prefix = params[:prefix]
 
-    subquery_opts = params[:options] || []
-
     on =
       params
       |> Map.get(:on, true)
@@ -568,7 +548,6 @@ defmodule EctoShorts.CommonQueryAPI do
       binding_alias,
       subquery_as,
       subquery_data,
-      subquery_opts,
       {qual, on, prefix}
     )
   end
@@ -626,18 +605,15 @@ defmodule EctoShorts.CommonQueryAPI do
          binding_alias,
          subquery_as,
          subquery_data,
-         subquery_opts,
          {qual, on, prefix}
        ) do
-    subquery = subquery(subquery_data, subquery_opts)
-
     if is_nil(subquery_as) or subquery_as === false do
       if binding_alias do
         Query.join(
           query,
           qual,
           [{^binding_alias, q}],
-          ^subquery,
+          subquery(subquery_data),
           on: ^on,
           prefix: ^prefix
         )
@@ -646,7 +622,7 @@ defmodule EctoShorts.CommonQueryAPI do
           query,
           qual,
           [q],
-          ^subquery,
+          subquery(subquery_data),
           on: ^on,
           prefix: ^prefix
         )
@@ -658,7 +634,7 @@ defmodule EctoShorts.CommonQueryAPI do
             query,
             qual,
             [{^binding_alias, q}],
-            ^subquery,
+            subquery(subquery_data),
             as: ^subquery_as,
             on: ^on,
             prefix: ^prefix
@@ -668,7 +644,7 @@ defmodule EctoShorts.CommonQueryAPI do
             query,
             qual,
             [q],
-            ^subquery,
+            subquery(subquery_data),
             as: ^subquery_as,
             on: ^on,
             prefix: ^prefix

@@ -5,6 +5,7 @@ defmodule EctoShorts.Repo.Migrations.CreatePosts do
     create table(:posts) do
       add :title, :string
       add :body, :string
+      add :permalink, :string
       add :published, :boolean
       add :tags, {:array, :string}
       add :views, :integer
@@ -18,5 +19,7 @@ defmodule EctoShorts.Repo.Migrations.CreatePosts do
 
       timestamps()
     end
+
+    create unique_index(:posts, :permalink)
   end
 end

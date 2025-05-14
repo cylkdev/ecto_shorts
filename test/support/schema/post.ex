@@ -13,6 +13,7 @@ defmodule EctoShorts.Schema.Post do
     field :published, :boolean
     field :tags, {:array, :string}
     field :views, :integer
+    field :permalink, :string
 
     field :notes, :string, source: :custom_string_field
 
@@ -24,17 +25,18 @@ defmodule EctoShorts.Schema.Post do
   @available_fields [
     :title,
     :body,
-    :views,
-    :tags,
     :notes,
-    :user_id
+    :permalink,
+    :tags,
+    :user_id,
+    :views
   ]
 
   def changeset(model_or_changeset, attrs \\ %{}) do
     model_or_changeset
     |> cast(attrs, @available_fields)
     |> no_assoc_constraint(:comments)
-    |> unique_constraint(:unique_identifier)
+    |> unique_constraint(:permalink)
   end
 
   def create_changeset(attrs \\ %{}) do

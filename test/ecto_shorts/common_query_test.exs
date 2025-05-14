@@ -53,16 +53,16 @@ defmodule EctoShorts.CommonQueryTest do
     end
   end
 
-  describe "has_subquery_source?/1" do
+  describe "has_source_subquery?/1" do
     test "returns false for a schema module" do
-      refute CommonQuery.has_subquery_source?(Post)
+      refute CommonQuery.has_source_subquery?(Post)
     end
 
     test "returns true for a query that wraps a subquery once" do
       inner_query = from p in Post, where: p.published == true
       outer_query = from p in subquery(inner_query), as: :post
 
-      assert CommonQuery.has_subquery_source?(outer_query)
+      assert CommonQuery.has_source_subquery?(outer_query)
     end
 
     test "returns true for a query that wraps a subquery inside another query" do
@@ -70,7 +70,7 @@ defmodule EctoShorts.CommonQueryTest do
       second_query = from p in subquery(first_query), as: :post
       third_query = from p in second_query, where: p.id in [1, 2, 3]
 
-      assert CommonQuery.has_subquery_source?(third_query)
+      assert CommonQuery.has_source_subquery?(third_query)
     end
 
     test "returns true for a query with multiple nested subqueries" do
@@ -78,13 +78,13 @@ defmodule EctoShorts.CommonQueryTest do
       second_query = from p in subquery(first_query), as: :post
       third_query = from p in subquery(second_query), where: p.id in [1, 2, 3]
 
-      assert CommonQuery.has_subquery_source?(third_query)
+      assert CommonQuery.has_source_subquery?(third_query)
     end
   end
 
-  describe "get_subquery_source/1" do
+  describe "get_source_subquery/1" do
     test "returns nil when source is a schema (not a subquery)" do
-      assert nil === CommonQuery.get_subquery_source(Post)
+      assert nil === CommonQuery.get_source_subquery(Post)
     end
 
     test "returns the subquery when given a query directly wrapping a subquery" do
@@ -92,7 +92,7 @@ defmodule EctoShorts.CommonQueryTest do
       source_query = from p in Post, where: p.published == true
       outer_query = from p in subquery(source_query), as: :post
 
-      assert subquery(source_query) === CommonQuery.get_subquery_source(outer_query)
+      assert subquery(source_query) === CommonQuery.get_source_subquery(outer_query)
     end
 
     test "returns the original subquery when nested one level deeper" do
@@ -101,7 +101,7 @@ defmodule EctoShorts.CommonQueryTest do
       outer_query = from p in subquery(source_query), as: :post
       final_query = from p in outer_query, where: p.id in [1, 2, 3]
 
-      assert subquery(source_query) === CommonQuery.get_subquery_source(final_query)
+      assert subquery(source_query) === CommonQuery.get_source_subquery(final_query)
     end
 
     test "returns the original subquery when nested multiple layers deep" do
@@ -111,7 +111,7 @@ defmodule EctoShorts.CommonQueryTest do
       outer_query = from p in subquery(source_query), where: p.id in [1, 2, 3]
       final_query = from p in outer_query, where: p.id in [1, 2, 3]
 
-      assert subquery(source_query) === CommonQuery.get_subquery_source(final_query)
+      assert subquery(source_query) === CommonQuery.get_source_subquery(final_query)
     end
   end
 

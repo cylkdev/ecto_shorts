@@ -102,11 +102,11 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
       # join one subquery
       iex> EctoShorts.QueryBuilders.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{subquery: %{query: EctoShorts.Schema.Comment, where: %{id: 2}}}, [])
-      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in subquery(from c0 in EctoShorts.Schema.Comment), as: :comments, on: true, where: c1.id == ^2>
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in subquery(from c0 in EctoShorts.Schema.Comment), as: :ecto_shorts_comment, on: true, where: c1.id == ^2>
 
       # join a list of subqueries
       iex> EctoShorts.QueryBuilders.Schema.build_query(EctoShorts.Schema.Post, nil, EctoShorts.Schema.Post, :join, %{subquery: [%{query: EctoShorts.Schema.Comment, where: %{id: 2}}]}, [])
-      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in subquery(from c0 in EctoShorts.Schema.Comment), as: :comments, on: true, where: c1.id == ^2>
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, join: c1 in subquery(from c0 in EctoShorts.Schema.Comment), as: :ecto_shorts_comment, on: true, where: c1.id == ^2>
   """
   @spec build_query(
           query_source(),
@@ -350,8 +350,6 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
     {subquery_from, params} = Map.pop(params, :query)
 
-    subquery_from = CommonQuery.to_query(subquery_from)
-
     subquery_schema_module =
       if is_nil(subquery_schema_module) do
         subquery_from
@@ -377,7 +375,6 @@ defmodule EctoShorts.QueryBuilders.Schema do
       take_join_keys(params),
       opts
     )
-    |> IO.inspect(label: "success")
     |> reduce_query_params(
       subquery_as,
       subquery_schema_module,
