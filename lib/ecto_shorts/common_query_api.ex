@@ -525,7 +525,12 @@ defmodule EctoShorts.CommonQueryAPI do
   end
 
   def join(query, binding_alias, assoc_as, :association, key, params, opts) do
-    schema_module = CommonQuery.fetch_binding_expr_source_schema_module!(query, binding_alias)
+    schema_module =
+      CommonQuery.fetch_binding_expr_source_and_schema!(
+        query,
+        binding_alias,
+        :schema
+      )
 
     qual = params[:qualifier] || :inner
 
@@ -540,7 +545,12 @@ defmodule EctoShorts.CommonQueryAPI do
   end
 
   def join(query, binding_alias, subquery_as, :subquery, subquery_data, params, opts) do
-    schema_module = CommonQuery.fetch_binding_expr_source_schema_module!(query, binding_alias)
+    schema_module =
+      CommonQuery.fetch_binding_expr_source_and_schema!(
+        query,
+        binding_alias,
+        :schema
+      )
 
     qual = params[:qualifier] || :inner
 
@@ -694,7 +704,11 @@ defmodule EctoShorts.CommonQueryAPI do
 
       schema_module =
         with nil <- schema_module do
-          CommonQuery.fetch_binding_expr_source_schema_module!(query, binding_alias)
+          CommonQuery.fetch_binding_expr_source_and_schema!(
+            query,
+            binding_alias,
+            :schema
+          )
         end
 
       expr = dynamic(schema_module, binding_alias, params, opts)
@@ -729,7 +743,11 @@ defmodule EctoShorts.CommonQueryAPI do
 
       schema_module =
         with nil <- schema_module do
-          CommonQuery.fetch_binding_expr_source_schema_module!(query, binding_alias)
+          CommonQuery.fetch_binding_expr_source_and_schema!(
+            query,
+            binding_alias,
+            :schema
+          )
         end
 
       expr = dynamic(schema_module, binding_alias, params, opts)

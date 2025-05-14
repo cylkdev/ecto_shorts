@@ -106,18 +106,16 @@ defmodule EctoShorts.CommonSchemas do
     schema_source
   end
 
-  def get_schema_source(module) when is_atom(module) do
-    if function_exported?(module, :__schema__, 1) do
-      module.__schema__(:source)
+  def get_schema_source(schema_module) when is_atom(schema_module) do
+    if function_exported?(schema_module, :__schema__, 1) do
+      schema_module.__schema__(:source)
     else
-      module
-      |> CommonQuery.to_query()
-      |> CommonQuery.get_query_from_expr_source()
+      CommonQuery.get_from_expr(schema_module, :source)
     end
   end
 
-  def get_schema_source(%_{} = query) do
-    CommonQuery.get_query_from_expr_source(query)
+  def get_schema_source(query) do
+    CommonQuery.get_from_expr(query, :source)
   end
 
   @doc group: "Introspection API"
@@ -137,14 +135,16 @@ defmodule EctoShorts.CommonSchemas do
       EctoShorts.Schema.Post
   """
   @spec get_schema_module(query_source() | schema_struct()) :: schema_module()
-  def get_schema_module(%{__meta__: %{schema: schema_module}}), do: schema_module
-  def get_schema_module({_schema_source, schema_module}), do: schema_module
+  def get_schema_module(%{__meta__: %{schema: schema_module}}) do
+    schema_module
+  end
+
+  def get_schema_module({_schema_source, schema_module}) do
+    schema_module
+  end
 
   def get_schema_module(query_source) do
-    query_source
-    |> CommonQuery.to_query()
-    |> CommonQuery.get_query_from_expr_source()
-    |> elem(1)
+    query_source |> CommonQuery.get_from_expr(:source) |> elem(1)
   end
 
   @doc """

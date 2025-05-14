@@ -354,7 +354,9 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
     subquery_schema_module =
       if is_nil(subquery_schema_module) do
-        CommonQuery.fetch_binding_expr_source_schema_module!(subquery_from, subquery_as)
+        subquery_from
+        |> CommonQuery.fetch_binding_expr_source_and_schema!(subquery_as)
+        |> elem(1)
       else
         subquery_schema_module
       end
