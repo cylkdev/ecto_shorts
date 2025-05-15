@@ -5,6 +5,8 @@ defmodule EctoShorts.Schema.AbstractPost do
 
   require Ecto.Query
 
+  @schema_prefix "custom_prefix"
+
   schema "abstract table: posts" do
     belongs_to :user, EctoShorts.Schema.User
 

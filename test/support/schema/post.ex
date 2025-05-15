@@ -5,6 +5,8 @@ defmodule EctoShorts.Schema.Post do
 
   require Ecto.Query
 
+  @schema_prefix "custom_prefix"
+
   schema "posts" do
     belongs_to :user, EctoShorts.Schema.User
     has_many :comments, EctoShorts.Schema.Comment

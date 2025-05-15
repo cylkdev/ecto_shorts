@@ -66,8 +66,8 @@ defmodule EctoShorts.CommonChanges do
 
   ## Examples
 
-      iex> EctoShorts.CommonChanges.validate_filename(changeset, :filename)
-      iex> EctoShorts.CommonChanges.validate_filename(changeset, :name, min: 3, max: 50)
+      EctoShorts.CommonChanges.validate_filename(changeset, :filename)
+      EctoShorts.CommonChanges.validate_filename(changeset, :name, min: 3, max: 50)
   """
   @spec validate_filename(changeset(), key()) :: changeset()
   @spec validate_filename(changeset(), key(), opts()) :: changeset()
@@ -126,7 +126,7 @@ defmodule EctoShorts.CommonChanges do
 
   ## Examples
 
-      iex> EctoShorts.CommonChanges.truncate_naive_datetime_change(changeset, :started_at)
+      EctoShorts.CommonChanges.truncate_naive_datetime_change(changeset, :started_at)
   """
   @spec truncate_naive_datetime_change(changeset(), key(), precision()) :: changeset()
   def truncate_naive_datetime_change(changeset, key, precision \\ :second) do
@@ -145,7 +145,7 @@ defmodule EctoShorts.CommonChanges do
 
   ## Examples
 
-      iex> EctoShorts.CommonChanges.truncate_datetime_change(changeset, :expires_at)
+      EctoShorts.CommonChanges.truncate_datetime_change(changeset, :expires_at)
   """
   @spec truncate_datetime_change(changeset(), key(), precision()) :: changeset()
   def truncate_datetime_change(changeset, key, precision \\ :second) do
@@ -229,7 +229,7 @@ defmodule EctoShorts.CommonChanges do
 
   ### Examples
 
-      iex> EctoShorts.CommonChanges.changeset_field_empty?(changeset, :comments)
+      EctoShorts.CommonChanges.changeset_field_empty?(changeset, :comments)
   """
   @spec changeset_field_empty?(changeset(), key()) :: boolean()
   def changeset_field_empty?(changeset, key) do
@@ -245,7 +245,7 @@ defmodule EctoShorts.CommonChanges do
 
   ### Examples
 
-      iex> EctoShorts.CommonChanges.changeset_field_nil?(changeset, :comments)
+      EctoShorts.CommonChanges.changeset_field_nil?(changeset, :comments)
   """
   @spec changeset_field_nil?(changeset(), key()) :: boolean()
   def changeset_field_nil?(changeset, key) do
@@ -288,10 +288,10 @@ defmodule EctoShorts.CommonChanges do
 
   ## Example
 
-    iex> EctoShorts.CommonChanges.preload_change_assoc(changeset, :profile)
-    iex> EctoShorts.CommonChanges.preload_change_assoc(changeset, :account, required: true)
-    iex> EctoShorts.CommonChanges.preload_change_assoc(changeset, :settings, required_when_missing: :settings_id)
-    iex> EctoShorts.CommonChanges.preload_change_assoc(changeset, :tags, repo: MyApp.CustomRepo)
+      EctoShorts.CommonChanges.preload_change_assoc(changeset, :profile)
+      EctoShorts.CommonChanges.preload_change_assoc(changeset, :account, required: true)
+      EctoShorts.CommonChanges.preload_change_assoc(changeset, :settings, required_when_missing: :settings_id)
+      EctoShorts.CommonChanges.preload_change_assoc(changeset, :tags, repo: MyApp.CustomRepo)
   """
   @spec preload_change_assoc(changeset(), key(), opts()) :: changeset()
   def preload_change_assoc(changeset, key, opts) do
@@ -355,7 +355,7 @@ defmodule EctoShorts.CommonChanges do
 
   ## Example
 
-      iex> EctoShorts.CommonChanges.put_or_cast_assoc(changeset, :tags)
+      EctoShorts.CommonChanges.put_or_cast_assoc(changeset, :tags)
   """
   @spec put_or_cast_assoc(changeset(), key()) :: changeset()
   @spec put_or_cast_assoc(changeset(), key(), opts()) :: changeset()

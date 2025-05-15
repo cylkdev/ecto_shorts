@@ -46,7 +46,6 @@ defmodule EctoShorts.CommonQueryAPI do
   @type prefix :: binary() | nil
   @type changeset :: Ecto.Changeset.t()
   @type dynamic_expr :: %Ecto.Query.DynamicExpr{}
-  @type maybe_dynamic_expr :: dynamic_expr() | nil
   @type binding_alias :: atom()
 
   @type condition :: :and | :or
@@ -82,7 +81,7 @@ defmodule EctoShorts.CommonQueryAPI do
       ...> dyn_b = dynamic([q], q.id > 1)
       ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :or, dyn_b)
   """
-  @spec merge_dynamic(maybe_dynamic_expr(), condition(), dynamic_expr()) :: dynamic_expr()
+  @spec merge_dynamic(dynamic_expr() | nil, condition(), dynamic_expr()) :: dynamic_expr()
   def merge_dynamic(nil, _operator, dyn), do: dyn
   def merge_dynamic(dyn_a, :or, dyn_b), do: Query.dynamic(^dyn_a or ^dyn_b)
   def merge_dynamic(dyn_a, :and, dyn_b), do: Query.dynamic(^dyn_a and ^dyn_b)
@@ -124,20 +123,26 @@ defmodule EctoShorts.CommonQueryAPI do
   end
 
   def dynamic(schema_module, binding_alias, params, opts) do
-    with nil <- do_dynamic(schema_module, binding_alias, params, opts) do
+    with nil <-
+           convert_to_dynamic_expression(
+             schema_module,
+             binding_alias,
+             params,
+             opts
+           ) do
       dynamic(binding_alias, true)
     end
   end
 
-  defp do_dynamic(schema_module, binding_alias, params, opts) do
-    {dynamic_source, params} = Map.pop(params, :source)
+  defp convert_to_dynamic_expression(schema_module, binding_alias, params, opts) do
+    {dyn, params} = Map.pop(params, :dynamic)
 
     params
     |> normalize_conditions()
-    |> Enum.reduce(dynamic_source, fn
-      {condition, params}, dynamic_source ->
+    |> Enum.reduce(dyn, fn
+      {condition, params}, dyn ->
         Utils.apply_expressions(
-          dynamic_source,
+          dyn,
           params,
           fn {key, value}, dyn ->
             DynamicExpressions.create_dynamic(
