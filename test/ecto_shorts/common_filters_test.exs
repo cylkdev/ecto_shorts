@@ -7,7 +7,7 @@ defmodule EctoShorts.CommonFiltersTest do
     Schema.Post
   }
 
-  import Ecto.Query
+  import Ecto.Query, only: [from: 2]
   import EctoShorts.Testing, only: [assert_query: 2]
 
   describe "&convert_params_to_filter/3" do

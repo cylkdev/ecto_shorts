@@ -23,7 +23,7 @@ defmodule EctoShorts.CommonSchemas do
   as long as the table structure matches the schema definition.
   """
 
-  alias EctoShorts.CommonQuery
+  alias EctoShorts.CommonQueries
 
   @type query :: Ecto.Query.t()
   @type schema_module :: Ecto.Queryable.t()
@@ -110,12 +110,12 @@ defmodule EctoShorts.CommonSchemas do
     if function_exported?(schema_module, :__schema__, 1) do
       schema_module.__schema__(:source)
     else
-      CommonQuery.get_from_expr(schema_module, :source)
+      CommonQueries.get_from_expr(schema_module, :source)
     end
   end
 
   def get_schema_source(query) do
-    CommonQuery.get_from_expr(query, :source)
+    CommonQueries.get_from_expr(query, :source)
   end
 
   @doc group: "Introspection API"
@@ -144,7 +144,7 @@ defmodule EctoShorts.CommonSchemas do
   end
 
   def get_schema_module(query_source) do
-    query_source |> CommonQuery.get_from_expr(:source) |> elem(1)
+    query_source |> CommonQueries.get_from_expr(:source) |> elem(1)
   end
 
   @doc """

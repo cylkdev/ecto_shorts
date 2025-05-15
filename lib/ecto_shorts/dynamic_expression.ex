@@ -51,28 +51,14 @@ defmodule EctoShorts.DynamicExpression do
       dynamic([q], ilike(q.name, ^"john")
   """
 
-  alias EctoShorts.Config
-
+  @type adapter :: module()
   @type schema_module :: Ecto.Queryable.t()
   @type dynamic_expr :: %Ecto.Query.DynamicExpr{}
   @type maybe_dynamic_expr :: dynamic_expr() | nil
-  @type binding_alias :: atom()
-
+  @type binding_alias :: atom() | nil
   @type condition :: :and | :or
-
   @type key :: atom()
   @type value :: any()
-  @type opts :: keyword()
-
-  @default_adapter EctoShorts.DynamicExpressions.Postgres
-
-  @default_adapters [
-    {Ecto.Adapters.Postgres, adapter: EctoShorts.DynamicExpressions.Postgres}
-  ]
-
-  @doc false
-  @spec default_adapters :: list({module(), keyword()})
-  def default_adapters, do: @default_adapters
 
   @doc """
   Defines a callback to implement custom logic for building a dynamic query expression.
@@ -89,52 +75,76 @@ defmodule EctoShorts.DynamicExpression do
   @callback create_dynamic(
               schema_module(),
               maybe_dynamic_expr(),
-              binding_alias() | nil,
+              binding_alias(),
               condition(),
               key(),
               value()
             ) :: dynamic_expr()
 
   @doc """
-  Delegates to the adapter module’s `create_dynamic/5` function.
+  Delegates to the given adapter module to build a dynamic query expression
+  based on the provided schema, field, and value.
 
-  This is the main entry point used by `EctoShorts` to apply adapter specific
-  dynamic filter logic.
+  This function acts as the main entry point for constructing `dynamic/2`
+  expressions across different database backends. It relies on the adapter
+  implementing the `EctoShorts.DynamicExpression` behaviour and calling
+  `create_dynamic/6` internally.
 
-  ## Options
+  The returned expression can be used in Ecto queries with `where/3`,
+  `or_where/3`, or similar macros.
 
-      * `:dynamic_expression_adapter` - Specifies the dynamic builder adapter
-        to use.
+  ## Parameters
 
-      * `:dynamic_expression_adapters` - Specifies the dynamic builder adapter
-        to associate with each ecto repo adapter in your application. This
-        can be a enumerable of key-value pairs where the `key` is the repo
-        adapter module and the value is a keyword list of options that must
-        contain the `:adapter` key. (e.g. `[{Ecto.Adapters.Postgres, adapter: EctoShorts.DynamicExpressions.Postgres}]`).
+    * `adapter` – A module that implements the `EctoShorts.DynamicExpression` behaviour.
+    * `schema_module` – The Ecto schema module for the query.
+    * `dyn` – The current dynamic expression (or `nil` if starting a new one).
+    * `binding_alias` – The alias or index representing the query binding (e.g. `:post` or `nil`).
+    * `condition` – Logical operator (`:and` or `:or`) to merge expressions.
+    * `key` – The schema field to filter on.
+    * `value` – The value or `{operator, value}` tuple to filter by.
 
   ## Examples
 
-        iex> EctoShorts.DynamicExpression.create_dynamic(EctoShorts.Schema.Post, nil, nil, :and, :tags, {:==, "blog"}, [])
+      iex> EctoShorts.DynamicExpression.create_dynamic(
+      ...>   EctoShorts.DynamicExpressions.Postgres,
+      ...>   EctoShorts.Schema.Post,
+      ...>   nil,
+      ...>   :post,
+      ...>   :and,
+      ...>   :title,
+      ...>   "example"
+      ...> )
+
+      iex> EctoShorts.DynamicExpression.create_dynamic(
+      ...>   EctoShorts.DynamicExpressions.Postgres,
+      ...>   EctoShorts.Schema.Post,
+      ...>   nil,
+      ...>   :post,
+      ...>   :and,
+      ...>   :title,
+      ...>   {:ilike, "example"}
+      ...> )
+
   """
   @spec create_dynamic(
+          adapter(),
           schema_module(),
           maybe_dynamic_expr(),
-          binding_alias() | nil,
+          binding_alias(),
           condition(),
           key(),
-          value(),
-          opts()
+          value()
         ) :: dynamic_expr()
   def create_dynamic(
+        adapter,
         schema_module,
         dyn,
         binding_alias,
         condition,
         key,
-        value,
-        opts
+        value
       ) do
-    adapter!(opts).create_dynamic(
+    adapter.create_dynamic(
       schema_module,
       dyn,
       binding_alias,
@@ -142,28 +152,5 @@ defmodule EctoShorts.DynamicExpression do
       key,
       value
     )
-  end
-
-  defp adapter!(opts) do
-    if Keyword.has_key?(opts, :dynamic_expression_adapter) do
-      opts[:dynamic_expression_adapter]
-    else
-      case find_adapter_for_repo(Config.repo!(opts).__adapter__(), opts) do
-        nil -> @default_adapter
-        {_, adapter_config} -> Keyword.fetch!(adapter_config, :adapter)
-      end
-    end
-  end
-
-  defp find_adapter_for_repo(repo_adapter, opts) do
-    opts
-    |> dynamic_expression_adapters()
-    |> Enum.find(fn {key, _} -> key === repo_adapter end)
-  end
-
-  defp dynamic_expression_adapters(opts) do
-    opts[:dynamic_expression_adapters] ||
-      Config.dynamic_expression_adapters() ||
-      @default_adapters
   end
 end

@@ -25,11 +25,11 @@ defmodule EctoShorts.CommonQueryAPI do
   learn, just use functions that work with data.
   """
 
-  alias EctoShorts.CommonQuery
+  alias EctoShorts.CommonQueries
   alias Ecto.Query
 
   alias EctoShorts.{
-    DynamicExpression,
+    DynamicExpressions,
     Utils
   }
 
@@ -140,7 +140,7 @@ defmodule EctoShorts.CommonQueryAPI do
           dynamic_source,
           params,
           fn {key, value}, dyn ->
-            DynamicExpression.create_dynamic(
+            DynamicExpressions.create_dynamic(
               schema_module,
               dyn,
               binding_alias,
@@ -508,7 +508,7 @@ defmodule EctoShorts.CommonQueryAPI do
 
   def join(query, binding_alias, assoc_as, :association, key, params, opts) do
     schema_module =
-      CommonQuery.fetch_binding_expr_source_and_schema!(
+      CommonQueries.fetch_binding_expr_source_and_schema!(
         query,
         binding_alias,
         :schema
@@ -528,7 +528,7 @@ defmodule EctoShorts.CommonQueryAPI do
 
   def join(query, binding_alias, subquery_as, :subquery, subquery_data, params, opts) do
     schema_module =
-      CommonQuery.fetch_binding_expr_source_and_schema!(
+      CommonQueries.fetch_binding_expr_source_and_schema!(
         query,
         binding_alias,
         :schema
@@ -680,7 +680,7 @@ defmodule EctoShorts.CommonQueryAPI do
 
       schema_module =
         with nil <- schema_module do
-          CommonQuery.fetch_binding_expr_source_and_schema!(
+          CommonQueries.fetch_binding_expr_source_and_schema!(
             query,
             binding_alias,
             :schema
@@ -719,7 +719,7 @@ defmodule EctoShorts.CommonQueryAPI do
 
       schema_module =
         with nil <- schema_module do
-          CommonQuery.fetch_binding_expr_source_and_schema!(
+          CommonQueries.fetch_binding_expr_source_and_schema!(
             query,
             binding_alias,
             :schema

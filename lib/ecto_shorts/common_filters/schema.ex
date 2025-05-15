@@ -1,11 +1,83 @@
 defmodule EctoShorts.CommonFilters.Schema do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  ...
-  """
+  Provides schema-aware filtering logic for building dynamic `Ecto.Query`
+  expressions.
 
+  This module acts as the core filter engine for structuring queries that are
+  dynamically composed from maps or keyword lists. It determines whether each
+  filter key corresponds to a known schema field, association, or supported DSL
+  extension (e.g., `:join`, `:select`, `:where`) and routes each one to the
+  appropriate query builder logic.
+
+  This API is designed to:
+
+    * **Recognize schema fields and apply expressions**, including operator/value
+      tuples (e.g., `%{views: %{>=: 10}}`).
+
+    * **Join associations dynamically** and recursively apply filters inside those
+      associations.
+
+    * **Integrate with subqueries**, including lists of subqueries or those
+      without explicit `:as` bindings.
+
+    * **Handle unsupported keys gracefully**, by logging helpful messages while
+      skipping them.
+
+  Internally, this module delegates most query construction to `EctoShorts.CommonQueryAPI`
+  and uses `EctoShorts.SchemaHelpers`for schema introspection.
+
+  This module implements the `EctoShorts.QueryBuilder` behaviour.
+
+  ### Supported Filters
+
+  The following filter keys are supported and map to dynamic query operations:
+
+    * `:join` – Joins an association or subquery and applies optional nested filters.
+
+    * `:select` – Selects fields from the root or joined schemas.
+
+    * `:select_merge` – Adds fields to an existing `select`.
+
+    * `:where` – Applies `AND` conditions to fields.
+
+    * `:or_where` – Applies `OR` conditions using the same format as `:where`.
+
+  See `filters/0` for the full list of supported query filters.
+
+  ### Examples
+
+  ```elixir
+  # Basic filter on a root schema field
+  iex> EctoShorts.CommonFilters.Schema.build_query(
+  ...>   EctoShorts.Schema.Post,
+  ...>   nil,
+  ...>   EctoShorts.Schema.Post,
+  ...>   :views,
+  ...>   %{>=: 10}
+  ...> )
+
+  # Join an association and apply filters inside it
+  iex> EctoShorts.CommonFilters.Schema.build_query(
+  ...>   EctoShorts.Schema.Post,
+  ...>   nil,
+  ...>   EctoShorts.Schema.Post,
+  ...>   :comments,
+  ...>   %{author_id: 5}
+  ...> )
+
+  # Apply a join using subquery with a condition
+  iex> EctoShorts.CommonFilters.Schema.build_query(
+  ...>   EctoShorts.Schema.Post,
+  ...>   nil,
+  ...>   EctoShorts.Schema.Post,
+  ...>   :join,
+  ...>   %{subquery: %{query: EctoShorts.Schema.Comment, where: %{id: 1}}}
+  ...> )
+  ```
+  """
   alias EctoShorts.{
-    CommonQuery,
+    CommonQueries,
     CommonQueryAPI,
     Utils,
     SchemaHelpers
@@ -164,6 +236,7 @@ defmodule EctoShorts.CommonFilters.Schema do
         - Use a valid schema field, such as:
 
         #{Enum.map_join(schema_module.__schema__(:query_fields), "\n", &"* #{&1}")}
+
         """
 
         assoc_warning_message =
@@ -353,7 +426,7 @@ defmodule EctoShorts.CommonFilters.Schema do
     subquery_schema_module =
       if is_nil(subquery_schema_module) do
         subquery_from
-        |> CommonQuery.fetch_binding_expr_source_and_schema!(subquery_as)
+        |> CommonQueries.fetch_binding_expr_source_and_schema!(subquery_as)
         |> elem(1)
       else
         subquery_schema_module

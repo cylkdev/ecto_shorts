@@ -12,8 +12,6 @@ defmodule EctoShorts.DynamicExpressions.Postgres do
   map or keyword list of filters. It handles building the right
   expressions for each field based on its type—so you don’t need to
   worry about whether a field is a string, number, or array.
-
-  ...
   """
 
   alias EctoShorts.{
@@ -40,7 +38,35 @@ defmodule EctoShorts.DynamicExpressions.Postgres do
 
   @impl EctoShorts.DynamicExpression
   @doc """
-  ...
+  Builds a dynamic expression for a single filter condition
+  using the given field, operator, and value.
+
+  This function is the core of dynamic filter generation.
+  It inspects the field type in the schema to determine
+  whether to apply a standard field condition or handle it
+  as an array-based condition.
+
+  Depending on whether the field is a normal scalar or an
+  array, it delegates to the appropriate module (`Field` or
+  `Array`) and then merges the resulting expression into the
+  provided dynamic expression.
+
+  ## Parameters
+
+    * `schema_module` – the Ecto schema module used for field introspection.
+    * `dyn` – the existing dynamic expression (or `nil`) to be merged into.
+    * `binding_alias` – an optional binding alias for use in the dynamic clause.
+    * `condition` – the logical operator used to combine expressions (`:and` or `:or`).
+    * `key` – the field name being filtered on.
+    * `value` – The value used for the operation, typically a tuple of `{operator, value}`
+      representing the operator (e.g. `:==`, `:ilike`, `:in`) and its value.
+
+  ## Examples
+
+      iex> EctoShorts.DynamicExpressions.Postgres.create_dynamic(EctoShorts.Schema.Post, nil, :binding_name, :and, :title, {:==, "Hello"})
+
+      iex> EctoShorts.DynamicExpressions.Postgres.create_dynamic(EctoShorts.Schema.Post, nil, :binding_name, :or, :tags, {:==, ["elixir", "ecto"]})
+
   """
   @spec create_dynamic(
           schema_module(),

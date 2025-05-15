@@ -91,19 +91,77 @@ defmodule EctoShorts.CommonFilters do
 
   @doc since: "2.5.0"
   @doc """
-  ...
+  Converts a set of parameters into an `Ecto.Query`.
+
+  ## Input Forms
+
+  This function supports multiple forms of input for flexibility:
+
+  1. **Simple Schema + Filter Map**
+
+    You can pass a schema module as the first argument and a map or keyword
+    list as the second:
+
+        EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{id: 1})
+
+  2. **Query Map**
+
+    You can pass a single map with a `:query` key containing the schema or
+    base query. This form also supports additional metadata:
+
+        EctoShorts.CommonFilters.convert_params_to_filter(%{
+          query: EctoShorts.Schema.Post,
+          as: :post,
+          where: %{id: 1}
+        })
+
+  3. **Keyword Lists**
+
+    You can use keyword lists to express filters, especially for flat queries:
+
+        EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, [title: "Hello", limit: 10])
+
+  4. **Empty Input**
+
+    If filters are an empty map or list, the original query is returned unchanged.
+
+  ## Metadata Keys (when using the query map form)
+
+  When you pass a map as the only argument (the query map form), you may include:
+
+    * `:query` – The base query or schema module (required)
+    * `:queryable` – An optional override for determining field types
+    * `:as` – The named binding alias to use in the query
+    * `:prefix` – Database prefix to use
+    * `:options` – Additional options passed to filter builders
 
   ## Examples
+
+      # Basic filter using a schema:
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{id: 1})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.id == ^1>
 
+      # Join and nested filter using query map form:
+
       iex> EctoShorts.CommonFilters.convert_params_to_filter(%{
       ...>   query: EctoShorts.Schema.Post,
       ...>   as: :post,
-      ...>   where: %{id: 1}
+      ...>   comments: %{body: %{ilike: "awesome"}}
       ...> })
-      #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, where: p0.id == ^1>
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, as: :post, join: c1 in assoc(p0, :comments), as: :ecto_shorts_comments, where: ilike(c1.body, ^"%awesome%")>
+
+      # Filter using keyword list:
+
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, [title: "Hello", limit: 5])
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.title == ^"Hello", limit: ^5>
+
+      # Ignore empty filter set:
+
+      iex> import Ecto.Query
+      ...> query = from p in EctoShorts.Schema.Post
+      ...> EctoShorts.CommonFilters.convert_params_to_filter(query, %{})
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post>
   """
   @spec convert_params_to_filter(query_source() | params()) :: query_source()
   @spec convert_params_to_filter(query_source() | params(), params() | opts()) :: query_source()

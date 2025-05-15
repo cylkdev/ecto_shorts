@@ -1,7 +1,42 @@
 defmodule EctoShorts.DynamicExpressions.Postgres.Array do
   @moduledoc since: "2.5.0"
   @moduledoc """
-  ...
+  Builds dynamic filter expressions for Postgres array fields.
+
+  This module is designed to handle conditions where the target
+  schema field is an array, and the value being matched is either
+  a scalar, a list, or wrapped in case transformation.
+
+  It supports a wide variety of operators like equality (`:==`),
+  inequality (`:!=`), pattern matching (`:like`, `:ilike`, `:=~`),
+  and comparison operators (`:<`, `:<=`, `:>`, `:>=`).
+
+  These expressions are designed to be composed into `Ecto.Query.dynamic/2`
+  calls and are safe to use with or without binding aliases.
+
+  ## Supported operations
+
+    * Scalar in array: `value in array_field`
+    * Array matches literal: `array_field == value`
+    * ANY comparisons: `value < ANY(array_field)`, etc.
+    * Pattern match against ANY: `"pattern" ILIKE ANY(array_field)`
+    * Case-based match: `LOWER(value) == LOWER(any in array_field)`
+    * Handling `nil` and list values for robust runtime filters
+
+  This module complements `EctoShorts.DynamicExpressions.Postgres.Field`
+  and is typically used internally by dynamic query builders.
+
+  ## Examples
+
+      # value in array field
+      iex> EctoShorts.DynamicExpressions.Postgres.Array.create_dynamic(:binding_name, "elixir", :==, :tags)
+
+      # case-insensitive regex match
+      iex> EctoShorts.DynamicExpressions.Postgres.Array.create_dynamic(:binding_name, "elixir", :=~, :tags)
+
+      # lower-case match against array values
+      iex> EctoShorts.DynamicExpressions.Postgres.Array.create_dynamic(:binding_name, :tags, :==, {:lower, "elixir"})
+
   """
 
   alias Ecto.Query

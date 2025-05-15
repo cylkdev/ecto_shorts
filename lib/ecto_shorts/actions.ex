@@ -88,7 +88,7 @@ defmodule EctoShorts.Actions do
   ## Multi API
 
   Multi operations let you group together several changes like inserts,
-  updates, or deletes — and run them inside a single database transaction.
+  updates, or deletes and run them inside a single database transaction.
 
   Each action is executed sequentially in the order provided. If any step
   fails (for example, due to a validation error), the entire set of changes

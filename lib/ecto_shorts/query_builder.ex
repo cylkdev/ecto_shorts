@@ -87,13 +87,9 @@ defmodule EctoShorts.QueryBuilder do
   ## Parameters
 
     * `query` — An existing query, queryable, or `{schema_source, schema_module}` tuple.
-
     * `binding` — An optional alias used to refer to the query binding (e.g. `:post`).
-
     * `queryable` — The schema module or queryable the filters apply to.
-
     * `key` — A filter key, such as a field name (`:title`) or virtual key (`:limit`).
-
     * `value` — The value to filter by. This may be a scalar, list, or expression map
       like `%{ilike: "foo"}`.
 
