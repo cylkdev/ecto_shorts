@@ -467,17 +467,17 @@ defmodule EctoShorts.CommonQueries do
           binding_alias() | nil,
           key()
         ) :: source_and_schema() | :error
-  def fetch_binding_expr_source_and_schema(query, binding_alias, :schema) do
-    with {_schema_source, schema_module} <-
-           fetch_binding_expr_source_and_schema(query, binding_alias) do
-      schema_module
-    end
-  end
-
   def fetch_binding_expr_source_and_schema(query, binding_alias, :source) do
     with {schema_source, _schema_module} <-
            fetch_binding_expr_source_and_schema(query, binding_alias) do
       schema_source
+    end
+  end
+
+  def fetch_binding_expr_source_and_schema(query, binding_alias, :schema) do
+    with {_schema_source, schema_module} <-
+           fetch_binding_expr_source_and_schema(query, binding_alias) do
+      schema_module
     end
   end
 

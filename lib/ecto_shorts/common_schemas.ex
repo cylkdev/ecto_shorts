@@ -13,7 +13,7 @@ defmodule EctoShorts.CommonSchemas do
 
   For example:
 
-      EctoSchema.Actions.all({"posts", EctoShorts.Schema.AbstractPost}, %{id: 1})
+      EctoSchema.Actions.all({"posts", EctoShorts.Schema.PostAbstract}, %{id: 1})
 
   In this example, the query runs against the "posts" table instead of the default
   source defined in the schema. When both a `source` and `queryable` are provided,
@@ -34,6 +34,7 @@ defmodule EctoShorts.CommonSchemas do
   @type sourceable :: schema_module() | source_and_schema()
   @type query_source :: query() | sourceable()
   @type changeset :: Ecto.Changeset.t()
+  @type changeset_input :: sourceable() | schema_struct() | changeset()
   @type prefix :: binary() | nil
   @type key :: atom()
   @type params :: map()
@@ -48,7 +49,7 @@ defmodule EctoShorts.CommonSchemas do
       iex> EctoShorts.CommonSchemas.get_reflection(EctoShorts.Schema.Post, :primary_key)
       [:id]
 
-      iex> EctoShorts.CommonSchemas.get_reflection({"posts", EctoShorts.Schema.AbstractPost}, :primary_key)
+      iex> EctoShorts.CommonSchemas.get_reflection({"posts", EctoShorts.Schema.PostAbstract}, :primary_key)
       [:id]
   """
   @spec get_reflection(sourceable(), any()) :: any()
@@ -64,7 +65,7 @@ defmodule EctoShorts.CommonSchemas do
       iex> EctoShorts.CommonSchemas.get_reflection(EctoShorts.Schema.Post, :type, :id)
       :id
 
-      iex> EctoShorts.CommonSchemas.get_reflection({"posts", EctoShorts.Schema.AbstractPost}, :type, :id)
+      iex> EctoShorts.CommonSchemas.get_reflection({"posts", EctoShorts.Schema.PostAbstract}, :type, :id)
       :id
   """
   @spec get_reflection(sourceable(), any(), any()) :: any()
@@ -136,7 +137,7 @@ defmodule EctoShorts.CommonSchemas do
     |> Map.get(key)
   end
 
-  @doc group: "Introspection API"
+  @doc group: "Schema API"
   @doc """
   Returns the `Ecto.Schema.Metadata` struct from the given schema struct.
 
@@ -153,7 +154,7 @@ defmodule EctoShorts.CommonSchemas do
   def get_metadata(%{data: %{__meta__: meta}}), do: meta
   def get_metadata(%{__meta__: meta}), do: meta
 
-  @doc group: "Struct API"
+  @doc group: "Schema API"
   @doc """
   Updates the `__meta__` field on an Ecto schema struct.
 
@@ -182,7 +183,7 @@ defmodule EctoShorts.CommonSchemas do
       }
 
       # the source given in the tuple takes precedence
-      EctoShorts.CommonSchemas.put_metadata({"posts", EctoShorts.Schema.AbstractPost}, state: :loaded, source: "custom_source", prefix: "custom_prefix")
+      EctoShorts.CommonSchemas.put_metadata({"posts", EctoShorts.Schema.PostAbstract}, state: :loaded, source: "custom_source", prefix: "custom_prefix")
       %EctoShorts.Schema.Post{
         __meta__: %Ecto.Schema.Metadata{
           state: :loaded,
@@ -208,16 +209,31 @@ defmodule EctoShorts.CommonSchemas do
     )
   end
 
-  def put_metadata({schema_source, schema_module}, opts) do
-    {schema_source, schema_module}
-    |> build_struct()
-    |> put_metadata(Keyword.delete(opts, :source))
+  @doc group: "Schema API"
+  @doc """
+  Builds a struct from a queryable, optionally overriding its source.
+
+  ### Examples
+
+      EctoShorts.CommonSchemas.create_struct(EctoShorts.Schema.Post)
+      %EctoShorts.Schema.Post{__meta__: %Ecto.Schema.Metadata{source: "posts"}}
+
+      EctoShorts.CommonSchemas.create_struct({"custom_source", EctoShorts.Schema.Post})
+      %EctoShorts.Schema.Post{__meta__: %Ecto.Schema.Metadata{source: "custom_source"}}
+  """
+  @spec create_struct(sourceable()) :: schema_struct()
+  def create_struct({schema_source, schema_module}) do
+    schema_module
+    |> struct()
+    |> put_metadata(
+      state: :loaded,
+      source: schema_source,
+      prefix: get_schema_prefix(schema_module)
+    )
   end
 
-  def put_metadata(schema_module, opts) do
-    schema_module
-    |> build_struct()
-    |> put_metadata(opts)
+  def create_struct(schema_module) do
+    struct(schema_module)
   end
 
   @doc group: "Changeset API"
@@ -228,25 +244,47 @@ defmodule EctoShorts.CommonSchemas do
   This function resolves how to build the changeset based on the input
   type, and delegates to `create_changeset/4`.
   """
-  @spec create_changeset(sourceable() | schema_struct() | changeset(), params()) :: changeset()
-  @spec create_changeset(sourceable() | schema_struct() | changeset(), params(), opts()) ::
-          changeset()
-  def create_changeset(query_or_schema_or_changeset, params, opts \\ [])
+  @spec create_changeset(changeset_input()) :: changeset()
+  @spec create_changeset(changeset_input(), params()) :: changeset()
+  @spec create_changeset(changeset_input(), params(), opts()) :: changeset()
+  def create_changeset(changeset_input, params \\ %{}, opts \\ [])
 
-  def create_changeset(%{data: %{__meta__: %{schema: schema_module}}} = changeset, params, opts) do
+  def create_changeset(
+        %{data: %{__meta__: %{schema: schema_module}}} = changeset,
+        params,
+        opts
+      ) do
     create_changeset(schema_module, changeset, params, opts)
   end
 
-  def create_changeset(%{__meta__: %{schema: schema_module}} = struct, params, opts) do
+  def create_changeset(
+        %{__meta__: %{schema: schema_module}} = struct,
+        params,
+        opts
+      ) do
     create_changeset(schema_module, struct, params, opts)
   end
 
-  def create_changeset({schema_source, schema_module}, params, opts) do
-    create_changeset(schema_module, build_struct({schema_source, schema_module}), params, opts)
+  def create_changeset(
+        {schema_source, schema_module},
+        params,
+        opts
+      ) do
+    create_changeset(
+      schema_module,
+      create_struct({schema_source, schema_module}),
+      params,
+      opts
+    )
   end
 
   def create_changeset(schema_module, params, opts) do
-    create_changeset(schema_module, build_struct(schema_module), params, opts)
+    create_changeset(
+      schema_module,
+      create_struct(schema_module),
+      params,
+      opts
+    )
   end
 
   @doc group: "Changeset API"
@@ -279,84 +317,64 @@ defmodule EctoShorts.CommonSchemas do
           params(),
           opts()
         ) :: changeset()
-  def create_changeset(
-        {schema_source, schema_module},
-        %{data: %{__meta__: %{schema: _}} = struct} = changeset,
-        params,
-        opts
-      ) do
-    create_changeset(
-      schema_module,
-      %{
-        changeset
-        | data: put_metadata(struct, source: schema_source)
-      },
+  def create_changeset(sourceable, struct_or_changeset, params, opts) do
+    sourceable
+    |> normalize_schema_module()
+    |> to_changeset(
+      prepare_changeset_data(struct_or_changeset, sourceable),
       params,
-      opts
+      opts[:create_changeset]
     )
   end
 
-  def create_changeset({schema_source, schema_module}, struct, params, opts) do
-    create_changeset(
-      schema_module,
-      put_metadata(struct, source: schema_source),
-      params,
-      opts
-    )
+  defp prepare_changeset_data(
+         %{data: %{__meta__: _} = schema_struct} = changeset,
+         {schema_source, _schema_module}
+       ) do
+    %{changeset | data: put_metadata(schema_struct, source: schema_source)}
   end
 
-  def create_changeset(schema_module, struct_or_changeset, params, opts) do
-    case opts[:create_changeset] do
-      {mod, fun, args} ->
-        apply(mod, fun, [struct_or_changeset, params] ++ args)
-
-      {mod, fun} ->
-        apply(mod, fun, [struct_or_changeset, params])
-
-      fun when is_function(fun, 2) ->
-        fun.(struct_or_changeset, params)
-
-      fun when is_function(fun, 1) ->
-        struct_or_changeset
-        |> schema_module.changeset(params)
-        |> fun.()
-
-      changes when is_map(changes) ->
-        schema_module.changeset(struct_or_changeset, Map.merge(params, changes))
-
-      _ ->
-        schema_module.changeset(struct_or_changeset, params)
-    end
+  defp prepare_changeset_data(
+         %{__meta__: _} = schema_struct,
+         {schema_source, _schema_module}
+       ) do
+    put_metadata(schema_struct, source: schema_source)
   end
 
-  @doc group: "Struct API"
-  @doc """
-  Builds a struct from a queryable, optionally overriding its source.
-
-  ### Examples
-
-      EctoShorts.CommonSchemas.build_struct(EctoShorts.Schema.Post)
-      %EctoShorts.Schema.Post{
-        __meta__: %Ecto.Schema.Metadata{source: "posts"}
-      }
-
-      EctoShorts.CommonSchemas.build_struct({"custom_source", EctoShorts.Schema.Post})
-      %EctoShorts.Schema.Post{
-        __meta__: %Ecto.Schema.Metadata{source: "custom_source"}
-      }
-  """
-  @spec build_struct(sourceable()) :: schema_struct()
-  def build_struct({schema_source, schema_module}) do
-    schema_module
-    |> struct()
-    |> put_metadata(
-      state: :loaded,
-      source: schema_source,
-      prefix: get_schema_prefix(schema_module)
-    )
+  defp prepare_changeset_data(struct_or_changeset, _schema_module) do
+    struct_or_changeset
   end
 
-  def build_struct(schema_module) do
-    struct(schema_module)
+  defp normalize_schema_module({_, schema_module}), do: schema_module
+  defp normalize_schema_module(schema_module), do: schema_module
+
+  defp to_changeset(schema_module, struct_or_changeset, params, nil) do
+    schema_module.changeset(struct_or_changeset, params)
+  end
+
+  defp to_changeset(_schema_module, struct_or_changeset, params, {module, fun, args}) do
+    apply(module, fun, [struct_or_changeset, params] ++ args)
+  end
+
+  defp to_changeset(_schema_module, struct_or_changeset, params, {module, fun}) do
+    apply(module, fun, [struct_or_changeset, params])
+  end
+
+  defp to_changeset(_schema_module, struct_or_changeset, params, module) when is_atom(module) do
+    module.changeset(struct_or_changeset, params)
+  end
+
+  defp to_changeset(_schema_module, struct_or_changeset, params, fun) when is_function(fun, 2) do
+    fun.(struct_or_changeset, params)
+  end
+
+  defp to_changeset(schema_module, struct_or_changeset, params, fun) when is_function(fun, 1) do
+    struct_or_changeset
+    |> schema_module.changeset(params)
+    |> fun.()
+  end
+
+  defp to_changeset(schema_module, struct_or_changeset, params, changes) when is_map(changes) do
+    schema_module.changeset(struct_or_changeset, Map.merge(params, changes))
   end
 end

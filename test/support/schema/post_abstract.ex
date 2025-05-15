@@ -1,11 +1,9 @@
-defmodule EctoShorts.Schema.AbstractPost do
+defmodule EctoShorts.Schema.PostAbstract do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
   require Ecto.Query
-
-  @schema_prefix "custom_prefix"
 
   schema "abstract table: posts" do
     belongs_to :user, EctoShorts.Schema.User

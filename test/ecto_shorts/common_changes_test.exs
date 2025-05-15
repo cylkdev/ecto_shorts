@@ -3,6 +3,45 @@ defmodule EctoShorts.CommonChangesTest do
   doctest EctoShorts.CommonChanges
 
   alias EctoShorts.CommonChanges
+
+  # describe "put_when: " do
+  #   test "returns changeset without changes if evaluator function returns false" do
+  #     when_func = fn _changeset -> false end
+
+  #     change_func = fn changeset -> Ecto.Changeset.put_change(changeset, :title, "title") end
+
+  #     changeset =
+  #       %EctoShorts.Schema.Post{}
+  #       |> Post.changeset(%{})
+  #       |> CommonChanges.put_when(when_func, change_func)
+
+  #     assert %Ecto.Changeset{
+  #              changes: changes,
+  #              params: params
+  #            } = changeset
+
+  #     assert %{} === changes
+
+  #     assert %{} === params
+  #   end
+
+  #   test "returns changeset with changes if evaluator function returns true" do
+  #     when_func = fn _changeset -> true end
+
+  #     change_func = fn changeset -> Ecto.Changeset.put_change(changeset, :title, "title") end
+
+  #     changeset =
+  #       %EctoShorts.Schema.Post{}
+  #       |> Post.changeset(%{})
+  #       |> CommonChanges.put_when(when_func, change_func)
+
+  #     assert %Ecto.Changeset{
+  #              changes: changes
+  #            } = changeset
+
+  #     assert %{title: "title"} === changes
+  #   end
+  # end
 end
 
 # defmodule EctoShorts.CommonChangesTest do
