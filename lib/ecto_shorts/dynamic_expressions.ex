@@ -41,12 +41,12 @@ defmodule EctoShorts.DynamicExpressions do
 
   @default_adapter EctoShorts.DynamicExpressions.Postgres
 
-  @default_adapters [
-    {Ecto.Adapters.Postgres, adapter: EctoShorts.DynamicExpressions.Postgres}
-  ]
+  @default_adapters %{
+    Ecto.Adapters.Postgres => [adapter: EctoShorts.DynamicExpressions.Postgres]
+  }
 
   @doc false
-  @spec default_adapters :: list({module(), keyword()})
+  @spec default_adapters :: %{module() => keyword()}
   def default_adapters, do: @default_adapters
 
   @doc """

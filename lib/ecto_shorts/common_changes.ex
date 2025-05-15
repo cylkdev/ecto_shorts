@@ -49,6 +49,7 @@ defmodule EctoShorts.CommonChanges do
 
   @type changeset :: Ecto.Changeset.t()
   @type key :: atom()
+  @type preloads :: atom() | list(atom()) | keyword()
   @type pattern :: binary() | Regex.t()
   @type precision :: :microsecond | :millisecond | :second
   @type opts :: keyword()
@@ -262,7 +263,7 @@ defmodule EctoShorts.CommonChanges do
   """
   @spec preload_change_assoc(changeset(), key()) :: changeset()
   def preload_change_assoc(changeset, key) do
-    if Map.has_key?(changeset.params, Atom.to_string(key)) do
+    if changeset_params_has_key?(changeset, key) do
       changeset
       |> preload_changeset_assoc(key)
       |> put_or_cast_assoc(key)
@@ -304,7 +305,7 @@ defmodule EctoShorts.CommonChanges do
 
     opts = Keyword.put(opts, :required, required?)
 
-    if Map.has_key?(changeset.params, Atom.to_string(key)) do
+    if changeset_params_has_key?(changeset, key) do
       changeset
       |> preload_changeset_assoc(key, opts)
       |> put_or_cast_assoc(key, opts)
@@ -331,10 +332,10 @@ defmodule EctoShorts.CommonChanges do
   This is useful when working with nested input data that must be hydrated
   into structs before being validated.
   """
-  @spec preload_changeset_assoc(changeset(), key()) :: changeset()
-  @spec preload_changeset_assoc(changeset(), key(), opts()) :: changeset()
-  def preload_changeset_assoc(changeset, key, opts \\ []) do
-    Map.update!(changeset, :data, &Actions.preload(&1, key, opts))
+  @spec preload_changeset_assoc(changeset(), preloads()) :: changeset()
+  @spec preload_changeset_assoc(changeset(), preloads(), opts()) :: changeset()
+  def preload_changeset_assoc(changeset, preloads, opts \\ []) do
+    Map.update!(changeset, :data, &Actions.preload(&1, preloads, opts))
   end
 
   @doc """
@@ -359,10 +360,10 @@ defmodule EctoShorts.CommonChanges do
   """
   @spec put_or_cast_assoc(changeset(), key()) :: changeset()
   @spec put_or_cast_assoc(changeset(), key(), opts()) :: changeset()
-  def put_or_cast_assoc(changeset, key, opts \\ []) do
-    params_data = Map.get(changeset.params, Atom.to_string(key))
+  def put_or_cast_assoc(%{data: %{__meta__: _}} = changeset, key, opts \\ []) do
+    data_or_nil = get_changeset_params(changeset, key)
 
-    apply_put_or_cast_assoc(changeset, key, params_data, opts)
+    apply_put_or_cast_assoc(changeset, key, data_or_nil, opts)
   end
 
   defp apply_put_or_cast_assoc(changeset, key, nil, opts) do
@@ -425,15 +426,35 @@ defmodule EctoShorts.CommonChanges do
   end
 
   @doc false
+  def changeset_params_has_key?(%{params: nil}, _key) do
+    false
+  end
+
+  def changeset_params_has_key?(%{params: params}, key) do
+    Map.has_key?(params, to_string(key)) or
+      Map.has_key?(params, key)
+  end
+
+  @doc false
+  def get_changeset_params(%{params: nil}, _key) do
+    nil
+  end
+
+  def get_changeset_params(%{params: params}, key) do
+    Map.get(params, to_string(key)) ||
+      Map.get(params, key)
+  end
+
+  @doc false
   def prepare_query_params(schema_module, params_data) do
     case SchemaHelpers.primary_key(schema_module) do
       [_] ->
         schema_module
-        |> SchemaHelpers.filter_primary_key(params_data)
+        |> SchemaHelpers.filter_primary_keys(params_data)
         |> flatten_query_params()
 
       _ ->
-        %{or_where: SchemaHelpers.filter_primary_key(schema_module, params_data)}
+        %{or_where: SchemaHelpers.filter_primary_keys(schema_module, params_data)}
     end
   end
 
@@ -447,10 +468,20 @@ defmodule EctoShorts.CommonChanges do
   end
 
   @doc false
-  def only_primary_keys?(schema_module, params_data) do
-    Enum.all?(params_data, fn params ->
-      SchemaHelpers.filter_primary_key(schema_module, params) === params
-    end)
+  def only_primary_keys?(schema_module, params) when is_map(params) do
+    SchemaHelpers.filter_primary_keys(schema_module, params) === params
+  end
+
+  def only_primary_keys?(schema_module, values) when is_list(values) do
+    if Keyword.keyword?(values) do
+      SchemaHelpers.filter_primary_keys(schema_module, values) === values
+    else
+      Enum.all?(values, fn params -> only_primary_keys?(schema_module, params) end)
+    end
+  end
+
+  def only_primary_keys?(_schema_module, _term) do
+    false
   end
 
   @doc false
@@ -470,8 +501,7 @@ defmodule EctoShorts.CommonChanges do
       :ok
     else
       raise KeyError,
-            "key not found in schema #{inspect(schema_module)} " <>
-              "changeset types, got: #{inspect(key)}"
+            "key not found in schema #{inspect(schema_module)} changeset types, got: #{inspect(key)}"
     end
   end
 

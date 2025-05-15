@@ -1,15 +1,14 @@
 defmodule EctoShorts.ActionsTest do
   @moduledoc false
-  use EctoShorts.DataCase
+  use EctoShorts.DataCase, async: true
+  doctest EctoShorts.Actions
 
-  alias EctoShorts.Actions
-
-  alias EctoShorts.Repo
-
-  alias EctoShorts.Schema.{
-    PostAbstract,
-    Post,
-    PostNoPrimaryKey
+  alias EctoShorts.{
+    Actions,
+    Repo,
+    Schema.PostAbstract,
+    Schema.Post,
+    Schema.PostNoPrimaryKey
   }
 
   def insert!(repo, {schema_source, schema_module}, params) do
@@ -45,7 +44,7 @@ defmodule EctoShorts.ActionsTest do
     test "raises if schema has no primary key and batch key not provided" do
       _post = insert!(Repo, Post, %{title: "post_title"})
 
-      assert_raise KeyError, ~r|keys not found |, fn ->
+      assert_raise ArgumentError, ~r|Match keys not found|, fn ->
         Actions.batch(PostNoPrimaryKey, [%{title: "post_title"}])
       end
     end
@@ -796,13 +795,13 @@ defmodule EctoShorts.ActionsTest do
           views: 1
         })
 
-      assert %EctoShorts.Schema.PostAbstract{
+      assert %PostAbstract{
                title: "post_title",
                tags: ["post_tag"],
                views: 1
              } = post
 
-      assert [^post] = Actions.all({"posts", PostAbstract})
+      assert [^post] = Actions.all({"posts", PostAbstract}, %{id: post.id})
     end
   end
 

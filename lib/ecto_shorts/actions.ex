@@ -12,16 +12,16 @@ defmodule EctoShorts.Actions do
 
   Instead of manually writing queries like this:
 
-      User |> where([u], u.name == "Jane") |> Repo.all()
+      EctoShorts.Schema.Post |> where([u], u.body == "example") |> Repo.all()
 
   You can write:
 
-      EctoShorts.Actions.all(User, %{name: "Jane"})
+      EctoShorts.Actions.all(EctoShorts.Schema.Post, %{body: "example"})
 
   Similarly, data inserts and updates are simplified:
 
-      EctoShorts.Actions.create(Post, %{title: "Hello", body: "World"})
-      EctoShorts.Actions.update(Post, 1, %{title: "Updated Title"})
+      EctoShorts.Actions.create(EctoShorts.Schema.Post, %{title: "Hello", body: "World"})
+      EctoShorts.Actions.update(EctoShorts.Schema.Post, 1, %{title: "Updated Title"})
 
   Each function in this module works with maps. You define what you
   want using simple parameters, and the module handles building
@@ -39,7 +39,7 @@ defmodule EctoShorts.Actions do
 
   For example:
 
-      %{name: "Jane"}
+      %{body: "Jane"}
       # Matches records where `name` equals "Jane"
 
       %{title: %{ilike: "post"}}
@@ -71,12 +71,10 @@ defmodule EctoShorts.Actions do
 
   For example:
 
-      list_of_params = [
+      EctoShorts.Actions.batch_find(EctoShorts.Schema.Post, [
         %{author_id: 1, status: "published"},
         %{author_id: 2, status: "draft"}
-      ]
-
-      EctoShorts.Actions.batch_find(Post, list_of_params)
+      ])
 
   Each map describes its own match condition. The function returns all
   records that match at least one of them.
@@ -99,12 +97,7 @@ defmodule EctoShorts.Actions do
 
   For example:
 
-      multi = EctoShorts.Actions.multi_create(%{
-        post: {MyApp.Post, %{title: "Hello"}},
-        log: {MyApp.Log, %{message: "created post"}}
-      })
-
-      Repo.transaction(multi)
+      EctoShorts.Actions.create_many(EctoShorts.Schema.Post, [%{title: "example"}])
 
   Each entry is processed in order, and all changes are wrapped in a transaction.
   You stay focused on describing what changes need to happen, and the underlying
@@ -144,11 +137,10 @@ defmodule EctoShorts.Actions do
   @type schema_struct_or_structs :: schema_struct() | list(schema_struct())
 
   @type multi :: Ecto.Multi.t()
-  @type multi_params :: list(map() | {map(), map()})
 
   @type aggregate_options :: :avg | :count | :max | :min | :sum
 
-  @type preloads :: list() | keyword()
+  @type preloads :: atom() | keyword() | list()
 
   @type match_keys :: atom() | list(atom())
   @type batch_id :: map()
@@ -177,16 +169,10 @@ defmodule EctoShorts.Actions do
   ## Examples
 
       # Preload a single association on one record
-      iex> user = EctoShorts.Actions.all(User, %{name: "Jane"}) |> List.first()
-      iex> user = EctoShorts.Actions.preload(user, [:posts])
-      iex> user.posts
-      [%EctoShorts.Schema.Post{}, %EctoShorts.Schema.Post{}]
+      iex> EctoShorts.Actions.preload(%EctoShorts.Schema.Post{}, [:comments])
 
       # Preload multiple associations on a list of records
-      iex> users = EctoShorts.Actions.all(User, %{status: "active"})
-      iex> users = EctoShorts.Actions.preload(users, [:posts, :profile])
-      iex> Enum.all?(users, &Map.has_key?(&1, :profile))
-      true
+      iex> EctoShorts.Actions.preload(%EctoShorts.Schema.Post{}, [comments: :authors])
   """
   @spec preload(schema_struct_or_structs(), preloads(), opts()) :: schema_struct_or_structs()
   def preload(schema_struct, preloads, opts \\ []) do
@@ -217,19 +203,10 @@ defmodule EctoShorts.Actions do
   ## Examples
 
       # Find posts for a list of lookup maps
-      iex> values = [%{author_id: 1}, %{author_id: 2}]
-      iex> result = EctoShorts.Actions.batch_load(Post, values, :author_id)
-      iex> Enum.all?(result, fn {_, post} -> post.author_id in [1, 2] end)
-      true
+      iex> EctoShorts.Actions.batch_load(EctoShorts.Schema.Post, [%{author_id: 1}, %{author_id: 2}])
 
       # Load users and preserve the original input
-      iex> params = [%{name: "A"}, %{name: "B"}]
-      iex> result = EctoShorts.Actions.batch_load(User, params, :name)
-      iex> Enum.map(result, fn {input, user} -> {input[:name], user.name} end)
-      [
-        {"A", "A"},
-        {"B", "B"}
-      ]
+      iex> EctoShorts.Actions.batch_load(EctoShorts.Schema.Post, [%{body: "example"}])
   """
   @spec batch_load(query_source(), match_keys(), batch_params()) :: batch_params()
   @spec batch_load(query_source(), match_keys(), batch_params(), opts()) :: batch_params()
@@ -314,13 +291,7 @@ defmodule EctoShorts.Actions do
   ## Examples
 
       # Find all users matching any of the filter criteria
-      iex> filters = [
-      ...>   %{email: "user1@example.com"},
-      ...>   %{name: "User 2"},
-      ...>   %{org_id: 3}
-      ...> ]
-      iex> EctoShorts.Actions.batch_find(User, filters)
-      [%User{}, %User{}, ...]
+      iex> EctoShorts.Actions.batch_find(EctoShorts.Schema.Post, [:title], [%{title: "finds_record_by_title_one"}, %{title: "or_title_two"}])
   """
   @spec batch_find(query_source(), match_keys(), list(params())) ::
           {:ok, list(schema_struct())} | {:error, any()}
@@ -366,7 +337,7 @@ defmodule EctoShorts.Actions do
   parameter sets into a single query and returns a result map that preserves
   the association between the original inputs and the fetched records.
 
-      iex> EctoShorts.Actions.batch(Post, [:title], [
+      iex> EctoShorts.Actions.batch(EctoShorts.Schema.Post, [:title], [
       ...>   %{title: "First Post"},
       ...>   %{title: "Second Post"}
       ...> ])
@@ -382,10 +353,10 @@ defmodule EctoShorts.Actions do
 
   You can specify a list of keys to match on using the `keys` argument:
 
-      iex> EctoShorts.Actions.batch(User, [:org_id, :email], [
-      ...>   %{org_id: 1, email: "admin@example.com"},
-      ...>   %{org_id: 2, email: "editor@example.com"}
-      ...> ])
+      EctoShorts.Actions.batch(EctoShorts.Schema.Post, [:org_id, :email], [
+        %{org_id: 1, title: "admin@example.com"},
+        %{org_id: 2, title: "editor@example.com"}
+      ])
 
   This ensures each input map is matched against all specified fields as a unique
   composite key.
@@ -396,18 +367,17 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> Actions.batch(Post, [:title], [%{title: "post_title"}])
-      %{%{title: "post_title"} => %EctoShorts.Schema.Post{title: "post_title"}}
+      iex> EctoShorts.Actions.batch(EctoShorts.Schema.Post, [:title], [%{title: "post_title"}])
   """
   @spec batch(query_source(), match_keys(), list(params())) :: batch_results()
   @spec batch(query_source(), match_keys(), list(params()), opts()) :: batch_results()
-  def batch(query_source, match_keys \\ :primary_key, list_of_params, opts \\ []) do
+  def batch(query_source, match_keys \\ :primary_key, list_of_params, opts \\ []) when is_list(list_of_params) do
     match_keys = normalize_match_keys(query_source, match_keys)
 
     {batch_results, duplicates} =
       query_source
       |> all(%{or_where: list_of_params}, opts)
-      |> match_records_to_keys(query_source, match_keys)
+      |> build_batch_results(query_source, match_keys)
 
     if duplicates === [] do
       batch_results
@@ -428,7 +398,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc false
-  def match_records_to_keys(records, query_source, match_keys) do
+  def build_batch_results(records, query_source, match_keys) do
     Enum.reduce(records, {%{}, []}, fn record, {batch_results, duplicates} ->
       batch_id = match_id(query_source, match_keys, record)
 
@@ -446,8 +416,22 @@ defmodule EctoShorts.Actions do
     if has_all_keys?(match_keys, data) do
       Map.take(data, match_keys)
     else
-      raise KeyError,
-            "keys not found #{inspect(match_keys)} for schema #{inspect(schema_module)}, got: #{inspect(data, pretty: true)}"
+      raise ArgumentError,
+            """
+            Match keys not found.
+
+            schema:
+
+            #{inspect(schema_module)}
+
+            keys:
+
+            #{inspect(match_keys)}
+
+            data:
+
+            #{inspect(data, pretty: true)}
+            """
     end
   end
 
@@ -479,33 +463,38 @@ defmodule EctoShorts.Actions do
   @doc """
   Inserts multiple records into the database.
 
-  Each entry in the `list_of_params` is validated using the schema's `changeset/2` function
-  unless `validate: false` is passed.
+  Each entry in the `list_of_params` is validated using the schema's
+  `changeset/2` function unless `validate: false` is passed.
 
   ## Conflict Handling
 
-  If a record includes all primary key fields, it will be treated as an upsert.
+  If a record includes all primary key fields, it will be treated as
+  an upsert.
+
   It automatically applies:
 
-    * `:conflict_target` set to the primary key
-    * `:on_conflict` set to `{:replace, keys}` — where `keys` are all fields except the
-      primary key and `:inserted_at`
+    * `:conflict_target` set to the primary key.
 
-  This allows partial updates on existing records during bulk inserts while skipping
-  fields that cannot be nil.
+    * `:on_conflict` set to `{:replace, keys}` where `keys` are all
+      fields except the primary key and `:inserted_at`.
+
+  This allows partial updates on existing records during bulk inserts
+  while skipping fields that cannot be `nil`.
 
   ## Preloading Existing Records
 
-  Sometimes, you may need to preload existing records so that the changeset has access
-  to required values:
+  Sometimes, you may need to preload existing records so that the
+  changeset has access to required values:
 
-    * If your changeset logic uses data from the existing row (e.g., to preserve an audit field).
-    * If a required field cannot be overwritten by `nil`, and passing it directly would cause
-      a constraint error.
+    * If your changeset logic uses data from the existing row (e.g.
+      to preserve an audit field).
+
+    * If a required field cannot be overwritten by `nil`, and passing
+      it directly would cause a constraint error.
 
   You can enable this behavior with the `:batch_load` option:
 
-      Actions.insert_all(User, list_of_params, batch_load: :primary_key)
+      EctoShorts.Actions.insert_all(EctoShorts.Schema.Post, list_of_params, batch_load: :primary_key)
 
   This will call `batch_load/4` and transform each param into
   `{existing_record, new_params}` tuples when a match is found.
@@ -518,8 +507,7 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.insert_all(MyApp.User, [%{id: 1, name: "Jane"}], batch_load: :primary_key)
-      {:ok, {1, [%User{id: 1, name: "Jane"}]}}
+      iex> EctoShorts.Actions.insert_all(EctoShorts.Schema.Post, [%{id: 1, body: "Jane"}], batch_load: :primary_key)
   """
   @spec insert_all(query_source(), list(params())) ::
           {:ok, insert_all_response()} | {:error, any()}
@@ -576,11 +564,9 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.update_all(MyApp.User, %{active: false}, %{active: true})
-      {5, nil}
+      iex> EctoShorts.Actions.update_all(EctoShorts.Schema.Post, %{published: false}, %{published: true})
 
-      iex> EctoShorts.Actions.update_all(MyApp.User, %{role: "guest"}, %{role: "user"}, repo: MyApp.Repo)
-      {12, nil}
+      iex> EctoShorts.Actions.update_all(EctoShorts.Schema.Post, %{title: "hello"}, %{title: "world"}, repo: EctoShorts.Repo)
   """
   @spec update_all(query_source(), params(), params()) :: update_all_response()
   @spec update_all(query_source(), params(), params(), opts()) :: update_all_response()
@@ -618,11 +604,9 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.delete_all(MyApp.User, %{active: false})
-      {3, nil}
+      iex> EctoShorts.Actions.delete_all(EctoShorts.Schema.Post, %{published: false})
 
-      iex> EctoShorts.Actions.delete_all(MyApp.Post, %{archived: true}, repo: MyApp.Repo)
-      {7, nil}
+      iex> EctoShorts.Actions.delete_all(EctoShorts.Schema.Post, %{published: true}, repo: EctoShorts.Repo)
   """
   @spec delete_all(query_source()) :: delete_all_response()
   @spec delete_all(query_source(), params()) :: delete_all_response()
@@ -639,11 +623,8 @@ defmodule EctoShorts.Actions do
   @doc """
   Finds or creates many records sequentially inside a transaction.
 
-  This function supports distinct parameters per operation. You can either:
-
-    * Pass a single map to use as both the `find_params` and `create_params`, or
-    * Pass a `{find_params, create_params}` tuple to look up a record with one set
-      of values and create it with another if not found.
+  This function accepts a list of maps where each map is used as both
+  the `find_params` and `create_params`.
 
   ## Options
 
@@ -651,16 +632,11 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-    iex> list_of_params = [
-    ...>   %{email: "user1@example.com", name: "User 1"},
-    ...>   {%{email: "user2@example.com"}, %{email: "user2@example.com", name: "User 2"}}
-    ...> ]
-    ...> EctoShorts.Actions.find_or_create_many(MyApp.User, list_of_params)
-    {:ok, [%User{}, %User{}]}
+    iex> EctoShorts.Actions.find_or_create_many(EctoShorts.Schema.Post, [%{title: "title_one", body: "example"}])
   """
-  @spec find_or_create_many(query_source(), list(multi_params())) ::
+  @spec find_or_create_many(query_source(), list(params())) ::
           {:ok, list(schema_struct())} | {:error, any()}
-  @spec find_or_create_many(query_source(), list(multi_params()), opts()) ::
+  @spec find_or_create_many(query_source(), list(params()), opts()) ::
           {:ok, list(schema_struct())} | {:error, any()}
   def find_or_create_many(query_source, list_of_params, opts \\ []) do
     opts = Keyword.merge(default_opts(), opts)
@@ -718,16 +694,13 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> updates = [
-      ...>   %{id: 1, name: "Updated Name"},
-      ...>   {%{id: 2}, %{name: "Another Update"}}
-      ...> ]
-      ...> EctoShorts.Actions.find_and_update_many(MyApp.User, updates)
-      {:ok, [%User{}, %User{}]}
+      iex> EctoShorts.Actions.find_and_update_many(EctoShorts.Schema.Post, [%{id: 1, body: "updated_body"}])
+
+      iex> EctoShorts.Actions.find_and_update_many(EctoShorts.Schema.Post, [{%{id: 2}, %{body: "Another Update"}}])
   """
-  @spec find_and_update_many(query_source(), list(multi_params())) ::
+  @spec find_and_update_many(query_source(), list(params() | {params(), params()})) ::
           {:ok, list(schema_struct())} | {:error, any()}
-  @spec find_and_update_many(query_source(), list(multi_params()), opts()) ::
+  @spec find_and_update_many(query_source(), list(params() | {params(), params()})) ::
           {:ok, list(schema_struct())} | {:error, any()}
   def find_and_update_many(query_source, list_of_params, opts \\ []) do
     opts = Keyword.merge(default_opts(), opts)
@@ -761,11 +734,7 @@ defmodule EctoShorts.Actions do
           record ->
             with {:error, changeset} <-
                    query_source
-                   |> CommonSchemas.create_changeset(
-                     record,
-                     Map.merge(find_params, update_params),
-                     opts
-                   )
+                   |> create_changeset(record, Map.merge(find_params, update_params), opts)
                    |> repo.update(opts) do
               {:error,
                {:conflict, "Failed to update record.",
@@ -801,16 +770,13 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> items = [
-      ...>   %{email: "user1@example.com", name: "User One"},
-      ...>   {%{email: "user2@example.com"}, %{name: "User Two"}}
-      ...> ]
-      ...> EctoShorts.Actions.find_and_upsert_many(MyApp.User, items)
-      {:ok, [%User{}, %User{}]}
+      iex> EctoShorts.Actions.find_and_upsert_many(EctoShorts.Schema.Post, [%{title: "title_one", body: "example"}])
+
+      iex> EctoShorts.Actions.find_and_upsert_many(EctoShorts.Schema.Post, [{%{title: "title_two"}, %{body: "example"}}])
   """
-  @spec find_and_upsert_many(query_source(), list(multi_params())) ::
+  @spec find_and_upsert_many(query_source(), list(params() | {params(), params()})) ::
           {:ok, list(schema_struct())} | {:error, any()}
-  @spec find_and_upsert_many(query_source(), list(multi_params()), opts()) ::
+  @spec find_and_upsert_many(query_source(), list(params() | {params(), params()}), opts()) ::
           {:ok, list(schema_struct())} | {:error, any()}
   def find_and_upsert_many(query_source, list_of_params, opts \\ []) do
     opts = Keyword.merge(default_opts(), opts)
@@ -849,11 +815,7 @@ defmodule EctoShorts.Actions do
           record ->
             with {:error, changeset} <-
                    query_source
-                   |> CommonSchemas.create_changeset(
-                     record,
-                     Map.merge(find_params, upsert_params),
-                     opts
-                   )
+                   |> create_changeset(record, Map.merge(find_params, upsert_params), opts)
                    |> repo.update(opts) do
               {:error,
                {:conflict, "Failed to update record.",
@@ -888,12 +850,7 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> users = [
-      ...>   %{email: "user1@example.com", name: "User One"},
-      ...>   %{email: "user2@example.com", name: "User Two"}
-      ...> ]
-      ...> EctoShorts.Actions.create_many(MyApp.User, users)
-      {:ok, [%User{}, %User{}]}
+      iex> EctoShorts.Actions.create_many(EctoShorts.Schema.Post, [%{title: "title_two", body: "example"}])
   """
   @spec create_many(sourceable(), list(params())) ::
           {:ok, list(schema_struct())} | {:error, any()}
@@ -915,7 +872,7 @@ defmodule EctoShorts.Actions do
       Ecto.Multi.run(multi, {:create, idx}, fn repo, _changes_so_far ->
         with {:error, changeset} <-
                query_source
-               |> CommonSchemas.create_changeset(params, opts)
+               |> create_changeset(params, opts)
                |> repo.insert(opts) do
           {:error,
            {:conflict, "Failed to create record.",
@@ -941,12 +898,7 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> list_of_params = [
-      ...>   %{email: "user1@example.com"},
-      ...>   %{email: "user2@example.com"}
-      ...> ]
-      ...> EctoShorts.Actions.find_many(MyApp.User, list_of_params)
-      {:ok, [%User{}, %User{}]}
+      iex> EctoShorts.Actions.find_many(EctoShorts.Schema.Post, [%{title: "title_one"}, %{title: "title_two"}])
   """
   @spec find_many(query_source(), list(params())) ::
           {:ok, list(schema_struct())} | {:error, any()}
@@ -997,9 +949,8 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> users = [%User{id: 1}, %User{id: 2}]
-      ...> EctoShorts.Actions.delete_many(users)
-      {:ok, [%User{}, %User{}]}
+      iex> {:ok, posts} = EctoShorts.Actions.create_many(EctoShorts.Schema.Post, [%{title: "post_title_one"}, %{title: "post_title_two"}])
+      ...> EctoShorts.Actions.delete_many(posts)
   """
   @spec delete_many(list(schema_or_changeset())) ::
           {:ok, list(schema_struct())} | {:error, any()}
@@ -1021,7 +972,7 @@ defmodule EctoShorts.Actions do
       Ecto.Multi.run(multi, {:create, idx}, fn repo, _changes_so_far ->
         with {:error, changeset} <-
                entry
-               |> CommonSchemas.create_changeset(%{}, opts)
+               |> create_changeset(%{}, opts)
                |> repo.delete(opts) do
           {:error,
            {:conflict, "Failed to delete record.",
@@ -1052,10 +1003,7 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> find_params = %{email: "user@example.com"}
-      ...> create_params = %{email: "user@example.com", name: "New User"}
-      ...> EctoShorts.Actions.find_and_create(MyApp.User, find_params, create_params)
-      {:ok, %User{}}
+      iex> EctoShorts.Actions.find_and_create(EctoShorts.Schema.Post, %{title: "title_one"}, %{title: "title_one", body: "new_post"})
   """
   @spec find_and_create(query_source(), params(), params()) ::
           {:ok, schema_struct()} | {:error, changeset() | any()}
@@ -1080,8 +1028,7 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.find_and_update(MyApp.User, %{id: 1}, %{name: "Updated Name"})
-      {:ok, %User{name: "Updated Name"}}
+      iex> EctoShorts.Actions.find_and_update(EctoShorts.Schema.Post, %{id: 1}, %{body: "updated_body"})
   """
   @spec find_and_update(query_source(), params(), params()) ::
           {:ok, schema_struct()} | {:error, changeset() | any()}
@@ -1108,8 +1055,7 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.find_and_upsert(MyApp.User, %{email: "fira@example.com"}, %{name: "Fira"})
-      {:ok, %User{}}
+      iex> EctoShorts.Actions.find_and_upsert(EctoShorts.Schema.Post, %{title: "fira@example.com"}, %{body: "post_body"})
   """
   @spec find_and_upsert(query_source(), params(), params()) ::
           {:ok, schema_struct()} | {:error, changeset() | any()}
@@ -1142,11 +1088,9 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.find_and_delete(MyApp.User, %{id: 1})
-      {:ok, %User{}}
+      iex> EctoShorts.Actions.find_and_delete(EctoShorts.Schema.Post, %{id: 1})
 
-      iex> EctoShorts.Actions.find_and_delete({"users", MyApp.User}, %{email: "fira@example.com"}, repo: MyApp.Repo)
-      {:ok, %User{}}
+      iex> EctoShorts.Actions.find_and_delete({"posts", EctoShorts.Schema.Post}, %{title: "fira@example.com"}, repo: EctoShorts.Repo)
   """
   @spec find_and_delete(query_source(), params()) ::
           {:ok, schema_struct()} | {:error, changeset() | any()}
@@ -1173,16 +1117,14 @@ defmodule EctoShorts.Actions do
   ### Additional Options
 
     * `:drop_associations` – When true (default), any schema associations
-      in the parameter map will be excluded before the find query. This avoids
-      unexpected behavior due to association joins during lookup.
+      in the parameter map will be excluded before the find query. This
+      avoids unexpected behavior due to association joins during lookup.
 
   ## Examples
 
-      iex> EctoShorts.Actions.find_or_create(MyApp.User, %{email: "fira@example.com"})
-      {:ok, %User{}}
+      iex> EctoShorts.Actions.find_or_create(EctoShorts.Schema.Post, %{title: "example"})
 
-      iex> EctoShorts.Actions.find_or_create({"users", MyApp.User}, %{email: "fira@example.com"}, repo: MyApp.Repo)
-      {:ok, %User{}}
+      iex> EctoShorts.Actions.find_or_create({"posts", EctoShorts.Schema.Post}, %{title: "fira@example.com"}, repo: EctoShorts.Repo)
   """
   @spec find_or_create(query_source(), params()) ::
           {:ok, schema_struct()} | {:error, changeset() | any()}
@@ -1214,14 +1156,11 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.get(MyApp.User, 1)
-      %User{id: 1}
+      iex> EctoShorts.Actions.get(EctoShorts.Schema.Post, 1)
 
-      iex> EctoShorts.Actions.get(MyApp.User, 1, repo: MyApp.Repo)
-      %User{id: 1}
+      iex> EctoShorts.Actions.get(EctoShorts.Schema.Post, 1, repo: EctoShorts.Repo)
 
-      iex> EctoShorts.Actions.get({"users", MyApp.User}, "abc-123", replica: MyApp.Repo.Replica)
-      %User{id: "abc-123"}
+      iex> EctoShorts.Actions.get({"posts", EctoShorts.Schema.Post}, 1, replica: EctoShorts.Repo)
   """
   @spec get(query_source(), id()) :: schema_struct() | nil
   @spec get(query_source(), id(), opts()) :: schema_struct() | nil
@@ -1249,14 +1188,11 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.all(MyApp.User, %{id: 1})
-      [%User{id: 1}]
+      iex> EctoShorts.Actions.all(EctoShorts.Schema.Post, %{id: 1})
 
-      iex> EctoShorts.Actions.all(MyApp.User, id: 1, repo: MyApp.Repo)
-      [%User{id: 1}]
+      iex> EctoShorts.Actions.all(EctoShorts.Schema.Post, id: 1, repo: EctoShorts.Repo)
 
-      iex> EctoShorts.Actions.all(MyApp.User, id: 1, replica: MyApp.Repo.Replica)
-      [%User{id: 1}]
+      iex> EctoShorts.Actions.all(EctoShorts.Schema.Post, id: 1, replica: EctoShorts.Repo)
   """
   @spec all(query_source()) :: list(schema_struct())
   @spec all(query_source(), params()) :: list(schema_struct())
@@ -1293,14 +1229,11 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.all(MyApp.User, %{role: "admin"})
-      [%User{role: "admin"}]
+      iex> EctoShorts.Actions.all(EctoShorts.Schema.Post, %{published: true})
 
-      iex> EctoShorts.Actions.all(MyApp.User, role: "admin", order_by: :inserted_at, repo: MyApp.Repo)
-      [%User{role: "admin"}]
+      iex> EctoShorts.Actions.all(EctoShorts.Schema.Post, published: true, order_by: :inserted_at, repo: EctoShorts.Repo)
 
-      iex> EctoShorts.Actions.all({"users", MyApp.User}, %{role: "admin"}, replica: MyApp.Repo.Replica)
-      [%User{role: "admin"}]
+      iex> EctoShorts.Actions.all({"posts", EctoShorts.Schema.Post}, %{published: true}, replica: EctoShorts.Repo)
   """
   @spec all(query_source(), params(), opts()) :: list(schema_struct())
   def all(query_source, params, opts) do
@@ -1336,14 +1269,11 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.create(MyApp.User, %{name: "Fira"}, repo: MyApp.Repo)
-      {:ok, %User{name: "Fira"}}
+      iex> EctoShorts.Actions.create(EctoShorts.Schema.Post, %{body: "post_body"}, repo: EctoShorts.Repo)
 
-      iex> EctoShorts.Actions.create({"users", MyApp.User}, %{name: "Fira"}, repo: MyApp.Repo)
-      {:ok, %User{name: "Fira"}}
+      iex> EctoShorts.Actions.create({"posts", EctoShorts.Schema.Post}, %{body: "post_body"}, repo: EctoShorts.Repo)
   """
-  @spec create(sourceable(), params()) ::
-          {:ok, schema_struct()} | {:error, changeset() | any()}
+  @spec create(sourceable(), params()) :: {:ok, schema_struct()} | {:error, changeset() | any()}
   @spec create(sourceable(), params(), opts()) ::
           {:ok, schema_struct()} | {:error, changeset() | any()}
   def create(query_source, params, opts \\ []) do
@@ -1367,14 +1297,11 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.find(MyApp.User, %{id: 1}, repo: MyApp.Repo)
-      {:ok, %User{id: 1}}
+      iex> EctoShorts.Actions.find(EctoShorts.Schema.Post, %{id: 1}, repo: EctoShorts.Repo)
 
-      iex> EctoShorts.Actions.find(MyApp.User, %{email: "notfound@example.com"})
-      {:error, %{code: :not_found, message: "Record not found.", ...}}
+      iex> EctoShorts.Actions.find(EctoShorts.Schema.Post, %{title: "notfound@example.com"})
 
-      iex> EctoShorts.Actions.find({"users", MyApp.User}, %{id: 1})
-      {:ok, %User{id: 1}}
+      iex> EctoShorts.Actions.find({"posts", EctoShorts.Schema.Post}, %{id: 1})
   """
   @spec find(query_source(), params()) :: {:ok, schema_struct()} | {:error, any()}
   @spec find(query_source(), params(), opts()) :: {:ok, schema_struct()} | {:error, any()}
@@ -1446,20 +1373,17 @@ defmodule EctoShorts.Actions do
 
       # Using a primary key:
 
-      iex> EctoShorts.Actions.update(MyApp.User, 1, %{name: "New Name"})
-      {:ok, %User{name: "New Name"}}
+      iex> EctoShorts.Actions.update(EctoShorts.Schema.Post, 1, %{body: "New Name"})
 
       # Using a struct:
 
-      iex> user = %User{id: 1, name: "Old Name"}
-      iex> EctoShorts.Actions.update(MyApp.User, user, %{name: "Updated"})
-      {:ok, %User{name: "Updated"}}
+      iex> {:ok, post} = EctoShorts.Actions.create({"posts", EctoShorts.Schema.PostAbstract}, %{body: "example"})
+      ...> EctoShorts.Actions.update(EctoShorts.Schema.Post, post, %{body: "updated_body"})
 
       # Using a tuple source:
 
-      iex> user = %User{id: 1}
-      iex> EctoShorts.Actions.update({"users", MyApp.User}, user, %{name: "Updated"})
-      {:ok, %User{name: "Updated"}}
+      iex> {:ok, post} = EctoShorts.Actions.create({"posts", EctoShorts.Schema.PostAbstract}, %{body: "example"})
+      ...> EctoShorts.Actions.update({"posts", EctoShorts.Schema.PostAbstract}, post, %{body: "updated_body"})
   """
   @spec update(query_source(), id() | schema_struct(), params()) ::
           {:ok, schema_struct()} | {:error, changeset() | any()}
@@ -1481,7 +1405,7 @@ defmodule EctoShorts.Actions do
     opts = Keyword.merge(default_opts(), opts)
 
     query_source
-    |> CommonSchemas.create_changeset(schema_struct, update_params, opts)
+    |> create_changeset(schema_struct, update_params, opts)
     |> Config.repo!(opts).update(opts)
   end
 
@@ -1510,18 +1434,17 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.delete(MyApp.User, 1)
-      {:ok, %User{}}
+      iex> {:ok, post} = EctoShorts.Actions.create(EctoShorts.Schema.Post, %{body: "example"})
+      ...> EctoShorts.Actions.delete(EctoShorts.Schema.Post, post.id)
 
-      iex> EctoShorts.Actions.delete(MyApp.User, "abc123")
-      {:ok, %User{}}
+      iex> {:ok, post} = EctoShorts.Actions.create({"posts", EctoShorts.Schema.PostAbstract}, %{body: "example"})
+      ...> EctoShorts.Actions.delete({"posts", EctoShorts.Schema.PostAbstract}, post.id)
 
-      iex> EctoShorts.Actions.delete({"users", MyApp.User}, 1)
-      {:ok, %User{}}
+      iex> {:ok, post} = EctoShorts.Actions.create(EctoShorts.Schema.Post, %{body: "example"})
+      ...> EctoShorts.Actions.delete([post])
 
-      iex> users = [%User{id: 1}, %User{id: 2}]
-      iex> EctoShorts.Actions.delete(users)
-      {:error, [%Ecto.Changeset{}, %Ecto.Changeset{}]}
+      iex> {:ok, post} = EctoShorts.Actions.create(EctoShorts.Schema.Post, %{body: "example"})
+      ...> post |> EctoShorts.Schema.Post.changeset(%{}) |> EctoShorts.Actions.delete()
   """
   @spec delete(schema_or_changeset() | list(schema_or_changeset())) ::
           {:ok, list(schema_struct())} | {:error, list(changeset())} | {:error, any()}
@@ -1536,7 +1459,7 @@ defmodule EctoShorts.Actions do
 
     with {:error, changeset} <-
            queryable
-           |> CommonSchemas.create_changeset(changeset, %{}, opts)
+           |> create_changeset(changeset, %{}, opts)
            |> Config.repo!(opts).delete(opts) do
       {:error,
        Error.call(
@@ -1556,7 +1479,7 @@ defmodule EctoShorts.Actions do
 
     with {:error, changeset} <-
            queryable
-           |> CommonSchemas.create_changeset(schema_struct, %{}, opts)
+           |> create_changeset(schema_struct, %{}, opts)
            |> Config.repo!(opts).delete(opts) do
       {:error,
        Error.call(
@@ -1596,14 +1519,11 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.delete(MyApp.User, 1, repo: MyApp.Repo)
-      {:ok, %User{}}
+      iex> EctoShorts.Actions.delete(EctoShorts.Schema.Post, 1, repo: EctoShorts.Repo)
 
-      iex> EctoShorts.Actions.delete(MyApp.User, "abc123", replica: MyApp.Repo.Replica)
-      {:ok, %User{}}
+      iex> EctoShorts.Actions.delete(EctoShorts.Schema.Post, 1, replica: EctoShorts.Repo)
 
-      iex> EctoShorts.Actions.delete({"users", MyApp.User}, 1, repo: MyApp.Repo)
-      {:ok, %User{}}
+      iex> EctoShorts.Actions.delete({"posts", EctoShorts.Schema.Post}, 1, repo: EctoShorts.Repo)
   """
   @spec delete(query_source(), id(), opts()) ::
           {:ok, schema_struct()} | {:error, changeset() | any()}
@@ -1629,14 +1549,9 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> stream = EctoShorts.Actions.stream(MyApp.User, %{role: "admin"}, repo: MyApp.Repo)
-      ...> Enum.to_list(stream)
-      [%User{}, %User{}]
+      iex> EctoShorts.Actions.stream(EctoShorts.Schema.Post, %{published: true}, repo: EctoShorts.Repo)
 
-      iex> stream =
-      ...>   EctoShorts.Actions.stream({"users", MyApp.User}, %{active: true}, repo: MyApp.Repo)
-      ...> Enum.take(stream, 10)
-      [%User{}, ...]
+      iex> EctoShorts.Actions.stream({"posts", EctoShorts.Schema.Post}, %{published: true}, repo: EctoShorts.Repo)
   """
   @spec stream(query_source()) :: stream()
   @spec stream(query_source(), params()) :: stream()
@@ -1673,11 +1588,9 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.aggregate(MyApp.User, %{active: true}, :count, :id)
-      42
+      iex> EctoShorts.Actions.aggregate(EctoShorts.Schema.Post, %{published: true}, :count, :id)
 
-      iex> EctoShorts.Actions.aggregate(MyApp.User, %{role: "admin"}, :avg, :login_count, repo: MyApp.Repo)
-      5.75
+      iex> EctoShorts.Actions.aggregate(EctoShorts.Schema.Post, %{published: true}, :avg, :views, repo: EctoShorts.Repo)
   """
   @spec aggregate(query_source()) :: any() | nil
   @spec aggregate(query_source(), params()) :: any() | nil
@@ -1725,19 +1638,19 @@ defmodule EctoShorts.Actions do
       # Run a transactional function:
 
       iex> EctoShorts.Actions.transaction(fn ->
-      ...>   EctoShorts.Actions.create(MyApp.User, %{name: "Jane"})
+      ...>   EctoShorts.Actions.create(EctoShorts.Schema.Post, %{body: "Jane"})
       ...> end)
 
       # Use a one-arity function:
 
       iex> EctoShorts.Actions.transaction(fn repo ->
-      ...>   repo.insert!(%MyApp.User{name: "Jane"})
+      ...>   repo.insert!(%EctoShorts.Schema.Post{body: "Jane"})
       ...> end)
 
       # Run a pre-built Ecto.Multi:
 
       iex> multi = Ecto.Multi.new()
-      ...> |> Ecto.Multi.insert(:user, MyApp.User.changeset(%MyApp.User{}, %{name: "Jane"}))
+      ...> Ecto.Multi.insert(multi, :user, EctoShorts.Schema.Post.changeset(%EctoShorts.Schema.Post{}, %{body: "Jane"}))
       ...> EctoShorts.Actions.transaction(multi)
   """
   @spec transaction(function() | multi()) :: {:ok, any()} | {:error, any()}
@@ -1756,7 +1669,7 @@ defmodule EctoShorts.Actions do
     opts = Keyword.merge(default_opts(), opts)
 
     case Config.repo!(opts).transaction(
-           fn repo -> execute_transaction(fun, repo, opts) end,
+           fn repo -> execute_transaction_fun(fun, repo, opts) end,
            opts
          ) do
       {:error, :error} -> :error
@@ -1765,7 +1678,7 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  defp execute_transaction(fun, repo, opts) do
+  defp execute_transaction_fun(fun, repo, opts) do
     response =
       if is_function(fun, 1) do
         fun.(repo)
@@ -1808,6 +1721,10 @@ defmodule EctoShorts.Actions do
   end
 
   @doc false
+  def create_changeset(%_{} = struct_or_changeset, params, opts) do
+    CommonSchemas.create_changeset(struct_or_changeset, params, opts)
+  end
+
   def create_changeset({schema_source, schema_module}, params, opts) do
     if function_exported?(schema_module, :create_changeset, 1) and
          not Keyword.has_key?(opts, :create_changeset) do
@@ -1824,6 +1741,11 @@ defmodule EctoShorts.Actions do
     else
       CommonSchemas.create_changeset(schema_module, params, opts)
     end
+  end
+
+  @doc false
+  def create_changeset(sourceable, struct_or_changeset, params, opts) do
+    CommonSchemas.create_changeset(sourceable, struct_or_changeset, params, opts)
   end
 
   @doc false

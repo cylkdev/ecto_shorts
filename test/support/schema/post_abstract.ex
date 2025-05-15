@@ -3,10 +3,8 @@ defmodule EctoShorts.Schema.PostAbstract do
   use Ecto.Schema
   import Ecto.Changeset
 
-  require Ecto.Query
-
   schema "abstract table: posts" do
-    belongs_to :user, EctoShorts.Schema.User
+    belongs_to :author, EctoShorts.Schema.User
 
     field :title, :string
     field :body, :string
@@ -28,7 +26,7 @@ defmodule EctoShorts.Schema.PostAbstract do
     :notes,
     :permalink,
     :tags,
-    :user_id,
+    :author_id,
     :views
   ]
 

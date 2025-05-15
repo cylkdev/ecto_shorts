@@ -12,10 +12,7 @@ defmodule EctoShorts.Repo.Migrations.CreatePosts do
 
       add :custom_string_field, :string
 
-      add :user_id, references(:users,
-        on_delete: :nilify_all,
-        on_update: :update_all
-      )
+      add :author_id, references(:users, on_delete: :nilify_all, on_update: :update_all)
 
       timestamps()
     end

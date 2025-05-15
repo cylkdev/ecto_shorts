@@ -3,8 +3,6 @@ defmodule EctoShorts.Schema.CompositePrimaryKey do
   use Ecto.Schema
   import Ecto.Changeset
 
-  require Ecto.Query
-
   @primary_key false
 
   schema "composite_primary_keys" do

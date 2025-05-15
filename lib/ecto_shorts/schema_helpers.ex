@@ -358,21 +358,21 @@ defmodule EctoShorts.SchemaHelpers do
   ## Examples
 
       # Filtering primary key from a single params map
-      iex> EctoShorts.SchemaHelpers.filter_primary_key(EctoShorts.Schema.Post, %{id: 10, title: "Fira", age: 30})
+      iex> EctoShorts.SchemaHelpers.filter_primary_keys(EctoShorts.Schema.Post, %{id: 10, title: "Fira", age: 30})
       %{id: 10}
 
       # Filtering primary keys from a list of maps
       iex> list = [%{id: 1, title: "A"}, %{id: 2, title: "B"}, %{title: "C"}]
-      ...> EctoShorts.SchemaHelpers.filter_primary_key(EctoShorts.Schema.Post, list)
+      ...> EctoShorts.SchemaHelpers.filter_primary_keys(EctoShorts.Schema.Post, list)
       [%{id: 1}, %{id: 2}, %{}]
   """
-  @spec filter_primary_key(schema_module(), params() | list(params())) ::
+  @spec filter_primary_keys(schema_module(), params() | list(params())) ::
           params() | list(params())
-  def filter_primary_key(schema_module, list_of_params) when is_list(list_of_params) do
-    Enum.map(list_of_params, &filter_primary_key(schema_module, &1))
+  def filter_primary_keys(schema_module, list_of_params) when is_list(list_of_params) do
+    Enum.map(list_of_params, &filter_primary_keys(schema_module, &1))
   end
 
-  def filter_primary_key(schema_module, params) do
+  def filter_primary_keys(schema_module, params) do
     primary_key =
       schema_module
       |> primary_key()

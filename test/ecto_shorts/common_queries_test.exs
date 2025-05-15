@@ -2,10 +2,13 @@ defmodule EctoShorts.CommonQueriesTest do
   use ExUnit.Case, async: true
   doctest EctoShorts.CommonQueries
 
-  alias EctoShorts.CommonQueries
-  alias EctoShorts.Schema.{Comment, Post}
+  alias EctoShorts.{
+    CommonQueries,
+    Schema.Comment,
+    Schema.Post
+  }
 
-  import Ecto.Query
+  import Ecto.Query, only: [from: 2, subquery: 1]
 
   describe "&get_from_expr" do
     test "returns FromExpr for a simple schema module" do
