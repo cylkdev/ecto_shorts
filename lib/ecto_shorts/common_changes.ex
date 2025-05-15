@@ -47,20 +47,13 @@ defmodule EctoShorts.CommonChanges do
     SchemaHelpers
   }
 
-  @typedoc "An Ecto changeset being transformed or validated."
   @type changeset :: Ecto.Changeset.t()
-
-  @typedoc "A field name (typically an atom)."
   @type key :: atom()
-
+  @type pattern :: binary() | Regex.t()
   @type precision :: :microsecond | :millisecond | :second
-
-  @typedoc """
-  A keyword-list of options.
-  """
   @type opts :: keyword()
 
-  @filename_web_safe_regex ~r|^[ A-Za-z0-9\-\_\.\(\)]+$|u
+  @web_safe_filename_regex ~r|^[ A-Za-z0-9\-\_\.\(\)]+$|u
 
   @doc since: "2.5.0"
   @doc """
@@ -80,19 +73,51 @@ defmodule EctoShorts.CommonChanges do
   @spec validate_filename(changeset(), key(), opts()) :: changeset()
   def validate_filename(changeset, key \\ :filename, opts \\ []) do
     changeset
-    |> Changeset.validate_change(key, fn
+    |> validate_string_change_matches(key, opts[:pattern] || @web_safe_filename_regex)
+    |> Changeset.validate_length(key, min: opts[:min] || 1, max: opts[:max] || 255)
+  end
+
+  @doc """
+  Validates that a string field in the changeset matches a given pattern
+  or regular expression.
+
+  This function checks whether the value for the given `key` matches a
+  provided pattern using either a regular expression (`Regex`) or a
+  string pattern with the `=~` operator.
+
+  If the value is `nil`, it is ignored. If it does not match, a
+  validation error is added to the changeset under the given key.
+  """
+  @spec validate_string_change_matches(changeset(), key(), pattern()) :: changeset()
+  @spec validate_string_change_matches(changeset(), key(), pattern(), opts()) :: changeset()
+  def validate_string_change_matches(changeset, key, pattern, opts \\ []) do
+    Changeset.validate_change(changeset, key, fn
       ^key, nil ->
         []
 
       ^key, change ->
-        message =
-          "Can only contain characters alphanumeric characters " <>
-            "(A-Z, a-z, 0-9) or special characters space, hyphen (-), " <>
-            "underscore(_), and period (.)."
-
-        if Regex.match?(@filename_web_safe_regex, change), do: [], else: [{key, message}]
+        if string_matches?(change, pattern) do
+          []
+        else
+          string_match_change_error(key, pattern, opts)
+        end
     end)
-    |> Changeset.validate_length(key, min: opts[:min] || 1, max: opts[:max] || 255)
+  end
+
+  defp string_matches?(str, pattern) when is_struct(pattern, Regex) do
+    Regex.match?(pattern, str)
+  end
+
+  defp string_matches?(str, pattern) when is_binary(pattern) do
+    str =~ pattern
+  end
+
+  defp string_match_change_error(key, pattern, opts) do
+    message = opts[:message] || "does not match the required format"
+
+    metadata = [validation: :string_match, pattern: pattern]
+
+    [{key, {message, metadata}}]
   end
 
   @doc since: "2.5.0"

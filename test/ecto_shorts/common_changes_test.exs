@@ -1,3 +1,10 @@
+defmodule EctoShorts.CommonChangesTest do
+  use ExUnit.Case, async: true
+  doctest EctoShorts.CommonChanges
+
+  alias EctoShorts.CommonChanges
+end
+
 # defmodule EctoShorts.CommonChangesTest do
 #   use EctoShorts.DataCase
 
