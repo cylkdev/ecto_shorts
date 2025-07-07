@@ -24,7 +24,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
     * **Handle unsupported keys gracefully**, by logging helpful messages while
       skipping them.
 
-  Internally, this module delegates most query construction to `EctoShorts.CommonQueryAPI`
+  Internally, this module delegates most query construction to `EctoShorts.CommonQueryLanguage`
   and uses `EctoShorts.SchemaHelpers`for schema introspection.
 
   This module implements the `EctoShorts.QueryBuilder` behaviour.
@@ -76,13 +76,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   ...> )
   ```
   """
-  alias EctoShorts.SchemaHelpers
-  alias EctoShorts.{
-    # CommonQuery,
-    CommonQueryAPI,
-    Utils
-    # SchemaHelpers
-  }
+  alias EctoShorts.{CommonQueryAPI, SchemaHelpers, Utils}
 
   @type query :: Ecto.Query.t()
   @type schema :: Ecto.Queryable.t()
@@ -115,7 +109,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
   @doc """
   Returns the list of supported filters that can be used in schema-aware queries.
 
-  These filters delegate to `EctoShorts.CommonQueryAPI` and enable dynamic,
+  These filters delegate to `EctoShorts.CommonQueryLanguage` and enable dynamic,
   field-driven construction of queries in a composable and reusable way.
 
   ### Filter behaviors
@@ -142,7 +136,7 @@ defmodule EctoShorts.QueryBuilders.Schema do
 
     * If the key matches a supported filter (e.g., `:select`, `:join`),
       it applies the appropriate query transformation using
-      `EctoShorts.CommonQueryAPI`.
+      `EctoShorts.CommonQueryLanguage`.
 
     * If the key matches an association in the schema, the query will be
       joined and any nested filters applied to that association.

@@ -1,742 +1,592 @@
 defmodule EctoShorts.CommonQueryAPI do
-  @moduledoc since: "2.5.0"
-  @moduledoc """
-  `EctoShorts.CommonQueryAPI` provides a standardized API for creating
-  `Ecto.Query` expressions with support for bound and unbound contexts.
-
-  This api wraps the `Ecto.Query` macro calls so you don't need to
-  import `Ecto.Query` or manually writing macros like `from`, `where`,
-  or `select`. You can use maps or keyword lists to drive the behaviour
-  of things such as filters, joins, and ordering.
-
-  ## Getting Started
-
-  Here’s a simple example:
-
-      alias EctoShorts.CommonQueryAPI
-
-      EctoShorts.Schemas.Post
-      |> CommonQueryAPI.from(as: :post)
-      |> CommonQueryAPI.where(:post, %{published: true})
-      |> CommonQueryAPI.order_by(:post, [asc: :inserted_at])
-      |> CommonQueryAPI.limit(nil, 10)
-
-  You don’t need to `import Ecto.Query`, and there are no macros to
-  learn, just use functions that work with data.
-  """
+  @moduledoc false
   alias Ecto.Query
 
   alias EctoShorts.{
-    CommonQuery,
-    DynamicExpressions,
+    CommonQueryAPI.DynamicBuilder,
+    CommonQueryAPI.FilterBuilder,
+    CommonQueryAPI.JoinBuilder,
+    CommonQueryAPI.LockBuilder,
     Utils
   }
 
   require Ecto.Query
+  require DynamicBuilder
+  require FilterBuilder
+  require JoinBuilder
+  require LockBuilder
 
-  @type changeset :: Ecto.Changeset.t()
-  @type dynamic_expr :: %Ecto.Query.DynamicExpr{}
-  @type subquery :: Ecto.SubQuery.t()
-  @type query :: Ecto.Query.t()
-  @type schema :: Ecto.Queryable.t()
-  @type source :: binary()
-  @type schema_source :: {source(), schema()}
-  @type schema_metadata :: Ecto.Schema.Metadata.t()
-  @type schema_input :: schema() | schema_source()
-  @type query_source :: query() | schema_input()
-  @type prefix :: binary() | nil
-  @type binding_alias :: atom() | nil
-  @type condition :: :and | :or
-  @type join_operation :: :association | :subquery | :query
-  @type limit :: non_neg_integer()
-  @type offset :: integer()
-  @type key :: atom()
-  @type value :: any()
-  @type operator :: atom()
-  @type params :: map() | keyword()
-  @type opts :: keyword()
+  @default_dynamic_builder_adapter EctoShorts.DynamicBuilders.Postgres
 
   @doc """
-  Merges two dynamic expressions with `and`.
-
-  Returns the second expression if the first is `nil`.
-
-  ## Examples
-
-      iex> import Ecto.Query
-      ...> dyn_a = nil
-      ...> dyn_b = dynamic([q], q.id > 1)
-      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :and, dyn_b)
-
-      iex> import Ecto.Query
-      ...> dyn_a = dynamic([q], q.name == "example")
-      ...> dyn_b = dynamic([q], q.id > 1)
-      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :and, dyn_b)
-
-      iex> import Ecto.Query
-      ...> dyn_a = dynamic([q], q.name == "example")
-      ...> dyn_b = dynamic([q], q.id > 1)
-      ...> EctoShorts.CommonQueryAPI.merge_dynamic(dyn_a, :or, dyn_b)
+  ...
   """
-  @spec merge_dynamic(dynamic_expr() | nil, condition(), dynamic_expr()) :: dynamic_expr()
-  def merge_dynamic(nil, _operator, dyn), do: dyn
-  def merge_dynamic(dyn_a, :or, dyn_b), do: Query.dynamic(^dyn_a or ^dyn_b)
+  def and_dynamic(dyn_a, dyn_b), do: merge_dynamic(dyn_a, :and, dyn_b)
+
+  @doc """
+  ...
+  """
+  def or_dynamic(dyn_a, dyn_b), do: merge_dynamic(dyn_a, :or, dyn_b)
+
+  @doc """
+  ...
+  """
+  def merge_dynamic(dyn_a, _, nil), do: dyn_a
+  def merge_dynamic(nil, _, dyn_b), do: dyn_b
   def merge_dynamic(dyn_a, :and, dyn_b), do: Query.dynamic(^dyn_a and ^dyn_b)
+  def merge_dynamic(dyn_a, :or, dyn_b), do: Query.dynamic(^dyn_a or ^dyn_b)
 
   @doc """
-  Builds a binding-aware dynamic expression.
-
-  If a binding is provided, the dynamic will be created using that named binding.
-  If no binding is given, it defaults to the root from binding.
-
-  ## Examples
-
-      iex> EctoShorts.CommonQueryAPI.dynamic(nil, id: 1)
+  ...
   """
-  @spec dynamic(binding_alias() | nil, value()) :: dynamic_expr()
-  def dynamic(binding_alias, value) do
-    if binding_alias do
-      Query.dynamic([{^binding_alias, d}], ^value)
+  FilterBuilder.define_base_api(:distinct)
+  FilterBuilder.define_positional_binding_api(:distinct)
+  FilterBuilder.define_named_binding_api(:distinct)
+
+  @doc """
+  ...
+  """
+  DynamicBuilder.define_base_api()
+  DynamicBuilder.define_positional_binding_api()
+  DynamicBuilder.define_named_binding_api()
+
+  def dynamic(_source, current_binding, true, _opts) do
+    dynamic(current_binding, true)
+  end
+
+  def dynamic(source, current_binding, value, opts) do
+    if value === true do
+      dynamic(current_binding, true)
     else
-      Query.dynamic([d], ^value)
+      value
+      |> normalize_conditions()
+      |> Enum.reduce(nil, fn
+        {condition, params}, dyn ->
+          Utils.apply_expressions(
+            dyn,
+            params,
+            fn {key, value}, dyn ->
+              build_dynamic(
+                source,
+                dyn,
+                current_binding,
+                condition,
+                key,
+                value,
+                opts
+              )
+            end,
+            opts
+          )
+      end)
     end
+  end
+
+  defp normalize_conditions(params) do
+    {params_with_conditions, params_without_conditions} =
+      Enum.reduce(params, {[], []}, fn
+        {:and, con}, {params_with_conditions, params_without_conditions} ->
+          {[{:and, con} | params_with_conditions], params_without_conditions}
+
+        {:or, con}, {params_with_conditions, params_without_conditions} ->
+          {[{:or, con} | params_with_conditions], params_without_conditions}
+
+        {key, value}, {params_with_conditions, params_without_conditions} ->
+          {params_with_conditions, [{key, value} | params_without_conditions]}
+      end)
+
+    Enum.sort([and: params_without_conditions] ++ params_with_conditions)
+  end
+
+  defp build_dynamic(
+         source,
+         dyn,
+         current_binding,
+         condition,
+         key,
+         value,
+         opts
+       ) do
+    opts
+    |> dynamic_builder_adapter()
+    |> DynamicBuilder.build_dynamic(
+      source,
+      dyn,
+      current_binding,
+      condition,
+      key,
+      value
+    )
+  end
+
+  defp dynamic_builder_adapter(opts) do
+    opts[:dynamic_builder_adapter] || @default_dynamic_builder_adapter
   end
 
   @doc """
-  Builds a binding-aware dynamic expression.
-
-  If a binding is provided, the dynamic will be created using that
-  named binding. If no binding is given, it defaults to the root
-  from binding.
-
-  ## Examples
-
-      iex> EctoShorts.CommonQueryAPI.dynamic(EctoShorts.Schemas.Post, nil, %{id: 1}, [])
+  ...
   """
-  def dynamic(binding_alias, source, params, opts \\ [])
-
-  def dynamic(binding_alias, source, params, opts) when is_list(params) do
-    dynamic(binding_alias, source, Map.new(params), opts)
-  end
-
-  def dynamic(binding_alias, source, params, opts) do
-    with nil <-
-           DynamicExpressions.convert_params_to_dynamic(
-             binding_alias,
-             source,
-             params,
-             opts
-           ) do
-      dynamic(binding_alias, true)
-    end
+  def except(query, other_query) do
+    Query.except(query, ^other_query)
   end
 
   @doc """
-  Sets the `from` clause on a query.
-
-  ## Example
-
-      iex> EctoShorts.CommonQueryAPI.from(EctoShorts.Schemas.Post, :post)
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, as: :post>
+  ...
   """
-  def from(query, binding_alias, opts \\ [])
-
-  def from(query, binding_alias, opts) when is_map(opts) do
-    from(query, binding_alias, Map.to_list(opts))
-  end
-
-  def from(query, binding_alias, opts) do
-    prefix = opts[:prefix]
-
-    if binding_alias do
-      query
-      |> Query.from(as: ^binding_alias, prefix: ^prefix)
-      |> maybe_put_query_prefix(opts)
-    else
-      query
-      |> Query.from(prefix: ^prefix)
-      |> maybe_put_query_prefix(opts)
-    end
-  end
-
-  defp maybe_put_query_prefix(query, opts) do
-    case opts[:query_prefix] do
-      nil -> query
-      prefix -> put_query_prefix(query, prefix)
-    end
+  def except_all(query, other_query) do
+    Query.except_all(query, ^other_query)
   end
 
   @doc """
-  Overrides the query’s schema prefix (useful for multi-tenancy).
-
-  ## Example
-
-      iex> import Ecto.Query
-      ...> query = from p in EctoShorts.Schemas.Post
-      ...> query = EctoShorts.CommonQueryAPI.put_query_prefix(query, "tenant_123")
-      ...> query.prefix
-      "tenant_123"
+  ...
   """
-  @spec put_query_prefix(query_source(), prefix()) :: query()
+  def exclude(query, field) do
+    Query.exclude(query, field)
+  end
+
+  @doc """
+  ...
+  """
+  def first(queryable, order_by \\ nil) do
+    Query.first(queryable, order_by)
+  end
+
+  @doc """
+  ...
+  """
+  def from(expr, opts \\ [])
+
+  def from(expr, %{join: join} = opts) do
+    as = opts[:as]
+    distinct = opts[:distinct]
+    group_by = opts[:group_by]
+    having = opts[:having]
+    limit = opts[:limit]
+    offset = opts[:offset]
+    on = opts[:on] || true
+    order_by = opts[:order_by]
+    preload = opts[:preload]
+    select = opts[:select]
+    select_merge = opts[:select_merge]
+    update = opts[:update]
+    where = opts[:where]
+
+    Query.from(expr,
+      as: ^as,
+      distinct: ^distinct,
+      group_by: ^group_by,
+      having: ^having,
+      join: ^join,
+      on: ^on,
+      limit: ^limit,
+      offset: ^offset,
+      order_by: ^order_by,
+      preload: ^preload,
+      select: ^select,
+      select_merge: ^select_merge,
+      update: ^update,
+      where: ^where
+    )
+  end
+
+  def from(expr, %{left_join: left_join} = opts) do
+    as = opts[:as]
+    distinct = opts[:distinct]
+    group_by = opts[:group_by]
+    having = opts[:having]
+    limit = opts[:limit]
+    offset = opts[:offset]
+    on = opts[:on] || true
+    order_by = opts[:order_by]
+    preload = opts[:preload]
+    select = opts[:select]
+    select_merge = opts[:select_merge]
+    update = opts[:update]
+    where = opts[:where]
+
+    Query.from(expr,
+      as: ^as,
+      distinct: ^distinct,
+      group_by: ^group_by,
+      having: ^having,
+      left_join: ^left_join,
+      on: ^on,
+      limit: ^limit,
+      offset: ^offset,
+      order_by: ^order_by,
+      preload: ^preload,
+      select: ^select,
+      select_merge: ^select_merge,
+      update: ^update,
+      where: ^where
+    )
+  end
+
+  def from(expr, %{right_join: right_join} = opts) do
+    as = opts[:as]
+    distinct = opts[:distinct]
+    group_by = opts[:group_by]
+    having = opts[:having]
+    limit = opts[:limit]
+    offset = opts[:offset]
+    on = opts[:on] || true
+    order_by = opts[:order_by]
+    preload = opts[:preload]
+    select = opts[:select]
+    select_merge = opts[:select_merge]
+    update = opts[:update]
+    where = opts[:where]
+
+    Query.from(expr,
+      as: ^as,
+      distinct: ^distinct,
+      group_by: ^group_by,
+      having: ^having,
+      right_join: ^right_join,
+      on: ^on,
+      limit: ^limit,
+      offset: ^offset,
+      order_by: ^order_by,
+      preload: ^preload,
+      select: ^select,
+      select_merge: ^select_merge,
+      update: ^update,
+      where: ^where
+    )
+  end
+
+  def from(expr, %{inner_join: inner_join} = opts) do
+    as = opts[:as]
+    distinct = opts[:distinct]
+    group_by = opts[:group_by]
+    having = opts[:having]
+    limit = opts[:limit]
+    offset = opts[:offset]
+    on = opts[:on] || true
+    order_by = opts[:order_by]
+    preload = opts[:preload]
+    select = opts[:select]
+    select_merge = opts[:select_merge]
+    update = opts[:update]
+    where = opts[:where]
+
+    Query.from(expr,
+      as: ^as,
+      distinct: ^distinct,
+      group_by: ^group_by,
+      having: ^having,
+      inner_join: ^inner_join,
+      on: ^on,
+      limit: ^limit,
+      offset: ^offset,
+      order_by: ^order_by,
+      preload: ^preload,
+      select: ^select,
+      select_merge: ^select_merge,
+      update: ^update,
+      where: ^where
+    )
+  end
+
+  def from(expr, %{full_join: full_join} = opts) do
+    as = opts[:as]
+    distinct = opts[:distinct]
+    group_by = opts[:group_by]
+    having = opts[:having]
+    limit = opts[:limit]
+    offset = opts[:offset]
+    on = opts[:on] || true
+    order_by = opts[:order_by]
+    preload = opts[:preload]
+    select = opts[:select]
+    select_merge = opts[:select_merge]
+    update = opts[:update]
+    where = opts[:where]
+
+    Query.from(expr,
+      as: ^as,
+      distinct: ^distinct,
+      group_by: ^group_by,
+      having: ^having,
+      full_join: ^full_join,
+      on: ^on,
+      limit: ^limit,
+      offset: ^offset,
+      order_by: ^order_by,
+      preload: ^preload,
+      select: ^select,
+      select_merge: ^select_merge,
+      update: ^update,
+      where: ^where
+    )
+  end
+
+  def from(expr, %{cross_join: cross_join} = opts) do
+    as = opts[:as]
+    distinct = opts[:distinct]
+    group_by = opts[:group_by]
+    having = opts[:having]
+    limit = opts[:limit]
+    offset = opts[:offset]
+    on = opts[:on] || true
+    order_by = opts[:order_by]
+    preload = opts[:preload]
+    select = opts[:select]
+    select_merge = opts[:select_merge]
+    update = opts[:update]
+    where = opts[:where]
+
+    Query.from(expr,
+      as: ^as,
+      distinct: ^distinct,
+      group_by: ^group_by,
+      having: ^having,
+      cross_join: ^cross_join,
+      on: ^on,
+      limit: ^limit,
+      offset: ^offset,
+      order_by: ^order_by,
+      preload: ^preload,
+      select: ^select,
+      select_merge: ^select_merge,
+      update: ^update,
+      where: ^where
+    )
+  end
+
+  def from(expr, opts) do
+    from(expr, Map.new(opts))
+  end
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:group_by)
+  FilterBuilder.define_positional_binding_api(:group_by)
+  FilterBuilder.define_named_binding_api(:group_by)
+
+  @doc """
+  ...
+  """
+  def has_named_binding?(queryable, key) do
+    Query.has_named_binding?(queryable, key)
+  end
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:having)
+  FilterBuilder.define_positional_binding_api(:having)
+  FilterBuilder.define_named_binding_api(:having)
+
+  @doc """
+  ...
+  """
+  def intersect(query, other_query) do
+    Query.intersect(query, ^other_query)
+  end
+
+  @doc """
+  ...
+  """
+  def intersect_all(query, other_query) do
+    Query.intersect_all(query, ^other_query)
+  end
+
+  @doc """
+  ...
+  """
+  def has_named_binding(query, name) do
+    Query.has_named_binding?(query, name)
+  end
+
+  @doc """
+  ...
+  """
+  JoinBuilder.define_base_api()
+  JoinBuilder.define_positional_binding_api()
+  JoinBuilder.define_named_binding_api()
+
+  @doc """
+  ...
+  """
+  def last(queryable, order_by \\ nil) do
+    Query.last(queryable, order_by)
+  end
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:limit)
+  FilterBuilder.define_positional_binding_api(:limit)
+  FilterBuilder.define_named_binding_api(:limit)
+
+  @doc """
+  Locks selected rows for update. Other transactions can’t update/delete.
+  Most common for pessimistic locking.
+  """
+  LockBuilder.define_base_api("update", "FOR UPDATE")
+  LockBuilder.define_positional_binding_api("update", "FOR UPDATE")
+  LockBuilder.define_named_binding_api("update", "FOR UPDATE")
+
+  @doc """
+  Locks selected rows for update. Other transactions can’t update/delete.
+  Most common for pessimistic locking.
+  """
+  LockBuilder.define_base_api("no_key_update", "FOR NO KEY UPDATE")
+  LockBuilder.define_positional_binding_api("no_key_update", "FOR NO KEY UPDATE")
+  LockBuilder.define_named_binding_api("no_key_update", "FOR NO KEY UPDATE")
+
+  @doc """
+  Allows other transactions to read, but not update/delete.
+  Shared read lock.
+  """
+  LockBuilder.define_base_api("share", "FOR SHARE")
+  LockBuilder.define_positional_binding_api("share", "FOR SHARE")
+  LockBuilder.define_named_binding_api("share", "FOR SHARE")
+
+  @doc """
+  Allows other transactions to read, but not update/delete.
+  Shared read lock.
+  """
+  LockBuilder.define_base_api("key_share", "FOR KEY SHARE")
+  LockBuilder.define_positional_binding_api("key_share", "FOR KEY SHARE")
+  LockBuilder.define_named_binding_api("key_share", "FOR KEY SHARE")
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:offset)
+  FilterBuilder.define_positional_binding_api(:offset)
+  FilterBuilder.define_named_binding_api(:offset)
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:or_having)
+  FilterBuilder.define_positional_binding_api(:or_having)
+  FilterBuilder.define_named_binding_api(:or_having)
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:or_where)
+  FilterBuilder.define_positional_binding_api(:or_where)
+  FilterBuilder.define_named_binding_api(:or_where)
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:order_by)
+  FilterBuilder.define_positional_binding_api(:order_by)
+  FilterBuilder.define_named_binding_api(:order_by)
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:preload)
+  FilterBuilder.define_positional_binding_api(:preload)
+  FilterBuilder.define_named_binding_api(:preload)
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:prepend_order_by)
+  FilterBuilder.define_positional_binding_api(:prepend_order_by)
+  FilterBuilder.define_named_binding_api(:prepend_order_by)
+
+  @doc """
+  ...
+  """
   def put_query_prefix(query, prefix) do
     Query.put_query_prefix(query, prefix)
   end
 
   @doc """
-  Wraps a query as a subquery.
-
-  ## Examples
-
-      iex> EctoShorts.CommonQueryAPI.subquery(EctoShorts.Schemas.Post)
+  ...
   """
-  @spec subquery(query_source() | subquery()) :: subquery()
-  @spec subquery(query_source() | subquery(), opts()) :: subquery()
+  def recursive_ctes(query, value) do
+    Query.recursive_ctes(query, value)
+  end
+
+  @doc """
+  ...
+  """
+  def reverse_order(query) do
+    Query.reverse_order(query)
+  end
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:select)
+  FilterBuilder.define_positional_binding_api(:select)
+  FilterBuilder.define_named_binding_api(:select)
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:select_merge)
+  FilterBuilder.define_positional_binding_api(:select_merge)
+  FilterBuilder.define_named_binding_api(:select_merge)
+
+  @doc """
+  ...
+  """
   def subquery(query, opts \\ []) do
     Query.subquery(query, opts)
   end
 
   @doc """
-  Excludes a field (such as `:order_by`) from the query.
-
-  ## Examples
-
-      iex> import Ecto.Query
-      ...> query = from p in EctoShorts.Schemas.Post, order_by: p.inserted_at
-      ...> EctoShorts.CommonQueryAPI.exclude(query, :order_by)
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post>
+  ...
   """
-  @spec exclude(query_source(), key()) :: query()
-  def exclude(query, key) do
-    Query.exclude(query, key)
+  def union(query, other_query) do
+    Query.union(query, ^other_query)
   end
 
   @doc """
-  Limits the number of results returned by the query.
-
-  ## Examples
-
-      iex> EctoShorts.CommonQueryAPI.limit(EctoShorts.Schemas.Post, nil, 10)
+  ...
   """
-  @spec limit(query_source(), binding_alias() | nil, value()) :: query()
-  def limit(query, binding_alias, value) do
-    if binding_alias do
-      Query.limit(query, [{^binding_alias, q}], ^value)
-    else
-      Query.limit(query, [q], ^value)
-    end
+  def union_all(query, other_query) do
+    Query.union_all(query, ^other_query)
   end
 
   @doc """
-  Offsets the results returned by the query.
-
-  ## Examples
-
-      iex> EctoShorts.CommonQueryAPI.offset(EctoShorts.Schemas.Post, nil, 20)
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, offset: ^20>
+  ...
   """
-  @spec offset(query_source(), binding_alias() | nil, value()) :: query()
-  def offset(query, binding_alias, value) do
-    if binding_alias do
-      Query.offset(query, [{^binding_alias, q}], ^value)
-    else
-      Query.offset(query, [q], ^value)
-    end
+  FilterBuilder.define_base_api(:update)
+  FilterBuilder.define_positional_binding_api(:update)
+  FilterBuilder.define_named_binding_api(:update)
+
+  @doc """
+  ...
+  """
+  FilterBuilder.define_base_api(:where)
+  FilterBuilder.define_positional_binding_api(:where)
+  FilterBuilder.define_named_binding_api(:where)
+
+  @doc """
+  ...
+  """
+  def with_cte(query, name, opts) do
+    as = opts[:as]
+    materialized = opts[:materialized]
+    operation = opts[:operation] || :all
+
+    Query.with_cte(query, ^name, as: ^as, materialized: materialized, operation: operation)
   end
 
   @doc """
-  Groups the results by the given value.
-
-  ## Examples
-
-      iex> EctoShorts.CommonQueryAPI.group_by(EctoShorts.Schemas.Post, nil, :id)
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, group_by: [p0.id]>
+  ...
   """
-  @spec group_by(query_source(), binding_alias() | nil, value()) :: query()
-  def group_by(query, binding_alias, value) do
-    if binding_alias do
-      Query.group_by(query, [{^binding_alias, q}], ^value)
-    else
-      Query.group_by(query, [q], ^value)
-    end
+  def with_named_binding(query, key, fun) do
+    Query.with_named_binding(query, key, fun)
   end
 
   @doc """
-  Orders the results by the given value.
-
-  ## Examples
-
-      iex> EctoShorts.CommonQueryAPI.order_by(EctoShorts.Schemas.Post, nil, [asc: :inserted_at])
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, order_by: [asc: p0.inserted_at]>
+  ...
   """
-  @spec order_by(query_source(), binding_alias() | nil, value()) :: query()
-  def order_by(query, binding_alias, value) do
-    if binding_alias do
-      Query.order_by(query, [{^binding_alias, q}], ^value)
-    else
-      Query.order_by(query, [q], ^value)
-    end
-  end
-
-  @doc """
-  Preloads associations on the query.
-
-  ## Examples
-
-      iex> EctoShorts.CommonQueryAPI.preload(EctoShorts.Schemas.Post, nil, :comments)
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, preload: [:comments]>
-  """
-  @spec preload(query_source(), binding_alias() | nil, value()) :: query()
-  def preload(query, binding_alias, value) do
-    if binding_alias do
-      Query.preload(query, [{^binding_alias, q}], ^value)
-    else
-      Query.preload(query, [q], ^value)
-    end
-  end
-
-  @spec select(query_source(), binding_alias() | nil, params() | true, opts()) :: query()
-  def select(query, binding_alias, value, opts \\ [])
-
-  def select(query, binding_alias, true, _opts) do
-    query_select(query, binding_alias, true)
-  end
-
-  def select(query, binding_alias, values, opts) when is_list(values) do
-    if Keyword.keyword?(values) do
-      select(query, binding_alias, Map.new(values), opts)
-    else
-      query_select(query, binding_alias, {:map, values})
-    end
-  end
-
-  def select(query, binding_alias, params, opts) do
-    if Map.has_key?(params, :value) do
-      query_select(query, binding_alias, params[:value])
-    else
-      Utils.apply_expressions(
-        query,
-        params,
-        fn {key, value}, query ->
-          query_select(query, binding_alias, {key, value})
-        end,
-        opts
-      )
-    end
-  end
-
-  defp query_select(query, binding_alias, true) do
-    if binding_alias do
-      Query.select(query, [{^binding_alias, q}], q)
-    else
-      Query.select(query, [q], q)
-    end
-  end
-
-  defp query_select(query, binding_alias, {:map, values}) do
-    if binding_alias do
-      Query.select(query, [{^binding_alias, q}], map(q, ^values))
-    else
-      Query.select(query, [q], map(q, ^values))
-    end
-  end
-
-  defp query_select(query, binding_alias, {:struct, values}) do
-    if binding_alias do
-      Query.select(query, [{^binding_alias, q}], struct(q, ^values))
-    else
-      Query.select(query, [q], struct(q, ^values))
-    end
-  end
-
-  defp query_select(query, binding_alias, value) do
-    if binding_alias do
-      Query.select(query, [{^binding_alias, q}], ^value)
-    else
-      Query.select(query, [q], ^value)
-    end
-  end
-
-  @spec select_merge(query_source(), binding_alias() | nil, params() | true, opts()) :: query()
-  def select_merge(query, binding_alias, value, opts \\ [])
-
-  def select_merge(query, binding_alias, values, opts) when is_list(values) do
-    if Keyword.keyword?(values) do
-      select_merge(query, binding_alias, Map.new(values), opts)
-    else
-      query_select_merge(query, binding_alias, values)
-    end
-  end
-
-  def select_merge(query, binding_alias, params, opts) when is_map(params) do
-    if Map.has_key?(params, :value) do
-      query_select_merge(query, binding_alias, params[:value])
-    else
-      Utils.apply_expressions(
-        query,
-        params,
-        fn {key, value}, query ->
-          query_select_merge(query, binding_alias, {key, value})
-        end,
-        opts
-      )
-    end
-  end
-
-  def select_merge(query, binding_alias, value, _opts) do
-    query_select_merge(query, binding_alias, value)
-  end
-
-  defp query_select_merge(query, binding_alias, true) do
-    if binding_alias do
-      Query.select_merge(query, [{^binding_alias, q}], q)
-    else
-      Query.select_merge(query, [q], q)
-    end
-  end
-
-  defp query_select_merge(query, binding_alias, {:map, keys}) do
-    if binding_alias do
-      Query.select_merge(query, [{^binding_alias, q}], map(q, ^keys))
-    else
-      Query.select_merge(query, [q], map(q, ^keys))
-    end
-  end
-
-  defp query_select_merge(query, binding_alias, {:struct, keys}) do
-    if binding_alias do
-      Query.select_merge(query, [{^binding_alias, q}], struct(q, ^keys))
-    else
-      Query.select_merge(query, [q], struct(q, ^keys))
-    end
-  end
-
-  defp query_select_merge(query, binding_alias, value) do
-    if binding_alias do
-      Query.select_merge(query, [{^binding_alias, q}], ^value)
-    else
-      Query.select_merge(query, [q], ^value)
-    end
-  end
-
-  @doc """
-  Adds a join to the query for an association or subquery.
-
-  ## Examples
-
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schemas.Post, :association, {nil, nil}, :comments)
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, join: c1 in assoc(p0, :comments)>
-
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schemas.Post, :association, {nil, :comments}, :comments)
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, join: c1 in assoc(p0, :comments), as: :comments>
-
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schemas.Post, :association, {nil, nil}, :comments)
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, join: c1 in assoc(p0, :comments)>
-
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schemas.Post, :association, {nil, :comments}, :comments, %{on: %{id: 2}})
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, join: c1 in assoc(p0, :comments), as: :comments, on: c1.id == ^2>
-
-      iex> EctoShorts.CommonQueryAPI.join(EctoShorts.Schemas.Post, :association, {nil, :comments}, :comments, %{on: %{id: %{>=: 2}}})
-      #Ecto.Query<from p0 in EctoShorts.Schemas.Post, join: c1 in assoc(p0, :comments), as: :comments, on: c1.id >= ^2>
-  """
-  def join(query, op, join_binding, key, params \\ %{}, opts \\ [])
-
-  def join(query, op, {binding_alias, join_as}, key, params, opts) when is_list(params) do
-    join(query, op, {binding_alias, join_as}, key, Map.new(params), opts)
-  end
-
-  def join(query, :association, {binding_alias, as}, key, params, opts) do
-    {source, params} = Map.pop(params, :source)
-
-    source =
-      if source !== nil do
-        source
-      else
-        CommonQuery.get_binding_source(query, binding_alias)
-      end
-
-    qual = params[:qualifier] || :inner
-
-    prefix = params[:prefix]
-
-    on = join_on_dynamic(as, source, params[:on], opts)
-
-    join_assoc(query, {binding_alias, as}, key, {qual, on, prefix})
-  end
-
-  def join(query, :subquery, {binding_alias, as}, inner_query, params, opts) do
-    {source, params} = Map.pop(params, :source)
-
-    source =
-      if source !== nil do
-        source
-      else
-        CommonQuery.get_binding_source(query, binding_alias)
-      end
-
-    qual = params[:qualifier] || :inner
-
-    prefix = params[:prefix]
-
-    on = join_on_dynamic(as, source, params[:on], opts)
-
-    join_subquery(query, {binding_alias, as}, inner_query, {qual, on, prefix})
-  end
-
-  def join(query, :query, {binding_alias, as}, source, params, opts) do
-    qual = params[:qualifier] || :inner
-
-    prefix = params[:prefix]
-
-    on = join_on_dynamic(as, source, params[:on], opts)
-
-    join_query(query, {binding_alias, as}, source, {qual, on, prefix})
-  end
-
-  defp join_assoc(query, {binding_alias, as}, key, {qual, on, prefix}) do
-    if is_nil(as) or as === false do
-      if binding_alias do
-        Query.join(
-          query,
-          qual,
-          [{^binding_alias, q}],
-          assoc(q, ^key),
-          on: ^on,
-          prefix: ^prefix
-        )
-      else
-        Query.join(
-          query,
-          qual,
-          [q],
-          assoc(q, ^key),
-          on: ^on,
-          prefix: ^prefix
-        )
-      end
-    else
-      Query.with_named_binding(query, as, fn query, as ->
-        if binding_alias do
-          Query.join(
-            query,
-            qual,
-            [{^binding_alias, q}],
-            assoc(q, ^key),
-            as: ^as,
-            on: ^on,
-            prefix: ^prefix
-          )
-        else
-          Query.join(
-            query,
-            qual,
-            [q],
-            assoc(q, ^key),
-            as: ^as,
-            on: ^on,
-            prefix: ^prefix
-          )
-        end
-      end)
-    end
-  end
-
-  defp join_subquery(query, {binding_alias, as}, inner_query, {qual, on, prefix}) do
-    if is_nil(as) or as === false do
-      if binding_alias do
-        Query.join(
-          query,
-          qual,
-          [{^binding_alias, q}],
-          subquery(inner_query),
-          on: ^on,
-          prefix: ^prefix
-        )
-      else
-        Query.join(
-          query,
-          qual,
-          [q],
-          subquery(inner_query),
-          on: ^on,
-          prefix: ^prefix
-        )
-      end
-    else
-      Query.with_named_binding(query, as, fn query, as ->
-        if binding_alias do
-          Query.join(
-            query,
-            qual,
-            [{^binding_alias, q}],
-            subquery(inner_query),
-            as: ^as,
-            on: ^on,
-            prefix: ^prefix
-          )
-        else
-          Query.join(
-            query,
-            qual,
-            [q],
-            subquery(inner_query),
-            as: ^as,
-            on: ^on,
-            prefix: ^prefix
-          )
-        end
-      end)
-    end
-  end
-
-  defp join_query(query, {binding_alias, as}, source, {qual, on, prefix}) do
-    source = normalize_source(source)
-
-    if is_nil(as) or as === false do
-      if binding_alias do
-        Query.join(
-          query,
-          qual,
-          [{^binding_alias, q}],
-          ^source,
-          on: ^on,
-          prefix: ^prefix
-        )
-      else
-        Query.join(
-          query,
-          qual,
-          [q],
-          ^source,
-          on: ^on,
-          prefix: ^prefix
-        )
-      end
-    else
-      Query.with_named_binding(query, as, fn query, as ->
-        if binding_alias do
-          Query.join(
-            query,
-            qual,
-            [{^binding_alias, q}],
-            ^source,
-            as: ^as,
-            on: ^on,
-            prefix: ^prefix
-          )
-        else
-          Query.join(
-            query,
-            qual,
-            [q],
-            ^source,
-            as: ^as,
-            on: ^on,
-            prefix: ^prefix
-          )
-        end
-      end)
-    end
-  end
-
-  defp join_on_dynamic(binding_alias, source, params, opts) when is_list(params) do
-    join_on_dynamic(binding_alias, source, Map.new(params), opts)
-  end
-
-  defp join_on_dynamic(binding_alias, source, params, opts) when is_map(params) do
-    dynamic(binding_alias, source, params, opts)
-  end
-
-  defp join_on_dynamic(_, _, _, _) do
-    true
-  end
-
-  def or_where(query, binding_alias, values, opts \\ [])
-
-  def or_where(query, binding_alias, values, opts) when is_list(values) do
-    if Keyword.keyword?(values) do
-      or_where(query, binding_alias, Map.new(values), opts)
-    else
-      Enum.reduce(values, query, fn value, query ->
-        or_where(query, binding_alias, value, opts)
-      end)
-    end
-  end
-
-  def or_where(query, binding_alias, params, opts) do
-    {expression, params} = Map.pop(params, :value)
-
-    {source, params} = Map.pop(params, :source)
-
-    source =
-      if source !== nil do
-        source
-      else
-        CommonQuery.get_binding_source(query, binding_alias)
-      end
-
-    if expression !== nil do
-      query_or_where(query, binding_alias, expression)
-    else
-      query_or_where(query, nil, dynamic(binding_alias, source, params, opts))
-    end
-  end
-
-  defp query_or_where(query, binding_alias, expr) do
-    if binding_alias do
-      Query.or_where(query, [{^binding_alias, q}], ^expr)
-    else
-      Query.or_where(query, [q], ^expr)
-    end
-  end
-
-  def where(query, binding_alias, values, opts \\ [])
-
-  def where(query, binding_alias, values, opts) when is_list(values) do
-    if Keyword.keyword?(values) do
-      where(query, binding_alias, Map.new(values), opts)
-    else
-      Enum.reduce(values, query, fn value, query ->
-        where(query, binding_alias, value, opts)
-      end)
-    end
-  end
-
-  def where(query, binding_alias, params, opts) do
-    {expression, params} = Map.pop(params, :value)
-
-    {source, params} = Map.pop(params, :source)
-
-    source =
-      if source !== nil do
-        source
-      else
-        CommonQuery.get_binding_source(query, binding_alias)
-      end
-
-    if expression !== nil do
-      query_where(query, binding_alias, expression)
-    else
-      query_where(query, nil, dynamic(binding_alias, source, params, opts))
-    end
-  end
-
-  defp query_where(query, binding_alias, expr) do
-    if binding_alias do
-      Query.where(query, [{^binding_alias, q}], ^expr)
-    else
-      Query.where(query, [q], ^expr)
-    end
-  end
-
-  defp normalize_source({nil, schema}) when is_atom(schema) do
-    schema
-  end
-
-  defp normalize_source({source, schema}) when is_atom(schema) do
-    {source, schema}
-  end
-
-  defp normalize_source(source) when is_binary(source) do
-    source
-  end
+  FilterBuilder.define_base_api(:with_ties)
+  FilterBuilder.define_positional_binding_api(:with_ties)
+  FilterBuilder.define_named_binding_api(:with_ties)
 end

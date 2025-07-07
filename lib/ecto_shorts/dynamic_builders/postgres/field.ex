@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicExpressions.Postgres.Field do
+defmodule EctoShorts.DynamicBuilders.Postgres.Field do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Provides dynamic filter expressions for scalar fields in Postgres.
@@ -25,8 +25,10 @@ defmodule EctoShorts.DynamicExpressions.Postgres.Field do
   """
 
   alias Ecto.Query
+  alias EctoShorts.CommonQueryAPI.DynamicBuilder
 
   require Ecto.Query
+  require EctoShorts.CommonQueryAPI.DynamicBuilder
 
   @type dynamic_expr :: Ecto.Query.dynamic_expr()
   @type binding_alias :: atom() | nil
@@ -41,7 +43,7 @@ defmodule EctoShorts.DynamicExpressions.Postgres.Field do
   both named bindings (`as: :alias`) and positional bindings.
 
   This function is typically used by higher-level dynamic
-  filtering modules, like `EctoShorts.DynamicExpressions.Postgres`,
+  filtering modules, like `EctoShorts.DynamicBuilders.Postgres`,
   to generate `where` and `or_where` clauses dynamically.
   """
   @spec build_dynamic(binding_alias() | nil, any(), operator(), any()) :: dynamic_expr()
@@ -64,6 +66,17 @@ defmodule EctoShorts.DynamicExpressions.Postgres.Field do
     do: build_dynamic(binding_alias, key, :>=, value)
 
   # ---
+
+  # DynamicBuilder.define_base_fragment_api(
+  #   :ilike,
+  #   "? ILIKE ANY(SELECT unnest(?))",
+  #   [field: :key, var: :patterns],
+  #   [
+  #     quote do
+  #       expr = Enum.map(expr, &"%#{&1}%")
+  #     end
+  #   ]
+  # )
 
   def build_dynamic(binding_alias, key, :ilike, values) when is_list(values) do
     patterns = Enum.map(values, &"%#{&1}%")

@@ -123,7 +123,7 @@ defmodule EctoShorts.CommonSchema do
   end
 
   def get_schema_source(query) do
-    CommonQuery.get_source(query)
+    CommonQuery.lookup_base_expr_source(query)
   end
 
   @doc """

@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicExpressions.Postgres do
+defmodule EctoShorts.DynamicBuilders.Postgres do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Build dynamic `where` and `or_where` filters for Postgres without
@@ -16,12 +16,12 @@ defmodule EctoShorts.DynamicExpressions.Postgres do
 
   alias EctoShorts.{
     CommonQueryAPI,
-    DynamicExpressions.Postgres.Array,
-    DynamicExpressions.Postgres.Field,
+    DynamicBuilders.Postgres.Array,
+    DynamicBuilders.Postgres.Field,
     SchemaHelpers
   }
 
-  @behaviour EctoShorts.DynamicExpression
+  @behaviour EctoShorts.DynamicBuilder
 
   @type schema :: Ecto.Queryable.t()
   @type dynamic_expr :: %Ecto.Query.DynamicExpr{}
@@ -45,7 +45,7 @@ defmodule EctoShorts.DynamicExpressions.Postgres do
   @doc false
   def operators, do: @operators
 
-  @impl EctoShorts.DynamicExpression
+  @impl EctoShorts.DynamicBuilder
   @doc """
   Builds a dynamic expression for a single filter condition
   using the given field, operator, and value.
@@ -72,16 +72,16 @@ defmodule EctoShorts.DynamicExpressions.Postgres do
 
   ## Examples
 
-      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(nil, :binding_name, :and, EctoShorts.Schemas.Post, :title, {:==, "Hello"})
+      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(nil, :binding_name, :and, EctoShorts.Schemas.Post, :title, {:==, "Hello"})
 
-      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(nil, :binding_name, :or, EctoShorts.Schemas.Post, :tags, {:==, ["elixir", "ecto"]})
+      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(nil, :binding_name, :or, EctoShorts.Schemas.Post, :tags, {:==, ["elixir", "ecto"]})
 
   """
   def build_dynamic(
+        source,
         dyn,
         binding_alias,
         condition,
-        source,
         key,
         {operator, value}
       )
@@ -110,18 +110,18 @@ defmodule EctoShorts.DynamicExpressions.Postgres do
   end
 
   def build_dynamic(
+        source,
         dyn,
         binding_alias,
         condition,
-        source,
         key,
         value
       ) do
     build_dynamic(
+      source,
       dyn,
       binding_alias,
       condition,
-      source,
       key,
       {:==, value}
     )

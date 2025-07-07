@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicExpressionsTest do
+defmodule EctoShorts.CommonQueryComposerTest do
   use ExUnit.Case, async: true
-  doctest EctoShorts.DynamicExpressions
+  doctest EctoShorts.CommonQueryComposer
 end

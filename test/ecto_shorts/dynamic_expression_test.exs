@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicExpressionTest do
+defmodule EctoShorts.DynamicBuilderTest do
   use ExUnit.Case, async: true
-  doctest EctoShorts.DynamicExpression
+  doctest EctoShorts.DynamicBuilder
 end

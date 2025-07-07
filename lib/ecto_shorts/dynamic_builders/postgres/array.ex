@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicExpressions.Postgres.Array do
+defmodule EctoShorts.DynamicBuilders.Postgres.Array do
   @moduledoc since: "2.5.0"
   @moduledoc """
   Builds Ecto.Query dynamic expressions for Postgres array fields.
@@ -11,7 +11,7 @@ defmodule EctoShorts.DynamicExpressions.Postgres.Array do
   These expressions are designed to be composed into `Ecto.Query.dynamic/2`
   calls and are safe to use with or without binding aliases.
 
-  See `EctoShorts.DynamicExpressions.Postgres.Field` for more information
+  See `EctoShorts.DynamicBuilders.Postgres.Field` for more information
   on filtering other field types.
   """
 

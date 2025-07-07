@@ -1,8 +1,8 @@
-defmodule EctoShorts.DynamicExpressions.Postgres.FieldTest do
+defmodule EctoShorts.DynamicBuilders.Postgres.FieldTest do
   use ExUnit.Case, async: true
-  doctest EctoShorts.DynamicExpressions.Postgres.Field
+  doctest EctoShorts.DynamicBuilders.Postgres.Field
 
-  alias EctoShorts.DynamicExpressions.Postgres.Field
+  alias EctoShorts.DynamicBuilders.Postgres.Field
   alias EctoShorts.Schemas.Post
 
   import Ecto.Query, only: [dynamic: 2, from: 2]
