@@ -11,7 +11,7 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
 
   ## Options
 
-    * `:max` - Max number of positional bindings to support (required)
+    * `:max_positional_bindings` - Max number of positional bindings to support (required)
     * `:prefix` - Atom prefix for generated binding vars (default: `:b`)
     * `:operators` - List of operator atoms to generate clauses for (e.g., `:==`, `:in`, `:ilike`)
     * `:builder` - Module implementing `build_expr/4` (and optionally `build_head_ast/4`)
@@ -23,7 +23,7 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
 
       EctoShorts.CommonQueryAPI.Generator.define_query_api(
         :dynamic,
-        max: 3,
+        max_positional_bindings: 3,
         builder: EctoShorts.CommonQueryAPI.Generator.FieldExprBuilder,
         operators: [:==, :ilike, :in, :fragment_like],
         reverse_ops: []
@@ -33,7 +33,7 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
 
       EctoShorts.CommonQueryAPI.Generator.define_query_api(
         :join,
-        max: 2,
+        max_positional_bindings: 2,
         builder: EctoShorts.CommonQueryAPI.Generator.JoinExprBuilder,
         operators: [:association, :subquery]
       )
@@ -42,6 +42,7 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
     query_api_ast = Generator.build_query_api_ast(macro_name, __CALLER__, opts)
 
     quote do
+      import Ecto.Query
       unquote(query_api_ast)
     end
   end
@@ -62,7 +63,7 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
       EctoShorts.CommonQueryAPI.Generator.build_query_api_ast(
         :dynamic,
         __ENV__,
-        max: 2,
+        max_positional_bindings: 2,
         prefix: :b,
         builder: EctoShorts.CommonQueryAPI.Generator.FieldExprBuilder,
         operators: [:==, :in]
@@ -72,13 +73,13 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
       EctoShorts.CommonQueryAPI.Generator.build_query_api_ast(
         :join,
         __ENV__,
-        max: 2,
+        max_positional_bindings: 2,
         builder: EctoShorts.CommonQueryAPI.Generator.JoinExprBuilder,
         operators: [:association, :subquery]
       )
   """
   def build_query_api_ast(macro_name, env \\ __ENV__, opts \\ []) do
-    max = Keyword.fetch!(opts, :max)
+    max = Keyword.fetch!(opts, :max_positional_bindings)
     prefix = Keyword.get(opts, :prefix, :b)
     ops = Keyword.get(opts, :operators, [:ilike])
     builder = Keyword.fetch!(opts, :builder)
@@ -126,7 +127,7 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
 
     * `builder_module` - Module that implements `build_expr/4`
     * `macro_name` - The query macro to wrap (e.g., `:dynamic`, `:join`, `:select`)
-    * `binding_arg` - Either `{:positional, n}` or `:named` to indicate binding style
+    * `binding_input` - Either `{:positional, n}` or `:named` to indicate binding style
     * `op` - The operation atom (e.g., `:==`, `:in`, `:association`, `:fragment_like`)
     * `prefix` - Prefix used when generating binding vars (default: `:b`)
     * `opts` - The keyword list of options passed from the generator macro
@@ -158,7 +159,7 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
   def build_query_api_function_ast(
         builder_module,
         macro_name,
-        binding_arg,
+        binding_input,
         op,
         prefix \\ :b,
         env \\ __ENV__,
@@ -173,52 +174,88 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
         atom when is_atom(atom) -> atom
       end
 
-    {bindings, binding_var} = build_bindings(binding_arg, prefix, env)
-
-    reverse_ops = Keyword.get(opts, :reverse_ops, [])
-    reverse? = op in reverse_ops
-
-    key_var = Macro.var(:key, env.context)
-    value_var = Macro.var(:value, env.context)
-
-    {key_var, value_var} = if reverse?, do: {value_var, key_var}, else: {key_var, value_var}
-
-    inner_expr = builder_module.build_expr(op, bindings, key_var, value_var)
-
     query_var = Macro.var(:query, env.context)
     qual_var = Macro.var(:qual, env.context)
     opts_var = Macro.var(:opts, env.context)
 
-    clause_head =
-      build_clause_head(
+    reverse_ops = Keyword.get(opts, :reverse_ops, [])
+
+    {key_var, value_var} =
+      if op in reverse_ops do
+        {Macro.var(:value, env.context), Macro.var(:key, env.context)}
+      else
+        {Macro.var(:key, env.context), Macro.var(:value, env.context)}
+      end
+
+    binding_info =
+      case binding_input do
+        {:positional, count} ->
+          bindings =
+            Enum.map(0..(count - 1), fn i ->
+              Macro.var(:"#{prefix}#{i}", env.context)
+            end)
+
+          {:positional, count, bindings}
+
+        :named ->
+          binding_alias_var = Macro.var(:binding_alias, env.context)
+          binding_var = Macro.var(:"#{prefix}0", env.context)
+
+          {:named, binding_alias_var, binding_var}
+      end
+
+    vars_info = {query_var, qual_var, key_var, value_var, opts_var}
+
+    inner_expr = builder_module.build_expr(op, binding_info, vars_info)
+
+    fn_head =
+      build_function_head(
         builder_module,
         macro_name,
-        {op, query_var, qual_var, key_var, value_var, binding_var, opts_var}
+        {op, binding_info, vars_info}
       )
 
-    macro_block =
-      build_macro_block(macro_name, {binding_arg, bindings, inner_expr, opts_var}, opts)
+    fn_body =
+      build_function_body(
+        macro_name,
+        {op, inner_expr, binding_info, vars_info},
+        opts
+      )
 
     quote do
-      def unquote(clause_head) do
-        unquote(macro_block)
+      def unquote(fn_head) do
+        unquote(fn_body)
       end
     end
   end
 
-  defp build_clause_head(
+  defp build_function_head(
          builder_module,
          macro_name,
-         {op, query_var, qual_var, key_var, value_var, binding_var, opts_var}
+         {
+          op,
+          binding_info,
+          {query_var, qual_var, key_var, value_var, opts_var} = vars_info
+        }
        ) do
     if function_exported?(builder_module, :build_head_ast, 4) do
-      builder_module.build_head_ast(op, key_var, value_var, binding_var)
+      builder_module.build_head_ast(macro_name, op, binding_info, vars_info)
     else
+      fn_head_binding_var =
+        case binding_info do
+          {:positional, count, bindings} ->
+            Enum.at(bindings, count - 1)
+
+          {:named, binding_alias_var, _binding_var} ->
+            binding_alias_var
+
+        end
+
       args =
         case macro_name do
-          :join -> [query_var, binding_var, qual_var, key_var, {op, value_var}, opts_var]
-          :dynamic -> [binding_var, key_var, {op, value_var}]
-          _ -> [query_var, binding_var, key_var, {op, value_var}]
+          :join -> [query_var, fn_head_binding_var, qual_var, key_var, {op, value_var}, opts_var]
+          :dynamic -> [fn_head_binding_var, key_var, {op, value_var}]
+          _ -> [query_var, fn_head_binding_var, key_var, {op, value_var}]
         end
 
       quote do
@@ -227,27 +264,52 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
     end
   end
 
-  defp build_macro_block(:dynamic, {binding_arg, bindings, inner_expr, _opts_var}, _opts) do
-    case binding_arg do
-      {:positional, _} ->
+  defp build_function_body(
+    :dynamic,
+    {
+      op,
+      inner_expr,
+      binding_info,
+      {query_var, qual_var, key_var, value_var, opts_var} = _vars_info
+    },
+    _opts
+  ) do
+    transform_ast = build_transform_ast(:dynamic, key_var, op, value_var)
+
+    case binding_info do
+      {:positional, _count, bindings} ->
         quote do
+          unquote_splicing(transform_ast)
+
           Ecto.Query.dynamic([unquote_splicing(bindings)], unquote(inner_expr))
         end
 
-      :named ->
-        [{_, selected_binding_var}] = bindings
-
+      {:named, binding_alias_var, binding_var} ->
         quote do
-          if binding_alias do
-            Ecto.Query.dynamic([unquote_splicing(bindings)], unquote(inner_expr))
+          unquote_splicing(transform_ast)
+
+          if unquote(binding_alias_var) do
+            Ecto.Query.dynamic(
+              [{^unquote(binding_alias_var), unquote(binding_var)}],
+              unquote(inner_expr)
+            )
           else
-            Ecto.Query.dynamic([unquote(selected_binding_var)], unquote(inner_expr))
+            Ecto.Query.dynamic([unquote(binding_var)], unquote(inner_expr))
           end
         end
     end
   end
 
-  defp build_macro_block(:join, {binding_arg, bindings, inner_expr, opts_var}, opts) do
+  defp build_function_body(
+    :join,
+    {
+      op,
+      inner_expr,
+      binding_info,
+      {query_var, qual_var, key_var, value_var, opts_var} = _vars_info
+    },
+    opts
+  ) do
     join_opts =
       if Keyword.has_key?(opts, :hints) do
         hints = opts[:hints]
@@ -261,43 +323,47 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
         end
       end
 
-    case binding_arg do
-      {:positional, _} ->
+    transform_ast = build_transform_ast(:join, key_var, op, value_var)
+
+    case binding_info do
+      {:positional, _count, bindings} ->
         quote do
           on_expr = unquote(opts_var)[:on] || true
           as = unquote(opts_var)[:as]
           prefix = unquote(opts_var)[:prefix]
 
+          unquote_splicing(transform_ast)
+
           Ecto.Query.join(
-            query,
-            qual,
+            unquote(query_var),
+            unquote(qual_var),
             [unquote_splicing(bindings)],
             unquote(inner_expr),
             unquote(join_opts)
           )
         end
 
-      :named ->
-        [{_, selected_binding_var}] = bindings
-
+      {:named, binding_alias_var, binding_var} ->
         quote do
           on_expr = unquote(opts_var)[:on] || true
           as = unquote(opts_var)[:as]
           prefix = unquote(opts_var)[:prefix]
 
+          unquote_splicing(transform_ast)
+
           if binding_alias do
             Ecto.Query.join(
-              query,
-              qual,
-              [unquote_splicing(bindings)],
+              unquote(query_var),
+              unquote(qual_var),
+              [{^unquote(binding_alias_var), unquote(binding_var)}],
               unquote(inner_expr),
               unquote(join_opts)
             )
           else
             Ecto.Query.join(
-              query,
-              qual,
-              [unquote(selected_binding_var)],
+              unquote(query_var),
+              unquote(qual_var),
+              [unquote(binding_var)],
               unquote(inner_expr),
               unquote(join_opts)
             )
@@ -306,10 +372,23 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
     end
   end
 
-  defp build_macro_block(macro_name, {binding_arg, bindings, inner_expr, _opts_var}, _opts) do
-    case binding_arg do
-      {:positional, _} ->
+  defp build_function_body(
+    macro_name,
+    {
+      op,
+      inner_expr,
+      binding_info,
+      {query_var, qual_var, key_var, value_var, opts_var} = vars_info
+    },
+    _opts
+  ) do
+    transform_ast = build_transform_ast(macro_name, key_var, op, value_var)
+
+    case binding_info do
+      {:positional, _count, bindings} ->
         quote do
+          unquote_splicing(transform_ast)
+
           Ecto.Query.unquote(macro_name)(
             query,
             [unquote_splicing(bindings)],
@@ -317,20 +396,20 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
           )
         end
 
-      :named ->
-        [{_, selected_binding_var}] = bindings
-
+      {:named, binding_alias_var, binding_var} ->
         quote do
+          unquote_splicing(transform_ast)
+
           if binding_alias do
             Ecto.Query.unquote(macro_name)(
               query,
-              [unquote_splicing(bindings)],
+              [{^binding_alias, unquote(binding_var)}],
               unquote(inner_expr)
             )
           else
             Ecto.Query.unquote(macro_name)(
               query,
-              [unquote(selected_binding_var)],
+              [unquote(binding_var)],
               unquote(inner_expr)
             )
           end
@@ -338,22 +417,19 @@ defmodule EctoShorts.CommonQueryAPI.Generator do
     end
   end
 
-  defp build_bindings({:positional, binding_count}, prefix, env) do
-    bindings =
-      Enum.map(0..(binding_count - 1), fn i ->
-        Macro.var(:"#{prefix}#{i}", env.context)
-      end)
-
-    {bindings, binding_count}
-  end
-
-  defp build_bindings(:named, prefix, env) do
-    pinned_binding_alias_var = Macro.var(:"^binding_alias", env.context)
-    binding_var = Macro.var(:"#{prefix}0", env.context)
-    bindings = [{pinned_binding_alias_var, binding_var}]
-
-    binding_head_var = Macro.var(:binding_alias, env.context)
-
-    {bindings, binding_head_var}
+  defp build_transform_ast(macro_name, key_var, op, value_var) do
+    [
+      quote do
+        unquote(value_var) =
+          if function_exported?(__MODULE__, :transform, 4) do
+            __MODULE__.transform(
+              unquote(value_var),
+              {unquote(macro_name), unquote(key_var), unquote(op)}
+            )
+          else
+            unquote(value_var)
+          end
+      end
+    ]
   end
 end
