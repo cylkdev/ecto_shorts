@@ -1,14 +1,14 @@
-defmodule EctoShorts.QueryBuilders.Filters do
+defmodule EctoShorts.QueryBuilder.Filters do
   @moduledoc false
 
   alias Ecto.Query
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.QueryBuilders.Dynamics
+  alias EctoShorts.QueryBuilder.Dynamics
 
   require Ecto.Query
 
-  @logger_prefix "EctoShorts.QueryBuilders.Filters"
+  @logger_prefix "EctoShorts.QueryBuilder.Filters"
 
   @default_operator :==
   @common_operators [:ids, :before, :after, :start_date, :end_date]

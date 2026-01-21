@@ -87,8 +87,8 @@ defmodule EctoShorts.MixProject do
         ],
         "Query Builder API": [
           EctoShorts.QueryBuilder,
-          EctoShorts.QueryBuilders,
-          EctoShorts.QueryBuilders.Postgres
+          EctoShorts.QueryBuilder,
+          EctoShorts.QueryBuilder.Postgres
         ],
         "Utility API": [
           EctoShorts.Actions.Error,

@@ -1,7 +1,16 @@
-defmodule EctoShorts.QueryBuilders do
+defmodule EctoShorts.QueryBuilder do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilders.Postgres
+  alias EctoShorts.QueryBuilder.Postgres
+
+  @callback build_query(
+              filter :: any(),
+              schema :: any(),
+              query :: any(),
+              binding_selector :: {:at, pos_integer()} | {:as, atom()},
+              term :: any(),
+              opts :: keyword()
+            ) :: Ecto.Query.t()
 
   def build_query(
         schema,

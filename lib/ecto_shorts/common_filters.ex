@@ -36,7 +36,7 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonFilters.Pagination
 
   alias EctoShorts.{
-    QueryBuilders,
+    QueryBuilder,
     CommonQuery,
     Utils
   }
@@ -46,8 +46,8 @@ defmodule EctoShorts.CommonFilters do
   @binding_operators [:as, :at]
   @boolean_operators [:and, :or]
   @pagination_filters [:first, :last, :limit, :offset, :order_by, :preload]
-  @select_filters [:select, :select_merge]
   @where_filters [:where, :or_where]
+  @query_builder_filters [:select, :select_merge]
 
   @doc """
   Convert a map of params to a query.
@@ -325,7 +325,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp apply_filter_params(schema, {filter, filter_term}, query, opts)
-       when filter in @select_filters do
+       when filter in @query_builder_filters do
     apply_query_builder(schema, filter, query, {:as, nil}, filter_term, opts)
   end
 
@@ -475,7 +475,7 @@ defmodule EctoShorts.CommonFilters do
          query,
          opts
        )
-       when filter in @select_filters do
+       when filter in @query_builder_filters do
     apply_query_builder(
       schema,
       filter,
@@ -628,7 +628,7 @@ defmodule EctoShorts.CommonFilters do
     if binding_selector?(bind_op, bind_to) do
       case get_schema_for_binding({bind_op, bind_to}, schema, query) do
         {:ok, binding_schema} ->
-          QueryBuilders.build_query(
+          QueryBuilder.build_query(
             binding_schema,
             filter,
             query,
@@ -693,7 +693,9 @@ defmodule EctoShorts.CommonFilters do
   defp normalize_params(list) when is_list(list) do
     cond do
       Keyword.keyword?(list) ->
-        Enum.map(list, fn {k, v} -> {k, normalize_params(v)} end)
+        list
+        |> sort_keys()
+        |> Enum.map(fn {k, v} -> {k, normalize_params(v)} end)
 
       Utils.key_values?(list) ->
         list
@@ -723,7 +725,7 @@ defmodule EctoShorts.CommonFilters do
   # The processing order must be:
   #
   #   1. `where` - Sets the base `WHERE` clause.
-  #   2. `params` - Regular field parameters are processed next which can contain implicit `where` filters.
+  #   2. `params` - Given parameters are processed next which can contain implicit `where` filters.
   #   3. `or_where` - The `:or_where` filters then add OR conditions to this base clause.
   #   4. `last` - The `:last` filter is processed last.
   #
@@ -760,18 +762,21 @@ defmodule EctoShorts.CommonFilters do
   defp sort_keys(params) do
     where_filters = Utils.enum_take(params, [:where])
     or_where_filters = Utils.enum_take(params, [:or_where])
-    last_filter = List.keyfind(params, :last, 0)
 
-    sorted_params =
-      params
-      |> Utils.enum_drop([:where, :or_where, :last])
-      |> Enum.sort_by(&elem(&1, 0))
+    last_filter =
+      case List.keyfind(params, :last, 0) do
+        nil -> []
+        last -> [last]
+      end
+
+    # Regular field filters should be processed with where_filters since they
+    # become implicit WHERE clauses and must come before or_where filters
+    field_filters = Utils.enum_drop(params, [:where, :or_where, :last])
 
     where_filters
-    |> Kernel.++(sorted_params)
+    |> Kernel.++(field_filters)
     |> Kernel.++(or_where_filters)
-    |> Kernel.++([last_filter])
-    |> Enum.reject(&is_nil/1)
+    |> Kernel.++(last_filter)
   end
 
   defp binding_selector?(:as, selector), do: is_nil(selector) or is_atom(selector)

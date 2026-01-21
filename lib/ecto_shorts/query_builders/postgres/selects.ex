@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.Selects do
+defmodule EctoShorts.QueryBuilder.Selects do
   @moduledoc false
   alias Ecto.Query
   alias EctoShorts.Utils
@@ -6,7 +6,7 @@ defmodule EctoShorts.QueryBuilders.Selects do
   require Ecto.Query
 
   {target_binding_var, binding_patterns} =
-    EctoShorts.QueryBuilders.BindingHelpers.query_var_and_binding_heads()
+    EctoShorts.QueryBuilder.BindingHelpers.query_var_and_binding_heads()
 
   def build_query(schema, query, binding_selector, term) when is_map(term) or is_list(term) do
     if Utils.key_values?(term) do

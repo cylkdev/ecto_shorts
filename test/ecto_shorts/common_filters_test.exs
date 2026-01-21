@@ -1200,10 +1200,10 @@ defmodule EctoShorts.CommonFiltersTest do
         )
 
       q2 =
-        CommonFilters.convert_params_to_filter(Post, %{
-          where: %{published: true},
-          or_where: %{views: %{or: [>: 10, <: 5]}}
-        })
+        CommonFilters.convert_params_to_filter(Post,
+          or_where: %{views: %{or: [>: 10, <: 5]}},
+          published: true
+        )
 
       assert_sql(Repo, expected, q2)
     end

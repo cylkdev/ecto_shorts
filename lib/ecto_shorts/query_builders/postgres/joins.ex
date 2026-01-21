@@ -1,15 +1,15 @@
-defmodule EctoShorts.QueryBuilders.Joins do
+defmodule EctoShorts.QueryBuilder.Joins do
   @moduledoc false
-  alias EctoShorts.QueryBuilders.Dynamics
+  alias EctoShorts.QueryBuilder.Dynamics
 
   alias Ecto.Query
 
-  @logger_prefix "EctoShorts.QueryBuilders.Joins"
+  @logger_prefix "EctoShorts.QueryBuilder.Joins"
 
   require Ecto.Query
 
   {target_binding_var, binding_patterns} =
-    EctoShorts.QueryBuilders.BindingHelpers.query_var_and_binding_heads()
+    EctoShorts.QueryBuilder.BindingHelpers.query_var_and_binding_heads()
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     def build_query(schema, query, unquote(quoted_binding_head), {:association, key, params}) do

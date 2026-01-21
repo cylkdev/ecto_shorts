@@ -1,7 +1,7 @@
-defmodule EctoShorts.QueryBuilders.Dynamics.CommonExpr do
+defmodule EctoShorts.QueryBuilder.Dynamics.CommonExpr do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilders.Dynamics.CommonExprBuilder
+  alias EctoShorts.QueryBuilder.Dynamics.CommonExprBuilder
 
   require Ecto.Query
   require CommonExprBuilder

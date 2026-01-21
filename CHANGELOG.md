@@ -44,11 +44,11 @@
   - Added support for boolean operators (`:and`, `:or`) in filter chains
   - **Note**: This refactor may change behavior in edge cases; review existing filter usage
 
-- Added `EctoShorts.QueryBuilders` module as the entry point for database-specific query building adapters
+- Added `EctoShorts.QueryBuilder` module as the entry point for database-specific query building adapters
   - `build_query/6`: Routes query building requests to the appropriate adapter (Postgres by default, or custom via `:query_builder` option)
   - Supports pluggable adapters for extending query building behavior across different database systems
 
-- Added `EctoShorts.QueryBuilders.Postgres` adapter implementing the `QueryBuilder` behavior for PostgreSQL
+- Added `EctoShorts.QueryBuilder.Postgres` adapter implementing the `QueryBuilder` behavior for PostgreSQL
 
 #### V2.4.0
 - add recursive relational filtering

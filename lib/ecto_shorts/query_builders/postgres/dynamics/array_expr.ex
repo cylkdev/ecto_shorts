@@ -1,6 +1,6 @@
-defmodule EctoShorts.QueryBuilders.Dynamics.ArrayExpr do
+defmodule EctoShorts.QueryBuilder.Dynamics.ArrayExpr do
   @moduledoc false
-  alias EctoShorts.QueryBuilders.Dynamics.ArrayExprBuilder
+  alias EctoShorts.QueryBuilder.Dynamics.ArrayExprBuilder
 
   require Ecto.Query
   require ArrayExprBuilder

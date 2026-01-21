@@ -1,7 +1,7 @@
-defmodule EctoShorts.QueryBuilders.Dynamics.ScalarExpr do
+defmodule EctoShorts.QueryBuilder.Dynamics.ScalarExpr do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilders.Dynamics.ScalarExprBuilder
+  alias EctoShorts.QueryBuilder.Dynamics.ScalarExprBuilder
 
   require Ecto.Query
   require ScalarExprBuilder

@@ -1,7 +1,7 @@
-defmodule EctoShorts.QueryBuilders.Postgres do
+defmodule EctoShorts.QueryBuilder.Postgres do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilders.{
+  alias EctoShorts.QueryBuilder.{
     Joins,
     Filters,
     Selects

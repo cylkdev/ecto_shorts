@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryBuilders.Dynamics.ScalarExprBuilder do
+defmodule EctoShorts.QueryBuilder.Dynamics.ScalarExprBuilder do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilders.BindingHelpers
-  alias EctoShorts.QueryBuilders.Dynamics.ScalarExprBuilder
+  alias EctoShorts.QueryBuilder.BindingHelpers
+  alias EctoShorts.QueryBuilder.Dynamics.ScalarExprBuilder
 
   defmacro define_scalar_exprs(context_ast \\ nil, opts_ast \\ []) do
     context = Macro.expand(context_ast, __CALLER__)

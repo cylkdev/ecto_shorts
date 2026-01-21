@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryBuilders.Dynamics do
+defmodule EctoShorts.QueryBuilder.Dynamics do
   @moduledoc false
   alias Ecto.Query
 
-  alias EctoShorts.QueryBuilders.Dynamics.{
+  alias EctoShorts.QueryBuilder.Dynamics.{
     ArrayExpr,
     CommonExpr,
     ScalarExpr
