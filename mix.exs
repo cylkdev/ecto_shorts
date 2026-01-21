@@ -4,8 +4,8 @@ defmodule EctoShorts.MixProject do
   def project do
     [
       app: :ecto_shorts,
-      version: "2.4.0",
-      elixir: "~> 1.13",
+      version: "2.5.0",
+      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: "Helper tools for making ecto interactions more pleasant and shorter",
@@ -47,9 +47,7 @@ defmodule EctoShorts.MixProject do
       {:ecto, "~> 3.0"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0", optional: true},
-
       {:error_message, "~> 0.1"},
-
       {:credo, ">= 0.0.0", only: [:dev, :test]},
       {:excoveralls, ">= 0.0.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.0.0", only: :dev},
@@ -76,22 +74,25 @@ defmodule EctoShorts.MixProject do
       groups_for_modules: [
         "Main Modules": [
           EctoShorts.Actions,
-          EctoShorts.CommonChanges
-        ],
-
-        "Support Modules": [
+          EctoShorts.CommonChanges,
           EctoShorts.CommonFilters,
-          EctoShorts.SchemaHelpers
+          EctoShorts.CommonParams
         ],
-
-        "Misc Modules": [
-          EctoShorts.Actions.Error
+        "Reflection API": [
+          EctoShorts.CommonQuery,
+          EctoShorts.CommonSchema
         ],
-
-        "Query Builder Modules": [
+        "Testing API": [
+          EctoShorts.Testing
+        ],
+        "Query Builder API": [
           EctoShorts.QueryBuilder,
-          EctoShorts.QueryBuilder.Schema,
-          EctoShorts.QueryBuilder.Common
+          EctoShorts.QueryBuilders,
+          EctoShorts.QueryBuilders.Postgres
+        ],
+        "Utility API": [
+          EctoShorts.Actions.Error,
+          EctoShorts.SchemaHelpers
         ]
       ]
     ]

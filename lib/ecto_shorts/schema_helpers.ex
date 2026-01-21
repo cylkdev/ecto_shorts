@@ -1,151 +1,148 @@
 defmodule EctoShorts.SchemaHelpers do
+  @moduledoc since: "2.5.0"
   @moduledoc """
-  Module that has helpers that are globably useful on ecto schemas
+  Provides helper functions for common checks on
+  Ecto schema data.
   """
 
   @doc """
-  Returns a struct for the given ecto schema.
+  Recursively resolves the related schema module for an association
+  key on a given schema module.
 
-  ### Options
+  This function handles both direct and `:through` associations.
+  For `:through` associations, it recursively follows the
+  association path until it reaches the final related schema.
 
-      See `Ecto.put_meta/2` for more information.
+  ## Examples
 
-  ### Examples
+      iex> EctoShorts.SchemaHelpers.get_related_schema(EctoShorts.Schema.Post, :comments)
+      EctoShorts.Schema.Comment
 
-      iex> EctoShorts.SchemaHelpers.build_struct(%EctoShorts.Support.Schemas.Comment{}, state: :loaded, source: "comment", prefix: "prefix")
-      %EctoShorts.Support.Schemas.Comment{
-        __meta__: %Ecto.Schema.Metadata{
-          context: nil,
-          prefix: "prefix",
-          schema: EctoShorts.Support.Schemas.Comment,
-          source: "comment",
-          state: :loaded
-        }
-      }
+      iex> EctoShorts.SchemaHelpers.get_related_schema(EctoShorts.Schema.Post, :comments_authors)
+      EctoShorts.Schema.User
 
-      iex> EctoShorts.SchemaHelpers.build_struct(EctoShorts.Support.Schemas.Comment, state: :loaded, source: "comment", prefix: "prefix")
-      %EctoShorts.Support.Schemas.Comment{
-        __meta__: %Ecto.Schema.Metadata{
-          context: nil,
-          prefix: "prefix",
-          schema: EctoShorts.Support.Schemas.Comment,
-          source: "comment",
-          state: :loaded
-        }
-      }
+      iex> EctoShorts.SchemaHelpers.get_related_schema(EctoShorts.Schema.Post, :does_not_exist)
+      nil
   """
-  @doc since: "2.5.0"
-  @spec build_struct(
-    schema :: Ecto.Queryable.t() | Ecto.Schema.t(),
-    meta :: keyword()
-  ) :: Ecto.Schema.t()
-  def build_struct(%_{} = schema_data, meta) do
-    meta = Keyword.put_new(meta, :state, :loaded)
+  def get_related_schema(schema, key), do: lookup_related_schema(schema, key)
 
-    Ecto.put_meta(schema_data, meta)
-  end
+  defp lookup_related_schema(nil, _), do: nil
 
-  def build_struct(schema, meta) do
+  defp lookup_related_schema(schema, []), do: schema
+
+  defp lookup_related_schema(schema, [key | path]) do
     schema
-    |> struct()
-    |> build_struct(meta)
+    |> lookup_related_schema(key)
+    |> lookup_related_schema(path)
+  end
+
+  defp lookup_related_schema(schema, key) do
+    case schema.__schema__(:association, key) do
+      %{related: schema} -> schema
+      %{through: path} -> lookup_related_schema(schema, path)
+      _ -> nil
+    end
   end
 
   @doc """
-  Determine if item passed in is a Ecto Schema
+  Returns the declared Ecto type of a given field in a schema.
 
-  ## Example
+  This uses the schema's `__schema__/2` introspection to
+  retrieve the field type, which can be a primitive type
+  (e.g. `:string`, `:integer`) or a composite like
+  `{:array, :string}`.
 
-    iex> EctoShorts.SchemaHelpers.schema?(%EctoShorts.Support.Schemas.Comment{})
-    true
+  ## Examples
 
-    iex> EctoShorts.SchemaHelpers.schema?(%{some_map: 1})
-    false
+      iex> EctoShorts.SchemaHelpers.schema_field_type(EctoShorts.Schema.Post, :title)
+      :string
 
-    iex> EctoShorts.SchemaHelpers.schema?([%EctoShorts.Support.Schemas.Comment{}])
-    false
+      iex> EctoShorts.SchemaHelpers.schema_field_type(EctoShorts.Schema.Post, :tags)
+      {:array, :string}
+
   """
-  @spec schema?(Ecto.Schema.t | any) :: boolean
-  def schema?(%{__meta__: %{schema: _}}), do: true
-  def schema?(_), do: false
+  def schema_field_type(schema, key), do: schema.__schema__(:type, key)
 
   @doc """
-  Determine if any items in list are a schema
+  Returns `true` if the value of `key` is an `Ecto.Association.NotLoaded`
+  struct, otherwise `false.`
 
-  ## Example
+  ## Examples
 
-    iex> EctoShorts.SchemaHelpers.has_schemas?([%{some_map: 1}, %EctoShorts.Support.Schemas.Comment{}])
-    true
-
-    iex> EctoShorts.SchemaHelpers.has_schemas?([%{some_map: 1}])
-    false
+      # Suppose we have a User struct whose :profile association hasn't been preloaded
+      iex> post = %EctoShorts.Schema.Post{comments: %Ecto.Association.NotLoaded{}}
+      ...> EctoShorts.SchemaHelpers.association_not_loaded?(post, :comments)
+      true
   """
-  @spec has_schemas?(list(Ecto.Schema.t | any)) :: boolean
-  def has_schemas?(items), do: Enum.any?(items, &schema?/1)
+  def association_not_loaded?(schema_data, key) do
+    schema_data
+    |> Map.get(key)
+    |> is_struct(Ecto.Association.NotLoaded)
+  end
 
   @doc """
-  Determine if all items in list are a schema
+  Returns `true` if all items in the given list are Ecto
+  schema structs, otherwise returns `false`.
 
-  ## Example
+  ## Examples
 
-    iex> EctoShorts.SchemaHelpers.all_schemas?([%{some_map: 1}, %EctoShorts.Support.Schemas.Comment{}])
-    false
+      # A list where every element is an Ecto schema struct
+      iex> list = [%EctoShorts.Schema.Post{}, %EctoShorts.Schema.Comment{}]
+      ...> EctoShorts.SchemaHelpers.all_schema_struct?(list)
+      true
 
-    iex> EctoShorts.SchemaHelpers.all_schemas?([%EctoShorts.Support.Schemas.Comment{}])
-    true
+      # A list with mixed types (one struct, one map)
+      iex> mixed_list = [%EctoShorts.Schema.Post{}, %{title: "Not a schema"}]
+      ...> EctoShorts.SchemaHelpers.all_schema_struct?(mixed_list)
+      false
   """
-  @spec all_schemas?(list(Ecto.Schema.t | any)) :: boolean
-  def all_schemas?(items), do: Enum.all?(items, &schema?/1)
+  def all_schema_struct?([]), do: false
+  def all_schema_struct?(map) when map === %{}, do: false
+  def all_schema_struct?(enum), do: Enum.all?(enum, &schema_struct?/1)
 
   @doc """
-  Returns `true` if the map has the atom key `:id` or
-  the string key `"id"` and the value is not nil.
+  Returns `true` if any item in the given list is an Ecto
+  schema struct, otherwise returns `false`.
 
-  ## Example
+  ## Examples
 
-    iex> EctoShorts.SchemaHelpers.created?(%{id: 2})
-    true
+      # A list containing at least one Ecto struct
+      iex> items = [%EctoShorts.Schema.Post{}, %{id: 1, title: "Frank"}]
+      ...> EctoShorts.SchemaHelpers.any_schema_struct?(items)
+      true
 
-    iex> EctoShorts.SchemaHelpers.created?(%{"id" => 2})
-    true
-
-    iex> EctoShorts.SchemaHelpers.created?(%{item: 3})
-    false
+      # A list of maps with no Ecto structs
+      iex> maps = [%{title: "George"}, %{title: "Hannah"}]
+      ...> EctoShorts.SchemaHelpers.any_schema_struct?(maps)
+      false
   """
-  @spec created?(Ecto.Schema.t | any) :: boolean
-  def created?(%{id: id}), do: !is_nil(id)
-  def created?(%{"id" => id}), do: !is_nil(id)
-  def created?(_), do: false
+  def any_schema_struct?(values), do: Enum.any?(values, &schema_struct?/1)
 
-  @spec all_created?(list(Ecto.Schema.t | any)) :: boolean
   @doc """
-  Determine if all items in list has been created or not
+  Returns `true` if the given value is an Ecto schema struct,
+  otherwise returns `false`.
 
-  ## Example
+  ## Examples
 
-    iex> EctoShorts.SchemaHelpers.all_created?([%{id: 2}, %{"id" => 5}])
-    true
+      iex> EctoShorts.SchemaHelpers.schema_struct?(%EctoShorts.Schema.Post{})
+      true
 
-    iex> EctoShorts.SchemaHelpers.all_created?([%{"id" => 2}, %{item: 3}])
-    false
+      iex> EctoShorts.SchemaHelpers.schema_struct?(%{title: "Not a schema"})
+      false
   """
-  def all_created?(items), do: Enum.all?(items, &created?/1)
+  def schema_struct?(%{__meta__: %{schema: schema}}), do: schema_module?(schema)
+  def schema_struct?(_), do: false
 
-  @spec any_created?(list(Ecto.Schema.t | any)) :: boolean
   @doc """
-  Returns `true` if any of the items passed as an argument to
-  `EctoShorts.SchemaHelpers.created?/1` is `true`.
-
-  ## Example
-
-    iex> EctoShorts.SchemaHelpers.any_created?([%{id: 2}, %{"id" => 5}])
-    true
-
-    iex> EctoShorts.SchemaHelpers.any_created?([%{"id" => 2}, %{item: 3}])
-    true
-
-    iex> EctoShorts.SchemaHelpers.any_created?([%{test: 3}, %{item: 3}])
-    false
+  ...
   """
-  def any_created?(items), do: Enum.any?(items, &created?/1)
+  def schema_module?(module) when is_atom(module) and module !== nil do
+    function_exported?(module, :__schema__, 2)
+  end
+
+  def schema_module?(_), do: false
+
+  def any_created?(%{id: id}), do: not is_nil(id)
+  def any_created?(%{"id" => id}), do: not is_nil(id)
+  def any_created?(_), do: false
 end

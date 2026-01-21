@@ -1,26 +1,76 @@
 defmodule EctoShorts.Actions.Error do
   @moduledoc """
-  This module generates errors from actions it can be
-  overridden by config by setting error module
+  Defines a standard error structure used across EctoShorts actions and
+  provides a flexible interface for generating actionable errors.
 
-  Errors from Actions: [:not_found, :bad_request, :internal_server_error]
+  This module can be overridden via configuration by setting
+  `:error_module` in your application config or passing it in explicitly
+  via options to `call/4`.
   """
 
-  @type t :: ErrorMessage.t
+  @doc """
+  Defines the callback used to construct an error struct.
 
-  @callback create_error(atom, String.t, map) :: t
+  This callback must be implemented by custom error modules and
+  is invoked by `EctoShorts.Actions.Error.call/4`.
 
-  def call(code, message, details) do
-    module = error_module()
+  The returned map must include the keys `:code`, `:message`, and `:details`.
 
-    module.create_error(code, message, details)
+  ## Usage
+
+  ```elixir
+
+  defmodule MyApp.CustomError do
+    @behaviour EctoShorts.Actions.Error
+
+    def create_error(code, message, details) do
+      %{code: code, message: "[MyApp] " <> message, details: details}
+    end
   end
 
-  def error_module, do: Application.get_env(:ecto_shorts, :error_module) || EctoShorts.Actions.Error
+  ```
+  """
+  @callback create_error(atom(), binary(), map()) :: any()
 
-  def create_error(code, message, details), do: %ErrorMessage{
-    code: code,
-    message: message,
-    details: details
-  }
+  @default_error_module __MODULE__
+
+  @doc """
+  Creates an error struct using the default or configured error module.
+
+  Accepts an error `code`, a human-readable `message`, and optional
+  `details` map. Uses the `:error_module` option configured in the
+  application environment if no module is passed in options.
+
+  Raises if the returned structure is not a valid error map.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.Error.call(:not_found, "User not found", %{id: 123}, [])
+      %{code: :not_found, message: "User not found", details: %{id: 123}}
+
+      iex> EctoShorts.Actions.Error.call(:bad_request, "Missing param", nil, error_module: MyApp.CustomError, [])
+  """
+  def call(code, message, details, opts \\ []) do
+    error_module(opts).create_error(code, message, details)
+  end
+
+  defp error_module(opts) do
+    opts[:error_module] ||
+      EctoShorts.Config.error_module() ||
+      @default_error_module
+  end
+
+  @doc """
+  Default implementation of `create_error/3`.
+
+  Can be overridden in a custom module if configured in application
+  settings or passed via `:error_module`.
+  """
+  def create_error(code, message, details) do
+    struct!(ErrorMessage,
+      code: code,
+      message: message,
+      details: details
+    )
+  end
 end

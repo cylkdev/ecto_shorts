@@ -53,27 +53,144 @@ defmodule EctoShorts.CommonChanges do
       end
 
   """
-  require Logger
-
-  import Ecto.Changeset, only: [
-    get_field: 2,
-    put_assoc: 4,
-    cast_assoc: 2,
-    cast_assoc: 3
-  ]
 
   alias Ecto.Changeset
   alias EctoShorts.{Actions, Config, SchemaHelpers}
 
+  require Logger
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def has_nil_change?(changeset, fields) when is_list(fields) do
+    Enum.all?(fields, &has_nil_change?(changeset, &1))
+  end
+
+  def has_nil_change?(changeset, field) do
+    changeset
+    |> Changeset.get_change(field)
+    |> is_nil()
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
+  def has_empty_change?(changeset, fields) when is_list(fields) do
+    Enum.all?(fields, &has_empty_change?(changeset, &1))
+  end
+
+  def has_empty_change?(changeset, field) do
+    case Changeset.get_change(changeset, field) do
+      [] -> true
+      map when map === %{} -> true
+      _ -> false
+    end
+  end
+
+  @doc """
+  Prevents a field or list of fields from being set to nil if it already exists in persisted data.
+
+  ## Examples
+
+      iex> EctoShorts.CommonChanges.validate_not_unset(changeset, [:field])
+  """
+  def validate_not_unset(changeset, fields) when is_list(fields) do
+    Enum.reduce(fields, changeset, fn field, acc_changeset ->
+      validate_not_unset(acc_changeset, field)
+    end)
+  end
+
+  def validate_not_unset(changeset, field) do
+    original = Map.get(changeset.data, field)
+
+    # skip if field is nil
+    # check if field is being set to nil
+    # skip if already errored
+    should_error? =
+      not is_nil(original) and
+        Ecto.Changeset.changed?(changeset, field, to: nil) and
+        not Keyword.has_key?(changeset.errors, field)
+
+    if should_error? do
+      Ecto.Changeset.add_error(changeset, field, "can't be blank")
+    else
+      changeset
+    end
+  end
+
+  @doc "Truncates a list of fields to a datetime"
+  def truncate_datetime_change(changeset, fields, precision \\ :second)
+
+  def truncate_datetime_change(changeset, fields, precision) when is_list(fields) do
+    Enum.reduce(fields, changeset, fn field, acc_changeset ->
+      truncate_datetime_change(
+        acc_changeset,
+        field,
+        precision
+      )
+    end)
+  end
+
+  def truncate_datetime_change(changeset, field, precision) do
+    Changeset.update_change(changeset, field, fn
+      %DateTime{} = datetime -> DateTime.truncate(datetime, precision)
+      %NaiveDateTime{} = naive_datetime -> NaiveDateTime.truncate(naive_datetime, precision)
+      value -> value
+    end)
+  end
+
+  @doc "Validates a value doesn't get set to nil after it's been set to a non nil value"
+  def trim_string_change(changeset, fields) do
+    fields
+    |> List.wrap()
+    |> Enum.reduce(changeset, fn field, acc_changeset ->
+      Changeset.update_change(acc_changeset, field, fn
+        change when is_binary(change) -> String.trim(change)
+        value -> value
+      end)
+    end)
+  end
+
+  def put_new_change(changeset, field, value) do
+    if Changeset.get_change(changeset, field) === nil do
+      Changeset.put_change(
+        changeset,
+        field,
+        resolve_value(value, field)
+      )
+    else
+      changeset
+    end
+  end
+
+  def put_new_value(changeset, field, value) do
+    if Changeset.get_field(changeset, field) === nil do
+      Changeset.put_change(
+        changeset,
+        field,
+        resolve_value(value, field)
+      )
+    else
+      changeset
+    end
+  end
+
+  defp resolve_value(fun, field) when is_function(fun, 1), do: fun.(field)
+  defp resolve_value(fun, _) when is_function(fun, 0), do: fun.()
+  defp resolve_value(value, _), do: value
+
   @doc "Run's changeset function if when function returns true"
-  @spec put_when(
-    Changeset.t,
-    ((Changeset.t) -> boolean),
-    ((Changeset.t) -> Changeset.t)
-  ) :: Changeset.t
-  def put_when(changeset, when_func, change_func) do
+  def apply_when(changeset, when_func, change_func) do
     if when_func.(changeset) do
-      change_func.(changeset)
+      case change_func.(changeset) do
+        changeset when is_struct(changeset, Changeset) ->
+          changeset
+
+        term ->
+          raise ArgumentError, "Expected function to return a changeset, got: #{inspect(term)}"
+      end
     else
       changeset
     end
@@ -87,9 +204,9 @@ defmodule EctoShorts.CommonChanges do
 
       iex> EctoShorts.CommonChanges.changeset_field_empty?(changeset, :comments)
   """
-  @spec changeset_field_empty?(Changeset.t, atom) :: boolean
+  @spec changeset_field_empty?(Changeset.t(), atom) :: boolean
   def changeset_field_empty?(changeset, key) do
-    get_field(changeset, key) === []
+    Changeset.get_field(changeset, key) === []
   end
 
   @doc """
@@ -100,9 +217,9 @@ defmodule EctoShorts.CommonChanges do
 
       iex> EctoShorts.CommonChanges.changeset_field_nil?(changeset, :comments)
   """
-  @spec changeset_field_nil?(Changeset.t, atom) :: boolean
+  @spec changeset_field_nil?(Changeset.t(), atom) :: boolean
   def changeset_field_nil?(changeset, key) do
-    changeset |> get_field(key) |> is_nil()
+    changeset |> Changeset.get_field(key) |> is_nil()
   end
 
   @doc """
@@ -128,7 +245,7 @@ defmodule EctoShorts.CommonChanges do
     iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required: true)
     iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required_when_missing: :my_relation_id)
   """
-  @spec preload_change_assoc(Changeset.t(), atom(), keyword()) :: Changeset.t
+  @spec preload_change_assoc(Changeset.t(), atom(), keyword()) :: Changeset.t()
   def preload_change_assoc(changeset, key, opts) do
     required? =
       if opts[:required_when_missing] do
@@ -144,33 +261,33 @@ defmodule EctoShorts.CommonChanges do
       |> preload_changeset_assoc(key, opts)
       |> put_or_cast_assoc(key, opts)
     else
-      cast_assoc(changeset, key, opts)
+      Changeset.cast_assoc(changeset, key, opts)
     end
   end
 
-  @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t
+  @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t()
   def preload_change_assoc(changeset, key) do
     if Map.has_key?(changeset.params, Atom.to_string(key)) do
       changeset
       |> preload_changeset_assoc(key)
       |> put_or_cast_assoc(key)
     else
-      cast_assoc(changeset, key)
+      Changeset.cast_assoc(changeset, key)
     end
   end
 
   @doc "Preloads a changesets association"
-  @spec preload_changeset_assoc(Changeset.t, atom) :: Changeset.t
-  @spec preload_changeset_assoc(Changeset.t, atom, keyword()) :: Changeset.t
+  @spec preload_changeset_assoc(Changeset.t(), atom) :: Changeset.t()
+  @spec preload_changeset_assoc(Changeset.t(), atom, keyword()) :: Changeset.t()
   def preload_changeset_assoc(changeset, key, opts \\ [])
 
   def preload_changeset_assoc(changeset, key, opts) do
     if opts[:ids] do
       schema = changeset_relationship_schema(changeset, key)
 
-      preloaded_data = Actions.all(schema, %{ids: opts[:ids]}, opts)
+      records = Actions.all(schema, %{ids: opts[:ids]}, opts)
 
-      Map.update!(changeset, :data, &Map.put(&1, key, preloaded_data))
+      Map.update!(changeset, :data, &Map.put(&1, key, records))
     else
       Map.update!(changeset, :data, &Config.repo!(opts).preload(&1, key, opts))
     end
@@ -184,7 +301,8 @@ defmodule EctoShorts.CommonChanges do
     else
       %parent_schema{} = changeset.data
 
-      raise ArgumentError, "The key #{inspect(key)} is not an association for the queryable #{inspect(parent_schema)}."
+      raise ArgumentError,
+            "The key #{inspect(key)} is not an association for the queryable #{inspect(parent_schema)}."
     end
   end
 
@@ -200,8 +318,8 @@ defmodule EctoShorts.CommonChanges do
   CommonChanges.put_or_cast_assoc(change(user, fruits: [%{id: 1}, %{id: 3}]), :fruits)
   ```
   """
-  @spec put_or_cast_assoc(Changeset.t, atom) :: Changeset.t
-  @spec put_or_cast_assoc(Changeset.t, atom, Keyword.t) :: Changeset.t
+  @spec put_or_cast_assoc(Changeset.t(), atom) :: Changeset.t()
+  @spec put_or_cast_assoc(Changeset.t(), atom, Keyword.t()) :: Changeset.t()
   def put_or_cast_assoc(changeset, key, opts \\ []) do
     params_data = Map.get(changeset.params, Atom.to_string(key))
 
@@ -209,13 +327,13 @@ defmodule EctoShorts.CommonChanges do
   end
 
   defp find_method_and_put_or_cast(changeset, key, nil, opts) do
-    cast_assoc(changeset, key, opts)
+    Changeset.cast_assoc(changeset, key, opts)
   end
 
   defp find_method_and_put_or_cast(changeset, key, params_data, opts) when is_list(params_data) do
     cond do
-      SchemaHelpers.all_schemas?(params_data) ->
-        put_assoc(
+      SchemaHelpers.all_schema_struct?(params_data) ->
+        Changeset.put_assoc(
           changeset,
           key,
           params_data,
@@ -225,28 +343,25 @@ defmodule EctoShorts.CommonChanges do
       member_update?(params_data) ->
         schema = changeset_relationship_schema(changeset, key)
         data = Actions.all(schema, ids: data_ids(params_data))
-
-        put_assoc(changeset, key, data, opts)
+        Changeset.put_assoc(changeset, key, data, opts)
 
       SchemaHelpers.any_created?(params_data) ->
+        ids = params_data |> data_ids() |> Enum.reject(&is_nil/1)
+
         changeset
-        |> preload_changeset_assoc(
-          key,
-          Keyword.put(opts, :ids, params_data |> data_ids() |> Enum.reject(&is_nil/1))
-        )
-        |> cast_assoc(key, opts)
+        |> preload_changeset_assoc(key, Keyword.put(opts, :ids, ids))
+        |> Changeset.cast_assoc(key, opts)
 
       true ->
-        cast_assoc(changeset, key, opts)
-
+        Changeset.cast_assoc(changeset, key, opts)
     end
   end
 
   defp find_method_and_put_or_cast(changeset, key, param_data, opts) do
-    if SchemaHelpers.schema?(param_data) do
-      put_assoc(changeset, key, param_data, opts)
+    if SchemaHelpers.schema_struct?(param_data) do
+      Changeset.put_assoc(changeset, key, param_data, opts)
     else
-      cast_assoc(changeset, key, opts)
+      Changeset.cast_assoc(changeset, key, opts)
     end
   end
 

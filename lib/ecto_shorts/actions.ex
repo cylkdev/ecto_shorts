@@ -1,833 +1,933 @@
 defmodule EctoShorts.Actions do
-  @moduledoc """
-  Actions for CRUD in ecto, these can be used by all schemas/queries
-
-  Generally we can define our contexts to be very reusable by creating
-  them to look something like this:
-
-  ```elixir
-  defmodule MyApp.Accounts do
-    alias EctoShorts.Actions
-    alias MyApp.Accounts.User
-
-    def all_users(params), do: Actions.all(User, params)
-    def find_user(params), do: Actions.find(User, params)
-  end
-  ```
-
-  We're then able to use this context with all filters that are
-  supported by `EctoShorts.CommonFilters` without having to create new queries
-
-  ```elixir
-  def do_something do
-    MyApp.Accounts.all_user(%{
-      first_name: %{ilike: "john"},
-      age: %{gte: 18},
-      priority_level: 5,
-      address: %{country: "Canada"}
-    })
-  end
-  ```
-
-  You can read more on reusable ecto code [here](https://learn-elixir.dev/blogs/creating-reusable-ecto-code)
-
-  ### Supporting multiple Repos
-
-  To support multiple repos, what we can do is pass arguments to the last parameter
-  of most `EctoShorts.Actions` calls
-
-  #### Example
-
-  ```elixir
-  defmodule MyApp.Accounts do
-    alias EctoShorts.Actions
-    alias MyApp.Accounts.User
-
-    def all_users(params), do: Actions.all(User, params, replica: MyApp.Repo.Replica)
-    def create_user(params), do: Actions.find(User, params, repo: MyApp.Repo)
-  end
-  ```
-  """
-  @type id :: binary() | integer()
-  @type source :: binary()
-  @type field :: atom()
-  @type params :: map()
-  @type params_list :: list(params)
-  @type query :: Ecto.Query.t()
-  @type queryable :: Ecto.Queryable.t()
-  @type source_queryable :: {source(), queryable()}
-  @type changeset :: Ecto.Changeset.t()
-  @type changesets :: list(changeset())
-  @type schema :: Ecto.Schema.t()
-  @type schemas :: list() | list(schema())
-  @type opts :: Keyword.t()
-  @type aggregate_options :: :avg | :count | :max | :min | :sum
-  @type schema_res :: {:ok, schema()} | {:error, any}
+  alias EctoShorts.Actions.Error
 
   alias EctoShorts.{
-    Actions.Error,
-    CommonFilters,
-    CommonSchemas,
     Config,
-    SchemaHelpers
+    CommonFilters,
+    CommonParams,
+    CommonSchema
   }
 
+  @cardinalities [:one, :many]
+
+  @doc group: "CRUD"
+  @doc since: "2.5.0"
   @doc """
-  Fetches a single record where the primary key matches the given `id`.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See [Ecto.Repo.get/3](https://hexdocs.pm/ecto/Ecto.Repo.html#c:get/3) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.get(YourSchema, 1)
-      iex> EctoSchemas.Actions.get(YourSchema, 1)
-      iex> EctoSchemas.Actions.get({"source", YourSchema}, 1)
+  ...
   """
-  @spec get(
-    query :: query() | queryable() | source_queryable(),
-    id :: id(),
-    options :: opts()
-  ) :: schema() | nil
-  @spec get(
-    query :: query() | queryable() | source_queryable(),
-    id :: id()
-  ) :: schema() | nil
-  def get(query, id, opts \\ []) do
-    Config.replica!(opts).get(query, id, opts)
+  def exists?(source, params, opts \\ []) do
+    source
+    |> CommonFilters.convert_params_to_filter(params, opts)
+    |> Config.replica!(opts).exists?(opts)
   end
 
+  @doc group: "CRUD"
   @doc """
-  Fetches all records matching the given query.
-
-  See [Ecto.Repo.all/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.all(YourSchema)
-      iex> EctoSchemas.Actions.all({"source", YourSchema})
-      iex> EctoSchemas.Actions.all(%Ecto.Query{})
+  ...
   """
-  @spec all(query :: queryable() | source_queryable()) :: schemas()
-  def all(query) do
-    all(query, default_opts())
+  def all(queryable) do
+    all(queryable, %{}, [])
   end
 
-  @doc """
-  Fetches all records matching the given query.
-
-  ### Filter Parameters
-
-  When the parameters is a keyword list the options `:repo` and `:replica` can be set.
-
-  See `EctoShorts.CommonFilters` for more information.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See [Ecto.Repo.all/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.all(YourSchema, %{id: 1})
-      iex> EctoSchemas.Actions.all(YourSchema, id: 1, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.all(YourSchema, id: 1, replica: YourApp.Repo)
-      iex> EctoSchemas.Actions.all({"source", YourSchema}, %{id: 1})
-      iex> EctoSchemas.Actions.all({"source", YourSchema}, id: 1, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.all({"source", YourSchema}, id: 1, replica: YourApp.Repo)
-      iex> EctoSchemas.Actions.all(%Ecto.Query{}, %{id: 1})
-      iex> EctoSchemas.Actions.all(%Ecto.Query{}, id: 1, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.all(%Ecto.Query{}, id: 1, replica: YourApp.Repo)
-  """
-  @spec all(
-    query :: query() | queryable() | source_queryable(),
-    params_or_opts :: params() | opts()
-  ) :: schemas()
-  def all(query, params) when is_map(params) do
-    all(query, params, default_opts())
+  def all(queryable, params) when is_map(params) do
+    all(queryable, params, [])
   end
 
-  def all(query, opts) do
-    query_params =
+  def all(queryable, opts) do
+    params =
       opts
       |> Keyword.drop([:repo, :replica])
       |> Map.new()
 
-    if Enum.any?(query_params) do
-      all(query, query_params, Keyword.take(opts, [:repo, :replica]))
-    else
-      all(query, %{}, Keyword.take(opts, [:repo, :replica]))
-    end
+    all(queryable, params, Keyword.take(opts, [:repo, :replica]))
   end
 
+  def all(queryable, params, opts) do
+    params =
+      params
+      |> put_order_by(opts)
+      |> put_group_by(opts)
+
+    queryable
+    |> CommonFilters.convert_params_to_filter(params, opts)
+    |> Config.repo!(opts).all(opts)
+  end
+
+  @doc group: "CRUD"
   @doc """
-  Fetches all records matching the given query.
-
-  ### Filter Parameters
-
-  See `EctoShorts.CommonFilters` for more information.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-    * `:order_by` - Orders the fields based on one or more fields.
-
-  See [Ecto.Repo.all/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) for more options.
-
-  ## Examples
-
-      iex> EctoSchemas.Actions.all(YourSchema, %{id: 1}, prefix: "public")
-      iex> EctoSchemas.Actions.all(YourSchema, %{id: 1}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.all(YourSchema, %{id: 1}, replica: YourApp.Repo)
-      iex> EctoSchemas.Actions.all({"source", YourSchema}, %{id: 1}, prefix: "public")
-      iex> EctoSchemas.Actions.all({"source", YourSchema}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.all({"source", YourSchema}, replica: YourApp.Repo)
-      iex> EctoSchemas.Actions.all(%Ecto.Query{}, %{id: 1}, prefix: "public")
-      iex> EctoSchemas.Actions.all(%Ecto.Query{}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.all(%Ecto.Query{}, replica: YourApp.Repo)
+  ...
   """
-  @spec all(
-    query :: query() | queryable() | source_queryable(),
-    params :: params(),
-    opts :: opts()
-  ) :: schemas()
-  def all(query, params, opts)  do
-    order_by = Keyword.get(opts, :order_by, nil)
-
-    params = if order_by, do: Map.put(params || %{}, :order_by, order_by), else: params
-
-    query
-    |> CommonFilters.convert_params_to_filter(params)
-    |> Config.replica!(opts).all(opts)
-  end
-
-  @doc """
-  Finds a schema with matching params. Can also accept a keyword options list.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See [Ecto.Repo.all/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:one/2) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.find(YourSchema, %{id: 1})
-      iex> EctoSchemas.Actions.find({"source", YourSchema}, %{id: 1})
-      iex> EctoSchemas.Actions.find({"source", YourSchema}, %{id: 1}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.find({"source", YourSchema}, %{id: 1}, replica: YourApp.Repo)
-      iex> EctoSchemas.Actions.find(%Ecto.Query{}, %{id: 1})
-      iex> EctoSchemas.Actions.find(%Ecto.Query{}, %{id: 1}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.find(%Ecto.Query{}, %{id: 1}, replica: YourApp.Repo)
-  """
-  @spec find(
-    query :: queryable() | source_queryable(),
-    params :: params(),
-    opts
-  ) :: schema_res | {:error, any}
-  @spec find(
-    query :: queryable() | source_queryable(),
-    params :: params()
-  ) :: schema_res | {:error, any}
-  def find(query, params, opts \\ [])
-
-  def find(query, params, _options) when params === %{} and is_atom(query) do
-    {:error, Error.call(:not_found, "no records found", %{
-      query: query,
-      params: params
-    })}
-  end
-
-  def find(query, params, opts) do
-    order_by = Keyword.get(opts, :order_by, nil)
-
-    params = if order_by, do: Map.put(params || %{}, :order_by, order_by), else: params
-
-    query
-    |> CommonFilters.convert_params_to_filter(params)
-    |> Config.replica!(opts).one(opts)
-    |> case do
-      nil ->
-        {:error, Error.call(:not_found, "no records found", %{
-          query: query,
-          params: params
-        })}
-
-      schema -> {:ok, schema}
-    end
-  end
-
-  @doc """
-  Creates a schema with given params. Can also accept a keyword options list.
-
-  ### Options
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See [Ecto.Repo.insert/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:insert/2) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.create(YourSchema, %{name: "example"})
-      iex> EctoSchemas.Actions.create(YourSchema, %{name: "example"}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.create({"source", YourSchema}, %{name: "example"})
-      iex> EctoSchemas.Actions.create({"source", YourSchema}, %{name: "example"}, repo: YourApp.Repo)
-  """
-  @spec create(
-    query :: queryable() | source_queryable(),
-    params :: params(),
-    opts :: opts()
-  ) :: {:ok, schema()} | {:error, changeset()}
-  @spec create(
-    query :: queryable() | source_queryable(),
-    params :: params()
-  ) :: {:ok, schema()} | {:error, changeset()}
-  def create(query, params, opts \\ []) do
-    query
-    |> build_changeset(params, opts)
+  def create(schema, params, opts \\ []) do
+    schema
+    |> CommonSchema.create_changeset(params, opts)
     |> Config.repo!(opts).insert(opts)
   end
 
+  @doc group: "CRUD"
   @doc """
-  Finds a schema by params or creates one if it isn't found.
-  Can also accept a keyword options list.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used to
-      fetch the record if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See `find/3` and `create/3` for more information.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.find_or_create(YourSchema, %{name: "great name"})
-      iex> EctoSchemas.Actions.find_or_create(YourSchema, %{name: "great name"}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.find_or_create(YourSchema, %{name: "great name"}, replica: YourApp.Repo.replica())
-      iex> EctoSchemas.Actions.find_or_create({"source", YourSchema}, %{name: "great name"})
-      iex> EctoSchemas.Actions.find_or_create({"source", YourSchema}, %{name: "great name"}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.find_or_create({"source", YourSchema}, %{name: "great name"}, replica: YourApp.Repo.replica())
+  ...
   """
-  @spec find_or_create(
-    query :: queryable() | source_queryable(),
-    params :: params(),
-    opts :: opts()
-  ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  @spec find_or_create(
-    query :: queryable() | source_queryable(),
-    params :: params()
-  ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  def find_or_create(query, params, opts \\ []) do
-    queryable = CommonSchemas.get_schema_queryable(query)
-
-    find_params = drop_associations(params, queryable)
-
-    with {:error, %{code: :not_found}} <- find(query, find_params, opts) do
-      create(query, params, opts)
-    end
+  def get(queryable, id, opts \\ []) do
+    Config.replica!(opts).get(queryable, id, opts)
   end
 
+  @doc group: "CRUD"
   @doc """
-  Finds a schema by params and updates it or creates with results of
-  params/update_params merged. Can also accept a keyword options list.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used to
-      fetch the record if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See `find/3` and `update/4` for more information.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.find_and_update(YourSchema, %{id: 1}, %{name: "great name"})
-      iex> EctoSchemas.Actions.find_and_update(YourSchema, %{id: 1}, %{name: "great name"}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.find_and_update(YourSchema, %{id: 1}, %{name: "great name"}, replica: YourApp.Repo.replica())
-      iex> EctoSchemas.Actions.find_and_update({"source", YourSchema}, %{id: 1}, %{name: "great name"})
-      iex> EctoSchemas.Actions.find_and_update({"source", YourSchema}, %{id: 1}, %{name: "great name"}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.find_and_update({"source", YourSchema}, %{id: 1}, %{name: "great name"}, replica: YourApp.Repo.replica())
+  ...
   """
-  @spec find_and_update(
-    query :: queryable() | source_queryable(),
-    find_params :: params(),
-    update_params :: params(),
-    opts :: opts()
-  ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  @spec find_and_update(
-    query :: queryable() | source_queryable(),
-    find_params :: params(),
-    update_params :: params()
-  ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  def find_and_update(query, find_params, update_params, opts \\ []) do
-    with {:ok, schema_data} <- find(query, find_params, opts) do
-      update(query, schema_data, update_params, opts)
-    end
+  def find(queryable, params, opts \\ [])
+
+  def find(queryable, params, opts)
+      when params === %{} and not is_struct(queryable, Ecto.Query) do
+    {:error,
+     Error.call(
+       :not_found,
+       "record not found.",
+       %{
+         query: queryable,
+         params: params
+       },
+       opts
+     )}
   end
 
-  @doc """
-  Finds a schema by params and updates it or creates with results of
-  params/update_params merged. Can also accept a keyword options list.
+  def find(queryable, params, opts) do
+    params =
+      params
+      |> put_order_by(opts)
+      |> put_group_by(opts)
 
-  ### Options
+    opts = Keyword.drop(opts, [:order_by, :group_by])
 
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used to
-      fetch the record if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See `find/3`, `create/3` and `update/4` for more information.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.find_and_upsert(YourSchema, %{id: 1}, %{name: "great name"})
-      iex> EctoSchemas.Actions.find_and_upsert(YourSchema, %{id: 1}, %{name: "great name"}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.find_and_upsert(YourSchema, %{id: 1}, %{name: "great name"}, replica: YourApp.Repo.replica())
-      iex> EctoSchemas.Actions.find_and_upsert({"source", YourSchema}, %{id: 1}, %{name: "great name"})
-      iex> EctoSchemas.Actions.find_and_upsert({"source", YourSchema}, %{id: 1}, %{name: "great name"}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.find_and_upsert({"source", YourSchema}, %{id: 1}, %{name: "great name"}, replica: YourApp.Repo.replica())
-  """
-  @spec find_and_upsert(
-    query :: queryable() | source_queryable(),
-    find_params :: params(),
-    update_params :: params(),
-    opts :: opts()
-  ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  @spec find_and_upsert(
-    query :: queryable() | source_queryable(),
-    find_params :: params(),
-    update_params :: params()
-  ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  def find_and_upsert(query, find_params, update_params, opts \\ []) do
-    case find(query, find_params, opts) do
-      {:ok, schema_data} ->
-        update(query, schema_data, update_params, opts)
-
-      {:error, %{code: :not_found}} ->
-        create_params = Map.merge(find_params, update_params)
-
-        create(query, create_params, opts)
-
-      e -> e
-    end
-  end
-
-  @doc """
-  Updates a schema with given updates. Can also accept a keyword options list.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used to
-      fetch the record if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See `update/4` and [Ecto.Repo.get/3](https://hexdocs.pm/ecto/Ecto.Repo.html#c:get/3) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.update(YourSchema, %{id: 1}, %{name: "great name"})
-      iex> EctoSchemas.Actions.update(YourSchema, %{id: 1}, %{name: "great name"}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.update(YourSchema, %{id: 1}, %{name: "great name"}, replica: YourApp.Repo.replica())
-      iex> EctoSchemas.Actions.update({"source", YourSchema}, %{id: 1}, %{name: "great name"})
-      iex> EctoSchemas.Actions.update({"source", YourSchema}, %{id: 1}, %{name: "great name"}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.update({"source", YourSchema}, %{id: 1}, %{name: "great name"}, replica: YourApp.Repo.replica())
-  """
-  @spec update(
-    query :: queryable() | source_queryable(),
-    id :: pos_integer | String.t(),
-    updates :: map() | Keyword.t()
-  ) :: {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
-  @spec update(
-    query :: queryable() | source_queryable(),
-    id :: pos_integer | String.t(),
-    updates :: map() | Keyword.t(),
-    opts
-  ) :: {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
-  @spec update(
-    query :: queryable() | source_queryable(),
-    schema_data :: Ecto.Schema.t(),
-    updates :: map() | Keyword.t()
-  ) :: {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
-  @spec update(
-    query :: queryable() | source_queryable(),
-    schema_data :: Ecto.Schema.t(),
-    updates :: map() | Keyword.t(),
-    opts
-  ) :: {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
-  def update(query, schema_data, update_params, opts \\ [])
-
-  def update(query, schema_id, update_params, opts) when is_integer(schema_id) or is_binary(schema_id) do
-    case get(query, schema_id, opts) do
+    case queryable
+         |> CommonFilters.convert_params_to_filter(params, opts)
+         |> Config.replica!(opts).one(opts) do
       nil ->
-        {:error, Error.call(
-          :not_found,
-          "No item found with id: #{schema_id}",
-          %{
-            schema: query,
-            schema_id: schema_id,
-            updates: update_params
-          }
-        )}
-      schema_data -> update(query, schema_data, update_params, opts)
+        {:error,
+         Error.call(
+           :not_found,
+           "record not found.",
+           %{
+             query: queryable,
+             params: params
+           },
+           opts
+         )}
+
+      record ->
+        {:ok, record}
     end
   end
 
-  def update(query, schema_data, update_params, opts) when is_list(update_params) do
-    update_params = Map.new(update_params)
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def update(queryable, id_or_schema_data, params, opts \\ [])
 
-    update(query, schema_data, update_params, opts)
+  def update(queryable, id, params, opts) when is_integer(id) or is_binary(id) do
+    with {:ok, record} <- find(queryable, %{id: id}, opts) do
+      update(queryable, record, params, opts)
+    end
   end
 
-  def update(query, schema_data, update_params, opts) do
-    query
-    |> build_changeset(schema_data, update_params, opts)
+  def update(queryable, schema_data, params, opts) do
+    queryable
+    |> CommonSchema.create_changeset(schema_data, params, opts)
     |> Config.repo!(opts).update(opts)
   end
 
+  @doc group: "CRUD"
   @doc """
-  Deletes a record given existing data.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.delete(%YourSchema{})
-      iex> EctoSchemas.Actions.delete([%YourSchema{}])
+  ...
   """
-  @spec delete(schema :: schema()) :: {:ok, schema()} | {:error, any()}
-  @spec delete(schemas :: schemas()) :: {:ok, schemas()} | {:error, any()}
-  def delete(%_{} = schema_data) do
-    delete(schema_data, default_opts())
+  def delete(data, opts \\ [])
+
+  def delete(queryable, id) when is_binary(id) or is_integer(id) do
+    delete(queryable, id, [])
   end
 
-  def delete(schema_data) when is_list(schema_data) do
-    delete(schema_data, default_opts())
-  end
-
-  @doc """
-  Similar to `delete/1` but can also accept a keyword options list.
-
-  ### Options
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See [Ecto.Repo.delete/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:delete/2) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.delete(%YourSchema{})
-      iex> EctoSchemas.Actions.create(%YourSchema{}, repo: YourApp.Repo)
-  """
-  @spec delete(
-    schema :: schema(),
-    opts :: opts()
-  ) :: {:ok, schema()} | {:error, any()}
-  @spec delete(
-    schemas :: schemas(),
-    opts :: opts()
-  ) :: {:ok, schemas()} | {:error, any()}
-  @spec delete(
-    query :: queryable() | source_queryable(),
-    id :: id()
-  ) :: {:ok, schema()} | {:error, any()}
-  def delete(%Ecto.Changeset{} = changeset, opts) do
-    case Config.repo!(opts).delete(changeset, opts) do
-      {:error, changeset} ->
-        {:error, Error.call(
-          :internal_server_error,
-          "Error deleting #{inspect(changeset.data.__struct__)}",
-          %{changeset: changeset}
-        )}
-      ok -> ok
+  def delete(%{data: %{__meta__: %{schema: schema}}} = changeset, opts) do
+    with {:error, changeset} <-
+           schema
+           |> CommonSchema.create_changeset(changeset, opts)
+           |> Config.repo!(opts).delete(opts) do
+      {:error,
+       Error.call(
+         :conflict,
+         "failed to delete record.",
+         %{
+           schema: schema,
+           changeset: changeset
+         },
+         opts
+       )}
     end
   end
 
-  def delete(%queryable{} = schema_data, opts) do
-    changeset = build_changeset(queryable, schema_data, %{}, opts)
-
-    case Config.repo!(opts).delete(changeset, opts) do
-      {:error, changeset} ->
-        {:error, Error.call(
-          :internal_server_error,
-          "Error deleting #{inspect(queryable)}",
-          %{changeset: changeset, schema_data: schema_data}
-        )}
-      ok -> ok
+  def delete(%{__meta__: %{schema: schema}} = schema_data, opts) do
+    with {:error, changeset} <-
+           schema
+           |> CommonSchema.create_changeset(schema_data, opts)
+           |> Config.repo!(opts).delete(opts) do
+      {:error,
+       Error.call(
+         :conflict,
+         "failed to delete record.",
+         %{
+           schema: schema,
+           changeset: changeset
+         },
+         opts
+       )}
     end
   end
 
-  def delete(schema_data, opts) when is_list(schema_data) do
-    schema_data |> Enum.map(&delete(&1, opts)) |> reduce_status_tuples()
-  end
-
-  def delete(query, id) when (is_binary(id) or is_integer(id)) do
-    delete(query, id, default_opts())
-  end
-
-  @doc """
-  Deletes a schema. Can also accept a keyword options list.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used to
-      fetch the record if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See `find/3` and [Ecto.Repo.delete/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:delete/2) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.delete(YourSchema, 1)
-      iex> EctoSchemas.Actions.delete(YourSchema, "binary_id")
-      iex> EctoSchemas.Actions.delete(YourSchema, "binary_id", repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.delete({"source", YourSchema}, 1)
-      iex> EctoSchemas.Actions.delete({"source", YourSchema}, "binary_id")
-      iex> EctoSchemas.Actions.delete({"source", YourSchema}, "binary_id", repo: YourApp.Repo)
-  """
-  @spec delete(
-    query :: queryable() | source_queryable(),
-    id :: id(),
-    opts :: opts()
-  ) :: {:ok, schema()} | {:error, any()}
-  def delete(query, id, opts) when (is_integer(id) or is_binary(id)) do
-    with {:ok, schema_data} <- find(query, %{id: id}, opts) do
-      Config.repo!(opts).delete(schema_data, opts)
+  def delete(structs_or_changesets, opts) when is_list(structs_or_changesets) do
+    with {:ok, results} <-
+           Enum.reduce_while(structs_or_changesets, {:ok, []}, fn entry, {:ok, acc} ->
+             case delete(entry, opts) do
+               {:ok, result} -> {:cont, {:ok, [result | acc]}}
+               {:error, reason} -> {:halt, {:error, reason}}
+             end
+           end) do
+      {:ok, Enum.reverse(results)}
     end
   end
 
-  @doc """
-  Returns a lazy enumerable that emits all entries matching the given query.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used to
-      fetch the record if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See [Ecto.Repo.stream/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:stream/2) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.stream(YourSchema, %{id: 1})
-      iex> EctoSchemas.Actions.stream(YourSchema, %{id: 1}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.stream(YourSchema, %{id: 1}, replica: YourApp.Repo)
-      iex> EctoSchemas.Actions.stream({"source", YourSchema}, %{id: 1})
-      iex> EctoSchemas.Actions.stream({"source", YourSchema}, %{id: 1}, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.stream({"source", YourSchema}, %{id: 1}, replica: YourApp.Repo)
-  """
-  @spec stream(
-    query :: queryable() | source_queryable(),
-    params :: params(),
-    opts :: opts()
-  ) :: schemas()
-  @spec stream(
-    query :: queryable() | source_queryable(),
-    params :: params()
-  ) :: schemas()
-  def stream(query, params, opts \\ []) do
-    query
-    |> CommonSchemas.get_schema_query()
-    |> CommonFilters.convert_params_to_filter(params)
-    |> Config.replica!(opts).stream(opts)
-  end
-
-  @doc """
-  Calculate the given aggregate.
-
-  ### Options
-
-    * `:replica` - A module that uses `Ecto.Repo`. This option takes
-      precedence over the `:repo` option and will be used to
-      fetch the record if set.
-
-    * `:repo` - A module that uses `Ecto.Repo`.
-
-  See [Ecto.Repo.aggregate/4](https://hexdocs.pm/ecto/Ecto.Repo.html#c:aggregate/4) for more options.
-
-  ### Examples
-
-      iex> EctoSchemas.Actions.aggregate(YourSchema, %{id: 1}, :count, :id)
-      iex> EctoSchemas.Actions.aggregate(YourSchema, %{id: 1}, :count, :id, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.aggregate(YourSchema, %{id: 1}, :count, :id, replica: YourApp.Repo)
-      iex> EctoSchemas.Actions.aggregate({"source", YourSchema}, %{id: 1}, :count, :id)
-      iex> EctoSchemas.Actions.aggregate({"source", YourSchema}, %{id: 1}, :count, :id, repo: YourApp.Repo)
-      iex> EctoSchemas.Actions.aggregate({"source", YourSchema}, %{id: 1}, :count, :id, replica: YourApp.Repo)
-  """
-  @spec aggregate(
-    query :: query() | queryable() | source_queryable(),
-    params :: params(),
-    aggregate :: aggregate_options(),
-    field :: field(),
-    opts :: opts()
-  ) :: {:ok, Ecto.Schema.t()} | {:error, any()}
-  @spec aggregate(
-    query :: query() | queryable() | source_queryable(),
-    params :: params(),
-    aggregate :: aggregate_options(),
-    field :: field()
-  ) :: {:ok, Ecto.Schema.t()} | {:error, any()}
-  def aggregate(query, params, aggregate, field, opts \\ []) do
-    query
-    |> CommonSchemas.get_schema_query()
-    |> CommonFilters.convert_params_to_filter(params)
-    |> Config.replica!(opts).aggregate(aggregate, field, opts)
-  end
-
-  @doc """
-  Accepts a list of schemas and attempts to find them in the DB. Any missing Schemas will be created.
-  Can also accept a keyword options list.
-
-  ***Note: Relational filtering doesn't work on this function***
-
-  ## Options
-    * `:repo` - A module that uses the Ecto.Repo Module.
-    * `:replica` - If you don't want to perform any reads against your Primary, you can specify a replica to read from.
-
-  ## Examples
-    iex> {:ok, records} = EctoSchemas.Actions.find_or_create_many(EctoSchemas.Accounts.User, [%{name: "foo"}, %{name: "bar}])
-    iex> length(records) === 2
-  """
-  @spec find_or_create_many(
-    query :: queryable() | source_queryable(),
-    params_list :: params_list(),
-    opts :: opts()
-  ) :: {:ok, schemas()} | {:error, changesets()}
-  @spec find_or_create_many(
-    query :: queryable() | source_queryable(),
-    params_list :: params_list()
-  ) :: {:ok, schemas()} | {:error, changesets()}
-  def find_or_create_many(query, param_list, opts) do
-    queryable = CommonSchemas.get_schema_queryable(query)
-
-    find_param_list =
-      Enum.map(param_list, fn params ->
-        drop_associations(params, queryable)
-      end)
-
-    {create_params, found_results} = find_many(query, find_param_list, opts)
-
-    query
-    |> multi_insert(param_list, create_params, opts)
-    |> Config.repo!(opts).transaction()
-    |> case do
-      {:ok, created_map} -> {:ok, merge_found(created_map, found_results)}
-      error -> error
+  def delete(queryable, id, opts) when is_integer(id) or is_binary(id) do
+    with {:ok, record} <- find(queryable, %{id: id}, opts) do
+      delete(record, opts)
     end
   end
 
-  def find_or_create_many(schema, param_list) do
-    find_or_create_many(schema, param_list, default_opts())
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def stream(queryable, params \\ %{}, opts \\ []) do
+    queryable
+    |> CommonFilters.convert_params_to_filter(params, opts)
+    |> Config.repo!(opts).stream(opts)
   end
 
-  defp find_many(schema, param_list, opts) do
-    param_list
-    |> Enum.map(fn params ->
-      case find(schema, params, opts) do
-        {:ok, schema_data} -> schema_data
-        _ -> nil
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def aggregate(queryable, params \\ %{}, aggregate \\ :count, key \\ :id, opts \\ []) do
+    queryable
+    |> CommonFilters.convert_params_to_filter(params, opts)
+    |> Config.replica!(opts).aggregate(aggregate, key, opts)
+  end
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def transaction(fun_or_multi, opts \\ []) do
+    Config.repo!(opts).transaction(fun_or_multi, opts)
+  end
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def transact(fun_or_multi, opts \\ [])
+
+  def transact(%Ecto.Multi{} = multi, opts) do
+    multi
+    |> transaction(opts)
+    |> handle_multi_response(opts)
+  end
+
+  def transact(fun, opts) when is_function(fun) do
+    fn repo -> eval_transaction_fun(fun, repo, opts) end
+    |> transaction(opts)
+    |> normalize_transaction_response(opts)
+  end
+
+  defp normalize_transaction_response(result, opts) do
+    unwrap? = Keyword.get(opts, :strict, true)
+
+    case {unwrap?, result} do
+      # If the transaction is rolled back with `:error`, Ecto
+      # returns `{:error, :error}`. Normalize it to `:error`.
+      {_, {:error, :error}} ->
+        :error
+
+      # If the transaction function returns `:ok`, Ecto returns
+      # `{:ok, :ok}`. Normalize it to `:ok`.
+      {_, {:ok, :ok}} ->
+        :ok
+
+      # If `unwrap?` is true, unwrap nested status tuples returned from
+      # inside the transaction.
+      #
+      # `{:error, reason}` is commonly understood as “the transaction
+      # failed / rolled back”, while `{:ok, {:error, reason}}` means
+      # “the transaction committed and returned an error tuple as data”.
+      #
+      # For this reason, unwrapping is only done in strict mode. When
+      # strict mode is enabled, returning `{:error, reason}` triggers
+      # a rollback, so `{:ok, {:error, reason}}` should not happen in
+      # normal usage.
+      {true, {:ok, {:error, _} = error}} ->
+        error
+
+      # If `unwrap?` is true, unwrap nested ok tuples returned from
+      # inside the transaction.
+      #
+      # This allows callers to return `{:ok, value}` from inside the
+      # transaction without producing `{:ok, {:ok, value}}` after the
+      # transaction commits.
+      {true, {:ok, {:ok, _} = response}} ->
+        response
+
+      # Otherwise, return response unchanged.
+      {_, other} ->
+        other
+    end
+  end
+
+  defp eval_transaction_fun(fun, repo, opts) do
+    response = call_transaction_fun(fun, repo)
+
+    if Keyword.get(opts, :strict, true) do
+      maybe_rollback(response, repo)
+    else
+      response
+    end
+  end
+
+  defp call_transaction_fun(fun, repo) when is_function(fun, 1), do: fun.(repo)
+  defp call_transaction_fun(fun, _repo) when is_function(fun, 0), do: fun.()
+
+  defp maybe_rollback(:error, repo), do: repo.rollback(:error)
+  defp maybe_rollback({:error, reason}, repo), do: repo.rollback(reason)
+  defp maybe_rollback({:ok, value}, _repo), do: value
+  defp maybe_rollback(term, _repo), do: term
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def find_and_create(queryable, find_params, create_params, opts \\ []) do
+    with {:error, _} <- find(queryable, find_params, opts) do
+      create(queryable, create_params, opts)
+    end
+  end
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def find_and_update(source, find_params, update_params, opts \\ []) do
+    with {:ok, record} <- find(source, find_params, opts) do
+      update(source, record, update_params, opts)
+    end
+  end
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def find_and_upsert(source, find_params, upsert_params, opts \\ []) do
+    case find(source, find_params, opts) do
+      {:ok, record} -> update(source, record, upsert_params, opts)
+      {:error, _} -> create(source, Map.merge(find_params, upsert_params), opts)
+    end
+  end
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def find_and_delete(source, find_params, opts \\ []) do
+    with {:ok, record} <- find(source, find_params, opts) do
+      delete(record, opts)
+    end
+  end
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def find_or_create(queryable, params, opts \\ []) do
+    query_fields =
+      Keyword.get(
+        opts,
+        :query_fields,
+        CommonSchema.get_schema_reflection(queryable, :query_fields)
+      )
+
+    with {:error, _} <- find(queryable, Map.take(params, query_fields), opts) do
+      create(queryable, params, opts)
+    end
+  end
+
+  @doc group: "Batch"
+  @doc """
+  ...
+  """
+  def batch(schema, args, batch_keys \\ :id, cardinality \\ :many, opts \\ [])
+
+  def batch(_schema, [], _batch_keys, _cardinality, _opts) do
+    %{}
+  end
+
+  def batch(schema, args, batch_keys, cardinality, opts)
+      when is_list(batch_keys) and cardinality in @cardinalities do
+    batch_keys = Enum.uniq(batch_keys)
+
+    case build_batch_params(schema, args, batch_keys, opts) do
+      [] ->
+        %{}
+
+      batch_params ->
+        schema
+        |> CommonFilters.convert_params_to_filter(batch_params, opts)
+        |> Config.repo!(opts).all(opts)
+        |> Enum.group_by(&Map.take(&1, batch_keys))
+        |> handle_batch_response(cardinality, batch_keys)
+    end
+  end
+
+  def batch(schema, args, batch_key, cardinality, opts)
+      when cardinality in @cardinalities do
+    values =
+      args
+      |> Enum.map(&normalize_batch_key(&1, batch_key))
+      |> Enum.uniq()
+
+    if values === [] do
+      %{}
+    else
+      schema
+      |> CommonFilters.convert_params_to_filter(%{batch_key => values}, opts)
+      |> Config.repo!(opts).all(opts)
+      |> Enum.group_by(&normalize_batch_key(&1, batch_key))
+      |> handle_batch_response(cardinality, batch_key)
+    end
+  end
+
+  defp build_batch_params(_schema, _list_of_params, [], _opts) do
+    []
+  end
+
+  defp build_batch_params(schema, list_of_params, batch_keys, opts) do
+    query_fields = Keyword.get(opts, :query_fields, schema.__schema__(:query_fields))
+
+    if Enum.all?(batch_keys, &(&1 in query_fields)) do
+      list_of_params
+      |> Enum.map(fn params -> normalize_batch_key(params, batch_keys) end)
+      |> Enum.uniq()
+      |> Enum.map(&{:or_where, &1})
+    else
+      raise ArgumentError,
+            "Expected batch keys to be a subset of query fields #{inspect(query_fields)}, got: #{inspect(batch_keys)}"
+    end
+  end
+
+  defp normalize_batch_key(params, keys) when is_list(params) and is_list(keys) do
+    params |> Map.new() |> normalize_batch_key(keys)
+  end
+
+  defp normalize_batch_key(params, keys) when is_map(params) and is_list(keys) do
+    Map.take(params, keys)
+  end
+
+  defp normalize_batch_key(params, key) when is_map(params) do
+    Map.get(params, key)
+  end
+
+  defp normalize_batch_key(value, key) when is_atom(key) do
+    %{key => value}
+  end
+
+  defp handle_batch_response(records, cardinality, batch_key) do
+    records
+    |> Enum.map(fn {key, values} ->
+      case {cardinality, values} do
+        {:one, [value]} ->
+          {key, value}
+
+        {:one, _} ->
+          raise ArgumentError,
+                "Expected at most one value for batch key #{inspect(batch_key)}, got #{length(values)}"
+
+        {_, values} ->
+          {key, values}
       end
     end)
-    |> Enum.with_index()
-    |> Enum.split_with(fn {schema_data, _index} -> is_nil(schema_data) end)
+    |> Map.new()
   end
 
-  defp multi_insert(queryable, param_list, create_params, opts) do
-    Enum.reduce(create_params, Ecto.Multi.new(), fn {nil, i}, multi ->
-      Ecto.Multi.insert(multi, i, fn _ ->
-        build_changeset(queryable, Enum.at(param_list, i), opts)
+  @doc group: "Batch"
+  @doc """
+  ...
+  """
+  def batch_preload(schema, entries, keys, opts) do
+    {list_of_params, index_to_key} = extract_lookup_params(entries, keys)
+
+    key_fields = normalize_key_fields(keys)
+
+    fetched_records = batch(schema, list_of_params, key_fields, :one, opts)
+
+    Enum.reduce(index_to_key, entries, fn {index, batch_key}, acc ->
+      case Map.get(fetched_records, batch_key) do
+        nil ->
+          acc
+
+        record ->
+          current_entry = get_in(acc, [Access.at!(index)])
+          updated_entry = zip_batch_result(current_entry, record)
+          put_in(acc, [Access.at!(index)], updated_entry)
+      end
+    end)
+  end
+
+  defp normalize_key_fields(key) when is_atom(key), do: [key]
+  defp normalize_key_fields(keys) when is_list(keys), do: keys
+  defp normalize_key_fields(keys), do: keys
+
+  defp zip_batch_result({_find_params, other_params}, record) do
+    {record, other_params}
+  end
+
+  defp zip_batch_result(original_params, record) do
+    {record, original_params}
+  end
+
+  defp extract_lookup_params(entries, keys) do
+    entries
+    |> Stream.with_index()
+    |> Enum.reduce({[], %{}}, &reduce_preload_entry(&1, &2, keys))
+  end
+
+  defp reduce_preload_entry({entry, index}, {values_acc, index_map}, keys) do
+    case normalize_preload_params(entry) do
+      nil ->
+        {values_acc, index_map}
+
+      params ->
+        batch_key = build_batch_key(params, keys)
+
+        if batch_key === %{} do
+          {values_acc, index_map}
+        else
+          {[batch_key | values_acc], Map.put(index_map, index, batch_key)}
+        end
+    end
+  end
+
+  defp normalize_preload_params({params, _other}) do
+    normalize_preload_params(params)
+  end
+
+  defp normalize_preload_params(params) when is_list(params) do
+    Map.new(params)
+  end
+
+  defp normalize_preload_params(params) when is_map(params) and not is_struct(params) do
+    params
+  end
+
+  defp normalize_preload_params(_), do: nil
+
+  defp build_batch_key(params, true) do
+    params
+  end
+
+  defp build_batch_key(params, keys) when is_list(keys) do
+    Map.take(params, keys)
+  end
+
+  defp build_batch_key(params, key) when is_atom(key) do
+    Map.take(params, [key])
+  end
+
+  defp build_batch_key(params, key_fn) when is_function(key_fn) do
+    case key_fn.(params) do
+      map when is_map(map) -> map
+      term -> raise "Expected batch key function to return a map, got: #{inspect(term)}"
+    end
+  end
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def insert_all(source, params_list, opts \\ []) do
+    params_list =
+      if Keyword.has_key?(opts, :preload) do
+        batch_preload(source, params_list, opts[:preload], opts)
+      else
+        params_list
+      end
+
+    with {:ok, inserts} <- CommonParams.convert_to_insert_params(source, params_list, opts) do
+      on_conflict_options = CommonParams.build_on_conflict_options(source, inserts, opts)
+
+      {:ok,
+       Config.repo!(opts).insert_all(
+         source,
+         inserts,
+         Keyword.merge(on_conflict_options, opts)
+       )}
+    end
+  end
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def update_all(source, find_params, update_params, opts \\ []) do
+    updates =
+      source
+      |> CommonSchema.get_schema_source()
+      |> CommonParams.convert_to_update_params(update_params, opts)
+
+    source
+    |> CommonFilters.convert_params_to_filter(find_params, opts)
+    |> Config.repo!(opts).update_all(updates, opts)
+  end
+
+  @doc group: "CRUD"
+  @doc """
+  ...
+  """
+  def delete_all(queryable, params \\ %{}, opts \\ []) do
+    queryable
+    |> CommonFilters.convert_params_to_filter(params, opts)
+    |> Config.repo!(opts).delete_all(opts)
+  end
+
+  @doc group: "Multi"
+  @doc """
+  ...
+  """
+  def create_many(schema, params_list, opts \\ []) when is_list(params_list) do
+    schema
+    |> build_create_many_multi(params_list, opts)
+    |> transaction(opts)
+    |> handle_multi_response(opts)
+  end
+
+  defp build_create_many_multi(schema, params_list, opts) do
+    params_list
+    |> Enum.with_index()
+    |> Enum.reduce(Ecto.Multi.new(), fn {params, index}, multi ->
+      Ecto.Multi.run(multi, {:create, index}, fn repo, _changes ->
+        repo_create(repo, schema, params, index, opts)
       end)
     end)
   end
 
-  defp build_changeset({source, queryable}, schema_data, params, opts) do
-    schema_data = SchemaHelpers.build_struct(schema_data, source: source)
-
-    build_changeset(queryable, schema_data, params, opts)
+  @doc group: "Multi"
+  @doc """
+  ...
+  """
+  def find_many(schema, params_list, opts \\ []) when is_list(params_list) do
+    schema
+    |> build_find_many_multi(params_list, opts)
+    |> transaction(opts)
+    |> handle_multi_response(opts)
   end
 
-  defp build_changeset(queryable, schema_data, params, opts) do
-    case opts[:changeset] do
-      nil ->
-        queryable.changeset(schema_data, params)
-
-      func when is_function(func, 2) ->
-        func.(schema_data, params)
-
-      func when is_function(func, 1) ->
-        schema_data
-        |> queryable.changeset(params)
-        |> func.()
-    end
-  end
-
-  defp build_changeset({source, queryable}, params, opts) do
-    loaded_struct = CommonSchemas.get_loaded_struct({source, queryable})
-
-    build_changeset(queryable, loaded_struct, params, opts)
-  end
-
-  defp build_changeset(queryable, params, opts) do
-    if Code.ensure_loaded?(queryable) and function_exported?(queryable, :create_changeset, 1) do
-      queryable.create_changeset(params)
-    else
-      struct = struct(queryable)
-
-      build_changeset(queryable, struct, params, opts)
-    end
-  end
-
-  defp drop_associations(params, queryable) do
-    Map.drop(params, queryable.__schema__(:associations))
-  end
-
-  defp merge_found(created_map, found_results) do
-    created_map
-    |> Enum.map(fn {index, result} -> {result, index} end)
-    |> Kernel.++(found_results)
-    |> Enum.sort(&(elem(&1, 1) >= elem(&2, 1)))
-    |> Enum.map(&elem(&1, 0))
-  end
-
-  defp reduce_status_tuples(status_tuples) do
-    {status, res} =
-      Enum.reduce(status_tuples, {:ok, []}, fn
-        {:ok, _}, {:error, _} = e -> e
-        {:ok, record}, {:ok, acc} -> {:ok, [record | acc]}
-        {:error, error}, {:ok, _} -> {:error, [error]}
-        {:error, e}, {:error, error_acc} -> {:error, [e | error_acc]}
+  defp build_find_many_multi(schema, params_list, opts) do
+    params_list
+    |> Enum.with_index()
+    |> Enum.reduce(Ecto.Multi.new(), fn {params, index}, multi ->
+      Ecto.Multi.run(multi, {:find, index}, fn repo, _changes ->
+        repo_find(repo, schema, params, index, opts)
       end)
-
-    {status, Enum.reverse(res)}
+    end)
   end
 
-  defp default_opts do
-    [repo: Config.repo(), replica: Config.replica()]
+  @doc group: "Multi"
+  @doc """
+  ...
+  """
+  def update_many(schema, entries, opts \\ []) when is_list(entries) do
+    schema
+    |> build_update_many_multi(entries, opts)
+    |> transaction(opts)
+    |> handle_multi_response(opts)
+  end
+
+  defp build_update_many_multi(schema, entries, opts) do
+    entries
+    |> Enum.with_index()
+    |> Enum.reduce(Ecto.Multi.new(), fn {arg, index}, multi ->
+      Ecto.Multi.run(multi, {:update, index}, fn repo, _changes ->
+        run_multi_update_many(repo, schema, arg, index, opts)
+      end)
+    end)
+  end
+
+  defp run_multi_update_many(repo, schema, {find_params, update_params}, index, opts) do
+    with {:ok, record} <- repo_find(repo, schema, find_params, index, opts) do
+      repo_update(repo, schema, record, update_params, index, opts)
+    end
+  end
+
+  defp run_multi_update_many(repo, schema, %{id: id} = params, index, opts) do
+    update_params = Map.delete(params, :id)
+
+    with {:ok, record} <- repo_find(repo, schema, %{id: id}, index, opts) do
+      repo_update(repo, schema, record, update_params, index, opts)
+    end
+  end
+
+  defp run_multi_update_many(_repo, _schema, term, _index, _opts) do
+    raise ArgumentError,
+          """
+          expected one of:
+
+          - a tuple of {map(), map()}
+          - a map with an :id key
+
+          got: #{inspect(term)}
+          """
+  end
+
+  @doc group: "Multi"
+  @doc """
+  ...
+  """
+  def delete_many(schema, records, opts \\ []) when is_list(records) do
+    schema
+    |> build_delete_many_multi(records, opts)
+    |> transaction(opts)
+    |> handle_multi_response(opts)
+  end
+
+  defp build_delete_many_multi(schema, entries, opts) do
+    entries
+    |> Enum.with_index()
+    |> Enum.reduce(Ecto.Multi.new(), fn {entry, index}, multi ->
+      Ecto.Multi.run(multi, {:delete, index}, fn repo, _changes ->
+        run_multi_delete(repo, schema, entry, index, opts)
+      end)
+    end)
+  end
+
+  defp run_multi_delete(repo, schema, %_{} = schema_data, index, opts) do
+    repo_delete(repo, schema, schema_data, index, opts)
+  end
+
+  defp run_multi_delete(repo, schema, params, index, opts)
+       when is_map(params) or is_list(params) do
+    with {:ok, record} <- repo_find(repo, schema, params, index, opts) do
+      repo_delete(repo, schema, record, index, opts)
+    end
+  end
+
+  defp run_multi_delete(repo, schema, id, index, opts) do
+    run_multi_delete(repo, schema, %{id: id}, index, opts)
+  end
+
+  @doc group: "Multi"
+  @doc """
+  ...
+  """
+  def find_or_create_many(schema, params_list, opts \\ []) when is_list(params_list) do
+    schema
+    |> build_find_or_create_multi(params_list, opts)
+    |> transaction(opts)
+    |> handle_multi_response(opts)
+  end
+
+  defp build_find_or_create_multi(schema, params_list, opts) do
+    params_list
+    |> Enum.with_index()
+    |> Enum.reduce(Ecto.Multi.new(), fn {params, index}, multi ->
+      Ecto.Multi.run(multi, {:find_or_create, index}, fn repo, _changes ->
+        case repo_one(repo, schema, params, opts) do
+          nil -> repo_create(repo, schema, params, index, opts)
+          record -> {:ok, record}
+        end
+      end)
+    end)
+  end
+
+  @doc group: "Multi"
+  @doc """
+  ...
+  """
+  def find_and_upsert_many(schema, entries, opts \\ []) when is_list(entries) do
+    schema
+    |> build_upsert_multi(entries, opts)
+    |> transaction(opts)
+    |> handle_multi_response(opts)
+  end
+
+  defp build_upsert_multi(schema, entries, opts) do
+    entries
+    |> Enum.with_index()
+    |> Enum.reduce(Ecto.Multi.new(), fn {arg, index}, multi ->
+      case arg do
+        {find_params, upsert_params} ->
+          Ecto.Multi.run(multi, {:find_and_upsert, index}, fn repo, _changes ->
+            repo_upsert(repo, schema, find_params, upsert_params, index, opts)
+          end)
+
+        %{id: id} = params ->
+          upsert_params = Map.delete(params, :id)
+
+          Ecto.Multi.run(multi, {:find_and_upsert, index}, fn repo, _changes ->
+            repo_upsert(repo, schema, %{id: id}, upsert_params, index, opts)
+          end)
+
+        term ->
+          raise ArgumentError,
+                """
+                expected one of:
+
+                - a tuple of {map(), map()}
+                - a map with an :id key
+
+                got: #{inspect(term)}
+                """
+      end
+    end)
+  end
+
+  defp repo_one(repo, schema, find_params, opts) do
+    schema
+    |> CommonFilters.convert_params_to_filter(find_params, opts)
+    |> repo.one(opts)
+  end
+
+  defp repo_find(repo, schema, params, index, opts) do
+    case repo_one(repo, schema, params, opts) do
+      nil ->
+        {:error,
+         {:not_found, "record not found.",
+          %{
+            schema: schema,
+            action: :find,
+            index: index,
+            params: params
+          }}}
+
+      record ->
+        {:ok, record}
+    end
+  end
+
+  defp repo_create(repo, schema, params, index, opts) do
+    case schema
+         |> CommonSchema.create_changeset(params, opts)
+         |> repo.insert(opts) do
+      {:ok, record} ->
+        {:ok, record}
+
+      {:error, changeset} ->
+        {:error,
+         {:conflict, "failed to create record.",
+          %{
+            schema: schema,
+            action: :create,
+            index: index,
+            params: params,
+            changeset: changeset
+          }}}
+    end
+  end
+
+  defp repo_update(repo, schema, record, params, index, opts) do
+    case schema
+         |> CommonSchema.create_changeset(record, params, opts)
+         |> repo.update(opts) do
+      {:ok, record} ->
+        {:ok, record}
+
+      {:error, changeset} ->
+        {:error,
+         {:conflict, "failed to update record.",
+          %{
+            schema: schema,
+            action: :update,
+            index: index,
+            params: params,
+            changeset: changeset
+          }}}
+    end
+  end
+
+  defp repo_delete(repo, schema, record, index, opts) do
+    case record |> schema.changeset(%{}) |> repo.delete(opts) do
+      {:ok, deleted_record} ->
+        {:ok, deleted_record}
+
+      {:error, changeset} ->
+        {:error,
+         {:conflict, "failed to delete record.",
+          %{
+            schema: schema,
+            action: :delete,
+            index: index,
+            changeset: changeset
+          }}}
+    end
+  end
+
+  defp repo_upsert(repo, schema, find_params, upsert_params, index, opts) do
+    params = Map.merge(find_params, upsert_params)
+
+    case repo_one(repo, schema, find_params, opts) do
+      nil -> repo_create(repo, schema, params, index, opts)
+      record -> repo_update(repo, schema, record, params, index, opts)
+    end
+  end
+
+  defp handle_multi_response(
+         {:error, _failed_operation, {code, message, details}, changes_so_far},
+         opts
+       ) do
+    details =
+      details
+      |> Map.new()
+      |> Map.put(:changes_so_far, Map.values(changes_so_far))
+
+    {:error, Error.call(code, message, details, opts)}
+  end
+
+  defp handle_multi_response({:error, _failed_operation, reason, _changes_so_far}, _opts) do
+    {:error, reason}
+  end
+
+  defp handle_multi_response({:ok, operations}, _opts) do
+    {:ok, Map.values(operations)}
+  end
+
+  defp put_order_by(enum, opts) do
+    case Keyword.get(opts, :order_by) do
+      nil ->
+        enum
+
+      order_by ->
+        if is_map(enum) do
+          Map.put(enum, :order_by, order_by)
+        else
+          enum ++ [order_by: order_by]
+        end
+    end
+  end
+
+  defp put_group_by(enum, opts) do
+    case Keyword.get(opts, :group_by) do
+      nil ->
+        enum
+
+      group_by ->
+        if is_map(enum) do
+          Map.put(enum, :group_by, group_by)
+        else
+          enum ++ [group_by: group_by]
+        end
+    end
   end
 end
