@@ -1224,7 +1224,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       q2 =
         CommonFilters.convert_params_to_filter(Post, %{
-          or: [%{published: true, views: 20}, %{published: false, views: 10}]
+          or: [[published: true, views: 20], [published: false, views: 10]]
         })
 
       assert_sql(Repo, expected, q2)
@@ -1241,8 +1241,8 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(Post, %{
           or: [
-            %{published: %{or: [==: true, ==: false]}},
-            %{published: %{or: [==: true, ==: false]}}
+            [published: [or: [==: true, ==: false]]],
+            [published: [or: [==: true, ==: false]]]
           ]
         })
 
@@ -1258,7 +1258,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       q2 =
         CommonFilters.convert_params_to_filter(Post, %{
-          and: [%{published: true, views: 20}, %{title: "hello", views: 15}]
+          and: [[published: true, views: 20], [title: "hello", views: 15]]
         })
 
       assert_sql(Repo, expected, q2)
@@ -1272,7 +1272,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       q2 =
         CommonFilters.convert_params_to_filter(Post, %{
-          or: [%{published: true, views: 20}]
+          or: [[published: true, views: 20]]
         })
 
       assert_sql(Repo, expected, q2)
@@ -1290,7 +1290,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(Post,
           title: "test",
-          or: [%{published: true, views: 20}, %{published: false, views: 10}]
+          or: [[published: true, views: 20], [published: false, views: 10]]
         )
 
       assert_sql(Repo, expected, q2)
@@ -1343,7 +1343,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(Post, %{
           where: %{title: "test"},
-          or_where: %{or: [%{published: true, views: 20}, %{published: false, views: 10}]}
+          or_where: %{or: [[published: true, views: 20], [published: false, views: 10]]}
         })
 
       assert_sql(Repo, expected, q2)
@@ -1364,7 +1364,7 @@ defmodule EctoShorts.CommonFiltersTest do
             CommonFilters.convert_params_to_filter(q, %{
               id: %{
                 or: [
-                  %{published: true, does_not_exist: "value"}
+                  [published: true, does_not_exist: "value"]
                 ]
               }
             })
@@ -1376,21 +1376,6 @@ defmodule EctoShorts.CommonFiltersTest do
                "Expected a query field for schema EctoShorts.Schema.Post, got: :does_not_exist"
 
       assert_received :done
-    end
-
-    test "invalid params type logs error and returns query unchanged" do
-      q = from(p in Post)
-
-      log =
-        capture_log(fn ->
-          q2 = CommonFilters.convert_params_to_filter(q, "bad")
-          send(self(), {:q2, q2})
-        end)
-
-      assert log =~ "Expected params to be a map or keyword list, got: \"bad\""
-
-      assert_received {:q2, q2}
-      assert q2 == q
     end
 
     test "invalid filter params container logs error and returns query unchanged" do

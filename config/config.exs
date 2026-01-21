@@ -2,8 +2,6 @@
 # and its dependencies with the aid of the Mix.Config module.
 import Config
 
-config :logger, level: :info
-
 config :ecto_shorts,
   mix_env: Mix.env(),
   repo: nil,

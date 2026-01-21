@@ -1212,10 +1212,7 @@ defmodule EctoShorts.ActionsTest do
           or_where: %{published: false}
         })
 
-      results = Repo.all(q)
-      assert Enum.count(results) == 2
-      assert Enum.any?(results, &match?(%Post{title: "Published"}, &1))
-      assert Enum.any?(results, &match?(%Post{title: "Unpublished"}, &1))
+      assert [%Post{title: "Published"}, %Post{title: "Unpublished"}] = Repo.all(q)
     end
 
     test "supports :limit" do
@@ -1463,8 +1460,7 @@ defmodule EctoShorts.ActionsTest do
           published: %{in: [true]}
         })
 
-      assert [result] = Repo.all(q)
-      assert %Post{title: "True", published: true} = result
+      assert [%Post{title: "True", published: true}] = Repo.all(q)
     end
 
     test "supports explicit NOT IN operator for scalar fields" do
@@ -1481,8 +1477,7 @@ defmodule EctoShorts.ActionsTest do
           published: %{not: %{in: [true]}}
         })
 
-      assert [result] = Repo.all(q)
-      assert %Post{title: "False", published: false} = result
+      assert [%Post{title: "False", published: false}] = Repo.all(q)
     end
 
     test "coerces not == with list RHS to NOT IN for scalar fields" do
@@ -1499,8 +1494,7 @@ defmodule EctoShorts.ActionsTest do
           published: %{not: %{==: [true]}}
         })
 
-      assert [result] = Repo.all(q)
-      assert %Post{title: "False", published: false} = result
+      assert [%Post{title: "False", published: false}] = Repo.all(q)
     end
 
     test "coerces not != with list RHS to IN for scalar fields" do

@@ -3,6 +3,7 @@ defmodule EctoShorts.QueryBuilders.Filters do
 
   alias Ecto.Query
 
+  alias EctoShorts.CommonSchema
   alias EctoShorts.QueryBuilders.Dynamics
 
   require Ecto.Query
@@ -27,22 +28,26 @@ defmodule EctoShorts.QueryBuilders.Filters do
     compose(filter, query, dynamic)
   end
 
-  def build_query(schema, filter, query, binding_selector, {key, value}, _opts) do
+  def build_query(source, filter, query, binding_selector, {key, value}, _opts) do
     cond do
       key in @common_operators ->
-        dynamic = Dynamics.dynamic_field_expr(schema, binding_selector, key, value)
+        dynamic =
+          source
+          |> CommonSchema.get_schema_source()
+          |> Dynamics.dynamic_field_expr(binding_selector, key, value)
+
         compose(filter, query, dynamic)
 
-      is_nil(schema) ->
+      is_nil(source) ->
         {operator, value} = normalize_operator_value(value)
-        apply_filter(schema, filter, query, binding_selector, key, {operator, value})
+        apply_filter(source, filter, query, binding_selector, key, {operator, value})
 
-      key in schema.__schema__(:query_fields) ->
+      key in CommonSchema.get_schema_reflection(source, :query_fields) ->
         {operator, value} = normalize_operator_value(value)
-        apply_filter(schema, filter, query, binding_selector, key, {operator, value})
+        apply_filter(source, filter, query, binding_selector, key, {operator, value})
 
       true ->
-        warn_non_schema_key(schema, key)
+        warn_non_schema_key(source, key)
         query
     end
   end

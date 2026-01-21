@@ -76,7 +76,23 @@ defmodule EctoShorts.CommonFilters do
       ...> EctoShorts.CommonFilters.convert_params_to_filter(q, %{at: %{1 => %{where: %{first_name: %{==: "John"}}}}})
       #Ecto.Query<from u0 in EctoShorts.Schema.Post, as: :custom_alias, where: u0.first_name == ^"John">
   """
-  def convert_params_to_filter(source, params, opts \\ []) do
+  def convert_params_to_filter(source, params, opts \\ [])
+
+  def convert_params_to_filter(source, params, opts) when is_map(params) do
+    convert_to_query_language(source, Map.to_list(params), opts)
+  end
+
+  def convert_params_to_filter(source, entries, opts) when is_list(entries) do
+    if Keyword.keyword?(entries) do
+      convert_to_query_language(source, entries, opts)
+    else
+      Enum.reduce(entries, source, fn params, acc ->
+        convert_to_query_language(acc, params, opts)
+      end)
+    end
+  end
+
+  defp convert_to_query_language(source, params, opts) do
     {table_name, schema} = normalize_source(source)
 
     query = normalize_base_query(source, {table_name, schema})
@@ -84,16 +100,17 @@ defmodule EctoShorts.CommonFilters do
     # TODO: When querying by bare table name (schema is nil), callers may need to explicitly
     # provide a :select (Ecto.Repo.all/2 does not auto-select fields without a schema).
 
-    if (is_map(params) and not is_struct(params)) or Keyword.keyword?(params) do
+    if (is_map(params) and not is_struct(params)) or Utils.key_values?(params) do
       params
       |> normalize_params()
       |> Enum.reduce(query, fn {_, _} = p, q ->
-        reduce_filter_params(schema, p, q, opts)
+        apply_filter_params(schema, p, q, opts)
       end)
     else
       EctoShorts.Logger.warning(
         @logger_prefix,
-        "Expected params to be a map or keyword list, got: #{inspect(params)}"
+        "Expected params to be a map or keyword list, got: #{inspect(params)}. " <>
+          "No filters were applied to the query."
       )
 
       query
@@ -162,12 +179,12 @@ defmodule EctoShorts.CommonFilters do
     {nil, nil}
   end
 
-  defp reduce_filter_params(schema, {key, value}, query, opts)
+  defp apply_filter_params(schema, {key, value}, query, opts)
        when key in @pagination_filters do
     apply_pagination_filter(schema, key, value, query, opts)
   end
 
-  defp reduce_filter_params(schema, {bool_op, values}, query, opts)
+  defp apply_filter_params(schema, {bool_op, values}, query, opts)
        when bool_op in @boolean_operators and is_list(values) do
     apply_query_builder(
       schema,
@@ -179,7 +196,7 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp reduce_filter_params(schema, {bind_op, binding_params}, query, opts)
+  defp apply_filter_params(schema, {bind_op, binding_params}, query, opts)
        when bind_op in @binding_operators do
     if Utils.key_values?(binding_params) do
       Enum.reduce(binding_params, query, fn {bind_to, filter_params}, updated_query ->
@@ -211,7 +228,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_filter_params(
+  defp apply_filter_params(
          schema,
          {filter, {level_1_key, {level_2_key, {level_3_key, filter_value}}}},
          query,
@@ -220,7 +237,7 @@ defmodule EctoShorts.CommonFilters do
        when is_map(filter_value) or is_list(filter_value) do
     if Utils.key_values?(filter_value) and level_2_key not in @boolean_operators do
       Enum.reduce(filter_value, query, fn value, updated_query ->
-        reduce_filter_params(
+        apply_filter_params(
           schema,
           {filter, {level_1_key, {level_2_key, {level_3_key, value}}}},
           updated_query,
@@ -239,7 +256,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_filter_params(
+  defp apply_filter_params(
          schema,
          {filter, {level_1_key, {level_2_key, term}}},
          query,
@@ -248,7 +265,7 @@ defmodule EctoShorts.CommonFilters do
        when is_map(term) or is_list(term) do
     if Utils.key_values?(term) and level_2_key not in @boolean_operators do
       Enum.reduce(term, query, fn value, updated_query ->
-        reduce_filter_params(
+        apply_filter_params(
           schema,
           {filter, {level_1_key, {level_2_key, value}}},
           updated_query,
@@ -267,7 +284,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_filter_params(schema, {filter, {level_1_key, {level_2_key, value}}}, query, opts) do
+  defp apply_filter_params(schema, {filter, {level_1_key, {level_2_key, value}}}, query, opts) do
     apply_query_builder(
       schema,
       filter,
@@ -278,7 +295,7 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp reduce_filter_params(schema, {filter, {field, term}}, query, opts) do
+  defp apply_filter_params(schema, {filter, {field, term}}, query, opts) do
     if Utils.key_values?(term) do
       is_association? = is_atom(schema) and schema_association?(schema, field)
 
@@ -292,7 +309,7 @@ defmodule EctoShorts.CommonFilters do
         )
       else
         Enum.reduce(term, query, fn value, updated_query ->
-          reduce_filter_params(schema, {filter, {field, value}}, updated_query, opts)
+          apply_filter_params(schema, {filter, {field, value}}, updated_query, opts)
         end)
       end
     else
@@ -307,16 +324,16 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_filter_params(schema, {filter, filter_term}, query, opts)
+  defp apply_filter_params(schema, {filter, filter_term}, query, opts)
        when filter in @select_filters do
     apply_query_builder(schema, filter, query, {:as, nil}, filter_term, opts)
   end
 
-  defp reduce_filter_params(schema, {filter, filter_term}, query, opts)
+  defp apply_filter_params(schema, {filter, filter_term}, query, opts)
        when is_nil(filter) or filter in @where_filters do
     if Utils.key_values?(filter_term) do
       Enum.reduce(filter_term, query, fn value, updated_query ->
-        reduce_filter_params(schema, {filter, value}, updated_query, opts)
+        apply_filter_params(schema, {filter, value}, updated_query, opts)
       end)
     else
       EctoShorts.Logger.warning(
@@ -328,7 +345,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_filter_params(schema, {filter, {boolean_operator, filter_values}}, query, opts)
+  defp apply_filter_params(schema, {filter, {boolean_operator, filter_values}}, query, opts)
        when (is_nil(filter) or filter in @where_filters) and
               boolean_operator in @boolean_operators and
               is_list(filter_values) do
@@ -342,8 +359,8 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp reduce_filter_params(schema, {key, value}, query, opts) do
-    reduce_filter_params(schema, {nil, %{key => value}}, query, opts)
+  defp apply_filter_params(schema, {key, value}, query, opts) do
+    apply_filter_params(schema, {nil, %{key => value}}, query, opts)
   end
 
   defp apply_binding_filter_param(
@@ -669,8 +686,8 @@ defmodule EctoShorts.CommonFilters do
 
   defp normalize_params(map) when is_map(map) and not is_struct(map) do
     map
-    |> Enum.map(fn {k, v} -> {k, normalize_params(v)} end)
-    |> sort_filter_params()
+    |> Map.to_list()
+    |> normalize_params()
   end
 
   defp normalize_params(list) when is_list(list) do
@@ -680,8 +697,8 @@ defmodule EctoShorts.CommonFilters do
 
       Utils.key_values?(list) ->
         list
+        |> sort_keys()
         |> Enum.map(fn {k, v} -> {k, normalize_params(v)} end)
-        |> sort_filter_params()
 
       true ->
         Enum.map(list, &normalize_params/1)
@@ -692,24 +709,69 @@ defmodule EctoShorts.CommonFilters do
     term
   end
 
-  defp sort_filter_params(params) do
-    where_filters = Enum.filter(params, fn {k, _} -> k === :where end)
-    or_where_filters = Enum.filter(params, fn {k, _} -> k === :or_where end)
+  # ********************************** IMPORTANT **********************************
+  #
+  # Parameter ordering is critical for correct SQL generation due to how Ecto
+  # composes query clauses. `Ecto.Query.or_where/2` behaves differently depending
+  # on whether a `WHERE` clause already exists in the query:
+  #
+  # `Ecto.Query.or_where/2` behaves differently based on query state:
+  #
+  #   * If no WHERE clause exists: creates the initial WHERE clause
+  #   * If a WHERE clause exists: adds an OR condition to the existing clause
+  #
+  # The processing order must be:
+  #
+  #   1. `where` - Sets the base `WHERE` clause.
+  #   2. `params` - Regular field parameters are processed next which can contain implicit `where` filters.
+  #   3. `or_where` - The `:or_where` filters then add OR conditions to this base clause.
+  #   4. `last` - The `:last` filter is processed last.
+  #
+  # Let's explore two scenarios:
+  #
+  # Given params `%{published: true, or_where: %{published: false}}`
+  #
+  # Scenario 1:
+  #
+  # If the order is `published: true` -> `or_where: %{published: false}` it does
+  # the same thing as:
+  #
+  #     schema
+  #     |> Query.where([p], p.published == true)      # Creates: WHERE (published = true)
+  #     |> Query.or_where([p], p.published == false)  # Adds: OR (published = false)
+  #     #Ecto.Query<from p0 in Post, where: p0.published == true or p0.published == false>
+  #
+  # This gives us the expected result.
+  #
+  # Scenario 2:
+  #
+  # If the order is `or_where: %{published: false}` -> `published: true`:
+  #
+  #     schema
+  #     |> Query.or_where([p], p.published == false)  # Creates: WHERE (published = false)
+  #     |> Query.where([p], p.published == true)      # Adds: AND (published = true)
+  #     #Ecto.Query<from p0 in Post, where: p0.published == false, where: p0.published == true>
+  #
+  # This is incorrect because `Query.or_where/2` creates an initial WHERE clause
+  # when none exists, and subsequent `Query.where/2` calls AND new conditions
+  # together. Regular fields and `:where` filters must be processed before
+  # `:or_where` to ensure a base WHERE clause exists for `or_where/2` to
+  # correctly add OR conditions.
+  defp sort_keys(params) do
+    where_filters = Utils.enum_take(params, [:where])
+    or_where_filters = Utils.enum_take(params, [:or_where])
     last_filter = List.keyfind(params, :last, 0)
 
-    rest =
-      where_filters
-      |> Kernel.++(or_where_filters)
-      |> Kernel.++([last_filter])
-      |> Enum.reject(&is_nil/1)
+    sorted_params =
+      params
+      |> Utils.enum_drop([:where, :or_where, :last])
+      |> Enum.sort_by(&elem(&1, 0))
 
-    params
-    |> Enum.reject(fn
-      {key, _} when key in [:where, :or_where, :last] -> true
-      _ -> false
-    end)
-    |> Enum.sort_by(&elem(&1, 0))
-    |> Kernel.++(rest)
+    where_filters
+    |> Kernel.++(sorted_params)
+    |> Kernel.++(or_where_filters)
+    |> Kernel.++([last_filter])
+    |> Enum.reject(&is_nil/1)
   end
 
   defp binding_selector?(:as, selector), do: is_nil(selector) or is_atom(selector)

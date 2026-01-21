@@ -170,7 +170,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp normalize_insert_params(schema, params, opts) do
-    query_fields = Keyword.get(opts, :query_fields, schema.__schema__(:query_fields))
+    query_fields = get_query_fields(opts, schema)
 
     params
     |> to_map!()
@@ -264,7 +264,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp normalize_insert_entry(schema, %_{} = schema_data, opts) do
-    changed_keys = Keyword.get(opts, :query_fields, schema.__schema__(:query_fields))
+    changed_keys = get_query_fields(opts, schema)
 
     with {:ok, insert_data} <- build_struct(schema, schema_data, %{}, opts) do
       {:ok, insert_data, changed_keys}
@@ -273,7 +273,7 @@ defmodule EctoShorts.CommonParams do
 
   defp normalize_insert_entry(schema, params, opts) do
     params = normalize_insert_params(schema, params, opts)
-    query_fields = Keyword.get(opts, :query_fields, schema.__schema__(:query_fields))
+    query_fields = get_query_fields(opts, schema)
     changed_keys = keys_changed_in_params(query_fields, params)
 
     with {:ok, insert_data} <- build_schema_data(schema, params, opts) do
@@ -323,7 +323,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp build_insert_map(schema, insert_data, utc_now, changed_keys, opts) do
-    query_fields = Keyword.get(opts, :query_fields, schema.__schema__(:query_fields))
+    query_fields = get_query_fields(opts, schema)
 
     insert_data
     |> Map.take(query_fields)
@@ -468,7 +468,7 @@ defmodule EctoShorts.CommonParams do
 
     with updates when updates !== [] <-
            schema
-           |> build_update_operations(params, [])
+           |> build_update_operations(params, [], opts)
            |> group_update_operations() do
       updates
       |> put_set_updated_at(utc_now, schema, opts)
@@ -508,27 +508,27 @@ defmodule EctoShorts.CommonParams do
     end)
   end
 
-  defp build_update_operations(source, %{} = params, acc) do
-    build_update_operations(source, Map.to_list(params), acc)
+  defp build_update_operations(source, %{} = params, acc, opts) do
+    build_update_operations(source, Map.to_list(params), acc, opts)
   end
 
-  defp build_update_operations(_source, [], acc) do
+  defp build_update_operations(_source, [], acc, _opts) do
     acc
   end
 
-  defp build_update_operations(source, [head | tail], acc) do
-    with acc <- build_update_operations(source, head, acc) do
-      build_update_operations(source, tail, acc)
+  defp build_update_operations(source, [head | tail], acc, opts) do
+    with acc <- build_update_operations(source, head, acc, opts) do
+      build_update_operations(source, tail, acc, opts)
     end
   end
 
-  defp build_update_operations(source, {key, value}, acc) do
+  defp build_update_operations(source, {key, value}, acc, opts) do
     case source do
       nil ->
         normalize_update_value(nil, key, value, acc)
 
       schema ->
-        if key in schema.__schema__(:query_fields) do
+        if key in get_query_fields(opts, schema) do
           normalize_update_value(schema, key, value, acc)
         else
           acc
@@ -670,5 +670,9 @@ defmodule EctoShorts.CommonParams do
     datetime
     |> cast_datetime(timestamp_type)
     |> truncate_datetime()
+  end
+
+  defp get_query_fields(opts, source) do
+    Keyword.get(opts, :query_fields, CommonSchema.get_schema_reflection(source, :query_fields))
   end
 end
