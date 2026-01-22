@@ -771,7 +771,10 @@ defmodule EctoShorts.CommonFilters do
 
     # Regular field filters should be processed with where_filters since they
     # become implicit WHERE clauses and must come before or_where filters
-    field_filters = Utils.enum_drop(params, [:where, :or_where, :last])
+    field_filters =
+      params
+      |> Utils.enum_drop([:where, :or_where, :last])
+      |> Enum.map(fn term -> {:where, term} end)
 
     where_filters
     |> Kernel.++(field_filters)

@@ -197,6 +197,10 @@ defmodule EctoShorts.Actions.CRUD do
     end
   end
 
+  def delete(_queryable, %_{} = struct_or_changeset, opts) do
+    delete(struct_or_changeset, opts)
+  end
+
   @doc group: "CRUD"
   @doc """
   ...
