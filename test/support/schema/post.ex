@@ -7,27 +7,26 @@ defmodule EctoShorts.Schema.Post do
   require Ecto.Query
 
   schema "posts" do
-    belongs_to(:author, EctoShorts.Schema.User)
+    belongs_to :author, EctoShorts.Schema.User
 
-    many_to_many(:authors, EctoShorts.Schema.User,
+    many_to_many :authors, EctoShorts.Schema.User,
       join_through: EctoShorts.Schema.PostAuthor,
       join_keys: [post_id: :id, author_id: :id],
       unique: true,
       on_replace: :delete
-    )
 
-    has_many(:comments, EctoShorts.Schema.Comment, on_replace: :delete)
-    has_many(:comments_authors, through: [:comments, :author])
-    has_many(:composite_primary_keys, EctoShorts.Schema.CompositePrimaryKey)
+    has_many :comments, EctoShorts.Schema.Comment, on_replace: :delete
+    has_many :comments_authors, through: [:comments, :author]
+    has_many :composite_primary_keys, EctoShorts.Schema.CompositePrimaryKey
 
-    field(:body, :string)
-    field(:notes, :string, source: :custom_string_field)
-    field(:permalink, :string)
-    field(:published_at, :utc_datetime)
-    field(:published, :boolean)
-    field(:title, :string)
-    field(:tags, {:array, :string})
-    field(:views, :integer)
+    field :body, :string
+    field :notes, :string, source: :custom_string_field
+    field :permalink, :string
+    field :published_at, :utc_datetime
+    field :published, :boolean
+    field :title, :string
+    field :tags, {:array, :string}
+    field :views, :integer
 
     timestamps()
   end

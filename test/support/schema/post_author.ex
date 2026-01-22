@@ -3,8 +3,8 @@ defmodule EctoShorts.Schema.PostAuthor do
   import Ecto.Changeset
 
   schema "posts_authors" do
-    belongs_to(:author, EctoShorts.Schema.User)
-    belongs_to(:post, EctoShorts.Schema.Post)
+    belongs_to :author, EctoShorts.Schema.User
+    belongs_to :post, EctoShorts.Schema.Post
 
     timestamps()
   end

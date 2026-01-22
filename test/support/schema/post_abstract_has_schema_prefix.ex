@@ -6,7 +6,7 @@ defmodule EctoShorts.Schema.PostAbstractHasSchemaPrefix do
   @schema_prefix "custom_schema_prefix"
 
   schema "abstract table: posts" do
-    field(:title, :string)
+    field :title, :string
 
     timestamps()
   end

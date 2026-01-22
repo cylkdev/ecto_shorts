@@ -6,9 +6,9 @@ defmodule EctoShorts.Schema.Book do
   @primary_key false
 
   schema "books" do
-    belongs_to(:author, EctoShorts.Schema.User, on_replace: :delete)
+    belongs_to :author, EctoShorts.Schema.User, on_replace: :delete
 
-    field(:title, :string)
+    field :title, :string
 
     timestamps()
   end

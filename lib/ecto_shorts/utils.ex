@@ -17,6 +17,12 @@ defmodule EctoShorts.Utils do
     end)
   end
 
+  def enum_fetch!(enum, key) do
+    with nil <- enum_get(enum, key, nil) do
+      raise "Key #{inspect(key)} not found."
+    end
+  end
+
   def enum_get(map, key, default) when is_map(map) do
     Map.get(map, key, default)
   end

@@ -18,6 +18,9 @@ defmodule EctoShorts.QueryBuilder.Joins do
 
       on =
         case params[:on] do
+          true ->
+            true
+
           nil ->
             true
 
@@ -49,7 +52,7 @@ defmodule EctoShorts.QueryBuilder.Joins do
           term ->
             EctoShorts.Logger.error(
               @logger_prefix,
-              "Expected :on to be a keyword list, got: #{inspect(term)}"
+              "Expected :on to be a keyword list, map, or true, got: #{inspect(term)}"
             )
 
             true

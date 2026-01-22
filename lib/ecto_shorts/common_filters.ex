@@ -694,12 +694,12 @@ defmodule EctoShorts.CommonFilters do
     cond do
       Keyword.keyword?(list) ->
         list
-        |> sort_keys()
+        |> sort_filter_params()
         |> Enum.map(fn {k, v} -> {k, normalize_params(v)} end)
 
       Utils.key_values?(list) ->
         list
-        |> sort_keys()
+        |> sort_filter_params()
         |> Enum.map(fn {k, v} -> {k, normalize_params(v)} end)
 
       true ->
@@ -759,7 +759,7 @@ defmodule EctoShorts.CommonFilters do
   # together. Regular fields and `:where` filters must be processed before
   # `:or_where` to ensure a base WHERE clause exists for `or_where/2` to
   # correctly add OR conditions.
-  defp sort_keys(params) do
+  defp sort_filter_params(params) do
     where_filters = Utils.enum_take(params, [:where])
     or_where_filters = Utils.enum_take(params, [:or_where])
 

@@ -4,8 +4,8 @@ defmodule EctoShorts.Schema.UserData do
   import Ecto.Changeset
 
   schema "data_stores" do
-    field(:data, :map)
-    belongs_to(:creator, EctoShorts.Schema.User)
+    field :data, :map
+    belongs_to :creator, EctoShorts.Schema.User
   end
 
   @available_fields [

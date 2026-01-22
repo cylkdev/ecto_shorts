@@ -4,19 +4,18 @@ defmodule EctoShorts.Schema.User do
   import Ecto.Changeset
 
   schema "users" do
-    field(:first_name, :string)
-    field(:last_name, :string)
-    field(:age, :integer)
-    field(:email, :string)
+    field :first_name, :string
+    field :last_name, :string
+    field :age, :integer
+    field :email, :string
 
-    many_to_many(:posts, EctoShorts.Schema.Post,
+    many_to_many :posts, EctoShorts.Schema.Post,
       join_through: EctoShorts.Schema.PostAuthor,
       join_keys: [author_id: :id, post_id: :id],
       unique: true
-    )
 
-    has_many(:comments, EctoShorts.Schema.Comment, foreign_key: :author_id, on_replace: :delete)
-    has_many(:books, EctoShorts.Schema.Book, foreign_key: :author_id, on_replace: :delete)
+    has_many :comments, EctoShorts.Schema.Comment, foreign_key: :author_id, on_replace: :delete
+    has_many :books, EctoShorts.Schema.Book, foreign_key: :author_id, on_replace: :delete
 
     timestamps()
   end
