@@ -47,7 +47,7 @@ defmodule EctoShorts.CommonFilters do
   @boolean_operators [:and, :or]
   @pagination_filters [:first, :last, :limit, :offset, :order_by, :preload]
   @where_filters [:where, :or_where]
-  @query_builder_filters [:select, :select_merge]
+  @query_builder_filters [:join, :select, :select_merge]
 
   @doc """
   Convert a map of params to a query.
