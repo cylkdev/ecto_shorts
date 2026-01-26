@@ -22,7 +22,64 @@ defmodule EctoShorts.CommonSchema do
   This approach allows reusing schema modules across different tables,
   as long as the table structure matches the schema definition.
   """
+  alias Ecto.Queryable
   alias EctoShorts.CommonQuery
+
+  def normalize_source(%Ecto.Query{} = query) do
+    query
+    |> CommonQuery.get_query_source()
+    |> normalize_source()
+  end
+
+  def normalize_source({nil, schema_module})
+      when is_atom(schema_module) and schema_module !== nil do
+    {nil, schema_module}
+  end
+
+  def normalize_source({table_name, nil}) when is_binary(table_name) and table_name !== "" do
+    {table_name, nil}
+  end
+
+  def normalize_source({table_name, schema_module})
+      when is_binary(table_name) and table_name !== "" and is_atom(schema_module) and
+             schema_module !== nil do
+    {table_name, schema_module}
+  end
+
+  def normalize_source(schema_module) when is_atom(schema_module) and schema_module !== nil do
+    {nil, schema_module}
+  end
+
+  def normalize_source(table_name) when is_binary(table_name) and table_name !== "" do
+    {table_name, nil}
+  end
+
+  def normalize_source(term) do
+    raise ArgumentError, """
+    Expected source to be one of the following:
+
+    - `Ecto.Query.t()` - An Ecto.Query struct
+    - `binary()` - The table name as a string
+    - `Ecto.Schema.t()` - An Ecto.Schema module
+    - `{binary(), Ecto.Schema.t()}` - The table name and the Ecto.Schema module
+    - `{nil, Ecto.Schema.t()}` - No table name and an Ecto.Schema module
+    - `{binary(), nil}` - The table name and no Ecto.Schema module
+
+    got:
+
+    #{inspect(term)}
+    """
+  end
+
+  def to_query(%Ecto.Query{} = query), do: query
+
+  def to_query(source) do
+    case normalize_source(source) do
+      {nil, schema} -> Queryable.to_query(schema)
+      {table_name, nil} -> Queryable.to_query(table_name)
+      {table_name, schema} -> Queryable.to_query({table_name, schema})
+    end
+  end
 
   @doc """
   Invokes the `__schema__/1` get_schema_reflection function.

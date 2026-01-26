@@ -4,23 +4,16 @@ defmodule EctoShorts.QueryBuilder do
   alias EctoShorts.QueryBuilder.Postgres
 
   @callback build_query(
-              filter :: any(),
-              schema :: any(),
+              source :: any(),
               query :: any(),
               binding_selector :: {:at, pos_integer()} | {:as, atom()},
-              term :: any(),
+              current_filter :: any(),
+              args :: any(),
               opts :: keyword()
             ) :: Ecto.Query.t()
 
-  def build_query(
-        schema,
-        filter,
-        query,
-        binding_selector,
-        join_params,
-        opts \\ []
-      ) do
-    adapter(opts).build_query(schema, filter, query, binding_selector, join_params, opts)
+  def build_query(source, query, binding_selector, current_filter, args, opts \\ []) do
+    adapter(opts).build_query(source, query, binding_selector, current_filter, args, opts)
   end
 
   defp adapter(opts) do
