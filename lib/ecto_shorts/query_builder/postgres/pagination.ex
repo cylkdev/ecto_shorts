@@ -4,6 +4,10 @@ defmodule EctoShorts.QueryBuilder.Postgres.Pagination do
 
   require Ecto.Query
 
+  @filters [:first, :last, :limit, :offset, :order_by, :preload]
+
+  def filters, do: @filters
+
   def build_query(_schema, query, :first, limit_value) do
     limit(query, limit_value)
   end

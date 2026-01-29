@@ -7,6 +7,7 @@ defmodule EctoShorts.MixProject do
       version: "2.5.0",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
+      aliases: aliases(),
       deps: deps(),
       description: "Helper tools for making ecto interactions more pleasant and shorter",
       docs: docs(),
@@ -95,6 +96,14 @@ defmodule EctoShorts.MixProject do
           EctoShorts.SchemaHelpers
         ]
       ]
+    ]
+  end
+
+  defp aliases do
+    [
+      setup: ["deps.get", "ecto.setup"],
+      "ecto.setup": ["ecto.create", "ecto.migrate"],
+      "ecto.reset": ["ecto.drop", "ecto.setup"]
     ]
   end
 end

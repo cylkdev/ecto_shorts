@@ -2,75 +2,231 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
   alias EctoShorts.QueryBuilder
+  alias EctoShorts.SchemaHelpers
+
+  @logger_prefix "EctoShorts.CommonFilters"
 
   @binding_operators [:as, :at]
-  @delegated_filters [:join, :offset, :limit, :select, :select_merge]
-
   @default_binding_selector {:as, nil}
-  @default_filter :where
 
-  def convert_params_to_filter(source, args, opts) do
+  @where :where
+  @schema_filters [:where, :or_where]
+  @query_filters [
+    :join,
+    :offset,
+    :limit,
+    :select,
+    :select_merge,
+    :first,
+    :last,
+    :order_by,
+    :preload
+  ]
+
+  def convert_params_to_filter(source, params, opts) do
     schema_source = CommonSchema.normalize_source(source)
 
     query = CommonSchema.to_query(source)
 
-    entries =
-      args
-      |> list_wrap()
-      |> Enum.map(&normalize_params/1)
+    params
+    |> list_wrap()
+    |> Enum.reduce(query, fn params, query_acc ->
+      normalized_params = normalize_params(params)
 
-    Enum.reduce(entries, query, fn entry, query_acc ->
-      if is_map(entry) or Keyword.keyword?(entry) do
+      if is_map(normalized_params) or Keyword.keyword?(normalized_params) do
         reduce_params(
           schema_source,
           query_acc,
           @default_binding_selector,
-          @default_filter,
-          entry,
+          @where,
+          normalized_params,
           opts
         )
       else
-        raise ArgumentError, "Expected args to be a map or list, got: #{inspect(entry)}"
+        raise ArgumentError, "Expected params to be a map or list, got: #{inspect(params)}"
       end
     end)
   end
 
-  defp reduce_params(source, query, bind_select, current_filter, {key, value}, opts) do
+  defp reduce_params(schema_source, query, binding_selector, current_filter, {key, value}, opts) do
     cond do
-      key in @delegated_filters ->
-        apply_query_builder(source, query, bind_select, key, value, opts)
+      key in @schema_filters ->
+        if is_map(value) or is_list(value) do
+          Enum.reduce(value, query, fn entry, query_acc ->
+            build_schema_filters(schema_source, query_acc, binding_selector, key, entry, opts)
+          end)
+        else
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Expected params for #{key} to be a map or keyword list, got: #{inspect(value)}"
+          )
+
+          query
+        end
+
+      key in Keyword.get(opts, :query_filters, @query_filters) ->
+        apply_query_builder(schema_source, query, binding_selector, key, value, opts)
 
       key in @binding_operators ->
-        Enum.reduce(value, query, fn {bind_to, params}, query_acc ->
-          reduce_params(source, query_acc, {key, bind_to}, current_filter, params, opts)
-        end)
+        if is_map(value) or is_list(value) do
+          Enum.reduce(value, query, fn {bind_to, params}, query_acc ->
+            reduce_binding_params(
+              schema_source,
+              query_acc,
+              {key, bind_to},
+              current_filter,
+              params,
+              opts
+            )
+          end)
+        else
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Expected value for binding selector to be a map or keyword list, got: #{inspect(value)}"
+          )
+
+          query
+        end
 
       true ->
-        build_schema_filters(source, query, bind_select, current_filter, {key, value}, opts)
+        case CommonSchema.get_schema_reflection(schema_source, :associations) do
+          nil ->
+            build_schema_filters(
+              schema_source,
+              query,
+              binding_selector,
+              current_filter,
+              {key, value},
+              opts
+            )
+
+          assocs ->
+            if key in assocs do
+              build_join_filters(
+                schema_source,
+                query,
+                binding_selector,
+                current_filter,
+                key,
+                value,
+                opts
+              )
+            else
+              build_schema_filters(
+                schema_source,
+                query,
+                binding_selector,
+                current_filter,
+                {key, value},
+                opts
+              )
+            end
+        end
     end
   end
 
-  defp reduce_params(source, query, bind_select, current_filter, args, opts) do
-    if is_map(args) do
-      reduce_params(source, query, bind_select, current_filter, Map.to_list(args), opts)
+  defp reduce_params(schema_source, query, binding_selector, current_filter, params, opts) do
+    if is_map(params) do
+      reduce_params(
+        schema_source,
+        query,
+        binding_selector,
+        current_filter,
+        Map.to_list(params),
+        opts
+      )
     else
-      if Keyword.keyword?(args) do
-        Enum.reduce(args, query, fn {key, value}, query_acc ->
-          reduce_params(source, query_acc, bind_select, current_filter, {key, value}, opts)
+      if Keyword.keyword?(params) do
+        Enum.reduce(params, query, fn {key, value}, query_acc ->
+          reduce_params(
+            schema_source,
+            query_acc,
+            binding_selector,
+            current_filter,
+            {key, value},
+            opts
+          )
         end)
       else
-        apply_query_builder(source, query, bind_select, current_filter, args, opts)
+        apply_query_builder(schema_source, query, binding_selector, current_filter, params, opts)
       end
     end
   end
 
-  defp build_schema_filters(source, query, bind_select, current_filter, {key, value}, opts) do
+  defp reduce_binding_params(schema_source, query, {bind_op, bind_to}, filter, params, opts) do
+    case {bind_op, bind_to} do
+      {:as, bind_alias} when is_atom(bind_alias) ->
+        reduce_params(schema_source, query, {:as, bind_alias}, filter, params, opts)
+
+      {:at, bind_index} when is_integer(bind_index) ->
+        reduce_params(schema_source, query, {:at, bind_index}, filter, params, opts)
+
+      binding_selector ->
+        EctoShorts.Logger.warning(
+          @logger_prefix,
+          "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: #{inspect(binding_selector)}"
+        )
+
+        query
+    end
+  end
+
+  defp build_join_filters(
+         {_, parent_schema} = schema_source,
+         query,
+         binding_selector,
+         filter,
+         assoc_key,
+         params,
+         opts
+       ) do
+    if Keyword.keyword?(params) do
+      assoc_schema = SchemaHelpers.get_related_schema(parent_schema, assoc_key)
+
+      joined_query =
+        apply_query_builder(
+          schema_source,
+          query,
+          binding_selector,
+          :join,
+          {:association, assoc_key, Keyword.take(params, [:as, :on, :type])},
+          opts
+        )
+
+      {join_bind_op, join_bind_to} =
+        if Keyword.has_key?(params, :as) do
+          {:as, Keyword.get(params, :as, nil)}
+        else
+          {:at, CommonQuery.query_binding_count(joined_query)}
+        end
+
+      reduce_params(
+        assoc_schema,
+        joined_query,
+        {join_bind_op, join_bind_to},
+        filter,
+        Keyword.drop(params, [:as, :on, :type]),
+        opts
+      )
+    else
+      query
+    end
+  end
+
+  defp build_schema_filters(
+         schema_source,
+         query,
+         binding_selector,
+         current_filter,
+         {key, value},
+         opts
+       ) do
     cond do
       is_map(value) ->
         reduce_params(
-          source,
+          schema_source,
           query,
-          bind_select,
+          binding_selector,
           current_filter,
           {key, Map.to_list(value)},
           opts
@@ -80,57 +236,62 @@ defmodule EctoShorts.CommonFilters do
         if Keyword.keyword?(value) do
           Enum.reduce(value, query, fn {key2, value2}, query_acc ->
             reduce_params(
-              source,
+              schema_source,
               query_acc,
-              bind_select,
+              binding_selector,
               current_filter,
               {key, {key2, value2}},
               opts
             )
           end)
         else
-          apply_query_builder(source, query, bind_select, current_filter, {key, value}, opts)
+          apply_query_builder(
+            schema_source,
+            query,
+            binding_selector,
+            current_filter,
+            {key, value},
+            opts
+          )
         end
 
       true ->
-        apply_query_builder(source, query, bind_select, current_filter, {key, value}, opts)
+        apply_query_builder(
+          schema_source,
+          query,
+          binding_selector,
+          current_filter,
+          {key, value},
+          opts
+        )
     end
   end
 
-  defp apply_query_builder(source, query, bind_select, current_filter, args, opts) do
-    source
-    |> resolve_binding_source(query, bind_select)
+  defp apply_query_builder(schema_source, query, binding_selector, current_filter, params, opts) do
+    schema_source
+    |> to_binding_source(query, binding_selector)
     |> QueryBuilder.build_query(
       query,
-      bind_select,
+      binding_selector,
       current_filter,
-      args,
+      params,
       opts
     )
   end
 
-  defp resolve_binding_source(source, _query, {:as, nil}) do
-    source
+  defp to_binding_source(schema_source, _query, {:as, nil}) do
+    schema_source
   end
 
-  defp resolve_binding_source(_source, query, {_bind_op, bind_to}) do
+  defp to_binding_source(_source, query, {_bind_op, bind_to}) do
     CommonQuery.get_query_binding_source(query, bind_to)
   end
 
   defp list_wrap(term) do
     cond do
-      is_map(term) ->
-        [term]
-
-      is_list(term) ->
-        if Keyword.keyword?(term) do
-          [term]
-        else
-          term
-        end
-
-      true ->
-        [term]
+      is_map(term) -> [term]
+      is_list(term) -> if Keyword.keyword?(term), do: [term], else: term
+      true -> [term]
     end
   end
 
@@ -170,12 +331,13 @@ defmodule EctoShorts.CommonFilters do
         last -> [last]
       end
 
-    # Regular field filters should be processed with where_filters since they
-    # become implicit WHERE clauses and must come before or_where filters
-    field_filters = Keyword.drop(params, [:where, :or_where, :last])
+    # Regular field filters should be processed with where_filters
+    # since they can contain implicit WHERE clauses and must come
+    # before or_where filters
+    rest = Keyword.drop(params, [:where, :or_where, :last])
 
     where_filters
-    |> Kernel.++(field_filters)
+    |> Kernel.++(rest)
     |> Kernel.++(or_where_filters)
     |> Kernel.++(last_filter)
   end
@@ -229,8 +391,8 @@ end
 #   @binding_operators [:as, :at]
 #   @boolean_operators [:and, :or]
 #   @pagination_filters [:first, :last, :limit, :offset, :order_by, :preload]
-#   @where_filters [:where, :or_where]
-#   @delegated_filters [:join, :select, :select_merge]
+#   @schema_filters [:where, :or_where]
+#   @query_filters [:join, :select, :select_merge]
 
 #   @doc """
 #   Convert a map of params to a query.
@@ -482,7 +644,7 @@ end
 #     if Utils.key_values?(term) do
 #       is_association? = is_atom(schema) and schema_association?(schema, field)
 
-#       if is_association? and (is_nil(filter) or filter in @where_filters) do
+#       if is_association? and (is_nil(filter) or filter in @schema_filters) do
 #         join_and_apply_assoc_filters(
 #           schema,
 #           query,
@@ -508,12 +670,12 @@ end
 #   end
 
 #   defp apply_query_builder_params(schema, {filter, filter_term}, query, opts)
-#        when filter in @delegated_filters do
+#        when filter in @query_filters do
 #     apply_query_builder(schema, filter, query, {:as, nil}, filter_term, opts)
 #   end
 
 #   defp apply_query_builder_params(schema, {filter, filter_term}, query, opts)
-#        when is_nil(filter) or filter in @where_filters do
+#        when is_nil(filter) or filter in @schema_filters do
 #     if Utils.key_values?(filter_term) do
 #       Enum.reduce(filter_term, query, fn value, updated_query ->
 #         apply_query_builder_params(schema, {filter, value}, updated_query, opts)
@@ -529,7 +691,7 @@ end
 #   end
 
 #   defp apply_query_builder_params(schema, {filter, {boolean_operator, filter_values}}, query, opts)
-#        when (is_nil(filter) or filter in @where_filters) and
+#        when (is_nil(filter) or filter in @schema_filters) and
 #               boolean_operator in @boolean_operators and
 #               is_list(filter_values) do
 #     apply_query_builder(
@@ -605,7 +767,7 @@ end
 #          opts
 #        )
 #        when (is_map(filter_params) or is_list(filter_params)) and
-#               (is_nil(filter) or filter in @where_filters) do
+#               (is_nil(filter) or filter in @schema_filters) do
 #     if Utils.key_values?(filter_params) and not is_nil(schema) and
 #          schema_association?(schema, field) do
 #       join_and_apply_assoc_filters(
@@ -658,7 +820,7 @@ end
 #          query,
 #          opts
 #        )
-#        when filter in @delegated_filters do
+#        when filter in @query_filters do
 #     apply_query_builder(
 #       schema,
 #       filter,
@@ -678,7 +840,7 @@ end
 #          query,
 #          opts
 #        )
-#        when is_nil(filter) or filter in @where_filters do
+#        when is_nil(filter) or filter in @schema_filters do
 #     if Utils.key_values?(term) do
 #       Enum.reduce(term, query, fn {_, _} = value, updated_query ->
 #         apply_schema_binding_filter(
@@ -775,7 +937,7 @@ end
 #           opts
 #         )
 
-#       {next_bind_op, next_bind_to} =
+#       {join_bind_op, join_bind_to} =
 #         if Utils.enum_has_key?(normalized_params, :as) do
 #           {:as, Utils.enum_get(normalized_params, :as, nil)}
 #         else
@@ -784,8 +946,8 @@ end
 
 #       apply_binding_filter_param(
 #         assoc_schema,
-#         next_bind_op,
-#         next_bind_to,
+#         join_bind_op,
+#         join_bind_to,
 #         Utils.enum_drop(normalized_params, [:as, :on, :type]),
 #         updated_query,
 #         opts
@@ -809,7 +971,7 @@ end
 #          opts
 #        ) do
 #     if binding_selector?(bind_op, bind_to) do
-#       case resolve_binding_source({bind_op, bind_to}, schema, query) do
+#       case to_binding_source({bind_op, bind_to}, schema, query) do
 #         {:ok, binding_schema} ->
 #           QueryBuilder.build_query(
 #             binding_schema,
@@ -838,7 +1000,7 @@ end
 #     end
 #   end
 
-#   defp resolve_binding_source({bind_op, bind_to}, schema, query) do
+#   defp to_binding_source({bind_op, bind_to}, schema, query) do
 #     case {bind_op, bind_to} do
 #       {:as, nil} ->
 #         {:ok, schema}
@@ -943,8 +1105,8 @@ end
 #   # `:or_where` to ensure a base WHERE clause exists for `or_where/2` to
 #   # correctly add OR conditions.
 #   defp sort_filter_params(params) do
-#     where_filters = Utils.enum_take(params, [:where])
-#     or_where_filters = Utils.enum_take(params, [:or_where])
+#     schema_filters = Utils.enum_take(params, [:where])
+#     or_schema_filters = Utils.enum_take(params, [:or_where])
 
 #     last_filter =
 #       case List.keyfind(params, :last, 0) do
@@ -952,16 +1114,16 @@ end
 #         last -> [last]
 #       end
 
-#     # Regular field filters should be processed with where_filters since they
+#     # Regular field filters should be processed with schema_filters since they
 #     # become implicit WHERE clauses and must come before or_where filters
 #     field_filters =
 #       params
 #       |> Utils.enum_drop([:where, :or_where, :last])
 #       |> Enum.map(fn term -> {:where, term} end)
 
-#     where_filters
+#     schema_filters
 #     |> Kernel.++(field_filters)
-#     |> Kernel.++(or_where_filters)
+#     |> Kernel.++(or_schema_filters)
 #     |> Kernel.++(last_filter)
 #   end
 

@@ -131,13 +131,13 @@ defmodule EctoShorts.CommonSchemaTest do
     end
   end
 
-  describe "to_schema_struct/1" do
+  describe "create_schema_struct/1" do
     test "builds a struct for a schema module" do
-      assert %User{} = CommonSchema.to_schema_struct(User)
+      assert %User{} = CommonSchema.create_schema_struct(User)
     end
 
     test "builds a struct for a source tuple and sets metadata" do
-      struct = CommonSchema.to_schema_struct({"custom_posts", PostAbstract})
+      struct = CommonSchema.create_schema_struct({"custom_posts", PostAbstract})
       meta = CommonSchema.get_schema_metadata(struct)
 
       assert meta.schema == PostAbstract

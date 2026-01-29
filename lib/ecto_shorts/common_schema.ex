@@ -25,6 +25,30 @@ defmodule EctoShorts.CommonSchema do
   alias Ecto.Queryable
   alias EctoShorts.CommonQuery
 
+  @doc """
+  ...
+  """
+  def to_query(%Ecto.Query{} = query), do: query
+
+  def to_query(source) do
+    case normalize_source(source) do
+      {nil, schema} -> Queryable.to_query(schema)
+      {table_name, nil} -> Queryable.to_query(table_name)
+      {table_name, schema} -> Queryable.to_query({table_name, schema})
+    end
+  end
+
+  @doc """
+  ...
+  """
+  def normalize_source(%{data: %{__meta__: %{source: source, schema: schema}}}) do
+    {source, schema}
+  end
+
+  def normalize_source(%{__meta__: %{source: source, schema: schema}}) do
+    {source, schema}
+  end
+
   def normalize_source(%Ecto.Query{} = query) do
     query
     |> CommonQuery.get_query_source()
@@ -71,87 +95,27 @@ defmodule EctoShorts.CommonSchema do
     """
   end
 
-  def to_query(%Ecto.Query{} = query), do: query
-
-  def to_query(source) do
+  @doc """
+  ...
+  """
+  def get_schema(source) do
     case normalize_source(source) do
-      {nil, schema} -> Queryable.to_query(schema)
-      {table_name, nil} -> Queryable.to_query(table_name)
-      {table_name, schema} -> Queryable.to_query({table_name, schema})
+      {_, schema} when is_atom(schema) and schema !== nil ->
+        schema
+
+      _ ->
+        nil
     end
   end
 
   @doc """
-  Invokes the `__schema__/1` get_schema_reflection function.
-
-  ### Examples
-
-      iex> EctoShorts.CommonSchema.get_schema_reflection(EctoShorts.Schema.Post, :primary_key)
-      [:id]
-
-      iex> EctoShorts.CommonSchema.get_schema_reflection({"posts", EctoShorts.Schema.PostAbstract}, :primary_key)
-      [:id]
+  ...
   """
-  def get_schema_reflection(%Ecto.Query{} = query, arg) do
-    query
-    |> CommonQuery.get_query_source()
-    |> get_schema_reflection(arg)
+  def fetch_schema!(source) do
+    with nil <- get_schema(source) do
+      raise ArgumentError, "Ecto.Schema not found in source: #{inspect(source)}"
+    end
   end
-
-  def get_schema_reflection({_, schema}, arg) when is_atom(schema), do: schema.__schema__(arg)
-
-  def get_schema_reflection(schema, arg) when is_atom(schema), do: schema.__schema__(arg)
-
-  @doc """
-  Invokes the `__schema__/2` reflection function.
-
-  ### Examples
-
-      iex> EctoShorts.CommonSchema.get_schema_reflection(EctoShorts.Schema.Post, :type, :id)
-      :id
-
-      iex> EctoShorts.CommonSchema.get_schema_reflection({"posts", EctoShorts.Schema.PostAbstract}, :type, :id)
-      :id
-  """
-  def get_schema_reflection(%Ecto.Query{} = query, arg1, arg2) do
-    query
-    |> CommonQuery.get_query_source()
-    |> get_schema_reflection(arg1, arg2)
-  end
-
-  def get_schema_reflection({_, schema}, arg1, arg2) when is_atom(schema) do
-    schema.__schema__(arg1, arg2)
-  end
-
-  def get_schema_reflection(schema, arg1, arg2) when is_atom(schema) do
-    schema.__schema__(arg1, arg2)
-  end
-
-  @doc """
-  Returns the `prefix` defined in the schema, if any.
-
-  ## Examples
-
-      iex> EctoShorts.CommonSchema.get_schema_prefix(EctoShorts.Schema.PostHasSchemaPrefix)
-      "custom_schema_prefix"
-
-      iex> EctoShorts.CommonSchema.get_schema_prefix({"posts", EctoShorts.Schema.PostAbstractHasSchemaPrefix})
-      "custom_schema_prefix"
-
-      iex> EctoShorts.CommonSchema.get_schema_prefix(%EctoShorts.Schema.PostHasSchemaPrefix{})
-      "custom_schema_prefix"
-  """
-  def get_schema_prefix(%Ecto.Query{} = query) do
-    query
-    |> CommonQuery.get_query_source()
-    |> get_schema_prefix()
-  end
-
-  def get_schema_prefix(%{__meta__: %{prefix: schema_prefix}}), do: schema_prefix
-
-  def get_schema_prefix({_, schema}) when is_atom(schema), do: schema.__schema__(:prefix)
-
-  def get_schema_prefix(schema) when is_atom(schema), do: schema.__schema__(:prefix)
 
   @doc """
   Returns a `{source, schema}` tuple where `source`
@@ -169,20 +133,57 @@ defmodule EctoShorts.CommonSchema do
       iex> EctoShorts.CommonSchema.get_schema_source(EctoShorts.Schema.Post)
       {"posts", EctoShorts.Schema.Post}
   """
-  def get_schema_source(%Ecto.Query{} = query) do
+  def get_schema_source(%{from: _, joins: _} = query) do
     CommonQuery.get_query_source(query)
   end
 
-  def get_schema_source(%{__meta__: %{schema: schema, source: source}}) do
+  def get_schema_source(%{data: %{__meta__: %{schema: schema, source: source}}} = _changeset) do
     {source, schema}
   end
 
-  def get_schema_source({source, schema}) when is_atom(schema) do
+  def get_schema_source(%{__meta__: %{schema: schema, source: source}} = _schema_struct) do
     {source, schema}
   end
 
-  def get_schema_source(schema) when is_atom(schema) do
+  def get_schema_source({source, schema})
+      when is_nil(source) or (is_binary(source) and is_atom(schema) and schema !== nil) do
+    {source, schema}
+  end
+
+  def get_schema_source(schema) when is_atom(schema) and schema !== nil do
     {schema.__schema__(:source), schema}
+  end
+
+  def get_schema_source(_) do
+    nil
+  end
+
+  @doc """
+  Returns the `prefix` defined in the schema, if any.
+
+  ## Examples
+
+      iex> EctoShorts.CommonSchema.get_schema_prefix(EctoShorts.Schema.PostHasSchemaPrefix)
+      "custom_schema_prefix"
+
+      iex> EctoShorts.CommonSchema.get_schema_prefix({"posts", EctoShorts.Schema.PostAbstractHasSchemaPrefix})
+      "custom_schema_prefix"
+
+      iex> EctoShorts.CommonSchema.get_schema_prefix(%EctoShorts.Schema.PostHasSchemaPrefix{})
+      "custom_schema_prefix"
+  """
+  def get_schema_prefix(%{data: %{__meta__: %{prefix: prefix}}}) do
+    prefix
+  end
+
+  def get_schema_prefix(%{__meta__: %{prefix: prefix}}) do
+    prefix
+  end
+
+  def get_schema_prefix(source) do
+    with schema <- fetch_schema!(source) do
+      schema.__schema__(:prefix)
+    end
   end
 
   @doc """
@@ -197,9 +198,43 @@ defmodule EctoShorts.CommonSchema do
       ...> EctoShorts.CommonSchema.get_schema_metadata(changeset)
       %Ecto.Schema.Metadata{schema: EctoShorts.Schema.Post, source: "posts", state: :built}
   """
-  def get_schema_metadata(%{data: %{__meta__: meta}}), do: meta
-  def get_schema_metadata(%{__meta__: meta}), do: meta
-  def get_schema_metadata(source), do: source |> to_schema_struct() |> get_schema_metadata()
+  def get_schema_metadata(%{data: %{__meta__: meta}} = _changeset), do: meta
+  def get_schema_metadata(%{__meta__: meta} = _schema_struct), do: meta
+  def get_schema_metadata(source), do: source |> create_schema_struct() |> get_schema_metadata()
+
+  @doc """
+  Invokes the `__schema__/1` get_schema_reflection function.
+
+  ### Examples
+
+      iex> EctoShorts.CommonSchema.get_schema_reflection(EctoShorts.Schema.Post, :primary_key)
+      [:id]
+
+      iex> EctoShorts.CommonSchema.get_schema_reflection({"posts", EctoShorts.Schema.PostAbstract}, :primary_key)
+      [:id]
+  """
+  def get_schema_reflection(source, arg) do
+    with schema <- fetch_schema!(source) do
+      schema.__schema__(arg)
+    end
+  end
+
+  @doc """
+  Invokes the `__schema__/2` reflection function.
+
+  ### Examples
+
+      iex> EctoShorts.CommonSchema.get_schema_reflection(EctoShorts.Schema.Post, :type, :id)
+      :id
+
+      iex> EctoShorts.CommonSchema.get_schema_reflection({"posts", EctoShorts.Schema.PostAbstract}, :type, :id)
+      :id
+  """
+  def get_schema_reflection(source, arg1, arg2) do
+    with schema <- fetch_schema!(source) do
+      schema.__schema__(arg1, arg2)
+    end
+  end
 
   @doc """
   Updates the `__meta__` field on an Ecto schema struct.
@@ -241,47 +276,49 @@ defmodule EctoShorts.CommonSchema do
         }
       }
   """
-  def put_schema_metadata(source_or_schema_data, params \\ [])
+  def put_schema_metadata(source_or_schema_struct, attrs \\ %{})
 
-  def put_schema_metadata(%{__meta__: state} = schema_data, params) do
-    Ecto.put_meta(schema_data,
-      context: params[:context] || state.context,
-      prefix: params[:prefix] || state.prefix,
-      source: params[:source] || state.source,
-      state: params[:state] || state.state || :loaded
+  def put_schema_metadata(%{__meta__: meta} = schema_struct, attrs) do
+    Ecto.put_meta(schema_struct,
+      context: attrs[:context] || meta.context,
+      prefix: attrs[:prefix] || meta.prefix,
+      source: attrs[:source] || meta.source,
+      state: attrs[:state] || meta.state || :loaded
     )
   end
 
-  def put_schema_metadata(source, params) do
-    source |> to_schema_struct() |> put_schema_metadata(params)
+  def put_schema_metadata(source, attrs) do
+    source
+    |> create_schema_struct()
+    |> put_schema_metadata(attrs)
   end
 
   @doc """
   ...
   """
-  def to_schema_struct(%Ecto.Query{} = query) do
-    query
-    |> CommonQuery.get_query_source()
-    |> to_schema_struct()
+  def create_schema_struct({nil, schema}) do
+    struct(schema)
   end
 
-  def to_schema_struct({source, schema}) do
+  def create_schema_struct({source, schema}) do
     schema
     |> struct()
     |> put_schema_metadata(state: :loaded, source: source, prefix: get_schema_prefix(schema))
   end
 
-  def to_schema_struct(schema) do
-    struct(schema)
+  def create_schema_struct(source) do
+    source
+    |> normalize_source()
+    |> create_schema_struct()
   end
 
   @doc """
-  `(schema_data :: Ecto.Schema.t(), params :: map(), options :: keyword())`
+  `(schema_struct :: Ecto.Schema.t(), params :: map(), options :: keyword())`
   `(changeset :: Ecto.Changeset.t(), params :: map(), options :: keyword())`
-  `(query_source :: {source_name :: binary(), schema_module :: module()}, schema_data :: Ecto.Schema.t(), options :: keyword())`
+  `(query_source :: {source_name :: binary(), schema_module :: module()}, schema_struct :: Ecto.Schema.t(), options :: keyword())`
   `(query_source :: {source_name :: binary(), schema_module :: module()}, changeset :: Ecto.Changeset.t(), options :: keyword())`
   `(query_source :: {source_name :: binary(), schema_module :: module()}, params :: map(), options :: keyword())`
-  `(schema_module :: module(), schema_data :: Ecto.Schema.t(), options :: keyword())`
+  `(schema_module :: module(), schema_struct :: Ecto.Schema.t(), options :: keyword())`
   `(schema_module :: module(), changeset :: Ecto.Changeset.t(), options :: keyword())`
   `(schema_module :: module(), params :: map(), options :: keyword())`
   """
@@ -289,38 +326,38 @@ defmodule EctoShorts.CommonSchema do
     create_changeset(schema, changeset, params, opts)
   end
 
-  def create_changeset(%{__meta__: %{schema: schema}} = schema_data, params, opts) do
-    create_changeset(schema, schema_data, params, opts)
+  def create_changeset(%{__meta__: %{schema: schema}} = schema_struct, params, opts) do
+    create_changeset(schema, schema_struct, params, opts)
   end
 
   def create_changeset({source, schema}, %{data: %{__meta__: _}} = changeset, opts) do
     create_changeset(schema, put_source(changeset, {source, schema}), %{}, opts)
   end
 
-  def create_changeset({source, schema}, %{__meta__: _} = schema_data, opts) do
-    create_changeset(schema, put_source(schema_data, {source, schema}), %{}, opts)
+  def create_changeset({source, schema}, %{__meta__: _} = schema_struct, opts) do
+    create_changeset(schema, put_source(schema_struct, {source, schema}), %{}, opts)
   end
 
   def create_changeset({source, schema}, params, opts) do
-    create_changeset(schema, to_schema_struct({source, schema}), params, opts)
+    create_changeset(schema, create_schema_struct({source, schema}), params, opts)
   end
 
   def create_changeset(schema, %{data: %{__meta__: _}} = changeset, opts) do
     create_changeset(schema, changeset, %{}, opts)
   end
 
-  def create_changeset(schema, %{__meta__: _} = schema_data, opts) do
-    create_changeset(schema, schema_data, %{}, opts)
+  def create_changeset(schema, %{__meta__: _} = schema_struct, opts) do
+    create_changeset(schema, schema_struct, %{}, opts)
   end
 
   def create_changeset(schema, params, opts) do
-    create_changeset(schema, to_schema_struct(schema), params, opts)
+    create_changeset(schema, create_schema_struct(schema), params, opts)
   end
 
   # ---
 
-  def create_changeset({source, schema}, %{__meta__: _} = schema_data, params, opts) do
-    create_changeset(schema, put_source(schema_data, {source, schema}), params, opts)
+  def create_changeset({source, schema}, %{__meta__: _} = schema_struct, params, opts) do
+    create_changeset(schema, put_source(schema_struct, {source, schema}), params, opts)
   end
 
   def create_changeset({source, schema}, %{data: %{__meta__: _}} = changeset, params, opts) do
@@ -342,14 +379,22 @@ defmodule EctoShorts.CommonSchema do
   defp apply_changeset!(schema, data_or_changeset, params, callback) do
     case callback do
       fun when is_function(fun, 3) ->
-        schema
-        |> fun.(data_or_changeset, params)
-        |> ensure_changeset!()
+        term = fun.(schema, data_or_changeset, params)
+
+        if changeset?(term) do
+          term
+        else
+          raise_not_changeset!(term)
+        end
 
       fun when is_function(fun, 2) ->
-        data_or_changeset
-        |> fun.(params)
-        |> ensure_changeset!()
+        term = fun.(data_or_changeset, params)
+
+        if changeset?(term) do
+          term
+        else
+          raise_not_changeset!(term)
+        end
 
       fun when is_function(fun, 1) ->
         changeset =
@@ -359,9 +404,13 @@ defmodule EctoShorts.CommonSchema do
             Ecto.Changeset.change(data_or_changeset, params)
           end
 
-        changeset
-        |> fun.()
-        |> ensure_changeset!()
+        term = fun.(changeset)
+
+        if changeset?(term) do
+          term
+        else
+          raise_not_changeset!(term)
+        end
 
       term ->
         raise ArgumentError,
@@ -369,23 +418,19 @@ defmodule EctoShorts.CommonSchema do
     end
   end
 
-  defp ensure_changeset!(term) do
-    if changeset?(term) do
-      term
-    else
-      raise "Expected an Ecto.Changeset, got: #{inspect(term)}"
-    end
+  defp raise_not_changeset!(term) do
+    raise "Expected an Ecto.Changeset, got: #{inspect(term)}"
   end
 
   defp changeset?(%Ecto.Changeset{}), do: true
   defp changeset?(_), do: false
 
-  defp put_source(%{data: schema_data} = changeset, {source, schema}) do
-    %{changeset | data: put_schema_metadata(schema_data, source: source, schema: schema)}
+  defp put_source(%{data: schema_struct} = changeset, {source, schema}) do
+    %{changeset | data: put_schema_metadata(schema_struct, source: source, schema: schema)}
   end
 
-  defp put_source(%{__meta__: _} = schema_data, {source, schema}) do
-    put_schema_metadata(schema_data, source: source, schema: schema)
+  defp put_source(%{__meta__: _} = schema_struct, {source, schema}) do
+    put_schema_metadata(schema_struct, source: source, schema: schema)
   end
 
   defp put_source(data_or_changeset, _) do
