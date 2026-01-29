@@ -1537,7 +1537,12 @@ defmodule EctoShorts.CommonFiltersTest do
           Post,
           %{
             where: %{title: "test"},
-            or_where: %{or: [[published: true, views: 20], [published: false, views: 10]]}
+            or_where: %{
+              or: [
+                [published: true, views: 20],
+                [published: false, views: 10]
+              ]
+            }
           },
           []
         )

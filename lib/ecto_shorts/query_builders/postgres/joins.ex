@@ -26,7 +26,7 @@ defmodule EctoShorts.QueryBuilder.Joins do
 
           list when is_list(list) ->
             if Keyword.keyword?(list) do
-              Dynamics.build_dynamic(schema, unquote(quoted_binding_head), list)
+              Dynamics.convert_to_dynamic(schema, unquote(quoted_binding_head), list)
             else
               EctoShorts.Logger.error(
                 @logger_prefix,
@@ -37,7 +37,7 @@ defmodule EctoShorts.QueryBuilder.Joins do
             end
 
           on_params when is_map(on_params) ->
-            Dynamics.build_dynamic(schema, unquote(quoted_binding_head), on_params)
+            Dynamics.convert_to_dynamic(schema, unquote(quoted_binding_head), on_params)
 
           term ->
             EctoShorts.Logger.error(

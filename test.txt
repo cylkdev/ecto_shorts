@@ -1,84 +1,1540 @@
-Running ExUnit with seed: 148741, max_cases: 24
+Running ExUnit with seed: 416133, max_cases: 24
 
+...............
+11:40:18.741 [debug] QUERY OK source="posts" db=1.8ms decode=0.5ms queue=1.3ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_upsert_many/3 updates a record when found"/1, at: test/ecto_shorts/actions_test.exs:1100[0m
+
+11:40:18.746 [debug] QUERY OK db=0.1ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+
+11:40:18.754 [debug] QUERY OK source="posts" db=0.3ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["A"]
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+
+11:40:18.757 [debug] QUERY OK source="posts" db=0.2ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Updated", ~N[2026-01-29 16:40:18], 1847]
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+
+11:40:18.757 [debug] QUERY OK db=0.1ms
+commit []
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+.
+11:40:18.758 [debug] QUERY OK source="posts" db=0.4ms queue=0.4ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Only", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete_all/3 returns {0, nil} when nothing matches"/1, at: test/ecto_shorts/actions_test.exs:851[0m
+
+11:40:18.760 [debug] QUERY OK source="posts" db=0.2ms queue=0.3ms
+DELETE FROM "posts" AS p0 WHERE (p0."title" = $1) ["Missing"]
+[90m↳ EctoShorts.ActionsTest."test delete_all/3 returns {0, nil} when nothing matches"/1, at: test/ecto_shorts/actions_test.exs:853[0m
+.
+11:40:18.761 [debug] QUERY OK source="posts" db=0.3ms queue=0.3ms
+INSERT INTO "posts" ("title","updated_at","inserted_at") VALUES ($1,$2,$3),($4,$5,$6) ["First", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18], "Second", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Bulk.insert_all/3, at: lib/ecto_shorts/actions/bulk.ex:26[0m
+
+11:40:18.761 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 []
+[90m↳ EctoShorts.ActionsTest."test insert_all/3 inserts multiple records successfully"/1, at: test/ecto_shorts/actions_test.exs:635[0m
+.
+11:40:18.763 [debug] QUERY OK source="posts" db=0.9ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Created"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.765 [debug] QUERY OK source="posts" db=0.2ms queue=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Created", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_or_create/3 creates a record when not found"/1, at: test/ecto_shorts/actions_test.exs:619[0m
+.
+11:40:18.767 [debug] QUERY OK source="users" db=0.9ms queue=0.4ms
+INSERT INTO "users" ("first_name","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["John", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 filters on a join association"/1, at: test/ecto_shorts/actions_test.exs:129[0m
+
+11:40:18.767 [debug] QUERY OK source="users" db=0.1ms
+INSERT INTO "users" ("first_name","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Jane", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 filters on a join association"/1, at: test/ecto_shorts/actions_test.exs:134[0m
+
+11:40:18.768 [debug] QUERY OK source="posts" db=0.4ms queue=0.1ms
+INSERT INTO "posts" ("title","permalink","author_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5) RETURNING "id" ["Authored", "authored-actions", 99, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 filters on a join association"/1, at: test/ecto_shorts/actions_test.exs:138[0m
+
+11:40:18.768 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","permalink","author_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4,$5) RETURNING "id" ["Other", "other-actions", 100, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 filters on a join association"/1, at: test/ecto_shorts/actions_test.exs:147[0m
+
+11:40:18.771 [debug] QUERY OK source="posts" db=0.3ms queue=0.4ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 INNER JOIN "users" AS u1 ON u1."id" = p0."author_id" WHERE (u1."first_name" = $1) ["John"]
+[90m↳ EctoShorts.ActionsTest."test all/3 filters on a join association"/1, at: test/ecto_shorts/actions_test.exs:149[0m
+.
+11:40:18.771 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.772 [debug] QUERY OK source="posts" db=0.3ms
+INSERT INTO "posts" ("permalink","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["exising", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.773 [debug] QUERY ERROR source="posts" db=1.6ms
+INSERT INTO "posts" ("permalink","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["exising", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.774 [debug] QUERY OK db=0.1ms
+rollback []
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+.
+11:40:18.775 [debug] QUERY OK source="posts" db=0.4ms queue=0.4ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test exists?/3 returns true when a matching record exists"/1, at: test/ecto_shorts/actions_test.exs:81[0m
+
+11:40:18.776 [debug] QUERY OK source="posts" db=0.3ms queue=0.5ms
+SELECT TRUE FROM "posts" AS p0 WHERE (p0."title" = $1) LIMIT 1 ["Existing"]
+[90m↳ EctoShorts.ActionsTest."test exists?/3 returns true when a matching record exists"/1, at: test/ecto_shorts/actions_test.exs:83[0m
+.
+11:40:18.777 [debug] QUERY OK source="posts" db=0.5ms queue=0.6ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test batch/4 returns records grouped by batch keys"/1, at: test/ecto_shorts/actions_test.exs:54[0m
+
+11:40:18.777 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test batch/4 returns records grouped by batch keys"/1, at: test/ecto_shorts/actions_test.exs:58[0m
+
+11:40:18.779 [debug] QUERY OK source="posts" db=0.3ms queue=0.5ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) OR (p0."title" = $2) ["A", "B"]
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:31[0m
+.
+11:40:18.781 [debug] QUERY OK source="posts" db=1.0ms
+SELECT TRUE FROM "posts" AS p0 WHERE (p0."title" = $1) LIMIT 1 ["NonExistent"]
+[90m↳ EctoShorts.ActionsTest."test exists?/3 returns false when no matching record exists"/1, at: test/ecto_shorts/actions_test.exs:87[0m
+.
+11:40:18.781 [debug] QUERY OK source="posts" db=0.3ms queue=0.2ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Existing", "existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest.__ex_unit_setup_21_0/1, at: test/ecto_shorts/actions_test.exs:748[0m
+
+11:40:18.782 [debug] QUERY OK source="posts" db=0.2ms queue=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."permalink" = $1) ["existing"]
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:31[0m
+.
+11:40:18.782 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [-1]
+[90m↳ EctoShorts.ActionsTest."test get/3 returns nil when not found"/1, at: test/ecto_shorts/actions_test.exs:224[0m
+.
+11:40:18.783 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete_many/2 deletes multiple records"/1, at: test/ecto_shorts/actions_test.exs:1041[0m
+
+11:40:18.783 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete_many/2 deletes multiple records"/1, at: test/ecto_shorts/actions_test.exs:1046[0m
+
+11:40:18.783 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.delete_many/3, at: lib/ecto_shorts/actions/multi.ex:105[0m
+
+11:40:18.784 [debug] QUERY OK source="posts" db=1.0ms
+DELETE FROM "posts" WHERE "id" = $1 [1860]
+[90m↳ EctoShorts.Actions.Multi.delete_many/3, at: lib/ecto_shorts/actions/multi.ex:105[0m
+
+11:40:18.784 [debug] QUERY OK source="posts" db=0.1ms
+DELETE FROM "posts" WHERE "id" = $1 [1861]
+[90m↳ EctoShorts.Actions.Multi.delete_many/3, at: lib/ecto_shorts/actions/multi.ex:105[0m
+
+11:40:18.784 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Multi.delete_many/3, at: lib/ecto_shorts/actions/multi.ex:105[0m
+
+11:40:18.784 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1860]
+[90m↳ EctoShorts.ActionsTest."test delete_many/2 deletes multiple records"/1, at: test/ecto_shorts/actions_test.exs:1051[0m
+
+11:40:18.785 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1861]
+[90m↳ EctoShorts.ActionsTest."test delete_many/2 deletes multiple records"/1, at: test/ecto_shorts/actions_test.exs:1052[0m
+.
+11:40:18.785 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete/2 deletes a list of schema structs"/1, at: test/ecto_shorts/actions_test.exs:342[0m
+
+11:40:18.785 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete/2 deletes a list of schema structs"/1, at: test/ecto_shorts/actions_test.exs:347[0m
+
+11:40:18.786 [debug] QUERY OK source="posts" db=0.6ms queue=0.1ms
+DELETE FROM "posts" WHERE "id" = $1 [1862]
+[90m↳ EctoShorts.Actions.CRUD.delete/2, at: lib/ecto_shorts/actions/crud.ex:168[0m
+
+11:40:18.786 [debug] QUERY OK source="posts" db=0.1ms
+DELETE FROM "posts" WHERE "id" = $1 [1863]
+[90m↳ EctoShorts.Actions.CRUD.delete/2, at: lib/ecto_shorts/actions/crud.ex:168[0m
+
+11:40:18.786 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1862]
+[90m↳ EctoShorts.ActionsTest."test delete/2 deletes a list of schema structs"/1, at: test/ecto_shorts/actions_test.exs:350[0m
+
+11:40:18.786 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1863]
+[90m↳ EctoShorts.ActionsTest."test delete/2 deletes a list of schema structs"/1, at: test/ecto_shorts/actions_test.exs:351[0m
+.
+11:40:18.787 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find/3 returns {:ok, record} when found"/1, at: test/ecto_shorts/actions_test.exs:233[0m
+
+11:40:18.787 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1864]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.787 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:29[0m
+
+11:40:18.787 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["ShouldRollback", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ anonymous fn/1 in EctoShorts.ActionsTest."test transact/2 rolls back and normalizes {:error, :error} to :error"/1, at: test/ecto_shorts/actions_test.exs:449[0m
+
+11:40:18.787 [debug] QUERY OK db=0.1ms
+rollback []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:29[0m
+.
+11:40:18.788 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Existing", "existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest.__ex_unit_setup_21_0/1, at: test/ecto_shorts/actions_test.exs:748[0m
+
+11:40:18.788 [debug] QUERY OK source="posts" db=0.6ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."permalink" = $1) ["existing"]
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:31[0m
+.
+11:40:18.789 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["ToDelete", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete/2 deletes a record by schema struct"/1, at: test/ecto_shorts/actions_test.exs:332[0m
+
+11:40:18.790 [debug] QUERY OK source="posts" db=0.7ms queue=0.1ms
+DELETE FROM "posts" WHERE "id" = $1 [1867]
+[90m↳ EctoShorts.Actions.CRUD.delete/2, at: lib/ecto_shorts/actions/crud.ex:168[0m
+.
+11:40:18.790 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1867]
+[90m↳ EctoShorts.ActionsTest."test delete/2 deletes a record by schema struct"/1, at: test/ecto_shorts/actions_test.exs:335[0m
+
+11:40:18.790 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+
+11:40:18.790 [debug] QUERY OK source="posts" db=0.2ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["A"]
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+
+11:40:18.790 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+
+11:40:18.791 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["B"]
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+
+11:40:18.791 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+
+11:40:18.791 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Multi.find_and_upsert_many/3, at: lib/ecto_shorts/actions/multi.ex:165[0m
+.
+11:40:18.791 [debug] QUERY OK source="posts" db=0.3ms queue=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Original Title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test insert_all/3 performs upsert when records include complete primary keys"/1, at: test/ecto_shorts/actions_test.exs:659[0m
+
+11:40:18.792 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+INSERT INTO "posts" ("id","title","updated_at","inserted_at") VALUES ($1,$2,$3,$4) ON CONFLICT ("id") DO UPDATE SET "title" = EXCLUDED."title" [1870, "Updated Title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Bulk.insert_all/3, at: lib/ecto_shorts/actions/bulk.ex:26[0m
+
+11:40:18.792 [debug] QUERY OK source="posts" db=0.2ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1870]
+[90m↳ EctoShorts.ActionsTest."test insert_all/3 performs upsert when records include complete primary keys"/1, at: test/ecto_shorts/actions_test.exs:672[0m
+.
+11:40:18.792 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [-1]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.793 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_or_create_many/3 creates missing records"/1, at: test/ecto_shorts/actions_test.exs:1074[0m
+
+11:40:18.793 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.find_or_create_many/3, at: lib/ecto_shorts/actions/multi.ex:141[0m
+
+11:40:18.793 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Existing"]
+[90m↳ EctoShorts.Actions.Multi.find_or_create_many/3, at: lib/ecto_shorts/actions/multi.ex:141[0m
+
+11:40:18.793 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Created"]
+[90m↳ EctoShorts.Actions.Multi.find_or_create_many/3, at: lib/ecto_shorts/actions/multi.ex:141[0m
+
+11:40:18.793 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Created", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Multi.find_or_create_many/3, at: lib/ecto_shorts/actions/multi.ex:141[0m
+
+11:40:18.793 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Multi.find_or_create_many/3, at: lib/ecto_shorts/actions/multi.ex:141[0m
+.
+11:40:18.794 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Existing", "existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest.__ex_unit_setup_21_0/1, at: test/ecto_shorts/actions_test.exs:748[0m
+
+11:40:18.794 [debug] QUERY OK source="posts" db=0.2ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."permalink" = $1) ["existing"]
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:31[0m
+.
+11:40:18.794 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete_all/3 deletes matching records and returns {count, nil}"/1, at: test/ecto_shorts/actions_test.exs:834[0m
+
+11:40:18.794 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete_all/3 deletes matching records and returns {count, nil}"/1, at: test/ecto_shorts/actions_test.exs:838[0m
+
+11:40:18.794 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete_all/3 deletes matching records and returns {count, nil}"/1, at: test/ecto_shorts/actions_test.exs:842[0m
+
+11:40:18.795 [debug] QUERY OK source="posts" db=0.5ms
+DELETE FROM "posts" AS p0 WHERE (p0."title" = $1) ["A"]
+[90m↳ EctoShorts.ActionsTest."test delete_all/3 deletes matching records and returns {count, nil}"/1, at: test/ecto_shorts/actions_test.exs:844[0m
+
+11:40:18.795 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 []
+[90m↳ EctoShorts.ActionsTest."test delete_all/3 deletes matching records and returns {count, nil}"/1, at: test/ecto_shorts/actions_test.exs:845[0m
+.
+11:40:18.795 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Missing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.796 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Created", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_create/3 creates a record when not found"/1, at: test/ecto_shorts/actions_test.exs:487[0m
+.
+11:40:18.797 [debug] QUERY OK source="comments" db=0.6ms queue=0.1ms
+INSERT INTO "comments" ("body","updated_at","inserted_at") VALUES ($1,$2,$3),($4,$5,$6) ["x", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18], "y", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Bulk.insert_all/3, at: lib/ecto_shorts/actions/bulk.ex:26[0m
+.
+11:40:18.797 [debug] QUERY OK source="comments" db=0.2ms queue=0.1ms
+SELECT c0."id", c0."author_id", c0."post_id", c0."body", c0."published", c0."published_at", c0."replies", c0."tags", c0."inserted_at", c0."updated_at" FROM "comments" AS c0 []
+[90m↳ EctoShorts.ActionsTest."test insert_all/3 with validate: false, inserts records that would fail validation"/1, at: test/ecto_shorts/actions_test.exs:739[0m
+
+11:40:18.797 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test aggregate/5 counts matching records (default options)"/1, at: test/ecto_shorts/actions_test.exs:416[0m
+
+11:40:18.798 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test aggregate/5 counts matching records (default options)"/1, at: test/ecto_shorts/actions_test.exs:420[0m
+
+11:40:18.798 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+SELECT count(p0."id") FROM "posts" AS p0 []
+[90m↳ EctoShorts.ActionsTest."test aggregate/5 counts matching records (default options)"/1, at: test/ecto_shorts/actions_test.exs:422[0m
+
+11:40:18.798 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+SELECT count(p0."id") FROM "posts" AS p0 WHERE (p0."title" = $1) ["A"]
+[90m↳ EctoShorts.ActionsTest."test aggregate/5 counts matching records (default options)"/1, at: test/ecto_shorts/actions_test.exs:423[0m
+.
+11:40:18.799 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_upsert/3 updates a record when found"/1, at: test/ecto_shorts/actions_test.exs:552[0m
+
+11:40:18.799 [debug] QUERY OK source="posts" db=0.2ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Existing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.799 [debug] QUERY OK source="posts" db=0.1ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Updated", ~N[2026-01-29 16:40:18], 1880]
+[90m↳ EctoShorts.ActionsTest."test find_and_upsert/3 updates a record when found"/1, at: test/ecto_shorts/actions_test.exs:555[0m
+.
+11:40:18.800 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Existing", "existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest.__ex_unit_setup_21_0/1, at: test/ecto_shorts/actions_test.exs:748[0m
+.
+11:40:18.800 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:23[0m
+
+11:40:18.800 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:23[0m
+
+11:40:18.800 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:23[0m
+
+11:40:18.800 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:23[0m
+.
+11:40:18.800 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Existing", "existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest.__ex_unit_setup_21_0/1, at: test/ecto_shorts/actions_test.exs:748[0m
+
+11:40:18.801 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."permalink" = $1) ["existing"]
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:31[0m
+.
+11:40:18.801 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Before", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test update/4 updates a record by schema struct"/1, at: test/ecto_shorts/actions_test.exs:276[0m
+
+11:40:18.801 [debug] QUERY OK source="posts" db=0.1ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["After", ~N[2026-01-29 16:40:18], 1885]
+[90m↳ EctoShorts.ActionsTest."test update/4 updates a record by schema struct"/1, at: test/ecto_shorts/actions_test.exs:278[0m
+
+11:40:18.801 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1885]
+[90m↳ EctoShorts.ActionsTest."test update/4 updates a record by schema struct"/1, at: test/ecto_shorts/actions_test.exs:279[0m
+.
+11:40:18.802 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test create/3 inserts a record"/1, at: test/ecto_shorts/actions_test.exs:183[0m
+
+11:40:18.802 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1886]
+[90m↳ EctoShorts.ActionsTest."test create/3 inserts a record"/1, at: test/ecto_shorts/actions_test.exs:184[0m
+.
+11:40:18.802 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_update/4 updates a record when found"/1, at: test/ecto_shorts/actions_test.exs:536[0m
+
+11:40:18.802 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Existing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.802 [debug] QUERY OK source="posts" db=0.1ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Updated", ~N[2026-01-29 16:40:18], 1887]
+[90m↳ EctoShorts.ActionsTest."test find_and_update/4 updates a record when found"/1, at: test/ecto_shorts/actions_test.exs:539[0m
+.
+11:40:18.803 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Original", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test insert_all/3 allows caller-provided on_conflict option to override computed defaults"/1, at: test/ecto_shorts/actions_test.exs:707[0m
+
+11:40:18.803 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("id","title","updated_at","inserted_at") VALUES ($1,$2,$3,$4) ON CONFLICT ("id") DO NOTHING [1888, "Attempted Update", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Bulk.insert_all/3, at: lib/ecto_shorts/actions/bulk.ex:26[0m
+
+11:40:18.803 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1888]
+[90m↳ EctoShorts.ActionsTest."test insert_all/3 allows caller-provided on_conflict option to override computed defaults"/1, at: test/ecto_shorts/actions_test.exs:721[0m
+.
+11:40:18.803 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","published","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["WhereMatch", true, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 supports filter keys where and or_where"/1, at: test/ecto_shorts/actions_test.exs:109[0m
+
+11:40:18.804 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","published","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["OrWhereMatch", false, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 supports filter keys where and or_where"/1, at: test/ecto_shorts/actions_test.exs:113[0m
+
+11:40:18.805 [debug] QUERY OK source="posts" db=0.1ms queue=0.2ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE ((p0."published" = $1)) OR (p0."title" = $2) ORDER BY p0."title" [true, "OrWhereMatch"]
+[90m↳ EctoShorts.ActionsTest."test all/3 supports filter keys where and or_where"/1, at: test/ecto_shorts/actions_test.exs:116[0m
+.
+11:40:18.805 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Missing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.805 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Created", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_create/4 creates a record when not found"/1, at: test/ecto_shorts/actions_test.exs:503[0m
+.
+11:40:18.806 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Missing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.806 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Original A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 updates multiple records successfully"/1, at: test/ecto_shorts/actions_test.exs:961[0m
+
+11:40:18.806 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Original B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 updates multiple records successfully"/1, at: test/ecto_shorts/actions_test.exs:966[0m
+
+11:40:18.806 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.806 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1892]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.807 [debug] QUERY OK source="posts" db=0.1ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Updated A", ~N[2026-01-29 16:40:18], 1892]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.807 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1893]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.807 [debug] QUERY OK source="posts" db=0.0ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Updated B", ~N[2026-01-29 16:40:18], 1893]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.807 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.807 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1892]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 updates multiple records successfully"/1, at: test/ecto_shorts/actions_test.exs:976[0m
+
+11:40:18.807 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1893]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 updates multiple records successfully"/1, at: test/ecto_shorts/actions_test.exs:977[0m
+.
+11:40:18.807 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Missing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.808 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Upserted", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_upsert/3 creates a record when not found"/1, at: test/ecto_shorts/actions_test.exs:560[0m
+.
+11:40:18.808 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:29[0m
+
+11:40:18.808 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:29[0m
+.
+11:40:18.808 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [-1]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.808 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Overridden", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test create/3 applies changeset callback from opts"/1, at: test/ecto_shorts/actions_test.exs:200[0m
+.
+11:40:18.809 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_create/3 returns {:ok, record} when found"/1, at: test/ecto_shorts/actions_test.exs:493[0m
+
+11:40:18.809 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Existing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.809 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Valid", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 returns {:error, error} and rolls back when a record fails validation"/1, at: test/ecto_shorts/actions_test.exs:984[0m
+
+11:40:18.809 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Also Valid", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 returns {:error, error} and rolls back when a record fails validation"/1, at: test/ecto_shorts/actions_test.exs:989[0m
+
+11:40:18.809 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.809 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1897]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.810 [debug] QUERY OK source="posts" db=0.1ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Updated", ~N[2026-01-29 16:40:18], 1897]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.810 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1898]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.810 [debug] QUERY OK db=0.0ms
+rollback []
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.810 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1897]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 returns {:error, error} and rolls back when a record fails validation"/1, at: test/ecto_shorts/actions_test.exs:1011[0m
+
+11:40:18.810 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1898]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 returns {:error, error} and rolls back when a record fails validation"/1, at: test/ecto_shorts/actions_test.exs:1012[0m
+.
+11:40:18.811 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Before", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test update/4 updates a record by id"/1, at: test/ecto_shorts/actions_test.exs:266[0m
+
+11:40:18.811 [debug] QUERY OK source="posts" db=0.2ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1899]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.811 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["After", ~N[2026-01-29 16:40:18], 1899]
+[90m↳ EctoShorts.ActionsTest."test update/4 updates a record by id"/1, at: test/ecto_shorts/actions_test.exs:268[0m
+
+11:40:18.811 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1899]
+[90m↳ EctoShorts.ActionsTest."test update/4 updates a record by id"/1, at: test/ecto_shorts/actions_test.exs:269[0m
+.
+11:40:18.812 [debug] QUERY OK source="posts" db=0.5ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test stream/3 streams filtered results"/1, at: test/ecto_shorts/actions_test.exs:379[0m
+
+11:40:18.812 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test stream/3 streams filtered results"/1, at: test/ecto_shorts/actions_test.exs:384[0m
+
+11:40:18.812 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.ActionsTest."test stream/3 streams filtered results"/1, at: test/ecto_shorts/actions_test.exs:387[0m
+
+11:40:18.815 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1900]
+[90m↳ anonymous fn/1 in EctoShorts.ActionsTest."test stream/3 streams filtered results"/1, at: test/ecto_shorts/actions_test.exs:389[0m
+
+11:40:18.815 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1900]
+[90m↳ anonymous fn/1 in EctoShorts.ActionsTest."test stream/3 streams filtered results"/1, at: test/ecto_shorts/actions_test.exs:389[0m
+
+11:40:18.815 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1900]
+[90m↳ anonymous fn/1 in EctoShorts.ActionsTest."test stream/3 streams filtered results"/1, at: test/ecto_shorts/actions_test.exs:389[0m
+
+11:40:18.815 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.ActionsTest."test stream/3 streams filtered results"/1, at: test/ecto_shorts/actions_test.exs:387[0m
+.
+11:40:18.815 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:29[0m
+
+11:40:18.815 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:29[0m
+.
+11:40:18.815 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_upsert/4 updates a record when found"/1, at: test/ecto_shorts/actions_test.exs:568[0m
+
+11:40:18.815 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Existing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.816 [debug] QUERY OK source="posts" db=0.1ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Updated", ~N[2026-01-29 16:40:18], 1902]
+[90m↳ EctoShorts.ActionsTest."test find_and_upsert/4 updates a record when found"/1, at: test/ecto_shorts/actions_test.exs:571[0m
+.
+11:40:18.816 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:29[0m
+
+11:40:18.816 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:29[0m
+.
+11:40:18.816 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["ToDelete", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_delete/3 deletes a record when found"/1, at: test/ecto_shorts/actions_test.exs:584[0m
+
+11:40:18.816 [debug] QUERY OK source="posts" db=0.2ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["ToDelete"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.817 [debug] QUERY OK source="posts" db=0.6ms
+DELETE FROM "posts" WHERE "id" = $1 [1903]
+[90m↳ EctoShorts.Actions.CRUD.delete/2, at: lib/ecto_shorts/actions/crud.ex:168[0m
+.
+11:40:18.817 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Missing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.818 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Upserted", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_upsert/4 creates a record when not found"/1, at: test/ecto_shorts/actions_test.exs:576[0m
+.
+11:40:18.818 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.818 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["A", "create-many-dup", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.818 [debug] QUERY ERROR source="posts" db=0.1ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["B", "create-many-dup", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.818 [debug] QUERY OK db=0.0ms
+rollback []
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+.
+11:40:18.819 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 filters by id"/1, at: test/ecto_shorts/actions_test.exs:96[0m
+
+11:40:18.819 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 filters by id"/1, at: test/ecto_shorts/actions_test.exs:101[0m
+.
+11:40:18.819 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1907]
+[90m↳ EctoShorts.ActionsTest."test all/3 filters by id"/1, at: test/ecto_shorts/actions_test.exs:103[0m
+
+11:40:18.819 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Existing", "existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest.__ex_unit_setup_21_0/1, at: test/ecto_shorts/actions_test.exs:748[0m
+.
+11:40:18.819 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_many/3 returns {:ok, records} when all are found"/1, at: test/ecto_shorts/actions_test.exs:915[0m
+
+11:40:18.819 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_many/3 returns {:ok, records} when all are found"/1, at: test/ecto_shorts/actions_test.exs:919[0m
+
+11:40:18.820 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.find_many/3, at: lib/ecto_shorts/actions/multi.ex:37[0m
+
+11:40:18.820 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["A"]
+[90m↳ EctoShorts.Actions.Multi.find_many/3, at: lib/ecto_shorts/actions/multi.ex:37[0m
+
+11:40:18.820 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["B"]
+[90m↳ EctoShorts.Actions.Multi.find_many/3, at: lib/ecto_shorts/actions/multi.ex:37[0m
+
+11:40:18.820 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Multi.find_many/3, at: lib/ecto_shorts/actions/multi.ex:37[0m
+.
+11:40:18.820 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Existing", "existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest.__ex_unit_setup_21_0/1, at: test/ecto_shorts/actions_test.exs:748[0m
+
+11:40:18.820 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."permalink" = $1) ["existing"]
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:31[0m
+.
+11:40:18.821 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Missing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.821 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test batch/4 skips params missing required batch keys (does not fall back to returning all records)"/1, at: test/ecto_shorts/actions_test.exs:71[0m
+
+11:40:18.821 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 []
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:31[0m
+.
+11:40:18.821 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 applies order_by from opts"/1, at: test/ecto_shorts/actions_test.exs:155[0m
+
+11:40:18.821 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 applies order_by from opts"/1, at: test/ecto_shorts/actions_test.exs:159[0m
+
+11:40:18.822 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 ORDER BY p0."title" []
+[90m↳ EctoShorts.ActionsTest."test all/3 applies order_by from opts"/1, at: test/ecto_shorts/actions_test.exs:161[0m
+.
+11:40:18.822 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","views","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Low", 1, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test aggregate/5 supports non-count aggregate functions"/1, at: test/ecto_shorts/actions_test.exs:429[0m
+
+11:40:18.822 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","views","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["High", 10, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test aggregate/5 supports non-count aggregate functions"/1, at: test/ecto_shorts/actions_test.exs:433[0m
+
+11:40:18.822 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+SELECT max(p0."views") FROM "posts" AS p0 []
+[90m↳ EctoShorts.ActionsTest."test aggregate/5 supports non-count aggregate functions"/1, at: test/ecto_shorts/actions_test.exs:435[0m
+
+11:40:18.823 [debug] QUERY OK source="posts" db=0.0ms
+SELECT max(p0."views") FROM "posts" AS p0 WHERE (p0."title" = $1) ["Low"]
+[90m↳ EctoShorts.ActionsTest."test aggregate/5 supports non-count aggregate functions"/1, at: test/ecto_shorts/actions_test.exs:436[0m
+.
+11:40:18.823 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Blocked", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete_many/2 returns {:error, error} when a delete fails"/1, at: test/ecto_shorts/actions_test.exs:1059[0m
+
+11:40:18.823 [debug] QUERY OK source="comments" db=0.2ms
+INSERT INTO "comments" ("body","post_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["hello", 1918, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete_many/2 returns {:error, error} when a delete fails"/1, at: test/ecto_shorts/actions_test.exs:1063[0m
+
+11:40:18.823 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.delete_many/3, at: lib/ecto_shorts/actions/multi.ex:105[0m
+
+11:40:18.824 [debug] QUERY ERROR source="posts" db=0.1ms
+DELETE FROM "posts" WHERE "id" = $1 [1918]
+[90m↳ EctoShorts.Actions.Multi.delete_many/3, at: lib/ecto_shorts/actions/multi.ex:105[0m
+
+11:40:18.824 [debug] QUERY OK db=0.0ms
+rollback []
+[90m↳ EctoShorts.Actions.Multi.delete_many/3, at: lib/ecto_shorts/actions/multi.ex:105[0m
+.
+11:40:18.824 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_many/3 returns {:error, error} when any record is not found (includes changes_so_far)"/1, at: test/ecto_shorts/actions_test.exs:933[0m
+
+11:40:18.824 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.find_many/3, at: lib/ecto_shorts/actions/multi.ex:37[0m
+
+11:40:18.824 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["A"]
+[90m↳ EctoShorts.Actions.Multi.find_many/3, at: lib/ecto_shorts/actions/multi.ex:37[0m
+
+11:40:18.824 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Missing"]
+[90m↳ EctoShorts.Actions.Multi.find_many/3, at: lib/ecto_shorts/actions/multi.ex:37[0m
+
+11:40:18.824 [debug] QUERY OK db=0.0ms
+rollback []
+[90m↳ EctoShorts.Actions.Multi.find_many/3, at: lib/ecto_shorts/actions/multi.ex:37[0m
+.
+11:40:18.825 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["ToDelete", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete/2 deletes a record by id"/1, at: test/ecto_shorts/actions_test.exs:315[0m
+
+11:40:18.825 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1920]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.825 [debug] QUERY OK source="posts" db=0.1ms
+DELETE FROM "posts" WHERE "id" = $1 [1920]
+[90m↳ EctoShorts.Actions.CRUD.delete/2, at: lib/ecto_shorts/actions/crud.ex:168[0m
+
+11:40:18.825 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1920]
+[90m↳ EctoShorts.ActionsTest."test delete/2 deletes a record by id"/1, at: test/ecto_shorts/actions_test.exs:318[0m
+.
+11:40:18.825 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Existing", "existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest.__ex_unit_setup_21_0/1, at: test/ecto_shorts/actions_test.exs:748[0m
+
+11:40:18.826 [debug] QUERY OK source="posts" db=0.2ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."permalink" = $1) ["existing"]
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:31[0m
+..
+11:40:18.826 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Original", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test insert_all/3 generates conflict options by default so duplicate primary keys do not raise"/1, at: test/ecto_shorts/actions_test.exs:679[0m
+
+11:40:18.826 [debug] QUERY ERROR source="posts" db=0.1ms
+INSERT INTO "posts" ("id","title") VALUES ($1,$2) [1922, "Will Raise"]
+[90m↳ EctoShorts.ActionsTest."test insert_all/3 generates conflict options by default so duplicate primary keys do not raise"/1, at: test/ecto_shorts/actions_test.exs:683[0m
+
+11:40:18.826 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("id","title","updated_at","inserted_at") VALUES ($1,$2,$3,$4) ON CONFLICT ("id") DO UPDATE SET "inserted_at" = EXCLUDED."inserted_at","title" = EXCLUDED."title","updated_at" = EXCLUDED."updated_at" [1922, "Updated", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Bulk.insert_all/3, at: lib/ecto_shorts/actions/bulk.ex:26[0m
+
+11:40:18.827 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1922]
+[90m↳ EctoShorts.ActionsTest."test insert_all/3 generates conflict options by default so duplicate primary keys do not raise"/1, at: test/ecto_shorts/actions_test.exs:699[0m
+.
+11:40:18.827 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_or_create/3 returns {:ok, record} when found"/1, at: test/ecto_shorts/actions_test.exs:599[0m
+.
+11:40:18.827 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Existing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.827 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_create/4 returns {:ok, record} when found"/1, at: test/ecto_shorts/actions_test.exs:509[0m
+.
+11:40:18.827 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Existing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.828 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test batch/4 when cardinality is :one, returns a single record per key (not a list)"/1, at: test/ecto_shorts/actions_test.exs:20[0m
+
+11:40:18.828 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test batch/4 when cardinality is :one, returns a single record per key (not a list)"/1, at: test/ecto_shorts/actions_test.exs:24[0m
+
+11:40:18.828 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = ANY($1)) [["A", "B"]]
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:49[0m
+.
+11:40:18.828 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Only", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find/3 allows empty params when queryable is an Ecto.Query"/1, at: test/ecto_shorts/actions_test.exs:253[0m
+
+11:40:18.829 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 []
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.829 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [-1]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.829 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_and_update/3 updates a record when found"/1, at: test/ecto_shorts/actions_test.exs:520[0m
+
+11:40:18.829 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Existing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.829 [debug] QUERY OK source="posts" db=0.0ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Updated", ~N[2026-01-29 16:40:18], 1928]
+[90m↳ EctoShorts.ActionsTest."test find_and_update/3 updates a record when found"/1, at: test/ecto_shorts/actions_test.exs:523[0m
+.
+11:40:18.829 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test stream/3 supports order_by via params"/1, at: test/ecto_shorts/actions_test.exs:397[0m
+
+11:40:18.830 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test stream/3 supports order_by via params"/1, at: test/ecto_shorts/actions_test.exs:401[0m
+
+11:40:18.830 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.ActionsTest."test stream/3 supports order_by via params"/1, at: test/ecto_shorts/actions_test.exs:404[0m
+
+11:40:18.830 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 ORDER BY p0."title" []
+[90m↳ anonymous fn/0 in EctoShorts.ActionsTest."test stream/3 supports order_by via params"/1, at: test/ecto_shorts/actions_test.exs:406[0m
+
+11:40:18.830 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 ORDER BY p0."title" []
+[90m↳ anonymous fn/0 in EctoShorts.ActionsTest."test stream/3 supports order_by via params"/1, at: test/ecto_shorts/actions_test.exs:406[0m
+
+11:40:18.830 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 ORDER BY p0."title" []
+[90m↳ anonymous fn/0 in EctoShorts.ActionsTest."test stream/3 supports order_by via params"/1, at: test/ecto_shorts/actions_test.exs:406[0m
+
+11:40:18.830 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.ActionsTest."test stream/3 supports order_by via params"/1, at: test/ecto_shorts/actions_test.exs:404[0m
+.
+11:40:18.830 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Missing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.830 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 opts order_by overrides params order_by"/1, at: test/ecto_shorts/actions_test.exs:169[0m
+
+11:40:18.831 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test all/3 opts order_by overrides params order_by"/1, at: test/ecto_shorts/actions_test.exs:173[0m
+.
+11:40:18.831 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 ORDER BY p0."title" []
+[90m↳ EctoShorts.ActionsTest."test all/3 opts order_by overrides params order_by"/1, at: test/ecto_shorts/actions_test.exs:175[0m
+
+11:40:18.831 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","updated_at","inserted_at") VALUES ($1,$2,$3),($4,$5,$6) RETURNING "updated_at","inserted_at","views","tags","title","published","published_at","permalink","custom_string_field","body","author_id","id" ["First", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18], "Second", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Bulk.insert_all/3, at: lib/ecto_shorts/actions/bulk.ex:26[0m
+.
+11:40:18.831 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test batch/4 accepts a single batch_key (non-list) and returns scalar-keyed results"/1, at: test/ecto_shorts/actions_test.exs:37[0m
+
+11:40:18.831 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test batch/4 accepts a single batch_key (non-list) and returns scalar-keyed results"/1, at: test/ecto_shorts/actions_test.exs:41[0m
+
+11:40:18.832 [debug] QUERY OK source="posts" db=0.2ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = ANY($1)) [["A", "B"]]
+[90m↳ EctoShorts.Actions.Batch.batch/5, at: lib/ecto_shorts/actions/batch.ex:49[0m
+.
+11:40:18.832 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["A", "create-dup", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test create/3 returns changeset error on insert constraint failure"/1, at: test/ecto_shorts/actions_test.exs:190[0m
+
+11:40:18.832 [debug] QUERY ERROR source="posts" db=0.1ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["B", "create-dup", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test create/3 returns changeset error on insert constraint failure"/1, at: test/ecto_shorts/actions_test.exs:193[0m
+.
+11:40:18.832 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["ToDelete", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test delete/3 deletes a record by id with opts"/1, at: test/ecto_shorts/actions_test.exs:360[0m
+
+11:40:18.832 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1939]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+
+11:40:18.833 [debug] QUERY OK source="posts" db=0.1ms
+DELETE FROM "posts" WHERE "id" = $1 [1939]
+[90m↳ EctoShorts.Actions.CRUD.delete/2, at: lib/ecto_shorts/actions/crud.ex:168[0m
+
+11:40:18.833 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1939]
+[90m↳ EctoShorts.ActionsTest."test delete/3 deletes a record by id with opts"/1, at: test/ecto_shorts/actions_test.exs:363[0m
+.
+11:40:18.833 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test get/3 returns the record when found"/1, at: test/ecto_shorts/actions_test.exs:218[0m
+
+11:40:18.833 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1940]
+[90m↳ EctoShorts.ActionsTest."test get/3 returns the record when found"/1, at: test/ecto_shorts/actions_test.exs:220[0m
+.
+11:40:18.833 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 returns {:error, error} when a record is not found"/1, at: test/ecto_shorts/actions_test.exs:1019[0m
+
+11:40:18.833 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.833 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1941]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.834 [debug] QUERY OK source="posts" db=0.0ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Updated", ~N[2026-01-29 16:40:18], 1941]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.834 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [999999]
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.834 [debug] QUERY OK db=0.0ms
+rollback []
+[90m↳ EctoShorts.Actions.Multi.update_many/3, at: lib/ecto_shorts/actions/multi.ex:58[0m
+
+11:40:18.834 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1941]
+[90m↳ EctoShorts.ActionsTest."test update_many/3 returns {:error, error} when a record is not found"/1, at: test/ecto_shorts/actions_test.exs:1032[0m
+.
+11:40:18.834 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Before", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test update/4 applies changeset callback from opts"/1, at: test/ecto_shorts/actions_test.exs:293[0m
+
+11:40:18.834 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1942]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.834 [debug] QUERY OK source="posts" db=0.0ms
+UPDATE "posts" SET "title" = $1, "updated_at" = $2 WHERE "id" = $3 ["Overridden", ~N[2026-01-29 16:40:18], 1942]
+[90m↳ EctoShorts.ActionsTest."test update/4 applies changeset callback from opts"/1, at: test/ecto_shorts/actions_test.exs:296[0m
+
+11:40:18.834 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [-1]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.835 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["Existing", "existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest.__ex_unit_setup_21_0/1, at: test/ecto_shorts/actions_test.exs:748[0m
+.
+11:40:18.835 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.835 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["A", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.835 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["B", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.835 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.Actions.Multi.create_many/3, at: lib/ecto_shorts/actions/multi.ex:16[0m
+
+11:40:18.835 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1944]
+[90m↳ EctoShorts.ActionsTest."test create_many/3 inserts multiple records"/1, at: test/ecto_shorts/actions_test.exs:867[0m
+
+11:40:18.835 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."id" = $1) [1945]
+[90m↳ EctoShorts.ActionsTest."test create_many/3 inserts multiple records"/1, at: test/ecto_shorts/actions_test.exs:868[0m
+.
+11:40:18.835 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["Existing", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.ActionsTest."test find_or_create/3 supports query_fields option"/1, at: test/ecto_shorts/actions_test.exs:607[0m
+
+11:40:18.836 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at" FROM "posts" AS p0 WHERE (p0."title" = $1) ["Existing"]
+[90m↳ EctoShorts.Actions.CRUD.find/3, at: lib/ecto_shorts/actions/crud.ex:100[0m
+.
+11:40:18.836 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:23[0m
+
+11:40:18.836 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["A", "dup", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:23[0m
+
+11:40:18.836 [debug] QUERY ERROR source="posts" db=0.1ms
+INSERT INTO "posts" ("title","permalink","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["B", "dup", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:23[0m
+
+11:40:18.836 [debug] QUERY OK db=0.0ms
+rollback []
+[90m↳ EctoShorts.Actions.Transaction.transact/2, at: lib/ecto_shorts/actions/transaction.ex:23[0m
+.......
+11:40:18.839 [debug] QUERY OK source="posts" db=0.1ms queue=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  does not add change when given schema_data that's already associated with record"/1, at: test/ecto_shorts/common_changes_test.exs:451[0m
+
+11:40:18.840 [debug] QUERY OK source="comments" db=0.1ms
+INSERT INTO "comments" ("body","post_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["created_body", 1949, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  does not add change when given schema_data that's already associated with record"/1, at: test/ecto_shorts/common_changes_test.exs:458[0m
+
+11:40:18.840 [debug] QUERY OK source="posts" db=0.0ms queue=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at", p0."id" FROM "posts" AS p0 WHERE (p0."id" = $1) [1949]
+[90m↳ Map.update!/3, at: lib/map.ex:916[0m
+...
+11:40:18.840 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds change for many_to_many relationship does not load association if parameters not set"/1, at: test/ecto_shorts/common_changes_test.exs:429[0m
+.
+11:40:18.841 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds change for many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:371[0m
+
+11:40:18.841 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds change for many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:379[0m
+
+11:40:18.841 [debug] QUERY OK source="users" db=0.1ms
+INSERT INTO "users" ("email","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["email", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds change for many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:379[0m
+
+11:40:18.844 [debug] QUERY OK source="posts_authors" db=0.5ms
+INSERT INTO "posts_authors" ("post_id","author_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" [1951, 101, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ anonymous fn/3 in Ecto.Adapters.SQL.checkout_or_transaction/4, at: lib/ecto/adapters/sql.ex:1358[0m
+
+11:40:18.844 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds change for many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:379[0m
+
+11:40:18.844 [debug] QUERY OK source="users" db=0.2ms queue=0.1ms
+SELECT u0."id", u0."first_name", u0."last_name", u0."age", u0."email", u0."inserted_at", u0."updated_at", p1."post_id"::bigint FROM "users" AS u0 INNER JOIN "posts_authors" AS p1 ON u0."id" = p1."author_id" WHERE (p1."post_id" = ANY($1)) ORDER BY p1."post_id"::bigint [[1951]]
+[90m↳ Map.update!/3, at: lib/map.ex:916[0m
+.
+11:40:18.844 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["created_title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload has_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:806[0m
+
+11:40:18.845 [debug] QUERY OK source="comments" db=0.1ms
+INSERT INTO "comments" ("body","post_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["comment_1_created_body", 1952, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload has_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:813[0m
+
+11:40:18.845 [debug] QUERY OK source="comments" db=0.0ms
+INSERT INTO "comments" ("body","post_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["comment_2_created_body", 1952, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload has_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:818[0m
+.
+11:40:18.846 [debug] QUERY OK source="comments" db=0.1ms queue=0.2ms
+SELECT c0."id", c0."author_id", c0."post_id", c0."body", c0."published", c0."published_at", c0."replies", c0."tags", c0."inserted_at", c0."updated_at" FROM "comments" AS c0 WHERE (c0."id" = ANY($1)) [[169, 170]]
+[90m↳ EctoShorts.CommonChanges.preload_changeset_assoc/3, at: lib/ecto_shorts/common_changes.ex:288[0m
+.
+11:40:18.846 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["created_title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  can preload has_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:727[0m
+
+11:40:18.847 [debug] QUERY OK source="comments" db=0.1ms
+INSERT INTO "comments" ("body","post_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["created_body", 1953, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  can preload has_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:734[0m
+
+11:40:18.847 [debug] QUERY OK source="comments" db=0.0ms queue=0.1ms
+SELECT c0."id", c0."author_id", c0."post_id", c0."body", c0."published", c0."published_at", c0."replies", c0."tags", c0."inserted_at", c0."updated_at", c0."post_id" FROM "comments" AS c0 WHERE (c0."post_id" = $1) ORDER BY c0."post_id" [1953]
+[90m↳ Map.update!/3, at: lib/map.ex:916[0m
 .....
-12:51:13.246 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :offset
+11:40:18.848 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set raises if the association does not exist"/1, at: test/ecto_shorts/common_changes_test.exs:904[0m
+.....
+11:40:18.849 [debug] QUERY OK source="posts" db=0.1ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["created_title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:854[0m
 
-12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :limit
+11:40:18.850 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:862[0m
 
-12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :offset
+11:40:18.850 [debug] QUERY OK source="users" db=0.1ms
+INSERT INTO "users" ("email","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["user_1_created_email", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:862[0m
 
-12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :limit
+11:40:18.850 [debug] QUERY OK source="posts_authors" db=0.1ms
+INSERT INTO "posts_authors" ("post_id","author_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" [1955, 102, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ anonymous fn/3 in Ecto.Adapters.SQL.checkout_or_transaction/4, at: lib/ecto/adapters/sql.ex:1358[0m
 
-12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :where
+11:40:18.850 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:862[0m
 
-12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :or_where
+11:40:18.850 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:868[0m
 
+11:40:18.850 [debug] QUERY OK source="users" db=0.0ms
+INSERT INTO "users" ("email","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["user_2_created_email", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:868[0m
 
-  1) test supports :offset (EctoShorts.CommonFiltersTest)
-     test/ecto_shorts/common_filters_test.exs:444
-     Expected queries to produce the same SQL:
+11:40:18.850 [debug] QUERY OK source="posts_authors" db=0.0ms
+INSERT INTO "posts_authors" ("post_id","author_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" [1955, 103, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ anonymous fn/3 in Ecto.Adapters.SQL.checkout_or_transaction/4, at: lib/ecto/adapters/sql.ex:1358[0m
 
-     left:  {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 OFFSET $1", [5]}
-     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0", []}
-     code: assert_sql(expected, q2)
-     stacktrace:
-       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
-       test/ecto_shorts/common_filters_test.exs:449: (test)
+11:40:18.850 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  when option :ids set can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:868[0m
 
+11:40:18.851 [debug] QUERY OK source="users" db=0.0ms
+SELECT u0."id", u0."first_name", u0."last_name", u0."age", u0."email", u0."inserted_at", u0."updated_at" FROM "users" AS u0 WHERE (u0."id" = ANY($1)) [[102, 103]]
+[90m↳ EctoShorts.CommonChanges.preload_changeset_assoc/3, at: lib/ecto_shorts/common_changes.ex:288[0m
+..
+11:40:18.851 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["created_post_title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  creates association when preload record not found by id "/1, at: test/ecto_shorts/common_changes_test.exs:555[0m
+
+11:40:18.851 [debug] QUERY OK source="comments" db=0.1ms
+INSERT INTO "comments" ("body","post_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["created_body", 1956, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  creates association when preload record not found by id "/1, at: test/ecto_shorts/common_changes_test.exs:562[0m
+
+11:40:18.852 [debug] QUERY OK source="comments" db=0.2ms
+DELETE FROM "comments" WHERE "id" = $1 [172]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  creates association when preload record not found by id "/1, at: test/ecto_shorts/common_changes_test.exs:567[0m
+
+11:40:18.852 [debug] QUERY OK source="comments" db=0.1ms
+SELECT c0."id", c0."author_id", c0."post_id", c0."body", c0."published", c0."published_at", c0."replies", c0."tags", c0."inserted_at", c0."updated_at", c0."post_id" FROM "comments" AS c0 WHERE (c0."post_id" = $1) ORDER BY c0."post_id" [1956]
+[90m↳ Map.update!/3, at: lib/map.ex:916[0m
+.
+11:40:18.852 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["created_title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  can preload belongs_to relationship"/1, at: test/ecto_shorts/common_changes_test.exs:690[0m
+
+11:40:18.852 [debug] QUERY OK source="comments" db=0.0ms
+INSERT INTO "comments" ("body","post_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["created_body", 1957, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  can preload belongs_to relationship"/1, at: test/ecto_shorts/common_changes_test.exs:697[0m
+.
+11:40:18.852 [debug] QUERY OK source="posts" db=0.0ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at", p0."id" FROM "posts" AS p0 WHERE (p0."id" = $1) [1957]
+[90m↳ Map.update!/3, at: lib/map.ex:916[0m
+.....
+11:40:18.853 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds change for has_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:316[0m
+
+11:40:18.853 [debug] QUERY OK source="comments" db=0.0ms
+INSERT INTO "comments" ("body","post_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["created_body", 1958, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds change for has_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:323[0m
+.
+11:40:18.853 [debug] QUERY OK source="comments" db=0.2ms
+SELECT c0."id", c0."author_id", c0."post_id", c0."body", c0."published", c0."published_at", c0."replies", c0."tags", c0."inserted_at", c0."updated_at", c0."post_id" FROM "comments" AS c0 WHERE (c0."post_id" = $1) ORDER BY c0."post_id" [1958]
+[90m↳ Map.update!/3, at: lib/map.ex:916[0m
+....
+11:40:18.854 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  raises if association does not exist"/1, at: test/ecto_shorts/common_changes_test.exs:251[0m
+.
+11:40:18.854 [debug] QUERY OK source="comments" db=0.1ms
+INSERT INTO "comments" ("inserted_at","updated_at") VALUES ($1,$2) RETURNING "id" [~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test put_or_cast_assoc:  preloads and puts associations when changeset params has ids"/1, at: test/ecto_shorts/common_changes_test.exs:940[0m
+
+11:40:18.854 [debug] QUERY OK source="comments" db=0.1ms
+SELECT c0."id", c0."author_id", c0."post_id", c0."body", c0."published", c0."published_at", c0."replies", c0."tags", c0."inserted_at", c0."updated_at" FROM "comments" AS c0 WHERE (c0."id" = ANY($1)) [[175]]
+[90m↳ EctoShorts.CommonChanges.find_method_and_put_or_cast/4, at: lib/ecto_shorts/common_changes.ex:345[0m
+.....
+11:40:18.855 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds changeset and no changes when given schema_data that's is not associated with record"/1, at: test/ecto_shorts/common_changes_test.exs:483[0m
+.
+11:40:18.855 [debug] QUERY OK source="comments" db=0.0ms
+INSERT INTO "comments" ("body","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["created_body", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds changeset and no changes when given schema_data that's is not associated with record"/1, at: test/ecto_shorts/common_changes_test.exs:490[0m
+.
+11:40:18.855 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds change for belongs_to relationship"/1, at: test/ecto_shorts/common_changes_test.exs:267[0m
+
+11:40:18.856 [debug] QUERY OK source="comments" db=0.0ms
+INSERT INTO "comments" ("body","post_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" ["created_body", 1961, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds change for belongs_to relationship"/1, at: test/ecto_shorts/common_changes_test.exs:274[0m
+
+11:40:18.856 [debug] QUERY OK source="posts" db=0.1ms
+SELECT p0."id", p0."author_id", p0."body", p0."custom_string_field", p0."permalink", p0."published_at", p0."published", p0."title", p0."tags", p0."views", p0."inserted_at", p0."updated_at", p0."id" FROM "posts" AS p0 WHERE (p0."id" = $1) [1961]
+[90m↳ Map.update!/3, at: lib/map.ex:916[0m
+.
+11:40:18.856 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["created_post_title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_change_assoc:  adds a new changeset when association params does not have :id set"/1, at: test/ecto_shorts/common_changes_test.exs:523[0m
+
+11:40:18.856 [debug] QUERY OK source="comments" db=0.1ms
+SELECT c0."id", c0."author_id", c0."post_id", c0."body", c0."published", c0."published_at", c0."replies", c0."tags", c0."inserted_at", c0."updated_at", c0."post_id" FROM "comments" AS c0 WHERE (c0."post_id" = $1) ORDER BY c0."post_id" [1962]
+[90m↳ Map.update!/3, at: lib/map.ex:916[0m
+.
+11:40:18.856 [debug] QUERY OK source="posts" db=0.0ms
+INSERT INTO "posts" ("title","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["created_title", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:766[0m
+
+11:40:18.856 [debug] QUERY OK db=0.0ms
+begin []
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:774[0m
+
+11:40:18.857 [debug] QUERY OK source="users" db=0.1ms
+INSERT INTO "users" ("email","inserted_at","updated_at") VALUES ($1,$2,$3) RETURNING "id" ["created_email", ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:774[0m
+
+11:40:18.857 [debug] QUERY OK source="posts_authors" db=0.1ms
+INSERT INTO "posts_authors" ("post_id","author_id","inserted_at","updated_at") VALUES ($1,$2,$3,$4) RETURNING "id" [1963, 104, ~N[2026-01-29 16:40:18], ~N[2026-01-29 16:40:18]]
+[90m↳ anonymous fn/3 in Ecto.Adapters.SQL.checkout_or_transaction/4, at: lib/ecto/adapters/sql.ex:1358[0m
+
+11:40:18.857 [debug] QUERY OK db=0.0ms
+commit []
+[90m↳ EctoShorts.CommonChangesTest."test preload_changeset_assoc:  can preload many_to_many relationship"/1, at: test/ecto_shorts/common_changes_test.exs:774[0m
+
+11:40:18.857 [debug] QUERY OK source="users" db=0.2ms
+SELECT u0."id", u0."first_name", u0."last_name", u0."age", u0."email", u0."inserted_at", u0."updated_at", p1."post_id"::bigint FROM "users" AS u0 INNER JOIN "posts_authors" AS p1 ON u0."id" = p1."author_id" WHERE (p1."post_id" = ANY($1)) ORDER BY p1."post_id"::bigint [[1963]]
+[90m↳ Map.update!/3, at: lib/map.ex:916[0m
 ....
 
-  2) test supports :limit (EctoShorts.CommonFiltersTest)
-     test/ecto_shorts/common_filters_test.exs:436
-     Expected queries to produce the same SQL:
+  1) test convert_params_to_filter/3 supports composite :or where inner maps also use field-level :or (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:1397
+     ** (FunctionClauseError) no function clause matching in EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
 
-     left:  {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 LIMIT $1", ~c"\n"}
-     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0", []}
-     code: assert_sql(expected, q2)
+     The following arguments were given to EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3:
+
+         # 1
+         {:as, nil}
+
+         # 2
+         :published
+
+         # 3
+         {:or, {:==, true}}
+
+     Attempted function clauses (showing 10 out of 175):
+
+         def dynamic_field_expr(-{:at, 1}-, key, -{op, nil}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:lower, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:upper, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:like, values}}-) when -is_list(values)-
+         ...
+         (165 clauses not shown)
+
+     code: CommonFilters.convert_params_to_filter(
      stacktrace:
-       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
-       test/ecto_shorts/common_filters_test.exs:441: (test)
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics/scalar_expr.ex:9: EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics.ex:127: anonymous fn/6 in EctoShorts.QueryBuilders.Postgres.Dynamics.apply_schema_expr/5
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics.ex:87: anonymous fn/5 in EctoShorts.QueryBuilders.Postgres.Dynamics.reduce_merge_dynamic/5
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/filters.ex:21: EctoShorts.QueryBuilder.Filters.build_query/6
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/ecto_shorts/common_filters_test.exs:1406: (test)
 
+.....................
 
+  2) test convert_params_to_filter/3 boolean operator group is correctly grouped with other where conditions (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:1326
+     ** (FunctionClauseError) no function clause matching in EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
 
-  3) test supports :limit and :offset combined with where (EctoShorts.CommonFiltersTest)
-     test/ecto_shorts/common_filters_test.exs:466
-     Expected queries to produce the same SQL:
+     The following arguments were given to EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3:
 
-     left:  {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 WHERE (p0.\"published\" = $1) LIMIT $2 OFFSET $3", [true, 10, 5]}
-     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 WHERE (p0.\"published\" = $1)", [true]}
-     code: assert_sql(expected, q2)
+         # 1
+         {:as, nil}
+
+         # 2
+         :views
+
+         # 3
+         {:or, {:>, 10}}
+
+     Attempted function clauses (showing 10 out of 175):
+
+         def dynamic_field_expr(-{:at, 1}-, key, -{op, nil}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:lower, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:upper, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:like, values}}-) when -is_list(values)-
+         ...
+         (165 clauses not shown)
+
+     code: CommonFilters.convert_params_to_filter(
      stacktrace:
-       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
-       test/ecto_shorts/common_filters_test.exs:487: (test)
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics/scalar_expr.ex:9: EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics.ex:127: anonymous fn/6 in EctoShorts.QueryBuilders.Postgres.Dynamics.apply_schema_expr/5
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/filters.ex:70: EctoShorts.QueryBuilder.Filters.build_field/6
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/ecto_shorts/common_filters_test.exs:1334: (test)
 
-....
+..
 
-  4) test supports multiple filters (where and or_where) (EctoShorts.CommonFiltersTest)
-     test/ecto_shorts/common_filters_test.exs:530
-     Expected queries to produce the same SQL:
+  3) test convert_params_to_filter/3 composite operator with invalid field logs warning and skips field (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:1554
+     ** (FunctionClauseError) no function clause matching in EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
 
-     left:  {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 WHERE ((p0.\"published\" = $1)) OR (p0.\"published\" = $2)", [true, false]}
-     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0", []}
-     code: assert_sql(expected, q2)
+     The following arguments were given to EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3:
+
+         # 1
+         {:as, nil}
+
+         # 2
+         :id
+
+         # 3
+         {:or, [[published: true, does_not_exist: "value"]]}
+
+     Attempted function clauses (showing 10 out of 175):
+
+         def dynamic_field_expr(-{:at, 1}-, key, -{op, nil}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:lower, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:upper, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:like, values}}-) when -is_list(values)-
+         ...
+         (165 clauses not shown)
+
+     code: capture_log(fn ->
      stacktrace:
-       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
-       test/ecto_shorts/common_filters_test.exs:549: (test)
+       (ecto_shorts 2.5.0) EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics.ex:127: anonymous fn/6 in EctoShorts.QueryBuilders.Postgres.Dynamics.apply_schema_expr/5
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/filters.ex:70: EctoShorts.QueryBuilder.Filters.build_field/6
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/ecto_shorts/common_filters_test.exs:1560: anonymous fn/1 in EctoShorts.CommonFiltersTest."test convert_params_to_filter/3 composite operator with invalid field logs warning and skips field"/1
+       (ex_unit 1.17.3) lib/ex_unit/capture_log.ex:113: ExUnit.CaptureLog.with_log/2
+       (ex_unit 1.17.3) lib/ex_unit/capture_log.ex:75: ExUnit.CaptureLog.capture_log/2
+       test/ecto_shorts/common_filters_test.exs:1558: (test)
 
-.........................
-12:51:13.258 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :last
+......................................
 
+  4) test convert_params_to_filter/3 supports boolean operator group under :or_where (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:1348
+     ** (FunctionClauseError) no function clause matching in EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
 
-  5) test supports :last (EctoShorts.CommonFiltersTest)
-     test/ecto_shorts/common_filters_test.exs:452
-     Expected queries to produce the same SQL:
+     The following arguments were given to EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3:
 
-     left:  {"SELECT s0.\"id\", s0.\"author_id\", s0.\"body\", s0.\"notes\", s0.\"permalink\", s0.\"published_at\", s0.\"published\", s0.\"title\", s0.\"tags\", s0.\"views\", s0.\"inserted_at\", s0.\"updated_at\" FROM (SELECT sp0.\"id\" AS \"id\", sp0.\"author_id\" AS \"author_id\", sp0.\"body\" AS \"body\", sp0.\"custom_string_field\" AS \"notes\", sp0.\"permalink\" AS \"permalink\", sp0.\"published_at\" AS \"published_at\", sp0.\"published\" AS \"published\", sp0.\"title\" AS \"title\", sp0.\"tags\" AS \"tags\", sp0.\"views\" AS \"views\", sp0.\"inserted_at\" AS \"inserted_at\", sp0.\"updated_at\" AS \"updated_at\" FROM \"posts\" AS sp0 ORDER BY sp0.\"id\" DESC LIMIT $1) AS s0 ORDER BY s0.\"id\"", [2]}
-     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0", []}
-     code: assert_sql(expected, q2)
+         # 1
+         {:as, nil}
+
+         # 2
+         :views
+
+         # 3
+         {:or, {:>, 10}}
+
+     Attempted function clauses (showing 10 out of 175):
+
+         def dynamic_field_expr(-{:at, 1}-, key, -{op, nil}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:lower, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:upper, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:like, values}}-) when -is_list(values)-
+         ...
+         (165 clauses not shown)
+
+     code: CommonFilters.convert_params_to_filter(
      stacktrace:
-       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
-       test/ecto_shorts/common_filters_test.exs:463: (test)
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics/scalar_expr.ex:9: EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics.ex:127: anonymous fn/6 in EctoShorts.QueryBuilders.Postgres.Dynamics.apply_schema_expr/5
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/filters.ex:70: EctoShorts.QueryBuilder.Filters.build_field/6
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/ecto_shorts/common_filters_test.exs:1356: (test)
 
-......
-Finished in 0.09 seconds (0.00s async, 0.09s sync)
-49 tests, 5 failures
+.......
+
+  5) test convert_params_to_filter/3 supports boolean :and operator for multiple comparisons on same field (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:1299
+     ** (FunctionClauseError) no function clause matching in EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
+
+     The following arguments were given to EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3:
+
+         # 1
+         {:as, nil}
+
+         # 2
+         :views
+
+         # 3
+         {:and, {:>, 10}}
+
+     Attempted function clauses (showing 10 out of 175):
+
+         def dynamic_field_expr(-{:at, 1}-, key, -{op, nil}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:lower, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:upper, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:like, values}}-) when -is_list(values)-
+         ...
+         (165 clauses not shown)
+
+     code: q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{and: [>: 10, <: 20]}}, [])
+     stacktrace:
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics/scalar_expr.ex:9: EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics.ex:127: anonymous fn/6 in EctoShorts.QueryBuilders.Postgres.Dynamics.apply_schema_expr/5
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/filters.ex:70: EctoShorts.QueryBuilder.Filters.build_field/6
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/ecto_shorts/common_filters_test.exs:1305: (test)
+
+...
+
+  6) test convert_params_to_filter/3 supports boolean :or operator for multiple comparisons on same field (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:1310
+     ** (FunctionClauseError) no function clause matching in EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
+
+     The following arguments were given to EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3:
+
+         # 1
+         {:as, nil}
+
+         # 2
+         :published
+
+         # 3
+         {:or, {:==, true}}
+
+     Attempted function clauses (showing 10 out of 175):
+
+         def dynamic_field_expr(-{:at, 1}-, key, -{op, nil}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:==, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:lower, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:!=, {:upper, value}}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:lower, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:upper, value}-)
+         def dynamic_field_expr(-{:at, 1}-, key, -{:not, {:like, values}}-) when -is_list(values)-
+         ...
+         (165 clauses not shown)
+
+     code: CommonFilters.convert_params_to_filter(
+     stacktrace:
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics/scalar_expr.ex:9: EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr.dynamic_field_expr/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/dynamics.ex:127: anonymous fn/6 in EctoShorts.QueryBuilders.Postgres.Dynamics.apply_schema_expr/5
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       (ecto_shorts 2.5.0) lib/ecto_shorts/query_builders/postgres/filters.ex:70: EctoShorts.QueryBuilder.Filters.build_field/6
+       (elixir 1.17.3) lib/enum.ex:2531: Enum."-reduce/3-lists^foldl/2-0-"/3
+       test/ecto_shorts/common_filters_test.exs:1317: (test)
+
+.............................................................................................................................................................................
+Finished in 0.4 seconds (0.2s async, 0.1s sync)
+404 tests, 6 failures

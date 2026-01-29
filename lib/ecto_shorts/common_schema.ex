@@ -109,15 +109,6 @@ defmodule EctoShorts.CommonSchema do
   end
 
   @doc """
-  ...
-  """
-  def fetch_schema!(source) do
-    with nil <- get_schema(source) do
-      raise ArgumentError, "Ecto.Schema not found in source: #{inspect(source)}"
-    end
-  end
-
-  @doc """
   Returns a `{source, schema}` tuple where `source`
   is the database table name string or `nil` and `schema` is an
   Ecto schema module.
@@ -181,7 +172,7 @@ defmodule EctoShorts.CommonSchema do
   end
 
   def get_schema_prefix(source) do
-    with schema <- fetch_schema!(source) do
+    with schema when schema !== nil <- get_schema(source) do
       schema.__schema__(:prefix)
     end
   end
@@ -214,7 +205,7 @@ defmodule EctoShorts.CommonSchema do
       [:id]
   """
   def get_schema_reflection(source, arg) do
-    with schema <- fetch_schema!(source) do
+    with schema when schema !== nil <- get_schema(source) do
       schema.__schema__(arg)
     end
   end
@@ -231,7 +222,7 @@ defmodule EctoShorts.CommonSchema do
       :id
   """
   def get_schema_reflection(source, arg1, arg2) do
-    with schema <- fetch_schema!(source) do
+    with schema when schema !== nil <- get_schema(source) do
       schema.__schema__(arg1, arg2)
     end
   end

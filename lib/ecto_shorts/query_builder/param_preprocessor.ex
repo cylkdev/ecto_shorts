@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.ExprBuilder do
+defmodule EctoShorts.QueryBuilder.ParamPreprocessor do
   @moduledoc false
 
   @doc """
@@ -6,10 +6,10 @@ defmodule EctoShorts.QueryBuilder.ExprBuilder do
 
   ## Examples
 
-    iex> EctoShorts.QueryBuilder.ExprBuilder.expand(%{title: "A"})
+    iex> EctoShorts.QueryBuilder.ParamPreprocessor.normalize_params(%{title: "A"})
     [{:title, "A"}]
   """
-  def expand(term) do
+  def normalize_params(term) do
     term
     |> do_normalize([])
     |> Enum.reverse()
@@ -38,7 +38,7 @@ defmodule EctoShorts.QueryBuilder.ExprBuilder do
   defp do_normalize({k, v}, acc) when is_list(v) do
     if flatten?(v) do
       v
-      |> expand()
+      |> normalize_params()
       |> Enum.map(&{k, &1})
       |> do_normalize(acc)
     else

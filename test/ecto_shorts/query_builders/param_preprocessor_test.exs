@@ -1,10 +1,10 @@
-defmodule EctoShorts.QueryBuilder.ExprBuilderTest do
+defmodule EctoShorts.QueryBuilder.ParamPreprocessorTest do
   use ExUnit.Case
-  alias EctoShorts.QueryBuilder.ExprBuilder
+  alias EctoShorts.QueryBuilder.ParamPreprocessor
 
-  describe "expand/1" do
+  describe "normalize_params/1" do
     test "flattens flat maps into tuples" do
-      actual = ExprBuilder.expand(%{title: "A", published: true})
+      actual = ParamPreprocessor.normalize_params(%{title: "A", published: true})
 
       expected = [
         {:title, "A"},
@@ -15,7 +15,7 @@ defmodule EctoShorts.QueryBuilder.ExprBuilderTest do
     end
 
     test "flattens nested maps into path tuples" do
-      actual = ExprBuilder.expand(%{post: %{title: "A", published: true}})
+      actual = ParamPreprocessor.normalize_params(%{post: %{title: "A", published: true}})
 
       expected = [
         {:post, {:title, "A"}},
@@ -26,7 +26,7 @@ defmodule EctoShorts.QueryBuilder.ExprBuilderTest do
     end
 
     test "keeps scalar lists as single values" do
-      actual = ExprBuilder.expand(%{tags: ["A", "B", "C"], likes: [1, 2, 3]})
+      actual = ParamPreprocessor.normalize_params(%{tags: ["A", "B", "C"], likes: [1, 2, 3]})
 
       expected = [
         {:tags, ["A", "B", "C"]},
@@ -38,7 +38,7 @@ defmodule EctoShorts.QueryBuilder.ExprBuilderTest do
 
     test "expands lists of maps into keyed tuples" do
       actual =
-        ExprBuilder.expand(%{
+        ParamPreprocessor.normalize_params(%{
           users: [%{email: "a@b.com", display_name: "ab"}]
         })
 
@@ -52,7 +52,7 @@ defmodule EctoShorts.QueryBuilder.ExprBuilderTest do
 
     test "retains keyword lists and tuple leaves" do
       actual =
-        ExprBuilder.expand(%{
+        ParamPreprocessor.normalize_params(%{
           filters: [status: "active", role: "admin"],
           meta: {:custom, "value"}
         })
@@ -67,7 +67,7 @@ defmodule EctoShorts.QueryBuilder.ExprBuilderTest do
     end
 
     test "ignores empty maps and lists" do
-      assert ExprBuilder.expand(%{empty_map: %{}, empty_list: []}) === []
+      assert ParamPreprocessor.normalize_params(%{empty_map: %{}, empty_list: []}) === []
     end
 
     test "handles deeply nested map and list combinations" do
@@ -95,11 +95,11 @@ defmodule EctoShorts.QueryBuilder.ExprBuilderTest do
         extras: {:version, "1.0"}
       ]
 
-      assert Enum.sort(ExprBuilder.expand(input)) === Enum.sort(expected)
+      assert Enum.sort(ParamPreprocessor.normalize_params(input)) === Enum.sort(expected)
     end
 
     test "preserves scalar lists inside maps" do
-      actual = ExprBuilder.expand(%{title: %{in: ["a"]}})
+      actual = ParamPreprocessor.normalize_params(%{title: %{in: ["a"]}})
 
       expected = [
         {:title, {:in, ["a"]}}
