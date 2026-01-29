@@ -4,8 +4,8 @@ defmodule EctoShorts.QueryBuilder.Filters do
   alias Ecto.Query
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.QueryBuilder.Postgres.Dynamics
-  alias EctoShorts.QueryBuilder.Postgres.Pagination
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics
+  alias EctoShorts.QueryBuilders.Postgres.Pagination
 
   require Ecto.Query
 

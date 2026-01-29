@@ -89,7 +89,7 @@ defmodule EctoShorts.MixProject do
         "Query Builder API": [
           EctoShorts.QueryBuilder,
           EctoShorts.QueryBuilder,
-          EctoShorts.QueryBuilder.Postgres
+          EctoShorts.QueryBuilders.Postgres
         ],
         "Utility API": [
           EctoShorts.Actions.Error,

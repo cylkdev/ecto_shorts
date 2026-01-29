@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.Postgres do
+defmodule EctoShorts.QueryBuilders.Postgres do
   @moduledoc false
 
   alias EctoShorts.QueryBuilder.{

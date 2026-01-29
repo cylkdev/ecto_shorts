@@ -1,10 +1,10 @@
-defmodule EctoShorts.QueryBuilder.Postgres.Dynamics do
+defmodule EctoShorts.QueryBuilders.Postgres.Dynamics do
   @moduledoc false
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.QueryBuilder.ExprBuilder
 
-  alias EctoShorts.QueryBuilder.Postgres.Dynamics.{
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics.{
     ArrayExpr,
     CommonExpr,
     ScalarExpr
@@ -146,11 +146,11 @@ defmodule EctoShorts.QueryBuilder.Postgres.Dynamics do
   defp source_has_schema?(_), do: false
 end
 
-# defmodule EctoShorts.QueryBuilder.Postgres.Dynamics do
+# defmodule EctoShorts.QueryBuilders.Postgres.Dynamics do
 #   @moduledoc false
 #   alias Ecto.Query
 
-#   alias EctoShorts.QueryBuilder.Postgres.Dynamics.{
+#   alias EctoShorts.QueryBuilders.Postgres.Dynamics.{
 #     ArrayExpr,
 #     CommonExpr,
 #     ScalarExpr

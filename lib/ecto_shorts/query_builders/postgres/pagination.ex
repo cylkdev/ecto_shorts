@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.Postgres.Pagination do
+defmodule EctoShorts.QueryBuilders.Postgres.Pagination do
   @moduledoc false
   alias Ecto.Query
 

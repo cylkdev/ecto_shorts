@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryBuilder.Postgres.Dynamics.ArrayExprBuilder do
+defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.ArrayExprBuilder do
   @moduledoc false
 
   alias EctoShorts.QueryBuilder.BindingHelpers
-  alias EctoShorts.QueryBuilder.Postgres.Dynamics.ArrayExprBuilder
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics.ArrayExprBuilder
 
   defmacro define_nil_comparisons(context_ast \\ nil, opts_ast \\ []) do
     context = Macro.expand(context_ast, __CALLER__)

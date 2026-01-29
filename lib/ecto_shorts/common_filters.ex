@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
-  alias EctoShorts.QueryBuilder
+  alias EctoShorts.QueryBuilders
   alias EctoShorts.SchemaHelpers
 
   @logger_prefix "EctoShorts.CommonFilters"
@@ -270,7 +270,7 @@ defmodule EctoShorts.CommonFilters do
   defp apply_query_builder(schema_source, query, binding_selector, current_filter, params, opts) do
     schema_source
     |> to_binding_source(query, binding_selector)
-    |> QueryBuilder.build_query(
+    |> QueryBuilders.build_query(
       query,
       binding_selector,
       current_filter,
@@ -381,7 +381,7 @@ end
 #   alias EctoShorts.CommonFilters.Pagination
 
 #   alias EctoShorts.{
-#     QueryBuilder,
+#     QueryBuilders,
 #     CommonQuery,
 #     Utils
 #   }
@@ -973,7 +973,7 @@ end
 #     if binding_selector?(bind_op, bind_to) do
 #       case to_binding_source({bind_op, bind_to}, schema, query) do
 #         {:ok, binding_schema} ->
-#           QueryBuilder.build_query(
+#           QueryBuilders.build_query(
 #             binding_schema,
 #             filter,
 #             query,

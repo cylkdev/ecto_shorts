@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryBuilder.Postgres.Dynamics.CommonExprBuilder do
+defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.CommonExprBuilder do
   @moduledoc false
 
   alias EctoShorts.QueryBuilder.BindingHelpers
-  alias EctoShorts.QueryBuilder.Postgres.Dynamics.CommonExprBuilder
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics.CommonExprBuilder
 
   defmacro define_common_exprs(context_ast \\ nil, opts_ast \\ []) do
     context = Macro.expand(context_ast, __CALLER__)
