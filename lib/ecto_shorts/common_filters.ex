@@ -1,11 +1,10 @@
 defmodule EctoShorts.CommonFilters do
-  alias Ecto.Queryable
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
   alias EctoShorts.QueryBuilder
 
   @binding_operators [:as, :at]
-  @delegated_filters [:join, :select, :select_merge]
+  @delegated_filters [:join, :offset, :limit, :select, :select_merge]
 
   @default_binding_selector {:as, nil}
   @default_filter :where

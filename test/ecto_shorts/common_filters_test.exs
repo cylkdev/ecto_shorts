@@ -275,338 +275,350 @@ defmodule EctoShorts.CommonFiltersTest do
     assert_sql(expected, q2)
   end
 
-  #   test "supports negated UPPER operator for scalar fields" do
-  #     expected = from p in Post, where: not (fragment("upper(?)", p.title) == ^"HELLO")
-  #     q = Post
+  test "supports negated UPPER operator for scalar fields" do
+    expected = from p in Post, where: not (fragment("upper(?)", p.title) == ^"HELLO")
+    q = Post
 
-  #     q2 =
-  #       CommonFilters.convert_params_to_filter(q, %{title: %{not: %{upper: "HELLO"}}})
+    q2 =
+      CommonFilters.convert_params_to_filter(q, %{title: %{not: %{upper: "HELLO"}}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports LIKE operator for array fields with list RHS (EXISTS ... LIKE ANY)" do
-  #     patterns = ["%elixir%", "%erlang%"]
+  test "supports LIKE operator for array fields with list RHS (EXISTS ... LIKE ANY)" do
+    patterns = ["%elixir%", "%erlang%"]
 
-  #     expected =
-  #       from(p in Post,
-  #         where:
-  #           fragment(
-  #             """
-  #             EXISTS (
-  #               SELECT 1
-  #               FROM unnest(?) AS t
-  #               WHERE t LIKE ANY (?)
-  #             )
-  #             """,
-  #             p.tags,
-  #             ^patterns
-  #           )
-  #       )
+    expected =
+      from(p in Post,
+        where:
+          fragment(
+            """
+            EXISTS (
+              SELECT 1
+              FROM unnest(?) AS t
+              WHERE t LIKE ANY (?)
+            )
+            """,
+            p.tags,
+            ^patterns
+          )
+      )
 
-  #     q = Post
+    q = Post
 
-  #     q2 =
-  #       CommonFilters.convert_params_to_filter(q, %{tags: %{like: ["elixir", "erlang"]}})
+    q2 =
+      CommonFilters.convert_params_to_filter(q, %{tags: %{like: ["elixir", "erlang"]}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports ILIKE operator for array fields with list RHS (EXISTS ... ILIKE ANY)" do
-  #     patterns = ["%elixir%", "%erlang%"]
+  test "supports ILIKE operator for array fields with list RHS (EXISTS ... ILIKE ANY)" do
+    patterns = ["%elixir%", "%erlang%"]
 
-  #     expected =
-  #       from(p in Post,
-  #         where:
-  #           fragment(
-  #             """
-  #             EXISTS (
-  #               SELECT 1
-  #               FROM unnest(?) AS t
-  #               WHERE t ILIKE ANY (?)
-  #             )
-  #             """,
-  #             p.tags,
-  #             ^patterns
-  #           )
-  #       )
+    expected =
+      from(p in Post,
+        where:
+          fragment(
+            """
+            EXISTS (
+              SELECT 1
+              FROM unnest(?) AS t
+              WHERE t ILIKE ANY (?)
+            )
+            """,
+            p.tags,
+            ^patterns
+          )
+      )
 
-  #     q = Post
+    q = Post
 
-  #     q2 =
-  #       CommonFilters.convert_params_to_filter(q, %{tags: %{ilike: ["elixir", "erlang"]}})
+    q2 =
+      CommonFilters.convert_params_to_filter(q, %{tags: %{ilike: ["elixir", "erlang"]}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports LOWER operator for array fields" do
-  #     expected =
-  #       from(p in Post,
-  #         where:
-  #           fragment(
-  #             """
-  #             EXISTS (
-  #               SELECT 1
-  #               FROM unnest(?) AS t
-  #               WHERE lower(t) = ?
-  #             )
-  #             """,
-  #             p.tags,
-  #             ^"elixir"
-  #           )
-  #       )
+  test "supports LOWER operator for array fields" do
+    expected =
+      from(p in Post,
+        where:
+          fragment(
+            """
+            EXISTS (
+              SELECT 1
+              FROM unnest(?) AS t
+              WHERE lower(t) = ?
+            )
+            """,
+            p.tags,
+            ^"elixir"
+          )
+      )
 
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{lower: "elixir"}})
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{lower: "elixir"}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports UPPER operator for array fields" do
-  #     expected =
-  #       from(p in Post,
-  #         where:
-  #           fragment(
-  #             """
-  #             EXISTS (
-  #               SELECT 1
-  #               FROM unnest(?) AS t
-  #               WHERE upper(t) = ?
-  #             )
-  #             """,
-  #             p.tags,
-  #             ^"ELIXIR"
-  #           )
-  #       )
+  test "supports UPPER operator for array fields" do
+    expected =
+      from(p in Post,
+        where:
+          fragment(
+            """
+            EXISTS (
+              SELECT 1
+              FROM unnest(?) AS t
+              WHERE upper(t) = ?
+            )
+            """,
+            p.tags,
+            ^"ELIXIR"
+          )
+      )
 
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{upper: "ELIXIR"}})
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{upper: "ELIXIR"}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports negated LOWER operator for array fields" do
-  #     expected =
-  #       from(p in Post,
-  #         where:
-  #           fragment(
-  #             """
-  #             NOT EXISTS (
-  #               SELECT 1
-  #               FROM unnest(?) AS t
-  #               WHERE lower(t) = ?
-  #             )
-  #             """,
-  #             p.tags,
-  #             ^"elixir"
-  #           )
-  #       )
+  test "supports negated LOWER operator for array fields" do
+    expected =
+      from(p in Post,
+        where:
+          fragment(
+            """
+            NOT EXISTS (
+              SELECT 1
+              FROM unnest(?) AS t
+              WHERE lower(t) = ?
+            )
+            """,
+            p.tags,
+            ^"elixir"
+          )
+      )
 
-  #     q = Post
+    q = Post
 
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{not: %{lower: "elixir"}}})
+    q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{not: %{lower: "elixir"}}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports negated UPPER operator for array fields" do
-  #     expected =
-  #       from(p in Post,
-  #         where:
-  #           fragment(
-  #             """
-  #             NOT EXISTS (
-  #               SELECT 1
-  #               FROM unnest(?) AS t
-  #               WHERE upper(t) = ?
-  #             )
-  #             """,
-  #             p.tags,
-  #             ^"ELIXIR"
-  #           )
-  #       )
+  test "supports negated UPPER operator for array fields" do
+    expected =
+      from(p in Post,
+        where:
+          fragment(
+            """
+            NOT EXISTS (
+              SELECT 1
+              FROM unnest(?) AS t
+              WHERE upper(t) = ?
+            )
+            """,
+            p.tags,
+            ^"ELIXIR"
+          )
+      )
 
-  #     q = Post
+    q = Post
 
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{not: %{upper: "ELIXIR"}}})
+    q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{not: %{upper: "ELIXIR"}}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports :limit" do
-  #     expected = from p in Post, limit: ^10
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, limit: 10)
+  test "supports :limit" do
+    expected = from p in Post, limit: ^10
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{limit: 10}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports :offset" do
-  #     expected = from p in Post, offset: ^5
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, offset: 5)
+  test "supports :offset" do
+    expected = from p in Post, offset: ^5
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{offset: 5}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports :last" do
-  #     expected =
-  #       Post
-  #       |> exclude(:order_by)
-  #       |> from order_by: [desc: :id], limit: ^2
-  #       |> subquery()
-  #       |> order_by(:id)
+  test "supports :last" do
+    expected =
+      Post
+      |> exclude(:order_by)
+      |> from(order_by: [desc: :id], limit: ^2)
+      |> subquery()
+      |> order_by(:id)
 
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, last: 2)
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{last: 2}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports :limit and :offset combined with where" do
-  #     expected =
-  #       from(p in Post,
-  #         where: p.published == ^true,
-  #         limit: ^10,
-  #         offset: ^5
-  #       )
+  test "supports :limit and :offset combined with where" do
+    expected =
+      from(p in Post,
+        where: p.published == ^true,
+        limit: ^10,
+        offset: ^5
+      )
 
-  #     q = Post
+    q = Post
 
-  #     q2 =
-  #       CommonFilters.convert_params_to_filter(q,
-  #         published: true,
-  #         limit: 10,
-  #         offset: 5
-  #       )
+    q2 =
+      CommonFilters.convert_params_to_filter(
+        q,
+        %{
+          published: true,
+          limit: 10,
+          offset: 5
+        },
+        []
+      )
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports == nil comparisons (generates IS NULL)" do
-  #     expected = from p in Post, where: is_nil(p.published_at)
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{published_at: nil})
+  test "supports == nil comparisons (generates IS NULL)" do
+    expected = from p in Post, where: is_nil(p.published_at)
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{published_at: nil}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports != nil comparisons (generates IS NOT NULL)" do
-  #     expected = from p in Post, where: not is_nil(p.published_at)
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{published_at: %{!=: nil}})
+  test "supports != nil comparisons (generates IS NOT NULL)" do
+    expected = from p in Post, where: not is_nil(p.published_at)
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{published_at: %{!=: nil}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports == nil comparisons for array fields (generates IS NULL)" do
-  #     expected = from p in Post, where: is_nil(p.tags)
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{tags: nil})
+  test "supports == nil comparisons for array fields (generates IS NULL)" do
+    expected = from p in Post, where: is_nil(p.tags)
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{tags: nil}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports != nil comparisons for array fields (generates IS NOT NULL)" do
-  #     expected = from p in Post, where: not is_nil(p.tags)
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{!=: nil}})
+  test "supports != nil comparisons for array fields (generates IS NOT NULL)" do
+    expected = from p in Post, where: not is_nil(p.tags)
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{!=: nil}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "invalid nil operator raises helpful error" do
-  #     assert_raise ArgumentError,
-  #                  "Expected the operator to be one of [:==, :!=] for nil comparison, got: :>",
-  #                  fn ->
-  #                    CommonFilters.convert_params_to_filter(Post, %{published_at: %{>: nil}})
-  #                  end
-  #   end
+  test "invalid nil operator raises helpful error" do
+    assert_raise ArgumentError,
+                 "Expected the operator to be one of [:==, :!=] for nil comparison, got: :>",
+                 fn ->
+                   CommonFilters.convert_params_to_filter(Post, %{published_at: %{>: nil}}, [])
+                 end
+  end
 
-  #   test "supports multiple filters (where and or_where)" do
-  #     expected =
-  #       from(p in Post,
-  #         where: p.published == ^true,
-  #         or_where: p.published == ^false
-  #       )
+  test "supports multiple filters (where and or_where)" do
+    expected =
+      from(p in Post,
+        where: p.published == ^true,
+        or_where: p.published == ^false
+      )
 
-  #     q = Post
+    q = Post
 
-  #     q2 =
-  #       CommonFilters.convert_params_to_filter(q, %{
-  #         where: %{published: true},
-  #         or_where: %{published: false}
-  #       })
+    q2 =
+      CommonFilters.convert_params_to_filter(
+        q,
+        %{
+          where: %{published: true},
+          or_where: %{published: false}
+        },
+        []
+      )
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports positional binding selector via :at" do
-  #     expected = from p in Post, where: p.published == ^true
-  #     q = Post
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{at: %{1 => %{published: true}}})
+  test "supports positional binding selector via :at" do
+    expected = from p in Post, where: p.published == ^true
+    q = Post
+    q2 = CommonFilters.convert_params_to_filter(q, %{at: %{1 => %{published: true}}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "invalid :at binding selector key logs error and is skipped" do
-  #     expected = from p in Post, where: p.published == ^true
-  #     q = Post
+  # test "invalid :at binding selector key logs error and is skipped" do
+  #   expected = from p in Post, where: p.published == ^true
+  #   q = Post
 
-  #     log =
-  #       capture_log(fn ->
-  #         q2 =
-  #           CommonFilters.convert_params_to_filter(q, %{
-  #             at: %{
-  #               "1" => %{published: false},
-  #               1 => %{published: true}
-  #             }
-  #           })
+  #   log =
+  #     capture_log(fn ->
+  #       q2 =
+  #         CommonFilters.convert_params_to_filter(q, %{
+  #           at: %{
+  #             "1" => %{published: false},
+  #             1 => %{published: true}
+  #           }
+  #         })
 
-  #         send(self(), {:q2, q2})
-  #       end)
+  #       send(self(), {:q2, q2})
+  #     end)
 
-  #     assert log =~ "Expected positional binding selector to be an integer, got: \"1\""
+  #   assert log =~ "Expected positional binding selector to be an integer, got: \"1\""
 
-  #     assert_received {:q2, q2}
-  #     assert_sql expected, q2
-  #   end
+  #   assert_received {:q2, q2}
+  #   assert_sql expected, q2
+  # end
 
-  #   test "supports named binding selector via :as" do
-  #     expected = from p in Post, as: :post, where: p.published == ^true
-  #     q = from p in Post, as: :post
-  #     q2 = CommonFilters.convert_params_to_filter(q, %{as: %{post: %{published: true}}})
+  test "supports named binding selector via :as" do
+    expected = from p in Post, as: :post, where: p.published == ^true
+    q = from p in Post, as: :post
+    q2 = CommonFilters.convert_params_to_filter(q, %{as: %{post: %{published: true}}}, [])
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
-  #   test "supports filtering on both root field and association field via :as" do
-  #     expected =
-  #       from(p in Post,
-  #         as: :post,
-  #         join: a in assoc(p, :author),
-  #         as: :author,
-  #         where: p.published == ^true,
-  #         where: a.first_name == ^"John"
-  #       )
+  test "supports filtering on both root field and association field via :as" do
+    expected =
+      from(p in Post,
+        as: :post,
+        join: a in assoc(p, :author),
+        as: :author,
+        where: p.published == ^true,
+        where: a.first_name == ^"John"
+      )
 
-  #     q =
-  #       from(p in Post,
-  #         as: :post,
-  #         join: a in assoc(p, :author),
-  #         as: :author
-  #       )
+    q =
+      from(p in Post,
+        as: :post,
+        join: a in assoc(p, :author),
+        as: :author
+      )
 
-  #     q2 =
-  #       CommonFilters.convert_params_to_filter(q, %{
-  #         as: [
-  #           post: %{published: true},
-  #           author: %{first_name: "John"}
-  #         ]
-  #       })
+    q2 =
+      CommonFilters.convert_params_to_filter(
+        q,
+        %{
+          as: [
+            post: %{published: true},
+            author: %{first_name: "John"}
+          ]
+        },
+        []
+      )
 
-  #     assert_sql expected, q2
-  #   end
+    assert_sql(expected, q2)
+  end
 
   #   test "supports explicit operator" do
   #     expected = from p in Post, where: p.published != ^true

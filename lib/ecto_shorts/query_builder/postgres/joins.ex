@@ -1,6 +1,6 @@
 defmodule EctoShorts.QueryBuilder.Joins do
   @moduledoc false
-  alias EctoShorts.QueryBuilder.Dynamics
+  alias EctoShorts.QueryBuilder.Postgres.Dynamics
 
   alias Ecto.Query
 

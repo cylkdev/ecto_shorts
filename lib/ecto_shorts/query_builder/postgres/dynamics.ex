@@ -1,9 +1,10 @@
-defmodule EctoShorts.QueryBuilder.Dynamics do
+defmodule EctoShorts.QueryBuilder.Postgres.Dynamics do
   @moduledoc false
 
   alias EctoShorts.CommonSchema
+  alias EctoShorts.QueryBuilder.ExprBuilder
 
-  alias EctoShorts.QueryBuilder.Dynamics.{
+  alias EctoShorts.QueryBuilder.Postgres.Dynamics.{
     ArrayExpr,
     CommonExpr,
     ScalarExpr
@@ -15,16 +16,16 @@ defmodule EctoShorts.QueryBuilder.Dynamics do
   @common_operators [:ids, :before, :after, :start_date, :end_date]
   @boolean_operators [:and, :or]
 
-  def merge_dynamic(nil, _, right_dynamic) do
-    right_dynamic
+  def merge_dynamic(nil, _, dyn_right) do
+    dyn_right
   end
 
-  def merge_dynamic(dyn_left, :and, right_dynamic) do
-    dynamic([], ^dyn_left and ^right_dynamic)
+  def merge_dynamic(dyn_l, :and, dyn_r) do
+    dynamic([], ^dyn_l and ^dyn_r)
   end
 
-  def merge_dynamic(dyn_left, :or, right_dynamic) do
-    dynamic([], ^dyn_left or ^right_dynamic)
+  def merge_dynamic(dyn_l, :or, dyn_r) do
+    dynamic([], ^dyn_l or ^dyn_r)
   end
 
   def build_dynamic(source, bind_select, args) do
@@ -39,81 +40,99 @@ defmodule EctoShorts.QueryBuilder.Dynamics do
     end
   end
 
-  defp reduce_dynamic(source, dynamic, bind_select, params)
+  defp reduce_dynamic(source, dyn_l, bind_select, params)
        when is_map(params) or is_list(params) do
-    Enum.reduce(params, dynamic, fn entry, dyn_acc ->
+    Enum.reduce(params, dyn_l, fn entry, dyn_acc ->
       reduce_dynamic(source, dyn_acc, bind_select, entry)
     end)
   end
 
-  defp reduce_dynamic(_source, dynamic, bind_select, {key, value})
+  defp reduce_dynamic(_source, dyn_l, bind_select, {key, value})
        when key in @common_operators do
-    dyn_expr = CommonExpr.dynamic_field_expr(bind_select, key, value)
-    merge_dynamic(dynamic, :and, dyn_expr)
+    value
+    |> ExprBuilder.expand()
+    |> Enum.reduce(dyn_l, fn item, dyn_acc ->
+      dyn_r = CommonExpr.dynamic_field_expr(bind_select, key, item)
+      merge_dynamic(dyn_acc, :and, dyn_r)
+    end)
   end
 
-  defp reduce_dynamic(source, dynamic, bind_select, {key, value})
+  defp reduce_dynamic(source, dyn_l, bind_select, {key, value})
        when key in @boolean_operators do
     if is_map(value) do
-      reduce_dynamic(source, dynamic, bind_select, {key, Map.to_list(value)})
+      reduce_dynamic(source, dyn_l, bind_select, {key, Map.to_list(value)})
     else
-      reduce_merge_dynamic(source, dynamic, bind_select, key, value)
+      reduce_merge_dynamic(source, dyn_l, bind_select, key, value)
     end
   end
 
-  defp reduce_dynamic(source, dynamic, bind_select, {key, value}) do
+  defp reduce_dynamic(source, dyn_l, bind_select, {key, value}) do
     if source_has_schema?(source) do
-      build_schema_dynamic(source, dynamic, bind_select, {key, value})
+      build_schema_dynamic(source, dyn_l, bind_select, {key, value})
     else
-      dyn_expr = ScalarExpr.dynamic_field_expr(bind_select, key, value)
-      merge_dynamic(dynamic, :and, dyn_expr)
+      value
+      |> ExprBuilder.expand()
+      |> Enum.reduce(dyn_l, fn item, dyn_acc ->
+        dyn_r = ScalarExpr.dynamic_field_expr(bind_select, key, item)
+        merge_dynamic(dyn_acc, :and, dyn_r)
+      end)
     end
   end
 
-  defp reduce_merge_dynamic(source, dynamic, bind_select, bool_op, entries) do
-    Enum.reduce(entries, dynamic, fn entry, dyn_acc ->
-      right_dynamic =
+  defp reduce_merge_dynamic(source, dyn_l, bind_select, bool_op, entries) do
+    Enum.reduce(entries, dyn_l, fn entry, dyn_acc ->
+      dyn_r =
         cond do
           is_map(entry) -> reduce_dynamic(source, nil, bind_select, Map.to_list(entry))
           Keyword.keyword?(entry) -> reduce_dynamic(source, nil, bind_select, entry)
           true -> reduce_dynamic(source, nil, bind_select, entry)
         end
 
-      merge_dynamic(dyn_acc, bool_op, right_dynamic)
+      merge_dynamic(dyn_acc, bool_op, dyn_r)
     end)
   end
 
-  defp build_schema_dynamic(source, left_dynamic, bind_select, {key, value}) do
+  defp build_schema_dynamic(source, dyn_l, bind_select, {key, value}) do
     cond do
       is_map(value) ->
-        build_schema_dynamic(source, left_dynamic, bind_select, {key, Map.to_list(value)})
+        build_schema_dynamic(
+          source,
+          dyn_l,
+          bind_select,
+          {key, Map.to_list(value)}
+        )
 
       is_list(value) ->
         if Keyword.keyword?(value) do
-          Enum.reduce(value, left_dynamic, fn entry, dyn_acc ->
+          Enum.reduce(value, dyn_l, fn entry, dyn_acc ->
             build_schema_dynamic(source, dyn_acc, bind_select, {key, entry})
           end)
         else
-          apply_schema_expr(source, left_dynamic, bind_select, key, value)
+          apply_schema_expr(source, dyn_l, bind_select, key, value)
         end
 
       true ->
-        apply_schema_expr(source, left_dynamic, bind_select, key, value)
+        apply_schema_expr(source, dyn_l, bind_select, key, value)
     end
   end
 
-  defp apply_schema_expr(source, left_dynamic, bind_select, key, {op, value}) do
-    if array_type?(source, key) do
-      right_dynamic = ArrayExpr.dynamic_field_expr(bind_select, key, {op, value})
-      merge_dynamic(left_dynamic, :and, right_dynamic)
-    else
-      right_dynamic = ScalarExpr.dynamic_field_expr(bind_select, key, {op, value})
-      merge_dynamic(left_dynamic, :and, right_dynamic)
-    end
+  defp apply_schema_expr(source, dyn_l, bind_select, key, {op, value}) do
+    value
+    |> ExprBuilder.expand()
+    |> Enum.reduce(dyn_l, fn item, dyn_acc ->
+      dyn_r =
+        if array_type?(source, key) do
+          ArrayExpr.dynamic_field_expr(bind_select, key, {op, item})
+        else
+          ScalarExpr.dynamic_field_expr(bind_select, key, {op, item})
+        end
+
+      merge_dynamic(dyn_acc, :and, dyn_r)
+    end)
   end
 
-  defp apply_schema_expr(source, left_dynamic, bind_select, key, value) do
-    apply_schema_expr(source, left_dynamic, bind_select, key, {@equal, value})
+  defp apply_schema_expr(source, dyn_l, bind_select, key, value) do
+    apply_schema_expr(source, dyn_l, bind_select, key, {@equal, value})
   end
 
   defp array_type?(source, key) do
@@ -127,11 +146,11 @@ defmodule EctoShorts.QueryBuilder.Dynamics do
   defp source_has_schema?(_), do: false
 end
 
-# defmodule EctoShorts.QueryBuilder.Dynamics do
+# defmodule EctoShorts.QueryBuilder.Postgres.Dynamics do
 #   @moduledoc false
 #   alias Ecto.Query
 
-#   alias EctoShorts.QueryBuilder.Dynamics.{
+#   alias EctoShorts.QueryBuilder.Postgres.Dynamics.{
 #     ArrayExpr,
 #     CommonExpr,
 #     ScalarExpr

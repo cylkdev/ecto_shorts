@@ -1,10 +1,10 @@
-defmodule EctoShorts.QueryBuilder.DynamicsTest do
+defmodule EctoShorts.QueryBuilder.Postgres.DynamicsTest do
   use ExUnit.Case
   use EctoShorts.Testing
 
   import Ecto.Query
 
-  alias EctoShorts.QueryBuilder.Dynamics
+  alias EctoShorts.QueryBuilder.Postgres.Dynamics
   alias EctoShorts.Schema.Post
 
   test "build_dynamic supports common operator :ids" do
@@ -62,6 +62,27 @@ defmodule EctoShorts.QueryBuilder.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "build_dynamic supports composite boolean :or expressions" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.build_dynamic(Post, binding, %{
+        or: [
+          %{id: 1, published: true},
+          %{id: 2, published: false}
+        ]
+      })
+
+    expected =
+      dynamic(
+        [q],
+        (field(q, ^:id) == ^1 and field(q, ^:published) == ^true) or
+          (field(q, ^:id) == ^2 and field(q, ^:published) == ^false)
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
   test "build_dynamic supports boolean operator :and" do
     binding = {:as, nil}
     actual = Dynamics.build_dynamic(Post, binding, %{and: [published: true, title: "hi"]})
@@ -77,7 +98,7 @@ defmodule EctoShorts.QueryBuilder.DynamicsTest do
 
   test "build_dynamic supports boolean operator :or with map value" do
     binding = {:as, nil}
-    actual = Dynamics.build_dynamic(Post, binding, %{or: %{published: true, title: "hi"}})
+    actual = Dynamics.build_dynamic(Post, binding, %{or: [published: true, title: "hi"]})
 
     expected =
       dynamic(

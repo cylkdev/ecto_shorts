@@ -4,7 +4,8 @@ defmodule EctoShorts.QueryBuilder.Filters do
   alias Ecto.Query
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.QueryBuilder.Dynamics
+  alias EctoShorts.QueryBuilder.Postgres.Dynamics
+  alias EctoShorts.QueryBuilder.Postgres.Pagination
 
   require Ecto.Query
 
@@ -18,7 +19,7 @@ defmodule EctoShorts.QueryBuilder.Filters do
       when bool_op in @boolean_operators and is_list(values) do
     dynamic = boolean_dynamic(schema, bind_select, nil, {bool_op, values})
 
-    compose(filter, query, dynamic)
+    apply_query_dynamic(filter, query, dynamic)
   end
 
   def build_query(source, filter, query, bind_select, {common_op, args}, _opts)
@@ -28,7 +29,11 @@ defmodule EctoShorts.QueryBuilder.Filters do
       |> CommonSchema.get_schema_source()
       |> Dynamics.build_dynamic(bind_select, {common_op, args})
 
-    compose(filter, query, dynamic)
+    apply_query_dynamic(filter, query, dynamic)
+  end
+
+  def build_query(source, :offset, query, _bind_select, value, _opts) do
+    Pagination.build_query(source, query, :offset, value)
   end
 
   def build_query(source, filter, query, bind_select, {key, value}, _opts) do
@@ -67,11 +72,11 @@ defmodule EctoShorts.QueryBuilder.Filters do
     if composite?(values) do
       dynamic = boolean_dynamic(schema, bind_select, nil, {bool_op, values})
 
-      compose(filter, query, dynamic)
+      apply_query_dynamic(filter, query, dynamic)
     else
       dynamic = boolean_dynamic(schema, bind_select, field_key, {bool_op, values})
 
-      compose(filter, query, dynamic)
+      apply_query_dynamic(filter, query, dynamic)
     end
   end
 
@@ -80,11 +85,11 @@ defmodule EctoShorts.QueryBuilder.Filters do
     if Keyword.keyword?(values) do
       Enum.reduce(values, query, fn value, updated_query ->
         dynamic = apply_dynamic(schema, bind_select, field_key, {operator, value})
-        compose(filter, updated_query, dynamic)
+        apply_query_dynamic(filter, updated_query, dynamic)
       end)
     else
       dynamic = apply_dynamic(schema, bind_select, field_key, {operator, values})
-      compose(filter, query, dynamic)
+      apply_query_dynamic(filter, query, dynamic)
     end
   end
 
@@ -92,13 +97,13 @@ defmodule EctoShorts.QueryBuilder.Filters do
        when is_map(params) do
     Enum.reduce(params, query, fn value, updated_query ->
       dynamic = apply_dynamic(schema, bind_select, field_key, {operator, value})
-      compose(filter, updated_query, dynamic)
+      apply_query_dynamic(filter, updated_query, dynamic)
     end)
   end
 
   defp apply_filter(schema, filter, query, bind_select, field_key, {operator, field_value}) do
     dynamic = apply_dynamic(schema, bind_select, field_key, {operator, field_value})
-    compose(filter, query, dynamic)
+    apply_query_dynamic(filter, query, dynamic)
   end
 
   defp build_composite_dynamic(schema, bind_select, enum) do
@@ -170,15 +175,15 @@ defmodule EctoShorts.QueryBuilder.Filters do
     Dynamics.build_dynamic(source, bind_select, {key, value})
   end
 
-  defp compose(_, query, nil) do
+  defp apply_query_dynamic(_, query, nil) do
     query
   end
 
-  defp compose(:or_where, query, dynamic) do
+  defp apply_query_dynamic(:or_where, query, dynamic) do
     Query.or_where(query, ^dynamic)
   end
 
-  defp compose(:where, query, dynamic) do
+  defp apply_query_dynamic(:where, query, dynamic) do
     Query.where(query, ^dynamic)
   end
 

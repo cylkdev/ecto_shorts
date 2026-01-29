@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.ArrayExprBuilder do
+defmodule EctoShorts.QueryBuilder.Postgres.Dynamics.ArrayExprBuilder do
   @moduledoc false
 
   alias EctoShorts.QueryBuilder.BindingHelpers
-  alias EctoShorts.QueryBuilder.Dynamics.ArrayExprBuilder
+  alias EctoShorts.QueryBuilder.Postgres.Dynamics.ArrayExprBuilder
 
   defmacro define_nil_comparisons(context_ast \\ nil, opts_ast \\ []) do
     context = Macro.expand(context_ast, __CALLER__)
@@ -284,6 +284,14 @@ defmodule EctoShorts.QueryBuilder.Dynamics.ArrayExprBuilder do
           dynamic_field_expr(unquote(quoted_binding_head), key, {:==, values})
         end
 
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, {:all, values}}})
+            when is_list(values) do
+          Ecto.Query.dynamic(
+            [unquote_splicing(quoted_binding_body)],
+            not fragment("? @> ?", field(unquote(target_binding_var), ^key), ^values)
+          )
+        end
+
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, values}})
             when is_list(values) do
           Ecto.Query.dynamic(
@@ -293,6 +301,13 @@ defmodule EctoShorts.QueryBuilder.Dynamics.ArrayExprBuilder do
               field(unquote(target_binding_var), ^key),
               ^values
             )
+          )
+        end
+
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, value}}) do
+          Ecto.Query.dynamic(
+            [unquote_splicing(quoted_binding_body)],
+            ^value not in field(unquote(target_binding_var), ^key)
           )
         end
 
@@ -324,14 +339,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.ArrayExprBuilder do
           )
         end
 
-        def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, {:all, values}}})
-            when is_list(values) do
-          Ecto.Query.dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not fragment("? @> ?", field(unquote(target_binding_var), ^key), ^values)
-          )
-        end
-
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:==, values})
             when is_list(values) do
           Ecto.Query.dynamic(
@@ -346,6 +353,10 @@ defmodule EctoShorts.QueryBuilder.Dynamics.ArrayExprBuilder do
             [unquote_splicing(quoted_binding_body)],
             field(unquote(target_binding_var), ^key) != ^values
           )
+        end
+
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {:!=, value}) do
+          dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, value}})
         end
 
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:in, values})
@@ -394,10 +405,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.ArrayExprBuilder do
 
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:==, value}) do
           dynamic_field_expr(unquote(quoted_binding_head), key, {:in, value})
-        end
-
-        def dynamic_field_expr(unquote(quoted_binding_head), key, {:!=, value}) do
-          dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, value}})
         end
 
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:in, value}) do

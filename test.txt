@@ -1,0 +1,84 @@
+Running ExUnit with seed: 148741, max_cases: 24
+
+.....
+12:51:13.246 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :offset
+
+12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :limit
+
+12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :offset
+
+12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :limit
+
+12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :where
+
+12:51:13.252 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :or_where
+
+
+  1) test supports :offset (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:444
+     Expected queries to produce the same SQL:
+
+     left:  {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 OFFSET $1", [5]}
+     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0", []}
+     code: assert_sql(expected, q2)
+     stacktrace:
+       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
+       test/ecto_shorts/common_filters_test.exs:449: (test)
+
+....
+
+  2) test supports :limit (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:436
+     Expected queries to produce the same SQL:
+
+     left:  {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 LIMIT $1", ~c"\n"}
+     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0", []}
+     code: assert_sql(expected, q2)
+     stacktrace:
+       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
+       test/ecto_shorts/common_filters_test.exs:441: (test)
+
+
+
+  3) test supports :limit and :offset combined with where (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:466
+     Expected queries to produce the same SQL:
+
+     left:  {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 WHERE (p0.\"published\" = $1) LIMIT $2 OFFSET $3", [true, 10, 5]}
+     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 WHERE (p0.\"published\" = $1)", [true]}
+     code: assert_sql(expected, q2)
+     stacktrace:
+       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
+       test/ecto_shorts/common_filters_test.exs:487: (test)
+
+....
+
+  4) test supports multiple filters (where and or_where) (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:530
+     Expected queries to produce the same SQL:
+
+     left:  {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0 WHERE ((p0.\"published\" = $1)) OR (p0.\"published\" = $2)", [true, false]}
+     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0", []}
+     code: assert_sql(expected, q2)
+     stacktrace:
+       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
+       test/ecto_shorts/common_filters_test.exs:549: (test)
+
+.........................
+12:51:13.258 [warning] [EctoShorts.QueryBuilder.Filters] Expected a query field for schema {nil, EctoShorts.Schema.Post}, got: :last
+
+
+  5) test supports :last (EctoShorts.CommonFiltersTest)
+     test/ecto_shorts/common_filters_test.exs:452
+     Expected queries to produce the same SQL:
+
+     left:  {"SELECT s0.\"id\", s0.\"author_id\", s0.\"body\", s0.\"notes\", s0.\"permalink\", s0.\"published_at\", s0.\"published\", s0.\"title\", s0.\"tags\", s0.\"views\", s0.\"inserted_at\", s0.\"updated_at\" FROM (SELECT sp0.\"id\" AS \"id\", sp0.\"author_id\" AS \"author_id\", sp0.\"body\" AS \"body\", sp0.\"custom_string_field\" AS \"notes\", sp0.\"permalink\" AS \"permalink\", sp0.\"published_at\" AS \"published_at\", sp0.\"published\" AS \"published\", sp0.\"title\" AS \"title\", sp0.\"tags\" AS \"tags\", sp0.\"views\" AS \"views\", sp0.\"inserted_at\" AS \"inserted_at\", sp0.\"updated_at\" AS \"updated_at\" FROM \"posts\" AS sp0 ORDER BY sp0.\"id\" DESC LIMIT $1) AS s0 ORDER BY s0.\"id\"", [2]}
+     right: {"SELECT p0.\"id\", p0.\"author_id\", p0.\"body\", p0.\"custom_string_field\", p0.\"permalink\", p0.\"published_at\", p0.\"published\", p0.\"title\", p0.\"tags\", p0.\"views\", p0.\"inserted_at\", p0.\"updated_at\" FROM \"posts\" AS p0", []}
+     code: assert_sql(expected, q2)
+     stacktrace:
+       (ecto_shorts 2.5.0) lib/ecto_shorts/testing.ex:87: EctoShorts.Testing.assert_sql/3
+       test/ecto_shorts/common_filters_test.exs:463: (test)
+
+......
+Finished in 0.09 seconds (0.00s async, 0.09s sync)
+49 tests, 5 failures

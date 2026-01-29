@@ -1,6 +1,6 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.ArrayExpr do
+defmodule EctoShorts.QueryBuilder.Postgres.Dynamics.ArrayExpr do
   @moduledoc false
-  alias EctoShorts.QueryBuilder.Dynamics.ArrayExprBuilder
+  alias EctoShorts.QueryBuilder.Postgres.Dynamics.ArrayExprBuilder
 
   require Ecto.Query
   require ArrayExprBuilder
