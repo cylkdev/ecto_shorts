@@ -23,7 +23,7 @@ defmodule EctoShorts.CommonFilters do
     :preload
   ]
 
-  def convert_params_to_filter(source, params, opts) do
+  def convert_params_to_filter(source, params, opts \\ []) do
     schema_source = CommonSchema.normalize_source(source)
 
     query = CommonSchema.to_query(source)
