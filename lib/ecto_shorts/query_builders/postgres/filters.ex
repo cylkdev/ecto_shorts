@@ -5,40 +5,39 @@ defmodule EctoShorts.QueryBuilder.Filters do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.QueryBuilders.Postgres.Dynamics
-  alias EctoShorts.QueryBuilders.Postgres.Pagination
 
   require Ecto.Query
 
   @logger_prefix "EctoShorts.QueryBuilder.Filters"
 
-  @common_operators [:ids, :before, :after, :start_date, :end_date]
   @boolean_operators [:and, :or]
 
-  @pagination_filters Pagination.filters()
+  @common_filters [:ids, :before, :after, :start_date, :end_date]
+  @pagination_filters [:first, :last, :limit, :offset, :order_by, :preload]
 
-  def build_query(source, filter, query, binding_selector, {bool_op, args}, _opts)
+  def build(source, filter, query, binding_selector, {bool_op, args}, _opts)
       when bool_op in @boolean_operators and is_list(args) do
     dynamic = Dynamics.convert_to_dynamic(source, binding_selector, {bool_op, args})
 
-    apply_query_dynamic(filter, query, dynamic)
+    apply_dynamic(filter, query, dynamic)
   end
 
-  def build_query(source, filter, query, binding_selector, {common_op, args}, _opts)
-      when common_op in @common_operators do
+  def build(source, filter, query, binding_selector, {common_op, args}, _opts)
+      when common_op in @common_filters do
     dynamic =
       source
       |> CommonSchema.get_schema_source()
       |> Dynamics.convert_to_dynamic(binding_selector, {common_op, args})
 
-    apply_query_dynamic(filter, query, dynamic)
+    apply_dynamic(filter, query, dynamic)
   end
 
-  def build_query(source, filter, query, _binding_selector, value, _opts)
+  def build(source, filter, query, binding_selector, value, _opts)
       when filter in @pagination_filters do
-    Pagination.build_query(source, query, filter, value)
+    apply_pagination_filter(source, filter, query, binding_selector, value)
   end
 
-  def build_query(source, filter, query, binding_selector, {key, value}, _opts) do
+  def build(source, filter, query, binding_selector, {key, value}, _opts) do
     cond do
       schemaless_source?(source) ->
         build_field(source, filter, query, binding_selector, key, value)
@@ -52,7 +51,7 @@ defmodule EctoShorts.QueryBuilder.Filters do
     end
   end
 
-  def build_query(_schema, _filter, query, _binding_selector, term, _opts) do
+  def build(_schema, _filter, query, _binding_selector, term, _opts) do
     EctoShorts.Logger.warning(
       @logger_prefix,
       "Expected params to be a map or keyword list, got: #{inspect(term)}"
@@ -67,20 +66,96 @@ defmodule EctoShorts.QueryBuilder.Filters do
   defp source_has_schema?(_), do: false
 
   defp build_field(source, filter, query, binding_selector, key, value) do
-    dynamic = Dynamics.convert_to_dynamic(source, binding_selector, {key, value})
-    apply_query_dynamic(filter, query, dynamic)
+    dyn = Dynamics.convert_to_dynamic(source, binding_selector, {key, value})
+    apply_dynamic(filter, query, dyn)
   end
 
-  defp apply_query_dynamic(_, query, nil) do
+  defp apply_pagination_filter(source, :first, query, binding_selector, limit) do
+    apply_pagination_filter(source, :limit, query, binding_selector, limit)
+  end
+
+  # Applies `:last` pagination by selecting the last `limit` rows
+  # according to `sort_keys`.
+  #
+  # First, any existing `order_by` is removed and the query is ordered
+  # in descending order by `sort_keys` so the last rows come first;
+  # then `limit` is applied and the result is wrapped in a subquery.
+  #
+  # Finally, the outer query is ordered in ascending order by the same
+  # `sort_keys` so the returned rows are presented in the expected order.
+  # This reduces over `sort_keys` to support composite primary keys
+  # (multi-field ordering).
+
+  defp apply_pagination_filter(source, :last, query, binding_selector, entries)
+       when is_map(entries) or is_list(entries) do
+    Enum.reduce(entries, query, fn entry, q ->
+      apply_pagination_filter(source, :last, q, binding_selector, entry)
+    end)
+  end
+
+  defp apply_pagination_filter(source, :last, query, _binding_selector, {sort_key, limit}) do
+    sort_keys =
+      if is_nil(sort_key) do
+        List.wrap(CommonSchema.get_schema_reflection(source, :primary_key) || :id)
+      else
+        List.wrap(sort_key)
+      end
+
+    subquery =
+      sort_keys
+      |> Enum.reduce(Query.exclude(query, :order_by), &Query.order_by(&2, desc: ^&1))
+      |> Query.from(limit: ^limit)
+      |> Query.subquery()
+
+    Enum.reduce(sort_keys, subquery, &Query.order_by(&2, asc: ^&1))
+  end
+
+  defp apply_pagination_filter(source, :last, query, binding_selector, limit) do
+    apply_pagination_filter(source, :last, query, binding_selector, {nil, limit})
+  end
+
+  defp apply_pagination_filter(_source, :limit, query, _binding_selector, value) do
+    Query.limit(query, ^value)
+  end
+
+  defp apply_pagination_filter(_source, :offset, query, _binding_selector, value) do
+    Query.offset(query, ^value)
+  end
+
+  defp apply_pagination_filter(source, :order_by, query, binding_selector, entries)
+       when is_map(entries) or is_list(entries) do
+    Enum.reduce(entries, query, fn entry, q ->
+      apply_pagination_filter(source, :order_by, q, binding_selector, entry)
+    end)
+  end
+
+  defp apply_pagination_filter(_source, :order_by, query, _binding_selector, {:asc, key}) do
+    Query.order_by(query, asc: ^key)
+  end
+
+  defp apply_pagination_filter(_source, :order_by, query, _binding_selector, {:desc, key}) do
+    Query.order_by(query, desc: ^key)
+  end
+
+  defp apply_pagination_filter(_source, :order_by, query, _binding_selector, key)
+       when is_atom(key) do
+    Query.order_by(query, desc: ^key)
+  end
+
+  defp apply_pagination_filter(_source, :preload, query, _binding_selector, value) do
+    Query.preload(query, ^value)
+  end
+
+  defp apply_dynamic(_, query, nil) do
     query
   end
 
-  defp apply_query_dynamic(:or_where, query, dynamic) do
-    Query.or_where(query, ^dynamic)
+  defp apply_dynamic(:or_where, query, dyn) do
+    Query.or_where(query, ^dyn)
   end
 
-  defp apply_query_dynamic(:where, query, dynamic) do
-    Query.where(query, ^dynamic)
+  defp apply_dynamic(:where, query, dyn) do
+    Query.where(query, ^dyn)
   end
 
   defp warn_non_schema_key(schema, key) do

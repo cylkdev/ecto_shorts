@@ -34,24 +34,22 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics do
     source = CommonSchema.normalize_source(source)
 
     if is_map(args) or is_list(args) do
-      reduce_params(source, binding_selector, args, nil)
+      Enum.reduce(args, nil, fn entry, dyn_acc ->
+        reduce_dynamic_params(source, dyn_acc, binding_selector, entry)
+      end)
     else
-      reduce_dynamic_expr(source, nil, binding_selector, args)
+      reduce_dynamic_params(source, nil, binding_selector, args)
     end
   end
 
-  defp reduce_params(source, binding_selector, args, dyn_l) do
+  defp reduce_dynamic_params(source, dyn_l, binding_selector, args)
+       when is_map(args) or is_list(args) do
     Enum.reduce(args, dyn_l, fn entry, dyn_acc ->
-      reduce_dynamic_expr(source, dyn_acc, binding_selector, entry)
+      reduce_dynamic_params(source, dyn_acc, binding_selector, entry)
     end)
   end
 
-  defp reduce_dynamic_expr(source, dyn_l, binding_selector, args)
-       when is_map(args) or is_list(args) do
-    reduce_params(source, binding_selector, args, dyn_l)
-  end
-
-  defp reduce_dynamic_expr(_source, dyn_l, binding_selector, {key, value})
+  defp reduce_dynamic_params(_source, dyn_l, binding_selector, {key, value})
        when key in @common_operators do
     value
     |> ParamPreprocessor.normalize_params()
@@ -61,16 +59,16 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics do
     end)
   end
 
-  defp reduce_dynamic_expr(source, dyn_l, binding_selector, {key, value})
+  defp reduce_dynamic_params(source, dyn_l, binding_selector, {key, value})
        when key in @boolean_operators do
     if is_map(value) do
-      reduce_dynamic_expr(source, dyn_l, binding_selector, {key, Map.to_list(value)})
+      reduce_dynamic_params(source, dyn_l, binding_selector, {key, Map.to_list(value)})
     else
       reduce_merge_dynamic_predicates(source, dyn_l, binding_selector, key, value)
     end
   end
 
-  defp reduce_dynamic_expr(source, dyn_l, binding_selector, {key, value}) do
+  defp reduce_dynamic_params(source, dyn_l, binding_selector, {key, value}) do
     if source_has_schema?(source) do
       build_schema_dynamic(source, dyn_l, binding_selector, {key, value})
     else
@@ -106,15 +104,20 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics do
   #
   # This reducer can build “outer” groups (across a list of entries),
   # and it can also participate in “inner” groups when entries contain
-  # nested boolean structures (since entries are built via `reduce_dynamic_expr/4`,
+  # nested boolean structures (since entries are built via `reduce_dynamic_params/4`,
   # which may call back into this reducer for nested `:and` / `:or`).
   defp reduce_merge_dynamic_predicates(source, dyn_l, binding_selector, bool_op, entries) do
     Enum.reduce(entries, dyn_l, fn entry, dyn_acc ->
       dyn_r =
         cond do
-          is_map(entry) -> reduce_dynamic_expr(source, nil, binding_selector, Map.to_list(entry))
-          Keyword.keyword?(entry) -> reduce_dynamic_expr(source, nil, binding_selector, entry)
-          true -> reduce_dynamic_expr(source, nil, binding_selector, entry)
+          is_map(entry) ->
+            reduce_dynamic_params(source, nil, binding_selector, Map.to_list(entry))
+
+          Keyword.keyword?(entry) ->
+            reduce_dynamic_params(source, nil, binding_selector, entry)
+
+          true ->
+            reduce_dynamic_params(source, nil, binding_selector, entry)
         end
 
       merge_dynamic(dyn_acc, bool_op, dyn_r)

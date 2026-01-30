@@ -8,25 +8,33 @@ defmodule EctoShorts.QueryBuilder.Selects do
   {target_binding_var, binding_patterns} =
     EctoShorts.QueryBuilder.BindingHelpers.query_var_and_binding_heads()
 
-  def build_query(schema, query, binding_selector, term) when is_map(term) or is_list(term) do
+  def build(filter, schema, query, binding_selector, term) when is_map(term) or is_list(term) do
     if Utils.key_values?(term) do
       Enum.reduce(term, query, fn value, updated_query ->
-        build_query(schema, updated_query, binding_selector, value)
+        build(filter, schema, updated_query, binding_selector, value)
       end)
     else
-      apply_select_expr(schema, query, binding_selector, term)
+      apply_expr(filter, schema, query, binding_selector, term)
     end
   end
 
-  def build_query(schema, query, _binding_selector, {bind_op, params})
+  def build(filter, schema, query, _binding_selector, {bind_op, params})
       when bind_op in [:at, :as] do
     Enum.reduce(params, query, fn {binding_target, term}, updated_query ->
-      build_query(schema, updated_query, {bind_op, binding_target}, term)
+      build(filter, schema, updated_query, {bind_op, binding_target}, term)
     end)
   end
 
-  def build_query(schema, query, binding_selector, term) do
-    apply_select_expr(schema, query, binding_selector, term)
+  def build(filter, schema, query, binding_selector, term) do
+    apply_expr(filter, schema, query, binding_selector, term)
+  end
+
+  defp apply_expr(filter, schema, query, binding_selector, term) do
+    case filter do
+      :select ->
+        apply_select_expr(schema, query, binding_selector, term)
+        # :select_merge -> apply_select_merge_expr(schema, query, binding_selector, term)
+    end
   end
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do

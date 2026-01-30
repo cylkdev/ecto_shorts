@@ -31,10 +31,10 @@ defmodule EctoShorts.CommonFilters do
     params
     |> list_wrap()
     |> Enum.reduce(query, fn params, query_acc ->
-      normalized_params = normalize_params(params)
+      normalized_params = normalize_filter_params(params)
 
       if is_map(normalized_params) or Keyword.keyword?(normalized_params) do
-        reduce_params(
+        reduce_filter_params(
           schema_source,
           query_acc,
           @default_binding_selector,
@@ -48,7 +48,14 @@ defmodule EctoShorts.CommonFilters do
     end)
   end
 
-  defp reduce_params(schema_source, query, binding_selector, current_filter, {key, value}, opts) do
+  defp reduce_filter_params(
+         schema_source,
+         query,
+         binding_selector,
+         current_filter,
+         {key, value},
+         opts
+       ) do
     cond do
       key in @schema_filters ->
         if is_map(value) or is_list(value) do
@@ -125,9 +132,9 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_params(schema_source, query, binding_selector, current_filter, params, opts) do
+  defp reduce_filter_params(schema_source, query, binding_selector, current_filter, params, opts) do
     if is_map(params) do
-      reduce_params(
+      reduce_filter_params(
         schema_source,
         query,
         binding_selector,
@@ -138,7 +145,7 @@ defmodule EctoShorts.CommonFilters do
     else
       if Keyword.keyword?(params) do
         Enum.reduce(params, query, fn {key, value}, query_acc ->
-          reduce_params(
+          reduce_filter_params(
             schema_source,
             query_acc,
             binding_selector,
@@ -156,10 +163,10 @@ defmodule EctoShorts.CommonFilters do
   defp reduce_binding_params(schema_source, query, {bind_op, bind_to}, filter, params, opts) do
     case {bind_op, bind_to} do
       {:as, bind_alias} when is_atom(bind_alias) ->
-        reduce_params(schema_source, query, {:as, bind_alias}, filter, params, opts)
+        reduce_filter_params(schema_source, query, {:as, bind_alias}, filter, params, opts)
 
       {:at, bind_index} when is_integer(bind_index) ->
-        reduce_params(schema_source, query, {:at, bind_index}, filter, params, opts)
+        reduce_filter_params(schema_source, query, {:at, bind_index}, filter, params, opts)
 
       binding_selector ->
         EctoShorts.Logger.warning(
@@ -172,7 +179,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp build_join_filters(
-         {_, parent_schema} = schema_source,
+         schema_source,
          query,
          binding_selector,
          filter,
@@ -181,7 +188,11 @@ defmodule EctoShorts.CommonFilters do
          opts
        ) do
     if Keyword.keyword?(params) do
-      assoc_schema = SchemaHelpers.get_related_schema(parent_schema, assoc_key)
+      assoc_schema =
+        case schema_source do
+          {_, parent_schema} -> SchemaHelpers.get_related_schema(parent_schema, assoc_key)
+          parent_schema -> SchemaHelpers.get_related_schema(parent_schema, assoc_key)
+        end
 
       joined_query =
         apply_query_builder(
@@ -200,7 +211,7 @@ defmodule EctoShorts.CommonFilters do
           {:at, CommonQuery.query_binding_count(joined_query)}
         end
 
-      reduce_params(
+      reduce_filter_params(
         assoc_schema,
         joined_query,
         {join_bind_op, join_bind_to},
@@ -223,7 +234,7 @@ defmodule EctoShorts.CommonFilters do
        ) do
     cond do
       is_map(value) ->
-        reduce_params(
+        reduce_filter_params(
           schema_source,
           query,
           binding_selector,
@@ -235,7 +246,7 @@ defmodule EctoShorts.CommonFilters do
       is_list(value) ->
         if Keyword.keyword?(value) do
           Enum.reduce(value, query, fn {key2, value2}, query_acc ->
-            reduce_params(
+            reduce_filter_params(
               schema_source,
               query_acc,
               binding_selector,
@@ -295,29 +306,29 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp normalize_params({k, v}) when is_map(v) or is_list(v) do
-    {k, normalize_params(v)}
+  defp normalize_filter_params({k, v}) when is_map(v) or is_list(v) do
+    {k, normalize_filter_params(v)}
   end
 
-  defp normalize_params(map) when is_map(map) and not is_struct(map) do
+  defp normalize_filter_params(map) when is_map(map) and not is_struct(map) do
     map
     |> Map.to_list()
-    |> normalize_params()
+    |> normalize_filter_params()
   end
 
-  defp normalize_params(list) when is_list(list) do
+  defp normalize_filter_params(list) when is_list(list) do
     cond do
       Keyword.keyword?(list) ->
         list
         |> sort_params()
-        |> Enum.map(fn {k, v} -> {k, normalize_params(v)} end)
+        |> Enum.map(fn {k, v} -> {k, normalize_filter_params(v)} end)
 
       true ->
-        Enum.map(list, &normalize_params/1)
+        Enum.map(list, &normalize_filter_params/1)
     end
   end
 
-  defp normalize_params(term) do
+  defp normalize_filter_params(term) do
     term
   end
 

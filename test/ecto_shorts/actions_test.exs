@@ -2,7 +2,6 @@ defmodule EctoShorts.ActionsTest do
   use EctoShorts.DataCase
 
   alias EctoShorts.Actions
-  alias EctoShorts.CommonFilters
   alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
   alias EctoShorts.Schema.User
@@ -1105,1755 +1104,1462 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:ok, [%Post{title: "Updated"}]} = Actions.find_and_upsert_many(Post, args)
     end
+
+    test "creates a post and can find it by published field" do
+      %Post{}
+      |> Post.changeset(%{title: "Published", published: true})
+      |> Repo.insert!()
+
+      _unpublished_post =
+        %Post{}
+        |> Post.changeset(%{title: "Unpublished", published: false})
+        |> Repo.insert!()
+
+      assert [%Post{title: "Published", published: true}] = Actions.all(Post, %{published: true})
+    end
+
+    test "supports :select true (selects the binding)" do
+      %Post{}
+      |> Post.changeset(%{title: "Selected", published: true})
+      |> Repo.insert!()
+
+      assert [%Post{title: "Selected"}] = Actions.all(Post, %{select: true, title: "Selected"})
+    end
+
+    test "supports :select for a single field" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "SelectId", published: true})
+        |> Repo.insert!()
+
+      assert [id] = Actions.all(Post, %{select: :id, id: post.id})
+      assert id == post.id
+    end
+
+    test "supports :select {:map, map} for custom field aliases" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "SelectAlias", published: true})
+        |> Repo.insert!()
+
+      assert [%{custom_id: id}] =
+               Actions.all(Post, %{
+                 select: %{map: %{custom_id: :id}},
+                 id: post.id
+               })
+
+      assert id == post.id
+    end
+
+    test "supports :select {:map, fields} (Ecto map/2)" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "SelectMap", published: true})
+        |> Repo.insert!()
+
+      assert [%{id: id, title: title}] =
+               Actions.all(Post, %{
+                 select: %{map: [:id, :title]},
+                 id: post.id
+               })
+
+      assert id == post.id
+      assert title == "SelectMap"
+    end
+
+    test "supports :select {:struct, fields} (Ecto struct/2)" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "SelectStruct", published: true})
+        |> Repo.insert!()
+
+      assert [%Post{id: id}] =
+               Actions.all(Post, %{
+                 select: %{struct: [:id]},
+                 id: post.id
+               })
+
+      assert id == post.id
+    end
+
+    test "supports :or_where filter key" do
+      %Post{}
+      |> Post.changeset(%{title: "Published", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Unpublished", published: false})
+      |> Repo.insert!()
+
+      assert [%Post{title: "Published"}, %Post{title: "Unpublished"}] =
+               Actions.all(Post, %{
+                 published: true,
+                 or_where: %{published: false}
+               })
+    end
+
+    test "supports :limit" do
+      %Post{}
+      |> Post.changeset(%{title: "One"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Two"})
+      |> Repo.insert!()
+
+      assert [%Post{title: "One"}] =
+               Actions.all(Post, %{
+                 order_by: %{asc: :id},
+                 limit: 1
+               })
+    end
+
+    test "supports :first (alias for limit)" do
+      %Post{}
+      |> Post.changeset(%{title: "One"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Two"})
+      |> Repo.insert!()
+
+      assert [%Post{title: "One"}] =
+               Actions.all(Post, %{
+                 order_by: %{asc: :id},
+                 first: 1
+               })
+    end
+
+    test "supports :offset" do
+      %Post{}
+      |> Post.changeset(%{title: "One"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Two"})
+      |> Repo.insert!()
+
+      assert [%Post{title: "Two"}] =
+               Actions.all(Post, %{
+                 order_by: %{asc: :id},
+                 offset: 1
+               })
+    end
+
+    test "supports :preload" do
+      author =
+        %User{}
+        |> User.changeset(%{first_name: "Preload"})
+        |> Repo.insert!()
+
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "WithAuthor", author_id: author.id})
+        |> Repo.insert!()
+
+      assert [%Post{title: "WithAuthor"} = result] =
+               Actions.all(Post, %{
+                 id: post.id,
+                 preload: [:author]
+               })
+
+      assert %User{first_name: "Preload"} = result.author
+    end
+
+    test "supports :last" do
+      %Post{}
+      |> Post.changeset(%{title: "One"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Two"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Three"})
+      |> Repo.insert!()
+
+      results = Actions.all(Post, %{last: 2})
+
+      assert Enum.count(results) == 2
+      assert Enum.map(results, & &1.title) == ["Two", "Three"]
+    end
+
+    test "supports :last with key" do
+      %Post{}
+      |> Post.changeset(%{title: "One"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Two"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Three"})
+      |> Repo.insert!()
+
+      results = Actions.all(Post, %{last: %{id: 2}})
+
+      assert Enum.count(results) == 2
+      assert Enum.map(results, & &1.title) == ["Two", "Three"]
+    end
+
+    test "supports positional binding selector via :at" do
+      author =
+        %User{}
+        |> User.changeset(%{first_name: "author"})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{
+        title: "Published",
+        published: true,
+        author_id: author.id
+      })
+      |> Repo.insert!()
+
+      _unpublished_post =
+        %Post{}
+        |> Post.changeset(%{
+          title: "Unpublished",
+          published: false,
+          author_id: author.id
+        })
+        |> Repo.insert!()
+
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      assert [result] = Actions.all(q, %{at: %{1 => %{published: true}}})
+      assert %Post{title: "Published", published: true} = result
+    end
+
+    test "supports named binding selector via :as" do
+      %Post{}
+      |> Post.changeset(%{title: "Published", published: true})
+      |> Repo.insert!()
+
+      _unpublished_post =
+        %Post{}
+        |> Post.changeset(%{title: "Unpublished", published: false})
+        |> Repo.insert!()
+
+      q = from(p in Post, as: :post)
+
+      assert [result] = Actions.all(q, %{as: %{post: %{published: true}}})
+      assert %Post{title: "Published", published: true} = result
+    end
+
+    test "supports explicit operator" do
+      %Post{}
+      |> Post.changeset(%{title: "True", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "False", published: false})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{published: %{!=: true}})
+      assert %Post{title: "False", published: false} = result
+    end
+
+    test "supports negated explicit operator" do
+      %Post{}
+      |> Post.changeset(%{title: "True", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "False", published: false})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{published: %{not: %{==: true}}})
+      assert %Post{title: "False", published: false} = result
+    end
+
+    test "supports negated explicit operator (not !=)" do
+      %Post{}
+      |> Post.changeset(%{title: "True", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "False", published: false})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{published: %{not: %{!=: true}}})
+      assert %Post{title: "True", published: true} = result
+    end
+
+    test "supports explicit IN operator for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "True", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "False", published: false})
+      |> Repo.insert!()
+
+      assert [%Post{title: "True", published: true}] =
+               Actions.all(Post, %{published: %{in: [true]}})
+    end
+
+    test "supports explicit NOT IN operator for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "True", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "False", published: false})
+      |> Repo.insert!()
+
+      assert [%Post{title: "False", published: false}] =
+               Actions.all(Post, %{published: %{not: %{in: [true]}}})
+    end
+
+    test "coerces not == with list RHS to NOT IN for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "True", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "False", published: false})
+      |> Repo.insert!()
+
+      assert [%Post{title: "False", published: false}] =
+               Actions.all(Post, %{published: %{not: %{==: [true]}}})
+    end
+
+    test "coerces not != with list RHS to IN for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "True", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "False", published: false})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{published: %{not: %{!=: [true]}}})
+      assert %Post{title: "True", published: true} = result
+    end
+
+    test "supports >= comparison for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Low", views: 9})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "High", views: 10})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{views: %{>=: 10}})
+      assert %Post{title: "High", views: 10} = result
+    end
+
+    test "supports < comparison for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Low", views: 9})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "High", views: 10})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{views: %{<: 10}})
+      assert %Post{title: "Low", views: 9} = result
+    end
+
+    test "supports <= comparison for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Low", views: 10})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "High", views: 11})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{views: %{<=: 10}})
+      assert %Post{title: "Low", views: 10} = result
+    end
+
+    test "supports negated > comparison for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Low", views: 5})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "High", views: 15})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{views: %{not: %{>: 10}}})
+      assert %Post{title: "Low", views: 5} = result
+    end
+
+    test "supports LOWER operator for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Hello"})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "Other"})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{title: %{lower: "hello"}})
+      assert %Post{title: "Hello"} = result
+    end
+
+    test "supports UPPER operator for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Hello"})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "Other"})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{title: %{upper: "HELLO"}})
+      assert %Post{title: "Hello"} = result
+    end
+
+    test "supports negated LOWER operator for scalar fields" do
+      _excluded =
+        %Post{}
+        |> Post.changeset(%{title: "Hello"})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Other"})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{title: %{not: %{lower: "hello"}}})
+      assert %Post{title: "Other"} = result
+    end
+
+    test "supports negated UPPER operator for scalar fields" do
+      _excluded =
+        %Post{}
+        |> Post.changeset(%{title: "Hello"})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Other"})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{title: %{not: %{upper: "HELLO"}}})
+      assert %Post{title: "Other"} = result
+    end
+
+    test "supports LIKE operator for scalar fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Hello world"})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "Goodbye"})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{title: %{like: "Hello"}})
+      assert %Post{title: "Hello world"} = result
+    end
+
+    test "supports LIKE operator for scalar fields with list RHS (LIKE ANY)" do
+      %Post{}
+      |> Post.changeset(%{title: "Hello"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "World"})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "Other"})
+        |> Repo.insert!()
+
+      results = Actions.all(Post, %{title: %{like: ["Hello", "World"]}, order_by: [asc: :title]})
+
+      assert Enum.count(results) == 2
+      assert Enum.any?(results, &match?(%Post{title: "Hello"}, &1))
+      assert Enum.any?(results, &match?(%Post{title: "World"}, &1))
+    end
+
+    test "supports negated LIKE operator for scalar fields" do
+      _match =
+        %Post{}
+        |> Post.changeset(%{title: "Hello"})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Other"})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{title: %{not: %{like: "Hello"}}})
+      assert %Post{title: "Other"} = result
+    end
+
+    test "supports LOWER operator for array fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["Elixir"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{lower: "elixir"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "supports UPPER operator for array fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["Elixir"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{upper: "ELIXIR"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "supports negated LOWER operator for array fields" do
+      _excluded =
+        %Post{}
+        |> Post.changeset(%{title: "Excluded", tags: ["Elixir"]})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Kept", tags: ["ruby"]})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{not: %{lower: "elixir"}}})
+      assert %Post{title: "Kept"} = result
+    end
+
+    test "supports negated UPPER operator for array fields" do
+      _excluded =
+        %Post{}
+        |> Post.changeset(%{title: "Excluded", tags: ["Elixir"]})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Kept", tags: ["ruby"]})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{not: %{upper: "ELIXIR"}}})
+      assert %Post{title: "Kept"} = result
+    end
+
+    test "supports negated ILIKE operator for scalar fields with list RHS (NOT ILIKE ANY)" do
+      _excluded =
+        %Post{}
+        |> Post.changeset(%{title: "HELLO"})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Other"})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{title: %{not: %{ilike: ["hello", "world"]}}})
+      assert %Post{title: "Other"} = result
+    end
+
+    test "array field supports membership via :in with scalar RHS" do
+      %Post{}
+      |> Post.changeset(%{
+        title: "Match",
+        tags: ["elixir", "erlang"]
+      })
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{
+          title: "NoMatch",
+          tags: ["ruby"]
+        })
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{in: "elixir"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "supports LIKE operator for array fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["elixir"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{like: "elixir"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "supports ILIKE operator for array fields" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["Elixir"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{ilike: "elixir"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "supports LIKE operator for array fields with list RHS" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["erlang"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{
+          title: "NoMatch",
+          tags: ["ruby"]
+        })
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{like: ["elixir", "erlang"]}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "supports negated LIKE operator for array fields" do
+      _excluded =
+        %Post{}
+        |> Post.changeset(%{
+          title: "Excluded",
+          tags: ["elixir"]
+        })
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Kept", tags: ["ruby"]})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{not: %{like: "elixir"}}})
+      assert %Post{title: "Kept"} = result
+    end
+
+    test "supports negated ILIKE operator for array fields" do
+      _excluded =
+        %Post{}
+        |> Post.changeset(%{
+          title: "Excluded",
+          tags: ["Elixir"]
+        })
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Kept", tags: ["ruby"]})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{not: %{ilike: "elixir"}}})
+      assert %Post{title: "Kept"} = result
+    end
+
+    test "array field compares equality when RHS is a list and operator defaults to ==" do
+      %Post{}
+      |> Post.changeset(%{
+        title: "Match",
+        tags: ["elixir", "erlang"]
+      })
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{
+          title: "NoMatch",
+          tags: ["elixir"]
+        })
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: ["elixir", "erlang"]})
+      assert %Post{title: "Match", tags: ["elixir", "erlang"]} = result
+    end
+
+    test "array field supports negated equality when RHS is a list" do
+      %Post{}
+      |> Post.changeset(%{
+        title: "Match",
+        tags: ["elixir", "erlang"]
+      })
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{
+        title: "NoMatch",
+        tags: ["elixir"]
+      })
+      |> Repo.insert!()
+
+      results = Actions.all(Post, %{tags: %{not: %{==: ["elixir"]}}})
+      assert Enum.count(results) == 1
+      assert Enum.any?(results, &match?(%Post{title: "Match"}, &1))
+    end
+
+    test "array field supports > comparison against scalar (any element matches)" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["b"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NoMatch", tags: ["a"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{>: "a"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "array field supports >= comparison against scalar (any element matches)" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["b"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NoMatch", tags: ["a"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{>=: "b"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "array field supports < comparison against scalar (any element matches)" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["a"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NoMatch", tags: ["b"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{<: "b"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "array field supports <= comparison against scalar (any element matches)" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["a"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NoMatch", tags: ["b"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{<=: "a"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "array field supports negated > comparison against scalar" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["a"]})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{
+        title: "NoMatch",
+        tags: ["b"]
+      })
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{not: %{>: "a"}}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "supports keyword-list params" do
+      %Post{}
+      |> Post.changeset(%{title: "Published", published: true})
+      |> Repo.insert!()
+
+      _unpublished_post =
+        %Post{}
+        |> Post.changeset(%{title: "Unpublished", published: false})
+        |> Repo.insert!()
+
+      assert [%Post{title: "Published", published: true}] = Actions.all(Post, published: true)
+    end
+
+    test "treats non-keyword lists as values (defaults operator to ==)" do
+      %Post{}
+      |> Post.changeset(%{title: "True", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "False", published: false})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{published: [true]})
+      assert %Post{title: "True", published: true} = result
+    end
+
+    test "supports multiple conditions under a single filter" do
+      %Post{}
+      |> Post.changeset(%{title: "True", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "False", published: false})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{where: %{published: [==: true, !=: false]}})
+      assert %Post{title: "True", published: true} = result
+    end
+
+    test "supports boolean :and operator for multiple comparisons on same field" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", views: 15})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "NoMatch", views: 25})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{views: %{and: [>: 10, <: 20]}})
+      assert %Post{title: "Match", views: 15} = result
+    end
+
+    test "supports boolean :or operator for multiple comparisons on same field" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", views: 3})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "NoMatch", views: 7})
+      |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{views: %{or: [<: 5, >: 10]}})
+      assert %Post{title: "Match", views: 3} = result
+    end
+
+    test "boolean operator group under :or_where" do
+      %Post{}
+      |> Post.changeset(%{
+        title: "Published",
+        published: true,
+        views: 0
+      })
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{
+        title: "Unpublished",
+        published: false,
+        views: 3
+      })
+      |> Repo.insert!()
+
+      results =
+        Actions.all(Post, %{
+          published: true,
+          or_where: %{views: %{or: [<: 5, >: 10]}}
+        })
+
+      assert Enum.count(results) == 2
+      assert Enum.any?(results, &match?(%Post{title: "Published"}, &1))
+      assert Enum.any?(results, &match?(%Post{title: "Unpublished"}, &1))
+    end
+
+    #   test "can join association and filter on association field" do
+    #     author =
+    #       %User{}
+    #       |> User.changeset(%{first_name: "John"})
+    #       |> Repo.insert!()
+
+    #     other_author =
+    #       %User{}
+    #       |> User.changeset(%{first_name: "Jane"})
+    #       |> Repo.insert!()
+
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Authored", permalink: "authored-join", author_id: author.id})
+    #     |> Repo.insert!()
+
+    #     _other_post =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "Other", permalink: "other-join", author_id: other_author.id})
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{author: %{first_name: "John"}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Authored"} = result
+    #     assert result.author_id == author.id
+    #   end
+
+    #   test "can join association with :as and filter on association field" do
+    #     author =
+    #       %User{}
+    #       |> User.changeset(%{first_name: "John"})
+    #       |> Repo.insert!()
+
+    #     other_author =
+    #       %User{}
+    #       |> User.changeset(%{first_name: "Jane"})
+    #       |> Repo.insert!()
+
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Authored", permalink: "authored-join-as", author_id: author.id})
+    #     |> Repo.insert!()
+
+    #     _other_post =
+    #       %Post{}
+    #       |> Post.changeset(%{
+    #         title: "Other",
+    #         permalink: "other-join-as",
+    #         author_id: other_author.id
+    #       })
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{author: %{as: :author_join, first_name: "John"}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Authored"} = result
+    #     assert result.author_id == author.id
+    #   end
+
+    #   test "can recursively filter through nested associations" do
+    #     john =
+    #       %User{}
+    #       |> User.changeset(%{first_name: "John"})
+    #       |> Repo.insert!()
+
+    #     jane =
+    #       %User{}
+    #       |> User.changeset(%{first_name: "Jane"})
+    #       |> Repo.insert!()
+
+    #     post_with_jane_comment =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "HasJaneComment", permalink: "has-jane-comment"})
+    #       |> Repo.insert!()
+
+    #     post_with_john_comment =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "HasJohnComment", permalink: "has-john-comment"})
+    #       |> Repo.insert!()
+
+    #     %Comment{}
+    #     |> Comment.changeset(%{post_id: post_with_jane_comment.id, author_id: jane.id, body: "Nice"})
+    #     |> Repo.insert!()
+
+    #     %Comment{}
+    #     |> Comment.changeset(%{post_id: post_with_john_comment.id, author_id: john.id, body: "Nice"})
+    #     |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{comments: %{author: %{first_name: "Jane"}}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "HasJaneComment"} = result
+    #   end
+
+    #   test "creates associated records and can filter on association field" do
+    #     author =
+    #       %User{}
+    #       |> User.changeset(%{first_name: "John"})
+    #       |> Repo.insert!()
+
+    #     other_author =
+    #       %User{}
+    #       |> User.changeset(%{first_name: "Jane"})
+    #       |> Repo.insert!()
+
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Authored", permalink: "authored", author_id: author.id})
+    #     |> Repo.insert!()
+
+    #     _other_post =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "Other", permalink: "other", author_id: other_author.id})
+    #       |> Repo.insert!()
+
+    #     q =
+    #       from(p in Post,
+    #         as: :post,
+    #         join: a in assoc(p, :author),
+    #         as: :author,
+    #         order_by: [asc: p.id]
+    #       )
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{as: %{author: %{first_name: "John"}}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Authored"} = result
+    #     assert result.author_id == author.id
+    #   end
+
+    #   test "scalar field: != with list RHS behaves like NOT IN" do
+    #     _a =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "A", views: 10})
+    #       |> Repo.insert!()
+
+    #     _b =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "B", views: 20})
+    #       |> Repo.insert!()
+
+    #     %Post{}
+    #     |> Post.changeset(%{title: "C", views: 30})
+    #     |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{views: %{!=: [10, 20]}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "C", views: 30} = result
+    #   end
+
+    #   test "array field: scalar RHS defaults to membership" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Match", tags: ["elixir", "erlang"]})
+    #     |> Repo.insert!()
+
+    #     _no_match =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{tags: "elixir"},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Match", tags: ["elixir", "erlang"]} = result
+    #   end
+
+    #   test "array field: list RHS with :in uses overlap-any semantics" do
+    #     %Post{}
+    #     |> Post.changeset(%{
+    #       title: "Match",
+    #       tags: ["elixir", "erlang"]
+    #     })
+    #     |> Repo.insert!()
+
+    #     _no_match =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{tags: %{in: ["elixir"]}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Match"} = result
+    #   end
+
+    #   test "array field: in all uses contains-all semantics" do
+    #     %Post{}
+    #     |> Post.changeset(%{
+    #       title: "Match",
+    #       tags: ["elixir", "erlang"]
+    #     })
+    #     |> Repo.insert!()
+
+    #     _no_match =
+    #       %Post{}
+    #       |> Post.changeset(%{
+    #         title: "NoMatch",
+    #         tags: ["elixir"]
+    #       })
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{tags: %{in: %{all: ["elixir", "erlang"]}}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Match"} = result
+    #   end
+
+    #   test "scalar field: supports > comparison" do
+    #     _low =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "Low", views: 5})
+    #       |> Repo.insert!()
+
+    #     %Post{}
+    #     |> Post.changeset(%{title: "High", views: 15})
+    #     |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{views: %{>: 10}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "High", views: 15} = result
+    #   end
+
+    #   test "array field: negated overlap via not in" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Match", tags: ["ruby"]})
+    #     |> Repo.insert!()
+
+    #     _no_match =
+    #       %Post{}
+    #       |> Post.changeset(%{
+    #         title: "NoMatch",
+    #         tags: ["elixir"]
+    #       })
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{tags: %{not: %{in: ["elixir"]}}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Match", tags: ["ruby"]} = result
+    #   end
+
+    #   test "scalar field: == nil generates IS NULL semantics" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Nil", permalink: "scalar-nil", published_at: nil})
+    #     |> Repo.insert!()
+
+    #     _not_nil =
+    #       %Post{}
+    #       |> Post.changeset(%{
+    #         title: "NotNil",
+    #         permalink: "scalar-not-nil",
+    #         published_at: DateTime.utc_now()
+    #       })
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{published_at: nil},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Nil", published_at: nil} = result
+    #   end
+
+    #   test "scalar field: != nil generates IS NOT NULL semantics" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Nil", permalink: "scalar-ne-nil-nil", published_at: nil})
+    #     |> Repo.insert!()
+
+    #     %Post{}
+    #     |> Post.changeset(%{
+    #       title: "NotNil",
+    #       permalink: "scalar-ne-nil-not-nil",
+    #       published_at: DateTime.utc_now()
+    #     })
+    #     |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{published_at: %{!=: nil}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "NotNil"} = result
+    #     assert result.published_at != nil
+    #   end
+
+    #   test "scalar field: == with list RHS behaves like IN" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "A", permalink: "scalar-eq-list-a", views: 10})
+    #     |> Repo.insert!()
+
+    #     _b =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "B", permalink: "scalar-eq-list-b", views: 20})
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{views: %{==: [10]}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "A", views: 10} = result
+    #   end
+
+    #   test "scalar field: supports negated < comparison" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Low", permalink: "scalar-not-lt-low", views: 5})
+    #     |> Repo.insert!()
+
+    #     %Post{}
+    #     |> Post.changeset(%{title: "High", permalink: "scalar-not-lt-high", views: 15})
+    #     |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{views: %{not: %{<: 10}}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "High", views: 15} = result
+    #   end
+
+    #   test "supports :ids (scalar special filter)" do
+    #     a =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "A", permalink: "ids-a"})
+    #       |> Repo.insert!()
+
+    #     b =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "B", permalink: "ids-b"})
+    #       |> Repo.insert!()
+
+    #     _c =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "C", permalink: "ids-c"})
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{id: [a.id, b.id]},
+    #         []
+    #       )
+
+    #     assert ["A", "B"] = q |> Repo.all() |> Enum.map(& &1.title) |> Enum.sort()
+    #   end
+
+    #   test "supports :before (scalar special filter)" do
+    #     a =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "A", permalink: "before-a"})
+    #       |> Repo.insert!()
+
+    #     b =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "B", permalink: "before-b"})
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{before: b.id},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "A"} = result
+    #     assert result.id == a.id
+    #   end
+
+    #   test "supports :after (scalar special filter)" do
+    #     a =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "A", permalink: "after-a"})
+    #       |> Repo.insert!()
+
+    #     b =
+    #       %Post{}
+    #       |> Post.changeset(%{title: "B", permalink: "after-b"})
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{after: a.id},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "B"} = result
+    #     assert result.id == b.id
+    #   end
+
+    #   test "array field: negated != with list RHS behaves like ==" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Match", tags: ["elixir"]})
+    #     |> Repo.insert!()
+
+    #     _no_match =
+    #       %Post{}
+    #       |> Post.changeset(%{
+    #         title: "NoMatch",
+    #         tags: ["ruby"]
+    #       })
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{tags: %{not: %{!=: ["elixir"]}}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Match", tags: ["elixir"]} = result
+    #   end
+
+    #   test "array field: supports negated >= comparison against scalar" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Match", tags: ["a"]})
+    #     |> Repo.insert!()
+
+    #     _no_match =
+    #       %Post{}
+    #       |> Post.changeset(%{
+    #         title: "NoMatch",
+    #         tags: ["b"]
+    #       })
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{tags: %{not: %{>=: "b"}}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Match"} = result
+    #   end
+
+    #   test "array field: supports negated < comparison against scalar" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Match", permalink: "array-not-lt-scalar-match", tags: ["b"]})
+    #     |> Repo.insert!()
+
+    #     _no_match =
+    #       %Post{}
+    #       |> Post.changeset(%{
+    #         title: "NoMatch",
+    #         permalink: "array-not-lt-scalar-no-match",
+    #         tags: ["a"]
+    #       })
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{tags: %{not: %{<: "b"}}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Match"} = result
+    #   end
+
+    #   test "array field: supports negated <= comparison against scalar" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Match", permalink: "array-not-lte-scalar-match", tags: ["b"]})
+    #     |> Repo.insert!()
+
+    #     _no_match =
+    #       %Post{}
+    #       |> Post.changeset(%{
+    #         title: "NoMatch",
+    #         permalink: "array-not-lte-scalar-no-match",
+    #         tags: ["a"]
+    #       })
+    #       |> Repo.insert!()
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         %{tags: %{not: %{<=: "a"}}},
+    #         []
+    #       )
+
+    #     assert [result] = Repo.all(q)
+    #     assert %Post{title: "Match"} = result
+    #   end
+
+    #   test "select filter with nested params reduces over values" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Test", published: true})
+    #     |> Repo.insert!()
+
+    #     q = from(p in Post, as: :post)
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         q,
+    #         %{as: %{post: %{select: %{struct: [:id, :title]}}}},
+    #         []
+    #       )
+
+    #     assert [%Post{title: "Test"}] = Repo.all(q)
+    #   end
+
+    #   test "where filter with non-map scalar value calls query builder directly" do
+    #     %Post{}
+    #     |> Post.changeset(%{title: "Test", published: true})
+    #     |> Repo.insert!()
+
+    #     q = from(p in Post, as: :post)
+
+    #     q =
+    #       CommonFilters.convert_params_to_filter(
+    #         Post,
+    #         q,
+    #         %{as: %{post: %{where: %{published: true}}}},
+    #         []
+    #       )
+
+    #     assert [%Post{title: "Test"}] = Repo.all(q)
+    #   end
   end
-
-  # describe "convert_params_to_filter/2 with database queries" do
-  #   test "creates a post and can find it by published field" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Published", published: true})
-  #     |> Repo.insert!()
-
-  #     _unpublished_post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Unpublished", published: false})
-  #       |> Repo.insert!()
-
-  #     q = CommonFilters.convert_params_to_filter(Post, %{published: true})
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Published", published: true} = result
-  #   end
-
-  #   test "supports :select true (selects the binding)" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Selected", published: true})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{select: true, title: "Selected"})
-
-  #     assert [%Post{title: "Selected"}] = Repo.all(q)
-  #   end
-
-  #   test "supports :select for a single field" do
-  #     post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "SelectId", published: true})
-  #       |> Repo.insert!()
-
-  #     q = CommonFilters.convert_params_to_filter(Post, %{select: :id, id: post.id})
-
-  #     assert [id] = Repo.all(q)
-  #     assert id == post.id
-  #   end
-
-  #   test "supports :select {:map, map} for custom field aliases" do
-  #     post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "SelectAlias", published: true})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         select: %{map: %{custom_id: :id}},
-  #         id: post.id
-  #       })
-
-  #     assert [%{custom_id: id}] = Repo.all(q)
-  #     assert id == post.id
-  #   end
-
-  #   test "supports :select {:map, fields} (Ecto map/2)" do
-  #     post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "SelectMap", published: true})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         select: %{map: [:id, :title]},
-  #         id: post.id
-  #       })
-
-  #     assert [%{id: id, title: title}] = Repo.all(q)
-  #     assert id == post.id
-  #     assert title == "SelectMap"
-  #   end
-
-  #   test "supports :select {:struct, fields} (Ecto struct/2)" do
-  #     post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "SelectStruct", published: true})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         select: %{struct: [:id]},
-  #         id: post.id
-  #       })
-
-  #     assert [%Post{id: id}] = Repo.all(q)
-  #     assert id == post.id
-  #   end
-
-  #   test "supports :or_where filter key" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Published", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Unpublished", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         published: true,
-  #         or_where: %{published: false}
-  #       })
-
-  #     assert [%Post{title: "Published"}, %Post{title: "Unpublished"}] = Repo.all(q)
-  #   end
-
-  #   test "supports :limit" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "One"})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Two"})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         order_by: %{asc: :id},
-  #         limit: 1
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "One"} = result
-  #   end
-
-  #   test "supports :first (alias for limit)" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "One"})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Two"})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         order_by: %{asc: :id},
-  #         first: 1
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "One"} = result
-  #   end
-
-  #   test "supports :offset" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "One"})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Two"})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         order_by: %{asc: :id},
-  #         offset: 1
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Two"} = result
-  #   end
-
-  #   test "supports :preload" do
-  #     author =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "Preload"})
-  #       |> Repo.insert!()
-
-  #     post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "WithAuthor", author_id: author.id})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         id: post.id,
-  #         preload: [:author]
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "WithAuthor"} = result
-  #     assert %User{first_name: "Preload"} = result.author
-  #   end
-
-  #   test "supports :last" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "One"})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Two"})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Three"})
-  #     |> Repo.insert!()
-
-  #     q = CommonFilters.convert_params_to_filter(Post, %{last: 2})
-  #     results = Repo.all(q)
-
-  #     assert Enum.count(results) == 2
-  #     assert Enum.map(results, & &1.title) == ["Two", "Three"]
-  #   end
-
-  #   test "supports :last with key" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "One"})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Two"})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Three"})
-  #     |> Repo.insert!()
-
-  #     q = CommonFilters.convert_params_to_filter(Post, %{last: %{id: 2}})
-  #     results = Repo.all(q)
-
-  #     assert Enum.count(results) == 2
-  #     assert Enum.map(results, & &1.title) == ["Two", "Three"]
-  #   end
-
-  #   test "supports positional binding selector via :at" do
-  #     author =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "author"})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "Published",
-  #       published: true,
-  #       author_id: author.id
-  #     })
-  #     |> Repo.insert!()
-
-  #     _unpublished_post =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "Unpublished",
-  #         published: false,
-  #         author_id: author.id
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       from(p in Post,
-  #         join: a in assoc(p, :author)
-  #       )
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(q, %{
-  #         at: %{1 => %{published: true}}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Published", published: true} = result
-  #   end
-
-  #   test "supports named binding selector via :as" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Published", published: true})
-  #     |> Repo.insert!()
-
-  #     _unpublished_post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Unpublished", published: false})
-  #       |> Repo.insert!()
-
-  #     q = from(p in Post, as: :post)
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(q, %{
-  #         as: %{post: %{published: true}}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Published", published: true} = result
-  #   end
-
-  #   test "supports explicit operator" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "True", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "False", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         published: %{!=: true}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "False", published: false} = result
-  #   end
-
-  #   test "supports negated explicit operator" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "True", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "False", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         published: %{not: %{==: true}}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "False", published: false} = result
-  #   end
-
-  #   test "supports negated explicit operator (not !=)" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "True", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "False", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         published: %{not: %{!=: true}}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "True", published: true} = result
-  #   end
-
-  #   test "supports explicit IN operator for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "True", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "False", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         published: %{in: [true]}
-  #       })
-
-  #     assert [%Post{title: "True", published: true}] = Repo.all(q)
-  #   end
-
-  #   test "supports explicit NOT IN operator for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "True", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "False", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         published: %{not: %{in: [true]}}
-  #       })
-
-  #     assert [%Post{title: "False", published: false}] = Repo.all(q)
-  #   end
-
-  #   test "coerces not == with list RHS to NOT IN for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "True", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "False", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         published: %{not: %{==: [true]}}
-  #       })
-
-  #     assert [%Post{title: "False", published: false}] = Repo.all(q)
-  #   end
-
-  #   test "coerces not != with list RHS to IN for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "True", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "False", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         published: %{not: %{!=: [true]}}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "True", published: true} = result
-  #   end
-
-  #   test "supports >= comparison for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Low", views: 9})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "High", views: 10})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         views: %{>=: 10}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "High", views: 10} = result
-  #   end
-
-  #   test "supports < comparison for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Low", views: 9})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "High", views: 10})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         views: %{<: 10}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Low", views: 9} = result
-  #   end
-
-  #   test "supports <= comparison for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Low", views: 10})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "High", views: 11})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         views: %{<=: 10}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Low", views: 10} = result
-  #   end
-
-  #   test "supports negated > comparison for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Low", views: 5})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "High", views: 15})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         views: %{not: %{>: 10}}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Low", views: 5} = result
-  #   end
-
-  #   test "supports LOWER operator for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Hello"})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Other"})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         title: %{lower: "hello"}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Hello"} = result
-  #   end
-
-  #   test "supports UPPER operator for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Hello"})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Other"})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         title: %{upper: "HELLO"}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Hello"} = result
-  #   end
-
-  #   test "supports negated LOWER operator for scalar fields" do
-  #     _excluded =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Hello"})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Other"})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(Post, %{
-  #         title: %{not: %{lower: "hello"}}
-  #       })
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Other"} = result
-  #   end
-
-  #   test "supports negated UPPER operator for scalar fields" do
-  #     _excluded =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Hello"})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Other"})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{title: %{not: %{upper: "HELLO"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Other"} = result
-  #   end
-
-  #   test "supports LIKE operator for scalar fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Hello world"})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Goodbye"})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{title: %{like: "Hello"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Hello world"} = result
-  #   end
-
-  #   test "supports LIKE operator for scalar fields with list RHS (LIKE ANY)" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Hello"})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "World"})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Other"})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{title: %{like: ["Hello", "World"]}, order_by: [asc: :title]},
-  #         []
-  #       )
-
-  #     results = Repo.all(q)
-  #     assert Enum.count(results) == 2
-  #     assert Enum.any?(results, &match?(%Post{title: "Hello"}, &1))
-  #     assert Enum.any?(results, &match?(%Post{title: "World"}, &1))
-  #   end
-
-  #   test "supports negated LIKE operator for scalar fields" do
-  #     _match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Hello"})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Other"})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{title: %{not: %{like: "Hello"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Other"} = result
-  #   end
-
-  #   test "supports LOWER operator for array fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["Elixir"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{lower: "elixir"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "supports UPPER operator for array fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["Elixir"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{upper: "ELIXIR"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "supports negated LOWER operator for array fields" do
-  #     _excluded =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Excluded", tags: ["Elixir"]})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Kept", tags: ["ruby"]})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{lower: "elixir"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Kept"} = result
-  #   end
-
-  #   test "supports negated UPPER operator for array fields" do
-  #     _excluded =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Excluded", tags: ["Elixir"]})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Kept", tags: ["ruby"]})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{upper: "ELIXIR"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Kept"} = result
-  #   end
-
-  #   test "supports negated ILIKE operator for scalar fields with list RHS (NOT ILIKE ANY)" do
-  #     _excluded =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "HELLO"})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Other"})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{title: %{not: %{ilike: ["hello", "world"]}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Other"} = result
-  #   end
-
-  #   test "array field supports membership via :in with scalar RHS" do
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "Match",
-  #       tags: ["elixir", "erlang"]
-  #     })
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NoMatch",
-  #         tags: ["ruby"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{in: "elixir"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "supports LIKE operator for array fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["elixir"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{like: "elixir"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "supports ILIKE operator for array fields" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["Elixir"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{ilike: "elixir"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "supports LIKE operator for array fields with list RHS" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["erlang"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NoMatch",
-  #         tags: ["ruby"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{like: ["elixir", "erlang"]}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "supports negated LIKE operator for array fields" do
-  #     _excluded =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "Excluded",
-  #         tags: ["elixir"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Kept", tags: ["ruby"]})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{like: "elixir"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Kept"} = result
-  #   end
-
-  #   test "supports negated ILIKE operator for array fields" do
-  #     _excluded =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "Excluded",
-  #         tags: ["Elixir"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Kept", tags: ["ruby"]})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{ilike: "elixir"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Kept"} = result
-  #   end
-
-  #   test "array field compares equality when RHS is a list and operator defaults to ==" do
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "Match",
-  #       tags: ["elixir", "erlang"]
-  #     })
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NoMatch",
-  #         tags: ["elixir"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: ["elixir", "erlang"]},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match", tags: ["elixir", "erlang"]} = result
-  #   end
-
-  #   test "array field supports negated equality when RHS is a list" do
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "Match",
-  #       tags: ["elixir", "erlang"]
-  #     })
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "NoMatch",
-  #       tags: ["elixir"]
-  #     })
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{==: ["elixir"]}}},
-  #         []
-  #       )
-
-  #     results = Repo.all(q)
-  #     assert Enum.count(results) == 1
-  #     assert Enum.any?(results, &match?(%Post{title: "Match"}, &1))
-  #   end
-
-  #   test "array field supports > comparison against scalar (any element matches)" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["b"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["a"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{>: "a"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "array field supports >= comparison against scalar (any element matches)" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["b"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["a"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{>=: "b"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "array field supports < comparison against scalar (any element matches)" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["a"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["b"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{<: "b"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "array field supports <= comparison against scalar (any element matches)" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["a"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["b"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{<=: "a"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "array field supports negated > comparison against scalar" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["a"]})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "NoMatch",
-  #       tags: ["b"]
-  #     })
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{>: "a"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "supports keyword-list params" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Published", published: true})
-  #     |> Repo.insert!()
-
-  #     _unpublished_post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Unpublished", published: false})
-  #       |> Repo.insert!()
-
-  #     q = CommonFilters.convert_params_to_filter(Post, published: true)
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Published", published: true} = result
-  #   end
-
-  #   test "treats non-keyword lists as values (defaults operator to ==)" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "True", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "False", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{published: [true]},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "True", published: true} = result
-  #   end
-
-  #   test "supports multiple conditions under a single filter" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "True", published: true})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "False", published: false})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{where: %{published: [==: true, !=: false]}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "True", published: true} = result
-  #   end
-
-  #   test "supports boolean :and operator for multiple comparisons on same field" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", views: 15})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "NoMatch", views: 25})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{views: %{and: [>: 10, <: 20]}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match", views: 15} = result
-  #   end
-
-  #   test "supports boolean :or operator for multiple comparisons on same field" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", views: 3})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "NoMatch", views: 7})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{views: %{or: [<: 5, >: 10]}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match", views: 3} = result
-  #   end
-
-  #   test "boolean operator group under :or_where" do
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "Published",
-  #       published: true,
-  #       views: 0
-  #     })
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "Unpublished",
-  #       published: false,
-  #       views: 3
-  #     })
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{
-  #           published: true,
-  #           or_where: %{views: %{or: [<: 5, >: 10]}}
-  #         },
-  #         []
-  #       )
-
-  #     results = Repo.all(q)
-  #     assert Enum.count(results) == 2
-  #     assert Enum.any?(results, &match?(%Post{title: "Published"}, &1))
-  #     assert Enum.any?(results, &match?(%Post{title: "Unpublished"}, &1))
-  #   end
-
-  #   test "can join association and filter on association field" do
-  #     author =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "John"})
-  #       |> Repo.insert!()
-
-  #     other_author =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "Jane"})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Authored", permalink: "authored-join", author_id: author.id})
-  #     |> Repo.insert!()
-
-  #     _other_post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Other", permalink: "other-join", author_id: other_author.id})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{author: %{first_name: "John"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Authored"} = result
-  #     assert result.author_id == author.id
-  #   end
-
-  #   test "can join association with :as and filter on association field" do
-  #     author =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "John"})
-  #       |> Repo.insert!()
-
-  #     other_author =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "Jane"})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Authored", permalink: "authored-join-as", author_id: author.id})
-  #     |> Repo.insert!()
-
-  #     _other_post =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "Other",
-  #         permalink: "other-join-as",
-  #         author_id: other_author.id
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{author: %{as: :author_join, first_name: "John"}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Authored"} = result
-  #     assert result.author_id == author.id
-  #   end
-
-  #   test "can recursively filter through nested associations" do
-  #     john =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "John"})
-  #       |> Repo.insert!()
-
-  #     jane =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "Jane"})
-  #       |> Repo.insert!()
-
-  #     post_with_jane_comment =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "HasJaneComment", permalink: "has-jane-comment"})
-  #       |> Repo.insert!()
-
-  #     post_with_john_comment =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "HasJohnComment", permalink: "has-john-comment"})
-  #       |> Repo.insert!()
-
-  #     %Comment{}
-  #     |> Comment.changeset(%{post_id: post_with_jane_comment.id, author_id: jane.id, body: "Nice"})
-  #     |> Repo.insert!()
-
-  #     %Comment{}
-  #     |> Comment.changeset(%{post_id: post_with_john_comment.id, author_id: john.id, body: "Nice"})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{comments: %{author: %{first_name: "Jane"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "HasJaneComment"} = result
-  #   end
-
-  #   test "creates associated records and can filter on association field" do
-  #     author =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "John"})
-  #       |> Repo.insert!()
-
-  #     other_author =
-  #       %User{}
-  #       |> User.changeset(%{first_name: "Jane"})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Authored", permalink: "authored", author_id: author.id})
-  #     |> Repo.insert!()
-
-  #     _other_post =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Other", permalink: "other", author_id: other_author.id})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       from(p in Post,
-  #         as: :post,
-  #         join: a in assoc(p, :author),
-  #         as: :author,
-  #         order_by: [asc: p.id]
-  #       )
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{as: %{author: %{first_name: "John"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Authored"} = result
-  #     assert result.author_id == author.id
-  #   end
-
-  #   test "scalar field: != with list RHS behaves like NOT IN" do
-  #     _a =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "A", views: 10})
-  #       |> Repo.insert!()
-
-  #     _b =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "B", views: 20})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "C", views: 30})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{views: %{!=: [10, 20]}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "C", views: 30} = result
-  #   end
-
-  #   test "array field: scalar RHS defaults to membership" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["elixir", "erlang"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: "elixir"},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match", tags: ["elixir", "erlang"]} = result
-  #   end
-
-  #   test "array field: list RHS with :in uses overlap-any semantics" do
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "Match",
-  #       tags: ["elixir", "erlang"]
-  #     })
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "NoMatch", tags: ["ruby"]})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{in: ["elixir"]}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "array field: in all uses contains-all semantics" do
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "Match",
-  #       tags: ["elixir", "erlang"]
-  #     })
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NoMatch",
-  #         tags: ["elixir"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{in: %{all: ["elixir", "erlang"]}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "scalar field: supports > comparison" do
-  #     _low =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "Low", views: 5})
-  #       |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "High", views: 15})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{views: %{>: 10}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "High", views: 15} = result
-  #   end
-
-  #   test "array field: negated overlap via not in" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["ruby"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NoMatch",
-  #         tags: ["elixir"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{in: ["elixir"]}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match", tags: ["ruby"]} = result
-  #   end
-
-  #   test "scalar field: == nil generates IS NULL semantics" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Nil", permalink: "scalar-nil", published_at: nil})
-  #     |> Repo.insert!()
-
-  #     _not_nil =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NotNil",
-  #         permalink: "scalar-not-nil",
-  #         published_at: DateTime.utc_now()
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{published_at: nil},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Nil", published_at: nil} = result
-  #   end
-
-  #   test "scalar field: != nil generates IS NOT NULL semantics" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Nil", permalink: "scalar-ne-nil-nil", published_at: nil})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{
-  #       title: "NotNil",
-  #       permalink: "scalar-ne-nil-not-nil",
-  #       published_at: DateTime.utc_now()
-  #     })
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{published_at: %{!=: nil}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "NotNil"} = result
-  #     assert result.published_at != nil
-  #   end
-
-  #   test "scalar field: == with list RHS behaves like IN" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "A", permalink: "scalar-eq-list-a", views: 10})
-  #     |> Repo.insert!()
-
-  #     _b =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "B", permalink: "scalar-eq-list-b", views: 20})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{views: %{==: [10]}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "A", views: 10} = result
-  #   end
-
-  #   test "scalar field: supports negated < comparison" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Low", permalink: "scalar-not-lt-low", views: 5})
-  #     |> Repo.insert!()
-
-  #     %Post{}
-  #     |> Post.changeset(%{title: "High", permalink: "scalar-not-lt-high", views: 15})
-  #     |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{views: %{not: %{<: 10}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "High", views: 15} = result
-  #   end
-
-  #   test "supports :ids (scalar special filter)" do
-  #     a =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "A", permalink: "ids-a"})
-  #       |> Repo.insert!()
-
-  #     b =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "B", permalink: "ids-b"})
-  #       |> Repo.insert!()
-
-  #     _c =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "C", permalink: "ids-c"})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{id: [a.id, b.id]},
-  #         []
-  #       )
-
-  #     assert ["A", "B"] = q |> Repo.all() |> Enum.map(& &1.title) |> Enum.sort()
-  #   end
-
-  #   test "supports :before (scalar special filter)" do
-  #     a =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "A", permalink: "before-a"})
-  #       |> Repo.insert!()
-
-  #     b =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "B", permalink: "before-b"})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{before: b.id},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "A"} = result
-  #     assert result.id == a.id
-  #   end
-
-  #   test "supports :after (scalar special filter)" do
-  #     a =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "A", permalink: "after-a"})
-  #       |> Repo.insert!()
-
-  #     b =
-  #       %Post{}
-  #       |> Post.changeset(%{title: "B", permalink: "after-b"})
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{after: a.id},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "B"} = result
-  #     assert result.id == b.id
-  #   end
-
-  #   test "array field: negated != with list RHS behaves like ==" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["elixir"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NoMatch",
-  #         tags: ["ruby"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{!=: ["elixir"]}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match", tags: ["elixir"]} = result
-  #   end
-
-  #   test "array field: supports negated >= comparison against scalar" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", tags: ["a"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NoMatch",
-  #         tags: ["b"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{>=: "b"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "array field: supports negated < comparison against scalar" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", permalink: "array-not-lt-scalar-match", tags: ["b"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NoMatch",
-  #         permalink: "array-not-lt-scalar-no-match",
-  #         tags: ["a"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{<: "b"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "array field: supports negated <= comparison against scalar" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Match", permalink: "array-not-lte-scalar-match", tags: ["b"]})
-  #     |> Repo.insert!()
-
-  #     _no_match =
-  #       %Post{}
-  #       |> Post.changeset(%{
-  #         title: "NoMatch",
-  #         permalink: "array-not-lte-scalar-no-match",
-  #         tags: ["a"]
-  #       })
-  #       |> Repo.insert!()
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         %{tags: %{not: %{<=: "a"}}},
-  #         []
-  #       )
-
-  #     assert [result] = Repo.all(q)
-  #     assert %Post{title: "Match"} = result
-  #   end
-
-  #   test "select filter with nested params reduces over values" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Test", published: true})
-  #     |> Repo.insert!()
-
-  #     q = from(p in Post, as: :post)
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         q,
-  #         %{as: %{post: %{select: %{struct: [:id, :title]}}}},
-  #         []
-  #       )
-
-  #     assert [%Post{title: "Test"}] = Repo.all(q)
-  #   end
-
-  #   test "where filter with non-map scalar value calls query builder directly" do
-  #     %Post{}
-  #     |> Post.changeset(%{title: "Test", published: true})
-  #     |> Repo.insert!()
-
-  #     q = from(p in Post, as: :post)
-
-  #     q =
-  #       CommonFilters.convert_params_to_filter(
-  #         Post,
-  #         q,
-  #         %{as: %{post: %{where: %{published: true}}}},
-  #         []
-  #       )
-
-  #     assert [%Post{title: "Test"}] = Repo.all(q)
-  #   end
-  # end
 end
