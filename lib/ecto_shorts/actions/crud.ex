@@ -11,6 +11,15 @@ defmodule EctoShorts.Actions.CRUD do
   @doc """
   ...
   """
+  def preload(data, preloads, opts \\ []) do
+    Config.replica!(opts).preload(data, preloads, opts)
+  end
+
+  @doc group: "CRUD"
+  @doc since: "2.5.0"
+  @doc """
+  ...
+  """
   def exists?(source, params, opts \\ []) do
     source
     |> CommonFilters.convert_params_to_filter(params, opts)
