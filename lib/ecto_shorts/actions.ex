@@ -7,17 +7,8 @@ defmodule EctoShorts.Actions do
     Multi
   }
 
-  def batch(schema, args, batch_keys \\ :id, cardinality \\ :many, opts \\ []) do
-    Batch.batch(schema, args, batch_keys, cardinality, opts)
-  end
-
-  def batch_preload(schema, entries, keys, opts \\ []) do
-    Batch.batch_preload(schema, entries, keys, opts)
-  end
-
-  def exists?(source, params, opts \\ []) do
-    CRUD.exists?(source, params, opts)
-  end
+  def preload(data, preloads, opts \\ []), do: CRUD.preload(data, preloads, opts)
+  def exists?(source, params, opts \\ []), do: CRUD.exists?(source, params, opts)
 
   def all(source), do: CRUD.all(source)
   def all(source, params_or_opts), do: CRUD.all(source, params_or_opts)
@@ -85,6 +76,14 @@ defmodule EctoShorts.Actions do
 
   def transact(fun_or_multi, opts \\ []) do
     Transaction.transact(fun_or_multi, opts)
+  end
+
+  def batch(schema, args, batch_keys \\ :id, cardinality \\ :many, opts \\ []) do
+    Batch.batch(schema, args, batch_keys, cardinality, opts)
+  end
+
+  def batch_preload(schema, entries, keys, opts \\ []) do
+    Batch.batch_preload(schema, entries, keys, opts)
   end
 
   def insert_all(schema, params_list, opts \\ []) do
