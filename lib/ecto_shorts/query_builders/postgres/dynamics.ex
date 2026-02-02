@@ -61,7 +61,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics do
 
   defp reduce_dynamic_params(source, dyn_l, binding_selector, {key, value})
        when key in @boolean_operators do
-    if is_map(value) do
+    if is_map(value) and not is_struct(value) do
       reduce_dynamic_params(source, dyn_l, binding_selector, {key, Map.to_list(value)})
     else
       reduce_merge_dynamic_predicates(source, dyn_l, binding_selector, key, value)
@@ -110,7 +110,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics do
     Enum.reduce(entries, dyn_l, fn entry, dyn_acc ->
       dyn_r =
         cond do
-          is_map(entry) ->
+          is_map(entry) and not is_struct(entry) ->
             reduce_dynamic_params(source, nil, binding_selector, Map.to_list(entry))
 
           Keyword.keyword?(entry) ->
@@ -136,7 +136,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics do
       dyn_l
     else
       cond do
-        is_map(value) ->
+        is_map(value) and not is_struct(value) ->
           build_schema_dynamic(
             source,
             dyn_l,

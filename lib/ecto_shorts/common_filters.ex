@@ -233,7 +233,7 @@ defmodule EctoShorts.CommonFilters do
          opts
        ) do
     cond do
-      is_map(value) ->
+      is_map(value) and not is_struct(value) ->
         reduce_filter_params(
           schema_source,
           query,

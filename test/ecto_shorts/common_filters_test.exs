@@ -494,6 +494,34 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "preserves struct values (DateTime) for scalar comparisons" do
+      dt = ~U[2026-01-01 00:00:00Z]
+      expected = from p in Post, where: p.published_at == ^dt
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{published_at: dt},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "preserves struct values (DateTime) for operator map comparisons" do
+      dt = ~U[2026-01-01 00:00:00Z]
+      expected = from p in Post, where: p.published_at >= ^dt
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{published_at: %{>=: dt}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports == nil comparisons (generates IS NULL)" do
       expected = from p in Post, where: is_nil(p.published_at)
       q = Post

@@ -111,6 +111,34 @@ defmodule EctoShorts.QueryBuilders.Postgres.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic preserves struct values (DateTime) for scalar comparisons" do
+    binding = {:as, nil}
+    dt = ~U[2026-01-01 00:00:00Z]
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{published_at: dt})
+
+    expected =
+      dynamic(
+        [q],
+        field(q, ^:published_at) == ^dt
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic preserves struct values (DateTime) for operator map comparisons" do
+    binding = {:as, nil}
+    dt = ~U[2026-01-01 00:00:00Z]
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{published_at: %{>=: dt}})
+
+    expected =
+      dynamic(
+        [q],
+        field(q, ^:published_at) >= ^dt
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports scalar nil equality" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{==: nil}})

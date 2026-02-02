@@ -1,4 +1,6 @@
 defmodule EctoShorts.Actions.Bulk do
+  @moduledoc false
+
   alias EctoShorts.{
     Actions.Batch,
     Config,
@@ -10,6 +12,8 @@ defmodule EctoShorts.Actions.Bulk do
   @doc group: "CRUD"
   @doc """
   ...
+
+  [%{title: "A"}, {%Data{}, %{title: "B"}}, {%{id: 1}, %{title: "C"}}]
   """
   def insert_all(source, params_list, opts \\ []) do
     params_list =
