@@ -65,6 +65,12 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.ArrayExprBuilder do
       quote do
         def dynamic_field_expr(unquote(quoted_binding_head), key, {op, nil}) do
           case op do
+            :eq ->
+              Ecto.Query.dynamic(
+                [unquote_splicing(quoted_binding_body)],
+                is_nil(field(unquote(target_binding_var), ^key))
+              )
+
             :== ->
               Ecto.Query.dynamic(
                 [unquote_splicing(quoted_binding_body)],
@@ -80,7 +86,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.ArrayExprBuilder do
             _ ->
               raise ArgumentError,
                 message:
-                  "Expected the operator to be one of [:==, :!=] for nil comparison, got: #{inspect(op)}"
+                  "Expected the operator to be one of [:eq, :==, :!=] for nil comparison, got: #{inspect(op)}"
           end
         end
       end
@@ -274,14 +280,50 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.ArrayExprBuilder do
   def base_ops_ast(target_binding_var, binding_patterns) do
     for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
       quote do
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {op, value})
+            when op in [:gt, :gte, :lt, :lte, :eq] do
+          mapped_op =
+            case op do
+              :gt -> :>
+              :gte -> :>=
+              :lt -> :<
+              :lte -> :<=
+              :eq -> :==
+            end
+
+          dynamic_field_expr(unquote(quoted_binding_head), key, {mapped_op, value})
+        end
+
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {op, value}})
+            when op in [:gt, :gte, :lt, :lte, :eq] do
+          mapped_op =
+            case op do
+              :gt -> :>
+              :gte -> :>=
+              :lt -> :<
+              :lte -> :<=
+              :eq -> :==
+            end
+
+          dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {mapped_op, value}})
+        end
+
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:==, values}})
             when is_list(values) do
           dynamic_field_expr(unquote(quoted_binding_head), key, {:!=, values})
         end
 
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:==, value}}) do
+          dynamic_field_expr(unquote(quoted_binding_head), key, {:!=, value})
+        end
+
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:!=, values}})
             when is_list(values) do
           dynamic_field_expr(unquote(quoted_binding_head), key, {:==, values})
+        end
+
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:!=, value}}) do
+          dynamic_field_expr(unquote(quoted_binding_head), key, {:==, value})
         end
 
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, {:all, values}}})

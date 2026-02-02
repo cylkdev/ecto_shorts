@@ -186,7 +186,6 @@ defmodule EctoShorts.CommonQuery do
   defp has_subquery?(%{source: %Ecto.SubQuery{query: _}}), do: true
   defp has_subquery?(_), do: false
 
-  defp get_inner_query(%Ecto.SubQuery{query: query}), do: query
   defp get_inner_query(%Ecto.Query{from: %{source: %{query: query}}}), do: query
   defp get_inner_query(_), do: nil
 

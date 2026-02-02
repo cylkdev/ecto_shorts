@@ -21,6 +21,34 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExprBuilder do
   def scalar_exprs_ast(target_binding_var, binding_patterns) do
     for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
       quote do
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {op, value})
+            when op in [:gt, :gte, :lt, :lte, :eq] do
+          mapped_op =
+            case op do
+              :gt -> :>
+              :gte -> :>=
+              :lt -> :<
+              :lte -> :<=
+              :eq -> :==
+            end
+
+          dynamic_field_expr(unquote(quoted_binding_head), key, {mapped_op, value})
+        end
+
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {op, value}})
+            when op in [:gt, :gte, :lt, :lte, :eq] do
+          mapped_op =
+            case op do
+              :gt -> :>
+              :gte -> :>=
+              :lt -> :<
+              :lte -> :<=
+              :eq -> :==
+            end
+
+          dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {mapped_op, value}})
+        end
+
         def dynamic_field_expr(unquote(quoted_binding_head), key, {op, nil}) do
           case op do
             :== ->

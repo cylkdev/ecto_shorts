@@ -379,6 +379,62 @@ defmodule EctoShorts.QueryBuilders.Postgres.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports scalar gt" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{gt: 1}})
+    expected = dynamic([q], field(q, ^:views) > ^1)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar gte" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{gte: 1}})
+    expected = dynamic([q], field(q, ^:views) >= ^1)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar lt" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{lt: 1}})
+    expected = dynamic([q], field(q, ^:views) < ^1)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar lte" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{lte: 1}})
+    expected = dynamic([q], field(q, ^:views) <= ^1)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar eq" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{eq: "a"}})
+    expected = dynamic([q], field(q, ^:title) == ^"a")
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar eq nil" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{eq: nil}})
+    expected = dynamic([q], is_nil(field(q, ^:title)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar not gt" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{not: %{gt: 1}}})
+    expected = dynamic([q], not (field(q, ^:views) > ^1))
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports scalar greater than" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{>: 1}})
@@ -447,6 +503,14 @@ defmodule EctoShorts.QueryBuilders.Postgres.DynamicsTest do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{!=: nil}})
     expected = dynamic([q], not is_nil(field(q, ^:tags)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array eq nil" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{eq: nil}})
+    expected = dynamic([q], is_nil(field(q, ^:tags)))
 
     assert_dynamic(expected, actual)
   end
@@ -863,6 +927,62 @@ defmodule EctoShorts.QueryBuilders.Postgres.DynamicsTest do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{<=: "a"}})
     expected = dynamic([q], fragment("? >= ANY(?)", ^"a", field(q, ^:tags)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array gt" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{gt: "a"}})
+    expected = dynamic([q], fragment("? < ANY(?)", ^"a", field(q, ^:tags)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array gte" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{gte: "a"}})
+    expected = dynamic([q], fragment("? <= ANY(?)", ^"a", field(q, ^:tags)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array lt" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{lt: "a"}})
+    expected = dynamic([q], fragment("? > ANY(?)", ^"a", field(q, ^:tags)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array lte" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{lte: "a"}})
+    expected = dynamic([q], fragment("? >= ANY(?)", ^"a", field(q, ^:tags)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array eq list" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{eq: ["a", "b"]}})
+    expected = dynamic([q], field(q, ^:tags) == ^["a", "b"])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array eq value" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{eq: "a"}})
+    expected = dynamic([q], ^"a" in field(q, ^:tags))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array not eq value" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{not: %{eq: "a"}}})
+    expected = dynamic([q], ^"a" not in field(q, ^:tags))
 
     assert_dynamic(expected, actual)
   end
