@@ -2,7 +2,7 @@ defmodule EctoShorts.QueryBuilder.BindingHelpers do
   @moduledoc false
 
   def query_var_and_binding_heads(context \\ nil, opts \\ []) do
-    max_pos = Keyword.get(opts, :max_positional_bindings, 3)
+    max_pos = Keyword.get(opts, :max_positional_bindings, 10)
     binding_alias_var = Macro.var(:binding_alias, context)
     target_binding_var = Macro.var(:q, context)
     step_var = Macro.var(:_, context)
