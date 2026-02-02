@@ -365,6 +365,7 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
+  defp member_update?([]), do: false
   defp member_update?(schemas) do
     Enum.all?(schemas, fn
       %{id: id} = item when item === %{id: id} -> true
