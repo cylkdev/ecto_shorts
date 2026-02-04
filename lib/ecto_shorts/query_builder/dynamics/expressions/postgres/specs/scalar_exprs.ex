@@ -1,39 +1,8 @@
 defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ScalarExprs do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilder.BindingHelpers
   alias EctoShorts.QueryBuilder.Dynamics.Expression.AST
-  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder
   alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec
-  alias EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
-
-  @doc """
-  Defines scalar `dynamic_field_expr/3` clauses.
-  """
-  defmacro define_exprs(context_ast \\ nil, opts_ast \\ []) do
-    context = Macro.expand(context_ast, __CALLER__)
-    opts = Macro.expand(opts_ast, __CALLER__)
-
-    {target_binding_var, binding_patterns} =
-      BindingHelpers.query_var_and_binding_heads(context, opts)
-
-    clause_asts =
-      for {binding_head_ast, binding_body_asts} <- binding_patterns,
-          spec <-
-            clause_specs(
-              :scalar,
-              context,
-              binding_head_ast,
-              target_binding_var,
-              binding_body_asts
-            ) do
-        clause_ast_or_raise(DynamicFieldExpr, spec)
-      end
-
-    quote do
-      (unquote_splicing(clause_asts))
-    end
-  end
 
   @doc false
   def clause_specs(
@@ -641,12 +610,5 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ScalarExpr
       end
 
     direct_ops ++ not_ops
-  end
-
-  defp clause_ast_or_raise(emitter, spec) when is_atom(emitter) do
-    case ClauseBuilder.clause_ast(emitter, spec) do
-      {:ok, ast} -> ast
-      {:error, reason} -> raise ArgumentError, "Failed to build clause: #{inspect(reason)}"
-    end
   end
 end
