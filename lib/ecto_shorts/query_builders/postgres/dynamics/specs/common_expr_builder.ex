@@ -42,7 +42,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
 
     [
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: :ids,
         head: id_values_var,
@@ -55,7 +55,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
           )
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: :after,
         head: cursor_value_var,
@@ -68,7 +68,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
           )
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: :before,
         head: cursor_value_var,
@@ -81,7 +81,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
           )
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: :start_date,
         head: date_value_var,
@@ -94,7 +94,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
           )
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: :end_date,
         head: date_value_var,

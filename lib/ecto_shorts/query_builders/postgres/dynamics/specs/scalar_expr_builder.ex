@@ -50,7 +50,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
 
     [
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:==, unquote(values_var)}}),
@@ -65,7 +65,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:!=, unquote(values_var)}}),
@@ -80,7 +80,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:==, unquote(values_var)}),
@@ -95,7 +95,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:!=, unquote(values_var)}),
@@ -110,7 +110,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:==, unquote(value_var)}}),
@@ -124,7 +124,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:!=, unquote(value_var)}}),
@@ -138,7 +138,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:in, {:all, unquote(values_var)}}}),
@@ -153,7 +153,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:in, {:all, unquote(values_var)}}),
@@ -184,7 +184,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
 
     [
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {unquote(op_var), unquote(value_var)}),
@@ -208,7 +208,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {unquote(op_var), unquote(value_var)}}),
@@ -244,7 +244,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
 
     [
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {unquote(op_var), nil}),
@@ -281,7 +281,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
 
     [
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:==, {:lower, unquote(value_var)}}),
@@ -295,7 +295,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:==, {:upper, unquote(value_var)}}),
@@ -309,7 +309,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:lower, unquote(value_var)}),
@@ -322,7 +322,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           )
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:upper, unquote(value_var)}),
@@ -335,7 +335,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           )
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:lower, unquote(value_var)}}),
@@ -348,7 +348,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           )
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:upper, unquote(value_var)}}),
@@ -361,7 +361,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           )
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:!=, {:lower, unquote(value_var)}}),
@@ -374,7 +374,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           )
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:!=, {:upper, unquote(value_var)}}),
@@ -403,7 +403,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
 
     [
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:like, unquote(values_var)}}),
@@ -427,7 +427,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:like, unquote(value_var)}}),
@@ -446,7 +446,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:ilike, unquote(values_var)}}),
@@ -470,7 +470,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:ilike, unquote(value_var)}}),
@@ -489,7 +489,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:like, unquote(values_var)}),
@@ -513,7 +513,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:like, unquote(value_var)}),
@@ -532,7 +532,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:ilike, unquote(values_var)}),
@@ -556,7 +556,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       },
       %{
-        kind: :clause_body,
+        kind: :clause,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:ilike, unquote(value_var)}),
@@ -599,7 +599,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
 
         %{
-          kind: :clause_body,
+          kind: :clause,
           binding_head: binding_head_ast,
           key: key_var,
           head: quote(do: {unquote(op), unquote(value_var)}),
@@ -619,7 +619,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
 
         %{
-          kind: :clause_body,
+          kind: :clause,
           binding_head: binding_head_ast,
           key: key_var,
           head: quote(do: {:not, {unquote(op), unquote(value_var)}}),
