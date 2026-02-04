@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.Selects do
+defmodule EctoShorts.QueryBuilder.Stages.Selects do
   @moduledoc false
   alias Ecto.Query
   alias EctoShorts.Utils
@@ -8,6 +8,7 @@ defmodule EctoShorts.QueryBuilder.Selects do
   {target_binding_var, binding_patterns} =
     EctoShorts.QueryBuilder.BindingHelpers.query_var_and_binding_heads()
 
+  @doc "Builds a select expression for the query."
   def build(filter, schema, query, binding_selector, term) when is_map(term) or is_list(term) do
     if Utils.key_values?(term) do
       Enum.reduce(term, query, fn value, updated_query ->

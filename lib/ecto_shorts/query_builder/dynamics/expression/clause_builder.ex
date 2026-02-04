@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder do
   @moduledoc """
   Builds quoted `dynamic_field_expr/3` clauses from clause specs.
 
@@ -30,7 +30,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
   Import `Ecto.Query` in the module that receives the generated clause.
 
   ClauseBuilder builds one clause at a time. To build many clauses, map over a
-  list of specs and call `clause_ast/1` for each one.
+  list of specs and call `clause_ast/2` for each one.
 
   ## Examples
 
@@ -43,12 +43,13 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
         head: quote(do: {:==, v}),
         body: quote(do: Ecto.Query.dynamic([q], field(q, ^key) == ^v))
       }
-      {:ok, clause_ast} = EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder.clause_ast(spec)
+      emitter = EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
+      {:ok, clause_ast} = EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder.clause_ast(emitter, spec)
       Macro.to_string(clause_ast)
 
   ## Error Reasons
 
-  `clause_ast/1` returns `{:error, reason}` for invalid specs:
+  `clause_ast/2` returns `{:error, reason}` for invalid specs:
 
     * `:missing_key` - a required key is missing (from `ClauseSpec.new/1`)
     * `:invalid_spec` - the input is not a valid clause spec (from `ClauseSpec.new/1`)
@@ -59,15 +60,16 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
       key: Macro.var(:key, nil),
       head: quote(do: {:==, v})
     }
-    EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder.clause_ast(spec)
+    emitter = EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
+    EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder.clause_ast(emitter, spec)
     {:error, :missing_key}
 
   > NOTE: The generated clause calls `field/2` and `fragment/1`.
   > Import `Ecto.Query` in the module that receives the generated clause.
   """
 
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.Emitters.DynamicFieldExpr
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec
 
   @doc false
   def __after_compile__(env, _bytecode) do
@@ -122,61 +124,6 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
 
     :ok
   end
-
-  @doc "Same as `clause_ast/1`, but raises on error."
-  def clause_ast!(spec), do: clause_ast!(DynamicFieldExpr, spec)
-
-  @doc "Same as `clause_ast/2`, but raises on error."
-  def clause_ast!(emitter, spec) do
-    case clause_ast(emitter, spec) do
-      {:ok, ast} ->
-        ast
-
-      {:error, reason} ->
-        raise ArgumentError, "Failed to build clause: #{inspect(reason)}"
-    end
-  end
-
-  @doc """
-  Builds a quoted `dynamic_field_expr/3` clause from a clause spec.
-
-  This function validates the spec and returns one quoted function clause.
-
-  ## Return values
-
-    * `{:ok, ast}` - quoted code for a single `def dynamic_field_expr/3` clause
-    * `{:error, reason}` - an error tuple
-
-  `ClauseSpec.new/1` runs first.
-
-  ## Spec keys
-
-  * `:binding_head` - AST for the binding selector head pattern
-  * `:key` - AST for the second argument pattern
-  * `:head` - AST for the third argument pattern (example: `{:==, v}`)
-  * `:body` - AST returned by the clause body
-  * `:kind` - tags the clause (example: `:clause`)
-
-  ## Examples
-
-    iex> spec = %{
-    ...>   kind: :clause,
-    ...>   binding_head: quote(do: {:as, nil}),
-    ...>   key: Macro.var(:key, nil),
-    ...>   head: quote(do: {:==, v}),
-    ...>   body: quote(do: Ecto.Query.dynamic([q], field(q, ^key) == ^v))
-    ...> }
-    iex> match?(
-    ...>   {:ok, _},
-    ...>   EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder.clause_ast(spec)
-    ...> )
-    true
-
-    iex> EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder.clause_ast(%{})
-    {:error, :missing_key}
-  """
-  @spec clause_ast(ClauseSpec.t() | map() | keyword()) :: {:ok, Macro.t()} | {:error, term()}
-  def clause_ast(spec), do: clause_ast(DynamicFieldExpr, spec)
 
   @doc """
   Builds a clause AST using the given emitter module.
@@ -235,7 +182,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
             target_binding_var,
             binding_body_asts
           ) do
-      clause_ast!(emitter, spec)
+      clause_ast_or_raise(emitter, spec)
     end
   end
 
@@ -259,6 +206,13 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
 
       {:error, _} ->
         :ok
+    end
+  end
+
+  defp clause_ast_or_raise(emitter, spec) when is_atom(emitter) do
+    case ClauseBuilder.clause_ast(emitter, spec) do
+      {:ok, ast} -> ast
+      {:error, reason} -> raise ArgumentError, "Failed to build clause: #{inspect(reason)}"
     end
   end
 end

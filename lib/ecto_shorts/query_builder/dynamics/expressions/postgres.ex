@@ -1,14 +1,13 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Adapters.Postgres do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres do
   @moduledoc false
+  use EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapter
 
-  use EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseAdapter
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
 
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.Emitters.DynamicFieldExpr
-
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.{
-    ArrayExprBuilder,
-    CommonExprBuilder,
-    ScalarExprBuilder
+  alias EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.{
+    ArrayExprs,
+    CommonExprs,
+    ScalarExprs
   }
 
   def emitter_module, do: DynamicFieldExpr
@@ -16,21 +15,21 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Adapters.Postgres do
   def options, do: [max_positional_bindings: 10]
 
   def clause_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts) do
-    CommonExprBuilder.clause_specs(
+    CommonExprs.clause_specs(
       kind,
       context,
       binding_head_ast,
       target_binding_var,
       binding_body_asts
     ) ++
-      ScalarExprBuilder.clause_specs(
+      ScalarExprs.clause_specs(
         kind,
         context,
         binding_head_ast,
         target_binding_var,
         binding_body_asts
       ) ++
-      ArrayExprBuilder.clause_specs(
+      ArrayExprs.clause_specs(
         kind,
         context,
         binding_head_ast,

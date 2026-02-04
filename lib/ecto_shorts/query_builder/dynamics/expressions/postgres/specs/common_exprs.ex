@@ -1,10 +1,11 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.CommonExprs do
   @moduledoc false
 
   alias EctoShorts.QueryBuilder.BindingHelpers
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.AST
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.AST
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
 
   @doc """
   Defines common `dynamic_field_expr/3` clauses using the spec-driven ClauseBuilder.
@@ -34,7 +35,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
               target_binding_var,
               binding_body_asts
             ) do
-        ClauseBuilder.clause_ast!(spec)
+        clause_ast_or_raise(DynamicFieldExpr, spec)
       end
 
     quote do
@@ -126,5 +127,12 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
 
   def clause_specs(_kind, _context, _binding_head_ast, _target_binding_var, _binding_body_asts) do
     []
+  end
+
+  defp clause_ast_or_raise(emitter, spec) when is_atom(emitter) do
+    case ClauseBuilder.clause_ast(emitter, spec) do
+      {:ok, ast} -> ast
+      {:error, reason} -> raise ArgumentError, "Failed to build clause: #{inspect(reason)}"
+    end
   end
 end

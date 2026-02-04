@@ -1,7 +1,7 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpecTest do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpecTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec
 
   test "new/1 validates required keys and returns a struct" do
     key_var = Macro.var(:key, nil)

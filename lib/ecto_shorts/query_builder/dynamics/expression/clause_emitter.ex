@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseEmitter do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseEmitter do
   @moduledoc """
   Defines the contract for building a clause AST from a clause spec.
 

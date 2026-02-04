@@ -1,10 +1,10 @@
-defmodule EctoShorts.QueryBuilders.Postgres.DynamicsTest do
+defmodule EctoShorts.QueryBuilder.DynamicsTest do
   use ExUnit.Case
   use EctoShorts.Testing
 
   import Ecto.Query
 
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics
+  alias EctoShorts.QueryBuilder.Dynamics
   alias EctoShorts.Schema.Post
 
   test "convert_to_dynamic supports common operator :ids" do

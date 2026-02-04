@@ -1,10 +1,10 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec do
   @moduledoc """
   Validates clause specs so they can generate `dynamic_field_expr/3` clauses.
 
   A clause spec is a struct that contains AST values. You use it to describe one
   function clause for `dynamic_field_expr/3`. You then pass the spec to
-  `EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder.clause_ast/1`.
+  `EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder.clause_ast/1`.
 
   This module does not build Ecto query expressions. It only checks the shape
   of the spec and returns a `%ClauseSpec{}` struct.
@@ -32,7 +32,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec do
     ...>   head: quote(do: {:==, v}),
     ...>   body: quote(do: Ecto.Query.dynamic([q], field(q, ^key) == ^v))
     ...> }
-    ...> EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec.new(spec)
+    ...> EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec.new(spec)
 
   ## Error Reasons
 
@@ -41,7 +41,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec do
     * `:missing_key` - a required key is missing
     * `:invalid_spec` - the input is not a map, keyword list, or `%ClauseSpec{}`
 
-    iex> EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec.new(%{kind: :clause})
+    iex> EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec.new(%{kind: :clause})
     {:error, :missing_key}
 
   > NOTE: ClauseSpec does not validate the *meaning* of `:head` or `:body`.
@@ -103,14 +103,14 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec do
   ## Examples
 
       iex> spec =
-      ...>   EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec.new(%{
+      ...>   EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec.new(%{
       ...>     kind: :clause,
       ...>     binding_head: quote(do: {:as, nil}),
       ...>     key: Macro.var(:key, nil),
       ...>     head: quote(do: {:==, vals}),
       ...>     body: quote(do: Ecto.Query.dynamic([q], field(q, ^key) in ^vals))
       ...>   })
-      iex> match?({:ok, %EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec{}}, spec)
+      iex> match?({:ok, %EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec{}}, spec)
       true
   """
   @spec new(attrs :: map() | keyword()) :: {:ok, t()} | {:error, term()}

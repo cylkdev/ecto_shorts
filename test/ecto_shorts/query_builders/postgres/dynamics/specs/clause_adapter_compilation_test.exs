@@ -1,9 +1,9 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseAdapterCompilationTest do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapterCompilationTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.AST
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseAdapter
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.Emitters.DynamicFieldExpr
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.AST
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapter
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]

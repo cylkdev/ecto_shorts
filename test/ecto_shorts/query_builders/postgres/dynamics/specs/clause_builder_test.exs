@@ -1,10 +1,10 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilderTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseEmitter
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.Emitters.DynamicFieldExpr
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseEmitter
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -24,15 +24,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
 
   defp compile_clause_module!(clause_ast) do
     # Generate a unique module name to avoid conflicts across async tests.
-    module =
-      Module.concat([
-        EctoShorts,
-        QueryBuilders,
-        Postgres,
-        Dynamics,
-        Specs,
-        :"Tmp#{System.unique_integer([:positive])}"
-      ])
+    module = Module.concat([__MODULE__, :"Tmp#{System.unique_integer([:positive])}"])
 
     quoted =
       quote do
@@ -51,7 +43,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
     module
   end
 
-  test "clause_ast/1 builds a scalar equality clause and it compiles" do
+  test "clause_ast/2 builds a scalar equality clause and it compiles" do
     # `:kind` is a tag field on the spec.
     # ClauseBuilder does not branch on it.
     key_var = Macro.var(:key, nil)
@@ -69,7 +61,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
           end
       })
 
-    assert {:ok, clause_ast} = ClauseBuilder.clause_ast(spec)
+    assert {:ok, clause_ast} = ClauseBuilder.clause_ast(DynamicFieldExpr, spec)
 
     module = compile_clause_module!(clause_ast)
 
@@ -84,7 +76,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
     assert_dynamic(expected_dyn, actual_dyn)
   end
 
-  test "clause_ast/1 builds a clause with a guard and it compiles" do
+  test "clause_ast/2 builds a clause with a guard and it compiles" do
     # ClauseSpec supports an optional `:guard` AST.
     key_var = Macro.var(:key, nil)
     values_var = Macro.var(:values, nil)
@@ -102,7 +94,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
           end
       })
 
-    assert {:ok, clause_ast} = ClauseBuilder.clause_ast(spec)
+    assert {:ok, clause_ast} = ClauseBuilder.clause_ast(DynamicFieldExpr, spec)
 
     # Sanity check the emitted source includes the guard.
     assert Macro.to_string(clause_ast) |> String.contains?("when is_list(values)")
@@ -113,7 +105,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
     assert_dynamic(expected_dyn, actual_dyn)
   end
 
-  test "clause_ast/1 returns error when kind is not an atom" do
+  test "clause_ast/2 returns error when kind is not an atom" do
     key_var = Macro.var(:key, nil)
     v_var = Macro.var(:v, nil)
 
@@ -134,17 +126,17 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
               key: :kind,
               value: 123,
               keys_path: []
-            }} = ClauseBuilder.clause_ast(spec)
+            }} = ClauseBuilder.clause_ast(DynamicFieldExpr, spec)
   end
 
-  test "clause_ast/1 returns error for missing keys" do
+  test "clause_ast/2 returns error for missing keys" do
     assert {:error,
             %NimbleOptions.ValidationError{
               message: "required :binding_head option not found, received options: [:kind]",
               key: :binding_head,
               value: nil,
               keys_path: []
-            }} = ClauseBuilder.clause_ast(%{kind: :clause})
+            }} = ClauseBuilder.clause_ast(DynamicFieldExpr, %{kind: :clause})
   end
 
   test "clause_ast/2 returns error for invalid emitter" do
@@ -173,20 +165,5 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
     assert {:ok, clause_ast} = ClauseBuilder.clause_ast(KindCapturingEmitter, spec)
     module = compile_clause_module!(clause_ast)
     assert apply(module, :emitted_kind, []) == :my_kind
-  end
-
-  test "clause_ast/2 with the default emitter matches clause_ast/1 output" do
-    spec =
-      ClauseSpec.new!(%{
-        kind: :whatever,
-        binding_head: quote(do: {:as, nil}),
-        key: Macro.var(:key, nil),
-        head: quote(do: :anything),
-        body: quote(do: :ok)
-      })
-
-    assert {:ok, ast1} = ClauseBuilder.clause_ast(spec)
-    assert {:ok, ast2} = ClauseBuilder.clause_ast(DynamicFieldExpr, spec)
-    assert Macro.to_string(ast1) == Macro.to_string(ast2)
   end
 end

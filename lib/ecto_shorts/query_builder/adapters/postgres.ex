@@ -1,13 +1,9 @@
-defmodule EctoShorts.QueryBuilders.Postgres do
+defmodule EctoShorts.QueryBuilder.Adapters.Postgres do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilder.{
-    Joins,
-    Filters,
-    Selects
-  }
+  alias EctoShorts.QueryBuilder.Stages.{Filters, Joins, Selects}
 
-  @behaviour EctoShorts.QueryBuilder
+  @behaviour EctoShorts.QueryBuilder.Adapter
 
   @common_filters [:ids, :before, :after, :start_date, :end_date]
 
@@ -28,6 +24,7 @@ defmodule EctoShorts.QueryBuilders.Postgres do
 
   @filters @common_filters ++ @pagination_filters ++ @query_api_filters
 
+  @doc "Returns the list of supported filter keys for this adapter."
   def filters, do: @filters
 
   @impl true

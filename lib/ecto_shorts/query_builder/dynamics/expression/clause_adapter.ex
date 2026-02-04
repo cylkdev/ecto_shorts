@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseAdapter do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapter do
   @moduledoc """
   Defines a repo-adapter contract for compiling `dynamic_field_expr/3` clauses.
 
@@ -38,7 +38,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseAdapter do
               binding_body_asts :: [Macro.t()]
             ) ::
               [
-                EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec.t()
+                EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec.t()
                 | map()
                 | keyword()
               ]
@@ -50,8 +50,8 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseAdapter do
   """
   defmacro __using__(_opts) do
     quote do
-      @behaviour EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseAdapter
-      @after_compile {EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder,
+      @behaviour EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapter
+      @after_compile {EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder,
                       :__after_compile__}
     end
   end

@@ -1,18 +1,13 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics do
+defmodule EctoShorts.QueryBuilder.Dynamics do
   @moduledoc false
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.QueryBuilder.ParamPreprocessor
-
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.{
-    ArrayExpr,
-    CommonExpr,
-    ScalarExpr
-  }
+  alias EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
 
   import Ecto.Query, only: [dynamic: 2]
 
-  @logger_prefix "EctoShorts.QueryBuilders.Postgres.Dynamics"
+  @logger_prefix "EctoShorts.QueryBuilder.Dynamics"
 
   @equal :==
   @common_operators [:ids, :before, :after, :start_date, :end_date]

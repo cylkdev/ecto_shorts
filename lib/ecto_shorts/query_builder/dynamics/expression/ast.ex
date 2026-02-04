@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.AST do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expression.AST do
   @moduledoc false
 
   @doc false

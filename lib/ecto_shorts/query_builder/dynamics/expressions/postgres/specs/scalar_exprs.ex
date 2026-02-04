@@ -1,10 +1,11 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ScalarExprs do
   @moduledoc false
 
   alias EctoShorts.QueryBuilder.BindingHelpers
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.AST
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.AST
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec
+  alias EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
 
   @doc """
   Defines scalar `dynamic_field_expr/3` clauses.
@@ -26,7 +27,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
               target_binding_var,
               binding_body_asts
             ) do
-        ClauseBuilder.clause_ast!(spec)
+        clause_ast_or_raise(DynamicFieldExpr, spec)
       end
 
     quote do
@@ -66,7 +67,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
       end
 
     [
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -81,7 +82,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -96,7 +97,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -111,7 +112,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -126,7 +127,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -140,7 +141,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -154,7 +155,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -169,7 +170,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -185,7 +186,6 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       }
     ]
-    |> Enum.map(&ClauseSpec.new!/1)
   end
 
   @doc false
@@ -200,7 +200,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
       end
 
     [
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -224,7 +224,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -249,7 +249,6 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       }
     ]
-    |> Enum.map(&ClauseSpec.new!/1)
   end
 
   @doc false
@@ -260,7 +259,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
     field_ast = AST.field_ast(target_binding_var, key_var)
 
     [
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -287,7 +286,6 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       }
     ]
-    |> Enum.map(&ClauseSpec.new!/1)
   end
 
   @doc false
@@ -297,7 +295,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
     field_ast = AST.field_ast(target_binding_var, key_var)
 
     [
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -311,7 +309,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -325,7 +323,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -338,7 +336,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             end
           )
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -351,7 +349,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             end
           )
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -364,7 +362,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             end
           )
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -377,7 +375,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             end
           )
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -390,7 +388,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             end
           )
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -404,7 +402,6 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           )
       }
     ]
-    |> Enum.map(&ClauseSpec.new!/1)
   end
 
   @doc false
@@ -419,7 +416,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
       end
 
     [
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -443,7 +440,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -462,7 +459,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -486,7 +483,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -505,7 +502,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -529,7 +526,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -548,7 +545,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -572,7 +569,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             )
           end
       },
-      %{
+      %ClauseSpec{
         kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
@@ -592,7 +589,6 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
           end
       }
     ]
-    |> Enum.map(&ClauseSpec.new!/1)
   end
 
   @doc false
@@ -615,7 +611,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             :<= -> quote(do: unquote(field_ast) <= ^unquote(value_var))
           end
 
-        %{
+        %ClauseSpec{
           kind: kind,
           binding_head: binding_head_ast,
           key: key_var,
@@ -635,7 +631,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
             :<= -> quote(do: not (unquote(field_ast) <= ^unquote(value_var)))
           end
 
-        %{
+        %ClauseSpec{
           kind: kind,
           binding_head: binding_head_ast,
           key: key_var,
@@ -644,7 +640,13 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder do
         }
       end
 
-    (direct_ops ++ not_ops)
-    |> Enum.map(&ClauseSpec.new!/1)
+    direct_ops ++ not_ops
+  end
+
+  defp clause_ast_or_raise(emitter, spec) when is_atom(emitter) do
+    case ClauseBuilder.clause_ast(emitter, spec) do
+      {:ok, ast} -> ast
+      {:error, reason} -> raise ArgumentError, "Failed to build clause: #{inspect(reason)}"
+    end
   end
 end

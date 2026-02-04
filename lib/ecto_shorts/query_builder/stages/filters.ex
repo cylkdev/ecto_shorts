@@ -1,20 +1,21 @@
-defmodule EctoShorts.QueryBuilder.Filters do
+defmodule EctoShorts.QueryBuilder.Stages.Filters do
   @moduledoc false
 
   alias Ecto.Query
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics
+  alias EctoShorts.QueryBuilder.Dynamics
 
   require Ecto.Query
 
-  @logger_prefix "EctoShorts.QueryBuilder.Filters"
+  @logger_prefix "EctoShorts.QueryBuilder.Stages.Filters"
 
   @boolean_operators [:and, :or]
 
   @common_filters [:ids, :before, :after, :start_date, :end_date]
   @pagination_filters [:first, :last, :limit, :offset, :order_by, :preload]
 
+  @doc "Applies the given filter to the query."
   def build(source, filter, query, binding_selector, {bool_op, args}, _opts)
       when bool_op in @boolean_operators and is_list(args) do
     dynamic = Dynamics.convert_to_dynamic(source, binding_selector, {bool_op, args})

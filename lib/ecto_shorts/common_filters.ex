@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
-  alias EctoShorts.QueryBuilders
+  alias EctoShorts.QueryBuilder
   alias EctoShorts.SchemaHelpers
 
   @logger_prefix "EctoShorts.CommonFilters"
@@ -281,7 +281,7 @@ defmodule EctoShorts.CommonFilters do
   defp apply_query_builder(schema_source, query, binding_selector, current_filter, params, opts) do
     schema_source
     |> to_binding_source(query, binding_selector)
-    |> QueryBuilders.build_query(
+    |> QueryBuilder.build_query(
       query,
       binding_selector,
       current_filter,

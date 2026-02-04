@@ -1,11 +1,11 @@
-defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.Emitters.DynamicFieldExpr do
+defmodule EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr do
   @moduledoc """
   Emits `def dynamic_field_expr/3` clauses from clause specs.
 
   This emitter matches the existing `ClauseBuilder` output.
   """
 
-  @behaviour EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseEmitter
+  @behaviour EctoShorts.QueryBuilder.Dynamics.Expression.ClauseEmitter
 
   @impl true
   def quoted_def(_kind, binding_head_ast, key_ast, head_ast, body_ast, nil) do
