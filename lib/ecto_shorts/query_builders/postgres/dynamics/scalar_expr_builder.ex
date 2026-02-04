@@ -51,6 +51,12 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExprBuilder do
 
         def dynamic_field_expr(unquote(quoted_binding_head), key, {op, nil}) do
           case op do
+            :eq ->
+              Ecto.Query.dynamic(
+                [unquote_splicing(quoted_binding_body)],
+                is_nil(field(unquote(target_binding_var), ^key))
+              )
+
             :== ->
               Ecto.Query.dynamic(
                 [unquote_splicing(quoted_binding_body)],
@@ -186,11 +192,21 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExprBuilder do
           dynamic_field_expr(unquote(quoted_binding_head), key, {:==, value})
         end
 
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, {:all, values}}})
+            when is_list(values) do
+          dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, values}})
+        end
+
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:in, value}}) do
           Ecto.Query.dynamic(
             [unquote_splicing(quoted_binding_body)],
             field(unquote(target_binding_var), ^key) not in ^value
           )
+        end
+
+        def dynamic_field_expr(unquote(quoted_binding_head), key, {:in, {:all, values}})
+            when is_list(values) do
+          dynamic_field_expr(unquote(quoted_binding_head), key, {:in, values})
         end
 
         def dynamic_field_expr(unquote(quoted_binding_head), key, {:not, {:>, value}}) do

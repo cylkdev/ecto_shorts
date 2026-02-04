@@ -49,6 +49,7 @@ defmodule EctoShorts.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0", optional: true},
       {:error_message, "~> 0.1"},
+      {:nimble_options, "~> 1.0"},
       {:credo, ">= 0.0.0", only: [:dev, :test]},
       {:excoveralls, ">= 0.0.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.0.0", only: :dev},

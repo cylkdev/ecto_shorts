@@ -556,7 +556,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
     test "invalid nil operator raises helpful error" do
       assert_raise ArgumentError,
-                   "Expected the operator to be one of [:==, :!=] for nil comparison, got: :>",
+                   "Expected the operator to be one of [:eq, :==, :!=] for nil comparison, got: :>",
                    fn ->
                      CommonFilters.convert_params_to_filter(Post, %{published_at: %{>: nil}}, [])
                    end

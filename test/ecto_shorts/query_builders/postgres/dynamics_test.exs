@@ -147,10 +147,37 @@ defmodule EctoShorts.QueryBuilders.Postgres.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports scalar nil equality with :eq alias" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{eq: nil}})
+    expected = dynamic([q], is_nil(field(q, ^:title)))
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports scalar nil inequality" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{!=: nil}})
     expected = dynamic([q], not is_nil(field(q, ^:title)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar :in with {:all, values} shape" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{in: {:all, ["a", "b"]}}})
+    expected = dynamic([q], field(q, ^:title) in ^["a", "b"])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar not :in with {:all, values} shape" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{title: %{not: %{in: {:all, ["a", "b"]}}}})
+
+    expected = dynamic([q], field(q, ^:title) not in ^["a", "b"])
 
     assert_dynamic(expected, actual)
   end
