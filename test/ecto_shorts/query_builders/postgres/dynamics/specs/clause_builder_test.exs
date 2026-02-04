@@ -2,10 +2,25 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
   use ExUnit.Case, async: true
 
   alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseEmitter
   alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.Emitters.DynamicFieldExpr
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
+
+  defmodule KindCapturingEmitter do
+    @moduledoc false
+
+    @behaviour ClauseEmitter
+
+    @impl true
+    def quoted_def(kind, _binding_head, _key, _head, _body, _guard) do
+      quote do
+        def emitted_kind, do: unquote(kind)
+      end
+    end
+  end
 
   defp compile_clause_module!(clause_ast) do
     # Generate a unique module name to avoid conflicts across async tests.
@@ -130,5 +145,48 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilderTest do
               value: nil,
               keys_path: []
             }} = ClauseBuilder.clause_ast(%{kind: :clause})
+  end
+
+  test "clause_ast/2 returns error for invalid emitter" do
+    spec =
+      ClauseSpec.new!(%{
+        kind: :clause,
+        binding_head: quote(do: {:as, nil}),
+        key: Macro.var(:key, nil),
+        head: quote(do: :anything),
+        body: quote(do: :ok)
+      })
+
+    assert {:error, :invalid_emitter} = ClauseBuilder.clause_ast(__MODULE__, spec)
+  end
+
+  test "clause_ast/2 delegates to the given emitter and passes kind" do
+    spec =
+      ClauseSpec.new!(%{
+        kind: :my_kind,
+        binding_head: quote(do: {:as, nil}),
+        key: Macro.var(:key, nil),
+        head: quote(do: :anything),
+        body: quote(do: :ok)
+      })
+
+    assert {:ok, clause_ast} = ClauseBuilder.clause_ast(KindCapturingEmitter, spec)
+    module = compile_clause_module!(clause_ast)
+    assert apply(module, :emitted_kind, []) == :my_kind
+  end
+
+  test "clause_ast/2 with the default emitter matches clause_ast/1 output" do
+    spec =
+      ClauseSpec.new!(%{
+        kind: :whatever,
+        binding_head: quote(do: {:as, nil}),
+        key: Macro.var(:key, nil),
+        head: quote(do: :anything),
+        body: quote(do: :ok)
+      })
+
+    assert {:ok, ast1} = ClauseBuilder.clause_ast(spec)
+    assert {:ok, ast2} = ClauseBuilder.clause_ast(DynamicFieldExpr, spec)
+    assert Macro.to_string(ast1) == Macro.to_string(ast2)
   end
 end

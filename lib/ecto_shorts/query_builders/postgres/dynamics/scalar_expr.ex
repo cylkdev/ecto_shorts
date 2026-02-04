@@ -1,10 +1,11 @@
 defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.ScalarExpr do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ScalarExprBuilder
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Adapters.Postgres
 
-  require Ecto.Query
-  require ScalarExprBuilder
+  @compile {:no_warn_undefined, {Postgres.Compiled.Scalar, :dynamic_field_expr, 3}}
 
-  ScalarExprBuilder.define_exprs()
+  def dynamic_field_expr(binding_selector, key, expr) do
+    Postgres.Compiled.Scalar.dynamic_field_expr(binding_selector, key, expr)
+  end
 end

@@ -1,9 +1,10 @@
 defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.ArrayExpr do
   @moduledoc false
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ArrayExprBuilder
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Adapters.Postgres
 
-  require Ecto.Query
-  require ArrayExprBuilder
+  @compile {:no_warn_undefined, {Postgres.Compiled.Array, :dynamic_field_expr, 3}}
 
-  ArrayExprBuilder.define_exprs()
+  def dynamic_field_expr(binding_selector, key, expr) do
+    Postgres.Compiled.Array.dynamic_field_expr(binding_selector, key, expr)
+  end
 end

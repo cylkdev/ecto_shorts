@@ -26,7 +26,14 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
 
     clause_asts =
       for {binding_head_ast, binding_body_asts} <- binding_patterns,
-          spec <- common_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
+          spec <-
+            clause_specs(
+              :common,
+              context,
+              binding_head_ast,
+              target_binding_var,
+              binding_body_asts
+            ) do
         ClauseBuilder.clause_ast!(spec)
       end
 
@@ -35,14 +42,21 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
     end
   end
 
-  defp common_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
+  @doc false
+  def clause_specs(
+        :common = kind,
+        context,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) do
     id_values_var = Macro.var(:id_values, context)
     cursor_value_var = Macro.var(:cursor_value, context)
     date_value_var = Macro.var(:date_value, context)
 
     [
       %{
-        kind: :clause,
+        kind: kind,
         binding_head: binding_head_ast,
         key: :ids,
         head: id_values_var,
@@ -55,7 +69,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
           )
       },
       %{
-        kind: :clause,
+        kind: kind,
         binding_head: binding_head_ast,
         key: :after,
         head: cursor_value_var,
@@ -68,7 +82,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
           )
       },
       %{
-        kind: :clause,
+        kind: kind,
         binding_head: binding_head_ast,
         key: :before,
         head: cursor_value_var,
@@ -81,7 +95,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
           )
       },
       %{
-        kind: :clause,
+        kind: kind,
         binding_head: binding_head_ast,
         key: :start_date,
         head: date_value_var,
@@ -94,7 +108,7 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
           )
       },
       %{
-        kind: :clause,
+        kind: kind,
         binding_head: binding_head_ast,
         key: :end_date,
         head: date_value_var,
@@ -108,5 +122,9 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder do
       }
     ]
     |> Enum.map(&ClauseSpec.new!/1)
+  end
+
+  def clause_specs(_kind, _context, _binding_head_ast, _target_binding_var, _binding_body_asts) do
+    []
   end
 end

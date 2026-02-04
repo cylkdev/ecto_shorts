@@ -18,4 +18,3 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseEmitter do
               guard_ast :: Macro.t() | nil
             ) :: Macro.t()
 end
-

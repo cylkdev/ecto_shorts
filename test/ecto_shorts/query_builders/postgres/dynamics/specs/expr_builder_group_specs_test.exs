@@ -51,8 +51,13 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ExprBuilderGroupSpecs
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     module =
-      __MODULE__
-      |> ScalarExprBuilder.nil_specs(binding_head_ast, target_binding_var, binding_body_asts)
+      ScalarExprBuilder.nil_specs(
+        :clause,
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      )
       |> compile_specs_module!()
 
     key = :archived_at
@@ -75,8 +80,9 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ExprBuilderGroupSpecs
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprBuilder.alias_op_specs(__MODULE__, binding_head_ast) ++
+      ScalarExprBuilder.alias_op_specs(:clause, __MODULE__, binding_head_ast) ++
         ScalarExprBuilder.base_op_specs(
+          :clause,
           __MODULE__,
           binding_head_ast,
           target_binding_var,
@@ -98,8 +104,9 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ExprBuilderGroupSpecs
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     module =
-      __MODULE__
-      |> ArrayExprBuilder.lower_upper_specs(
+      ArrayExprBuilder.lower_upper_specs(
+        :clause,
+        __MODULE__,
         binding_head_ast,
         target_binding_var,
         binding_body_asts
@@ -134,8 +141,9 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ExprBuilderGroupSpecs
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ArrayExprBuilder.alias_op_specs(__MODULE__, binding_head_ast) ++
+      ArrayExprBuilder.alias_op_specs(:clause, __MODULE__, binding_head_ast) ++
         ArrayExprBuilder.base_op_specs(
+          :clause,
           __MODULE__,
           binding_head_ast,
           target_binding_var,

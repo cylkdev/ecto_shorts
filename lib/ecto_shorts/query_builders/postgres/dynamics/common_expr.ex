@@ -1,10 +1,11 @@
 defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.CommonExpr do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.CommonExprBuilder
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Adapters.Postgres
 
-  require Ecto.Query
-  require CommonExprBuilder
+  @compile {:no_warn_undefined, {Postgres.Compiled.Common, :dynamic_field_expr, 3}}
 
-  CommonExprBuilder.define_common_exprs()
+  def dynamic_field_expr(binding_selector, key, expr) do
+    Postgres.Compiled.Common.dynamic_field_expr(binding_selector, key, expr)
+  end
 end

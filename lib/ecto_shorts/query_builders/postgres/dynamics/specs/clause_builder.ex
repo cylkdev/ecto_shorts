@@ -5,10 +5,13 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
   This module builds function clauses by describing them as data (maps).
   The output is quoted AST that you inject into a module.
 
+  ClauseBuilder validates the spec shape and delegates the clause generation to
+  an emitter module that implements `quoted_def/6`.
+
   ## How It Works
 
-  `clause_ast/1` takes a spec map and returns a quoted `def dynamic_field_expr/3`
-  clause.
+  `clause_ast/2` takes an emitter module and a spec (or spec attrs) and returns
+  a quoted `def dynamic_field_expr/3` clause.
 
   The function head patterns come from the spec keys:
 
@@ -64,10 +67,68 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
   """
 
   alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseSpec
+  alias EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.Emitters.DynamicFieldExpr
+
+  @doc false
+  def __after_compile__(env, _bytecode) do
+    adapter = env.module
+
+    unless function_exported?(adapter, :options, 0) do
+      raise ArgumentError, "#{inspect(adapter)} must export `options/0`"
+    end
+
+    unless function_exported?(adapter, :emitter_module, 0) do
+      raise ArgumentError, "#{inspect(adapter)} must export `emitter_module/0`"
+    end
+
+    unless function_exported?(adapter, :clause_specs, 5) do
+      raise ArgumentError, "#{inspect(adapter)} must export `clause_specs/5`"
+    end
+
+    opts = adapter.options()
+
+    unless Keyword.has_key?(opts, :max_positional_bindings) do
+      raise ArgumentError,
+            "#{inspect(adapter)}.options/0 must include `:max_positional_bindings`"
+    end
+
+    emitter = adapter.emitter_module()
+
+    case validate_emitter(emitter) do
+      :ok -> :ok
+      {:error, :invalid_emitter} -> raise ArgumentError, "Invalid emitter: #{inspect(emitter)}"
+    end
+
+    location = Macro.Env.location(env)
+
+    for kind <- [:common, :scalar, :array] do
+      compiled_module = compiled_module(adapter, kind)
+
+      delete_module_if_loaded(compiled_module)
+
+      clause_asts =
+        clause_asts_for_kind(kind, adapter, compiled_module, emitter, opts)
+
+      quoted =
+        quote do
+          import Ecto.Query
+          require Ecto.Query
+
+          unquote_splicing(clause_asts)
+        end
+
+      Module.create(compiled_module, quoted, location)
+    end
+
+    :ok
+  end
 
   @doc "Same as `clause_ast/1`, but raises on error."
-  def clause_ast!(spec) do
-    case clause_ast(spec) do
+  def clause_ast!(spec), do: clause_ast!(DynamicFieldExpr, spec)
+
+  @doc "Same as `clause_ast/2`, but raises on error."
+  def clause_ast!(emitter, spec) do
+    case clause_ast(emitter, spec) do
       {:ok, ast} ->
         ast
 
@@ -115,10 +176,27 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
     {:error, :missing_key}
   """
   @spec clause_ast(ClauseSpec.t() | map() | keyword()) :: {:ok, Macro.t()} | {:error, term()}
-  def clause_ast(spec_or_attrs) do
-    with {:ok, spec} <- to_clause_spec(spec_or_attrs) do
+  def clause_ast(spec), do: clause_ast(DynamicFieldExpr, spec)
+
+  @doc """
+  Builds a clause AST using the given emitter module.
+
+  The emitter module must implement `quoted_def/6` (see `ClauseEmitter`).
+
+  ## Error reasons
+
+    * `:invalid_emitter` - the emitter does not export `quoted_def/6`
+    * `:missing_key` - a required spec key is missing (from `ClauseSpec.new/1`)
+    * `:invalid_spec` - the spec attrs are not valid (from `ClauseSpec.new/1`)
+  """
+  @spec clause_ast(module(), ClauseSpec.t() | map() | keyword()) ::
+          {:ok, Macro.t()} | {:error, term()}
+  def clause_ast(emitter, spec) when is_atom(emitter) do
+    with :ok <- validate_emitter(emitter),
+         {:ok, spec} <- ClauseSpec.new(spec) do
       {:ok,
-       quoted_def(
+       emitter.quoted_def(
+         spec.kind,
          spec.binding_head,
          spec.key,
          spec.head,
@@ -128,28 +206,59 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.ClauseBuilder do
     end
   end
 
-  defp to_clause_spec(%ClauseSpec{} = spec) do
-    {:ok, spec}
+  defp validate_emitter(emitter) do
+    case Code.ensure_compiled(emitter) do
+      {:module, _} ->
+        if function_exported?(emitter, :quoted_def, 6) do
+          :ok
+        else
+          {:error, :invalid_emitter}
+        end
+
+      {:error, _} ->
+        {:error, :invalid_emitter}
+    end
   end
 
-  defp to_clause_spec(attrs) do
-    ClauseSpec.new(attrs)
+  defp clause_asts_for_kind(kind, adapter, context, emitter, opts) do
+    alias EctoShorts.QueryBuilder.BindingHelpers
+
+    {target_binding_var, binding_patterns} =
+      BindingHelpers.query_var_and_binding_heads(context, opts)
+
+    for {binding_head_ast, binding_body_asts} <- binding_patterns,
+        spec <-
+          adapter.clause_specs(
+            kind,
+            context,
+            binding_head_ast,
+            target_binding_var,
+            binding_body_asts
+          ) do
+      clause_ast!(emitter, spec)
+    end
   end
 
-  defp quoted_def(binding_head_ast, key_ast, head_ast, body_ast, guard_ast) do
-    if is_nil(guard_ast) do
-      quote do
-        def dynamic_field_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast)) do
-          unquote(body_ast)
-        end
-      end
-    else
-      quote do
-        def dynamic_field_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast))
-            when unquote(guard_ast) do
-          unquote(body_ast)
-        end
-      end
+  defp compiled_module(adapter, kind) do
+    Module.concat([adapter, Compiled, kind_module_segment(kind)])
+  end
+
+  defp kind_module_segment(kind) when is_atom(kind) do
+    kind
+    |> Atom.to_string()
+    |> Macro.camelize()
+    |> String.to_atom()
+  end
+
+  defp delete_module_if_loaded(module) do
+    case Code.ensure_loaded(module) do
+      {:module, _} ->
+        :code.purge(module)
+        :code.delete(module)
+        :ok
+
+      {:error, _} ->
+        :ok
     end
   end
 end

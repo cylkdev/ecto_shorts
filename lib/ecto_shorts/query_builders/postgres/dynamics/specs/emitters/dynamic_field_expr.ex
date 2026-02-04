@@ -25,4 +25,3 @@ defmodule EctoShorts.QueryBuilders.Postgres.Dynamics.Specs.Emitters.DynamicField
     end
   end
 end
-
