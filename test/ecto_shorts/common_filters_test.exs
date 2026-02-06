@@ -660,6 +660,24 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports joining an association via association key params" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          where: a.first_name == ^"John"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{author: [as: :author, first_name: "John"]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports explicit operator" do
       expected = from p in Post, where: p.published != ^true
       q = Post

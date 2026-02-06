@@ -54,7 +54,7 @@ defmodule EctoShorts.Dynamics.Compiler do
     compiled_module = Module.concat(caller_module, Compiled)
     context = compiled_module
 
-    alias EctoShorts.Dynamics.BindingHelpers
+    alias EctoShorts.Dynamics.Compiler.BindingHelpers
 
     {target_binding_var, binding_patterns} =
       BindingHelpers.query_var_and_binding_heads(
