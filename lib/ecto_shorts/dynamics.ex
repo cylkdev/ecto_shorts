@@ -12,18 +12,6 @@ defmodule EctoShorts.Dynamics do
   @equal :==
   @boolean_operators [:and, :or]
 
-  def merge_dynamic(nil, _, dyn_right) do
-    dyn_right
-  end
-
-  def merge_dynamic(dyn_l, :and, dyn_r) do
-    dynamic([], ^dyn_l and ^dyn_r)
-  end
-
-  def merge_dynamic(dyn_l, :or, dyn_r) do
-    dynamic([], ^dyn_l or ^dyn_r)
-  end
-
   def convert_to_dynamic(source, binding_selector, args) do
     source = CommonSchema.normalize_source(source)
 
@@ -208,6 +196,18 @@ defmodule EctoShorts.Dynamics do
 
   defp build_dynamic_field_expr(source, dyn_l, binding_selector, key, value) do
     build_dynamic_field_expr(source, dyn_l, binding_selector, key, {@equal, value})
+  end
+
+  defp merge_dynamic(nil, _, dyn_right) do
+    dyn_right
+  end
+
+  defp merge_dynamic(dyn_l, :and, dyn_r) do
+    dynamic([], ^dyn_l and ^dyn_r)
+  end
+
+  defp merge_dynamic(dyn_l, :or, dyn_r) do
+    dynamic([], ^dyn_l or ^dyn_r)
   end
 
   defp composite_predicate_entries?(values) when is_list(values) do

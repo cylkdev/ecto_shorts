@@ -1,4 +1,4 @@
-defmodule EctoShorts.CommonFilters.Stages.Filters do
+defmodule EctoShorts.CommonFilters.Filter do
   @moduledoc false
 
   alias Ecto.Query
@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonFilters.Stages.Filters do
 
   require Ecto.Query
 
-  @logger_prefix "EctoShorts.CommonFilters.Stages.Filters"
+  @logger_prefix "EctoShorts.CommonFilters.Filter"
 
   @boolean_operators [:and, :or]
 

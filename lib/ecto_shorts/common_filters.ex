@@ -1,7 +1,13 @@
 defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
-  alias EctoShorts.CommonFilters.Stages.{Filters, Joins, Selects}
+
+  alias EctoShorts.CommonFilters.{
+    Filter,
+    Join,
+    Select
+  }
+
   alias EctoShorts.SchemaHelpers
 
   @logger_prefix "EctoShorts.CommonFilters"
@@ -283,13 +289,13 @@ defmodule EctoShorts.CommonFilters do
 
     case current_filter do
       :join ->
-        Joins.build(source, query, binding_selector, params)
+        Join.build(source, query, binding_selector, params)
 
       filter when filter in [:select, :select_merge] ->
-        Selects.build(filter, source, query, binding_selector, params)
+        Select.build(filter, source, query, binding_selector, params)
 
       filter ->
-        Filters.build(source, filter, query, binding_selector, params, opts)
+        Filter.build(source, filter, query, binding_selector, params, opts)
     end
   end
 
