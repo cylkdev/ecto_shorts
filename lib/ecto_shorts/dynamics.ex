@@ -1,13 +1,13 @@
-defmodule EctoShorts.QueryBuilder.Dynamics do
+defmodule EctoShorts.Dynamics do
   @moduledoc false
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.QueryBuilder.Dynamics.ParamPreprocessor
-  alias EctoShorts.QueryBuilder.Dynamics.Postgres
+  alias EctoShorts.Dynamics.ParamPreprocessor
+  alias EctoShorts.Dynamics.Postgres
 
   import Ecto.Query, only: [dynamic: 2]
 
-  @logger_prefix "EctoShorts.QueryBuilder.Dynamics"
+  @logger_prefix "EctoShorts.Dynamics"
 
   @equal :==
   @boolean_operators [:and, :or]

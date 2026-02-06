@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Postgres do
+defmodule EctoShorts.Dynamics.Postgres do
   @moduledoc false
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.QueryBuilder.Dynamics.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
+  alias EctoShorts.Dynamics.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
 
   @operators [:ids, :before, :after, :start_date, :end_date]
 

@@ -1,10 +1,10 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec do
+defmodule EctoShorts.Dynamics.Compiler.ClauseSpec do
   @moduledoc """
   Validates clause specs so they can generate `dynamic_field_expr/3` clauses.
 
   A clause spec is a struct that contains AST values. You use it to describe one
   function clause for `dynamic_field_expr/3`. You then pass the spec to
-  `EctoShorts.QueryBuilder.Dynamics.Compiler.clause_ast/1`.
+  `EctoShorts.Dynamics.Compiler.clause_ast/1`.
 
   This module does not build Ecto query expressions. It only checks the shape
   of the spec and returns a `%ClauseSpec{}` struct.
@@ -30,7 +30,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec do
     ...>   head: quote(do: {:==, v}),
     ...>   body: quote(do: Ecto.Query.dynamic([q], field(q, ^key) == ^v))
     ...> }
-    ...> EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec.new(spec)
+    ...> EctoShorts.Dynamics.Compiler.ClauseSpec.new(spec)
 
   ## Error Reasons
 
@@ -39,7 +39,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec do
     * `:missing_key` - a required key is missing
     * `:invalid_spec` - the input is not a map, keyword list, or `%ClauseSpec{}`
 
-    iex> EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec.new(%{key: :id})
+    iex> EctoShorts.Dynamics.Compiler.ClauseSpec.new(%{key: :id})
     {:error, :missing_key}
 
   > NOTE: ClauseSpec does not validate the *meaning* of `:head` or `:body`.
@@ -90,13 +90,13 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec do
   ## Examples
 
       iex> spec =
-      ...>   EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec.new(%{
+      ...>   EctoShorts.Dynamics.Compiler.ClauseSpec.new(%{
       ...>     binding_head: quote(do: {:as, nil}),
       ...>     key: Macro.var(:key, nil),
       ...>     head: quote(do: {:==, vals}),
       ...>     body: quote(do: Ecto.Query.dynamic([q], field(q, ^key) in ^vals))
       ...>   })
-      iex> match?({:ok, %EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec{}}, spec)
+      iex> match?({:ok, %EctoShorts.Dynamics.Compiler.ClauseSpec{}}, spec)
       true
   """
   @spec new(attrs :: map() | keyword()) :: {:ok, t()} | {:error, term()}

@@ -1,7 +1,7 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.RepoAdapterOptsTest do
+defmodule EctoShorts.Dynamics.RepoAdapterOptsTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.QueryBuilder.Dynamics
+  alias EctoShorts.Dynamics
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]

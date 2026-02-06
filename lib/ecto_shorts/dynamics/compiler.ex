@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Compiler do
+defmodule EctoShorts.Dynamics.Compiler do
   @moduledoc """
   Defines the spec-driven compiler for `dynamic_field_expr/3` clauses.
 
@@ -13,7 +13,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Compiler do
   that exports `clause_specs/4`.
   """
 
-  alias EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec
+  alias EctoShorts.Dynamics.Compiler.ClauseSpec
 
   @doc """
   Defines `X.Compiled` and `X.dynamic_field_expr/3` in the caller module `X`.
@@ -54,7 +54,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Compiler do
     compiled_module = Module.concat(caller_module, Compiled)
     context = compiled_module
 
-    alias EctoShorts.QueryBuilder.BindingHelpers
+    alias EctoShorts.Dynamics.BindingHelpers
 
     {target_binding_var, binding_patterns} =
       BindingHelpers.query_var_and_binding_heads(

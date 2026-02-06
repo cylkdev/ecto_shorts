@@ -1,6 +1,6 @@
 defmodule EctoShorts.CommonFilters.Stages.Joins do
   @moduledoc false
-  alias EctoShorts.QueryBuilder.Dynamics
+  alias EctoShorts.Dynamics
 
   alias Ecto.Query
 
@@ -9,7 +9,7 @@ defmodule EctoShorts.CommonFilters.Stages.Joins do
   require Ecto.Query
 
   {target_binding_var, binding_patterns} =
-    EctoShorts.QueryBuilder.BindingHelpers.query_var_and_binding_heads()
+    EctoShorts.Dynamics.BindingHelpers.query_var_and_binding_heads()
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     @doc false

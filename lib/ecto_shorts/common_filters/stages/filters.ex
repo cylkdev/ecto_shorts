@@ -4,7 +4,7 @@ defmodule EctoShorts.CommonFilters.Stages.Filters do
   alias Ecto.Query
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.QueryBuilder.Dynamics
+  alias EctoShorts.Dynamics
 
   require Ecto.Query
 

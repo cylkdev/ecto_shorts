@@ -1,7 +1,7 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpecTest do
+defmodule EctoShorts.Dynamics.Compiler.ClauseSpecTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec
+  alias EctoShorts.Dynamics.Compiler.ClauseSpec
 
   test "new/1 validates required keys and returns a struct" do
     key_var = Macro.var(:key, nil)

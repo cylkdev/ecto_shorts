@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Postgres.ArrayExpr.Specs do
+defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilder.Dynamics.Compiler.AST
-  alias EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec
+  alias EctoShorts.Dynamics.Compiler.AST
+  alias EctoShorts.Dynamics.Compiler.ClauseSpec
 
   @doc false
   def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do

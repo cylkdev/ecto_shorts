@@ -1,9 +1,9 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Postgres.ExprGroupSpecsTest do
+defmodule EctoShorts.Dynamics.Postgres.ExprGroupSpecsTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.QueryBuilder.Dynamics.Compiler
-  alias EctoShorts.QueryBuilder.Dynamics.Postgres.ArrayExpr.Specs, as: ArrayExprSpecs
-  alias EctoShorts.QueryBuilder.Dynamics.Postgres.ScalarExpr.Specs, as: ScalarExprSpecs
+  alias EctoShorts.Dynamics.Compiler
+  alias EctoShorts.Dynamics.Postgres.ArrayExpr.Specs, as: ArrayExprSpecs
+  alias EctoShorts.Dynamics.Postgres.ScalarExpr.Specs, as: ScalarExprSpecs
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]

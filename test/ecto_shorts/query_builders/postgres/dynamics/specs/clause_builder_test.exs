@@ -1,8 +1,8 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.CompilerTest do
+defmodule EctoShorts.Dynamics.CompilerTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.QueryBuilder.Dynamics.Compiler
-  alias EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec
+  alias EctoShorts.Dynamics.Compiler
+  alias EctoShorts.Dynamics.Compiler.ClauseSpec
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]

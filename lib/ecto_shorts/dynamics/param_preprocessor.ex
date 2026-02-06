@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.ParamPreprocessor do
+defmodule EctoShorts.Dynamics.ParamPreprocessor do
   @moduledoc false
 
   @doc """
@@ -6,7 +6,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.ParamPreprocessor do
 
   ## Examples
 
-    iex> EctoShorts.QueryBuilder.Dynamics.ParamPreprocessor.normalize_params(%{title: "A"})
+    iex> EctoShorts.Dynamics.ParamPreprocessor.normalize_params(%{title: "A"})
     [{:title, "A"}]
   """
   def normalize_params(term) do

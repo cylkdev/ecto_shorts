@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Compiler.AST do
+defmodule EctoShorts.Dynamics.Compiler.AST do
   @moduledoc false
 
   @doc false
