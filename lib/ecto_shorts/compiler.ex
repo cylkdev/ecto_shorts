@@ -97,4 +97,3 @@ defmodule EctoShorts.Compiler do
     end
   end
 end
-ç

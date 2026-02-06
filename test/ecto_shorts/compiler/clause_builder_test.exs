@@ -1,7 +1,7 @@
-defmodule EctoShorts.CompilerTest do
+defmodule EctoShorts.Compiler.ClauseBuilderTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Compiler
+  alias EctoShorts.Compiler.ClauseBuilder
   alias EctoShorts.Compiler.ClauseSpec
 
   import Ecto.Query
@@ -43,7 +43,7 @@ defmodule EctoShorts.CompilerTest do
           end
       })
 
-    assert {:ok, clause_ast} = Compiler.clause_ast(spec)
+    assert {:ok, clause_ast} = ClauseBuilder.clause_ast(spec)
 
     module = compile_clause_module!(clause_ast)
 
@@ -75,7 +75,7 @@ defmodule EctoShorts.CompilerTest do
           end
       })
 
-    assert {:ok, clause_ast} = Compiler.clause_ast(spec)
+    assert {:ok, clause_ast} = ClauseBuilder.clause_ast(spec)
 
     # Sanity check the emitted source includes the guard.
     assert Macro.to_string(clause_ast) |> String.contains?("when is_list(values)")
@@ -93,6 +93,6 @@ defmodule EctoShorts.CompilerTest do
               key: :binding_head,
               value: nil,
               keys_path: []
-            }} = Compiler.clause_ast(%{key: :id})
+            }} = ClauseBuilder.clause_ast(%{key: :id})
   end
 end

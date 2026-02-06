@@ -1,7 +1,7 @@
 defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Compiler
+  alias EctoShorts.Compiler.ClauseBuilder
   alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs, as: ArrayExprSpecs
   alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs, as: ScalarExprSpecs
 
@@ -11,7 +11,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
   defp compile_specs_module!(specs) do
     clause_asts =
       Enum.map(specs, fn spec ->
-        assert {:ok, clause_ast} = Compiler.clause_ast(spec)
+        assert {:ok, clause_ast} = ClauseBuilder.clause_ast(spec)
         clause_ast
       end)
 
