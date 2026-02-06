@@ -1,10 +1,10 @@
-defmodule EctoShorts.QueryBuilder.Stages.Joins do
+defmodule EctoShorts.CommonFilters.Stages.Joins do
   @moduledoc false
   alias EctoShorts.QueryBuilder.Dynamics
 
   alias Ecto.Query
 
-  @logger_prefix "EctoShorts.QueryBuilder.Stages.Joins"
+  @logger_prefix "EctoShorts.CommonFilters.Stages.Joins"
 
   require Ecto.Query
 

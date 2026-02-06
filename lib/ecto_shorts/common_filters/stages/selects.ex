@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder.Stages.Selects do
+defmodule EctoShorts.CommonFilters.Stages.Selects do
   @moduledoc false
   alias Ecto.Query
   alias EctoShorts.Utils

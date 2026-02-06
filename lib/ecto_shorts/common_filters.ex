@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
-  alias EctoShorts.QueryBuilder.Stages.{Filters, Joins, Selects}
+  alias EctoShorts.CommonFilters.Stages.{Filters, Joins, Selects}
   alias EctoShorts.SchemaHelpers
 
   @logger_prefix "EctoShorts.CommonFilters"
