@@ -132,10 +132,10 @@ defmodule EctoShorts.CommonParams do
       `changeset/2` function for validation. If `false`, raw structs are
       constructed without validation.
   """
-  def convert_to_insert_params(source, list_of_params \\ [], opts \\ []) do
+  def convert_to_insert_params(source, params_list \\ [], opts \\ []) do
     schema = normalize_schema(source)
 
-    case build_inserts(list_of_params, schema, opts) do
+    case build_inserts(params_list, schema, opts) do
       {inserts, []} ->
         {:ok, Enum.reverse(inserts)}
 
@@ -144,11 +144,11 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp build_inserts(list_of_params, schema, opts) do
+  defp build_inserts(params_list, schema, opts) do
     utc_now = DateTime.utc_now()
 
     Enum.reduce(
-      list_of_params,
+      params_list,
       {[], []},
       fn params, {acc, errors} ->
         case normalize_insert_entry(schema, params, opts) do
@@ -191,21 +191,21 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp build_struct(schema, schema_data, params, opts) do
+  defp build_struct(schema, schema_struct, params, opts) do
     if opts[:validate] === false do
-      {:ok, struct(schema_data, params)}
+      {:ok, struct(schema_struct, params)}
     else
-      schema_data
+      schema_struct
       |> CommonSchema.create_changeset(params, opts)
-      |> Changeset.apply_action(changeset_action(schema, schema_data))
+      |> Changeset.apply_action(changeset_action(schema, schema_struct))
     end
   end
 
-  defp build_changeset(schema, %{data: schema_data} = changeset, opts) do
+  defp build_changeset(schema, %{data: schema_struct} = changeset, opts) do
     if opts[:validate] === false do
       {:ok, Changeset.apply_changes(changeset)}
     else
-      Changeset.apply_action(changeset, changeset_action(schema, schema_data))
+      Changeset.apply_action(changeset, changeset_action(schema, schema_struct))
     end
   end
 
@@ -229,8 +229,8 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp normalize_insert_entry(schema, {%{data: schema_data} = _changeset, params}, opts) do
-    normalize_insert_entry(schema, {schema_data, params}, opts)
+  defp normalize_insert_entry(schema, {%{data: schema_struct} = _changeset, params}, opts) do
+    normalize_insert_entry(schema, {schema_struct, params}, opts)
   end
 
   defp normalize_insert_entry(nil, params, opts) do
@@ -245,28 +245,28 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp normalize_insert_entry(schema, {%_{} = schema_data, params}, opts) do
+  defp normalize_insert_entry(schema, {%_{} = schema_struct, params}, opts) do
     params = normalize_insert_params(schema, params, opts)
-    changed_keys = keys_changed_in_schema_data(schema_data, params)
+    changed_keys = keys_changed_in_schema_data(schema_struct, params)
 
-    with {:ok, insert_data} <- build_struct(schema, schema_data, params, opts) do
+    with {:ok, insert_data} <- build_struct(schema, schema_struct, params, opts) do
       {:ok, insert_data, changed_keys}
     end
   end
 
-  defp normalize_insert_entry(schema, %{data: schema_data} = changeset, opts) do
+  defp normalize_insert_entry(schema, %{data: schema_struct} = changeset, opts) do
     params = normalize_insert_params(schema, changeset.params, opts)
-    changed_keys = keys_changed_in_schema_data(schema_data, params)
+    changed_keys = keys_changed_in_schema_data(schema_struct, params)
 
     with {:ok, insert_data} <- build_changeset(schema, changeset, opts) do
       {:ok, insert_data, changed_keys}
     end
   end
 
-  defp normalize_insert_entry(schema, %_{} = schema_data, opts) do
+  defp normalize_insert_entry(schema, %_{} = schema_struct, opts) do
     changed_keys = get_query_fields(opts, schema)
 
-    with {:ok, insert_data} <- build_struct(schema, schema_data, %{}, opts) do
+    with {:ok, insert_data} <- build_struct(schema, schema_struct, %{}, opts) do
       {:ok, insert_data, changed_keys}
     end
   end
@@ -281,9 +281,9 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-  defp keys_changed_in_schema_data(schema_data, map_b) do
+  defp keys_changed_in_schema_data(schema_struct, map_b) do
     Enum.reduce(map_b, [], fn {key, val}, acc ->
-      if Map.get(schema_data, key) != val do
+      if Map.get(schema_struct, key) != val do
         [key | acc]
       else
         acc
@@ -301,8 +301,8 @@ defmodule EctoShorts.CommonParams do
     end)
   end
 
-  defp changeset_action(schema, schema_data) do
-    if has_all_non_nil_primary_keys?(schema, schema_data) do
+  defp changeset_action(schema, schema_struct) do
+    if has_all_non_nil_primary_keys?(schema, schema_struct) do
       :update
     else
       :insert

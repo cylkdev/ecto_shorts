@@ -9,7 +9,7 @@ defmodule EctoShorts.ActionsTest do
   import Ecto.Query
 
   describe "batch/4" do
-    test "returns empty map when list_of_params is empty" do
+    test "returns empty map when params_list is empty" do
       assert %{} = Actions.batch(Post, [], [:title], :many, [])
     end
 
@@ -763,7 +763,7 @@ defmodule EctoShorts.ActionsTest do
       assert result == input
     end
 
-    test "preload with {map(), map()} replaces with {schema_data, other_params}", %{post: post} do
+    test "preload with {map(), map()} replaces with {schema_struct, other_params}", %{post: post} do
       input = {%{permalink: "existing"}, %{title: "New"}}
 
       assert [{%Post{id: id}, %{title: "New"}}] =
@@ -772,7 +772,7 @@ defmodule EctoShorts.ActionsTest do
       assert id == post.id
     end
 
-    test "preload with {keyword(), keyword()} replaces with {schema_data, other_params}", %{
+    test "preload with {keyword(), keyword()} replaces with {schema_struct, other_params}", %{
       post: post
     } do
       input = {[permalink: "existing"], [title: "New"]}
@@ -783,7 +783,7 @@ defmodule EctoShorts.ActionsTest do
       assert id == post.id
     end
 
-    test "preload with {keyword(), map()} replaces with {schema_data, other_params}", %{
+    test "preload with {keyword(), map()} replaces with {schema_struct, other_params}", %{
       post: post
     } do
       input = {[permalink: "existing"], %{title: "New"}}
@@ -794,7 +794,7 @@ defmodule EctoShorts.ActionsTest do
       assert id == post.id
     end
 
-    test "preload with {map(), keyword()} replaces with {schema_data, other_params}", %{
+    test "preload with {map(), keyword()} replaces with {schema_struct, other_params}", %{
       post: post
     } do
       input = {%{permalink: "existing"}, [title: "New"]}
@@ -805,7 +805,7 @@ defmodule EctoShorts.ActionsTest do
       assert id == post.id
     end
 
-    test "preload with map() replaces with {schema_data, params}", %{post: post} do
+    test "preload with map() replaces with {schema_struct, params}", %{post: post} do
       input = %{permalink: "existing", title: "New"}
 
       assert [{%Post{id: id}, params}] = Actions.batch_preload(Post, [input], :permalink, [])
@@ -813,7 +813,7 @@ defmodule EctoShorts.ActionsTest do
       assert params == input
     end
 
-    test "preload with keyword() replaces with {schema_data, params}", %{post: post} do
+    test "preload with keyword() replaces with {schema_struct, params}", %{post: post} do
       input = [permalink: "existing", title: "New"]
 
       assert [{%Post{id: id}, params}] = Actions.batch_preload(Post, [input], :permalink, [])
@@ -855,20 +855,20 @@ defmodule EctoShorts.ActionsTest do
 
   describe "create_many/3" do
     test "inserts multiple records" do
-      args = [
+      params = [
         %{title: "A"},
         %{title: "B"}
       ]
 
       assert {:ok, [%Post{title: "A"} = post_a, %Post{title: "B"} = post_b]} =
-               Actions.create_many(Post, args)
+               Actions.create_many(Post, params)
 
       assert %Post{title: "A"} = Repo.get!(Post, post_a.id)
       assert %Post{title: "B"} = Repo.get!(Post, post_b.id)
     end
 
     test "returns {:error, error} and rolls back when a record fails validation" do
-      args = [
+      params = [
         %{permalink: "exising"},
         %{permalink: "exising"}
       ]
@@ -884,11 +884,11 @@ defmodule EctoShorts.ActionsTest do
                   changeset: %Ecto.Changeset{},
                   params: %{permalink: "exising"}
                 }
-              }} = Actions.create_many(Post, args)
+              }} = Actions.create_many(Post, params)
     end
 
     test "returns {:error, error} and rolls back on constraint failure" do
-      args = [
+      params = [
         %{title: "A", permalink: "create-many-dup"},
         %{title: "B", permalink: "create-many-dup"}
       ]
@@ -903,7 +903,7 @@ defmodule EctoShorts.ActionsTest do
                   params: %{permalink: "create-many-dup"}
                 }
               }} =
-               Actions.create_many(Post, args)
+               Actions.create_many(Post, params)
     end
   end
 
@@ -917,13 +917,13 @@ defmodule EctoShorts.ActionsTest do
       |> Post.changeset(%{title: "B"})
       |> Repo.insert!()
 
-      args = [
+      params = [
         %{title: "A"},
         %{title: "B"}
       ]
 
       assert {:ok, [%Post{title: "A"}, %Post{title: "B"}]} =
-               Actions.find_many(Post, args)
+               Actions.find_many(Post, params)
     end
 
     test "returns {:error, error} when any record is not found (includes changes_so_far)" do
@@ -931,7 +931,7 @@ defmodule EctoShorts.ActionsTest do
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
 
-      args = [
+      params = [
         %{title: "A"},
         %{title: "Missing"}
       ]
@@ -948,7 +948,7 @@ defmodule EctoShorts.ActionsTest do
                   changes_so_far: [%Post{title: "A"}]
                 }
               }} =
-               Actions.find_many(Post, args)
+               Actions.find_many(Post, params)
     end
   end
 
@@ -964,13 +964,13 @@ defmodule EctoShorts.ActionsTest do
         |> Post.changeset(%{title: "Original B"})
         |> Repo.insert!()
 
-      args = [
+      params = [
         %{id: post_a.id, title: "Updated A"},
         %{id: post_b.id, title: "Updated B"}
       ]
 
       assert {:ok, [%Post{title: "Updated A"}, %Post{title: "Updated B"}]} =
-               Actions.update_many(Post, args)
+               Actions.update_many(Post, params)
 
       assert %Post{title: "Updated A"} = Repo.get!(Post, post_a.id)
       assert %Post{title: "Updated B"} = Repo.get!(Post, post_b.id)
@@ -987,7 +987,7 @@ defmodule EctoShorts.ActionsTest do
         |> Post.changeset(%{title: "Also Valid"})
         |> Repo.insert!()
 
-      args = [
+      params = [
         %{id: post_a.id, title: "Updated"},
         %{id: post_b.id, views: "not_an_integer"}
       ]
@@ -1004,7 +1004,7 @@ defmodule EctoShorts.ActionsTest do
                   params: %{views: "not_an_integer"}
                 }
               }} =
-               Actions.update_many(Post, args)
+               Actions.update_many(Post, params)
 
       # transaction rollback: records should not be updated
       assert %Post{title: "Valid"} = Repo.get!(Post, post_a.id)
@@ -1017,13 +1017,13 @@ defmodule EctoShorts.ActionsTest do
         |> Post.changeset(%{title: "Existing"})
         |> Repo.insert!()
 
-      args = [
+      params = [
         %{id: post.id, title: "Updated"},
         %{id: 999_999, title: "Not Found"}
       ]
 
       assert {:error, %{code: :not_found, message: "record not found.", details: details}} =
-               Actions.update_many(Post, args)
+               Actions.update_many(Post, params)
 
       assert details.index == 1
 
@@ -1072,25 +1072,25 @@ defmodule EctoShorts.ActionsTest do
       |> Post.changeset(%{title: "Existing"})
       |> Repo.insert!()
 
-      args = [
+      params = [
         %{title: "Existing"},
         %{title: "Created"}
       ]
 
       assert {:ok, [%Post{title: "Existing"}, %Post{title: "Created"}]} =
-               Actions.find_or_create_many(Post, args)
+               Actions.find_or_create_many(Post, params)
     end
   end
 
   describe "find_and_upsert_many/3" do
     test "creates records when not found" do
-      args = [
+      params = [
         {%{title: "A"}, %{title: "A"}},
         {%{title: "B"}, %{title: "B"}}
       ]
 
       assert {:ok, [%Post{title: "A"}, %Post{title: "B"}]} =
-               Actions.find_and_upsert_many(Post, args)
+               Actions.find_and_upsert_many(Post, params)
     end
 
     test "updates a record when found" do
@@ -1098,11 +1098,11 @@ defmodule EctoShorts.ActionsTest do
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
 
-      args = [
+      params = [
         {%{title: "A"}, %{title: "Updated"}}
       ]
 
-      assert {:ok, [%Post{title: "Updated"}]} = Actions.find_and_upsert_many(Post, args)
+      assert {:ok, [%Post{title: "Updated"}]} = Actions.find_and_upsert_many(Post, params)
     end
 
     test "creates a post and can find it by published field" do

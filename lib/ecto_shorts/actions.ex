@@ -26,16 +26,16 @@ defmodule EctoShorts.Actions do
     CRUD.find(source, params, opts)
   end
 
-  def update(queryable, id_or_schema_data, params, opts \\ []) do
-    CRUD.update(queryable, id_or_schema_data, params, opts)
+  def update(queryable, id_or_schema_struct, params, opts \\ []) do
+    CRUD.update(queryable, id_or_schema_struct, params, opts)
   end
 
-  def delete(structs_or_changesets) do
-    delete(structs_or_changesets, [])
+  def delete(records_or_changesets) do
+    delete(records_or_changesets, [])
   end
 
-  def delete(structs_or_changesets, opts) do
-    CRUD.delete(structs_or_changesets, opts)
+  def delete(records_or_changesets, opts) do
+    CRUD.delete(records_or_changesets, opts)
   end
 
   def delete(queryable, id, opts) do
@@ -78,8 +78,8 @@ defmodule EctoShorts.Actions do
     Transaction.transact(fun_or_multi, opts)
   end
 
-  def batch(schema, args, batch_keys \\ :id, cardinality \\ :many, opts \\ []) do
-    Batch.batch(schema, args, batch_keys, cardinality, opts)
+  def batch(schema, params, batch_keys \\ :id, cardinality \\ :many, opts \\ []) do
+    Batch.batch(schema, params, batch_keys, cardinality, opts)
   end
 
   def batch_preload(schema, entries, keys, opts \\ []) do

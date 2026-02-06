@@ -11,17 +11,17 @@ defmodule EctoShorts.Actions.Batch do
   @doc """
   ...
   """
-  def batch(schema, args, batch_keys \\ :id, cardinality \\ :many, opts \\ [])
+  def batch(schema, params, batch_keys \\ :id, cardinality \\ :many, opts \\ [])
 
   def batch(_schema, [], _batch_keys, _cardinality, _opts) do
     %{}
   end
 
-  def batch(schema, args, batch_keys, cardinality, opts)
+  def batch(schema, params, batch_keys, cardinality, opts)
       when is_list(batch_keys) and cardinality in @cardinalities do
     batch_keys = Enum.uniq(batch_keys)
 
-    case build_batch_params(schema, args, batch_keys, opts) do
+    case build_batch_params(schema, params, batch_keys, opts) do
       [] ->
         %{}
 
@@ -34,10 +34,10 @@ defmodule EctoShorts.Actions.Batch do
     end
   end
 
-  def batch(schema, args, batch_key, cardinality, opts)
+  def batch(schema, params, batch_key, cardinality, opts)
       when cardinality in @cardinalities do
     values =
-      args
+      params
       |> Enum.map(&normalize_batch_key(&1, batch_key))
       |> Enum.uniq()
 
@@ -56,11 +56,11 @@ defmodule EctoShorts.Actions.Batch do
     []
   end
 
-  defp build_batch_params(schema, list_of_params, batch_keys, opts) do
+  defp build_batch_params(schema, params_list, batch_keys, opts) do
     query_fields = get_query_fields(opts, schema)
 
     if Enum.all?(batch_keys, &(&1 in query_fields)) do
-      list_of_params
+      params_list
       |> Enum.map(fn params -> normalize_batch_key(params, batch_keys) end)
       |> Enum.uniq()
       |> Enum.map(&{:or_where, &1})
@@ -109,11 +109,11 @@ defmodule EctoShorts.Actions.Batch do
   ...
   """
   def batch_preload(schema, entries, keys, opts) do
-    {list_of_params, index_to_key} = extract_lookup_params(entries, keys)
+    {params_list, index_to_key} = extract_lookup_params(entries, keys)
 
     key_fields = normalize_key_fields(keys)
 
-    fetched_records = batch(schema, list_of_params, key_fields, :one, opts)
+    fetched_records = batch(schema, params_list, key_fields, :one, opts)
 
     Enum.reduce(index_to_key, entries, fn {index, batch_key}, acc ->
       case Map.get(fetched_records, batch_key) do

@@ -19,10 +19,10 @@ defmodule EctoShorts.CommonFilters.Select do
     end
   end
 
-  def build(filter, schema, query, _binding_selector, {bind_op, params})
-      when bind_op in [:at, :as] and (is_map(params) or is_list(params)) do
+  def build(filter, schema, query, _binding_selector, {binding_mode, params})
+      when binding_mode in [:at, :as] and (is_map(params) or is_list(params)) do
     Enum.reduce(params, query, fn {binding_target, term}, updated_query ->
-      build(filter, schema, updated_query, {bind_op, binding_target}, term)
+      build(filter, schema, updated_query, {binding_mode, binding_target}, term)
     end)
   end
 

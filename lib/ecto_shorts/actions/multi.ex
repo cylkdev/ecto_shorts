@@ -116,8 +116,8 @@ defmodule EctoShorts.Actions.Multi do
     end)
   end
 
-  defp run_multi_delete(repo, schema, %_{} = schema_data, index, opts) do
-    repo_delete(repo, schema, schema_data, index, opts)
+  defp run_multi_delete(repo, schema, %_{} = schema_struct, index, opts) do
+    repo_delete(repo, schema, schema_struct, index, opts)
   end
 
   defp run_multi_delete(repo, schema, params, index, opts)

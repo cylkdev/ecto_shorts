@@ -58,7 +58,7 @@ defmodule EctoShorts.CommonFilters do
          schema_source,
          query,
          binding_selector,
-         current_filter,
+         filter_op,
          {key, value},
          opts
        ) do
@@ -82,12 +82,12 @@ defmodule EctoShorts.CommonFilters do
 
       key in @binding_operators ->
         if is_map(value) or is_list(value) do
-          Enum.reduce(value, query, fn {bind_to, params}, query_acc ->
+          Enum.reduce(value, query, fn {binding_target, params}, query_acc ->
             reduce_binding_params(
               schema_source,
               query_acc,
-              {key, bind_to},
-              current_filter,
+              {key, binding_target},
+              filter_op,
               params,
               opts
             )
@@ -108,7 +108,7 @@ defmodule EctoShorts.CommonFilters do
               schema_source,
               query,
               binding_selector,
-              current_filter,
+              filter_op,
               {key, value},
               opts
             )
@@ -119,7 +119,7 @@ defmodule EctoShorts.CommonFilters do
                 schema_source,
                 query,
                 binding_selector,
-                current_filter,
+                filter_op,
                 key,
                 value,
                 opts
@@ -129,7 +129,7 @@ defmodule EctoShorts.CommonFilters do
                 schema_source,
                 query,
                 binding_selector,
-                current_filter,
+                filter_op,
                 {key, value},
                 opts
               )
@@ -138,13 +138,13 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_filter_params(schema_source, query, binding_selector, current_filter, params, opts) do
+  defp reduce_filter_params(schema_source, query, binding_selector, filter_op, params, opts) do
     if is_map(params) do
       reduce_filter_params(
         schema_source,
         query,
         binding_selector,
-        current_filter,
+        filter_op,
         Map.to_list(params),
         opts
       )
@@ -155,19 +155,26 @@ defmodule EctoShorts.CommonFilters do
             schema_source,
             query_acc,
             binding_selector,
-            current_filter,
+            filter_op,
             {key, value},
             opts
           )
         end)
       else
-        apply_query_builder(schema_source, query, binding_selector, current_filter, params, opts)
+        apply_query_builder(schema_source, query, binding_selector, filter_op, params, opts)
       end
     end
   end
 
-  defp reduce_binding_params(schema_source, query, {bind_op, bind_to}, filter, params, opts) do
-    case {bind_op, bind_to} do
+  defp reduce_binding_params(
+         schema_source,
+         query,
+         {binding_mode, binding_target},
+         filter,
+         params,
+         opts
+       ) do
+    case {binding_mode, binding_target} do
       {:as, bind_alias} when is_atom(bind_alias) ->
         reduce_filter_params(schema_source, query, {:as, bind_alias}, filter, params, opts)
 
@@ -210,7 +217,7 @@ defmodule EctoShorts.CommonFilters do
           opts
         )
 
-      {join_bind_op, join_bind_to} =
+      {join_binding_mode, join_binding_target} =
         if Keyword.has_key?(params, :as) do
           {:as, Keyword.get(params, :as, nil)}
         else
@@ -220,7 +227,7 @@ defmodule EctoShorts.CommonFilters do
       reduce_filter_params(
         assoc_schema,
         joined_query,
-        {join_bind_op, join_bind_to},
+        {join_binding_mode, join_binding_target},
         filter,
         Keyword.drop(params, [:as, :on, :type]),
         opts
@@ -234,7 +241,7 @@ defmodule EctoShorts.CommonFilters do
          schema_source,
          query,
          binding_selector,
-         current_filter,
+         filter_op,
          {key, value},
          opts
        ) do
@@ -244,7 +251,7 @@ defmodule EctoShorts.CommonFilters do
           schema_source,
           query,
           binding_selector,
-          current_filter,
+          filter_op,
           {key, Map.to_list(value)},
           opts
         )
@@ -256,7 +263,7 @@ defmodule EctoShorts.CommonFilters do
               schema_source,
               query_acc,
               binding_selector,
-              current_filter,
+              filter_op,
               {key, {key2, value2}},
               opts
             )
@@ -266,7 +273,7 @@ defmodule EctoShorts.CommonFilters do
             schema_source,
             query,
             binding_selector,
-            current_filter,
+            filter_op,
             {key, value},
             opts
           )
@@ -277,25 +284,25 @@ defmodule EctoShorts.CommonFilters do
           schema_source,
           query,
           binding_selector,
-          current_filter,
+          filter_op,
           {key, value},
           opts
         )
     end
   end
 
-  defp apply_query_builder(schema_source, query, binding_selector, current_filter, params, opts) do
-    source = to_binding_source(schema_source, query, binding_selector)
+  defp apply_query_builder(schema_source, query, binding_selector, filter_op, params, opts) do
+    binding_source = to_binding_source(schema_source, query, binding_selector)
 
-    case current_filter do
+    case filter_op do
       :join ->
-        Join.build(source, query, binding_selector, params, opts)
+        Join.build(binding_source, query, binding_selector, params, opts)
 
-      filter when filter in [:select, :select_merge] ->
-        Select.build(filter, source, query, binding_selector, params)
+      filter_op when filter_op in [:select, :select_merge] ->
+        Select.build(filter_op, binding_source, query, binding_selector, params)
 
-      filter ->
-        Filter.build(source, filter, query, binding_selector, params, opts)
+      filter_op ->
+        Filter.build(binding_source, filter_op, query, binding_selector, params, opts)
     end
   end
 
@@ -303,8 +310,8 @@ defmodule EctoShorts.CommonFilters do
     schema_source
   end
 
-  defp to_binding_source(_source, query, {_bind_op, bind_to}) do
-    CommonQuery.get_query_binding_source(query, bind_to)
+  defp to_binding_source(_schema_source, query, {_binding_mode, binding_target}) do
+    CommonQuery.get_query_binding_source(query, binding_target)
   end
 
   defp list_wrap(term) do

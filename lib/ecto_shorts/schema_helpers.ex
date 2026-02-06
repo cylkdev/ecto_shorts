@@ -74,8 +74,8 @@ defmodule EctoShorts.SchemaHelpers do
       ...> EctoShorts.SchemaHelpers.association_not_loaded?(post, :comments)
       true
   """
-  def association_not_loaded?(schema_data, key) do
-    schema_data
+  def association_not_loaded?(schema_struct, key) do
+    schema_struct
     |> Map.get(key)
     |> is_struct(Ecto.Association.NotLoaded)
   end

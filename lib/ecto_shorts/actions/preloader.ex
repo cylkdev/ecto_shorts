@@ -23,7 +23,7 @@ defmodule EctoShorts.Actions.Preloader do
   #   # Batch.batch(assoc_schema, params_list, primary_key, :many, opts)
   # end
 
-  # # def batch(schema, args, batch_keys, cardinality, opts)
+  # # def batch(schema, params, batch_keys, cardinality, opts)
 
   # defp prepare_batch_params({:one, _queryable, related_key}, params_list) do
   #   Enum.map(params_list, &%{related_key => Utils.enum_fetch!(&1, related_key)})

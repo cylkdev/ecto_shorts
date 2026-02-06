@@ -161,7 +161,7 @@ defmodule EctoShorts.Actions.CRUD do
   @doc """
   ...
   """
-  def update(queryable, id_or_schema_data, params, opts \\ [])
+  def update(queryable, id_or_schema_struct, params, opts \\ [])
 
   def update(queryable, id, params, opts) when is_integer(id) or is_binary(id) do
     with {:ok, record} <- find(queryable, %{id: id}, opts) do
@@ -169,9 +169,9 @@ defmodule EctoShorts.Actions.CRUD do
     end
   end
 
-  def update(queryable, schema_data, params, opts) do
+  def update(queryable, schema_struct, params, opts) do
     queryable
-    |> CommonSchema.create_changeset(schema_data, params, opts)
+    |> CommonSchema.create_changeset(schema_struct, params, opts)
     |> Config.repo!(opts).update(opts)
   end
 
@@ -203,10 +203,10 @@ defmodule EctoShorts.Actions.CRUD do
     end
   end
 
-  def delete(%{__meta__: %{schema: schema}} = schema_data, opts) do
+  def delete(%{__meta__: %{schema: schema}} = schema_struct, opts) do
     with {:error, changeset} <-
            schema
-           |> CommonSchema.create_changeset(schema_data, opts)
+           |> CommonSchema.create_changeset(schema_struct, opts)
            |> Config.repo!(opts).delete(opts) do
       {:error,
        Error.call(
@@ -221,9 +221,9 @@ defmodule EctoShorts.Actions.CRUD do
     end
   end
 
-  def delete(structs_or_changesets, opts) when is_list(structs_or_changesets) do
+  def delete(records_or_changesets, opts) when is_list(records_or_changesets) do
     with {:ok, results} <-
-           Enum.reduce_while(structs_or_changesets, {:ok, []}, fn entry, {:ok, acc} ->
+           Enum.reduce_while(records_or_changesets, {:ok, []}, fn entry, {:ok, acc} ->
              case delete(entry, opts) do
                {:ok, result} -> {:cont, {:ok, [result | acc]}}
                {:error, reason} -> {:halt, {:error, reason}}

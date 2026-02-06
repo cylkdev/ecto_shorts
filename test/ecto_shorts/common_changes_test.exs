@@ -447,7 +447,7 @@ defmodule EctoShorts.CommonChangesTest do
              } = changeset
     end
 
-    test "does not add change when given schema_data that's already associated with record" do
+    test "does not add change when given schema_struct that's already associated with record" do
       assert {:ok, post} = Actions.create(Post, %{title: "title"})
 
       post_id = post.id
@@ -479,7 +479,7 @@ defmodule EctoShorts.CommonChangesTest do
       assert %{} === changes
     end
 
-    test "adds changeset and no changes when given schema_data that's is not associated with record" do
+    test "adds changeset and no changes when given schema_struct that's is not associated with record" do
       assert {:ok, post} = Actions.create(Post, %{title: "title"})
 
       post_id = post.id
