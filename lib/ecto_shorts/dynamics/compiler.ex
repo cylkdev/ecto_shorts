@@ -70,7 +70,7 @@ defmodule EctoShorts.Dynamics.Compiler do
           target_binding_var,
           binding_body_asts
         )
-        |> Enum.map(&clause_ast_or_raise/1)
+        |> Enum.map(&clause_ast!/1)
       end)
 
     quote do
@@ -129,7 +129,7 @@ defmodule EctoShorts.Dynamics.Compiler do
     end
   end
 
-  defp clause_ast_or_raise(spec) do
+  defp clause_ast!(spec) do
     case clause_ast(spec) do
       {:ok, ast} -> ast
       {:error, reason} -> raise ArgumentError, "Failed to build clause: #{inspect(reason)}"
