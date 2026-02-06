@@ -1,8 +1,8 @@
 defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
   @moduledoc false
 
-  alias EctoShorts.Dynamics.Compiler.AST
-  alias EctoShorts.Dynamics.Compiler.ClauseSpec
+  alias EctoShorts.Compiler.AST
+  alias EctoShorts.Compiler.ClauseSpec
 
   @doc false
   def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do

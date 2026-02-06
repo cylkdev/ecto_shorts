@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters.Join do
   @moduledoc false
   alias EctoShorts.Dynamics
-  alias EctoShorts.Dynamics.Compiler.BindingHelpers
+  alias EctoShorts.Compiler.BindingHelpers
 
   alias Ecto.Query
 

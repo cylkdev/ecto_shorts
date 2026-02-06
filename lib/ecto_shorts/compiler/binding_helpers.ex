@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Compiler.BindingHelpers do
+defmodule EctoShorts.Compiler.BindingHelpers do
   @moduledoc false
 
   def query_var_and_binding_heads(context \\ nil, opts \\ []) do

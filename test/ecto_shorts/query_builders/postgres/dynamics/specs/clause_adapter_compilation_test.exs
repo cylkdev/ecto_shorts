@@ -1,8 +1,8 @@
-defmodule EctoShorts.Dynamics.Compiler.UsingTest do
+defmodule EctoShorts.Compiler.UsingTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Dynamics.Compiler
-  alias EctoShorts.Dynamics.Compiler.AST
+  alias EctoShorts.Compiler
+  alias EctoShorts.Compiler.AST
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]

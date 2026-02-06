@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Compiler.AST do
+defmodule EctoShorts.Compiler.AST do
   @moduledoc false
 
   @doc false
