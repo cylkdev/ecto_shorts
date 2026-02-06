@@ -2,7 +2,6 @@ defmodule EctoShorts.Dynamics do
   @moduledoc false
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.Dynamics.ParamPreprocessor
   alias EctoShorts.Dynamics.Postgres
 
   import Ecto.Query, only: [dynamic: 2]
@@ -44,7 +43,7 @@ defmodule EctoShorts.Dynamics do
     cond do
       key in Postgres.operators() ->
         value
-        |> ParamPreprocessor.normalize_params()
+        |> normalize_expr_params()
         |> Enum.reduce(dyn_l, fn item, dyn_acc ->
           dyn_r = Postgres.build_dynamic_expression(source, binding_selector, key, item)
           merge_dynamic(dyn_acc, :and, dyn_r)
@@ -55,7 +54,7 @@ defmodule EctoShorts.Dynamics do
 
       true ->
         value
-        |> ParamPreprocessor.normalize_params()
+        |> normalize_expr_params()
         |> Enum.reduce(dyn_l, fn item, dyn_acc ->
           dyn_r = Postgres.build_dynamic_expression(source, binding_selector, key, item)
           merge_dynamic(dyn_acc, :and, dyn_r)
@@ -186,7 +185,7 @@ defmodule EctoShorts.Dynamics do
 
   defp build_dynamic_field_expr(source, dyn_l, binding_selector, key, {op, value}) do
     value
-    |> ParamPreprocessor.normalize_params()
+    |> normalize_expr_params()
     |> Enum.reduce(dyn_l, fn item, dyn_acc ->
       dyn_r = Postgres.build_dynamic_expression(source, binding_selector, key, {op, item})
 
@@ -219,4 +218,51 @@ defmodule EctoShorts.Dynamics do
 
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
   defp source_has_schema?(_), do: false
+
+  defp normalize_expr_params(term) do
+    term
+    |> do_normalize_expr_params([])
+    |> Enum.reverse()
+  end
+
+  defp do_normalize_expr_params(term, acc) when is_map(term) and not is_struct(term) do
+    term
+    |> Map.to_list()
+    |> do_normalize_expr_params(acc)
+  end
+
+  defp do_normalize_expr_params([], acc), do: acc
+
+  defp do_normalize_expr_params(list, acc) when is_list(list) do
+    if flatten?(list) do
+      Enum.reduce(list, acc, fn entry, acc_inner ->
+        do_normalize_expr_params(entry, acc_inner)
+      end)
+    else
+      [list | acc]
+    end
+  end
+
+  defp do_normalize_expr_params({k, v}, acc) when is_map(v) and not is_struct(v) do
+    do_normalize_expr_params({k, Map.to_list(v)}, acc)
+  end
+
+  defp do_normalize_expr_params({k, v}, acc) when is_list(v) do
+    if flatten?(v) do
+      v
+      |> normalize_expr_params()
+      |> Enum.map(&{k, &1})
+      |> do_normalize_expr_params(acc)
+    else
+      [{k, v} | acc]
+    end
+  end
+
+  defp do_normalize_expr_params(v, acc) do
+    [v | acc]
+  end
+
+  defp flatten?(list) do
+    Keyword.keyword?(list) or Enum.any?(list, &is_map/1)
+  end
 end
