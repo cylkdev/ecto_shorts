@@ -1,7 +1,6 @@
 defmodule EctoShorts.Actions do
   @moduledoc """
-  Public actions API for common CRUD, batch, bulk, multi, transaction,
-  and transaction operations.
+  Public actions API for common CRUD, batch, bulk, multi, and transaction operations.
   """
 
   alias EctoShorts.Actions.Error
