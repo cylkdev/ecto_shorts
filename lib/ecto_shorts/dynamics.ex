@@ -63,7 +63,7 @@ defmodule EctoShorts.Dynamics do
           |> normalize_expression_params()
           |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
             right_dynamic =
-              expression_adapter.build_dynamic_expression(source, binding_selector, key, item)
+              expression_adapter.build_dynamic(source, binding_selector, key, item)
 
             merge_dynamic(dyn_acc, :and, right_dynamic)
           end)
@@ -75,7 +75,7 @@ defmodule EctoShorts.Dynamics do
             |> normalize_expression_params()
             |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
               right_dynamic =
-                expression_adapter.build_dynamic_expression(source, binding_selector, key, item)
+                expression_adapter.build_dynamic(source, binding_selector, key, item)
 
               merge_dynamic(dyn_acc, :and, right_dynamic)
             end)
@@ -89,7 +89,7 @@ defmodule EctoShorts.Dynamics do
         |> normalize_expression_params()
         |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
           right_dynamic =
-            expression_adapter.build_dynamic_expression(source, binding_selector, key, item)
+            expression_adapter.build_dynamic(source, binding_selector, key, item)
 
           merge_dynamic(dyn_acc, :and, right_dynamic)
         end)
@@ -104,7 +104,7 @@ defmodule EctoShorts.Dynamics do
         |> normalize_expression_params()
         |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
           right_dynamic =
-            expression_adapter.build_dynamic_expression(source, binding_selector, key, item)
+            expression_adapter.build_dynamic(source, binding_selector, key, item)
 
           merge_dynamic(dyn_acc, :and, right_dynamic)
         end)
@@ -200,12 +200,12 @@ defmodule EctoShorts.Dynamics do
         build_schema_dynamic(source, dyn_acc, binding_selector, {key, entry}, opts)
       end)
     else
-      build_dynamic_field_expr(source, left_dynamic, binding_selector, key, value, opts)
+      build_apply_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts)
     end
   end
 
   defp build_schema_dynamic_value(source, left_dynamic, binding_selector, key, value, opts) do
-    build_dynamic_field_expr(source, left_dynamic, binding_selector, key, value, opts)
+    build_apply_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts)
   end
 
   # NOTE: `{bool_op, values}` can mean two different things:
@@ -225,12 +225,12 @@ defmodule EctoShorts.Dynamics do
   # values for `:id`, which will likely crash due to there being no matching clause.
   #
   # (In practice, this will crash in the adapter expression builder when no
-  # matching `dynamic_field_expr/3` clause exists for the unexpected shape.)
+  # matching `apply_dynamic_expr/3` clause exists for the unexpected shape.)
   #
   # So: for composite entries we pass `values` through unchanged and let the
   # existing reducer recurse into each field; for same-field comparisons we
   # wrap them as `{key, comparison}`.
-  defp build_dynamic_field_expr(
+  defp build_apply_dynamic_expr(
          source,
          left_dynamic,
          binding_selector,
@@ -259,7 +259,7 @@ defmodule EctoShorts.Dynamics do
     merge_dynamic(left_dynamic, :and, right_dynamic)
   end
 
-  defp build_dynamic_field_expr(
+  defp build_apply_dynamic_expr(
          source,
          left_dynamic,
          binding_selector,
@@ -273,14 +273,14 @@ defmodule EctoShorts.Dynamics do
     |> normalize_expression_params()
     |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
       right_dynamic =
-        expression_adapter.build_dynamic_expression(source, binding_selector, key, {op, item})
+        expression_adapter.build_dynamic(source, binding_selector, key, {op, item})
 
       merge_dynamic(dyn_acc, :and, right_dynamic)
     end)
   end
 
-  defp build_dynamic_field_expr(source, left_dynamic, binding_selector, key, value, opts) do
-    build_dynamic_field_expr(
+  defp build_apply_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts) do
+    build_apply_dynamic_expr(
       source,
       left_dynamic,
       binding_selector,
@@ -427,9 +427,9 @@ defmodule EctoShorts.Dynamics do
             "Expected :expression_adapter #{inspect(module)} to export operators/0"
     end
 
-    unless function_exported?(module, :build_dynamic_expression, 4) do
+    unless function_exported?(module, :build_dynamic, 4) do
       raise ArgumentError,
-            "Expected :expression_adapter #{inspect(module)} to export build_dynamic_expression/4"
+            "Expected :expression_adapter #{inspect(module)} to export build_dynamic/4"
     end
   end
 end

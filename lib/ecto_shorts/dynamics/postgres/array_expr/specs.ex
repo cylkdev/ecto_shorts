@@ -33,7 +33,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         guard: list_guard,
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:!=, unquote(values_var)}
@@ -47,7 +47,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         guard: list_guard,
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:==, unquote(values_var)}
@@ -60,7 +60,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         head: quote(do: {:not, {:==, unquote(value_var)}}),
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:!=, unquote(value_var)}
@@ -73,7 +73,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         head: quote(do: {:not, {:!=, unquote(value_var)}}),
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:==, unquote(value_var)}
@@ -111,7 +111,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
                 :eq -> :==
               end
 
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {mapped_op, unquote(value_var)}
@@ -134,7 +134,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
                 :eq -> :==
               end
 
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {mapped_op, unquote(value_var)}}
@@ -236,7 +236,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         head: quote(do: {:==, {:lower, unquote(value_var)}}),
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:lower, unquote(value_var)}
@@ -249,7 +249,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         head: quote(do: {:==, {:upper, unquote(value_var)}}),
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:upper, unquote(value_var)}
@@ -262,7 +262,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         head: quote(do: {:!=, {:lower, unquote(value_var)}}),
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {:lower, unquote(value_var)}}
@@ -275,7 +275,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         head: quote(do: {:!=, {:upper, unquote(value_var)}}),
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {:upper, unquote(value_var)}}
@@ -578,7 +578,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         head: quote(do: {:!=, unquote(value_var)}),
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {:in, unquote(value_var)}}
@@ -665,7 +665,7 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs do
         head: quote(do: {:==, unquote(value_var)}),
         body:
           quote do
-            dynamic_field_expr(
+            apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
               {:in, unquote(value_var)}

@@ -10,16 +10,16 @@ defmodule EctoShorts.Dynamics.Postgres do
     @operators
   end
 
-  def build_dynamic_expression(source, binding_selector, key, expr) do
+  def build_dynamic(source, binding_selector, key, expr) do
     cond do
       key in operators() ->
-        CommonExpr.dynamic_field_expr(binding_selector, key, expr)
+        CommonExpr.apply_dynamic_expr(binding_selector, key, expr)
 
       match?({:array, _}, CommonSchema.get_schema_reflection(source, :type, key)) ->
-        ArrayExpr.dynamic_field_expr(binding_selector, key, expr)
+        ArrayExpr.apply_dynamic_expr(binding_selector, key, expr)
 
       true ->
-        ScalarExpr.dynamic_field_expr(binding_selector, key, expr)
+        ScalarExpr.apply_dynamic_expr(binding_selector, key, expr)
     end
   end
 end

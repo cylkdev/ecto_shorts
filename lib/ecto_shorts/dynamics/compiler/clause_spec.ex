@@ -1,9 +1,9 @@
 defmodule EctoShorts.Dynamics.Compiler.ClauseSpec do
   @moduledoc """
-  Validates clause specs so they can generate `dynamic_field_expr/3` clauses.
+  Validates clause specs so they can generate `apply_dynamic_expr/3` clauses.
 
   A clause spec is a struct that contains AST values. You use it to describe one
-  function clause for `dynamic_field_expr/3`. You then pass the spec to
+  function clause for `apply_dynamic_expr/3`. You then pass the spec to
   `EctoShorts.Dynamics.Compiler.clause_ast/1`.
 
   This module does not build Ecto query expressions. It only checks the shape

@@ -51,18 +51,18 @@ defmodule EctoShorts.Dynamics.Compiler.UsingTest do
     compiled_module
   end
 
-  test "use Compiler defines dynamic_field_expr/3 in the caller module" do
+  test "use Compiler defines apply_dynamic_expr/3 in the caller module" do
     compiled_module = compile_compiled_module!()
     assert {:module, _} = Code.ensure_compiled(compiled_module)
   end
 
-  test "generated dynamic_field_expr/3 clauses return the expected dynamic" do
+  test "generated apply_dynamic_expr/3 clauses return the expected dynamic" do
     compiled_module = compile_compiled_module!()
 
     expected = dynamic([q], field(q, ^:id) == ^1)
 
     actual =
-      apply(compiled_module, :dynamic_field_expr, [
+      apply(compiled_module, :apply_dynamic_expr, [
         {:as, nil},
         :id,
         {:==, 1}
@@ -75,7 +75,7 @@ defmodule EctoShorts.Dynamics.Compiler.UsingTest do
     compiled_module = compile_compiled_module!()
 
     assert_raise FunctionClauseError, fn ->
-      apply(compiled_module, :dynamic_field_expr, [
+      apply(compiled_module, :apply_dynamic_expr, [
         {:at, 2},
         :id,
         {:==, 1}

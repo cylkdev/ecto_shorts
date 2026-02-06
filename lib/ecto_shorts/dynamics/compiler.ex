@@ -1,13 +1,13 @@
 defmodule EctoShorts.Dynamics.Compiler do
   @moduledoc """
-  Defines the spec-driven compiler for `dynamic_field_expr/3` clauses.
+  Defines the spec-driven compiler for `apply_dynamic_expr/3` clauses.
 
   A module `X` can `use #{inspect(__MODULE__)}` to:
 
     * define a predictable compiled module named `X.Compiled` containing the
-      generated `dynamic_field_expr/3` clauses
-    * define `X.dynamic_field_expr/3` as the public entrypoint, delegating to
-      `X.Compiled.dynamic_field_expr/3`
+      generated `apply_dynamic_expr/3` clauses
+    * define `X.apply_dynamic_expr/3` as the public entrypoint, delegating to
+      `X.Compiled.apply_dynamic_expr/3`
 
   The clause specs must be defined in a separate, already-compiled specs module
   that exports `clause_specs/4`.
@@ -16,7 +16,7 @@ defmodule EctoShorts.Dynamics.Compiler do
   alias EctoShorts.Dynamics.Compiler.ClauseSpec
 
   @doc """
-  Defines `X.Compiled` and `X.dynamic_field_expr/3` in the caller module `X`.
+  Defines `X.Compiled` and `X.apply_dynamic_expr/3` in the caller module `X`.
 
   ## Options
 
@@ -84,14 +84,14 @@ defmodule EctoShorts.Dynamics.Compiler do
       end
 
       @doc false
-      def dynamic_field_expr(binding_selector, key, expr) do
-        unquote(compiled_module).dynamic_field_expr(binding_selector, key, expr)
+      def apply_dynamic_expr(binding_selector, key, expr) do
+        unquote(compiled_module).apply_dynamic_expr(binding_selector, key, expr)
       end
     end
   end
 
   @doc """
-  Builds a quoted `dynamic_field_expr/3` clause from a clause spec.
+  Builds a quoted `apply_dynamic_expr/3` clause from a clause spec.
 
   ## Error reasons
 
@@ -102,7 +102,7 @@ defmodule EctoShorts.Dynamics.Compiler do
   def clause_ast(spec) do
     with {:ok, spec} <- ClauseSpec.new(spec) do
       {:ok,
-       quoted_dynamic_field_expr_def(
+       quoted_apply_dynamic_expr_def(
          spec.binding_head,
          spec.key,
          spec.head,
@@ -112,17 +112,17 @@ defmodule EctoShorts.Dynamics.Compiler do
     end
   end
 
-  defp quoted_dynamic_field_expr_def(binding_head_ast, key_ast, head_ast, body_ast, nil) do
+  defp quoted_apply_dynamic_expr_def(binding_head_ast, key_ast, head_ast, body_ast, nil) do
     quote do
-      def dynamic_field_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast)) do
+      def apply_dynamic_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast)) do
         unquote(body_ast)
       end
     end
   end
 
-  defp quoted_dynamic_field_expr_def(binding_head_ast, key_ast, head_ast, body_ast, guard_ast) do
+  defp quoted_apply_dynamic_expr_def(binding_head_ast, key_ast, head_ast, body_ast, guard_ast) do
     quote do
-      def dynamic_field_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast))
+      def apply_dynamic_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast))
           when unquote(guard_ast) do
         unquote(body_ast)
       end
