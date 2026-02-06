@@ -296,10 +296,10 @@ defmodule EctoShorts.CommonFilters do
 
     case filter_op do
       :join ->
-        Join.build(binding_source, query, binding_selector, params, opts)
+        Join.build(binding_source, filter_op, query, binding_selector, params, opts)
 
       filter_op when filter_op in [:select, :select_merge] ->
-        Select.build(filter_op, binding_source, query, binding_selector, params)
+        Select.build(binding_source, filter_op, query, binding_selector, params, opts)
 
       filter_op ->
         Filter.build(binding_source, filter_op, query, binding_selector, params, opts)

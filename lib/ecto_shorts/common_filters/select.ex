@@ -1,7 +1,6 @@
 defmodule EctoShorts.CommonFilters.Select do
   @moduledoc false
   alias Ecto.Query
-  alias EctoShorts.Utils
   alias EctoShorts.Dynamics.Compiler.BindingHelpers
 
   require Ecto.Query
@@ -9,25 +8,26 @@ defmodule EctoShorts.CommonFilters.Select do
   {target_binding_var, binding_patterns} = BindingHelpers.query_var_and_binding_heads()
 
   @doc "Builds a select expression for the query."
-  def build(filter, schema, query, binding_selector, term) when is_map(term) or is_list(term) do
-    if key_values?(term) do
+  def build(schema, filter_op, query, binding_selector, term, opts)
+      when is_map(term) or is_list(term) do
+    if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
       Enum.reduce(term, query, fn entry, updated_query ->
-        build(filter, schema, updated_query, binding_selector, entry)
+        build(schema, filter_op, updated_query, binding_selector, entry, opts)
       end)
     else
-      apply_expr(filter, schema, query, binding_selector, term)
+      apply_expr(filter_op, schema, query, binding_selector, term)
     end
   end
 
-  def build(filter, schema, query, _binding_selector, {binding_mode, params})
+  def build(schema, filter_op, query, _binding_selector, {binding_mode, params}, opts)
       when binding_mode in [:at, :as] and (is_map(params) or is_list(params)) do
     Enum.reduce(params, query, fn {binding_target, term}, updated_query ->
-      build(filter, schema, updated_query, {binding_mode, binding_target}, term)
+      build(schema, filter_op, updated_query, {binding_mode, binding_target}, term, opts)
     end)
   end
 
-  def build(filter, schema, query, binding_selector, term) do
-    apply_expr(filter, schema, query, binding_selector, term)
+  def build(schema, filter_op, query, binding_selector, term, _opts) do
+    apply_expr(filter_op, schema, query, binding_selector, term)
   end
 
   defp apply_expr(:select, schema, query, binding_selector, term) do
@@ -62,7 +62,7 @@ defmodule EctoShorts.CommonFilters.Select do
            {:map, list}
          )
          when is_list(list) do
-      if key_values?(list) do
+      if Keyword.keyword?(list) do
         select_map = build_select_map(list, unquote(quoted_binding_head))
 
         Query.select(
@@ -95,7 +95,7 @@ defmodule EctoShorts.CommonFilters.Select do
 
     defp apply_select_expr(schema, query, unquote(quoted_binding_head), term)
          when is_map(term) or is_list(term) do
-      if key_values?(term) do
+      if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
         Enum.reduce(term, query, fn {key, value}, updated_query ->
           apply_select_expr(schema, updated_query, unquote(quoted_binding_head), {key, value})
         end)
@@ -112,8 +112,6 @@ defmodule EctoShorts.CommonFilters.Select do
       )
     end
   end
-
-  defp key_values?(term), do: Utils.key_values?(term)
 
   defp build_select_map(enum, binding_selector) do
     Enum.reduce(enum, %{}, fn {field_alias, field}, acc ->

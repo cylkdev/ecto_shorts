@@ -15,6 +15,7 @@ defmodule EctoShorts.CommonFilters.Join do
     @doc false
     def build(
           schema,
+          _filter_op,
           query,
           binding_selector = unquote(quoted_binding_head),
           {:association, key, params},
