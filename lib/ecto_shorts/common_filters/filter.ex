@@ -16,19 +16,19 @@ defmodule EctoShorts.CommonFilters.Filter do
   @pagination_filters [:first, :last, :limit, :offset, :order_by, :preload]
 
   @doc "Applies the given filter to the query."
-  def build(source, filter, query, binding_selector, {bool_op, args}, _opts)
+  def build(source, filter, query, binding_selector, {bool_op, args}, opts)
       when bool_op in @boolean_operators and is_list(args) do
-    dynamic = Dynamics.convert_to_dynamic(source, binding_selector, {bool_op, args})
+    dynamic = Dynamics.convert_to_dynamic(source, binding_selector, {bool_op, args}, opts)
 
     apply_dynamic(filter, query, dynamic)
   end
 
-  def build(source, filter, query, binding_selector, {common_op, args}, _opts)
+  def build(source, filter, query, binding_selector, {common_op, args}, opts)
       when common_op in @common_filters do
     dynamic =
       source
       |> CommonSchema.get_schema_source()
-      |> Dynamics.convert_to_dynamic(binding_selector, {common_op, args})
+      |> Dynamics.convert_to_dynamic(binding_selector, {common_op, args}, opts)
 
     apply_dynamic(filter, query, dynamic)
   end
@@ -38,13 +38,13 @@ defmodule EctoShorts.CommonFilters.Filter do
     apply_pagination_filter(source, filter, query, binding_selector, value)
   end
 
-  def build(source, filter, query, binding_selector, {key, value}, _opts) do
+  def build(source, filter, query, binding_selector, {key, value}, opts) do
     cond do
       schemaless_source?(source) ->
-        build_field(source, filter, query, binding_selector, key, value)
+        build_field(source, filter, query, binding_selector, key, value, opts)
 
       key in CommonSchema.get_schema_reflection(source, :query_fields) ->
-        build_field(source, filter, query, binding_selector, key, value)
+        build_field(source, filter, query, binding_selector, key, value, opts)
 
       true ->
         warn_non_schema_key(source, key)
@@ -66,8 +66,8 @@ defmodule EctoShorts.CommonFilters.Filter do
   defp source_has_schema?({_, schema}), do: is_atom(schema) and not is_nil(schema)
   defp source_has_schema?(_), do: false
 
-  defp build_field(source, filter, query, binding_selector, key, value) do
-    dyn = Dynamics.convert_to_dynamic(source, binding_selector, {key, value})
+  defp build_field(source, filter, query, binding_selector, key, value, opts) do
+    dyn = Dynamics.convert_to_dynamic(source, binding_selector, {key, value}, opts)
     apply_dynamic(filter, query, dyn)
   end
 

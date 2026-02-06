@@ -289,7 +289,7 @@ defmodule EctoShorts.CommonFilters do
 
     case current_filter do
       :join ->
-        Join.build(source, query, binding_selector, params)
+        Join.build(source, query, binding_selector, params, opts)
 
       filter when filter in [:select, :select_merge] ->
         Select.build(filter, source, query, binding_selector, params)

@@ -13,7 +13,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     @doc false
-    def build(schema, query, unquote(quoted_binding_head), {:association, key, params}) do
+    def build(schema, query, unquote(quoted_binding_head), {:association, key, params}, opts) do
       qual = params[:qualifier] || :inner
       as = params[:as]
 
@@ -27,7 +27,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
           list when is_list(list) ->
             if Keyword.keyword?(list) do
-              Dynamics.convert_to_dynamic(schema, unquote(quoted_binding_head), list)
+              Dynamics.convert_to_dynamic(schema, unquote(quoted_binding_head), list, opts)
             else
               EctoShorts.Logger.error(
                 @logger_prefix,
@@ -38,7 +38,7 @@ defmodule EctoShorts.CommonFilters.Join do
             end
 
           on_params when is_map(on_params) ->
-            Dynamics.convert_to_dynamic(schema, unquote(quoted_binding_head), on_params)
+            Dynamics.convert_to_dynamic(schema, unquote(quoted_binding_head), on_params, opts)
 
           term ->
             EctoShorts.Logger.error(

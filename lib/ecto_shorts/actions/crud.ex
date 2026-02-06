@@ -55,10 +55,10 @@ defmodule EctoShorts.Actions.CRUD do
   def all(queryable, opts) do
     params =
       opts
-      |> Keyword.drop([:repo, :replica])
+      |> Keyword.drop([:repo, :replica, :expression_adapter])
       |> Map.new()
 
-    all(queryable, params, Keyword.take(opts, [:repo, :replica]))
+    all(queryable, params, Keyword.take(opts, [:repo, :replica, :expression_adapter]))
   end
 
   @doc """
