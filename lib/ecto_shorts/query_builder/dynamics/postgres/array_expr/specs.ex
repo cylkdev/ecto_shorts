@@ -1,31 +1,21 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs do
+defmodule EctoShorts.QueryBuilder.Dynamics.Postgres.ArrayExpr.Specs do
   @moduledoc false
 
-  alias EctoShorts.QueryBuilder.Dynamics.Expression.AST
-  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec
+  alias EctoShorts.QueryBuilder.Dynamics.Compiler.AST
+  alias EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec
 
   @doc false
-  def clause_specs(
-        :array = kind,
-        context,
-        binding_head_ast,
-        target_binding_var,
-        binding_body_asts
-      ) do
-    list_semantic_specs(kind, context, binding_head_ast) ++
-      alias_op_specs(kind, context, binding_head_ast) ++
-      nil_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts) ++
-      lower_upper_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts) ++
-      like_ilike_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts) ++
-      base_op_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts)
-  end
-
-  def clause_specs(_kind, _context, _binding_head_ast, _target_binding_var, _binding_body_asts) do
-    []
+  def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
+    list_semantic_specs(context, binding_head_ast) ++
+      alias_op_specs(context, binding_head_ast) ++
+      nil_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
+      lower_upper_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
+      like_ilike_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
+      base_op_specs(context, binding_head_ast, target_binding_var, binding_body_asts)
   end
 
   @doc false
-  def list_semantic_specs(kind, context, binding_head_ast) do
+  def list_semantic_specs(context, binding_head_ast) do
     key_var = Macro.var(:key, context)
     value_var = Macro.var(:value, context)
     values_var = Macro.var(:values, context)
@@ -37,7 +27,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
 
     [
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:==, unquote(values_var)}}),
@@ -52,7 +41,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:!=, unquote(values_var)}}),
@@ -67,7 +55,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:==, unquote(value_var)}}),
@@ -81,7 +68,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:!=, unquote(value_var)}}),
@@ -98,7 +84,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
   end
 
   @doc false
-  def alias_op_specs(kind, context, binding_head_ast) do
+  def alias_op_specs(context, binding_head_ast) do
     key_var = Macro.var(:key, context)
     op_var = Macro.var(:op, context)
     value_var = Macro.var(:value, context)
@@ -110,7 +96,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
 
     [
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {unquote(op_var), unquote(value_var)}),
@@ -134,7 +119,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {unquote(op_var), unquote(value_var)}}),
@@ -161,14 +145,13 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
   end
 
   @doc false
-  def nil_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts) do
+  def nil_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
     key_var = Macro.var(:key, context)
     op_var = Macro.var(:op, context)
     field_ast = AST.field_ast(target_binding_var, key_var)
 
     [
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {unquote(op_var), nil}),
@@ -197,14 +180,13 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
   end
 
   @doc false
-  def lower_upper_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts) do
+  def lower_upper_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
     key_var = Macro.var(:key, context)
     value_var = Macro.var(:value, context)
     field_ast = AST.field_ast(target_binding_var, key_var)
 
     [
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:lower, unquote(value_var)}}),
@@ -227,7 +209,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:upper, unquote(value_var)}}),
@@ -250,7 +231,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:==, {:lower, unquote(value_var)}}),
@@ -264,7 +244,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:==, {:upper, unquote(value_var)}}),
@@ -278,7 +257,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:!=, {:lower, unquote(value_var)}}),
@@ -292,7 +270,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:!=, {:upper, unquote(value_var)}}),
@@ -306,7 +283,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:lower, unquote(value_var)}),
@@ -329,7 +305,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:upper, unquote(value_var)}),
@@ -355,14 +330,13 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
   end
 
   @doc false
-  def like_ilike_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts) do
+  def like_ilike_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
     key_var = Macro.var(:key, context)
     value_var = Macro.var(:value, context)
     field_ast = AST.field_ast(target_binding_var, key_var)
 
     [
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:ilike, unquote(value_var)}}),
@@ -391,7 +365,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:like, unquote(value_var)}}),
@@ -420,7 +393,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:ilike, unquote(value_var)}),
@@ -449,7 +421,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:like, unquote(value_var)}),
@@ -481,7 +452,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
   end
 
   @doc false
-  def base_op_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts) do
+  def base_op_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
     key_var = Macro.var(:key, context)
     value_var = Macro.var(:value, context)
     values_var = Macro.var(:values, context)
@@ -494,7 +465,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
 
     [
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:in, {:all, unquote(values_var)}}}),
@@ -508,7 +478,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:in, unquote(values_var)}}),
@@ -522,7 +491,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:in, unquote(value_var)}}),
@@ -535,7 +503,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:>, unquote(value_var)}}),
@@ -548,7 +515,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:>=, unquote(value_var)}}),
@@ -561,7 +527,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:<, unquote(value_var)}}),
@@ -574,7 +539,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:<=, unquote(value_var)}}),
@@ -587,7 +551,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:==, unquote(values_var)}),
@@ -599,7 +562,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:!=, unquote(values_var)}),
@@ -611,7 +573,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:!=, unquote(value_var)}),
@@ -625,7 +586,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:in, unquote(values_var)}),
@@ -639,7 +599,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:in, {:all, unquote(values_var)}}),
@@ -653,7 +612,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:>, unquote(value_var)}),
@@ -666,7 +624,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:>=, unquote(value_var)}),
@@ -679,7 +636,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:<, unquote(value_var)}),
@@ -692,7 +648,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:<=, unquote(value_var)}),
@@ -705,7 +660,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           )
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:==, unquote(value_var)}),
@@ -719,7 +673,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
           end
       },
       %ClauseSpec{
-        kind: kind,
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:in, unquote(value_var)}),

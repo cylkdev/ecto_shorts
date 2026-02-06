@@ -1,10 +1,10 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec do
+defmodule EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec do
   @moduledoc """
   Validates clause specs so they can generate `dynamic_field_expr/3` clauses.
 
   A clause spec is a struct that contains AST values. You use it to describe one
   function clause for `dynamic_field_expr/3`. You then pass the spec to
-  `EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder.clause_ast/1`.
+  `EctoShorts.QueryBuilder.Dynamics.Compiler.clause_ast/1`.
 
   This module does not build Ecto query expressions. It only checks the shape
   of the spec and returns a `%ClauseSpec{}` struct.
@@ -13,7 +13,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec do
 
   A clause spec contains these keys:
 
-    * `:kind` - tags the clause (any atom)
     * `:binding_head` - AST for the first argument pattern
     * `:key` - AST for the second argument pattern
     * `:head` - AST for the third argument pattern
@@ -26,13 +25,12 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec do
   Validate a spec before you build a clause:
 
     iex> spec = %{
-    ...>   kind: :clause,
     ...>   binding_head: quote(do: {:as, nil}),
     ...>   key: Macro.var(:key, nil),
     ...>   head: quote(do: {:==, v}),
     ...>   body: quote(do: Ecto.Query.dynamic([q], field(q, ^key) == ^v))
     ...> }
-    ...> EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec.new(spec)
+    ...> EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec.new(spec)
 
   ## Error Reasons
 
@@ -41,7 +39,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec do
     * `:missing_key` - a required key is missing
     * `:invalid_spec` - the input is not a map, keyword list, or `%ClauseSpec{}`
 
-    iex> EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec.new(%{kind: :clause})
+    iex> EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec.new(%{key: :id})
     {:error, :missing_key}
 
   > NOTE: ClauseSpec does not validate the *meaning* of `:head` or `:body`.
@@ -51,20 +49,11 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec do
   alias NimbleOptions
 
   @typedoc """
-  Clause kind tag.
-
-  This is a free-form atom that lets you group or label clauses.
-  `ClauseBuilder` does not branch on this value.
-  """
-  @type kind() :: :clause | atom()
-
-  @typedoc """
   A normalized clause spec.
 
   All values are AST values.
   """
   @type t() :: %__MODULE__{
-          kind: kind(),
           binding_head: Macro.t(),
           key: Macro.t(),
           head: Macro.t(),
@@ -72,17 +61,15 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec do
           guard: Macro.t() | nil
         }
 
-  @enforce_keys [:kind, :binding_head, :key, :head, :body]
+  @enforce_keys [:binding_head, :key, :head, :body]
 
-  defstruct kind: :clause,
-            binding_head: nil,
+  defstruct binding_head: nil,
             key: nil,
             head: nil,
             body: nil,
             guard: nil
 
   @schema [
-    kind: [type: :atom, required: true, default: :clause],
     binding_head: [type: :any, required: true],
     key: [type: :any, required: true],
     head: [type: :any, required: true],
@@ -103,14 +90,13 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec do
   ## Examples
 
       iex> spec =
-      ...>   EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec.new(%{
-      ...>     kind: :clause,
+      ...>   EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec.new(%{
       ...>     binding_head: quote(do: {:as, nil}),
       ...>     key: Macro.var(:key, nil),
       ...>     head: quote(do: {:==, vals}),
       ...>     body: quote(do: Ecto.Query.dynamic([q], field(q, ^key) in ^vals))
       ...>   })
-      iex> match?({:ok, %EctoShorts.QueryBuilder.Dynamics.Expression.ClauseSpec{}}, spec)
+      iex> match?({:ok, %EctoShorts.QueryBuilder.Dynamics.Compiler.ClauseSpec{}}, spec)
       true
   """
   @spec new(attrs :: map() | keyword()) :: {:ok, t()} | {:error, term()}

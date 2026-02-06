@@ -2,15 +2,14 @@ defmodule EctoShorts.QueryBuilder.Dynamics do
   @moduledoc false
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.QueryBuilder.ParamPreprocessor
-  alias EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
+  alias EctoShorts.QueryBuilder.Dynamics.ParamPreprocessor
+  alias EctoShorts.QueryBuilder.Dynamics.Postgres
 
   import Ecto.Query, only: [dynamic: 2]
 
   @logger_prefix "EctoShorts.QueryBuilder.Dynamics"
 
   @equal :==
-  @common_operators [:ids, :before, :after, :start_date, :end_date]
   @boolean_operators [:and, :or]
 
   def merge_dynamic(nil, _, dyn_right) do
@@ -44,16 +43,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics do
     end)
   end
 
-  defp reduce_dynamic_params(_source, dyn_l, binding_selector, {key, value})
-       when key in @common_operators do
-    value
-    |> ParamPreprocessor.normalize_params()
-    |> Enum.reduce(dyn_l, fn item, dyn_acc ->
-      dyn_r = CommonExpr.dynamic_field_expr(binding_selector, key, item)
-      merge_dynamic(dyn_acc, :and, dyn_r)
-    end)
-  end
-
   defp reduce_dynamic_params(source, dyn_l, binding_selector, {key, value})
        when key in @boolean_operators do
     if is_map(value) and not is_struct(value) do
@@ -64,15 +53,25 @@ defmodule EctoShorts.QueryBuilder.Dynamics do
   end
 
   defp reduce_dynamic_params(source, dyn_l, binding_selector, {key, value}) do
-    if source_has_schema?(source) do
-      build_schema_dynamic(source, dyn_l, binding_selector, {key, value})
-    else
-      value
-      |> ParamPreprocessor.normalize_params()
-      |> Enum.reduce(dyn_l, fn item, dyn_acc ->
-        dyn_r = ScalarExpr.dynamic_field_expr(binding_selector, key, item)
-        merge_dynamic(dyn_acc, :and, dyn_r)
-      end)
+    cond do
+      key in Postgres.operators() ->
+        value
+        |> ParamPreprocessor.normalize_params()
+        |> Enum.reduce(dyn_l, fn item, dyn_acc ->
+          dyn_r = Postgres.build_dynamic_expression(source, binding_selector, key, item)
+          merge_dynamic(dyn_acc, :and, dyn_r)
+        end)
+
+      source_has_schema?(source) ->
+        build_schema_dynamic(source, dyn_l, binding_selector, {key, value})
+
+      true ->
+        value
+        |> ParamPreprocessor.normalize_params()
+        |> Enum.reduce(dyn_l, fn item, dyn_acc ->
+          dyn_r = Postgres.build_dynamic_expression(source, binding_selector, key, item)
+          merge_dynamic(dyn_acc, :and, dyn_r)
+        end)
     end
   end
 
@@ -168,8 +167,10 @@ defmodule EctoShorts.QueryBuilder.Dynamics do
   #
   # If we always wrap entries as `{key, entry}` (ex: `{id, %{published: true}}`),
   # the inner field tuples (`{:published, true}`) can accidentally get treated as
-  # values for `:id`, which will likely crash in ScalarExpr/ArrayExpr due to there
-  # being no matching clause.
+  # values for `:id`, which will likely crash due to there being no matching clause.
+  #
+  # (In practice, this will crash in the adapter expression builder when no
+  # matching `dynamic_field_expr/3` clause exists for the unexpected shape.)
   #
   # So: for composite entries we pass `values` through unchanged and let the
   # existing reducer recurse into each field; for same-field comparisons we
@@ -199,12 +200,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics do
     value
     |> ParamPreprocessor.normalize_params()
     |> Enum.reduce(dyn_l, fn item, dyn_acc ->
-      dyn_r =
-        if field_type_of_array?(source, key) do
-          ArrayExpr.dynamic_field_expr(binding_selector, key, {op, item})
-        else
-          ScalarExpr.dynamic_field_expr(binding_selector, key, {op, item})
-        end
+      dyn_r = Postgres.build_dynamic_expression(source, binding_selector, key, {op, item})
 
       merge_dynamic(dyn_acc, :and, dyn_r)
     end)
@@ -212,13 +208,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics do
 
   defp build_dynamic_field_expr(source, dyn_l, binding_selector, key, value) do
     build_dynamic_field_expr(source, dyn_l, binding_selector, key, {@equal, value})
-  end
-
-  defp field_type_of_array?(source, key) do
-    case CommonSchema.get_schema_reflection(source, :type, key) do
-      {:array, _} -> true
-      _ -> false
-    end
   end
 
   defp composite_predicate_entries?(values) when is_list(values) do

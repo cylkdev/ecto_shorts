@@ -1,34 +1,24 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapterCompilationTest do
+defmodule EctoShorts.QueryBuilder.Dynamics.Compiler.UsingTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.QueryBuilder.Dynamics.Expression.AST
-  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapter
-  alias EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
+  alias EctoShorts.QueryBuilder.Dynamics.Compiler
+  alias EctoShorts.QueryBuilder.Dynamics.Compiler.AST
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
 
-  defp compile_adapter_module!() do
+  defp compile_compiled_module!() do
     unique = System.unique_integer([:positive])
 
-    adapter =
-      Module.concat([
-        __MODULE__,
-        :"TmpAdapter#{unique}"
-      ])
+    specs_module = Module.concat([__MODULE__, :"TmpSpecs#{unique}"])
+    compiled_module = Module.concat([__MODULE__, :"TmpCompiled#{unique}"])
 
     quoted =
       quote do
-        defmodule unquote(adapter) do
+        defmodule unquote(specs_module) do
           @moduledoc false
 
-          use unquote(ClauseAdapter)
-
-          def emitter_module, do: unquote(DynamicFieldExpr)
-
-          def options, do: [max_positional_bindings: 1]
-
-          def clause_specs(kind, context, binding_head_ast, target_binding_var, binding_body_asts) do
+          def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
             key_var = Macro.var(:key, context)
             v_var = Macro.var(:v, context)
 
@@ -39,7 +29,6 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapterCompilationTe
 
             [
               %{
-                kind: kind,
                 binding_head: binding_head_ast,
                 key: key_var,
                 head: quote(do: {:==, unquote(v_var)}),
@@ -48,32 +37,32 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapterCompilationTe
             ]
           end
         end
+
+        defmodule unquote(compiled_module) do
+          @moduledoc false
+
+          use unquote(Compiler),
+            specs: unquote(specs_module),
+            max_positional_bindings: 1
+        end
       end
 
     Code.compile_quoted(quoted)
-    adapter
+    compiled_module
   end
 
-  test "use ClauseAdapter compiles Adapter.Compiled.<Kind> modules" do
-    adapter = compile_adapter_module!()
-
-    common_mod = Module.concat([adapter, Compiled, Common])
-    scalar_mod = Module.concat([adapter, Compiled, Scalar])
-    array_mod = Module.concat([adapter, Compiled, Array])
-
-    assert {:module, _} = Code.ensure_compiled(common_mod)
-    assert {:module, _} = Code.ensure_compiled(scalar_mod)
-    assert {:module, _} = Code.ensure_compiled(array_mod)
+  test "use Compiler defines dynamic_field_expr/3 in the caller module" do
+    compiled_module = compile_compiled_module!()
+    assert {:module, _} = Code.ensure_compiled(compiled_module)
   end
 
-  test "compiled module includes generated dynamic_field_expr/3 clauses" do
-    adapter = compile_adapter_module!()
-    compiled_mod = Module.concat([adapter, Compiled, Common])
+  test "generated dynamic_field_expr/3 clauses return the expected dynamic" do
+    compiled_module = compile_compiled_module!()
 
     expected = dynamic([q], field(q, ^:id) == ^1)
 
     actual =
-      apply(compiled_mod, :dynamic_field_expr, [
+      apply(compiled_module, :dynamic_field_expr, [
         {:as, nil},
         :id,
         {:==, 1}
@@ -83,11 +72,10 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expression.ClauseAdapterCompilationTe
   end
 
   test "max_positional_bindings limits generated positional heads" do
-    adapter = compile_adapter_module!()
-    compiled_mod = Module.concat([adapter, Compiled, Common])
+    compiled_module = compile_compiled_module!()
 
     assert_raise FunctionClauseError, fn ->
-      apply(compiled_mod, :dynamic_field_expr, [
+      apply(compiled_module, :dynamic_field_expr, [
         {:at, 2},
         :id,
         {:==, 1}

@@ -1,6 +1,6 @@
 defmodule EctoShorts.QueryBuilder.ParamPreprocessorTest do
   use ExUnit.Case
-  alias EctoShorts.QueryBuilder.ParamPreprocessor
+  alias EctoShorts.QueryBuilder.Dynamics.ParamPreprocessor
 
   describe "normalize_params/1" do
     test "flattens flat maps into tuples" do

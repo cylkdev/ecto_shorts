@@ -18,7 +18,7 @@ defmodule EctoShorts.QueryBuilder.BindingHelpers do
     {target_binding_var, all_binding_patterns}
   end
 
-  def binding_patterns(kind, target_binding_var, binding_alias_var, max_pos \\ [])
+  def binding_patterns(binding_type, target_binding_var, binding_alias_var, max_pos \\ [])
 
   def binding_patterns(:named, target_binding_var, binding_alias_var, _max_pos) do
     [

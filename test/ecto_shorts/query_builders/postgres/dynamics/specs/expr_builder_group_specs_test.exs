@@ -1,10 +1,9 @@
-defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ExprGroupSpecsTest do
+defmodule EctoShorts.QueryBuilder.Dynamics.Postgres.ExprGroupSpecsTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.QueryBuilder.Dynamics.Expression.ClauseBuilder
-  alias EctoShorts.QueryBuilder.Dynamics.Expression.Emitters.DynamicFieldExpr
-  alias EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ArrayExprs
-  alias EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ScalarExprs
+  alias EctoShorts.QueryBuilder.Dynamics.Compiler
+  alias EctoShorts.QueryBuilder.Dynamics.Postgres.ArrayExpr.Specs, as: ArrayExprSpecs
+  alias EctoShorts.QueryBuilder.Dynamics.Postgres.ScalarExpr.Specs, as: ScalarExprSpecs
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -12,7 +11,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ExprGroupS
   defp compile_specs_module!(specs) do
     clause_asts =
       Enum.map(specs, fn spec ->
-        assert {:ok, clause_ast} = ClauseBuilder.clause_ast(DynamicFieldExpr, spec)
+        assert {:ok, clause_ast} = Compiler.clause_ast(spec)
         clause_ast
       end)
 
@@ -45,8 +44,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ExprGroupS
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     module =
-      ScalarExprs.nil_specs(
-        :clause,
+      ScalarExprSpecs.nil_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
@@ -74,9 +72,8 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ExprGroupS
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprs.alias_op_specs(:clause, __MODULE__, binding_head_ast) ++
-        ScalarExprs.base_op_specs(
-          :clause,
+      ScalarExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
+        ScalarExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,
           target_binding_var,
@@ -98,8 +95,7 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ExprGroupS
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     module =
-      ArrayExprs.lower_upper_specs(
-        :clause,
+      ArrayExprSpecs.lower_upper_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
@@ -135,9 +131,8 @@ defmodule EctoShorts.QueryBuilder.Dynamics.Expressions.Postgres.Specs.ExprGroupS
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ArrayExprs.alias_op_specs(:clause, __MODULE__, binding_head_ast) ++
-        ArrayExprs.base_op_specs(
-          :clause,
+      ArrayExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
+        ArrayExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,
           target_binding_var,
