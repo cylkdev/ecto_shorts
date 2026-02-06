@@ -1,18 +1,24 @@
 defmodule EctoShorts.QueryBuilder do
   @moduledoc """
-  Builds Ecto queries by applying a query builder adapter.
+  Builds Ecto queries by applying query builder stages.
 
-  This module is the public entrypoint for query building. It delegates to an
-  adapter module that implements `EctoShorts.QueryBuilder.Adapter`.
+  This module is the public entrypoint for applying a single query-building
+  step (filter) to an `Ecto.Query`.
+
+  Database-specific behavior is handled at expression compilation time (see
+  `EctoShorts.QueryBuilder.Dynamics`).
   """
 
-  @default_adapter EctoShorts.QueryBuilder.Adapters.Postgres
+  alias EctoShorts.QueryBuilder.Stages.{Filters, Joins, Selects}
 
   @doc """
-  Builds a query by delegating to the configured query builder adapter.
+  Builds a query by applying the given filter and args.
 
-  Pass the adapter in `opts[:query_builder]`. When absent, this uses the default
-  adapter for this library.
+  This function routes query-building requests to the appropriate stage:
+
+    * `:join` uses `EctoShorts.QueryBuilder.Stages.Joins`
+    * `:select` and `:select_merge` use `EctoShorts.QueryBuilder.Stages.Selects`
+    * all other filters use `EctoShorts.QueryBuilder.Stages.Filters`
   """
   @spec build_query(
           source :: any(),
@@ -23,7 +29,15 @@ defmodule EctoShorts.QueryBuilder do
           opts :: keyword()
         ) :: Ecto.Query.t()
   def build_query(source, query, binding_selector, current_filter, args, opts \\ []) do
-    adapter = Keyword.get(opts, :query_builder, @default_adapter)
-    adapter.build_query(source, query, binding_selector, current_filter, args, opts)
+    case current_filter do
+      :join ->
+        Joins.build(source, query, binding_selector, args)
+
+      filter when filter in [:select, :select_merge] ->
+        Selects.build(filter, source, query, binding_selector, args)
+
+      filter ->
+        Filters.build(source, filter, query, binding_selector, args, opts)
+    end
   end
 end
