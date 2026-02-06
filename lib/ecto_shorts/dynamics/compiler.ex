@@ -102,7 +102,7 @@ defmodule EctoShorts.Dynamics.Compiler do
   def clause_ast(spec) do
     with {:ok, spec} <- ClauseSpec.new(spec) do
       {:ok,
-       quoted_apply_dynamic_expr_def(
+       quote_def(
          spec.binding_head,
          spec.key,
          spec.head,
@@ -112,7 +112,7 @@ defmodule EctoShorts.Dynamics.Compiler do
     end
   end
 
-  defp quoted_apply_dynamic_expr_def(binding_head_ast, key_ast, head_ast, body_ast, nil) do
+  defp quote_def(binding_head_ast, key_ast, head_ast, body_ast, nil) do
     quote do
       def apply_dynamic_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast)) do
         unquote(body_ast)
@@ -120,7 +120,7 @@ defmodule EctoShorts.Dynamics.Compiler do
     end
   end
 
-  defp quoted_apply_dynamic_expr_def(binding_head_ast, key_ast, head_ast, body_ast, guard_ast) do
+  defp quote_def(binding_head_ast, key_ast, head_ast, body_ast, guard_ast) do
     quote do
       def apply_dynamic_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast))
           when unquote(guard_ast) do
