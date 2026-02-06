@@ -1,15 +1,19 @@
-defmodule EctoShorts.Dynamics.Postgres do
+defmodule EctoShorts.Dynamics.Adapters.Postgres do
   @moduledoc false
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.Dynamics.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
+  alias EctoShorts.Dynamics.Adapters.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
+
+  @behaviour EctoShorts.Dynamics.Adapter
 
   @operators [:ids, :before, :after, :start_date, :end_date]
 
+  @impl true
   def operators do
     @operators
   end
 
+  @impl true
   def build_dynamic(source, binding_selector, key, expr) do
     cond do
       key in operators() ->

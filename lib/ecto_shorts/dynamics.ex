@@ -3,7 +3,7 @@ defmodule EctoShorts.Dynamics do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
-  alias EctoShorts.Dynamics.Postgres
+  alias EctoShorts.Dynamics.Adapters.Postgres
 
   import Ecto.Query, only: [dynamic: 2]
 
@@ -200,12 +200,12 @@ defmodule EctoShorts.Dynamics do
         build_schema_dynamic(source, dyn_acc, binding_selector, {key, entry}, opts)
       end)
     else
-      build_apply_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts)
+      reduce_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts)
     end
   end
 
   defp build_schema_dynamic_value(source, left_dynamic, binding_selector, key, value, opts) do
-    build_apply_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts)
+    reduce_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts)
   end
 
   # NOTE: `{bool_op, values}` can mean two different things:
@@ -230,7 +230,7 @@ defmodule EctoShorts.Dynamics do
   # So: for composite entries we pass `values` through unchanged and let the
   # existing reducer recurse into each field; for same-field comparisons we
   # wrap them as `{key, comparison}`.
-  defp build_apply_dynamic_expr(
+  defp reduce_dynamic_expr(
          source,
          left_dynamic,
          binding_selector,
@@ -259,7 +259,7 @@ defmodule EctoShorts.Dynamics do
     merge_dynamic(left_dynamic, :and, right_dynamic)
   end
 
-  defp build_apply_dynamic_expr(
+  defp reduce_dynamic_expr(
          source,
          left_dynamic,
          binding_selector,
@@ -279,8 +279,8 @@ defmodule EctoShorts.Dynamics do
     end)
   end
 
-  defp build_apply_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts) do
-    build_apply_dynamic_expr(
+  defp reduce_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts) do
+    reduce_dynamic_expr(
       source,
       left_dynamic,
       binding_selector,
