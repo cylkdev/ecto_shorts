@@ -1,7 +1,7 @@
 # Understanding Summary
 
 ## Goal (one sentence)
-Simplify the QueryBuilder API by deleting `EctoShorts.QueryBuilder.Adapters.Postgres` (and its `filters/0`), removing the `EctoShorts.QueryBuilder.Adapter` behaviour, and inlining the Postgres dispatch where it is used.
+Simplify the query-building API by removing the `EctoShorts.QueryBuilder` module entirely and moving its dispatch functionality into the only call site (`EctoShorts.CommonFilters`).
 
 ## Hard Constraints
 - Follow the repo’s Review Driven Development loop: **Understand → Decompose → Plan → Plan Review (approval) → Act → Implementation Review → Iterate**.
@@ -18,15 +18,15 @@ Simplify the QueryBuilder API by deleting `EctoShorts.QueryBuilder.Adapters.Post
 - **Outputs:** an `Ecto.Query.t()` with the filter applied.
 
 ## Current State (as observed)
-- `EctoShorts.QueryBuilder` delegates to `opts[:query_builder]` (defaulting to `EctoShorts.QueryBuilder.Adapters.Postgres`) for `build_query/6`.
-- `EctoShorts.QueryBuilder.Adapters.Postgres` is the only adapter and dispatches:
+- `EctoShorts.QueryBuilder` currently dispatches:
   - `:join` → `EctoShorts.QueryBuilder.Stages.Joins.build/5`
   - `:select` / `:select_merge` → `EctoShorts.QueryBuilder.Stages.Selects.build/5`
   - everything else → `EctoShorts.QueryBuilder.Stages.Filters.build/6`
  - The effective DB “adapter boundary” is in `lib/ecto_shorts/query_builder/dynamics.ex` (when `opts[:repo]` is provided it enforces `Ecto.Adapters.Postgres`).
+ - The only runtime call site of `EctoShorts.QueryBuilder.build_query/6` is `EctoShorts.CommonFilters` (`apply_query_builder/6`).
 
 ## Acceptance Criteria
-- The module `EctoShorts.QueryBuilder.Adapters.Postgres` is removed from `lib/`.
+- The module `EctoShorts.QueryBuilder` is removed from `lib/`.
 - Default query building continues to work exactly as before for the supported filters (`:join`, `:select`, `:select_merge`, and the Filters stage).
 - `mix format`, `mix compile`, and `mix test` pass.
 
@@ -34,3 +34,4 @@ Simplify the QueryBuilder API by deleting `EctoShorts.QueryBuilder.Adapters.Post
 1. Remove `EctoShorts.QueryBuilder.Adapters.Postgres.filters/0` (module is truly removed).
 2. Remove the QueryBuilder adapter behaviour boundary; DB “adapter boundary” lives at expression compilation in `Dynamics`.
 3. No deprecation wrapper; simplify the public API.
+4. Remove the `EctoShorts.QueryBuilder` module; move its dispatch into the call site.

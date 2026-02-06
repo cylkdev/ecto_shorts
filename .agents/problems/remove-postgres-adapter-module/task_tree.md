@@ -29,4 +29,23 @@ Remove `EctoShorts.QueryBuilder.Adapters.Postgres` and simplify the QueryBuilder
 - [ ] Ensure ExDoc module grouping does not reference removed/non-existent modules.
 
 ## Selected Next Task Group
-**Task Group 01**.
+**Task Group 02**.
+
+## Task Group 02 — Remove `EctoShorts.QueryBuilder` module (proposed)
+
+### Task 02.1 — ADR for public API removal (required)
+- [ ] Draft ADR proposing removal of `EctoShorts.QueryBuilder` (public module) and moving its dispatch into `EctoShorts.CommonFilters`.
+- [ ] Get explicit approval for the ADR + Task Group 02 plan before changing `lib/` code.
+
+### Task 02.2 — Inline dispatch at call site
+- [ ] Update `EctoShorts.CommonFilters` to call stages directly instead of calling `EctoShorts.QueryBuilder.build_query/6`.
+
+### Task 02.3 — Remove module and fix references
+- [ ] Delete `lib/ecto_shorts/query_builder.ex`.
+- [ ] Remove or update tests that reference `EctoShorts.QueryBuilder`.
+- [ ] Remove `EctoShorts.QueryBuilder` from ExDoc grouping config (so docs generation does not reference a missing module).
+
+### Task 02.4 — Validation
+- [ ] Run `mix format`.
+- [ ] Run `mix compile`.
+- [ ] Run focused tests: `mix test test/ecto_shorts/common_filters_test.exs`.

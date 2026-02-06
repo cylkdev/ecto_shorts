@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
-  alias EctoShorts.QueryBuilder
+  alias EctoShorts.QueryBuilder.Stages.{Filters, Joins, Selects}
   alias EctoShorts.SchemaHelpers
 
   @logger_prefix "EctoShorts.CommonFilters"
@@ -279,15 +279,18 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp apply_query_builder(schema_source, query, binding_selector, current_filter, params, opts) do
-    schema_source
-    |> to_binding_source(query, binding_selector)
-    |> QueryBuilder.build_query(
-      query,
-      binding_selector,
-      current_filter,
-      params,
-      opts
-    )
+    source = to_binding_source(schema_source, query, binding_selector)
+
+    case current_filter do
+      :join ->
+        Joins.build(source, query, binding_selector, params)
+
+      filter when filter in [:select, :select_merge] ->
+        Selects.build(filter, source, query, binding_selector, params)
+
+      filter ->
+        Filters.build(source, filter, query, binding_selector, params, opts)
+    end
   end
 
   defp to_binding_source(schema_source, _query, {:as, nil}) do
