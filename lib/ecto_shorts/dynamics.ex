@@ -13,50 +13,78 @@ defmodule EctoShorts.Dynamics do
   @boolean_operators [:and, :or]
 
   def convert_to_dynamic(source, binding_selector, args, opts \\ []) do
-    expression_adapter = expression_adapter!(opts)
     source = CommonSchema.normalize_source(source)
 
     if is_map(args) or is_list(args) do
       Enum.reduce(args, nil, fn entry, dyn_acc ->
-        reduce_dynamic_params(expression_adapter, source, dyn_acc, binding_selector, entry)
+        reduce_dynamic_params(source, dyn_acc, binding_selector, entry, opts)
       end)
     else
-      reduce_dynamic_params(expression_adapter, source, nil, binding_selector, args)
+      reduce_dynamic_params(source, nil, binding_selector, args, opts)
     end
   end
 
-  defp reduce_dynamic_params(expression_adapter, source, dyn_l, binding_selector, args)
+  defp reduce_dynamic_params(source, dyn_l, binding_selector, args, opts)
        when is_map(args) or is_list(args) do
     Enum.reduce(args, dyn_l, fn entry, dyn_acc ->
-      reduce_dynamic_params(expression_adapter, source, dyn_acc, binding_selector, entry)
+      reduce_dynamic_params(source, dyn_acc, binding_selector, entry, opts)
     end)
   end
 
-  defp reduce_dynamic_params(expression_adapter, source, dyn_l, binding_selector, {key, value})
+  defp reduce_dynamic_params(source, dyn_l, binding_selector, {key, value}, opts)
        when key in @boolean_operators do
     if is_map(value) and not is_struct(value) do
       reduce_dynamic_params(
-        expression_adapter,
         source,
         dyn_l,
         binding_selector,
-        {key, Map.to_list(value)}
+        {key, Map.to_list(value)},
+        opts
       )
     else
       reduce_merge_dynamic_predicates(
-        expression_adapter,
         source,
         dyn_l,
         binding_selector,
         key,
-        value
+        value,
+        opts
       )
     end
   end
 
-  defp reduce_dynamic_params(expression_adapter, source, dyn_l, binding_selector, {key, value}) do
+  defp reduce_dynamic_params(source, dyn_l, binding_selector, {key, value}, opts) do
     cond do
-      key in expression_adapter.operators() ->
+      Keyword.has_key?(opts, :expression_adapter) ->
+        expression_adapter = expression_adapter!(opts)
+
+        if key in expression_adapter.operators() do
+          value
+          |> normalize_expr_params()
+          |> Enum.reduce(dyn_l, fn item, dyn_acc ->
+            dyn_r =
+              expression_adapter.build_dynamic_expression(source, binding_selector, key, item)
+
+            merge_dynamic(dyn_acc, :and, dyn_r)
+          end)
+        else
+          if source_has_schema?(source) do
+            build_schema_dynamic(source, dyn_l, binding_selector, {key, value}, opts)
+          else
+            value
+            |> normalize_expr_params()
+            |> Enum.reduce(dyn_l, fn item, dyn_acc ->
+              dyn_r =
+                expression_adapter.build_dynamic_expression(source, binding_selector, key, item)
+
+              merge_dynamic(dyn_acc, :and, dyn_r)
+            end)
+          end
+        end
+
+      key in Postgres.operators() ->
+        expression_adapter = expression_adapter!(opts)
+
         value
         |> normalize_expr_params()
         |> Enum.reduce(dyn_l, fn item, dyn_acc ->
@@ -65,9 +93,11 @@ defmodule EctoShorts.Dynamics do
         end)
 
       source_has_schema?(source) ->
-        build_schema_dynamic(expression_adapter, source, dyn_l, binding_selector, {key, value})
+        build_schema_dynamic(source, dyn_l, binding_selector, {key, value}, opts)
 
       true ->
+        expression_adapter = expression_adapter!(opts)
+
         value
         |> normalize_expr_params()
         |> Enum.reduce(dyn_l, fn item, dyn_acc ->
@@ -100,40 +130,40 @@ defmodule EctoShorts.Dynamics do
   #
   # This reducer can build “outer” groups (across a list of entries),
   # and it can also participate in “inner” groups when entries contain
-  # nested boolean structures (since entries are built via `reduce_dynamic_params/4`,
+  # nested boolean structures (since entries are built via `reduce_dynamic_params/5`,
   # which may call back into this reducer for nested `:and` / `:or`).
   defp reduce_merge_dynamic_predicates(
-         expression_adapter,
          source,
          dyn_l,
          binding_selector,
          bool_op,
-         entries
+         entries,
+         opts
        ) do
     Enum.reduce(entries, dyn_l, fn entry, dyn_acc ->
       dyn_r =
         cond do
           is_map(entry) and not is_struct(entry) ->
             reduce_dynamic_params(
-              expression_adapter,
               source,
               nil,
               binding_selector,
-              Map.to_list(entry)
+              Map.to_list(entry),
+              opts
             )
 
           Keyword.keyword?(entry) ->
-            reduce_dynamic_params(expression_adapter, source, nil, binding_selector, entry)
+            reduce_dynamic_params(source, nil, binding_selector, entry, opts)
 
           true ->
-            reduce_dynamic_params(expression_adapter, source, nil, binding_selector, entry)
+            reduce_dynamic_params(source, nil, binding_selector, entry, opts)
         end
 
       merge_dynamic(dyn_acc, bool_op, dyn_r)
     end)
   end
 
-  defp build_schema_dynamic(expression_adapter, source, dyn_l, binding_selector, {key, value}) do
+  defp build_schema_dynamic(source, dyn_l, binding_selector, {key, value}, opts) do
     schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
 
     if is_list(schema_fields) and key not in schema_fields do
@@ -144,41 +174,34 @@ defmodule EctoShorts.Dynamics do
 
       dyn_l
     else
-      build_schema_dynamic_value(expression_adapter, source, dyn_l, binding_selector, key, value)
+      build_schema_dynamic_value(source, dyn_l, binding_selector, key, value, opts)
     end
   end
 
-  defp build_schema_dynamic_value(
-         expression_adapter,
-         source,
-         dyn_l,
-         binding_selector,
-         key,
-         value
-       )
+  defp build_schema_dynamic_value(source, dyn_l, binding_selector, key, value, opts)
        when is_map(value) and not is_struct(value) do
     build_schema_dynamic(
-      expression_adapter,
       source,
       dyn_l,
       binding_selector,
-      {key, Map.to_list(value)}
+      {key, Map.to_list(value)},
+      opts
     )
   end
 
-  defp build_schema_dynamic_value(expression_adapter, source, dyn_l, binding_selector, key, value)
+  defp build_schema_dynamic_value(source, dyn_l, binding_selector, key, value, opts)
        when is_list(value) do
     if Keyword.keyword?(value) do
       Enum.reduce(value, dyn_l, fn entry, dyn_acc ->
-        build_schema_dynamic(expression_adapter, source, dyn_acc, binding_selector, {key, entry})
+        build_schema_dynamic(source, dyn_acc, binding_selector, {key, entry}, opts)
       end)
     else
-      build_dynamic_field_expr(expression_adapter, source, dyn_l, binding_selector, key, value)
+      build_dynamic_field_expr(source, dyn_l, binding_selector, key, value, opts)
     end
   end
 
-  defp build_schema_dynamic_value(expression_adapter, source, dyn_l, binding_selector, key, value) do
-    build_dynamic_field_expr(expression_adapter, source, dyn_l, binding_selector, key, value)
+  defp build_schema_dynamic_value(source, dyn_l, binding_selector, key, value, opts) do
+    build_dynamic_field_expr(source, dyn_l, binding_selector, key, value, opts)
   end
 
   # NOTE: `{bool_op, values}` can mean two different things:
@@ -204,12 +227,12 @@ defmodule EctoShorts.Dynamics do
   # existing reducer recurse into each field; for same-field comparisons we
   # wrap them as `{key, comparison}`.
   defp build_dynamic_field_expr(
-         expression_adapter,
          source,
          dyn_l,
          binding_selector,
          key,
-         {bool_op, values}
+         {bool_op, values},
+         opts
        )
        when bool_op in @boolean_operators and is_list(values) do
     entries =
@@ -221,25 +244,27 @@ defmodule EctoShorts.Dynamics do
 
     dyn_r =
       reduce_merge_dynamic_predicates(
-        expression_adapter,
         source,
         nil,
         binding_selector,
         bool_op,
-        entries
+        entries,
+        opts
       )
 
     merge_dynamic(dyn_l, :and, dyn_r)
   end
 
   defp build_dynamic_field_expr(
-         expression_adapter,
          source,
          dyn_l,
          binding_selector,
          key,
-         {op, value}
+         {op, value},
+         opts
        ) do
+    expression_adapter = expression_adapter!(opts)
+
     value
     |> normalize_expr_params()
     |> Enum.reduce(dyn_l, fn item, dyn_acc ->
@@ -250,14 +275,14 @@ defmodule EctoShorts.Dynamics do
     end)
   end
 
-  defp build_dynamic_field_expr(expression_adapter, source, dyn_l, binding_selector, key, value) do
+  defp build_dynamic_field_expr(source, dyn_l, binding_selector, key, value, opts) do
     build_dynamic_field_expr(
-      expression_adapter,
       source,
       dyn_l,
       binding_selector,
       key,
-      {@equal, value}
+      {@equal, value},
+      opts
     )
   end
 
