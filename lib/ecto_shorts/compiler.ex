@@ -61,7 +61,7 @@ defmodule EctoShorts.Compiler do
     compiled_module = Module.concat(env.module, Compiled)
     context = compiled_module
 
-    clause_asts = build_clause_asts(context, specs_module, opts)
+    clause_asts = build_clauses(context, specs_module, opts)
 
     quote do
       defmodule unquote(compiled_module) do
@@ -81,7 +81,7 @@ defmodule EctoShorts.Compiler do
   end
 
   @doc false
-  def build_clause_asts(context, specs_module, opts) do
+  def build_clauses(context, specs_module, opts) do
     compiler_config = Config.compiler()
 
     max_positional_bindings =
