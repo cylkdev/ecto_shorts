@@ -2,6 +2,5 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr do
   @moduledoc false
 
   use EctoShorts.Compiler,
-    specs: EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs,
-    max_positional_bindings: 10
+    specs: EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs
 end
