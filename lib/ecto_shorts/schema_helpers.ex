@@ -24,22 +24,22 @@ defmodule EctoShorts.SchemaHelpers do
       iex> EctoShorts.SchemaHelpers.get_related_schema(EctoShorts.Schema.Post, :does_not_exist)
       nil
   """
-  def get_related_schema(schema, key), do: lookup_related_schema(schema, key)
+  def get_related_schema(schema, key), do: do_get_related_schema(schema, key)
 
-  defp lookup_related_schema(nil, _), do: nil
+  defp do_get_related_schema(nil, _), do: nil
 
-  defp lookup_related_schema(schema, []), do: schema
+  defp do_get_related_schema(schema, []), do: schema
 
-  defp lookup_related_schema(schema, [key | path]) do
+  defp do_get_related_schema(schema, [key | path]) do
     schema
-    |> lookup_related_schema(key)
-    |> lookup_related_schema(path)
+    |> do_get_related_schema(key)
+    |> do_get_related_schema(path)
   end
 
-  defp lookup_related_schema(schema, key) do
+  defp do_get_related_schema(schema, key) do
     case schema.__schema__(:association, key) do
       %{related: schema} -> schema
-      %{through: path} -> lookup_related_schema(schema, path)
+      %{through: path} -> do_get_related_schema(schema, path)
       _ -> nil
     end
   end

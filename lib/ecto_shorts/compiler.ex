@@ -27,7 +27,8 @@ defmodule EctoShorts.Compiler do
   """
   defmacro __using__(opts) do
     quote do
-      @compiler_options unquote(opts)
+      opts = unquote(opts)
+      @compiler_options opts
       @before_compile EctoShorts.Compiler
     end
   end
@@ -89,7 +90,7 @@ defmodule EctoShorts.Compiler do
       end)
 
     {target_binding_var, binding_patterns} =
-      QueryBindingBuilder.query_var_and_binding_heads(context, max_positional_bindings)
+      QueryBindingBuilder.query_binding_contacts(context, max_positional_bindings)
 
     Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
       specs_module.clause_specs(

@@ -9,7 +9,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
   require Ecto.Query
 
-  {target_binding_var, binding_patterns} = QueryBindingBuilder.query_var_and_binding_heads()
+  {target_binding_var, binding_patterns} = QueryBindingBuilder.query_binding_contacts()
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     @doc false

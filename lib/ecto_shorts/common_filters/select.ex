@@ -5,7 +5,7 @@ defmodule EctoShorts.CommonFilters.Select do
 
   require Ecto.Query
 
-  {target_binding_var, binding_patterns} = QueryBindingBuilder.query_var_and_binding_heads()
+  {target_binding_var, binding_patterns} = QueryBindingBuilder.query_binding_contacts()
 
   @doc "Builds a select expression for the query."
   def build(schema, filter_op, query, binding_selector, term, opts)
