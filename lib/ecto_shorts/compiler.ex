@@ -81,34 +81,6 @@ defmodule EctoShorts.Compiler do
   end
 
   @doc false
-  def build_clauses(context, specs_module, opts) do
-    {target_binding_var, binding_patterns} =
-      resolve_query_binding_contract(context, opts)
-
-    Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
-      specs_module.clause_specs(
-        context,
-        binding_head_ast,
-        target_binding_var,
-        binding_body_asts
-      )
-      |> Enum.map(&clause_ast!/1)
-    end)
-  end
-
-  @doc false
-  def resolve_query_binding_contract(context, opts \\ []) do
-    compiler_config = Config.compiler()
-
-    max_positional_bindings =
-      Keyword.get_lazy(opts, :max_positional_bindings, fn ->
-        Keyword.get(compiler_config, :max_positional_bindings, 10)
-      end)
-
-    QueryBindingBuilder.query_binding_contracts(context, max_positional_bindings)
-  end
-
-  @doc false
   defmacro query_binding_clauses(opts \\ [], do: block) do
     {quoted_binding_head_var, quoted_binding_body_var, target_binding_var, binding_patterns_var,
      body_ast} =
@@ -155,6 +127,34 @@ defmodule EctoShorts.Compiler do
           Got:
           #{Macro.to_string(ast)}
           """
+  end
+
+  @doc false
+  def build_clauses(context, specs_module, opts) do
+    {target_binding_var, binding_patterns} =
+      resolve_query_binding_contract(context, opts)
+
+    Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
+      specs_module.clause_specs(
+        context,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      )
+      |> Enum.map(&clause_ast!/1)
+    end)
+  end
+
+  @doc false
+  def resolve_query_binding_contract(context, opts \\ []) do
+    compiler_config = Config.compiler()
+
+    max_positional_bindings =
+      Keyword.get_lazy(opts, :max_positional_bindings, fn ->
+        Keyword.get(compiler_config, :max_positional_bindings, 10)
+      end)
+
+    QueryBindingBuilder.query_binding_contracts(context, max_positional_bindings)
   end
 
   defp clause_ast!(spec) do
