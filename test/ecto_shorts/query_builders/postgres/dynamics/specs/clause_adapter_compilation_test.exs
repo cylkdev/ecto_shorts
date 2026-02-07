@@ -1,5 +1,5 @@
 defmodule EctoShorts.Compiler.UsingTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias EctoShorts.Compiler
   alias EctoShorts.Compiler.AST
@@ -7,11 +7,12 @@ defmodule EctoShorts.Compiler.UsingTest do
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
 
-  defp compile_compiled_module!() do
+  defp compile_compiled_module!(compiler_opts \\ [max_positional_bindings: 1]) do
     unique = System.unique_integer([:positive])
 
     specs_module = Module.concat([__MODULE__, :"TmpSpecs#{unique}"])
     compiled_module = Module.concat([__MODULE__, :"TmpCompiled#{unique}"])
+    opts = Keyword.put(compiler_opts, :specs, specs_module)
 
     quoted =
       quote do
@@ -41,9 +42,7 @@ defmodule EctoShorts.Compiler.UsingTest do
         defmodule unquote(compiled_module) do
           @moduledoc false
 
-          use unquote(Compiler),
-            specs: unquote(specs_module),
-            max_positional_bindings: 1
+          use unquote(Compiler), unquote(opts)
         end
       end
 
@@ -81,5 +80,31 @@ defmodule EctoShorts.Compiler.UsingTest do
         {:==, 1}
       ])
     end
+  end
+
+  test "__mix_recompile__?/0 marks stale when config max changes for config-driven modules" do
+    previous_compiler_config = Application.get_env(:ecto_shorts, :compiler)
+    on_exit(fn -> Application.put_env(:ecto_shorts, :compiler, previous_compiler_config) end)
+
+    Application.put_env(:ecto_shorts, :compiler, max_positional_bindings: 10)
+    compiled_module = compile_compiled_module!([])
+
+    refute apply(compiled_module, :__mix_recompile__?, [])
+
+    Application.put_env(:ecto_shorts, :compiler, max_positional_bindings: 11)
+
+    assert apply(compiled_module, :__mix_recompile__?, [])
+  end
+
+  test "__mix_recompile__?/0 ignores config max changes when module overrides max" do
+    previous_compiler_config = Application.get_env(:ecto_shorts, :compiler)
+    on_exit(fn -> Application.put_env(:ecto_shorts, :compiler, previous_compiler_config) end)
+
+    Application.put_env(:ecto_shorts, :compiler, max_positional_bindings: 10)
+    compiled_module = compile_compiled_module!(max_positional_bindings: 1)
+
+    Application.put_env(:ecto_shorts, :compiler, max_positional_bindings: 11)
+
+    refute apply(compiled_module, :__mix_recompile__?, [])
   end
 end

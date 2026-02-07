@@ -64,6 +64,10 @@ defmodule EctoShorts.Compiler do
     clause_asts = build_clauses(context, specs_module, opts)
 
     quote do
+      @compile_time_max_positional_bindings EctoShorts.Compiler.max_positional_bindings(
+                                              @compiler_options
+                                            )
+
       defmodule unquote(compiled_module) do
         @moduledoc false
 
@@ -77,6 +81,12 @@ defmodule EctoShorts.Compiler do
       def apply_dynamic_expr(binding_selector, key, expr) do
         unquote(compiled_module).apply_dynamic_expr(binding_selector, key, expr)
       end
+
+      @doc false
+      def __mix_recompile__? do
+        EctoShorts.Compiler.max_positional_bindings(@compiler_options) !=
+          @compile_time_max_positional_bindings
+      end
     end
   end
 
@@ -89,7 +99,7 @@ defmodule EctoShorts.Compiler do
     context = __CALLER__.module
 
     {target_binding_var_ast, binding_patterns_ast} =
-      resolve_query_binding_contract(context, opts)
+      get_query_binding_contracts(context, opts)
 
     quote do
       unquote(target_binding_var) = unquote(Macro.escape(target_binding_var_ast))
@@ -132,7 +142,7 @@ defmodule EctoShorts.Compiler do
   @doc false
   def build_clauses(context, specs_module, opts) do
     {target_binding_var, binding_patterns} =
-      resolve_query_binding_contract(context, opts)
+      get_query_binding_contracts(context, opts)
 
     Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
       specs_module.clause_specs(
@@ -146,15 +156,20 @@ defmodule EctoShorts.Compiler do
   end
 
   @doc false
-  def resolve_query_binding_contract(context, opts \\ []) do
+  def get_query_binding_contracts(context, opts \\ []) do
+    QueryBindingBuilder.query_binding_contracts(
+      context,
+      max_positional_bindings(opts)
+    )
+  end
+
+  @doc false
+  def max_positional_bindings(opts \\ []) do
     compiler_config = Config.compiler()
 
-    max_positional_bindings =
-      Keyword.get_lazy(opts, :max_positional_bindings, fn ->
-        Keyword.get(compiler_config, :max_positional_bindings, 10)
-      end)
-
-    QueryBindingBuilder.query_binding_contracts(context, max_positional_bindings)
+    Keyword.get_lazy(opts, :max_positional_bindings, fn ->
+      Keyword.get(compiler_config, :max_positional_bindings, 10)
+    end)
   end
 
   defp clause_ast!(spec) do
