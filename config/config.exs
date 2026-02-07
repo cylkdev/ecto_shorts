@@ -6,7 +6,8 @@ config :ecto_shorts,
   mix_env: Mix.env(),
   repo: nil,
   replica: nil,
-  error_module: EctoShorts.Actions.Error
+  error_module: EctoShorts.Actions.Error,
+  compiler: [max_positional_bindings: 10]
 
 if Mix.env() === :test do
   config :ecto_shorts, ecto_repos: [EctoShorts.Repo]

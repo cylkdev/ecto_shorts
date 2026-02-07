@@ -13,6 +13,7 @@ defmodule EctoShorts.Compiler do
   that exports `clause_specs/4`.
   """
 
+  alias EctoShorts.Config
   alias EctoShorts.Compiler.BindingHelpers
   alias EctoShorts.Compiler.ClauseBuilder
 
@@ -26,14 +27,14 @@ defmodule EctoShorts.Compiler do
   """
   defmacro __using__(opts) do
     quote do
-      @ecto_shorts_compiler_opts unquote(opts)
+      @compiler_options unquote(opts)
       @before_compile EctoShorts.Compiler
     end
   end
 
   @doc false
   defmacro __before_compile__(env) do
-    opts = Module.get_attribute(env.module, :ecto_shorts_compiler_opts)
+    opts = Module.get_attribute(env.module, :compiler_options)
     specs_opt = Keyword.fetch!(opts, :specs)
     specs_module = Macro.expand(specs_opt, env)
 
@@ -80,13 +81,15 @@ defmodule EctoShorts.Compiler do
 
   @doc false
   def build_clause_asts(context, specs_module, opts) do
-    max_positional_bindings = Keyword.get(opts, :max_positional_bindings, 10)
+    compiler_config = Config.compiler()
+
+    max_positional_bindings =
+      Keyword.get_lazy(opts, :max_positional_bindings, fn ->
+        Keyword.get(compiler_config, :max_positional_bindings, 10)
+      end)
 
     {target_binding_var, binding_patterns} =
-      BindingHelpers.query_var_and_binding_heads(
-        context,
-        max_positional_bindings: max_positional_bindings
-      )
+      BindingHelpers.query_var_and_binding_heads(context, max_positional_bindings)
 
     Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
       specs_module.clause_specs(

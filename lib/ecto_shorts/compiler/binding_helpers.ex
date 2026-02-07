@@ -1,17 +1,16 @@
 defmodule EctoShorts.Compiler.BindingHelpers do
   @moduledoc false
 
-  def query_var_and_binding_heads(context \\ nil, opts \\ []) do
-    max_pos = Keyword.get(opts, :max_positional_bindings, 10)
+  def query_var_and_binding_heads(context \\ nil, max_positional_bindings \\ 10) do
     binding_alias_var = Macro.var(:binding_alias, context)
     target_binding_var = Macro.var(:q, context)
     step_var = Macro.var(:_, context)
 
     positional_binding_patterns =
-      binding_patterns(:positional, target_binding_var, step_var, max_pos)
+      binding_patterns(:positional, target_binding_var, step_var, max_positional_bindings)
 
     named_binding_patterns =
-      binding_patterns(:named, target_binding_var, binding_alias_var, max_pos)
+      binding_patterns(:named, target_binding_var, binding_alias_var, max_positional_bindings)
 
     all_binding_patterns = positional_binding_patterns ++ named_binding_patterns
 
