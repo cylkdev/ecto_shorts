@@ -1,10 +1,13 @@
 defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExpr.Specs do
   @moduledoc false
 
+  @behaviour EctoShorts.Compiler.ClauseSpecProvider
+
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
 
   @doc false
+  @impl true
   def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
     id_values_var = Macro.var(:id_values, context)
     cursor_value_var = Macro.var(:cursor_value, context)

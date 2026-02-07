@@ -1,10 +1,13 @@
 defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
   @moduledoc false
 
+  @behaviour EctoShorts.Compiler.ClauseSpecProvider
+
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
 
   @doc false
+  @impl true
   def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
     list_semantic_specs(context, binding_head_ast) ++
       alias_op_specs(context, binding_head_ast) ++

@@ -14,8 +14,8 @@ defmodule EctoShorts.Compiler do
   """
 
   alias EctoShorts.Config
-  alias EctoShorts.Compiler.BindingHelpers
   alias EctoShorts.Compiler.ClauseBuilder
+  alias EctoShorts.Compiler.QueryBindingBuilder
 
   @doc """
   Defines `X.Compiled` and `X.apply_dynamic_expr/3` in the caller module `X`.
@@ -23,7 +23,7 @@ defmodule EctoShorts.Compiler do
   ## Options
 
     * `:specs` (required) - a module that exports `clause_specs/4`
-    * `:max_positional_bindings` - passed to `BindingHelpers` (defaults to `10`)
+    * `:max_positional_bindings` - passed to `QueryBindingBuilder` (defaults to `10`)
   """
   defmacro __using__(opts) do
     quote do
@@ -89,7 +89,7 @@ defmodule EctoShorts.Compiler do
       end)
 
     {target_binding_var, binding_patterns} =
-      BindingHelpers.query_var_and_binding_heads(context, max_positional_bindings)
+      QueryBindingBuilder.query_var_and_binding_heads(context, max_positional_bindings)
 
     Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
       specs_module.clause_specs(

@@ -1,4 +1,4 @@
-defmodule EctoShorts.Compiler.BindingHelpers do
+defmodule EctoShorts.Compiler.QueryBindingBuilder do
   @moduledoc false
 
   def query_var_and_binding_heads(context \\ nil, max_positional_bindings \\ 10) do
@@ -7,19 +7,22 @@ defmodule EctoShorts.Compiler.BindingHelpers do
     step_var = Macro.var(:_, context)
 
     positional_binding_patterns =
-      binding_patterns(:positional, target_binding_var, step_var, max_positional_bindings)
+      build_binding_patterns(:positional, target_binding_var, step_var, max_positional_bindings)
 
     named_binding_patterns =
-      binding_patterns(:named, target_binding_var, binding_alias_var, max_positional_bindings)
+      build_binding_patterns(
+        :named,
+        target_binding_var,
+        binding_alias_var,
+        max_positional_bindings
+      )
 
     all_binding_patterns = positional_binding_patterns ++ named_binding_patterns
 
     {target_binding_var, all_binding_patterns}
   end
 
-  def binding_patterns(binding_type, target_binding_var, binding_alias_var, max_pos \\ [])
-
-  def binding_patterns(:named, target_binding_var, binding_alias_var, _max_pos) do
+  defp build_binding_patterns(:named, target_binding_var, binding_alias_var, _max_pos) do
     [
       {
         {:as, nil},
@@ -40,7 +43,7 @@ defmodule EctoShorts.Compiler.BindingHelpers do
     ]
   end
 
-  def binding_patterns(:positional, target_binding_var, step_var, max_pos) do
+  defp build_binding_patterns(:positional, target_binding_var, step_var, max_pos) do
     Enum.map(1..max_pos, fn i ->
       {{:at, i}, Enum.map(1..i, &if(&1 === i, do: target_binding_var, else: step_var))}
     end)
