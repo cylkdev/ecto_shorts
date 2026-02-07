@@ -2,13 +2,12 @@ defmodule EctoShorts.CommonFilters.Join do
   @moduledoc false
   alias EctoShorts.Compiler
   alias EctoShorts.Dynamics
-
   alias Ecto.Query
 
   require EctoShorts.Compiler
-  @logger_prefix "EctoShorts.CommonFilters.Join"
-
   require Ecto.Query
+
+  @logger_prefix "EctoShorts.CommonFilters.Join"
 
   Compiler.query_binding_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
