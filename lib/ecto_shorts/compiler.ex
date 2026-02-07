@@ -82,15 +82,8 @@ defmodule EctoShorts.Compiler do
 
   @doc false
   def build_clauses(context, specs_module, opts) do
-    compiler_config = Config.compiler()
-
-    max_positional_bindings =
-      Keyword.get_lazy(opts, :max_positional_bindings, fn ->
-        Keyword.get(compiler_config, :max_positional_bindings, 10)
-      end)
-
     {target_binding_var, binding_patterns} =
-      QueryBindingBuilder.query_binding_contacts(context, max_positional_bindings)
+      resolve_query_binding_contract(context, opts)
 
     Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
       specs_module.clause_specs(
@@ -101,6 +94,67 @@ defmodule EctoShorts.Compiler do
       )
       |> Enum.map(&clause_ast!/1)
     end)
+  end
+
+  @doc false
+  def resolve_query_binding_contract(context, opts \\ []) do
+    compiler_config = Config.compiler()
+
+    max_positional_bindings =
+      Keyword.get_lazy(opts, :max_positional_bindings, fn ->
+        Keyword.get(compiler_config, :max_positional_bindings, 10)
+      end)
+
+    QueryBindingBuilder.query_binding_contracts(context, max_positional_bindings)
+  end
+
+  @doc false
+  defmacro query_binding_clauses(opts \\ [], do: block) do
+    {quoted_binding_head_var, quoted_binding_body_var, target_binding_var, binding_patterns_var,
+     body_ast} =
+      parse_query_binding_clauses_block!(block)
+
+    context = __CALLER__.module
+
+    {target_binding_var_ast, binding_patterns_ast} =
+      resolve_query_binding_contract(context, opts)
+
+    quote do
+      unquote(target_binding_var) = unquote(Macro.escape(target_binding_var_ast))
+      unquote(binding_patterns_var) = unquote(Macro.escape(binding_patterns_ast))
+
+      for {unquote(quoted_binding_head_var), unquote(quoted_binding_body_var)} <-
+            unquote(Macro.escape(binding_patterns_ast)) do
+        unquote(body_ast)
+      end
+    end
+  end
+
+  defp parse_query_binding_clauses_block!({:->, _meta, [[a, b, c, d], body_ast]}) do
+    {a, b, c, d, body_ast}
+  end
+
+  defp parse_query_binding_clauses_block!({:__block__, _meta, [single_clause]}) do
+    parse_query_binding_clauses_block!(single_clause)
+  end
+
+  defp parse_query_binding_clauses_block!([single_clause]) do
+    parse_query_binding_clauses_block!(single_clause)
+  end
+
+  defp parse_query_binding_clauses_block!(ast) do
+    raise ArgumentError,
+          """
+          Expected query_binding_clauses/2 block in the form:
+
+              Compiler.query_binding_clauses do
+                quoted_binding_head, quoted_binding_body, target_binding_var, binding_patterns ->
+                  ...
+              end
+
+          Got:
+          #{Macro.to_string(ast)}
+          """
   end
 
   defp clause_ast!(spec) do
