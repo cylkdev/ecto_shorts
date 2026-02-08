@@ -331,6 +331,77 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, q2)
     end
 
+    test "supports binding-aware :preload with direct named selector" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          preload: [author: a]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{preload: [author: [as: :author]]},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
+    test "supports binding-aware :preload with direct positional selector and shared nested payload" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          preload: [author: {a, [posts: [:comments]]}]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{preload: [author: [at: 2, posts: [:comments]]]},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
+    test "supports mixed direct named and positional selectors in one assoc payload" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          preload: [author: {a, [posts: [:comments]]}],
+          preload: [author: {a, [posts: [:comments]]}]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{preload: [author: [as: :author, at: 2, posts: [:comments]]]},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
     test "supports mixed selector+nested preload payload in one assoc entry" do
       q =
         from(p in Post,
