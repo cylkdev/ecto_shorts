@@ -3,11 +3,11 @@ defmodule EctoShorts.TestJoinSources do
 
   import Ecto.Query
 
-  def join_source(binding_selector, source_key, params) do
-    build_join_source(source_key, params, binding_selector)
+  def resolve_join_source(binding_selector, source_key, params) do
+    build_resolve_join_source(source_key, params, binding_selector)
   end
 
-  def build_join_source(:active_users, params, _binding_selector) do
+  def build_resolve_join_source(:active_users, params, _binding_selector) do
     params = normalize_params(params)
 
     with {:ok, min_age} <- fetch_integer(params, :min_age) do
@@ -15,11 +15,11 @@ defmodule EctoShorts.TestJoinSources do
     end
   end
 
-  def build_join_source(:error_fragment, _params, _binding_selector) do
+  def build_resolve_join_source(:error_fragment, _params, _binding_selector) do
     {:error, :forced_error}
   end
 
-  def build_join_source(_source_key, _params, _binding_selector) do
+  def build_resolve_join_source(_source_key, _params, _binding_selector) do
     {:error, :unsupported_fragment_key}
   end
 

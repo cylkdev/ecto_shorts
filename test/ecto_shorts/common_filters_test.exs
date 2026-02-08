@@ -1127,6 +1127,38 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports join hints option through runtime :join_source_module option" do
+      base_source_query =
+        from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
+
+      expected_source_query = from(u in base_source_query, hints: ["USE INDEX(users_age_index)"])
+
+      expected =
+        from(p in Post,
+          join: a in ^expected_source_query,
+          as: :active_users,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              fragment: [
+                source: %{name: :active_users, values: [min_age: 21]},
+                hints: ["USE INDEX(users_age_index)"],
+                as: :active_users,
+                on: true
+              ]
+            ]
+          },
+          join_source_module: EctoShorts.TestJoinSources
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "unknown join source key logs warning and skips entry" do
       q = from(p in Post)
 

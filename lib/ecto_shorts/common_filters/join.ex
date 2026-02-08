@@ -292,14 +292,12 @@ defmodule EctoShorts.CommonFilters.Join do
         Config.join_source_module()
       )
 
-    unless Code.ensure_loaded?(mod) and function_exported?(mod, :join_source, 3) do
+    unless Code.ensure_loaded?(mod) and function_exported?(mod, :resolve_join_source, 3) do
       raise ArgumentError,
-            "Expected join source module to have a join_source/3 function, got: #{inspect(mod)}"
+            "Expected join source module to have a resolve_join_source/3 function, got: #{inspect(mod)}"
     end
 
-    callback_result = mod.join_source(binding_selector, source_key, source_params)
-
-    case callback_result do
+    case mod.resolve_join_source(binding_selector, source_key, source_params) do
       {:ok, source} ->
         {:ok, source}
 
