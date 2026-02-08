@@ -113,7 +113,7 @@ defmodule EctoShorts.CommonFilters.Join do
             prefix: ^prefix
           )
 
-        apply_join_hints(joined_query, join_options[:hints] || [], opts)
+        apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
       end
 
       defp build_join_expr(
@@ -154,7 +154,7 @@ defmodule EctoShorts.CommonFilters.Join do
             prefix: ^prefix
           )
 
-        apply_join_hints(joined_query, join_options[:hints] || [], opts)
+        apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
       end
 
       defp build_join_expr(
@@ -181,7 +181,7 @@ defmodule EctoShorts.CommonFilters.Join do
             prefix: ^prefix
           )
 
-        apply_join_hints(joined_query, join_options[:hints] || [], opts)
+        apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
       end
 
       defp build_join_expr(
@@ -213,7 +213,7 @@ defmodule EctoShorts.CommonFilters.Join do
             prefix: ^prefix
           )
 
-        apply_join_hints(joined_query, join_options[:hints] || [], opts)
+        apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
       end
 
       defp build_join_expr(
@@ -291,7 +291,7 @@ defmodule EctoShorts.CommonFilters.Join do
                 prefix: ^prefix
               )
 
-            apply_join_hints(joined_query, join_options[:hints] || [], opts)
+            apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
 
           :error ->
             query
@@ -329,12 +329,12 @@ defmodule EctoShorts.CommonFilters.Join do
     end
   end
 
-  defp apply_join_hints(query, hints, opts) do
+  defp apply_join_hints(query, binding_selector, hints, opts) do
     mod = Keyword.get(opts, :join_source_module, Config.join_source_module())
 
-    if Code.ensure_loaded?(mod) and function_exported?(mod, :build_hint, 2) do
+    if Code.ensure_loaded?(mod) and function_exported?(mod, :build_hint, 3) do
       Enum.reduce(hints, query, fn hint_name, query_acc ->
-        case mod.build_hint(query_acc, hint_name) do
+        case mod.build_hint(query_acc, binding_selector, hint_name) do
           {:ok, %Ecto.Query{} = query} ->
             query
 
