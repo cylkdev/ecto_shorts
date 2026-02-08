@@ -1,11 +1,13 @@
 defmodule EctoShorts.CommonFilters.Join do
   @moduledoc false
 
-  alias Ecto.Query
   alias EctoShorts.Compiler
   alias EctoShorts.Config
   alias EctoShorts.Dynamics
+  alias EctoShorts.CommonSchema
   alias EctoShorts.CommonFilters
+
+  alias Ecto.Query
 
   require Ecto.Query
   require EctoShorts.Compiler
@@ -15,49 +17,46 @@ defmodule EctoShorts.CommonFilters.Join do
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
   @doc false
 
-  def build(schema, :join, query, binding_selector, params, opts) when is_map(params) do
-    build(schema, :join, query, binding_selector, Map.to_list(params), opts)
+  def build(source, :join, query, binding_selector, params, opts) when is_map(params) do
+    build(source, :join, query, binding_selector, Map.to_list(params), opts)
   end
 
-  def build(schema, :join, query, binding_selector, params, opts) do
-    if Keyword.has_key?(params, :type) do
-      {join_type, join_options} = Keyword.pop(params, :type)
+  def build(schema_source, :join, query, binding_selector, params, opts) do
+    Enum.reduce(params, query, fn
+      {join_type, join_options}, q2 when join_type in @join_types ->
+        reduce_join(schema_source, q2, binding_selector, {join_type, join_options}, opts)
 
-      if join_type in @join_types do
-        reduce_join(schema, query, binding_selector, {join_type, join_options}, opts)
-      else
-        EctoShorts.Logger.warning(
-          @logger_prefix,
-          "Expected join type to be one of #{@join_types}, got: #{inspect(join_type)}"
-        )
+      {key, join_options}, q2 ->
+        assocs = CommonSchema.get_schema_reflection(schema_source, :associations) || []
 
-        query
-      end
-    else
-      Enum.reduce(params, query, fn
-        {join_type, join_options}, q2 when join_type in @join_types ->
-          reduce_join(schema, q2, binding_selector, {join_type, join_options}, opts)
-
-        {key, _}, q2 ->
+        if key in assocs do
+          reduce_join(
+            schema_source,
+            q2,
+            binding_selector,
+            {:association, Keyword.put(join_options, :source, key)},
+            opts
+          )
+        else
           EctoShorts.Logger.warning(
             @logger_prefix,
             "Expected join type to be one of #{inspect(@join_types)}, got: #{inspect(key)}"
           )
 
           q2
-      end)
-    end
+        end
+    end)
   end
 
-  defp reduce_join(schema, query, binding_selector, {join_type, join_options}, opts) do
-    {source, join_options} = Keyword.pop(join_options, :source)
+  defp reduce_join(source, query, binding_selector, {join_type, join_options}, opts) do
+    {join_source, join_options} = Keyword.pop(join_options, :source)
 
-    if not is_nil(source) do
+    if not is_nil(join_source) do
       apply_join_expr(
-        schema,
+        source,
         query,
         binding_selector,
-        {join_type, source, join_options},
+        {join_type, join_source, join_options},
         opts
       )
     else
@@ -73,16 +72,16 @@ defmodule EctoShorts.CommonFilters.Join do
   Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
       defp apply_join_expr(
-             schema,
+             source,
              query,
              unquote(quoted_binding_head) = binding_selector,
              {:association, assoc_key, join_options},
              opts
            ) do
-        on_value = on_expr(schema, binding_selector, join_options[:on], opts)
+        on_value = on_expr(source, binding_selector, join_options[:on], opts)
 
         qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix] || ""
+        prefix = join_options[:prefix]
         as = join_options[:as]
 
         Query.join(
@@ -97,16 +96,16 @@ defmodule EctoShorts.CommonFilters.Join do
       end
 
       defp apply_join_expr(
-             schema,
+             source,
              query,
              unquote(quoted_binding_head) = binding_selector,
              {:schema, target_schema, join_options},
              opts
            ) do
-        on_value = on_expr(schema, binding_selector, join_options[:on], opts)
+        on_value = on_expr(source, binding_selector, join_options[:on], opts)
 
         qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix] || ""
+        prefix = join_options[:prefix]
         as = join_options[:as]
 
         schema_source =
@@ -135,16 +134,16 @@ defmodule EctoShorts.CommonFilters.Join do
       end
 
       defp apply_join_expr(
-             schema,
+             source,
              query,
              unquote(quoted_binding_head) = binding_selector,
              {:table, table_name, join_options},
              opts
            ) do
-        on_value = on_expr(schema, binding_selector, join_options[:on], opts)
+        on_value = on_expr(source, binding_selector, join_options[:on], opts)
 
         qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix] || ""
+        prefix = join_options[:prefix]
         as = join_options[:as]
 
         Query.join(
@@ -159,16 +158,16 @@ defmodule EctoShorts.CommonFilters.Join do
       end
 
       defp apply_join_expr(
-             schema,
+             source,
              query,
              unquote(quoted_binding_head) = binding_selector,
              {:query, source_query, join_options},
              opts
            ) do
-        on_value = on_expr(schema, binding_selector, join_options[:on], opts)
+        on_value = on_expr(source, binding_selector, join_options[:on], opts)
 
         qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix] || ""
+        prefix = join_options[:prefix]
         as = join_options[:as]
 
         unless is_struct(source_query, Ecto.Query) do
@@ -188,16 +187,16 @@ defmodule EctoShorts.CommonFilters.Join do
       end
 
       defp apply_join_expr(
-             schema,
+             source,
              query,
              unquote(quoted_binding_head) = binding_selector,
              {:subquery, params, join_options},
              opts
            ) do
-        on_value = on_expr(schema, binding_selector, join_options[:on], opts)
+        on_value = on_expr(source, binding_selector, join_options[:on], opts)
 
         qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix] || ""
+        prefix = join_options[:prefix]
         as = join_options[:as]
 
         from_query =
@@ -228,16 +227,16 @@ defmodule EctoShorts.CommonFilters.Join do
       end
 
       defp apply_join_expr(
-             schema,
+             source,
              query,
              unquote(quoted_binding_head) = binding_selector,
              {:fragment, params, join_options},
              opts
            ) do
-        on_value = on_expr(schema, binding_selector, join_options[:on], opts)
+        on_value = on_expr(source, binding_selector, join_options[:on], opts)
 
         qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix] || ""
+        prefix = join_options[:prefix]
         as = join_options[:as]
 
         fragment_name = params[:name]

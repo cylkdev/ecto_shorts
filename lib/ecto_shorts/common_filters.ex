@@ -214,7 +214,7 @@ defmodule EctoShorts.CommonFilters do
           query,
           binding_selector,
           :join,
-          Keyword.merge(params, type: :association, source: assoc_key),
+          [association: Keyword.put(params, :source, assoc_key)],
           opts
         )
 
