@@ -10,14 +10,14 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   @logger_prefix "EctoShorts.CommonFilters.Filter"
 
-  @boolean_operators [:and, :or]
+  @boolean_directives [:and, :or]
 
   @common_filters [:ids, :before, :after, :start_date, :end_date]
   @pagination_filters [:first, :last, :limit, :offset, :order_by]
 
   @doc "Applies the given filter to the query."
   def build(source, filter, query, binding_selector, {bool_op, params}, opts)
-      when bool_op in @boolean_operators and is_list(params) do
+      when bool_op in @boolean_directives and is_list(params) do
     dynamic = Dynamics.convert_to_dynamic(source, binding_selector, {bool_op, params}, opts)
 
     apply_dynamic(filter, query, dynamic)

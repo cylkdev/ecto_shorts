@@ -302,7 +302,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [binding: [as: :author]]]},
+          %{preload: [author: [as: :author]]},
           []
         )
 
@@ -324,7 +324,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [binding: [at: 2]]]},
+          %{preload: [author: [at: 2]]},
           []
         )
 
@@ -419,52 +419,27 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [posts: [:comments], binding: [as: :author]]]},
+          %{preload: [author: [as: :author, posts: [:comments]]]},
           []
         )
 
       assert_query(expected, q2)
     end
 
-    test "supports mixed plain and binding-aware :preload entries" do
+    test "invalid positional preload binding operator target fails" do
       q =
         from(p in Post,
           join: a in assoc(p, :author),
           as: :author
         )
 
-      expected =
-        from(p in Post,
-          join: a in assoc(p, :author),
-          as: :author,
-          preload: [:comments, author: a]
-        )
-
-      q2 =
+      assert_raise FunctionClauseError, fn ->
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [:comments, author: [binding: [as: :author]]]},
+          %{preload: [author: [at: [2]]]},
           []
         )
-
-      assert_query(expected, q2)
-    end
-
-    test "malformed preload binding selector skips entry" do
-      q =
-        from(p in Post,
-          join: a in assoc(p, :author),
-          as: :author
-        )
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{preload: [author: [binding: :author]]},
-          []
-        )
-
-      assert_query(q, q2)
+      end
     end
 
     test "missing preload binding alias raises Ecto.QueryError" do
@@ -473,7 +448,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_raise Ecto.QueryError, ~r/unknown bind name `:missing`/, fn ->
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [binding: [as: :missing]]]},
+          %{preload: [author: [as: :missing]]},
           []
         )
       end

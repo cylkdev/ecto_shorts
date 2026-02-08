@@ -23,39 +23,17 @@ defmodule EctoShorts.CommonFilters.Preload do
 
       params ->
         Enum.reduce(params, query, fn {binding_target, next_value}, q2 ->
-          do_preload(q2, binding_selector, {binding_operator, {binding_target, next_value}})
+          do_preload(
+            q2,
+            binding_selector,
+            {binding_operator, {binding_target, next_value}}
+          )
         end)
     end
   end
 
   defp do_preload(query, binding_selector, {assoc_key, expr}) do
-    if is_list(expr) and Keyword.keyword?(expr) do
-      {binding_operations, nested_entries} =
-        Enum.split_with(expr, fn {key, _value} -> key in @binding_operators end)
-
-      nested_payload = if nested_entries == [], do: nil, else: nested_entries
-
-      query =
-        Enum.reduce(binding_operations, query, fn {binding_operator, binding_target}, q2 ->
-          do_preload(
-            q2,
-            binding_selector,
-            {binding_operator, {binding_target, [{assoc_key, nested_payload}]}}
-          )
-        end)
-
-      if binding_operations === [] do
-        build_preload(query, binding_selector, assoc_key, nested_entries)
-      else
-        query
-      end
-    else
-      if is_list(expr) do
-        build_preload(query, binding_selector, [{assoc_key, expr}])
-      else
-        build_preload(query, binding_selector, assoc_key, expr)
-      end
-    end
+    build_preload(query, binding_selector, assoc_key, expr)
   end
 
   defp do_preload(query, binding_selector, term) do
@@ -71,7 +49,11 @@ defmodule EctoShorts.CommonFilters.Preload do
   Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
       defp build_preload(query, unquote(quoted_binding_head), expr) do
-        Query.preload(query, [unquote_splicing(quoted_binding_body)], ^expr)
+        Query.preload(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^expr
+        )
       end
 
       defp build_preload(query, unquote(quoted_binding_head), assoc, nil) do

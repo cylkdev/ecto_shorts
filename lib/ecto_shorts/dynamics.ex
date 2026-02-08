@@ -10,7 +10,7 @@ defmodule EctoShorts.Dynamics do
   @logger_prefix "EctoShorts.Dynamics"
 
   @equal :==
-  @boolean_operators [:and, :or]
+  @boolean_directives [:and, :or]
 
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
     source = CommonSchema.normalize_source(source)
@@ -32,7 +32,7 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp reduce_dynamic_params(source, left_dynamic, binding_selector, {key, value}, opts)
-       when key in @boolean_operators do
+       when key in @boolean_directives do
     if is_map(value) and not is_struct(value) do
       reduce_dynamic_params(
         source,
@@ -212,7 +212,7 @@ defmodule EctoShorts.Dynamics do
          {bool_op, values},
          opts
        )
-       when bool_op in @boolean_operators and is_list(values) do
+       when bool_op in @boolean_directives and is_list(values) do
     entries =
       if composite_predicate_entries?(values) do
         values
