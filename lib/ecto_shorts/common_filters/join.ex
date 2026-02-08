@@ -14,23 +14,32 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
   @doc false
-  def build(_schema, _filter_key, query, _binding_selector, [], _opts) do
+
+  def build(schema, :join, query, binding_selector, params, opts)
+      when is_map(params) and not is_struct(params) do
+    build(schema, :join, query, binding_selector, Map.to_list(params), opts)
+  end
+
+  def build(schema, :join, query, binding_selector, values, opts) when is_list(values) do
+    if Keyword.keyword?(values) do
+      apply_join(schema, query, binding_selector, values, opts)
+    else
+      Enum.reduce(values, query, fn params, q2 ->
+        build(schema, :join, q2, binding_selector, params, opts)
+      end)
+    end
+  end
+
+  def build(_schema, :join, query, _binding_selector, item, _opts) do
+    EctoShorts.Logger.warning(
+      @logger_prefix,
+      "Expected :join params to be a map or list, got: #{inspect(item)}"
+    )
+
     query
   end
 
-  def build(schema, filter_key, query, binding_selector, [head | _] = params_list, opts)
-      when is_map(head) or is_list(head) do
-    Enum.reduce(params_list, query, fn params, q2 ->
-      build(schema, filter_key, q2, binding_selector, params, opts)
-    end)
-  end
-
-  def build(schema, filter_key, query, binding_selector, params, opts)
-      when is_map(params) and not is_struct(params) do
-    build(schema, filter_key, query, binding_selector, Map.to_list(params), opts)
-  end
-
-  def build(schema, :join, query, binding_selector, params, opts) do
+  defp apply_join(schema, query, binding_selector, params, opts) do
     if Keyword.has_key?(params, :type) do
       {join_type, join_options} = Keyword.pop(params, :type)
 
