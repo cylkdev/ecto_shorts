@@ -334,8 +334,10 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp dynamic_adapter!(opts) do
-    if Keyword.has_key?(opts, :dynamic_adapter) do
-      Keyword.fetch!(opts, :dynamic_adapter)
+    adapter = opts[:dynamic_adapter] || Config.dynamic_adapter()
+
+    if not is_nil(adapter) do
+      adapter
     else
       repo = Config.repo!(opts)
 
