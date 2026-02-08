@@ -28,5 +28,10 @@ dialyzer/*.plt*
 .DS_Store
 .elixir_ls
 
+.codex
+.windsurf
+
 AGENTS.md
-.agent/
+PLANS.md
+GLOSSARY.md
+STYLE.md

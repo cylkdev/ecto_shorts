@@ -65,6 +65,15 @@ defmodule EctoShorts.Config do
 
   @doc since: "2.5.0"
   @doc """
+  Returns the configured fragment module.
+  """
+  @spec fragment_module :: module() | nil
+  def fragment_module do
+    Application.get_env(@app, :fragment_module)
+  end
+
+  @doc since: "2.5.0"
+  @doc """
   Returns the `Ecto.Repo` module to use.
 
   Looks for the `:repo` option first, falling back to the configured value in the

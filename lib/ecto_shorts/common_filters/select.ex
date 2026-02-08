@@ -33,7 +33,11 @@ defmodule EctoShorts.CommonFilters.Select do
     apply_select_expr(schema, query, binding_selector, term)
   end
 
-  Compiler.query_binding_clauses do
+  defp apply_expr(:select_merge, schema, query, binding_selector, term) do
+    apply_select_merge_expr(schema, query, binding_selector, term)
+  end
+
+  Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
       defp apply_select_expr(_schema, query, unquote(quoted_binding_head), true) do
         Query.select(query, [unquote_splicing(quoted_binding_body)], unquote(target_binding_var))
@@ -111,6 +115,89 @@ defmodule EctoShorts.CommonFilters.Select do
           field(unquote(target_binding_var), ^key)
         )
       end
+
+      defp apply_select_merge_expr(
+             _schema,
+             query,
+             unquote(quoted_binding_head),
+             {:map, params}
+           )
+           when is_map(params) do
+        select_map = build_select_map(params, unquote(quoted_binding_head))
+
+        Query.select_merge(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^select_map
+        )
+      end
+
+      defp apply_select_merge_expr(
+             _schema,
+             query,
+             unquote(quoted_binding_head),
+             {:map, list}
+           )
+           when is_list(list) do
+        if Keyword.keyword?(list) do
+          select_map = build_select_map(list, unquote(quoted_binding_head))
+
+          Query.select_merge(
+            query,
+            [unquote_splicing(quoted_binding_body)],
+            ^select_map
+          )
+        else
+          Query.select_merge(
+            query,
+            [unquote_splicing(quoted_binding_body)],
+            map(unquote(target_binding_var), ^list)
+          )
+        end
+      end
+
+      defp apply_select_merge_expr(schema, query, unquote(quoted_binding_head), term)
+           when is_map(term) or is_list(term) do
+        if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
+          Enum.reduce(term, query, fn {key, value}, updated_query ->
+            apply_select_merge_expr(
+              schema,
+              updated_query,
+              unquote(quoted_binding_head),
+              {key, value}
+            )
+          end)
+        else
+          Query.select_merge(
+            query,
+            [unquote_splicing(quoted_binding_body)],
+            ^term
+          )
+        end
+      end
+
+      defp apply_select_merge_expr(
+             _schema,
+             query,
+             unquote(quoted_binding_head),
+             {field_alias, field}
+           ) do
+        select_map = build_select_map([{field_alias, field}], unquote(quoted_binding_head))
+
+        Query.select_merge(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^select_map
+        )
+      end
+
+      defp apply_select_merge_expr(_schema, query, unquote(quoted_binding_head), term) do
+        Query.select_merge(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^term
+        )
+      end
   end
 
   defp build_select_map(enum, binding_selector) do
@@ -119,7 +206,7 @@ defmodule EctoShorts.CommonFilters.Select do
     end)
   end
 
-  Compiler.query_binding_clauses do
+  Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
       defp apply_dynamic_expr(unquote(quoted_binding_head), field) do
         Query.dynamic(

@@ -91,7 +91,7 @@ defmodule EctoShorts.Compiler do
   end
 
   @doc false
-  defmacro query_binding_clauses(opts \\ [], do: block) do
+  defmacro define_clauses(opts \\ [], do: block) do
     {quoted_binding_head_var, quoted_binding_body_var, target_binding_var, binding_patterns_var,
      body_ast} =
       parse_query_binding_clauses_block!(block)
@@ -127,9 +127,9 @@ defmodule EctoShorts.Compiler do
   defp parse_query_binding_clauses_block!(ast) do
     raise ArgumentError,
           """
-          Expected query_binding_clauses/2 block in the form:
+          Expected define_clauses/2 block in the form:
 
-              Compiler.query_binding_clauses do
+              Compiler.define_clauses do
                 quoted_binding_head, quoted_binding_body, target_binding_var, binding_patterns ->
                   ...
               end

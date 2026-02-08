@@ -5,6 +5,7 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonFilters.{
     Filter,
     Join,
+    Preload,
     Select
   }
 
@@ -213,7 +214,7 @@ defmodule EctoShorts.CommonFilters do
           query,
           binding_selector,
           :join,
-          {:association, assoc_key, Keyword.take(params, [:as, :on, :type])},
+          Keyword.merge(params, type: :association, source: assoc_key),
           opts
         )
 
@@ -297,6 +298,9 @@ defmodule EctoShorts.CommonFilters do
     case filter_op do
       :join ->
         Join.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :preload ->
+        Preload.build(binding_source, filter_op, query, binding_selector, params, opts)
 
       filter_op when filter_op in [:select, :select_merge] ->
         Select.build(binding_source, filter_op, query, binding_selector, params, opts)

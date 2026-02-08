@@ -13,7 +13,7 @@ defmodule EctoShorts.CommonFilters.Filter do
   @boolean_operators [:and, :or]
 
   @common_filters [:ids, :before, :after, :start_date, :end_date]
-  @pagination_filters [:first, :last, :limit, :offset, :order_by, :preload]
+  @pagination_filters [:first, :last, :limit, :offset, :order_by]
 
   @doc "Applies the given filter to the query."
   def build(source, filter, query, binding_selector, {bool_op, params}, opts)
@@ -141,10 +141,6 @@ defmodule EctoShorts.CommonFilters.Filter do
   defp apply_pagination_filter(_source, :order_by, query, _binding_selector, key)
        when is_atom(key) do
     Query.order_by(query, desc: ^key)
-  end
-
-  defp apply_pagination_filter(_source, :preload, query, _binding_selector, value) do
-    Query.preload(query, ^value)
   end
 
   defp apply_dynamic(_, query, nil) do

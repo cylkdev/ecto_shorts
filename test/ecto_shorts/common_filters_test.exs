@@ -4,6 +4,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
   alias EctoShorts.CommonFilters
   alias EctoShorts.Schema.Post
+  alias EctoShorts.Schema.User
 
   import Ecto.Query
   import ExUnit.CaptureLog
@@ -222,6 +223,196 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 = CommonFilters.convert_params_to_filter(q, %{select: %{struct: [:id]}}, [])
 
       assert_sql(expected, q2)
+    end
+
+    test "supports :select_merge {:map, map} for custom field aliases" do
+      expected = from p in Post, select_merge: %{custom_id: p.id}
+      q = Post
+
+      q2 =
+        CommonFilters.convert_params_to_filter(q, %{select_merge: %{map: %{custom_id: :id}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :select_merge {:map, fields} (Ecto map/2)" do
+      expected = from p in Post, select_merge: map(p, [:id, :title])
+      q = Post
+      q2 = CommonFilters.convert_params_to_filter(q, %{select_merge: %{map: [:id, :title]}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :select with :select_merge in one query" do
+      expected = from p in Post, select: map(p, [:id]), select_merge: %{post_title: p.title}
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [select: %{map: [:id]}, select_merge: %{map: %{post_title: :title}}],
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :select_merge supports non-tuple select_merge value" do
+      q = from p in Post, as: :post
+
+      expected = from p in Post, as: :post, select_merge: %{custom_id: p.id}
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{post: %{select_merge: %{map: %{custom_id: :id}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports plain :preload list" do
+      expected = from p in Post, preload: [:author]
+      q2 = CommonFilters.convert_params_to_filter(Post, %{preload: [:author]}, [])
+
+      assert_query(expected, q2)
+    end
+
+    test "supports plain nested :preload keyword list" do
+      expected = from p in Post, preload: [author: [:posts]]
+      q2 = CommonFilters.convert_params_to_filter(Post, %{preload: [author: [:posts]]}, [])
+
+      assert_query(expected, q2)
+    end
+
+    test "supports binding-aware :preload with named binding selector" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          preload: [author: a]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{preload: [author: [binding: [as: :author]]]},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
+    test "supports binding-aware :preload with positional binding selector" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          preload: [author: a]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{preload: [author: [binding: [at: 2]]]},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
+    test "supports mixed selector+nested preload payload in one assoc entry" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          preload: [author: {a, [posts: [:comments]]}]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{preload: [author: [posts: [:comments], binding: [as: :author]]]},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
+    test "supports mixed plain and binding-aware :preload entries" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          preload: [:comments, author: a]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{preload: [:comments, author: [binding: [as: :author]]]},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
+    test "malformed preload binding selector logs warning and skips entry" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{preload: [author: [binding: :author]]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :binding to be [as: atom()] or [at: integer()], got: :author"
+      assert_received {:q2, q2}
+      assert_query(q, q2)
+    end
+
+    test "missing preload binding alias raises Ecto.QueryError" do
+      q = from(p in Post)
+
+      assert_raise Ecto.QueryError, ~r/unknown bind name `:missing`/, fn ->
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{preload: [author: [binding: [as: :missing]]]},
+          []
+        )
+      end
     end
 
     test "supports LOWER operator for scalar fields" do
@@ -675,6 +866,281 @@ defmodule EctoShorts.CommonFiltersTest do
           []
         )
 
+      assert_sql(expected, q2)
+    end
+
+    test "supports canonical :join association entry" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{join: [author: [as: :author]]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports canonical :join schema source entry" do
+      expected =
+        from(p in Post,
+          join: u in User,
+          as: :user_join,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{join: [source: [schema: User], as: :user_join, on: true]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports canonical :join table source entry" do
+      expected =
+        from(p in Post,
+          join: u in "users",
+          as: :users_table,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{join: [source: [table: "users"], as: :users_table, on: true]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports canonical :join query source entry" do
+      user_query = from(u in User, where: u.age >= ^18)
+
+      expected =
+        from(p in Post,
+          join: u in ^user_query,
+          as: :adult_users,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{join: [source: [query: user_query], as: :adult_users, on: true]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports canonical :join subquery source entry" do
+      user_query = from(u in User, where: u.age >= ^18)
+
+      expected =
+        from(p in Post,
+          join: u in subquery(user_query),
+          as: :adult_users_subquery,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{join: [source: [subquery: user_query], as: :adult_users_subquery, on: true]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports canonical :join list of entries and preserves order" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          join: u in "users",
+          as: :users_table,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              [author: [as: :author]],
+              [source: [table: "users"], as: :users_table, on: true]
+            ]
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports canonical :join under named binding selector" do
+      q = from(p in Post, as: :post)
+
+      expected =
+        from(p in Post,
+          as: :post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{post: %{join: [author: [as: :author]]}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports fragment key dispatch through canonical :join source entry" do
+      previous = Application.get_env(:ecto_shorts, :fragments)
+
+      on_exit(fn ->
+        Application.put_env(:ecto_shorts, :fragments, previous)
+      end)
+
+      Application.put_env(:ecto_shorts, :fragments, EctoShorts.TestJoinFragments)
+
+      expected_source_query = from(u in User, where: u.age >= ^21)
+
+      expected =
+        from(p in Post,
+          join: a in ^expected_source_query,
+          as: :active_users,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              source: [fragment: [active_users: [min_age: 21]]],
+              as: :active_users,
+              on: true
+            ]
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports fragment key dispatch through runtime :fragments option" do
+      previous = Application.get_env(:ecto_shorts, :fragments)
+
+      on_exit(fn ->
+        Application.put_env(:ecto_shorts, :fragments, previous)
+      end)
+
+      Application.put_env(:ecto_shorts, :fragments, nil)
+
+      expected_source_query = from(u in User, where: u.age >= ^21)
+
+      expected =
+        from(p in Post,
+          join: a in ^expected_source_query,
+          as: :active_users,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              source: [fragment: [active_users: [min_age: 21]]],
+              as: :active_users,
+              on: true
+            ]
+          },
+          fragments: EctoShorts.TestJoinFragments
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "unknown fragment key logs warning and skips entry" do
+      previous = Application.get_env(:ecto_shorts, :fragments)
+
+      on_exit(fn ->
+        Application.put_env(:ecto_shorts, :fragments, previous)
+      end)
+
+      Application.put_env(:ecto_shorts, :fragments, EctoShorts.TestJoinFragments)
+
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{join: [source: [fragment: [unknown_key: [min_age: 18]]], as: :x, on: true]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~
+               "Fragment callback returned error for key :unknown_key: :unsupported_fragment_key"
+
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
+    end
+
+    test "malformed fragment payload logs warning and skips entry" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{join: [source: [fragment: [a: [x: 1], b: [y: 2]]], as: :x, on: true]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected fragment payload to be a single-entry keyword list"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
+    end
+
+    test "mixed valid and invalid canonical :join entries applies valid entries" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{join: [[author: [as: :author]], 123]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :join params to be a map or list, got: 123"
+      assert_received {:q2, q2}
       assert_sql(expected, q2)
     end
 
