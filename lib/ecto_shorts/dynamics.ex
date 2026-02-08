@@ -54,11 +54,33 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp reduce_dynamic_params(source, left_dynamic, binding_selector, {key, value}, opts) do
-    cond do
-      Keyword.has_key?(opts, :dynamic_adapter) ->
-        dynamic_adapter = dynamic_adapter!(opts)
+    if key in Postgres.operators() do
+      dynamic_adapter = dynamic_adapter!(opts)
 
-        if key in dynamic_adapter.operators() do
+      value
+      |> normalize_expression_params()
+      |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
+        right_dynamic =
+          dynamic_adapter.build_dynamic(source, binding_selector, key, item)
+
+        merge_dynamic(dyn_acc, :and, right_dynamic)
+      end)
+    else
+      dynamic_adapter = dynamic_adapter!(opts)
+
+      if key in dynamic_adapter.operators() do
+        value
+        |> normalize_expression_params()
+        |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
+          right_dynamic =
+            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
+
+          merge_dynamic(dyn_acc, :and, right_dynamic)
+        end)
+      else
+        if source_has_schema?(source) do
+          build_schema_dynamic(source, left_dynamic, binding_selector, {key, value}, opts)
+        else
           value
           |> normalize_expression_params()
           |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
@@ -67,47 +89,8 @@ defmodule EctoShorts.Dynamics do
 
             merge_dynamic(dyn_acc, :and, right_dynamic)
           end)
-        else
-          if source_has_schema?(source) do
-            build_schema_dynamic(source, left_dynamic, binding_selector, {key, value}, opts)
-          else
-            value
-            |> normalize_expression_params()
-            |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
-              right_dynamic =
-                dynamic_adapter.build_dynamic(source, binding_selector, key, item)
-
-              merge_dynamic(dyn_acc, :and, right_dynamic)
-            end)
-          end
         end
-
-      key in Postgres.operators() ->
-        dynamic_adapter = dynamic_adapter!(opts)
-
-        value
-        |> normalize_expression_params()
-        |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
-          right_dynamic =
-            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
-
-          merge_dynamic(dyn_acc, :and, right_dynamic)
-        end)
-
-      source_has_schema?(source) ->
-        build_schema_dynamic(source, left_dynamic, binding_selector, {key, value}, opts)
-
-      true ->
-        dynamic_adapter = dynamic_adapter!(opts)
-
-        value
-        |> normalize_expression_params()
-        |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
-          right_dynamic =
-            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
-
-          merge_dynamic(dyn_acc, :and, right_dynamic)
-        end)
+      end
     end
   end
 
