@@ -336,22 +336,22 @@ defmodule EctoShorts.Dynamics do
   defp dynamic_adapter!(opts) do
     adapter = opts[:dynamic_adapter] || Config.dynamic_adapter()
 
-    if not is_nil(adapter) do
-      adapter
-    else
-      repo = Config.repo!(opts)
+    repo = Config.repo!(opts)
 
-      unless is_atom(repo) and Code.ensure_loaded?(repo) and
-               function_exported?(repo, :__adapter__, 0) do
-        raise ArgumentError,
-              "Expected :repo to be an Ecto.Repo module that exports __adapter__/0, got: #{inspect(repo)}"
-      end
+    unless is_atom(repo) and Code.ensure_loaded?(repo) and
+             function_exported?(repo, :__adapter__, 0) do
+      raise ArgumentError,
+            "Expected :repo to be an Ecto.Repo module that exports __adapter__/0, got: #{inspect(repo)}"
+    end
 
-      case repo.__adapter__() do
-        Ecto.Adapters.Postgres ->
-          Postgres
+    case repo.__adapter__() do
+      Ecto.Adapters.Postgres ->
+        adapter || Postgres
 
-        other ->
+      other ->
+        if not is_nil(adapter) do
+          adapter
+        else
           raise ArgumentError, """
           Unsupported Ecto repo adapter: #{inspect(other)} (repo: #{inspect(repo)}).
 
@@ -361,7 +361,7 @@ defmodule EctoShorts.Dynamics do
 
               dynamic_adapter: MyApp.DynamicExpressionAdapter
           """
-      end
+        end
     end
   end
 end
