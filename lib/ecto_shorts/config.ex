@@ -51,9 +51,9 @@ defmodule EctoShorts.Config do
   @doc """
   Returns the configured join source module.
   """
-  @spec join_source_module :: module() | nil
-  def join_source_module do
-    Application.get_env(@app, :join_source_module)
+  @spec query_source_provider :: module() | nil
+  def query_source_provider do
+    Application.get_env(@app, :query_source_provider)
   end
 
   @doc since: "2.5.0"
@@ -162,18 +162,15 @@ defmodule EctoShorts.Config do
 
   @doc since: "2.5.0"
   @doc """
-  Returns the compiler options.
-
-  Defaults to `[]`.
+  Returns the max positional bindings.
 
   ## Examples
 
-      iex> EctoShorts.Config.compiler()
-      []
+      iex> EctoShorts.Config.max_query_bindings()
   """
-  @spec compiler :: keyword()
-  def compiler do
-    Application.get_env(@app, :compiler) || []
+  @spec max_query_bindings :: integer()
+  def max_query_bindings do
+    Application.get_env(@app, :max_query_bindings) || 10
   end
 
   @doc since: "2.5.0"

@@ -23,7 +23,7 @@ defmodule EctoShorts.Compiler do
   ## Options
 
     * `:specs` (required) - a module that exports `clause_specs/4`
-    * `:max_positional_bindings` - passed to `QueryBindingBuilder` (defaults to `10`)
+    * `:max_query_bindings` - passed to `QueryBindingBuilder` (defaults to `10`)
   """
   defmacro __using__(opts) do
     quote do
@@ -64,9 +64,7 @@ defmodule EctoShorts.Compiler do
     clause_asts = build_clauses(context, specs_module, opts)
 
     quote do
-      @compile_time_max_positional_bindings EctoShorts.Compiler.max_positional_bindings(
-                                              @compiler_options
-                                            )
+      @compile_time_max_query_bindings EctoShorts.Compiler.max_query_bindings(@compiler_options)
 
       defmodule unquote(compiled_module) do
         @moduledoc false
@@ -84,8 +82,8 @@ defmodule EctoShorts.Compiler do
 
       @doc false
       def __mix_recompile__? do
-        EctoShorts.Compiler.max_positional_bindings(@compiler_options) !=
-          @compile_time_max_positional_bindings
+        EctoShorts.Compiler.max_query_bindings(@compiler_options) !=
+          @compile_time_max_query_bindings
       end
     end
   end
@@ -159,17 +157,13 @@ defmodule EctoShorts.Compiler do
   def get_query_binding_contracts(context, opts \\ []) do
     QueryBindingBuilder.query_binding_contracts(
       context,
-      max_positional_bindings(opts)
+      max_query_bindings(opts)
     )
   end
 
   @doc false
-  def max_positional_bindings(opts \\ []) do
-    compiler_config = Config.compiler()
-
-    Keyword.get_lazy(opts, :max_positional_bindings, fn ->
-      Keyword.get(compiler_config, :max_positional_bindings, 10)
-    end)
+  def max_query_bindings(opts \\ []) do
+    opts[:max_query_bindings] || Config.max_query_bindings()
   end
 
   defp clause_ast!(spec) do

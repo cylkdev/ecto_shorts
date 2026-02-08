@@ -3,13 +3,13 @@
 import Config
 
 config :ecto_shorts,
-  mix_env: Mix.env(),
   repo: nil,
   replica: nil,
   error_module: EctoShorts.Actions.Error,
-  join_source_module: nil,
-  hints: [],
-  compiler: []
+  dynamic_adapter: EctoShorts.Dynamics.Adapters.Postgres,
+  max_query_bindings: 10,
+  query_source_provider: nil,
+  hints: []
 
 if Mix.env() === :test do
   config :ecto_shorts, ecto_repos: [EctoShorts.Repo]

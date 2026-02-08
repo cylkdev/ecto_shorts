@@ -1,20 +1,20 @@
 defmodule EctoShorts.Compiler.QueryBindingBuilder do
   @moduledoc false
 
-  def query_binding_contracts(context, max_positional_bindings) do
+  def query_binding_contracts(context, max_query_bindings) do
     binding_alias_var = Macro.var(:binding_alias, context)
     target_binding_var = Macro.var(:q, context)
     step_var = Macro.var(:_, context)
 
     positional_binding_patterns =
-      build_binding_patterns(:positional, target_binding_var, step_var, max_positional_bindings)
+      build_binding_patterns(:positional, target_binding_var, step_var, max_query_bindings)
 
     named_binding_patterns =
       build_binding_patterns(
         :named,
         target_binding_var,
         binding_alias_var,
-        max_positional_bindings
+        max_query_bindings
       )
 
     all_binding_patterns = positional_binding_patterns ++ named_binding_patterns

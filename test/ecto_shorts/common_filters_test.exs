@@ -1062,13 +1062,13 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "supports join source key dispatch through canonical :join source entry" do
-      previous = Application.get_env(:ecto_shorts, :join_source_module)
+      previous = Application.get_env(:ecto_shorts, :query_source_provider)
 
       on_exit(fn ->
-        Application.put_env(:ecto_shorts, :join_source_module, previous)
+        Application.put_env(:ecto_shorts, :query_source_provider, previous)
       end)
 
-      Application.put_env(:ecto_shorts, :join_source_module, EctoShorts.TestJoinSources)
+      Application.put_env(:ecto_shorts, :query_source_provider, EctoShorts.TestJoinSources)
 
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
@@ -1098,7 +1098,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports join source key dispatch through runtime :join_source_module option" do
+    test "supports join source key dispatch through runtime :query_source_provider option" do
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -1121,13 +1121,13 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          join_source_module: EctoShorts.TestJoinSources
+          query_source_provider: EctoShorts.TestJoinSources
         )
 
       assert_sql(expected, q2)
     end
 
-    test "supports join hint key resolution through runtime :join_source_module option" do
+    test "supports join hint key resolution through runtime :query_source_provider option" do
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -1155,7 +1155,7 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          join_source_module: EctoShorts.TestJoinSources
+          query_source_provider: EctoShorts.TestJoinSources
         )
 
       assert_sql(expected, q2)
@@ -1178,7 +1178,7 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              join_source_module: EctoShorts.TestJoinSources
+              query_source_provider: EctoShorts.TestJoinSources
             )
 
           send(self(), {:q2, q2})
@@ -1208,7 +1208,7 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              join_source_module: EctoShorts.TestJoinSources
+              query_source_provider: EctoShorts.TestJoinSources
             )
 
           send(self(), {:q2, q2})

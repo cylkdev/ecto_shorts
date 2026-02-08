@@ -434,7 +434,7 @@ defmodule EctoShorts.CommonFilters.Join do
   end
 
   defp resolve_join_source_expr(binding_selector, source_key, source_params, opts) do
-    mod = Keyword.get(opts, :join_source_module, Config.join_source_module())
+    mod = Keyword.get(opts, :query_source_provider, Config.query_source_provider())
 
     unless Code.ensure_loaded?(mod) and function_exported?(mod, :resolve_join_source, 3) do
       raise ArgumentError,
