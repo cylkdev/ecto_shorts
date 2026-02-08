@@ -14,6 +14,8 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @logger_prefix "EctoShorts.CommonFilters.Join"
 
+  @hints Application.compile_env(:ecto_shorts, :hints, [])
+
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
   @doc false
 
@@ -24,13 +26,13 @@ defmodule EctoShorts.CommonFilters.Join do
   def build(schema_source, :join, query, binding_selector, list, opts) do
     Enum.reduce(list, query, fn
       {join_type, join_options}, q2 when join_type in @join_types ->
-        reduce_join(schema_source, q2, binding_selector, {join_type, join_options}, opts)
+        apply_join(schema_source, q2, binding_selector, {join_type, join_options}, opts)
 
       {key, join_options}, q2 ->
         assocs = CommonSchema.get_schema_reflection(schema_source, :associations) || []
 
         if key in assocs do
-          reduce_join(
+          apply_join(
             schema_source,
             q2,
             binding_selector,
@@ -66,11 +68,11 @@ defmodule EctoShorts.CommonFilters.Join do
     end)
   end
 
-  defp reduce_join(schema_source, query, binding_selector, {join_type, join_options}, opts) do
+  defp apply_join(schema_source, query, binding_selector, {join_type, join_options}, opts) do
     {op_source, join_options} = Keyword.pop(join_options, :source)
 
     if not is_nil(op_source) do
-      build_join_expr(
+      apply_join_expr(
         schema_source,
         query,
         binding_selector,
@@ -89,7 +91,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
   Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
-      defp build_join_expr(
+      defp apply_join_expr(
              schema_source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -101,22 +103,21 @@ defmodule EctoShorts.CommonFilters.Join do
         qualifier = join_options[:qualifier] || :inner
         prefix = join_options[:prefix]
         as = join_options[:as]
+        hints = join_options[:hints]
 
-        joined_query =
-          Query.join(
-            query,
-            qualifier,
-            [unquote_splicing(quoted_binding_body)],
-            joined in assoc(unquote(target_binding_var), ^assoc_key),
-            as: ^as,
-            on: ^on_value,
-            prefix: ^prefix
-          )
-
-        apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
+        compose(
+          query,
+          binding_selector,
+          qualifier,
+          {:association, assoc_key},
+          as,
+          on_value,
+          prefix,
+          hints
+        )
       end
 
-      defp build_join_expr(
+      defp apply_join_expr(
              schema_source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -128,6 +129,7 @@ defmodule EctoShorts.CommonFilters.Join do
         qualifier = join_options[:qualifier] || :inner
         prefix = join_options[:prefix]
         as = join_options[:as]
+        hints = join_options[:hints]
 
         schema_source =
           case target_schema do
@@ -143,21 +145,19 @@ defmodule EctoShorts.CommonFilters.Join do
                     "Expected target schema to be an atom or a tuple of {table, schema}, got: #{inspect(target_schema)}"
           end
 
-        joined_query =
-          Query.join(
-            query,
-            qualifier,
-            [unquote_splicing(quoted_binding_body)],
-            joined in ^schema_source,
-            as: ^as,
-            on: ^on_value,
-            prefix: ^prefix
-          )
-
-        apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
+        compose(
+          query,
+          binding_selector,
+          qualifier,
+          {:source, schema_source},
+          as,
+          on_value,
+          prefix,
+          hints
+        )
       end
 
-      defp build_join_expr(
+      defp apply_join_expr(
              schema_source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -169,22 +169,21 @@ defmodule EctoShorts.CommonFilters.Join do
         qualifier = join_options[:qualifier] || :inner
         prefix = join_options[:prefix]
         as = join_options[:as]
+        hints = join_options[:hints]
 
-        joined_query =
-          Query.join(
-            query,
-            qualifier,
-            [unquote_splicing(quoted_binding_body)],
-            joined in ^table_name,
-            as: ^as,
-            on: ^on_value,
-            prefix: ^prefix
-          )
-
-        apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
+        compose(
+          query,
+          binding_selector,
+          qualifier,
+          {:source, table_name},
+          as,
+          on_value,
+          prefix,
+          hints
+        )
       end
 
-      defp build_join_expr(
+      defp apply_join_expr(
              schema_source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -196,27 +195,26 @@ defmodule EctoShorts.CommonFilters.Join do
         qualifier = join_options[:qualifier] || :inner
         prefix = join_options[:prefix]
         as = join_options[:as]
+        hints = join_options[:hints]
 
         unless is_struct(source_query, Ecto.Query) do
           raise ArgumentError,
                 "Expected source query to be a struct, got: #{inspect(source_query)}"
         end
 
-        joined_query =
-          Query.join(
-            query,
-            qualifier,
-            [unquote_splicing(quoted_binding_body)],
-            joined in ^source_query,
-            as: ^as,
-            on: ^on_value,
-            prefix: ^prefix
-          )
-
-        apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
+        compose(
+          query,
+          binding_selector,
+          qualifier,
+          {:source, source_query},
+          as,
+          on_value,
+          prefix,
+          hints
+        )
       end
 
-      defp build_join_expr(
+      defp apply_join_expr(
              schema_source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -228,6 +226,7 @@ defmodule EctoShorts.CommonFilters.Join do
         qualifier = join_options[:qualifier] || :inner
         prefix = join_options[:prefix]
         as = join_options[:as]
+        hints = join_options[:hints]
 
         subquery_source =
           case params do
@@ -243,18 +242,19 @@ defmodule EctoShorts.CommonFilters.Join do
               CommonFilters.convert_params_to_filter(from, filter_params, opts)
           end
 
-        Query.join(
+        compose(
           query,
+          binding_selector,
           qualifier,
-          [unquote_splicing(quoted_binding_body)],
-          joined in subquery(subquery_source),
-          as: ^as,
-          on: ^on_value,
-          prefix: ^prefix
+          {:subquery, subquery_source},
+          as,
+          on_value,
+          prefix,
+          hints
         )
       end
 
-      defp build_join_expr(
+      defp apply_join_expr(
              schema_source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -266,6 +266,7 @@ defmodule EctoShorts.CommonFilters.Join do
         qualifier = join_options[:qualifier] || :inner
         prefix = join_options[:prefix]
         as = join_options[:as]
+        hints = join_options[:hints]
 
         source_name = params[:name]
         source_values = params[:values]
@@ -280,22 +281,107 @@ defmodule EctoShorts.CommonFilters.Join do
 
         case resolve_join_source_expr(binding_selector, source_name, source_values, opts) do
           {:ok, expr} ->
-            joined_query =
-              Query.join(
-                query,
-                qualifier,
-                [unquote_splicing(quoted_binding_body)],
-                joined in ^expr,
-                as: ^as,
-                on: ^on_value,
-                prefix: ^prefix
-              )
-
-            apply_join_hints(joined_query, binding_selector, join_options[:hints] || [], opts)
+            compose(
+              query,
+              binding_selector,
+              qualifier,
+              {:source, expr},
+              as,
+              on_value,
+              prefix,
+              hints
+            )
 
           :error ->
             query
         end
+      end
+
+      for {hint_key, hint_value} <- @hints do
+        defp compose(
+               query,
+               unquote(quoted_binding_head) = _binding_selector,
+               qualifier,
+               {:association, assoc_key},
+               as,
+               on,
+               prefix,
+               unquote(hint_key)
+             ) do
+          Query.join(
+            query,
+            qualifier,
+            [unquote_splicing(quoted_binding_body)],
+            joined in assoc(unquote(target_binding_var), ^assoc_key),
+            as: ^as,
+            on: ^on,
+            prefix: ^prefix,
+            hints: unquote(hint_value)
+          )
+        end
+      end
+
+      defp compose(
+             query,
+             unquote(quoted_binding_head) = _binding_selector,
+             qualifier,
+             {:association, assoc_key},
+             as,
+             on,
+             prefix,
+             _hints
+           ) do
+        Query.join(
+          query,
+          qualifier,
+          [unquote_splicing(quoted_binding_body)],
+          joined in assoc(unquote(target_binding_var), ^assoc_key),
+          as: ^as,
+          on: ^on,
+          prefix: ^prefix
+        )
+      end
+
+      defp compose(
+             query,
+             unquote(quoted_binding_head) = _binding_selector,
+             qualifier,
+             {:source, source},
+             as,
+             on,
+             prefix,
+             _hints
+           ) do
+        Query.join(
+          query,
+          qualifier,
+          [unquote_splicing(quoted_binding_body)],
+          joined in ^source,
+          as: ^as,
+          on: ^on,
+          prefix: ^prefix
+        )
+      end
+
+      defp compose(
+             query,
+             unquote(quoted_binding_head) = _binding_selector,
+             qualifier,
+             {:subquery, subquery_source},
+             as,
+             on,
+             prefix,
+             _hints
+           ) do
+        Query.join(
+          query,
+          qualifier,
+          [unquote_splicing(quoted_binding_body)],
+          joined in subquery(subquery_source),
+          as: ^as,
+          on: ^on,
+          prefix: ^prefix
+        )
       end
   end
 
@@ -326,37 +412,6 @@ defmodule EctoShorts.CommonFilters.Join do
         )
 
         :error
-    end
-  end
-
-  defp apply_join_hints(query, binding_selector, hints, opts) do
-    mod = Keyword.get(opts, :join_source_module, Config.join_source_module())
-
-    if Code.ensure_loaded?(mod) and function_exported?(mod, :build_hint, 3) do
-      Enum.reduce(hints, query, fn hint_name, query_acc ->
-        case mod.build_hint(query_acc, binding_selector, hint_name) do
-          {:ok, %Ecto.Query{} = query} ->
-            query
-
-          {:error, reason} ->
-            EctoShorts.Logger.warning(
-              @logger_prefix,
-              "Join hint callback returned error for hint #{inspect(hint_name)}: #{inspect(reason)}"
-            )
-
-            :error
-
-          other ->
-            EctoShorts.Logger.warning(
-              @logger_prefix,
-              "Expected join hint callback to return {:ok, source} | {:error, reason}, got: #{inspect(other)}"
-            )
-
-            :error
-        end
-      end)
-    else
-      query
     end
   end
 
