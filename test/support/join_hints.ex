@@ -13,7 +13,7 @@ defmodule EctoShorts.TestJoinHints do
         %Query{} = query,
         _binding_selector,
         %{
-          hints: [:users_age_index],
+          hints: [:test_index],
           qualifier: qualifier,
           as: as,
           prefix: prefix,
@@ -30,7 +30,7 @@ defmodule EctoShorts.TestJoinHints do
         as: ^as,
         on: true,
         prefix: ^prefix,
-        hints: ["USE INDEX(users_age_index)"]
+        hints: ["USE INDEX(test_index)"]
       )
 
     {:ok, hinted_query}

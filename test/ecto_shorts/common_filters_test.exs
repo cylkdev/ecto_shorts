@@ -1135,7 +1135,8 @@ defmodule EctoShorts.CommonFiltersTest do
         from(p in Post,
           join: a in ^expected_source_query,
           as: :active_users,
-          on: true
+          on: true,
+          hints: ["USE INDEX(test_index)"]
         )
 
       q2 =
@@ -1145,7 +1146,7 @@ defmodule EctoShorts.CommonFiltersTest do
             join: [
               fragment: [
                 source: %{name: :active_users, values: [min_age: 21]},
-                hints: :users_age_index,
+                hints: :test_index,
                 as: :active_users,
                 on: true
               ]
@@ -1155,7 +1156,6 @@ defmodule EctoShorts.CommonFiltersTest do
         )
 
       assert_sql(expected, q2)
-      assert [%Ecto.Query.JoinExpr{hints: ["USE INDEX(users_age_index)"]}] = q2.joins
     end
 
     test "unknown join source key logs warning and skips entry" do

@@ -7,8 +7,8 @@ defmodule EctoShorts.TestJoinSources do
     build_resolve_join_source(source_key, params, binding_selector)
   end
 
-  def resolve_join_hint(_schema_source, :users_age_index) do
-    {:ok, "USE INDEX(users_age_index)"}
+  def resolve_join_hint(_schema_source, :test_index) do
+    {:ok, "USE INDEX(test_index)"}
   end
 
   def resolve_join_hint(_schema_source, _hint_name) do
