@@ -892,7 +892,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{join: [source: [schema: User], as: :user_join, on: true]},
+          %{join: [schema: [source: User, as: :user_join, on: true]]},
           []
         )
 
