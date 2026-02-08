@@ -7,7 +7,7 @@ defmodule EctoShorts.Dynamics.DynamicExpressionAdapterOptsTest do
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
 
-  test "convert_to_dynamic/4 accepts :expression_adapter override" do
+  test "convert_to_dynamic/4 accepts :dynamic_adapter override" do
     expected = dynamic([q], field(q, ^:views) == ^:override)
 
     actual =
@@ -15,7 +15,7 @@ defmodule EctoShorts.Dynamics.DynamicExpressionAdapterOptsTest do
         Post,
         {:as, nil},
         {:views, 1},
-        expression_adapter: EctoShorts.TestDynamicExpressionAdapter
+        dynamic_adapter: EctoShorts.TestDynamicExpressionAdapter
       )
 
     assert_dynamic(expected, actual)
@@ -23,7 +23,7 @@ defmodule EctoShorts.Dynamics.DynamicExpressionAdapterOptsTest do
 
   test "convert_to_dynamic/4 raises for unsupported repo adapter" do
     assert_raise ArgumentError,
-                 "Expected :repo to be an Ecto.Repo module that exports __adapter__/0, got: EctoShorts.TestUnsupportedRepo",
+                 ~r/Unsupported Ecto repo adapter/,
                  fn ->
                    Dynamics.convert_to_dynamic(
                      Post,

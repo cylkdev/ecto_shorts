@@ -1145,7 +1145,10 @@ defmodule EctoShorts.CommonFiltersTest do
           %{
             join: [
               fragment: [
-                source: %{name: :active_users, values: [min_age: 21]},
+                source: %{
+                  name: :active_users,
+                  values: [min_age: 21]
+                },
                 hints: :test_index,
                 as: :active_users,
                 on: true

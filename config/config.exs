@@ -9,7 +9,7 @@ config :ecto_shorts,
   error_module: EctoShorts.Actions.Error,
   join_source_module: nil,
   hints: [],
-  compiler: [max_positional_bindings: 10]
+  compiler: []
 
 if Mix.env() === :test do
   config :ecto_shorts, ecto_repos: [EctoShorts.Repo]
@@ -25,5 +25,5 @@ if Mix.env() === :test do
     log: :debug,
     stacktrace: true,
     pool: Ecto.Adapters.SQL.Sandbox,
-    pool_size: 10
+    pool_size: 30
 end

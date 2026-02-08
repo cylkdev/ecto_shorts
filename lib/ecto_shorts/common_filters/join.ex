@@ -105,7 +105,7 @@ defmodule EctoShorts.CommonFilters.Join do
         as = join_options[:as]
         hints = join_options[:hints]
 
-        compose(
+        build_join(
           query,
           binding_selector,
           qualifier,
@@ -145,7 +145,7 @@ defmodule EctoShorts.CommonFilters.Join do
                     "Expected target schema to be an atom or a tuple of {table, schema}, got: #{inspect(target_schema)}"
           end
 
-        compose(
+        build_join(
           query,
           binding_selector,
           qualifier,
@@ -171,7 +171,7 @@ defmodule EctoShorts.CommonFilters.Join do
         as = join_options[:as]
         hints = join_options[:hints]
 
-        compose(
+        build_join(
           query,
           binding_selector,
           qualifier,
@@ -202,7 +202,7 @@ defmodule EctoShorts.CommonFilters.Join do
                 "Expected source query to be a struct, got: #{inspect(source_query)}"
         end
 
-        compose(
+        build_join(
           query,
           binding_selector,
           qualifier,
@@ -242,7 +242,7 @@ defmodule EctoShorts.CommonFilters.Join do
               CommonFilters.convert_params_to_filter(from, filter_params, opts)
           end
 
-        compose(
+        build_join(
           query,
           binding_selector,
           qualifier,
@@ -281,7 +281,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
         case resolve_join_source_expr(binding_selector, source_name, source_values, opts) do
           {:ok, expr} ->
-            compose(
+            build_join(
               query,
               binding_selector,
               qualifier,
@@ -298,7 +298,7 @@ defmodule EctoShorts.CommonFilters.Join do
       end
 
       for {hint_key, hint_value} <- @hints do
-        defp compose(
+        defp build_join(
                query,
                unquote(quoted_binding_head) = _binding_selector,
                qualifier,
@@ -321,7 +321,7 @@ defmodule EctoShorts.CommonFilters.Join do
         end
       end
 
-      defp compose(
+      defp build_join(
              query,
              unquote(quoted_binding_head) = _binding_selector,
              qualifier,
@@ -343,7 +343,7 @@ defmodule EctoShorts.CommonFilters.Join do
       end
 
       for {hint_key, hint_value} <- @hints do
-        defp compose(
+        defp build_join(
                query,
                unquote(quoted_binding_head) = _binding_selector,
                qualifier,
@@ -366,7 +366,7 @@ defmodule EctoShorts.CommonFilters.Join do
         end
       end
 
-      defp compose(
+      defp build_join(
              query,
              unquote(quoted_binding_head) = _binding_selector,
              qualifier,
@@ -388,7 +388,7 @@ defmodule EctoShorts.CommonFilters.Join do
       end
 
       for {hint_key, hint_value} <- @hints do
-        defp compose(
+        defp build_join(
                query,
                unquote(quoted_binding_head) = _binding_selector,
                qualifier,
@@ -411,7 +411,7 @@ defmodule EctoShorts.CommonFilters.Join do
         end
       end
 
-      defp compose(
+      defp build_join(
              query,
              unquote(quoted_binding_head) = _binding_selector,
              qualifier,

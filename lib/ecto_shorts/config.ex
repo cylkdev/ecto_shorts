@@ -31,22 +31,6 @@ defmodule EctoShorts.Config do
     Application.get_env(@app, :repo)
   end
 
-  @doc """
-  Returns the configured `:compiler` keyword options from the `:ecto_shorts`
-  application environment.
-
-  Defaults to `[]` if not set.
-
-  ## Examples
-
-      iex> EctoShorts.Config.compiler()
-      [max_positional_bindings: 10]
-  """
-  @spec compiler :: keyword()
-  def compiler do
-    Application.get_env(@app, :compiler, [])
-  end
-
   @doc since: "2.5.0"
   @doc """
   Returns the configured `:replica` value from the `:ecto_shorts` application environment.
@@ -174,5 +158,36 @@ defmodule EctoShorts.Config do
           ```
       """
     end
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  Returns the compiler options.
+
+  Defaults to `[]`.
+
+  ## Examples
+
+      iex> EctoShorts.Config.compiler()
+      []
+  """
+  @spec compiler :: keyword()
+  def compiler do
+    Application.get_env(@app, :compiler) || []
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  Returns the dynamic adapter module.
+
+  Defaults to `nil`.
+
+  ## Examples
+
+      iex> EctoShorts.Config.dynamic_adapter()
+  """
+  @spec dynamic_adapter :: module() | nil
+  def dynamic_adapter do
+    Application.get_env(@app, :dynamic_adapter)
   end
 end

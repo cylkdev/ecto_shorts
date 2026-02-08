@@ -55,15 +55,15 @@ defmodule EctoShorts.Dynamics do
 
   defp reduce_dynamic_params(source, left_dynamic, binding_selector, {key, value}, opts) do
     cond do
-      Keyword.has_key?(opts, :expression_adapter) ->
-        expression_adapter = expression_adapter!(opts)
+      Keyword.has_key?(opts, :dynamic_adapter) ->
+        dynamic_adapter = dynamic_adapter!(opts)
 
-        if key in expression_adapter.operators() do
+        if key in dynamic_adapter.operators() do
           value
           |> normalize_expression_params()
           |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
             right_dynamic =
-              expression_adapter.build_dynamic(source, binding_selector, key, item)
+              dynamic_adapter.build_dynamic(source, binding_selector, key, item)
 
             merge_dynamic(dyn_acc, :and, right_dynamic)
           end)
@@ -75,7 +75,7 @@ defmodule EctoShorts.Dynamics do
             |> normalize_expression_params()
             |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
               right_dynamic =
-                expression_adapter.build_dynamic(source, binding_selector, key, item)
+                dynamic_adapter.build_dynamic(source, binding_selector, key, item)
 
               merge_dynamic(dyn_acc, :and, right_dynamic)
             end)
@@ -83,13 +83,13 @@ defmodule EctoShorts.Dynamics do
         end
 
       key in Postgres.operators() ->
-        expression_adapter = expression_adapter!(opts)
+        dynamic_adapter = dynamic_adapter!(opts)
 
         value
         |> normalize_expression_params()
         |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
           right_dynamic =
-            expression_adapter.build_dynamic(source, binding_selector, key, item)
+            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
 
           merge_dynamic(dyn_acc, :and, right_dynamic)
         end)
@@ -98,13 +98,13 @@ defmodule EctoShorts.Dynamics do
         build_schema_dynamic(source, left_dynamic, binding_selector, {key, value}, opts)
 
       true ->
-        expression_adapter = expression_adapter!(opts)
+        dynamic_adapter = dynamic_adapter!(opts)
 
         value
         |> normalize_expression_params()
         |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
           right_dynamic =
-            expression_adapter.build_dynamic(source, binding_selector, key, item)
+            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
 
           merge_dynamic(dyn_acc, :and, right_dynamic)
         end)
@@ -208,7 +208,8 @@ defmodule EctoShorts.Dynamics do
     reduce_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts)
   end
 
-  # NOTE: `{bool_op, values}` can mean two different things:
+  #
+  # `{bool_op, values}` can mean two different things:
   #
   # 1) Same-field comparisons (apply to `key`):
   #
@@ -220,16 +221,6 @@ defmodule EctoShorts.Dynamics do
   #    %{id: %{or: [%{published: true, views: 20}, %{published: false, views: 10}]}}
   #    -> each list item is a full "AND group" across multiple fields
   #
-  # If we always wrap entries as `{key, entry}` (ex: `{id, %{published: true}}`),
-  # the inner field tuples (`{:published, true}`) can accidentally get treated as
-  # values for `:id`, which will likely crash due to there being no matching clause.
-  #
-  # (In practice, this will crash in the adapter expression builder when no
-  # matching `apply_dynamic_expr/3` clause exists for the unexpected shape.)
-  #
-  # So: for composite entries we pass `values` through unchanged and let the
-  # existing reducer recurse into each field; for same-field comparisons we
-  # wrap them as `{key, comparison}`.
   defp reduce_dynamic_expr(
          source,
          left_dynamic,
@@ -267,13 +258,13 @@ defmodule EctoShorts.Dynamics do
          {op, value},
          opts
        ) do
-    expression_adapter = expression_adapter!(opts)
+    dynamic_adapter = dynamic_adapter!(opts)
 
     value
     |> normalize_expression_params()
     |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
       right_dynamic =
-        expression_adapter.build_dynamic(source, binding_selector, key, {op, item})
+        dynamic_adapter.build_dynamic(source, binding_selector, key, {op, item})
 
       merge_dynamic(dyn_acc, :and, right_dynamic)
     end)
@@ -359,77 +350,33 @@ defmodule EctoShorts.Dynamics do
     Keyword.keyword?(list) or Enum.any?(list, &is_map/1)
   end
 
-  defp expression_adapter!(opts) do
-    case Keyword.get(opts, :expression_adapter) do
-      nil ->
-        repo = Keyword.get(opts, :repo) || Config.repo()
+  defp dynamic_adapter!(opts) do
+    if Keyword.has_key?(opts, :dynamic_adapter) do
+      Keyword.fetch!(opts, :dynamic_adapter)
+    else
+      repo = Config.repo!(opts)
 
-        if is_nil(repo) do
-          raise ArgumentError, """
-          Missing :repo option for dynamic expression adapter detection.
-
-          Expected one of the following:
-
-            * Pass `repo: MyApp.Repo`
-            * Pass `expression_adapter: MyApp.DynamicExpressionAdapter`
-            * Configure a default repo:
-
-                config :ecto_shorts, :repo, MyApp.Repo
-          """
-        end
-
-        unless is_atom(repo) and function_exported?(repo, :__adapter__, 0) do
-          raise ArgumentError,
-                "Expected :repo to be an Ecto.Repo module that exports __adapter__/0, got: #{inspect(repo)}"
-        end
-
-        adapter = repo.__adapter__()
-
-        case adapter do
-          Ecto.Adapters.Postgres ->
-            Postgres
-
-          other ->
-            raise ArgumentError, """
-            Unsupported Ecto repo adapter: #{inspect(other)} (repo: #{inspect(repo)}).
-
-            EctoShorts currently supports dynamic expressions for Postgres only.
-
-            Use an Ecto SQL adapter with Postgres, or provide a custom dynamic expression adapter module via:
-
-                expression_adapter: MyApp.DynamicExpressionAdapter
-            """
-        end
-
-      module ->
-        validate_expression_adapter!(module)
-        module
-    end
-  end
-
-  defp validate_expression_adapter!(module) do
-    unless is_atom(module) do
-      raise ArgumentError,
-            "Expected :expression_adapter to be a module, got: #{inspect(module)}"
-    end
-
-    case Code.ensure_compiled(module) do
-      {:module, _} ->
-        :ok
-
-      {:error, reason} ->
+      unless is_atom(repo) and Code.ensure_loaded?(repo) and
+               function_exported?(repo, :__adapter__, 0) do
         raise ArgumentError,
-              "Expected :expression_adapter to be a compiled module, got: #{inspect(module)} (#{inspect(reason)})"
-    end
+              "Expected :repo to be an Ecto.Repo module that exports __adapter__/0, got: #{inspect(repo)}"
+      end
 
-    unless function_exported?(module, :operators, 0) do
-      raise ArgumentError,
-            "Expected :expression_adapter #{inspect(module)} to export operators/0"
-    end
+      case repo.__adapter__() do
+        Ecto.Adapters.Postgres ->
+          Postgres
 
-    unless function_exported?(module, :build_dynamic, 4) do
-      raise ArgumentError,
-            "Expected :expression_adapter #{inspect(module)} to export build_dynamic/4"
+        other ->
+          raise ArgumentError, """
+          Unsupported Ecto repo adapter: #{inspect(other)} (repo: #{inspect(repo)}).
+
+          EctoShorts currently supports dynamic expressions for Postgres only.
+
+          Use an Ecto SQL adapter with Postgres, or provide a custom dynamic expression adapter module via:
+
+              dynamic_adapter: MyApp.DynamicExpressionAdapter
+          """
+      end
     end
   end
 end
