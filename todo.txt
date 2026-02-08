@@ -1,1 +1,2 @@
 add support for :first and :last
+joins need to always select the last binding

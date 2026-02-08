@@ -1,18 +1,10 @@
-defmodule EctoShorts.TestJoinSources do
+defmodule EctoShorts.TestQuerySourceProvider do
   @moduledoc false
 
   import Ecto.Query
 
   def resolve_join_source(binding_selector, source_key, params) do
     build_resolve_join_source(source_key, params, binding_selector)
-  end
-
-  def resolve_join_hint(_schema_source, :test_index) do
-    {:ok, "USE INDEX(test_index)"}
-  end
-
-  def resolve_join_hint(_schema_source, _hint_name) do
-    {:error, :unsupported_hint_key}
   end
 
   def build_resolve_join_source(:active_users, params, _binding_selector) do

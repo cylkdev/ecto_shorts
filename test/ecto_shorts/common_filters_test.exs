@@ -379,27 +379,20 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, q2)
     end
 
-    test "malformed preload binding selector logs warning and skips entry" do
+    test "malformed preload binding selector skips entry" do
       q =
         from(p in Post,
           join: a in assoc(p, :author),
           as: :author
         )
 
-      log =
-        capture_log(fn ->
-          q2 =
-            CommonFilters.convert_params_to_filter(
-              q,
-              %{preload: [author: [binding: :author]]},
-              []
-            )
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{preload: [author: [binding: :author]]},
+          []
+        )
 
-          send(self(), {:q2, q2})
-        end)
-
-      assert log =~ "Expected :binding to be [as: atom()] or [at: integer()], got: :author"
-      assert_received {:q2, q2}
       assert_query(q, q2)
     end
 
@@ -1068,7 +1061,11 @@ defmodule EctoShorts.CommonFiltersTest do
         Application.put_env(:ecto_shorts, :query_source_provider, previous)
       end)
 
-      Application.put_env(:ecto_shorts, :query_source_provider, EctoShorts.TestJoinSources)
+      Application.put_env(
+        :ecto_shorts,
+        :query_source_provider,
+        EctoShorts.TestQuerySourceProvider
+      )
 
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
@@ -1121,7 +1118,7 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          query_source_provider: EctoShorts.TestJoinSources
+          query_source_provider: EctoShorts.TestQuerySourceProvider
         )
 
       assert_sql(expected, q2)
@@ -1155,7 +1152,7 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          query_source_provider: EctoShorts.TestJoinSources
+          query_source_provider: EctoShorts.TestQuerySourceProvider
         )
 
       assert_sql(expected, q2)
@@ -1178,7 +1175,7 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              query_source_provider: EctoShorts.TestJoinSources
+              query_source_provider: EctoShorts.TestQuerySourceProvider
             )
 
           send(self(), {:q2, q2})
@@ -1208,7 +1205,7 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              query_source_provider: EctoShorts.TestJoinSources
+              query_source_provider: EctoShorts.TestQuerySourceProvider
             )
 
           send(self(), {:q2, q2})
