@@ -102,15 +102,18 @@ defmodule EctoShorts.CommonFilters.Join do
         prefix = join_options[:prefix]
         as = join_options[:as]
 
-        Query.join(
-          query,
-          qualifier,
-          [unquote_splicing(quoted_binding_body)],
-          joined in assoc(unquote(target_binding_var), ^assoc_key),
-          as: ^as,
-          on: ^on_value,
-          prefix: ^prefix
-        )
+        joined_query =
+          Query.join(
+            query,
+            qualifier,
+            [unquote_splicing(quoted_binding_body)],
+            joined in assoc(unquote(target_binding_var), ^assoc_key),
+            as: ^as,
+            on: ^on_value,
+            prefix: ^prefix
+          )
+
+        apply_join_hints(joined_query, join_options[:hints] || [], opts)
       end
 
       defp build_join_expr(
@@ -140,15 +143,18 @@ defmodule EctoShorts.CommonFilters.Join do
                     "Expected target schema to be an atom or a tuple of {table, schema}, got: #{inspect(target_schema)}"
           end
 
-        Query.join(
-          query,
-          qualifier,
-          [unquote_splicing(quoted_binding_body)],
-          joined in ^schema_source,
-          as: ^as,
-          on: ^on_value,
-          prefix: ^prefix
-        )
+        joined_query =
+          Query.join(
+            query,
+            qualifier,
+            [unquote_splicing(quoted_binding_body)],
+            joined in ^schema_source,
+            as: ^as,
+            on: ^on_value,
+            prefix: ^prefix
+          )
+
+        apply_join_hints(joined_query, join_options[:hints] || [], opts)
       end
 
       defp build_join_expr(
@@ -164,15 +170,18 @@ defmodule EctoShorts.CommonFilters.Join do
         prefix = join_options[:prefix]
         as = join_options[:as]
 
-        Query.join(
-          query,
-          qualifier,
-          [unquote_splicing(quoted_binding_body)],
-          joined in ^table_name,
-          as: ^as,
-          on: ^on_value,
-          prefix: ^prefix
-        )
+        joined_query =
+          Query.join(
+            query,
+            qualifier,
+            [unquote_splicing(quoted_binding_body)],
+            joined in ^table_name,
+            as: ^as,
+            on: ^on_value,
+            prefix: ^prefix
+          )
+
+        apply_join_hints(joined_query, join_options[:hints] || [], opts)
       end
 
       defp build_join_expr(
@@ -193,15 +202,18 @@ defmodule EctoShorts.CommonFilters.Join do
                 "Expected source query to be a struct, got: #{inspect(source_query)}"
         end
 
-        Query.join(
-          query,
-          qualifier,
-          [unquote_splicing(quoted_binding_body)],
-          joined in ^source_query,
-          as: ^as,
-          on: ^on_value,
-          prefix: ^prefix
-        )
+        joined_query =
+          Query.join(
+            query,
+            qualifier,
+            [unquote_splicing(quoted_binding_body)],
+            joined in ^source_query,
+            as: ^as,
+            on: ^on_value,
+            prefix: ^prefix
+          )
+
+        apply_join_hints(joined_query, join_options[:hints] || [], opts)
       end
 
       defp build_join_expr(
@@ -268,15 +280,18 @@ defmodule EctoShorts.CommonFilters.Join do
 
         case resolve_join_source_expr(binding_selector, source_name, source_values, opts) do
           {:ok, expr} ->
-            Query.join(
-              query,
-              qualifier,
-              [unquote_splicing(quoted_binding_body)],
-              joined in ^expr,
-              as: ^as,
-              on: ^on_value,
-              prefix: ^prefix
-            )
+            joined_query =
+              Query.join(
+                query,
+                qualifier,
+                [unquote_splicing(quoted_binding_body)],
+                joined in ^expr,
+                as: ^as,
+                on: ^on_value,
+                prefix: ^prefix
+              )
+
+            apply_join_hints(joined_query, join_options[:hints] || [], opts)
 
           :error ->
             query
@@ -285,12 +300,7 @@ defmodule EctoShorts.CommonFilters.Join do
   end
 
   defp resolve_join_source_expr(binding_selector, source_key, source_params, opts) do
-    mod =
-      Keyword.get(
-        opts,
-        :join_source_module,
-        Config.join_source_module()
-      )
+    mod = Keyword.get(opts, :join_source_module, Config.join_source_module())
 
     unless Code.ensure_loaded?(mod) and function_exported?(mod, :resolve_join_source, 3) do
       raise ArgumentError,
@@ -316,6 +326,37 @@ defmodule EctoShorts.CommonFilters.Join do
         )
 
         :error
+    end
+  end
+
+  defp apply_join_hints(query, hints, opts) do
+    mod = Keyword.get(opts, :join_source_module, Config.join_source_module())
+
+    if Code.ensure_loaded?(mod) and function_exported?(mod, :build_hint, 2) do
+      Enum.reduce(hints, query, fn hint_name, query_acc ->
+        case mod.build_hint(query_acc, hint_name) do
+          {:ok, %Ecto.Query{} = query} ->
+            query
+
+          {:error, reason} ->
+            EctoShorts.Logger.warning(
+              @logger_prefix,
+              "Join hint callback returned error for hint #{inspect(hint_name)}: #{inspect(reason)}"
+            )
+
+            :error
+
+          other ->
+            EctoShorts.Logger.warning(
+              @logger_prefix,
+              "Expected join hint callback to return {:ok, source} | {:error, reason}, got: #{inspect(other)}"
+            )
+
+            :error
+        end
+      end)
+    else
+      query
     end
   end
 

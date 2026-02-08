@@ -7,6 +7,14 @@ defmodule EctoShorts.TestJoinSources do
     build_resolve_join_source(source_key, params, binding_selector)
   end
 
+  def resolve_join_hint(_schema_source, :users_age_index) do
+    {:ok, "USE INDEX(users_age_index)"}
+  end
+
+  def resolve_join_hint(_schema_source, _hint_name) do
+    {:error, :unsupported_hint_key}
+  end
+
   def build_resolve_join_source(:active_users, params, _binding_selector) do
     params = normalize_params(params)
 

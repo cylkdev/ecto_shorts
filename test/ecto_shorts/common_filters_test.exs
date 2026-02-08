@@ -1127,11 +1127,9 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports join hints option through runtime :join_source_module option" do
-      base_source_query =
+    test "supports join hint key resolution through runtime :join_source_module option" do
+      expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
-
-      expected_source_query = from(u in base_source_query, hints: ["USE INDEX(users_age_index)"])
 
       expected =
         from(p in Post,
@@ -1147,7 +1145,7 @@ defmodule EctoShorts.CommonFiltersTest do
             join: [
               fragment: [
                 source: %{name: :active_users, values: [min_age: 21]},
-                hints: ["USE INDEX(users_age_index)"],
+                hints: :users_age_index,
                 as: :active_users,
                 on: true
               ]
@@ -1157,6 +1155,7 @@ defmodule EctoShorts.CommonFiltersTest do
         )
 
       assert_sql(expected, q2)
+      assert [%Ecto.Query.JoinExpr{hints: ["USE INDEX(users_age_index)"]}] = q2.joins
     end
 
     test "unknown join source key logs warning and skips entry" do
