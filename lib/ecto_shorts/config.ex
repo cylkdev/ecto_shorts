@@ -13,8 +13,10 @@ defmodule EctoShorts.Config do
       iex> EctoShorts.Config.error_module()
       EctoShorts.Actions.Error
   """
-  @spec error_module :: module() | nil
-  def error_module, do: Application.get_env(@app, :error_module)
+  @spec error_module :: module()
+  def error_module do
+    Application.get_env(@app, :error_module) || EctoShorts.Actions.Error
+  end
 
   @doc """
   Returns the configured `:repo` value from the `:ecto_shorts` application environment.
