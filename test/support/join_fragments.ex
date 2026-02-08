@@ -5,6 +5,10 @@ defmodule EctoShorts.TestJoinFragments do
 
   alias EctoShorts.Schema.User
 
+  def fragment(binding_selector, fragment_key, params) do
+    build_fragment_source(fragment_key, params, binding_selector)
+  end
+
   def build_fragment_source(:active_users, params, _binding_selector) do
     params = normalize_params(params)
 

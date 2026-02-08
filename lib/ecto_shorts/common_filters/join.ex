@@ -22,6 +22,10 @@ defmodule EctoShorts.CommonFilters.Join do
   end
 
   def build(schema_source, :join, query, binding_selector, params, opts) do
+    apply_join(schema_source, query, binding_selector, params, opts)
+  end
+
+  defp apply_join(schema_source, query, binding_selector, params, opts) do
     Enum.reduce(params, query, fn
       {join_type, join_options}, q2 when join_type in @join_types ->
         reduce_join(schema_source, q2, binding_selector, {join_type, join_options}, opts)
@@ -52,7 +56,7 @@ defmodule EctoShorts.CommonFilters.Join do
     {join_source, join_options} = Keyword.pop(join_options, :source)
 
     if not is_nil(join_source) do
-      apply_join_expr(
+      build_join_expr(
         source,
         query,
         binding_selector,
@@ -71,7 +75,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
   Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
-      defp apply_join_expr(
+      defp build_join_expr(
              source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -95,7 +99,7 @@ defmodule EctoShorts.CommonFilters.Join do
         )
       end
 
-      defp apply_join_expr(
+      defp build_join_expr(
              source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -133,7 +137,7 @@ defmodule EctoShorts.CommonFilters.Join do
         )
       end
 
-      defp apply_join_expr(
+      defp build_join_expr(
              source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -157,7 +161,7 @@ defmodule EctoShorts.CommonFilters.Join do
         )
       end
 
-      defp apply_join_expr(
+      defp build_join_expr(
              source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -186,7 +190,7 @@ defmodule EctoShorts.CommonFilters.Join do
         )
       end
 
-      defp apply_join_expr(
+      defp build_join_expr(
              source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -226,7 +230,7 @@ defmodule EctoShorts.CommonFilters.Join do
         )
       end
 
-      defp apply_join_expr(
+      defp build_join_expr(
              source,
              query,
              unquote(quoted_binding_head) = binding_selector,
@@ -271,7 +275,7 @@ defmodule EctoShorts.CommonFilters.Join do
   defp resolve_fragment(binding_selector, fragment_key, fragment_params, opts) do
     mod = Keyword.get(opts, :fragment_module, Config.fragment_module())
 
-    unless function_exported?(mod, :fragment, 3) do
+    unless Code.ensure_loaded?(mod) and function_exported?(mod, :fragment, 3) do
       raise ArgumentError,
             "Expected fragment module to have a fragment/3 function, got: #{inspect(mod)}"
     end

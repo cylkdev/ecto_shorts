@@ -910,7 +910,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{join: [source: [table: "users"], as: :users_table, on: true]},
+          %{join: [table: [source: "users", as: :users_table, on: true]]},
           []
         )
 
@@ -930,7 +930,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{join: [source: [query: user_query], as: :adult_users, on: true]},
+          %{join: [query: [source: user_query, as: :adult_users, on: true]]},
           []
         )
 
@@ -950,7 +950,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{join: [source: [subquery: user_query], as: :adult_users_subquery, on: true]},
+          %{join: [subquery: [source: user_query, as: :adult_users_subquery, on: true]]},
           []
         )
 
@@ -972,8 +972,8 @@ defmodule EctoShorts.CommonFiltersTest do
           Post,
           %{
             join: [
-              [author: [as: :author]],
-              [source: [table: "users"], as: :users_table, on: true]
+              author: [as: :author],
+              table: [source: "users", as: :users_table, on: true]
             ]
           },
           []
@@ -1003,13 +1003,13 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "supports fragment key dispatch through canonical :join source entry" do
-      previous = Application.get_env(:ecto_shorts, :fragments)
+      previous = Application.get_env(:ecto_shorts, :fragment_module)
 
       on_exit(fn ->
-        Application.put_env(:ecto_shorts, :fragments, previous)
+        Application.put_env(:ecto_shorts, :fragment_module, previous)
       end)
 
-      Application.put_env(:ecto_shorts, :fragments, EctoShorts.TestJoinFragments)
+      Application.put_env(:ecto_shorts, :fragment_module, EctoShorts.TestJoinFragments)
 
       expected_source_query = from(u in User, where: u.age >= ^21)
 
@@ -1025,9 +1025,11 @@ defmodule EctoShorts.CommonFiltersTest do
           Post,
           %{
             join: [
-              source: [fragment: [active_users: [min_age: 21]]],
-              as: :active_users,
-              on: true
+              fragment: [
+                source: %{name: :active_users, values: [min_age: 21]},
+                as: :active_users,
+                on: true
+              ]
             ]
           },
           []
@@ -1036,14 +1038,14 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports fragment key dispatch through runtime :fragments option" do
-      previous = Application.get_env(:ecto_shorts, :fragments)
+    test "supports fragment key dispatch through runtime :fragment_module option" do
+      previous = Application.get_env(:ecto_shorts, :fragment_module)
 
       on_exit(fn ->
-        Application.put_env(:ecto_shorts, :fragments, previous)
+        Application.put_env(:ecto_shorts, :fragment_module, previous)
       end)
 
-      Application.put_env(:ecto_shorts, :fragments, nil)
+      Application.put_env(:ecto_shorts, :fragment_module, nil)
 
       expected_source_query = from(u in User, where: u.age >= ^21)
 
@@ -1059,25 +1061,27 @@ defmodule EctoShorts.CommonFiltersTest do
           Post,
           %{
             join: [
-              source: [fragment: [active_users: [min_age: 21]]],
-              as: :active_users,
-              on: true
+              fragment: [
+                source: %{name: :active_users, values: [min_age: 21]},
+                as: :active_users,
+                on: true
+              ]
             ]
           },
-          fragments: EctoShorts.TestJoinFragments
+          fragment_module: EctoShorts.TestJoinFragments
         )
 
       assert_sql(expected, q2)
     end
 
     test "unknown fragment key logs warning and skips entry" do
-      previous = Application.get_env(:ecto_shorts, :fragments)
+      previous = Application.get_env(:ecto_shorts, :fragment_module)
 
       on_exit(fn ->
-        Application.put_env(:ecto_shorts, :fragments, previous)
+        Application.put_env(:ecto_shorts, :fragment_module, previous)
       end)
 
-      Application.put_env(:ecto_shorts, :fragments, EctoShorts.TestJoinFragments)
+      Application.put_env(:ecto_shorts, :fragment_module, EctoShorts.TestJoinFragments)
 
       q = from(p in Post)
 
@@ -1086,7 +1090,15 @@ defmodule EctoShorts.CommonFiltersTest do
           q2 =
             CommonFilters.convert_params_to_filter(
               q,
-              %{join: [source: [fragment: [unknown_key: [min_age: 18]]], as: :x, on: true]},
+              %{
+                join: [
+                  fragment: [
+                    source: %{name: :unknown_key, values: [min_age: 18]},
+                    as: :x,
+                    on: true
+                  ]
+                ]
+              },
               []
             )
 
@@ -1101,6 +1113,14 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "malformed fragment payload logs warning and skips entry" do
+      previous = Application.get_env(:ecto_shorts, :fragment_module)
+
+      on_exit(fn ->
+        Application.put_env(:ecto_shorts, :fragment_module, previous)
+      end)
+
+      Application.put_env(:ecto_shorts, :fragment_module, EctoShorts.TestJoinFragments)
+
       q = from(p in Post)
 
       log =
@@ -1108,14 +1128,24 @@ defmodule EctoShorts.CommonFiltersTest do
           q2 =
             CommonFilters.convert_params_to_filter(
               q,
-              %{join: [source: [fragment: [a: [x: 1], b: [y: 2]]], as: :x, on: true]},
+              %{
+                join: [
+                  fragment: [
+                    source: %{name: :active_users, values: [a: [x: 1], b: [y: 2]]},
+                    as: :x,
+                    on: true
+                  ]
+                ]
+              },
               []
             )
 
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Expected fragment payload to be a single-entry keyword list"
+      assert log =~
+               "Fragment callback returned error for key :active_users: {:missing_or_invalid, :min_age}"
+
       assert_received {:q2, q2}
       assert_sql(q, q2)
     end
