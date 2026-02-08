@@ -14,6 +14,7 @@ if Mix.env() === :test do
   config :ecto_shorts, ecto_repos: [EctoShorts.Repo]
   config :ecto_shorts, repo: EctoShorts.Repo
   config :ecto_shorts, :sql_sandbox, true
+  config :ecto_shorts, :hints, users_age_index: ["USE INDEX(users_age_index)"]
 
   config :ecto_shorts, EctoShorts.Repo,
     username: "postgres",

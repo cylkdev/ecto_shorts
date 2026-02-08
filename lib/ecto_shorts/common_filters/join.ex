@@ -342,6 +342,30 @@ defmodule EctoShorts.CommonFilters.Join do
         )
       end
 
+      for {hint_key, hint_value} <- @hints do
+        defp compose(
+               query,
+               unquote(quoted_binding_head) = _binding_selector,
+               qualifier,
+               {:source, source},
+               as,
+               on,
+               prefix,
+               unquote(hint_key)
+             ) do
+          Query.join(
+            query,
+            qualifier,
+            [unquote_splicing(quoted_binding_body)],
+            joined in ^source,
+            as: ^as,
+            on: ^on,
+            prefix: ^prefix,
+            hints: unquote(hint_value)
+          )
+        end
+      end
+
       defp compose(
              query,
              unquote(quoted_binding_head) = _binding_selector,
@@ -361,6 +385,30 @@ defmodule EctoShorts.CommonFilters.Join do
           on: ^on,
           prefix: ^prefix
         )
+      end
+
+      for {hint_key, hint_value} <- @hints do
+        defp compose(
+               query,
+               unquote(quoted_binding_head) = _binding_selector,
+               qualifier,
+               {:subquery, subquery_source},
+               as,
+               on,
+               prefix,
+               unquote(hint_key)
+             ) do
+          Query.join(
+            query,
+            qualifier,
+            [unquote_splicing(quoted_binding_body)],
+            joined in subquery(subquery_source),
+            as: ^as,
+            on: ^on,
+            prefix: ^prefix,
+            hints: unquote(hint_value)
+          )
+        end
       end
 
       defp compose(
