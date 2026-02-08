@@ -65,11 +65,11 @@ defmodule EctoShorts.Config do
 
   @doc since: "2.5.0"
   @doc """
-  Returns the configured fragment module.
+  Returns the configured join source module.
   """
-  @spec fragment_module :: module() | nil
-  def fragment_module do
-    Application.get_env(@app, :fragment_module)
+  @spec join_source_module :: module() | nil
+  def join_source_module do
+    Application.get_env(@app, :join_source_module)
   end
 
   @doc since: "2.5.0"

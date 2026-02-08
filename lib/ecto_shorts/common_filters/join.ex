@@ -67,14 +67,14 @@ defmodule EctoShorts.CommonFilters.Join do
   end
 
   defp reduce_join(schema_source, query, binding_selector, {join_type, join_options}, opts) do
-    {join_source, join_options} = Keyword.pop(join_options, :source)
+    {op_source, join_options} = Keyword.pop(join_options, :source)
 
-    if not is_nil(join_source) do
+    if not is_nil(op_source) do
       build_join_expr(
         schema_source,
         query,
         binding_selector,
-        {join_type, join_source, join_options},
+        {join_type, op_source, join_options},
         opts
       )
     else
@@ -217,27 +217,25 @@ defmodule EctoShorts.CommonFilters.Join do
         prefix = join_options[:prefix]
         as = join_options[:as]
 
-        from_query =
+        subquery_source =
           case params do
             %Ecto.Query{} = query ->
               query
 
+            %Ecto.SubQuery{} = subquery ->
+              subquery
+
             subquery_params ->
-              source = subquery_params[:source]
+              from = subquery_params[:from] || schema_source
               filter_params = subquery_params[:query] || []
-
-              if is_nil(source) do
-                raise ArgumentError, "Source is required, got: #{inspect(subquery_params)}"
-              end
-
-              CommonFilters.convert_params_to_filter(source, filter_params, opts)
+              CommonFilters.convert_params_to_filter(from, filter_params, opts)
           end
 
         Query.join(
           query,
           qualifier,
           [unquote_splicing(quoted_binding_body)],
-          joined in subquery(from_query),
+          joined in subquery(subquery_source),
           as: ^as,
           on: ^on_value,
           prefix: ^prefix
@@ -257,24 +255,24 @@ defmodule EctoShorts.CommonFilters.Join do
         prefix = join_options[:prefix]
         as = join_options[:as]
 
-        fragment_name = params[:name]
-        fragment_values = params[:values]
+        source_name = params[:name]
+        source_values = params[:values]
 
-        if is_nil(fragment_name) do
-          raise ArgumentError, "Fragment name is required, got: #{inspect(params)}"
+        if is_nil(source_name) do
+          raise ArgumentError, "Join source name is required, got: #{inspect(params)}"
         end
 
-        if is_nil(fragment_values) do
-          raise ArgumentError, "Fragment values are required, got: #{inspect(params)}"
+        if is_nil(source_values) do
+          raise ArgumentError, "Join source values are required, got: #{inspect(params)}"
         end
 
-        case resolve_fragment(binding_selector, fragment_name, fragment_values, opts) do
-          {:ok, fragment} ->
+        case resolve_join_source_expr(binding_selector, source_name, source_values, opts) do
+          {:ok, expr} ->
             Query.join(
               query,
               qualifier,
               [unquote_splicing(quoted_binding_body)],
-              joined in ^fragment,
+              joined in ^expr,
               as: ^as,
               on: ^on_value,
               prefix: ^prefix
@@ -286,22 +284,29 @@ defmodule EctoShorts.CommonFilters.Join do
       end
   end
 
-  defp resolve_fragment(binding_selector, fragment_key, fragment_params, opts) do
-    mod = Keyword.get(opts, :fragment_module, Config.fragment_module())
+  defp resolve_join_source_expr(binding_selector, source_key, source_params, opts) do
+    mod =
+      Keyword.get(
+        opts,
+        :join_source_module,
+        Config.join_source_module()
+      )
 
-    unless Code.ensure_loaded?(mod) and function_exported?(mod, :fragment, 3) do
+    unless Code.ensure_loaded?(mod) and function_exported?(mod, :join_source, 3) do
       raise ArgumentError,
-            "Expected fragment module to have a fragment/3 function, got: #{inspect(mod)}"
+            "Expected join source module to have a join_source/3 function, got: #{inspect(mod)}"
     end
 
-    case mod.fragment(binding_selector, fragment_key, fragment_params) do
-      {:ok, fragment} ->
-        {:ok, fragment}
+    callback_result = mod.join_source(binding_selector, source_key, source_params)
+
+    case callback_result do
+      {:ok, source} ->
+        {:ok, source}
 
       {:error, reason} ->
         EctoShorts.Logger.warning(
           @logger_prefix,
-          "Fragment callback returned error for key #{inspect(fragment_key)}: #{inspect(reason)}"
+          "Join source callback returned error for key #{inspect(source_key)}: #{inspect(reason)}"
         )
 
         :error
@@ -309,7 +314,7 @@ defmodule EctoShorts.CommonFilters.Join do
       other ->
         EctoShorts.Logger.warning(
           @logger_prefix,
-          "Expected fragment callback to return {:ok, source} | {:error, reason}, got: #{inspect(other)}"
+          "Expected join source callback to return {:ok, source} | {:error, reason}, got: #{inspect(other)}"
         )
 
         :error

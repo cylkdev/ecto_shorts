@@ -1,27 +1,25 @@
-defmodule EctoShorts.TestJoinFragments do
+defmodule EctoShorts.TestJoinSources do
   @moduledoc false
 
   import Ecto.Query
 
-  alias EctoShorts.Schema.User
-
-  def fragment(binding_selector, fragment_key, params) do
-    build_fragment_source(fragment_key, params, binding_selector)
+  def join_source(binding_selector, source_key, params) do
+    build_join_source(source_key, params, binding_selector)
   end
 
-  def build_fragment_source(:active_users, params, _binding_selector) do
+  def build_join_source(:active_users, params, _binding_selector) do
     params = normalize_params(params)
 
     with {:ok, min_age} <- fetch_integer(params, :min_age) do
-      {:ok, from(u in User, where: u.age >= ^min_age)}
+      {:ok, from(u in fragment("SELECT * FROM users WHERE age >= ?", ^min_age), select: u)}
     end
   end
 
-  def build_fragment_source(:error_fragment, _params, _binding_selector) do
+  def build_join_source(:error_fragment, _params, _binding_selector) do
     {:error, :forced_error}
   end
 
-  def build_fragment_source(_fragment_key, _params, _binding_selector) do
+  def build_join_source(_source_key, _params, _binding_selector) do
     {:error, :unsupported_fragment_key}
   end
 

@@ -957,6 +957,65 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports canonical :join subquery source params composed into a query" do
+      expected_subquery = from(u in User, where: u.age >= ^18)
+
+      expected =
+        from(p in Post,
+          join: u in subquery(expected_subquery),
+          as: :adult_users_subquery,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              subquery: [
+                source: [
+                  from: User,
+                  query: [age: [>=: 18]]
+                ],
+                as: :adult_users_subquery,
+                on: true
+              ]
+            ]
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports canonical :join subquery source params without :from using existing source" do
+      expected_subquery = from(p in Post, where: p.published == ^true)
+
+      expected =
+        from(p in Post,
+          join: s in subquery(expected_subquery),
+          as: :published_posts_subquery,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              subquery: [
+                source: [query: [published: true]],
+                as: :published_posts_subquery,
+                on: true
+              ]
+            ]
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports canonical :join list of entries and preserves order" do
       expected =
         from(p in Post,
@@ -1002,16 +1061,17 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports fragment key dispatch through canonical :join source entry" do
-      previous = Application.get_env(:ecto_shorts, :fragment_module)
+    test "supports join source key dispatch through canonical :join source entry" do
+      previous = Application.get_env(:ecto_shorts, :join_source_module)
 
       on_exit(fn ->
-        Application.put_env(:ecto_shorts, :fragment_module, previous)
+        Application.put_env(:ecto_shorts, :join_source_module, previous)
       end)
 
-      Application.put_env(:ecto_shorts, :fragment_module, EctoShorts.TestJoinFragments)
+      Application.put_env(:ecto_shorts, :join_source_module, EctoShorts.TestJoinSources)
 
-      expected_source_query = from(u in User, where: u.age >= ^21)
+      expected_source_query =
+        from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
       expected =
         from(p in Post,
@@ -1038,16 +1098,9 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports fragment key dispatch through runtime :fragment_module option" do
-      previous = Application.get_env(:ecto_shorts, :fragment_module)
-
-      on_exit(fn ->
-        Application.put_env(:ecto_shorts, :fragment_module, previous)
-      end)
-
-      Application.put_env(:ecto_shorts, :fragment_module, nil)
-
-      expected_source_query = from(u in User, where: u.age >= ^21)
+    test "supports join source key dispatch through runtime :join_source_module option" do
+      expected_source_query =
+        from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
       expected =
         from(p in Post,
@@ -1068,21 +1121,13 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          fragment_module: EctoShorts.TestJoinFragments
+          join_source_module: EctoShorts.TestJoinSources
         )
 
       assert_sql(expected, q2)
     end
 
-    test "unknown fragment key logs warning and skips entry" do
-      previous = Application.get_env(:ecto_shorts, :fragment_module)
-
-      on_exit(fn ->
-        Application.put_env(:ecto_shorts, :fragment_module, previous)
-      end)
-
-      Application.put_env(:ecto_shorts, :fragment_module, EctoShorts.TestJoinFragments)
-
+    test "unknown join source key logs warning and skips entry" do
       q = from(p in Post)
 
       log =
@@ -1099,28 +1144,20 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              []
+              join_source_module: EctoShorts.TestJoinSources
             )
 
           send(self(), {:q2, q2})
         end)
 
       assert log =~
-               "Fragment callback returned error for key :unknown_key: :unsupported_fragment_key"
+               "Join source callback returned error for key :unknown_key: :unsupported_fragment_key"
 
       assert_received {:q2, q2}
       assert_sql(q, q2)
     end
 
-    test "malformed fragment payload logs warning and skips entry" do
-      previous = Application.get_env(:ecto_shorts, :fragment_module)
-
-      on_exit(fn ->
-        Application.put_env(:ecto_shorts, :fragment_module, previous)
-      end)
-
-      Application.put_env(:ecto_shorts, :fragment_module, EctoShorts.TestJoinFragments)
-
+    test "malformed join source payload logs warning and skips entry" do
       q = from(p in Post)
 
       log =
@@ -1137,14 +1174,14 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              []
+              join_source_module: EctoShorts.TestJoinSources
             )
 
           send(self(), {:q2, q2})
         end)
 
       assert log =~
-               "Fragment callback returned error for key :active_users: {:missing_or_invalid, :min_age}"
+               "Join source callback returned error for key :active_users: {:missing_or_invalid, :min_age}"
 
       assert_received {:q2, q2}
       assert_sql(q, q2)
