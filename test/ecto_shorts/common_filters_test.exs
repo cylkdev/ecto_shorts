@@ -1169,7 +1169,7 @@ defmodule EctoShorts.CommonFiltersTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Expected :join params to be a map or list, got: 123"
+      assert log =~ "Expected :join params to be a map or keyword list, got: 123"
       assert_received {:q2, q2}
       assert_sql(expected, q2)
     end
