@@ -19,24 +19,24 @@ defmodule EctoShorts.Dynamics do
 
     if is_map(params) or is_list(params) do
       Enum.reduce(params, nil, fn entry, dyn_acc ->
-        reduce_dynamic_params(source, dyn_acc, binding_selector, entry, opts)
+        append_param_predicates(source, dyn_acc, binding_selector, entry, opts)
       end)
     else
-      reduce_dynamic_params(source, nil, binding_selector, params, opts)
+      append_param_predicates(source, nil, binding_selector, params, opts)
     end
   end
 
-  defp reduce_dynamic_params(source, left_dynamic, binding_selector, params, opts)
+  defp append_param_predicates(source, left_dynamic, binding_selector, params, opts)
        when is_map(params) or is_list(params) do
     Enum.reduce(params, left_dynamic, fn entry, dyn_acc ->
-      reduce_dynamic_params(source, dyn_acc, binding_selector, entry, opts)
+      append_param_predicates(source, dyn_acc, binding_selector, entry, opts)
     end)
   end
 
-  defp reduce_dynamic_params(source, left_dynamic, binding_selector, {key, value}, opts)
+  defp append_param_predicates(source, left_dynamic, binding_selector, {key, value}, opts)
        when key in @boolean_operators do
     if is_map(value) and not is_struct(value) do
-      reduce_dynamic_params(
+      append_param_predicates(
         source,
         left_dynamic,
         binding_selector,
@@ -44,7 +44,7 @@ defmodule EctoShorts.Dynamics do
         opts
       )
     else
-      reduce_merge_dynamic_predicates(
+      merge_boolean_predicates(
         source,
         left_dynamic,
         binding_selector,
@@ -55,134 +55,83 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  defp reduce_dynamic_params(source, left_dynamic, binding_selector, {key, value}, opts) do
+  defp append_param_predicates(source, left_dynamic, binding_selector, {key, value}, opts) do
     dynamic_adapter = dynamic_adapter!(opts)
 
     cond do
       key in @aggregate_operators ->
-        reduce_helper_dynamic_params(source, left_dynamic, binding_selector, key, value, opts)
+        append_aggregate_predicates(source, left_dynamic, binding_selector, key, value, opts)
 
-      key in Postgres.operators() ->
-        value
-        |> normalize_expression_params()
-        |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
-          right_dynamic =
-            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
-
-          merge_dynamic(dyn_acc, :and, right_dynamic)
-        end)
-
-      key in dynamic_adapter.operators() ->
-        value
-        |> normalize_expression_params()
-        |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
-          right_dynamic =
-            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
-
-          merge_dynamic(dyn_acc, :and, right_dynamic)
-        end)
-
-      source_has_schema?(source) ->
-        build_schema_dynamic(source, left_dynamic, binding_selector, {key, value}, opts)
+      source_has_schema?(source) and not expression_operator?(key, dynamic_adapter) ->
+        append_schema_predicate(source, left_dynamic, binding_selector, {key, value}, opts)
 
       true ->
-        value
-        |> normalize_expression_params()
-        |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
-          right_dynamic =
-            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
-
-          merge_dynamic(dyn_acc, :and, right_dynamic)
-        end)
+        append_operator_predicates(
+          source,
+          left_dynamic,
+          binding_selector,
+          key,
+          value,
+          dynamic_adapter
+        )
     end
   end
 
-  defp reduce_helper_dynamic_params(
+  defp append_aggregate_predicates(
          source,
          left_dynamic,
          binding_selector,
          helper_op,
          params,
          opts
-       )
-       when is_map(params) and not is_struct(params) do
-    reduce_helper_dynamic_params(
-      source,
-      left_dynamic,
-      binding_selector,
-      helper_op,
-      Map.to_list(params),
-      opts
-    )
-  end
-
-  defp reduce_helper_dynamic_params(
-         source,
-         left_dynamic,
-         binding_selector,
-         helper_op,
-         params,
-         opts
-       )
-       when is_list(params) do
-    if Keyword.keyword?(params) do
-      Enum.reduce(params, left_dynamic, fn {field, expr}, dyn_acc ->
-        apply_helper_dynamic_expr(
+       ) do
+    case params do
+      map when is_map(map) and not is_struct(map) ->
+        append_aggregate_predicates(
           source,
-          dyn_acc,
+          left_dynamic,
+          binding_selector,
+          helper_op,
+          Map.to_list(map),
+          opts
+        )
+
+      list when is_list(list) ->
+        if Keyword.keyword?(list) do
+          Enum.reduce(list, left_dynamic, fn {field, expr}, dyn_acc ->
+            append_aggregate_predicate(
+              source,
+              dyn_acc,
+              binding_selector,
+              helper_op,
+              field,
+              expr,
+              opts
+            )
+          end)
+        else
+          warn_invalid_aggregate_params(helper_op, params)
+          left_dynamic
+        end
+
+      {field, expr} ->
+        append_aggregate_predicate(
+          source,
+          left_dynamic,
           binding_selector,
           helper_op,
           field,
           expr,
           opts
         )
-      end)
-    else
-      EctoShorts.Logger.warning(
-        @logger_prefix,
-        "Expected helper expression params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
-      )
 
-      left_dynamic
+      _ ->
+        warn_invalid_aggregate_params(helper_op, params)
+        left_dynamic
     end
   end
 
-  defp reduce_helper_dynamic_params(
-         source,
-         left_dynamic,
-         binding_selector,
-         helper_op,
-         {field, expr},
-         opts
-       ) do
-    apply_helper_dynamic_expr(
-      source,
-      left_dynamic,
-      binding_selector,
-      helper_op,
-      field,
-      expr,
-      opts
-    )
-  end
-
-  defp reduce_helper_dynamic_params(
-         _source,
-         left_dynamic,
-         _binding_selector,
-         helper_op,
-         params,
-         _opts
-       ) do
-    EctoShorts.Logger.warning(
-      @logger_prefix,
-      "Expected helper expression params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
-    )
-
-    left_dynamic
-  end
-
-  defp apply_helper_dynamic_expr(
+  defp append_aggregate_predicate(
          source,
          left_dynamic,
          binding_selector,
@@ -199,9 +148,9 @@ defmodule EctoShorts.Dynamics do
       end
 
     if source_has_schema?(source) do
-      build_schema_dynamic(source, left_dynamic, binding_selector, {field, helper_expr}, opts)
+      append_schema_predicate(source, left_dynamic, binding_selector, {field, helper_expr}, opts)
     else
-      reduce_dynamic_expr(source, left_dynamic, binding_selector, field, helper_expr, opts)
+      append_field_predicate(source, left_dynamic, binding_selector, field, helper_expr, opts)
     end
   end
 
@@ -228,9 +177,9 @@ defmodule EctoShorts.Dynamics do
   #
   # This reducer can build “outer” groups (across a list of entries),
   # and it can also participate in “inner” groups when entries contain
-  # nested boolean structures (since entries are built via `reduce_dynamic_params/5`,
+  # nested boolean structures (since entries are built via `append_param_predicates/5`,
   # which may call back into this reducer for nested `:and` / `:or`).
-  defp reduce_merge_dynamic_predicates(
+  defp merge_boolean_predicates(
          source,
          left_dynamic,
          binding_selector,
@@ -239,29 +188,21 @@ defmodule EctoShorts.Dynamics do
          opts
        ) do
     Enum.reduce(entries, left_dynamic, fn entry, dyn_acc ->
-      right_dynamic =
-        cond do
-          is_map(entry) and not is_struct(entry) ->
-            reduce_dynamic_params(
-              source,
-              nil,
-              binding_selector,
-              Map.to_list(entry),
-              opts
-            )
-
-          Keyword.keyword?(entry) ->
-            reduce_dynamic_params(source, nil, binding_selector, entry, opts)
-
-          true ->
-            reduce_dynamic_params(source, nil, binding_selector, entry, opts)
+      entry =
+        if is_map(entry) and not is_struct(entry) do
+          Map.to_list(entry)
+        else
+          entry
         end
+
+      right_dynamic =
+        append_param_predicates(source, nil, binding_selector, entry, opts)
 
       merge_dynamic(dyn_acc, boolean_operator, right_dynamic)
     end)
   end
 
-  defp build_schema_dynamic(source, left_dynamic, binding_selector, {key, value}, opts) do
+  defp append_schema_predicate(source, left_dynamic, binding_selector, {key, value}, opts) do
     schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
 
     if is_list(schema_fields) and key not in schema_fields do
@@ -272,34 +213,33 @@ defmodule EctoShorts.Dynamics do
 
       left_dynamic
     else
-      build_schema_dynamic_value(source, left_dynamic, binding_selector, key, value, opts)
+      append_schema_predicate_value(source, left_dynamic, binding_selector, key, value, opts)
     end
   end
 
-  defp build_schema_dynamic_value(source, left_dynamic, binding_selector, key, value, opts)
-       when is_map(value) and not is_struct(value) do
-    build_schema_dynamic(
-      source,
-      left_dynamic,
-      binding_selector,
-      {key, Map.to_list(value)},
-      opts
-    )
-  end
+  defp append_schema_predicate_value(source, left_dynamic, binding_selector, key, value, opts) do
+    case value do
+      map when is_map(map) and not is_struct(map) ->
+        append_schema_predicate(
+          source,
+          left_dynamic,
+          binding_selector,
+          {key, Map.to_list(map)},
+          opts
+        )
 
-  defp build_schema_dynamic_value(source, left_dynamic, binding_selector, key, value, opts)
-       when is_list(value) do
-    if Keyword.keyword?(value) do
-      Enum.reduce(value, left_dynamic, fn entry, dyn_acc ->
-        build_schema_dynamic(source, dyn_acc, binding_selector, {key, entry}, opts)
-      end)
-    else
-      reduce_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts)
+      list when is_list(list) ->
+        if Keyword.keyword?(list) do
+          Enum.reduce(list, left_dynamic, fn entry, dyn_acc ->
+            append_schema_predicate(source, dyn_acc, binding_selector, {key, entry}, opts)
+          end)
+        else
+          append_field_predicate(source, left_dynamic, binding_selector, key, value, opts)
+        end
+
+      _ ->
+        append_field_predicate(source, left_dynamic, binding_selector, key, value, opts)
     end
-  end
-
-  defp build_schema_dynamic_value(source, left_dynamic, binding_selector, key, value, opts) do
-    reduce_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts)
   end
 
   #
@@ -315,7 +255,7 @@ defmodule EctoShorts.Dynamics do
   #    %{id: %{or: [%{published: true, views: 20}, %{published: false, views: 10}]}}
   #    -> each list item is a full "AND group" across multiple fields
   #
-  defp reduce_dynamic_expr(
+  defp append_field_predicate(
          source,
          left_dynamic,
          binding_selector,
@@ -332,7 +272,7 @@ defmodule EctoShorts.Dynamics do
       end
 
     right_dynamic =
-      reduce_merge_dynamic_predicates(
+      merge_boolean_predicates(
         source,
         nil,
         binding_selector,
@@ -344,7 +284,7 @@ defmodule EctoShorts.Dynamics do
     merge_dynamic(left_dynamic, :and, right_dynamic)
   end
 
-  defp reduce_dynamic_expr(
+  defp append_field_predicate(
          source,
          left_dynamic,
          binding_selector,
@@ -354,7 +294,7 @@ defmodule EctoShorts.Dynamics do
        ) do
     value = All.resolve_value(source, key, value, opts)
 
-    reduce_dynamic_expr_values(
+    append_predicate_items(
       source,
       left_dynamic,
       binding_selector,
@@ -365,7 +305,7 @@ defmodule EctoShorts.Dynamics do
     )
   end
 
-  defp reduce_dynamic_expr(
+  defp append_field_predicate(
          source,
          left_dynamic,
          binding_selector,
@@ -377,7 +317,7 @@ defmodule EctoShorts.Dynamics do
       :all ->
         value = All.resolve_value(source, key, value, opts)
 
-        reduce_dynamic_expr_values(
+        append_predicate_items(
           source,
           left_dynamic,
           binding_selector,
@@ -388,7 +328,7 @@ defmodule EctoShorts.Dynamics do
         )
 
       _ ->
-        reduce_dynamic_expr_values(
+        append_predicate_items(
           source,
           left_dynamic,
           binding_selector,
@@ -400,7 +340,7 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  defp reduce_dynamic_expr(
+  defp append_field_predicate(
          source,
          left_dynamic,
          binding_selector,
@@ -411,16 +351,16 @@ defmodule EctoShorts.Dynamics do
     case value do
       map when is_map(map) and not is_struct(map) ->
         Enum.reduce(Map.to_list(map), left_dynamic, fn entry, dyn_acc ->
-          reduce_dynamic_expr(source, dyn_acc, binding_selector, key, {:not, entry}, opts)
+          append_field_predicate(source, dyn_acc, binding_selector, key, {:not, entry}, opts)
         end)
 
       list when is_list(list) ->
         Enum.reduce(list, left_dynamic, fn entry, dyn_acc ->
-          reduce_dynamic_expr(source, dyn_acc, binding_selector, key, {:not, entry}, opts)
+          append_field_predicate(source, dyn_acc, binding_selector, key, {:not, entry}, opts)
         end)
 
       _ ->
-        reduce_dynamic_expr_values(
+        append_predicate_items(
           source,
           left_dynamic,
           binding_selector,
@@ -432,7 +372,7 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  defp reduce_dynamic_expr(
+  defp append_field_predicate(
          source,
          left_dynamic,
          binding_selector,
@@ -440,13 +380,13 @@ defmodule EctoShorts.Dynamics do
          {op, value},
          opts
        ) do
-    reduce_dynamic_expr_values(source, left_dynamic, binding_selector, key, value, opts, fn item ->
+    append_predicate_items(source, left_dynamic, binding_selector, key, value, opts, fn item ->
       {op, item}
     end)
   end
 
-  defp reduce_dynamic_expr(source, left_dynamic, binding_selector, key, value, opts) do
-    reduce_dynamic_expr(
+  defp append_field_predicate(source, left_dynamic, binding_selector, key, value, opts) do
+    append_field_predicate(
       source,
       left_dynamic,
       binding_selector,
@@ -456,7 +396,7 @@ defmodule EctoShorts.Dynamics do
     )
   end
 
-  defp reduce_dynamic_expr_values(
+  defp append_predicate_items(
          source,
          left_dynamic,
          binding_selector,
@@ -475,6 +415,33 @@ defmodule EctoShorts.Dynamics do
 
       merge_dynamic(dyn_acc, :and, right_dynamic)
     end)
+  end
+
+  defp append_operator_predicates(
+         source,
+         left_dynamic,
+         binding_selector,
+         key,
+         value,
+         dynamic_adapter
+       ) do
+    value
+    |> normalize_expression_params()
+    |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
+      right_dynamic = dynamic_adapter.build_dynamic(source, binding_selector, key, item)
+      merge_dynamic(dyn_acc, :and, right_dynamic)
+    end)
+  end
+
+  defp expression_operator?(key, dynamic_adapter) do
+    key in Postgres.operators() or key in dynamic_adapter.operators()
+  end
+
+  defp warn_invalid_aggregate_params(helper_op, params) do
+    EctoShorts.Logger.warning(
+      @logger_prefix,
+      "Expected params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
+    )
   end
 
   defp merge_dynamic(nil, _, right_dynamic) do
@@ -501,48 +468,48 @@ defmodule EctoShorts.Dynamics do
 
   defp normalize_expression_params(term) do
     term
-    |> reduce_expression_params([])
+    |> flatten_expression_params([])
     |> Enum.reverse()
   end
 
-  defp reduce_expression_params(term, acc) when is_map(term) and not is_struct(term) do
+  defp flatten_expression_params(term, acc) when is_map(term) and not is_struct(term) do
     term
     |> Map.to_list()
-    |> reduce_expression_params(acc)
+    |> flatten_expression_params(acc)
   end
 
-  defp reduce_expression_params([], acc), do: acc
+  defp flatten_expression_params([], acc), do: acc
 
-  defp reduce_expression_params(list, acc) when is_list(list) do
-    if flatten?(list) do
+  defp flatten_expression_params(list, acc) when is_list(list) do
+    if should_flatten_expression_list?(list) do
       Enum.reduce(list, acc, fn entry, acc_inner ->
-        reduce_expression_params(entry, acc_inner)
+        flatten_expression_params(entry, acc_inner)
       end)
     else
       [list | acc]
     end
   end
 
-  defp reduce_expression_params({k, v}, acc) when is_map(v) and not is_struct(v) do
-    reduce_expression_params({k, Map.to_list(v)}, acc)
+  defp flatten_expression_params({k, v}, acc) when is_map(v) and not is_struct(v) do
+    flatten_expression_params({k, Map.to_list(v)}, acc)
   end
 
-  defp reduce_expression_params({k, v}, acc) when is_list(v) do
-    if flatten?(v) do
+  defp flatten_expression_params({k, v}, acc) when is_list(v) do
+    if should_flatten_expression_list?(v) do
       v
       |> normalize_expression_params()
       |> Enum.map(&{k, &1})
-      |> reduce_expression_params(acc)
+      |> flatten_expression_params(acc)
     else
       [{k, v} | acc]
     end
   end
 
-  defp reduce_expression_params(v, acc) do
+  defp flatten_expression_params(v, acc) do
     [v | acc]
   end
 
-  defp flatten?(list) do
+  defp should_flatten_expression_list?(list) do
     Keyword.keyword?(list) or Enum.any?(list, &is_map/1)
   end
 

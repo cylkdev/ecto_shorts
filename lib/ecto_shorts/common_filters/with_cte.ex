@@ -7,7 +7,6 @@ defmodule EctoShorts.CommonFilters.WithCte do
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.WithCte"
-  @cte_operations [:all, :update_all, :delete_all]
 
   @doc false
   def build(schema_source, :with_cte, query, _binding_selector, params, opts) do
