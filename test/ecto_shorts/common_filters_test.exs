@@ -765,6 +765,46 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :intersect with nested filter params" do
+      q = from(p in Post, where: p.published == ^true)
+      other_query = from(p in Post, where: p.published == ^false)
+
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          intersect: ^other_query
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{intersect: %{published: false}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :intersect_all with nested filter params" do
+      q = from(p in Post, where: p.published == ^true)
+      other_query = from(p in Post, where: p.published == ^false)
+
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          intersect_all: ^other_query
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{intersect_all: %{published: false}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports :group_by for a single field" do
       expected = from p in Post, group_by: p.author_id
       q = Post

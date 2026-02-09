@@ -32,6 +32,8 @@ defmodule EctoShorts.CommonFilters do
     :first,
     :group_by,
     :having,
+    :intersect,
+    :intersect_all,
     :join,
     :last,
     :limit,
