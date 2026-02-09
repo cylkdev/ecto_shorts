@@ -26,6 +26,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     :lock,
     :limit,
     :offset,
+    :put_query_prefix,
     :recursive_ctes,
     :reverse_order
   ]
@@ -248,6 +249,20 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   defp apply_expr(_schema_source, :offset, query, _binding_selector, value, _opts) do
     Query.offset(query, ^value)
+  end
+
+  defp apply_expr(_schema_source, :put_query_prefix, query, _binding_selector, value, _opts)
+       when is_binary(value) do
+    Query.put_query_prefix(query, value)
+  end
+
+  defp apply_expr(_schema_source, :put_query_prefix, query, _binding_selector, value, _opts) do
+    EctoShorts.Logger.warning(
+      @logger_prefix,
+      "Expected :put_query_prefix value to be a string, got: #{inspect(value)}"
+    )
+
+    query
   end
 
   defp apply_expr(

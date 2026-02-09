@@ -708,6 +708,64 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :put_query_prefix with schema source" do
+      expected = Ecto.Query.put_query_prefix(Post, "tenant_a")
+      q2 = CommonFilters.convert_params_to_filter(Post, %{put_query_prefix: "tenant_a"}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :put_query_prefix with table source" do
+      expected = Ecto.Query.put_query_prefix("posts", "tenant_a")
+      q2 = CommonFilters.convert_params_to_filter("posts", %{put_query_prefix: "tenant_a"}, [])
+
+      assert_query(expected, q2)
+    end
+
+    test "supports :put_query_prefix override order (last wins)" do
+      expected =
+        Post
+        |> Ecto.Query.put_query_prefix("tenant_a")
+        |> Ecto.Query.put_query_prefix("tenant_b")
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [put_query_prefix: "tenant_a", put_query_prefix: "tenant_b"],
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :put_query_prefix nil logs warning and leaves query unchanged" do
+      q = Ecto.Query.put_query_prefix(Post, "tenant_a")
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{put_query_prefix: nil}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :put_query_prefix value to be a string, got: nil"
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
+    test "invalid :put_query_prefix value logs warning and leaves query unchanged" do
+      q = from(p in Post, where: p.published == ^true)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{put_query_prefix: %{bad: "value"}}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :put_query_prefix value to be a string, got: [bad: \"value\"]"
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
     test "supports :with_ties true with :limit and :order_by" do
       q =
         from(p in Post,

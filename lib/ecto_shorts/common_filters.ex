@@ -49,6 +49,7 @@ defmodule EctoShorts.CommonFilters do
     :lock,
     :limit,
     :offset,
+    :put_query_prefix,
     :order_by,
     :windows,
     :reverse_order,
