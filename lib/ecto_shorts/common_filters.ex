@@ -86,6 +86,19 @@ defmodule EctoShorts.CommonFilters do
         |> ensure_kw!()
         |> Keyword.merge(params)
 
+      merged_params =
+        case normalized_source do
+          {_table, nil} ->
+            if Keyword.has_key?(merged_params, :select) do
+              merged_params
+            else
+              Keyword.put(merged_params, :select, true)
+            end
+
+          _ ->
+            merged_params
+        end
+
       do_convert(normalized_source, query, merged_params, opts)
     else
       Enum.reduce(entries, query, fn entry, query_acc ->
