@@ -3,7 +3,7 @@ defmodule EctoShorts.Dynamics do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
-  alias EctoShorts.Dynamics.All
+  alias EctoShorts.Dynamics.HelperExpressions
   alias EctoShorts.Dynamics.Adapters.Postgres
 
   require Ecto.Query
@@ -62,7 +62,7 @@ defmodule EctoShorts.Dynamics do
       key in @aggregate_operators ->
         append_aggregate_predicates(source, left_dynamic, binding_selector, key, value, opts)
 
-      source_has_schema?(source) and not expression_operator?(key, dynamic_adapter) ->
+      source_has_schema?(source) and key not in dynamic_adapter.operators() ->
         append_schema_predicate(source, left_dynamic, binding_selector, {key, value}, opts)
 
       true ->
@@ -162,31 +162,6 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  # Reduces `entries` into a single boolean `dynamic/2` expression.
-  #
-  # Each entry is first converted into an independent predicate
-  # (starting from `nil`), and then combined with the accumulator
-  # using `boolean_operator` (`:and` or `:or`).
-  #
-  # Returns the combined `dynamic()` expression (or the first built
-  # predicate when the accumulator is `nil`).
-  #
-  # ## Examples
-  #
-  #     # boolean_operator:  :or
-  #     # input:    [left_dynamic, right_dynamic]
-  #     # output:   left_dynamic or right_dynamic
-  #
-  #     # boolean_operator:  :and
-  #     # input:    [left_dynamic, right_dynamic]
-  #     # output:   left_dynamic and right_dynamic
-  #
-  # ## Nesting
-  #
-  # This reducer can build “outer” groups (across a list of entries),
-  # and it can also participate in “inner” groups when entries contain
-  # nested boolean structures (since entries are built via `append_param_predicates/5`,
-  # which may call back into this reducer for nested `:and` / `:or`).
   defp merge_boolean_predicates(
          source,
          left_dynamic,
@@ -250,19 +225,6 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  #
-  # `{boolean_operator, values}` can mean two different things:
-  #
-  # 1) Same-field comparisons (apply to `key`):
-  #
-  #    %{published: %{or: %{==: true, ==: false}}}
-  #    -> build predicates like: published == true OR published == false
-  #
-  # 2) Composite predicates (each entry is its own field map/keyword list):
-  #
-  #    %{id: %{or: [%{published: true, views: 20}, %{published: false, views: 10}]}}
-  #    -> each list item is a full "AND group" across multiple fields
-  #
   defp append_field_predicate(
          source,
          left_dynamic,
@@ -273,7 +235,7 @@ defmodule EctoShorts.Dynamics do
        )
        when boolean_operator in @boolean_operators and is_list(values) do
     entries =
-      if composite_predicate_entries?(values) do
+      if has_map_or_kwd?(values) do
         values
       else
         Enum.map(values, &{key, &1})
@@ -300,7 +262,7 @@ defmodule EctoShorts.Dynamics do
          {:all, value},
          opts
        ) do
-    value = All.build_all(source, key, value, opts)
+    value = HelperExpressions.build(source, key, value, opts)
 
     append_predicate_items(
       source,
@@ -318,12 +280,33 @@ defmodule EctoShorts.Dynamics do
          left_dynamic,
          binding_selector,
          key,
+         {:any, value},
+         opts
+       ) do
+    value = HelperExpressions.build(source, key, value, opts)
+
+    append_predicate_items(
+      source,
+      left_dynamic,
+      binding_selector,
+      key,
+      value,
+      opts,
+      fn item -> {:any, item} end
+    )
+  end
+
+  defp append_field_predicate(
+         source,
+         left_dynamic,
+         binding_selector,
+         key,
          {:not, {inner_key, value}},
          opts
        ) do
     case inner_key do
       :all ->
-        value = All.build_all(source, key, value, opts)
+        value = HelperExpressions.build(source, key, value, opts)
 
         append_predicate_items(
           source,
@@ -333,6 +316,19 @@ defmodule EctoShorts.Dynamics do
           value,
           opts,
           fn item -> {:not, {:all, item}} end
+        )
+
+      :any ->
+        value = HelperExpressions.build(source, key, value, opts)
+
+        append_predicate_items(
+          source,
+          left_dynamic,
+          binding_selector,
+          key,
+          value,
+          opts,
+          fn item -> {:not, {:any, item}} end
         )
 
       _ ->
@@ -446,10 +442,6 @@ defmodule EctoShorts.Dynamics do
     end)
   end
 
-  defp expression_operator?(key, dynamic_adapter) do
-    key in Postgres.operators() or key in dynamic_adapter.operators()
-  end
-
   defp merge_dynamic(nil, _, right_dynamic) do
     right_dynamic
   end
@@ -462,7 +454,7 @@ defmodule EctoShorts.Dynamics do
     Ecto.Query.dynamic([], ^left_dynamic or ^right_dynamic)
   end
 
-  defp composite_predicate_entries?(values) when is_list(values) do
+  defp has_map_or_kwd?(values) when is_list(values) do
     case values do
       [entry | _] -> (is_map(entry) and not is_struct(entry)) or Keyword.keyword?(entry)
       [] -> false

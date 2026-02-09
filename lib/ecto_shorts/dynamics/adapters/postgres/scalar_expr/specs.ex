@@ -18,6 +18,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
       nil_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       aggregate_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       all_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
+      any_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       lower_upper_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       like_ilike_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       base_op_specs(context, binding_head_ast, target_binding_var, binding_body_asts)
@@ -492,6 +493,121 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {:all, {mapped_op, unquote(value_var)}}}
+            )
+          end
+      }
+    ]
+  end
+
+  @doc false
+  def any_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
+    key_var = Macro.var(:key, context)
+    op_var = Macro.var(:op, context)
+    value_var = Macro.var(:value, context)
+
+    field_ast = AST.field_ast(target_binding_var, key_var)
+
+    op_guard =
+      quote do
+        unquote(op_var) in unquote(@comparison_operators)
+      end
+
+    alias_guard =
+      quote do
+        unquote(op_var) in unquote(@comparison_alias_operators)
+      end
+
+    non_tuple_value_guard =
+      quote do
+        not is_tuple(unquote(value_var))
+      end
+
+    [
+      %ClauseSpec{
+        binding_head: binding_head_ast,
+        key: key_var,
+        head: quote(do: {:any, unquote(value_var)}),
+        guard: non_tuple_value_guard,
+        body:
+          quote do
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {:any, {:==, unquote(value_var)}}
+            )
+          end
+      },
+      %ClauseSpec{
+        binding_head: binding_head_ast,
+        key: key_var,
+        head: quote(do: {:not, {:any, unquote(value_var)}}),
+        guard: non_tuple_value_guard,
+        body:
+          quote do
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {:any, {:!=, unquote(value_var)}}
+            )
+          end
+      },
+      %ClauseSpec{
+        binding_head: binding_head_ast,
+        key: key_var,
+        head: quote(do: {:any, {unquote(op_var), unquote(value_var)}}),
+        guard: op_guard,
+        body: any_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var)
+      },
+      %ClauseSpec{
+        binding_head: binding_head_ast,
+        key: key_var,
+        head: quote(do: {:not, {:any, {unquote(op_var), unquote(value_var)}}}),
+        guard: op_guard,
+        body: not_any_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var)
+      },
+      %ClauseSpec{
+        binding_head: binding_head_ast,
+        key: key_var,
+        head: quote(do: {:any, {unquote(op_var), unquote(value_var)}}),
+        guard: alias_guard,
+        body:
+          quote do
+            mapped_op =
+              case unquote(op_var) do
+                :gt -> :>
+                :gte -> :>=
+                :lt -> :<
+                :lte -> :<=
+                :eq -> :==
+              end
+
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {:any, {mapped_op, unquote(value_var)}}
+            )
+          end
+      },
+      %ClauseSpec{
+        binding_head: binding_head_ast,
+        key: key_var,
+        head: quote(do: {:not, {:any, {unquote(op_var), unquote(value_var)}}}),
+        guard: alias_guard,
+        body:
+          quote do
+            mapped_op =
+              case unquote(op_var) do
+                :gt -> :>
+                :gte -> :>=
+                :lt -> :<
+                :lte -> :<=
+                :eq -> :==
+              end
+
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {:not, {:any, {mapped_op, unquote(value_var)}}}
             )
           end
       }
@@ -1045,6 +1161,114 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
             AST.dynamic_ast(
               binding_body_asts,
               quote(do: not (unquote(field_ast) <= all(unquote(value_var))))
+            )
+          )
+      end
+    end
+  end
+
+  defp any_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var) do
+    quote do
+      case unquote(op_var) do
+        :== ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: unquote(field_ast) == any(unquote(value_var)))
+            )
+          )
+
+        :!= ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: unquote(field_ast) != any(unquote(value_var)))
+            )
+          )
+
+        :> ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: unquote(field_ast) > any(unquote(value_var)))
+            )
+          )
+
+        :>= ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: unquote(field_ast) >= any(unquote(value_var)))
+            )
+          )
+
+        :< ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: unquote(field_ast) < any(unquote(value_var)))
+            )
+          )
+
+        :<= ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: unquote(field_ast) <= any(unquote(value_var)))
+            )
+          )
+      end
+    end
+  end
+
+  defp not_any_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var) do
+    quote do
+      case unquote(op_var) do
+        :== ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) == any(unquote(value_var))))
+            )
+          )
+
+        :!= ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) != any(unquote(value_var))))
+            )
+          )
+
+        :> ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) > any(unquote(value_var))))
+            )
+          )
+
+        :>= ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) >= any(unquote(value_var))))
+            )
+          )
+
+        :< ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) < any(unquote(value_var))))
+            )
+          )
+
+        :<= ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) <= any(unquote(value_var))))
             )
           )
       end

@@ -65,29 +65,60 @@ defmodule EctoShorts.CommonFilters do
     :update
   ]
 
-  def convert_params_to_filter(source, params, opts \\ []) do
-    schema_source = CommonSchema.normalize_source(source)
+  def convert_params_to_filter(source, params, opts \\ [])
 
+  def convert_params_to_filter(source, params, opts) when is_map(params) do
+    convert_params_to_filter(source, Map.to_list(params), opts)
+  end
+
+  def convert_params_to_filter(source, entries, opts) when is_list(entries) do
     query = CommonSchema.to_query(source)
 
-    params
-    |> list_wrap()
-    |> Enum.reduce(query, fn params, query_acc ->
-      normalized_params = normalize_filter_params(params)
+    if Keyword.keyword?(entries) do
+      {schema_source, params} = Keyword.pop(entries, :source, source)
 
-      if is_map(normalized_params) or Keyword.keyword?(normalized_params) do
-        reduce_filter_params(
-          schema_source,
-          query_acc,
-          @default_binding_selector,
-          @where,
-          normalized_params,
-          opts
-        )
-      else
-        raise ArgumentError, "Expected params to be a map or list, got: #{inspect(params)}"
-      end
-    end)
+      {other_params, params} = Keyword.pop(params, :query, [])
+
+      normalized_source = CommonSchema.normalize_source(schema_source)
+
+      merged_params =
+        other_params
+        |> ensure_kw!()
+        |> Keyword.merge(params)
+
+      do_convert(normalized_source, query, merged_params, opts)
+    else
+      Enum.reduce(entries, query, fn entry, query_acc ->
+        do_convert(source, query_acc, entry, opts)
+      end)
+    end
+  end
+
+  defp ensure_kw!(map) when is_map(map), do: Map.to_list(map)
+
+  defp ensure_kw!(list) when is_list(list) do
+    unless Keyword.keyword?(list) do
+      raise ArgumentError, "Expected params to be a keyword list, got: #{inspect(list)}"
+    end
+
+    list
+  end
+
+  defp do_convert(schema_source, query, params, opts) do
+    normalized_params = normalize_filter_params(params)
+
+    if is_map(normalized_params) or Keyword.keyword?(normalized_params) do
+      reduce_filter_params(
+        schema_source,
+        query,
+        @default_binding_selector,
+        @where,
+        normalized_params,
+        opts
+      )
+    else
+      raise ArgumentError, "Expected params to be a map or list, got: #{inspect(params)}"
+    end
   end
 
   defp reduce_filter_params(
@@ -603,14 +634,6 @@ defmodule EctoShorts.CommonFilters do
     CommonQuery.get_query_binding_source(query, binding_target)
   end
 
-  defp list_wrap(term) do
-    cond do
-      is_map(term) -> [term]
-      is_list(term) -> if Keyword.keyword?(term), do: [term], else: term
-      true -> [term]
-    end
-  end
-
   defp normalize_filter_params({k, v}) when is_map(v) or is_list(v) do
     {k, normalize_filter_params(v)}
   end
@@ -627,7 +650,7 @@ defmodule EctoShorts.CommonFilters do
       |> sort_params()
       |> Enum.map(fn {k, v} -> {k, normalize_filter_params(v)} end)
     else
-      Enum.map(list, &normalize_filter_params/1)
+      list
     end
   end
 
@@ -637,6 +660,7 @@ defmodule EctoShorts.CommonFilters do
 
   defp sort_params(params) do
     where_filters = Keyword.take(params, [:where])
+
     or_where_filters = Keyword.take(params, [:or_where])
 
     terminal_filters =

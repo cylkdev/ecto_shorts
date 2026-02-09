@@ -626,6 +626,66 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports scalar any helper expression on a field" do
+    binding = {:as, nil}
+    subquery_expr = from(c in "comments", select: c.post_id)
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{id: %{any: %{>: subquery_expr}}})
+
+    expected = dynamic([q], field(q, ^:id) > any(subquery_expr))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar any helper expression query-builder payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        id: %{any: %{>: [source: Post, query: %{id: 1}]}}
+      })
+
+    subquery_expr =
+      Post
+      |> EctoShorts.CommonFilters.convert_params_to_filter(%{id: 1}, [])
+      |> select([p], p.id)
+
+    expected = dynamic([q], field(q, ^:id) > any(subquery_expr))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports negated scalar any helper expression on a field" do
+    binding = {:as, nil}
+    subquery_expr = from(c in "comments", select: c.post_id)
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{id: %{not: %{any: %{>: subquery_expr}}}})
+
+    expected = dynamic([q], not (field(q, ^:id) > any(subquery_expr)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports negated scalar any helper expression query-builder payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        id: %{not: %{any: %{>: [source: Post, query: %{id: 1}]}}}
+      })
+
+    subquery_expr =
+      Post
+      |> EctoShorts.CommonFilters.convert_params_to_filter(%{id: 1}, [])
+      |> select([p], p.id)
+
+    expected = dynamic([q], not (field(q, ^:id) > any(subquery_expr)))
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports array nil equality" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{==: nil}})

@@ -295,7 +295,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q = from(p in Post)
 
       assert_raise ArgumentError,
-                   "Expected params to be a map or list, got: %{123 => \"oops\"}",
+                   "Expected params to be a map or list, got: {123, \"oops\"}",
                    fn ->
                      CommonFilters.convert_params_to_filter(q, %{123 => "oops"}, [])
                    end
