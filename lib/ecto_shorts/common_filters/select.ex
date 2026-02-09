@@ -14,7 +14,7 @@ defmodule EctoShorts.CommonFilters.Select do
         build(schema, filter_op, updated_query, binding_selector, entry, opts)
       end)
     else
-      apply_expr(filter_op, schema, query, binding_selector, term)
+      reduce_select(filter_op, schema, query, binding_selector, term)
     end
   end
 
@@ -26,14 +26,14 @@ defmodule EctoShorts.CommonFilters.Select do
   end
 
   def build(schema, filter_op, query, binding_selector, term, _opts) do
-    apply_expr(filter_op, schema, query, binding_selector, term)
+    reduce_select(filter_op, schema, query, binding_selector, term)
   end
 
-  defp apply_expr(:select, schema, query, binding_selector, term) do
+  defp reduce_select(:select, schema, query, binding_selector, term) do
     apply_select_expr(schema, query, binding_selector, term)
   end
 
-  defp apply_expr(:select_merge, schema, query, binding_selector, term) do
+  defp reduce_select(:select_merge, schema, query, binding_selector, term) do
     apply_select_merge_expr(schema, query, binding_selector, term)
   end
 

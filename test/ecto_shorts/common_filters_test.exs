@@ -95,6 +95,54 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :subquery with nested filters" do
+      expected_inner = from(p in Post, where: p.id == ^2)
+      expected = subquery(expected_inner)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{subquery: %{id: 2}},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
+    test "applies :subquery after top-level filters" do
+      expected_inner =
+        from(p in Post,
+          where: p.published == ^true,
+          where: p.id == ^2
+        )
+
+      expected = subquery(expected_inner)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [published: true, subquery: %{id: 2}],
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
+    test "supports :subquery under named binding selector" do
+      q = from(p in Post, as: :post)
+      expected_inner = from(p in Post, as: :post, where: p.id == ^2)
+      expected = subquery(expected_inner)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{post: %{subquery: %{id: 2}}}},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
     test "invalid binding params logs error and returns query unchanged" do
       q = from(p in Post)
 

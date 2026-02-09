@@ -6,7 +6,8 @@ defmodule EctoShorts.CommonFilters do
     Filter,
     Join,
     Preload,
-    Select
+    Select,
+    SubQuery
   }
 
   alias EctoShorts.SchemaHelpers
@@ -27,7 +28,8 @@ defmodule EctoShorts.CommonFilters do
     :first,
     :last,
     :order_by,
-    :preload
+    :preload,
+    :subquery
   ]
 
   def convert_params_to_filter(source, params, opts \\ []) do
@@ -302,6 +304,35 @@ defmodule EctoShorts.CommonFilters do
       :preload ->
         Preload.build(binding_source, filter_op, query, binding_selector, params, opts)
 
+      :subquery ->
+        if is_map(params) or is_list(params) do
+          filtered_query =
+            reduce_filter_params(
+              schema_source,
+              query,
+              binding_selector,
+              filter_op,
+              params,
+              opts
+            )
+
+          SubQuery.build(
+            binding_source,
+            :subquery,
+            filtered_query,
+            binding_selector,
+            params,
+            opts
+          )
+        else
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Expected :subquery params to be a map or keyword list, got: #{inspect(params)}"
+          )
+
+          query
+        end
+
       filter_op when filter_op in [:select, :select_merge] ->
         Select.build(binding_source, filter_op, query, binding_selector, params, opts)
 
@@ -356,20 +387,23 @@ defmodule EctoShorts.CommonFilters do
     where_filters = Keyword.take(params, [:where])
     or_where_filters = Keyword.take(params, [:or_where])
 
-    last_filter =
-      case List.keyfind(params, :last, 0) do
-        nil -> []
-        last -> [last]
-      end
+    terminal_filters =
+      [:last, :subquery]
+      |> Enum.flat_map(fn key ->
+        case List.keyfind(params, key, 0) do
+          nil -> []
+          entry -> [entry]
+        end
+      end)
 
     # Regular field filters should be processed with where_filters
     # since they can contain implicit WHERE clauses and must come
     # before or_where filters
-    rest = Keyword.drop(params, [:where, :or_where, :last])
+    rest = Keyword.drop(params, [:where, :or_where, :last, :subquery])
 
     where_filters
     |> Kernel.++(rest)
     |> Kernel.++(or_where_filters)
-    |> Kernel.++(last_filter)
+    |> Kernel.++(terminal_filters)
   end
 end

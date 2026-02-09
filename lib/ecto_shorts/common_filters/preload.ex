@@ -24,7 +24,7 @@ defmodule EctoShorts.CommonFilters.Preload do
     if Keyword.keyword?(values) do
       case Enum.split_with(values, fn {k, _} -> k in @binding_operators end) do
         {[], entries} ->
-          build_preload(query, binding_selector, entries)
+          apply_preload_expr(query, binding_selector, entries)
 
         {binding_ops, []} ->
           Enum.reduce(binding_ops, query, fn {binding_op, value}, query_acc ->
@@ -34,26 +34,26 @@ defmodule EctoShorts.CommonFilters.Preload do
         {binding_ops, entries} ->
           Enum.reduce(binding_ops, query, fn {binding_op, params}, query_acc ->
             Enum.reduce(params, query_acc, fn {binding_target, assoc_key}, q2 ->
-              build_preload(q2, {binding_op, binding_target}, assoc_key, entries)
+              apply_preload_expr(q2, {binding_op, binding_target}, assoc_key, entries)
             end)
           end)
       end
     else
-      build_preload(query, binding_selector, values)
+      apply_preload_expr(query, binding_selector, values)
     end
   end
 
   defp reduce_preload(_schema_source, query, binding_selector, key) do
-    build_preload(query, binding_selector, key, nil)
+    apply_preload_expr(query, binding_selector, key, nil)
   end
 
   Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
-      defp build_preload(query, unquote(quoted_binding_head), expr) do
+      defp apply_preload_expr(query, unquote(quoted_binding_head), expr) do
         Query.preload(query, [unquote_splicing(quoted_binding_body)], ^expr)
       end
 
-      defp build_preload(query, unquote(quoted_binding_head), assoc_key, nil) do
+      defp apply_preload_expr(query, unquote(quoted_binding_head), assoc_key, nil) do
         Query.preload(
           query,
           [unquote_splicing(quoted_binding_body)],
@@ -61,7 +61,7 @@ defmodule EctoShorts.CommonFilters.Preload do
         )
       end
 
-      defp build_preload(query, unquote(quoted_binding_head), assoc_key, nested) do
+      defp apply_preload_expr(query, unquote(quoted_binding_head), assoc_key, nested) do
         if Keyword.keyword?(nested) do
           Enum.reduce(nested, query, fn nested_entry, query_acc ->
             Query.preload(

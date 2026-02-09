@@ -20,7 +20,7 @@ defmodule EctoShorts.CommonFilters.Filter do
       when bool_op in @boolean_directives and is_list(params) do
     dynamic = Dynamics.convert_to_dynamic(source, binding_selector, {bool_op, params}, opts)
 
-    apply_dynamic(filter, query, dynamic)
+    apply_where_expr(filter, query, dynamic)
   end
 
   def build(source, filter, query, binding_selector, {common_op, params}, opts)
@@ -30,12 +30,12 @@ defmodule EctoShorts.CommonFilters.Filter do
       |> CommonSchema.get_schema_source()
       |> Dynamics.convert_to_dynamic(binding_selector, {common_op, params}, opts)
 
-    apply_dynamic(filter, query, dynamic)
+    apply_where_expr(filter, query, dynamic)
   end
 
   def build(source, filter, query, binding_selector, value, _opts)
       when filter in @pagination_filters do
-    apply_pagination_filter(source, filter, query, binding_selector, value)
+    apply_pagination_expr(source, filter, query, binding_selector, value)
   end
 
   def build(source, filter, query, binding_selector, {key, value}, opts) do
@@ -68,11 +68,11 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   defp build_field(source, filter, query, binding_selector, key, value, opts) do
     dyn = Dynamics.convert_to_dynamic(source, binding_selector, {key, value}, opts)
-    apply_dynamic(filter, query, dyn)
+    apply_where_expr(filter, query, dyn)
   end
 
-  defp apply_pagination_filter(source, :first, query, binding_selector, limit) do
-    apply_pagination_filter(source, :limit, query, binding_selector, limit)
+  defp apply_pagination_expr(source, :first, query, binding_selector, limit) do
+    apply_pagination_expr(source, :limit, query, binding_selector, limit)
   end
 
   # Applies `:last` pagination by selecting the last `limit` rows
@@ -87,14 +87,14 @@ defmodule EctoShorts.CommonFilters.Filter do
   # This reduces over `sort_keys` to support composite primary keys
   # (multi-field ordering).
 
-  defp apply_pagination_filter(source, :last, query, binding_selector, entries)
+  defp apply_pagination_expr(source, :last, query, binding_selector, entries)
        when is_map(entries) or is_list(entries) do
     Enum.reduce(entries, query, fn entry, q ->
-      apply_pagination_filter(source, :last, q, binding_selector, entry)
+      apply_pagination_expr(source, :last, q, binding_selector, entry)
     end)
   end
 
-  defp apply_pagination_filter(source, :last, query, _binding_selector, {sort_key, limit}) do
+  defp apply_pagination_expr(source, :last, query, _binding_selector, {sort_key, limit}) do
     sort_keys =
       if is_nil(sort_key) do
         List.wrap(CommonSchema.get_schema_reflection(source, :primary_key) || :id)
@@ -111,47 +111,47 @@ defmodule EctoShorts.CommonFilters.Filter do
     Enum.reduce(sort_keys, subquery, &Query.order_by(&2, asc: ^&1))
   end
 
-  defp apply_pagination_filter(source, :last, query, binding_selector, limit) do
-    apply_pagination_filter(source, :last, query, binding_selector, {nil, limit})
+  defp apply_pagination_expr(source, :last, query, binding_selector, limit) do
+    apply_pagination_expr(source, :last, query, binding_selector, {nil, limit})
   end
 
-  defp apply_pagination_filter(_source, :limit, query, _binding_selector, value) do
+  defp apply_pagination_expr(_source, :limit, query, _binding_selector, value) do
     Query.limit(query, ^value)
   end
 
-  defp apply_pagination_filter(_source, :offset, query, _binding_selector, value) do
+  defp apply_pagination_expr(_source, :offset, query, _binding_selector, value) do
     Query.offset(query, ^value)
   end
 
-  defp apply_pagination_filter(source, :order_by, query, binding_selector, entries)
+  defp apply_pagination_expr(source, :order_by, query, binding_selector, entries)
        when is_map(entries) or is_list(entries) do
     Enum.reduce(entries, query, fn entry, q ->
-      apply_pagination_filter(source, :order_by, q, binding_selector, entry)
+      apply_pagination_expr(source, :order_by, q, binding_selector, entry)
     end)
   end
 
-  defp apply_pagination_filter(_source, :order_by, query, _binding_selector, {:asc, key}) do
+  defp apply_pagination_expr(_source, :order_by, query, _binding_selector, {:asc, key}) do
     Query.order_by(query, asc: ^key)
   end
 
-  defp apply_pagination_filter(_source, :order_by, query, _binding_selector, {:desc, key}) do
+  defp apply_pagination_expr(_source, :order_by, query, _binding_selector, {:desc, key}) do
     Query.order_by(query, desc: ^key)
   end
 
-  defp apply_pagination_filter(_source, :order_by, query, _binding_selector, key)
+  defp apply_pagination_expr(_source, :order_by, query, _binding_selector, key)
        when is_atom(key) do
     Query.order_by(query, desc: ^key)
   end
 
-  defp apply_dynamic(_, query, nil) do
+  defp apply_where_expr(_, query, nil) do
     query
   end
 
-  defp apply_dynamic(:or_where, query, dyn) do
+  defp apply_where_expr(:or_where, query, dyn) do
     Query.or_where(query, ^dyn)
   end
 
-  defp apply_dynamic(:where, query, dyn) do
+  defp apply_where_expr(:where, query, dyn) do
     Query.where(query, ^dyn)
   end
 

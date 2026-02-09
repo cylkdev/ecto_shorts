@@ -33,13 +33,13 @@ defmodule EctoShorts.CommonFilters.Join do
   def build(schema_source, :join, query, binding_selector, list, opts) do
     Enum.reduce(list, query, fn
       {join_type, join_options}, q2 when join_type in @join_types ->
-        apply_join(schema_source, q2, binding_selector, {join_type, join_options}, opts)
+        reduce_join(schema_source, q2, binding_selector, {join_type, join_options}, opts)
 
       {key, join_options}, q2 ->
         assocs = CommonSchema.get_schema_reflection(schema_source, :associations) || []
 
         if key in assocs do
-          apply_join(
+          reduce_join(
             schema_source,
             q2,
             binding_selector,
@@ -75,7 +75,7 @@ defmodule EctoShorts.CommonFilters.Join do
     end)
   end
 
-  defp apply_join(schema_source, query, binding_selector, {join_type, join_options}, opts) do
+  defp reduce_join(schema_source, query, binding_selector, {join_type, join_options}, opts) do
     {op_source, join_options} = Keyword.pop(join_options, :source)
 
     if not is_nil(op_source) do

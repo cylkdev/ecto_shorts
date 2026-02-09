@@ -51,15 +51,6 @@ defmodule EctoShorts.Config do
 
   @doc since: "2.5.0"
   @doc """
-  Returns the configured join source module.
-  """
-  @spec query_source_provider :: module() | nil
-  def query_source_provider do
-    Application.get_env(@app, :query_source_provider)
-  end
-
-  @doc since: "2.5.0"
-  @doc """
   Returns the `Ecto.Repo` module to use.
 
   Looks for the `:repo` option first, falling back to the configured value in the
@@ -164,19 +155,6 @@ defmodule EctoShorts.Config do
 
   @doc since: "2.5.0"
   @doc """
-  Returns the max positional bindings.
-
-  ## Examples
-
-      iex> EctoShorts.Config.max_query_bindings()
-  """
-  @spec max_query_bindings :: integer()
-  def max_query_bindings do
-    Application.get_env(@app, :max_query_bindings) || 10
-  end
-
-  @doc since: "2.5.0"
-  @doc """
   Returns the dynamic adapter module.
 
   Defaults to `nil`.
@@ -188,5 +166,27 @@ defmodule EctoShorts.Config do
   @spec dynamic_adapter :: module() | nil
   def dynamic_adapter do
     Application.get_env(@app, :dynamic_adapter)
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  Returns the configured join source module.
+  """
+  @spec query_source_provider :: module() | nil
+  def query_source_provider do
+    Application.get_env(@app, :query_source_provider)
+  end
+
+  @doc since: "2.5.0"
+  @doc """
+  Returns the max positional bindings.
+
+  ## Examples
+
+      iex> EctoShorts.Config.max_query_bindings()
+  """
+  @spec max_query_bindings :: integer()
+  def max_query_bindings do
+    Application.get_env(@app, :max_query_bindings) || 10
   end
 end
