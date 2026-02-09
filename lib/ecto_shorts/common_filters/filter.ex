@@ -13,7 +13,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   @boolean_operators [:and, :or]
 
-  @pagination_filters [
+  @query_api_filters [
     :except,
     :except_all,
     :exclude,
@@ -57,7 +57,7 @@ defmodule EctoShorts.CommonFilters.Filter do
   end
 
   def build(schema_source, filter, query, binding_selector, value, opts)
-      when filter in @pagination_filters do
+      when filter in @query_api_filters do
     apply_expr(schema_source, filter, query, binding_selector, value, opts)
   end
 
