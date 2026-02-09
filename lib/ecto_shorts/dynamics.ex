@@ -1,9 +1,9 @@
 defmodule EctoShorts.Dynamics do
   @moduledoc false
 
+  alias EctoShorts.CommonFilters
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
-  alias EctoShorts.Dynamics.HelperExpressions
   alias EctoShorts.Dynamics.Adapters.Postgres
 
   require Ecto.Query
@@ -262,7 +262,7 @@ defmodule EctoShorts.Dynamics do
          {:all, value},
          opts
        ) do
-    value = HelperExpressions.build(source, key, value, opts)
+    value = apply_helper_expressions(source, key, value, opts)
 
     append_predicate_items(
       source,
@@ -283,7 +283,7 @@ defmodule EctoShorts.Dynamics do
          {:any, value},
          opts
        ) do
-    value = HelperExpressions.build(source, key, value, opts)
+    value = apply_helper_expressions(source, key, value, opts)
 
     append_predicate_items(
       source,
@@ -306,7 +306,7 @@ defmodule EctoShorts.Dynamics do
        ) do
     case inner_key do
       :all ->
-        value = HelperExpressions.build(source, key, value, opts)
+        value = apply_helper_expressions(source, key, value, opts)
 
         append_predicate_items(
           source,
@@ -319,7 +319,7 @@ defmodule EctoShorts.Dynamics do
         )
 
       :any ->
-        value = HelperExpressions.build(source, key, value, opts)
+        value = apply_helper_expressions(source, key, value, opts)
 
         append_predicate_items(
           source,
@@ -463,6 +463,44 @@ defmodule EctoShorts.Dynamics do
 
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
   defp source_has_schema?(_), do: false
+
+  def apply_helper_expressions(source, field_name, expression, opts) do
+    case expression do
+      map when is_map(map) and not is_struct(map) ->
+        apply_helper_expressions(source, field_name, Map.to_list(map), opts)
+
+      list when is_list(list) ->
+        if Keyword.keyword?(list) and
+             (Keyword.has_key?(list, :source) or Keyword.has_key?(list, :query)) do
+          build_subquery(source, field_name, list, opts)
+        else
+          Enum.map(list, fn {key, value} ->
+            {key, apply_helper_expressions(source, field_name, value, opts)}
+          end)
+        end
+
+      {key, value} ->
+        {key, apply_helper_expressions(source, field_name, value, opts)}
+
+      _ ->
+        expression
+    end
+  end
+
+  defp build_subquery(source, field_name, payload, opts) do
+    payload_source = payload[:source] || source
+    payload_query = payload[:query] || []
+
+    CommonFilters.convert_params_to_filter(
+      source,
+      [
+        source: payload_source,
+        query: payload_query,
+        select: payload_query[:select] || field_name
+      ],
+      opts
+    )
+  end
 
   defp normalize_expression_params(term) do
     term
