@@ -311,14 +311,14 @@ defmodule EctoShorts.CommonFilters do
               schema_source,
               query,
               binding_selector,
-              filter_op,
+              @where,
               params,
               opts
             )
 
           SubQuery.build(
             binding_source,
-            :subquery,
+            filter_op,
             filtered_query,
             binding_selector,
             params,
