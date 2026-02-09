@@ -74,14 +74,15 @@ defmodule EctoShorts.Testing do
 
     * `repo` – The Ecto repo module.
     * `query_a`, `query_b` – The queries to compare.
+    * `kind` – The kind of SQL to generate. Defaults to `:all`.
 
   ## Examples
 
       assert_sql(Ecto.Adapters.Postgres, Repo, query1, query2)
   """
-  def assert_sql(repo, query_a, query_b) do
-    left = Ecto.Adapters.SQL.to_sql(:all, repo, query_a)
-    right = Ecto.Adapters.SQL.to_sql(:all, repo, query_b)
+  def assert_sql(repo, query_a, query_b, kind \\ :all) do
+    left = Ecto.Adapters.SQL.to_sql(kind, repo, query_a)
+    right = Ecto.Adapters.SQL.to_sql(kind, repo, query_b)
 
     if left !== right do
       Assertions.flunk(
@@ -101,9 +102,9 @@ defmodule EctoShorts.Testing do
 
       refute_sql(Repo, query1, query2)
   """
-  def refute_sql(repo, query_a, query_b) do
-    left = Ecto.Adapters.SQL.to_sql(:all, repo, query_a)
-    right = Ecto.Adapters.SQL.to_sql(:all, repo, query_b)
+  def refute_sql(repo, query_a, query_b, kind \\ :all) do
+    left = Ecto.Adapters.SQL.to_sql(kind, repo, query_a)
+    right = Ecto.Adapters.SQL.to_sql(kind, repo, query_b)
 
     if left === right do
       Assertions.flunk(
@@ -176,12 +177,12 @@ defmodule EctoShorts.Testing do
         Testing.refute_dynamic(dyn_a, dyn_b)
       end
 
-      def assert_sql(query_a, query_b) do
-        Testing.assert_sql(@repo, query_a, query_b)
+      def assert_sql(query_a, query_b, kind \\ :all) do
+        Testing.assert_sql(@repo, query_a, query_b, kind)
       end
 
-      def refute_sql(query_a, query_b) do
-        Testing.refute_sql(@repo, query_a, query_b)
+      def refute_sql(query_a, query_b, kind \\ :all) do
+        Testing.refute_sql(@repo, query_a, query_b, kind)
       end
 
       def assert_query(query_a, query_b) do

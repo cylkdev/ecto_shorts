@@ -518,6 +518,54 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports scalar avg helper expression on a field" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{avg: %{>: 10}}})
+    expected = dynamic([q], avg(field(q, ^:views)) > ^10)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports top-level avg helper expression" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{avg: %{views: %{>: 10}}})
+    expected = dynamic([q], avg(field(q, ^:views)) > ^10)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar count helper expression on a field" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{id: %{count: %{>: 1}}})
+    expected = dynamic([q], count(field(q, ^:id)) > ^1)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar sum helper expression on a field" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{sum: %{>=: 10}}})
+    expected = dynamic([q], sum(field(q, ^:views)) >= ^10)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar min helper expression on a field" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{min: %{<: 100}}})
+    expected = dynamic([q], min(field(q, ^:views)) < ^100)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar max helper expression on a field" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{max: %{<=: 100}}})
+    expected = dynamic([q], max(field(q, ^:views)) <= ^100)
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports array nil equality" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{==: nil}})

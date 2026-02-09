@@ -876,7 +876,7 @@ defmodule EctoShorts.CommonFiltersTest do
           []
         )
 
-      assert_update_sql(expected, q2)
+      assert_sql(expected, q2, :update_all)
     end
 
     test "supports :update with operation payload maps" do
@@ -890,7 +890,7 @@ defmodule EctoShorts.CommonFiltersTest do
           []
         )
 
-      assert_update_sql(expected, q2)
+      assert_sql(expected, q2, :update_all)
     end
 
     test "binding selector :update targets the selected binding" do
@@ -916,7 +916,7 @@ defmodule EctoShorts.CommonFiltersTest do
           []
         )
 
-      assert_update_sql(expected, q2)
+      assert_sql(expected, q2, :update_all)
     end
 
     test "positional binding selector :update targets the selected binding" do
@@ -940,7 +940,7 @@ defmodule EctoShorts.CommonFiltersTest do
           []
         )
 
-      assert_update_sql(expected, q2)
+      assert_sql(expected, q2, :update_all)
     end
 
     test "supports :order_by for a single field" do
@@ -1208,6 +1208,23 @@ defmodule EctoShorts.CommonFiltersTest do
         CommonFilters.convert_params_to_filter(
           Post,
           %{group_by: :views, having: %{views: %{>: 10}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :having with aggregate helper expressions" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: avg(p.views) > ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{avg: %{views: %{>: 10}}}},
           []
         )
 
@@ -3101,11 +3118,5 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_received {:q2, q2}
       assert q2 == q
     end
-  end
-
-  defp assert_update_sql(query_a, query_b) do
-    left = Ecto.Adapters.SQL.to_sql(:update_all, EctoShorts.Repo, query_a)
-    right = Ecto.Adapters.SQL.to_sql(:update_all, EctoShorts.Repo, query_b)
-    assert left == right
   end
 end

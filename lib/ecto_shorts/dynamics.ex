@@ -11,6 +11,7 @@ defmodule EctoShorts.Dynamics do
 
   @equal :==
   @boolean_directives [:and, :or]
+  @aggregate_directives [:avg, :count, :max, :min, :sum]
 
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
     source = CommonSchema.normalize_source(source)
@@ -54,21 +55,13 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp reduce_dynamic_params(source, left_dynamic, binding_selector, {key, value}, opts) do
-    if key in Postgres.operators() do
-      dynamic_adapter = dynamic_adapter!(opts)
+    dynamic_adapter = dynamic_adapter!(opts)
 
-      value
-      |> normalize_expression_params()
-      |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
-        right_dynamic =
-          dynamic_adapter.build_dynamic(source, binding_selector, key, item)
+    cond do
+      key in @aggregate_directives ->
+        reduce_helper_dynamic_params(source, left_dynamic, binding_selector, key, value, opts)
 
-        merge_dynamic(dyn_acc, :and, right_dynamic)
-      end)
-    else
-      dynamic_adapter = dynamic_adapter!(opts)
-
-      if key in dynamic_adapter.operators() do
+      key in Postgres.operators() ->
         value
         |> normalize_expression_params()
         |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
@@ -77,20 +70,137 @@ defmodule EctoShorts.Dynamics do
 
           merge_dynamic(dyn_acc, :and, right_dynamic)
         end)
-      else
-        if source_has_schema?(source) do
-          build_schema_dynamic(source, left_dynamic, binding_selector, {key, value}, opts)
-        else
-          value
-          |> normalize_expression_params()
-          |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
-            right_dynamic =
-              dynamic_adapter.build_dynamic(source, binding_selector, key, item)
 
-            merge_dynamic(dyn_acc, :and, right_dynamic)
-          end)
-        end
+      key in dynamic_adapter.operators() ->
+        value
+        |> normalize_expression_params()
+        |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
+          right_dynamic =
+            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
+
+          merge_dynamic(dyn_acc, :and, right_dynamic)
+        end)
+
+      source_has_schema?(source) ->
+        build_schema_dynamic(source, left_dynamic, binding_selector, {key, value}, opts)
+
+      true ->
+        value
+        |> normalize_expression_params()
+        |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
+          right_dynamic =
+            dynamic_adapter.build_dynamic(source, binding_selector, key, item)
+
+          merge_dynamic(dyn_acc, :and, right_dynamic)
+        end)
+    end
+  end
+
+  defp reduce_helper_dynamic_params(
+         source,
+         left_dynamic,
+         binding_selector,
+         helper_op,
+         params,
+         opts
+       )
+       when is_map(params) and not is_struct(params) do
+    reduce_helper_dynamic_params(
+      source,
+      left_dynamic,
+      binding_selector,
+      helper_op,
+      Map.to_list(params),
+      opts
+    )
+  end
+
+  defp reduce_helper_dynamic_params(
+         source,
+         left_dynamic,
+         binding_selector,
+         helper_op,
+         params,
+         opts
+       )
+       when is_list(params) do
+    if Keyword.keyword?(params) do
+      Enum.reduce(params, left_dynamic, fn {field, expr}, dyn_acc ->
+        apply_helper_dynamic_expr(
+          source,
+          dyn_acc,
+          binding_selector,
+          helper_op,
+          field,
+          expr,
+          opts
+        )
+      end)
+    else
+      EctoShorts.Logger.warning(
+        @logger_prefix,
+        "Expected helper expression params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
+      )
+
+      left_dynamic
+    end
+  end
+
+  defp reduce_helper_dynamic_params(
+         source,
+         left_dynamic,
+         binding_selector,
+         helper_op,
+         {field, expr},
+         opts
+       ) do
+    apply_helper_dynamic_expr(
+      source,
+      left_dynamic,
+      binding_selector,
+      helper_op,
+      field,
+      expr,
+      opts
+    )
+  end
+
+  defp reduce_helper_dynamic_params(
+         _source,
+         left_dynamic,
+         _binding_selector,
+         helper_op,
+         params,
+         _opts
+       ) do
+    EctoShorts.Logger.warning(
+      @logger_prefix,
+      "Expected helper expression params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
+    )
+
+    left_dynamic
+  end
+
+  defp apply_helper_dynamic_expr(
+         source,
+         left_dynamic,
+         binding_selector,
+         helper_op,
+         field,
+         expr,
+         opts
+       ) do
+    helper_expr =
+      if is_map(expr) and not is_struct(expr) do
+        {helper_op, Map.to_list(expr)}
+      else
+        {helper_op, expr}
       end
+
+    if source_has_schema?(source) do
+      build_schema_dynamic(source, left_dynamic, binding_selector, {field, helper_expr}, opts)
+    else
+      reduce_dynamic_expr(source, left_dynamic, binding_selector, field, helper_expr, opts)
     end
   end
 
