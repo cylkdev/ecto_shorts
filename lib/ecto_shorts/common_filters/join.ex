@@ -5,7 +5,7 @@ defmodule EctoShorts.CommonFilters.Join do
   alias EctoShorts.Dynamics
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonFilters
-  alias EctoShorts.CommonFilters.QuerySourceProvider
+  alias EctoShorts.QueryProvider
 
   alias Ecto.Query
 
@@ -446,7 +446,7 @@ defmodule EctoShorts.CommonFilters.Join do
   end
 
   defp resolve_expr_source(binding_selector, source_key, source_params, opts) do
-    case QuerySourceProvider.resolve_expression(binding_selector, source_key, source_params, opts) do
+    case QueryProvider.resolve_expression(binding_selector, source_key, source_params, opts) do
       {:ok, source} ->
         {:ok, source}
 

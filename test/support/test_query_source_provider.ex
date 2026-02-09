@@ -1,4 +1,4 @@
-defmodule EctoShorts.TestQuerySourceProvider do
+defmodule EctoShorts.TestQueryProvider do
   @moduledoc false
 
   import Ecto.Query

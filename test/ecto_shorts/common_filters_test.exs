@@ -734,7 +734,7 @@ defmodule EctoShorts.CommonFiltersTest do
         CommonFilters.convert_params_to_filter(
           q,
           %{lock: %{name: :for_share, values: []}},
-          query_source_provider: EctoShorts.TestQuerySourceProvider
+          query_source_provider: EctoShorts.TestQueryProvider
         )
 
       assert_sql(expected, q2)
@@ -1045,6 +1045,138 @@ defmodule EctoShorts.CommonFiltersTest do
       assert log =~ "Expected :recursive_ctes value to be a boolean, got: \"yes\""
       assert_received {:q2, q2}
       assert q2 == q
+    end
+
+    test "supports :with_named_binding when binding is missing" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{with_named_binding: [author: %{join: [association: [source: :author, as: :author]]}]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :with_named_binding as no-op when binding already exists" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{with_named_binding: [author: %{join: [association: [source: :author, as: :author]]}]},
+          []
+        )
+
+      assert_sql(q, q2)
+    end
+
+    test "supports :with_named_binding with multiple entries" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          join: u in "users",
+          as: :users_table,
+          on: true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            with_named_binding: [
+              author: %{join: [association: [source: :author, as: :author]]},
+              users_table: %{join: [table: [source: "users", as: :users_table, on: true]]}
+            ]
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :with_named_binding with map payload" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            with_named_binding: %{
+              author: %{join: [association: [source: :author, as: :author]]}
+            }
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :with_named_binding key type warns and leaves query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{
+                with_named_binding: [
+                  {"author", %{join: [association: [source: :author, as: :author]]}}
+                ]
+              },
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :with_named_binding key to be an atom, got: \"author\""
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
+    test "invalid :with_named_binding params type warns and leaves query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{with_named_binding: [author: 123]}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~
+               "Expected :with_named_binding params for :author to be a map or keyword list, got: 123"
+
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
+    test "raises when :with_named_binding callback does not create named binding" do
+      assert_raise RuntimeError,
+                   "callback function for with_named_binding/3 should create a named binding for key :author",
+                   fn ->
+                     CommonFilters.convert_params_to_filter(
+                       Post,
+                       %{with_named_binding: [author: %{where: %{published: true}}]},
+                       []
+                     )
+                   end
     end
 
     test "supports :update with update operators" do
@@ -2216,7 +2348,7 @@ defmodule EctoShorts.CommonFiltersTest do
       Application.put_env(
         :ecto_shorts,
         :query_source_provider,
-        EctoShorts.TestQuerySourceProvider
+        EctoShorts.TestQueryProvider
       )
 
       expected_source_query =
@@ -2270,7 +2402,7 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          query_source_provider: EctoShorts.TestQuerySourceProvider
+          query_source_provider: EctoShorts.TestQueryProvider
         )
 
       assert_sql(expected, q2)
@@ -2304,7 +2436,7 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          query_source_provider: EctoShorts.TestQuerySourceProvider
+          query_source_provider: EctoShorts.TestQueryProvider
         )
 
       assert_sql(expected, q2)
@@ -2327,7 +2459,7 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              query_source_provider: EctoShorts.TestQuerySourceProvider
+              query_source_provider: EctoShorts.TestQueryProvider
             )
 
           send(self(), {:q2, q2})
@@ -2357,7 +2489,7 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              query_source_provider: EctoShorts.TestQuerySourceProvider
+              query_source_provider: EctoShorts.TestQueryProvider
             )
 
           send(self(), {:q2, q2})

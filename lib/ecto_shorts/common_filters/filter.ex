@@ -3,7 +3,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonFilters
-  alias EctoShorts.CommonFilters.QuerySourceProvider
+  alias EctoShorts.QueryProvider
   alias EctoShorts.Dynamics
 
   alias Ecto.Query
@@ -320,7 +320,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
       query
     else
-      case QuerySourceProvider.resolve_expression(binding_selector, lock_name, lock_values, opts) do
+      case QueryProvider.resolve_expression(binding_selector, lock_name, lock_values, opts) do
         {:ok, lock_builder} when is_function(lock_builder, 1) ->
           lock_builder.(query)
 

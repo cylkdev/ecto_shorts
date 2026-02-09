@@ -1,4 +1,4 @@
-defmodule EctoShorts.CommonFilters.QuerySourceProvider.Common do
+defmodule EctoShorts.CommonFilters.FragmentProvider do
   @moduledoc false
 
   @doc false
