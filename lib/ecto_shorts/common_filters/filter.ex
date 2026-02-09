@@ -21,8 +21,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     :intersect_all,
     :last,
     :limit,
-    :offset,
-    :order_by
+    :offset
   ]
 
   @custom_filters [:ids, :before, :after, :start_date, :end_date]
@@ -192,24 +191,6 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   defp apply_pagination_expr(_schema_source, :offset, query, _binding_selector, value, _opts) do
     Query.offset(query, ^value)
-  end
-
-  defp apply_pagination_expr(schema_source, :order_by, query, binding_selector, entries, opts) do
-    case entries do
-      entries when is_map(entries) or is_list(entries) ->
-        Enum.reduce(entries, query, fn entry, q ->
-          apply_pagination_expr(schema_source, :order_by, q, binding_selector, entry, opts)
-        end)
-
-      {:asc, key} ->
-        Query.order_by(query, asc: ^key)
-
-      {:desc, key} ->
-        Query.order_by(query, desc: ^key)
-
-      key when is_atom(key) ->
-        Query.order_by(query, desc: ^key)
-    end
   end
 
   defp apply_where_expr(_, query, nil) do

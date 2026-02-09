@@ -805,6 +805,138 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :order_by for a single field" do
+      expected = from(p in Post, order_by: [desc: p.title])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: :title}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :order_by targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          order_by: [asc: a.first_name]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{author: %{order_by: {:asc, :first_name}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "positional binding selector :order_by targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          order_by: [asc: a.first_name]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{at: %{2 => %{order_by: {:asc, :first_name}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :prepend_order_by for a single field" do
+      q = from(p in Post, order_by: [desc: :id])
+
+      expected =
+        from(p in Post,
+          order_by: [desc: p.title, desc: p.id]
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(q, %{prepend_order_by: :title}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :prepend_order_by with ordered fields" do
+      q = from(p in Post, order_by: [desc: :id])
+
+      expected =
+        from(p in Post,
+          order_by: [asc: p.published_at, desc: p.title, desc: p.id]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{prepend_order_by: [asc: :published_at, desc: :title]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :prepend_order_by targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          order_by: [desc: :id]
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          order_by: [asc: a.first_name, desc: p.id]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{author: %{prepend_order_by: {:asc, :first_name}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "positional binding selector :prepend_order_by targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          order_by: [desc: :id]
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          order_by: [asc: a.first_name, desc: p.id]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{at: %{2 => %{prepend_order_by: {:asc, :first_name}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports :group_by for a single field" do
       expected = from p in Post, group_by: p.author_id
       q = Post

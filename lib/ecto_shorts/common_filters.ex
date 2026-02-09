@@ -8,6 +8,7 @@ defmodule EctoShorts.CommonFilters do
     GroupBy,
     Having,
     Join,
+    OrderBy,
     Preload,
     Select,
     SubQuery
@@ -40,6 +41,7 @@ defmodule EctoShorts.CommonFilters do
     :limit,
     :offset,
     :order_by,
+    :prepend_order_by,
     :preload,
     :select,
     :select_merge,
@@ -326,6 +328,16 @@ defmodule EctoShorts.CommonFilters do
 
       :preload ->
         Preload.build(binding_source, :preload, query, binding_selector, params, opts)
+
+      filter_op when filter_op in [:order_by, :prepend_order_by] ->
+        OrderBy.build(
+          binding_source,
+          filter_op,
+          query,
+          binding_selector,
+          params,
+          opts
+        )
 
       :subquery ->
         if is_map(params) or is_list(params) do
