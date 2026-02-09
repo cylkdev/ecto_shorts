@@ -27,7 +27,7 @@ else
     error_module: EctoShorts.Actions.Error,
     dynamic_adapter: EctoShorts.Dynamics.Adapters.Postgres,
     max_query_bindings: 10,
-    expression_resolver: nil,
+    query_source_provider: nil,
     hints: []
 
   config :ecto_shorts, EctoShorts.Repo,

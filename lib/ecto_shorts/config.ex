@@ -172,9 +172,9 @@ defmodule EctoShorts.Config do
   @doc """
   Returns the configured join source module.
   """
-  @spec expression_resolver :: module() | nil
-  def expression_resolver do
-    Application.get_env(@app, :expression_resolver)
+  @spec query_source_provider :: module() | nil
+  def query_source_provider do
+    Application.get_env(@app, :query_source_provider)
   end
 
   @doc since: "2.5.0"

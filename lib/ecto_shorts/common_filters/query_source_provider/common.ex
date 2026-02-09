@@ -1,4 +1,4 @@
-defmodule EctoShorts.CommonFilters.ExpressionResolver.Common do
+defmodule EctoShorts.CommonFilters.QuerySourceProvider.Common do
   @moduledoc false
 
   @doc false

@@ -736,7 +736,7 @@ defmodule EctoShorts.CommonFiltersTest do
         CommonFilters.convert_params_to_filter(
           q,
           %{lock: %{name: :for_share, values: []}},
-          expression_resolver: EctoShorts.TestQuerySourceProvider
+          query_source_provider: EctoShorts.TestQuerySourceProvider
         )
 
       assert_sql(expected, q2)
@@ -2048,15 +2048,15 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "supports join source key dispatch through canonical :join source entry" do
-      previous = Application.get_env(:ecto_shorts, :expression_resolver)
+      previous = Application.get_env(:ecto_shorts, :query_source_provider)
 
       on_exit(fn ->
-        Application.put_env(:ecto_shorts, :expression_resolver, previous)
+        Application.put_env(:ecto_shorts, :query_source_provider, previous)
       end)
 
       Application.put_env(
         :ecto_shorts,
-        :expression_resolver,
+        :query_source_provider,
         EctoShorts.TestQuerySourceProvider
       )
 
@@ -2088,7 +2088,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports join source key dispatch through runtime :expression_resolver option" do
+    test "supports join source key dispatch through runtime :query_source_provider option" do
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -2111,13 +2111,13 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          expression_resolver: EctoShorts.TestQuerySourceProvider
+          query_source_provider: EctoShorts.TestQuerySourceProvider
         )
 
       assert_sql(expected, q2)
     end
 
-    test "supports join hint key resolution through runtime :expression_resolver option" do
+    test "supports join hint key resolution through runtime :query_source_provider option" do
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -2145,7 +2145,7 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          expression_resolver: EctoShorts.TestQuerySourceProvider
+          query_source_provider: EctoShorts.TestQuerySourceProvider
         )
 
       assert_sql(expected, q2)
@@ -2168,7 +2168,7 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              expression_resolver: EctoShorts.TestQuerySourceProvider
+              query_source_provider: EctoShorts.TestQuerySourceProvider
             )
 
           send(self(), {:q2, q2})
@@ -2198,7 +2198,7 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              expression_resolver: EctoShorts.TestQuerySourceProvider
+              query_source_provider: EctoShorts.TestQuerySourceProvider
             )
 
           send(self(), {:q2, q2})
