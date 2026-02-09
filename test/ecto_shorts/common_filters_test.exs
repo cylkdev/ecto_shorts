@@ -708,6 +708,103 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :with_ties true with :limit and :order_by" do
+      q =
+        from(p in Post,
+          order_by: [desc: :views],
+          limit: ^10
+        )
+
+      expected =
+        q
+        |> Ecto.Query.with_ties(true)
+
+      q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: true}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :with_ties false with :limit and :order_by" do
+      q =
+        from(p in Post,
+          order_by: [desc: :views],
+          limit: ^10
+        )
+
+      expected =
+        q
+        |> Ecto.Query.with_ties(false)
+
+      q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: false}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :with_ties targets the selected binding" do
+      q =
+        from(p in Post,
+          as: :post,
+          order_by: [desc: :views],
+          limit: ^10
+        )
+
+      expected = Ecto.Query.with_ties(q, [post: p], true)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{with_ties: %{bind: %{as: %{post: true}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "positional binding selector :with_ties targets the selected binding" do
+      q =
+        from(p in Post,
+          order_by: [desc: :views],
+          limit: ^10
+        )
+
+      expected = Ecto.Query.with_ties(q, [p], true)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{with_ties: %{bind: %{at: %{1 => true}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :with_ties value logs warning and leaves query unchanged" do
+      q =
+        from(p in Post,
+          order_by: [desc: :views],
+          limit: ^10
+        )
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: "yes"}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :with_ties value to be a boolean, got: \"yes\""
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
+    test "raises when :with_ties is applied without :limit" do
+      assert_raise Ecto.Query.CompileError,
+                   "`with_ties` can only be applied to queries containing a `limit`",
+                   fn ->
+                     CommonFilters.convert_params_to_filter(Post, %{with_ties: true}, [])
+                   end
+    end
+
     test "supports :lock with direct query-builder function" do
       expected = from(p in Post, lock: "FOR UPDATE")
 
