@@ -3,6 +3,7 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonQuery
 
   alias EctoShorts.CommonFilters.{
+    Distinct,
     Filter,
     Join,
     Preload,
@@ -28,6 +29,7 @@ defmodule EctoShorts.CommonFilters do
     :first,
     :last,
     :order_by,
+    :distinct,
     :preload,
     :subquery
   ]
@@ -332,6 +334,9 @@ defmodule EctoShorts.CommonFilters do
 
           query
         end
+
+      :distinct ->
+        Distinct.build(binding_source, :distinct, query, binding_selector, params, opts)
 
       filter_op when filter_op in [:select, :select_merge] ->
         Select.build(binding_source, filter_op, query, binding_selector, params, opts)

@@ -710,6 +710,103 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :distinct true" do
+      expected = from p in Post, distinct: true
+      q = Post
+      q2 = CommonFilters.convert_params_to_filter(q, %{distinct: true}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :distinct false" do
+      expected = from p in Post, distinct: false
+      q = Post
+      q2 = CommonFilters.convert_params_to_filter(q, %{distinct: false}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :distinct for a single field" do
+      expected = from p in Post, distinct: :title
+      q = Post
+      q2 = CommonFilters.convert_params_to_filter(q, %{distinct: :title}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :distinct with ordered fields" do
+      expected = from p in Post, distinct: [desc: :title]
+      q = Post
+      q2 = CommonFilters.convert_params_to_filter(q, %{distinct: [desc: :title]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :distinct with map payload" do
+      expected = from p in Post, distinct: [desc: :title]
+      q = Post
+      q2 = CommonFilters.convert_params_to_filter(q, %{distinct: %{desc: :title}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :distinct with :order_by in the same query" do
+      expected = from p in Post, distinct: :title, order_by: [desc: :id]
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [distinct: :title, order_by: :id],
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :distinct targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          distinct: a.first_name
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{author: %{distinct: :first_name}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :distinct payload raises ArgumentError" do
+      assert_raise ArgumentError,
+                   ~r/`distinct` interpolated on root expects a field or a keyword list/,
+                   fn ->
+                     CommonFilters.convert_params_to_filter(Post, %{distinct: 123}, [])
+                   end
+    end
+
+    test "multiple :distinct entries raise compile error" do
+      assert_raise Ecto.Query.CompileError,
+                   "only one distinct expression is allowed in query",
+                   fn ->
+                     CommonFilters.convert_params_to_filter(
+                       Post,
+                       [distinct: :title, distinct: :id],
+                       []
+                     )
+                   end
+    end
+
     test "supports :last" do
       expected =
         Post
