@@ -64,34 +64,39 @@ defmodule EctoShorts.CommonFilters.Preload do
   defp reduce_preload_bind(schema_source, query, _binding_selector, bind_params, entries)
        when is_list(bind_params) do
     if Keyword.keyword?(bind_params) do
-      Enum.reduce(bind_params, query, fn {binding_mode, scoped_params}, query_acc ->
-        if binding_mode in @binding_selector_modes do
+      Enum.reduce(bind_params, query, fn
+        {binding_mode, scoped_params}, query_acc when binding_mode in @binding_selector_modes ->
           scoped_params =
-            cond do
-              is_map(scoped_params) and not is_struct(scoped_params) ->
-                Map.to_list(scoped_params)
+            case scoped_params do
+              value when is_map(value) and not is_struct(value) ->
+                Map.to_list(value)
 
-              Keyword.keyword?(scoped_params) ->
-                scoped_params
+              value when is_list(value) ->
+                value
 
-              true ->
+              value ->
                 raise ArgumentError,
-                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(scoped_params)}"
+                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(value)}"
             end
 
-          Enum.reduce(scoped_params, query_acc, fn {binding_target, value}, q2 ->
-            scoped_binding_selector = {binding_mode, binding_target}
+          Enum.reduce(scoped_params, query_acc, fn
+            {binding_target, value}, q2 ->
+              scoped_binding_selector = {binding_mode, binding_target}
 
-            if is_nil(entries) do
-              reduce_preload(schema_source, q2, scoped_binding_selector, value)
-            else
-              apply_preload_expr(q2, scoped_binding_selector, value, entries)
-            end
+              if is_nil(entries) do
+                reduce_preload(schema_source, q2, scoped_binding_selector, value)
+              else
+                apply_preload_expr(q2, scoped_binding_selector, value, entries)
+              end
+
+            entry, _q2 ->
+              raise ArgumentError,
+                    "Expected :bind -> #{inspect(binding_mode)} entries to be {target, params} tuples, got: #{inspect(entry)}"
           end)
-        else
+
+        {binding_mode, _scoped_params}, _query_acc ->
           raise ArgumentError,
                 "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
-        end
       end)
     else
       raise ArgumentError,

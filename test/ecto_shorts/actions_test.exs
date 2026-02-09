@@ -1304,7 +1304,7 @@ defmodule EctoShorts.ActionsTest do
       assert Enum.map(results, & &1.title) == ["Two", "Three"]
     end
 
-    test "supports positional binding selector via :at" do
+    test "supports positional binding selector via :bind/:at" do
       author =
         %User{}
         |> User.changeset(%{first_name: "author"})
@@ -1332,11 +1332,11 @@ defmodule EctoShorts.ActionsTest do
           join: a in assoc(p, :author)
         )
 
-      assert [result] = Actions.all(q, %{at: %{1 => %{published: true}}})
+      assert [result] = Actions.all(q, %{bind: %{at: %{1 => %{published: true}}}})
       assert %Post{title: "Published", published: true} = result
     end
 
-    test "supports named binding selector via :as" do
+    test "supports named binding selector via :bind/:as" do
       %Post{}
       |> Post.changeset(%{title: "Published", published: true})
       |> Repo.insert!()
@@ -1348,7 +1348,7 @@ defmodule EctoShorts.ActionsTest do
 
       q = from(p in Post, as: :post)
 
-      assert [result] = Actions.all(q, %{as: %{post: %{published: true}}})
+      assert [result] = Actions.all(q, %{bind: %{as: %{post: %{published: true}}}})
       assert %Post{title: "Published", published: true} = result
     end
 
