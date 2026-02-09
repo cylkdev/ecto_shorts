@@ -895,6 +895,94 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :with_cte with keyword payload" do
+      cte_query = from(p in Post, where: p.published == ^true)
+      expected = Ecto.Query.with_cte(Post, "published_posts", as: ^cte_query)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{with_cte: [published_posts: [as: cte_query]]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :with_cte with map payload" do
+      cte_query = from(p in Post, where: p.published == ^true)
+      expected = Ecto.Query.with_cte(Post, "published_posts", as: ^cte_query)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{with_cte: %{published_posts: %{as: cte_query}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :with_cte with :materialized and :operation options" do
+      cte_query = from(p in Post, select: p)
+
+      expected =
+        Ecto.Query.with_cte(
+          Post,
+          "published_posts",
+          as: ^cte_query,
+          materialized: false,
+          operation: :all
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            with_cte: [
+              published_posts: [as: cte_query, materialized: false, operation: :all]
+            ]
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :with_cte with nested :as payload" do
+      cte_query = from(p in Post, where: p.published == ^true)
+      expected = Ecto.Query.with_cte(Post, "published_posts", as: ^cte_query)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{with_cte: [published_posts: [as: %{from: Post, query: %{published: true}}]]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :with_cte entries warn and leave query unchanged" do
+      q = from(p in Post, where: p.published == ^true)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{with_cte: [published_posts: [operation: :all]]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "include an :as key"
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
     test "supports :update with update operators" do
       updates = [set: [title: "After"], inc: [views: 1]]
       expected = Ecto.Query.update(Post, ^updates)

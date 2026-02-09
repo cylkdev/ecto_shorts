@@ -12,6 +12,7 @@ defmodule EctoShorts.CommonFilters do
     Preload,
     Select,
     SubQuery,
+    WithCte,
     Windows,
     Update
   }
@@ -54,6 +55,7 @@ defmodule EctoShorts.CommonFilters do
     :select,
     :select_merge,
     :subquery,
+    :with_cte,
     :update
   ]
 
@@ -539,6 +541,11 @@ defmodule EctoShorts.CommonFilters do
     )
 
     query
+  end
+
+  defp apply_query_builder(schema_source, query, binding_selector, :with_cte, params, opts) do
+    binding_source = to_binding_source(schema_source, query, binding_selector)
+    WithCte.build(binding_source, :with_cte, query, binding_selector, params, opts)
   end
 
   defp apply_query_builder(schema_source, query, binding_selector, filter_op, params, opts)
