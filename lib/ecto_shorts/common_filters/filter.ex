@@ -3,6 +3,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonFilters
+  alias EctoShorts.CommonFilters.ExpressionResolver
   alias EctoShorts.Dynamics
 
   alias Ecto.Query
@@ -22,6 +23,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     :union,
     :union_all,
     :last,
+    :lock,
     :limit,
     :offset,
     :reverse_order
@@ -206,6 +208,39 @@ defmodule EctoShorts.CommonFilters.Filter do
     apply_pagination_expr(schema_source, :last, query, binding_selector, {nil, limit}, opts)
   end
 
+  defp apply_pagination_expr(_schema_source, :lock, query, _binding_selector, value, _opts)
+       when is_function(value, 1) do
+    value.(query)
+  end
+
+  defp apply_pagination_expr(_schema_source, :lock, query, binding_selector, params, opts)
+       when is_map(params) and not is_struct(params) do
+    apply_lock_from_resolver(query, binding_selector, params, opts)
+  end
+
+  defp apply_pagination_expr(_schema_source, :lock, query, binding_selector, params, opts)
+       when is_list(params) do
+    if Keyword.keyword?(params) do
+      apply_lock_from_resolver(query, binding_selector, params, opts)
+    else
+      EctoShorts.Logger.warning(
+        @logger_prefix,
+        "Expected :lock params to be a unary function or a keyword/map resolver payload, got: #{inspect(params)}"
+      )
+
+      query
+    end
+  end
+
+  defp apply_pagination_expr(_schema_source, :lock, query, _binding_selector, value, _opts) do
+    EctoShorts.Logger.warning(
+      @logger_prefix,
+      "Expected :lock params to be a unary function or a keyword/map resolver payload, got: #{inspect(value)}"
+    )
+
+    query
+  end
+
   defp apply_pagination_expr(_schema_source, :limit, query, _binding_selector, value, _opts) do
     Query.limit(query, ^value)
   end
@@ -235,5 +270,55 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   defp apply_where_expr(:where, query, dyn) do
     Query.where(query, ^dyn)
+  end
+
+  defp apply_lock_from_resolver(query, binding_selector, params, opts) do
+    params =
+      if is_map(params) and not is_struct(params) do
+        Map.to_list(params)
+      else
+        params
+      end
+
+    lock_name = Keyword.get(params, :name)
+    lock_values = Keyword.get(params, :values, [])
+
+    if is_nil(lock_name) do
+      EctoShorts.Logger.warning(
+        @logger_prefix,
+        "Expected :lock resolver payload to have a :name key, got: #{inspect(params)}"
+      )
+
+      query
+    else
+      case ExpressionResolver.resolve_expression(binding_selector, lock_name, lock_values, opts) do
+        {:ok, lock_builder} when is_function(lock_builder, 1) ->
+          lock_builder.(query)
+
+        {:ok, other} ->
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Expected :lock resolver to return {:ok, (Ecto.Query.t() -> Ecto.Query.t())}, got: #{inspect(other)}"
+          )
+
+          query
+
+        {:error, reason} ->
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Lock expression callback returned error for key #{inspect(lock_name)}: #{inspect(reason)}"
+          )
+
+          query
+
+        other ->
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Expected :lock resolver callback to return {:ok, query_builder_fun} | {:error, reason}, got: #{inspect(other)}"
+          )
+
+          query
+      end
+    end
   end
 end

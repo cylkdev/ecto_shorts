@@ -710,6 +710,38 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :lock with direct query-builder function" do
+      expected = from(p in Post, lock: "FOR UPDATE")
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: fn query -> from(p in query, lock: "FOR UPDATE") end},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :lock with expression resolver payload" do
+      q = from(p in Post, where: p.published == ^true)
+
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          lock: "FOR SHARE"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{lock: %{name: :for_share, values: []}},
+          expression_resolver: EctoShorts.TestQuerySourceProvider
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports :reverse_order with existing order_by expressions" do
       q = from(p in Post, order_by: [asc: :id, desc: :title])
 
@@ -1079,6 +1111,94 @@ defmodule EctoShorts.CommonFiltersTest do
       expected = from p in Post, group_by: p.author_id
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{group_by: :author_id}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :windows with keyword payload" do
+      expected =
+        from(p in Post,
+          windows: [post_window: [partition_by: p.author_id, order_by: [desc: p.inserted_at]]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :windows with map payload" do
+      expected =
+        from(p in Post,
+          windows: [post_window: [partition_by: p.author_id, order_by: [desc: p.inserted_at]]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: %{post_window: %{partition_by: :author_id, order_by: [desc: :inserted_at]}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :windows targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          windows: [author_window: [partition_by: a.first_name, order_by: [asc: a.age]]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{
+            as: %{
+              author: %{
+                windows: [author_window: [partition_by: :first_name, order_by: [asc: :age]]]
+              }
+            }
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "positional binding selector :windows targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          windows: [author_window: [partition_by: a.first_name, order_by: [asc: a.age]]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{
+            at: %{
+              2 => %{windows: [author_window: [partition_by: :first_name, order_by: [asc: :age]]]}
+            }
+          },
+          []
+        )
 
       assert_sql(expected, q2)
     end

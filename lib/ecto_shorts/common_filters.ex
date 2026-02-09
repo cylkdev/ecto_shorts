@@ -12,6 +12,7 @@ defmodule EctoShorts.CommonFilters do
     Preload,
     Select,
     SubQuery,
+    Windows,
     Update
   }
 
@@ -41,9 +42,11 @@ defmodule EctoShorts.CommonFilters do
     :union_all,
     :join,
     :last,
+    :lock,
     :limit,
     :offset,
     :order_by,
+    :windows,
     :reverse_order,
     :prepend_order_by,
     :preload,
@@ -333,6 +336,9 @@ defmodule EctoShorts.CommonFilters do
 
       :preload ->
         Preload.build(binding_source, :preload, query, binding_selector, params, opts)
+
+      :windows ->
+        Windows.build(binding_source, :windows, query, binding_selector, params, opts)
 
       filter_op when filter_op in [:order_by, :prepend_order_by] ->
         OrderBy.build(

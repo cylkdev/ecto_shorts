@@ -2,10 +2,10 @@ defmodule EctoShorts.CommonFilters.Join do
   @moduledoc false
 
   alias EctoShorts.Compiler
-  alias EctoShorts.Config
   alias EctoShorts.Dynamics
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonFilters
+  alias EctoShorts.CommonFilters.ExpressionResolver
 
   alias Ecto.Query
 
@@ -14,12 +14,19 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @logger_prefix "EctoShorts.CommonFilters.Join"
 
-  @hints case(Application.compile_env(:ecto_shorts, :hints)) do
-    nil -> []
-    hints when is_list(hints) -> hints
-    mod when is_atom(mod) -> mod.hints()
-    term -> raise ArgumentError, "Expected :hints to be a list or module, got: #{inspect(term)}"
-  end
+  @hints (case Application.compile_env(:ecto_shorts, :hints) do
+            nil ->
+              []
+
+            hints when is_list(hints) ->
+              hints
+
+            mod when is_atom(mod) ->
+              mod.hints()
+
+            term ->
+              raise ArgumentError, "Expected :hints to be a list or module, got: #{inspect(term)}"
+          end)
 
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
@@ -439,14 +446,7 @@ defmodule EctoShorts.CommonFilters.Join do
   end
 
   defp resolve_expr_source(binding_selector, source_key, source_params, opts) do
-    mod = Keyword.get(opts, :expression_resolver, Config.expression_resolver())
-
-    unless Code.ensure_loaded?(mod) and function_exported?(mod, :resolve_expression, 3) do
-      raise ArgumentError,
-            "Expected join source module to have a resolve_expression/3 function, got: #{inspect(mod)}"
-    end
-
-    case mod.resolve_expression(binding_selector, source_key, source_params) do
+    case ExpressionResolver.resolve_expression(binding_selector, source_key, source_params, opts) do
       {:ok, source} ->
         {:ok, source}
 

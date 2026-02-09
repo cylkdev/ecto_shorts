@@ -15,6 +15,18 @@ defmodule EctoShorts.TestQuerySourceProvider do
     end
   end
 
+  def build_resolve_expression(:for_update, _params, _binding_selector) do
+    {:ok, fn query -> from(q in query, lock: "FOR UPDATE") end}
+  end
+
+  def build_resolve_expression(:for_share, _params, _binding_selector) do
+    {:ok, fn query -> from(q in query, lock: "FOR SHARE") end}
+  end
+
+  def build_resolve_expression(:post_window, _params, _binding_selector) do
+    {:ok, [partition_by: [:author_id], order_by: [desc: :inserted_at]]}
+  end
+
   def build_resolve_expression(:error_fragment, _params, _binding_selector) do
     {:error, :forced_error}
   end
