@@ -10,31 +10,31 @@ defmodule EctoShorts.CommonFilters.WithCte do
 
   @doc false
   def build(schema_source, :with_cte, query, _binding_selector, params, opts) do
-    reduce_with_cte(schema_source, query, params, opts)
+    reduce_cte(schema_source, query, params, opts)
   end
 
-  defp reduce_with_cte(schema_source, query, params, opts)
+  defp reduce_cte(schema_source, query, params, opts)
        when is_map(params) and not is_struct(params) do
-    reduce_with_cte(schema_source, query, Map.to_list(params), opts)
+    reduce_cte(schema_source, query, Map.to_list(params), opts)
   end
 
-  defp reduce_with_cte(schema_source, query, params, opts) when is_list(params) do
+  defp reduce_cte(schema_source, query, params, opts) when is_list(params) do
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn {cte_name, cte_definition}, query_acc ->
-        apply_cte_entry(schema_source, query_acc, cte_name, cte_definition, opts)
+        apply_cte(schema_source, query_acc, cte_name, cte_definition, opts)
       end)
     else
       Enum.reduce(params, query, fn entry, query_acc ->
-        reduce_with_cte(schema_source, query_acc, entry, opts)
+        reduce_cte(schema_source, query_acc, entry, opts)
       end)
     end
   end
 
-  defp reduce_with_cte(schema_source, query, {cte_name, cte_definition}, opts) do
-    apply_cte_entry(schema_source, query, cte_name, cte_definition, opts)
+  defp reduce_cte(schema_source, query, {cte_name, cte_definition}, opts) do
+    apply_cte(schema_source, query, cte_name, cte_definition, opts)
   end
 
-  defp reduce_with_cte(_schema_source, query, value, _opts) do
+  defp reduce_cte(_schema_source, query, value, _opts) do
     EctoShorts.Logger.warning(
       @logger_prefix,
       "Expected :with_cte params to be a map or keyword list, got: #{inspect(value)}"
@@ -43,67 +43,47 @@ defmodule EctoShorts.CommonFilters.WithCte do
     query
   end
 
-  defp apply_cte_entry(schema_source, query, cte_name, cte_definition, opts) do
-    with {:ok, cte_query} <-
-           build_cte_query(schema_source, cte_name, cte_definition, opts) do
-      materialized = Keyword.get(cte_definition, :materialized)
-      operation = Keyword.get(cte_definition, :operation)
+  defp apply_cte(schema_source, query, cte_name, cte_definition, opts) do
+    case build_query(schema_source, cte_name, cte_definition, opts) do
+      {:ok, cte_query} ->
+        materialized = Keyword.get(cte_definition, :materialized)
+        operation = Keyword.get(cte_definition, :operation)
 
-      Query.with_cte(
-        query,
-        ^cte_name,
-        as: ^cte_query,
-        materialized: materialized,
-        operation: operation
-      )
-    else
-      :error -> query
+        Query.with_cte(
+          query,
+          ^cte_name,
+          as: ^cte_query,
+          materialized: materialized,
+          operation: operation
+        )
+
+      :error ->
+        query
     end
   end
 
-  defp build_cte_query(schema_source, cte_name, cte_definition, opts) do
-    case Keyword.fetch(cte_definition, :as) do
-      {:ok, as_value} ->
-        case as_value do
-          %Ecto.Query{} = query ->
-            {:ok, query}
+  defp build_query(schema_source, cte_name, cte_definition, opts) do
+    case Keyword.get(cte_definition, :as) do
+      %Ecto.Query{} = query ->
+        {:ok, query}
 
-          %Ecto.SubQuery{} = query ->
-            {:ok, query}
+      %Ecto.SubQuery{} = query ->
+        {:ok, query}
 
-          query_params when is_map(query_params) and not is_struct(query_params) ->
-            from_source = Map.get(query_params, :source, schema_source)
-            filter_params = Map.get(query_params, :query, [])
-            {:ok, CommonFilters.convert_params_to_filter(from_source, filter_params, opts)}
+      query_params when is_map(query_params) and not is_struct(query_params) ->
+        from_source = Keyword.get(query_params, :source, schema_source)
+        filter_params = Keyword.get(query_params, :query, %{})
+        {:ok, CommonFilters.convert_params_to_filter(from_source, filter_params, opts)}
 
-          query_params when is_list(query_params) ->
-            if Keyword.keyword?(query_params) do
-              from_source = Keyword.get(query_params, :source, schema_source)
+      query_params when is_list(query_params) ->
+        from_source = Keyword.get(query_params, :source, schema_source)
+        filter_params = Keyword.get(query_params, :query, %{})
+        {:ok, CommonFilters.convert_params_to_filter(from_source, filter_params, opts)}
 
-              filter_params = Keyword.get(query_params, :query, [])
-              {:ok, CommonFilters.convert_params_to_filter(from_source, filter_params, opts)}
-            else
-              EctoShorts.Logger.warning(
-                @logger_prefix,
-                "Expected CTE :as query payload for #{inspect(cte_name)} to be a query, subquery, or keyword/map payload, got: #{inspect(as_value)}"
-              )
-
-              :error
-            end
-
-          _ ->
-            EctoShorts.Logger.warning(
-              @logger_prefix,
-              "Expected CTE :as query payload for #{inspect(cte_name)} to be a query, subquery, or keyword/map payload, got: #{inspect(as_value)}"
-            )
-
-            :error
-        end
-
-      :error ->
+      term ->
         EctoShorts.Logger.warning(
           @logger_prefix,
-          "Expected CTE definition for #{inspect(cte_name)} to include an :as key, got: #{inspect(cte_definition)}"
+          "Expected CTE :as query params for #{inspect(cte_name)} to be a query, subquery, or keyword/map payload, got: #{inspect(term)}"
         )
 
         :error

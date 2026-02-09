@@ -250,7 +250,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
             subquery_params ->
               subquery_source = subquery_params[:source] || schema_source
-              filter_params = subquery_params[:query] || []
+              filter_params = subquery_params[:query] || %{}
               CommonFilters.convert_params_to_filter(subquery_source, filter_params, opts)
           end
 

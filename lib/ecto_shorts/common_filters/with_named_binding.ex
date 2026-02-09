@@ -44,9 +44,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
 
   defp apply_entry(query, binding_key, binding_params, opts)
        when is_atom(binding_key) and is_map(binding_params) and not is_struct(binding_params) do
-    Query.with_named_binding(query, binding_key, fn query_acc ->
-      CommonFilters.convert_params_to_filter(query_acc, Map.to_list(binding_params), opts)
-    end)
+    apply_entry(query, binding_key, Map.to_list(binding_params), opts)
   end
 
   defp apply_entry(query, binding_key, binding_params, opts)

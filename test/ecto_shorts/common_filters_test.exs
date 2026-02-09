@@ -1227,7 +1227,7 @@ defmodule EctoShorts.CommonFiltersTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "include an :as key"
+      assert log =~ "Expected CTE :as query params"
       assert_received {:q2, q2}
       assert q2 == q
     end

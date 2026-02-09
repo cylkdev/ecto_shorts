@@ -236,9 +236,9 @@ defmodule EctoShorts.CommonFilters.Filter do
     value.(query)
   end
 
-  defp apply_expr(_schema_source, :lock, query, binding_selector, params, opts)
+  defp apply_expr(schema_source, :lock, query, binding_selector, params, opts)
        when is_map(params) and not is_struct(params) do
-    apply_lock_from_resolver(query, binding_selector, params, opts)
+    apply_expr(schema_source, :lock, query, binding_selector, Map.to_list(params), opts)
   end
 
   defp apply_expr(_schema_source, :lock, query, binding_selector, params, opts)
