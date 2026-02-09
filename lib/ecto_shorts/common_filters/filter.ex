@@ -26,6 +26,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     :lock,
     :limit,
     :offset,
+    :recursive_ctes,
     :reverse_order
   ]
 
@@ -57,7 +58,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   def build(schema_source, filter, query, binding_selector, value, opts)
       when filter in @pagination_filters do
-    apply_pagination_expr(schema_source, filter, query, binding_selector, value, opts)
+    apply_expr(schema_source, filter, query, binding_selector, value, opts)
   end
 
   def build(schema_source, filter, query, binding_selector, {key, value}, opts) do
@@ -97,13 +98,13 @@ defmodule EctoShorts.CommonFilters.Filter do
     apply_where_expr(filter, query, dyn)
   end
 
-  defp apply_pagination_expr(_schema_source, :exclude, query, _binding_selector, entries, _opts) do
+  defp apply_expr(_schema_source, :exclude, query, _binding_selector, entries, _opts) do
     entries
     |> List.wrap()
     |> Enum.reduce(query, fn filter, q2 -> Query.exclude(q2, filter) end)
   end
 
-  defp apply_pagination_expr(schema_source, :except, query, _binding_selector, value, opts) do
+  defp apply_expr(schema_source, :except, query, _binding_selector, value, opts) do
     if is_struct(value, Ecto.Query) do
       Query.except(query, ^value)
     else
@@ -112,7 +113,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     end
   end
 
-  defp apply_pagination_expr(schema_source, :except_all, query, _binding_selector, value, opts) do
+  defp apply_expr(schema_source, :except_all, query, _binding_selector, value, opts) do
     if is_struct(value, Ecto.Query) do
       Query.except_all(query, ^value)
     else
@@ -121,7 +122,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     end
   end
 
-  defp apply_pagination_expr(schema_source, :intersect, query, _binding_selector, value, opts) do
+  defp apply_expr(schema_source, :intersect, query, _binding_selector, value, opts) do
     if is_struct(value, Ecto.Query) do
       Query.intersect(query, ^value)
     else
@@ -130,7 +131,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     end
   end
 
-  defp apply_pagination_expr(schema_source, :intersect_all, query, _binding_selector, value, opts) do
+  defp apply_expr(schema_source, :intersect_all, query, _binding_selector, value, opts) do
     if is_struct(value, Ecto.Query) do
       Query.intersect_all(query, ^value)
     else
@@ -139,7 +140,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     end
   end
 
-  defp apply_pagination_expr(schema_source, :union, query, _binding_selector, value, opts) do
+  defp apply_expr(schema_source, :union, query, _binding_selector, value, opts) do
     if is_struct(value, Ecto.Query) do
       Query.union(query, ^value)
     else
@@ -148,7 +149,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     end
   end
 
-  defp apply_pagination_expr(schema_source, :union_all, query, _binding_selector, value, opts) do
+  defp apply_expr(schema_source, :union_all, query, _binding_selector, value, opts) do
     if is_struct(value, Ecto.Query) do
       Query.union_all(query, ^value)
     else
@@ -157,18 +158,18 @@ defmodule EctoShorts.CommonFilters.Filter do
     end
   end
 
-  defp apply_pagination_expr(schema_source, :first, query, binding_selector, limit, opts) do
-    apply_pagination_expr(schema_source, :limit, query, binding_selector, limit, opts)
+  defp apply_expr(schema_source, :first, query, binding_selector, limit, opts) do
+    apply_expr(schema_source, :limit, query, binding_selector, limit, opts)
   end
 
-  defp apply_pagination_expr(schema_source, :last, query, binding_selector, entries, opts)
+  defp apply_expr(schema_source, :last, query, binding_selector, entries, opts)
        when is_map(entries) or is_list(entries) do
     Enum.reduce(entries, query, fn entry, q ->
-      apply_pagination_expr(schema_source, :last, q, binding_selector, entry, opts)
+      apply_expr(schema_source, :last, q, binding_selector, entry, opts)
     end)
   end
 
-  defp apply_pagination_expr(
+  defp apply_expr(
          schema_source,
          :last,
          query,
@@ -204,21 +205,21 @@ defmodule EctoShorts.CommonFilters.Filter do
     Enum.reduce(sort_keys, subquery, &Query.order_by(&2, asc: ^&1))
   end
 
-  defp apply_pagination_expr(schema_source, :last, query, binding_selector, limit, opts) do
-    apply_pagination_expr(schema_source, :last, query, binding_selector, {nil, limit}, opts)
+  defp apply_expr(schema_source, :last, query, binding_selector, limit, opts) do
+    apply_expr(schema_source, :last, query, binding_selector, {nil, limit}, opts)
   end
 
-  defp apply_pagination_expr(_schema_source, :lock, query, _binding_selector, value, _opts)
+  defp apply_expr(_schema_source, :lock, query, _binding_selector, value, _opts)
        when is_function(value, 1) do
     value.(query)
   end
 
-  defp apply_pagination_expr(_schema_source, :lock, query, binding_selector, params, opts)
+  defp apply_expr(_schema_source, :lock, query, binding_selector, params, opts)
        when is_map(params) and not is_struct(params) do
     apply_lock_from_resolver(query, binding_selector, params, opts)
   end
 
-  defp apply_pagination_expr(_schema_source, :lock, query, binding_selector, params, opts)
+  defp apply_expr(_schema_source, :lock, query, binding_selector, params, opts)
        when is_list(params) do
     if Keyword.keyword?(params) do
       apply_lock_from_resolver(query, binding_selector, params, opts)
@@ -232,7 +233,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     end
   end
 
-  defp apply_pagination_expr(_schema_source, :lock, query, _binding_selector, value, _opts) do
+  defp apply_expr(_schema_source, :lock, query, _binding_selector, value, _opts) do
     EctoShorts.Logger.warning(
       @logger_prefix,
       "Expected :lock params to be a unary function or a keyword/map resolver payload, got: #{inspect(value)}"
@@ -241,15 +242,43 @@ defmodule EctoShorts.CommonFilters.Filter do
     query
   end
 
-  defp apply_pagination_expr(_schema_source, :limit, query, _binding_selector, value, _opts) do
+  defp apply_expr(_schema_source, :limit, query, _binding_selector, value, _opts) do
     Query.limit(query, ^value)
   end
 
-  defp apply_pagination_expr(_schema_source, :offset, query, _binding_selector, value, _opts) do
+  defp apply_expr(_schema_source, :offset, query, _binding_selector, value, _opts) do
     Query.offset(query, ^value)
   end
 
-  defp apply_pagination_expr(
+  defp apply_expr(
+         _schema_source,
+         :recursive_ctes,
+         query,
+         _binding_selector,
+         value,
+         _opts
+       )
+       when is_boolean(value) do
+    Query.recursive_ctes(query, value)
+  end
+
+  defp apply_expr(
+         _schema_source,
+         :recursive_ctes,
+         query,
+         _binding_selector,
+         value,
+         _opts
+       ) do
+    EctoShorts.Logger.warning(
+      @logger_prefix,
+      "Expected :recursive_ctes value to be a boolean, got: #{inspect(value)}"
+    )
+
+    query
+  end
+
+  defp apply_expr(
          _schema_source,
          :reverse_order,
          query,

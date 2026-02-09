@@ -52,6 +52,7 @@ defmodule EctoShorts.CommonFilters do
     :reverse_order,
     :prepend_order_by,
     :preload,
+    :recursive_ctes,
     :select,
     :select_merge,
     :subquery,

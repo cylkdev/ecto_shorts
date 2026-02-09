@@ -997,6 +997,56 @@ defmodule EctoShorts.CommonFiltersTest do
       assert q2 == q
     end
 
+    test "supports :recursive_ctes true with :with_cte" do
+      cte_query = from(p in Post, where: p.published == ^true)
+
+      expected =
+        Post
+        |> Ecto.Query.recursive_ctes(true)
+        |> Ecto.Query.with_cte("published_posts", as: ^cte_query)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]],
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :recursive_ctes false with :with_cte" do
+      cte_query = from(p in Post, where: p.published == ^true)
+
+      q =
+        Post
+        |> Ecto.Query.recursive_ctes(true)
+        |> Ecto.Query.with_cte("published_posts", as: ^cte_query)
+
+      expected =
+        Post
+        |> Ecto.Query.with_cte("published_posts", as: ^cte_query)
+        |> Ecto.Query.recursive_ctes(false)
+
+      q2 = CommonFilters.convert_params_to_filter(q, %{recursive_ctes: false}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :recursive_ctes value logs warning and leaves query unchanged" do
+      q = from(p in Post, where: p.published == ^true)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{recursive_ctes: "yes"}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :recursive_ctes value to be a boolean, got: \"yes\""
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
     test "supports :update with update operators" do
       updates = [set: [title: "After"], inc: [views: 1]]
       expected = Ecto.Query.update(Post, ^updates)
