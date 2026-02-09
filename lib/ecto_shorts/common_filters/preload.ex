@@ -10,17 +10,17 @@ defmodule EctoShorts.CommonFilters.Preload do
   @binding_operators [:as, :at]
 
   def build(schema_source, :preload, query, binding_selector, arg, _opts) do
-    do_preload(schema_source, query, binding_selector, arg)
+    reduce_preload(schema_source, query, binding_selector, arg)
   end
 
-  defp do_preload(schema_source, query, _binding_selector, {binding_op, params})
+  defp reduce_preload(schema_source, query, _binding_selector, {binding_op, params})
        when binding_op in @binding_operators do
     Enum.reduce(params, query, fn {binding_target, value}, q2 ->
-      do_preload(schema_source, q2, {binding_op, binding_target}, value)
+      reduce_preload(schema_source, q2, {binding_op, binding_target}, value)
     end)
   end
 
-  defp do_preload(schema_source, query, binding_selector, values) when is_list(values) do
+  defp reduce_preload(schema_source, query, binding_selector, values) when is_list(values) do
     if Keyword.keyword?(values) do
       case Enum.split_with(values, fn {k, _} -> k in @binding_operators end) do
         {[], entries} ->
@@ -28,7 +28,7 @@ defmodule EctoShorts.CommonFilters.Preload do
 
         {binding_ops, []} ->
           Enum.reduce(binding_ops, query, fn {binding_op, value}, query_acc ->
-            do_preload(schema_source, query_acc, binding_selector, {binding_op, value})
+            reduce_preload(schema_source, query_acc, binding_selector, {binding_op, value})
           end)
 
         {binding_ops, entries} ->
@@ -43,7 +43,7 @@ defmodule EctoShorts.CommonFilters.Preload do
     end
   end
 
-  defp do_preload(_schema_source, query, binding_selector, key) do
+  defp reduce_preload(_schema_source, query, binding_selector, key) do
     build_preload(query, binding_selector, key, nil)
   end
 
