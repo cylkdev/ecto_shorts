@@ -443,16 +443,7 @@ defmodule EctoShorts.Dynamics do
 
   defp resolve_all_operator_rhs(source, key, rhs, opts)
        when is_map(rhs) and not is_struct(rhs) do
-    if Map.has_key?(rhs, :source) or Map.has_key?(rhs, :query) do
-      payload_source = Map.get(rhs, :source, source)
-      filter_params = Map.get(rhs, :query, [])
-
-      payload_source
-      |> EctoShorts.CommonFilters.convert_params_to_filter(filter_params, opts)
-      |> ensure_all_operator_scalar_select(key)
-    else
-      rhs
-    end
+    resolve_all_operator_rhs(source, key, Map.to_list(rhs), opts)
   end
 
   defp resolve_all_operator_rhs(source, key, rhs, opts) when is_list(rhs) do
