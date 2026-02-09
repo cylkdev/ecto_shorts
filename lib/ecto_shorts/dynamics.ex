@@ -352,7 +352,7 @@ defmodule EctoShorts.Dynamics do
          {:all, value},
          opts
        ) do
-    value = All.resolve_value(source, value, opts)
+    value = All.resolve_value(source, key, value, opts)
 
     value
     |> normalize_expression_params()
@@ -372,7 +372,7 @@ defmodule EctoShorts.Dynamics do
          {:not, {:all, value}},
          opts
        ) do
-    value = All.resolve_value(source, value, opts)
+    value = All.resolve_value(source, key, value, opts)
 
     value
     |> normalize_expression_params()

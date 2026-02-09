@@ -112,7 +112,10 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "supports scalar all helper expression query-builder payload in :where" do
-      subquery_expr = CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
+      subquery_expr =
+        Post
+        |> CommonFilters.convert_params_to_filter(%{id: 1}, [])
+        |> select([p], p.id)
 
       expected =
         from(p in Post,

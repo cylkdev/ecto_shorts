@@ -401,11 +401,17 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
         unquote(op_var) in unquote(@comparison_alias_operators)
       end
 
+    non_tuple_value_guard =
+      quote do
+        not is_tuple(unquote(value_var))
+      end
+
     [
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:all, unquote(value_var)}),
+        guard: non_tuple_value_guard,
         body:
           quote do
             apply_dynamic_expr(
@@ -419,6 +425,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:all, unquote(value_var)}}),
+        guard: non_tuple_value_guard,
         body:
           quote do
             apply_dynamic_expr(
