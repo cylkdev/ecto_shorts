@@ -1,14 +1,6 @@
 defmodule EctoShorts.CommonFilters.Join do
   @moduledoc false
 
-  hints =
-    case Application.compile_env(:ecto_shorts, :hints) do
-      nil -> []
-      hints when is_list(hints) -> hints
-      mod when is_atom(mod) -> mod.hints()
-      term -> raise ArgumentError, "Expected :hints to be a list or module, got: #{inspect(term)}"
-    end
-
   alias EctoShorts.Compiler
   alias EctoShorts.Config
   alias EctoShorts.Dynamics
@@ -22,7 +14,13 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @logger_prefix "EctoShorts.CommonFilters.Join"
 
-  @hints hints
+  @hints case(Application.compile_env(:ecto_shorts, :hints)) do
+    nil -> []
+    hints when is_list(hints) -> hints
+    mod when is_atom(mod) -> mod.hints()
+    term -> raise ArgumentError, "Expected :hints to be a list or module, got: #{inspect(term)}"
+  end
+
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
   @doc false
@@ -286,7 +284,7 @@ defmodule EctoShorts.CommonFilters.Join do
           raise ArgumentError, "Join source values are required, got: #{inspect(params)}"
         end
 
-        case resolve_join_source_expr(binding_selector, source_name, source_values, opts) do
+        case resolve_expr_source(binding_selector, source_name, source_values, opts) do
           {:ok, expr} ->
             build_join(
               query,
@@ -440,15 +438,15 @@ defmodule EctoShorts.CommonFilters.Join do
       end
   end
 
-  defp resolve_join_source_expr(binding_selector, source_key, source_params, opts) do
-    mod = Keyword.get(opts, :query_source_provider, Config.query_source_provider())
+  defp resolve_expr_source(binding_selector, source_key, source_params, opts) do
+    mod = Keyword.get(opts, :expression_resolver, Config.expression_resolver())
 
-    unless Code.ensure_loaded?(mod) and function_exported?(mod, :resolve_join_source, 3) do
+    unless Code.ensure_loaded?(mod) and function_exported?(mod, :resolve_expression, 3) do
       raise ArgumentError,
-            "Expected join source module to have a resolve_join_source/3 function, got: #{inspect(mod)}"
+            "Expected join source module to have a resolve_expression/3 function, got: #{inspect(mod)}"
     end
 
-    case mod.resolve_join_source(binding_selector, source_key, source_params) do
+    case mod.resolve_expression(binding_selector, source_key, source_params) do
       {:ok, source} ->
         {:ok, source}
 
