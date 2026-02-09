@@ -36,6 +36,8 @@ defmodule EctoShorts.CommonFilters do
     :or_having,
     :intersect,
     :intersect_all,
+    :union,
+    :union_all,
     :join,
     :last,
     :limit,

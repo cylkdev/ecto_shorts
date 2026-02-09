@@ -19,6 +19,8 @@ defmodule EctoShorts.CommonFilters.Filter do
     :first,
     :intersect,
     :intersect_all,
+    :union,
+    :union_all,
     :last,
     :limit,
     :offset,
@@ -132,6 +134,24 @@ defmodule EctoShorts.CommonFilters.Filter do
     else
       other_query = CommonFilters.convert_params_to_filter(schema_source, value, opts)
       Query.intersect_all(query, ^other_query)
+    end
+  end
+
+  defp apply_pagination_expr(schema_source, :union, query, _binding_selector, value, opts) do
+    if is_struct(value, Ecto.Query) do
+      Query.union(query, ^value)
+    else
+      other_query = CommonFilters.convert_params_to_filter(schema_source, value, opts)
+      Query.union(query, ^other_query)
+    end
+  end
+
+  defp apply_pagination_expr(schema_source, :union_all, query, _binding_selector, value, opts) do
+    if is_struct(value, Ecto.Query) do
+      Query.union_all(query, ^value)
+    else
+      other_query = CommonFilters.convert_params_to_filter(schema_source, value, opts)
+      Query.union_all(query, ^other_query)
     end
   end
 

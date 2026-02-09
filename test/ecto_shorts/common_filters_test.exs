@@ -825,6 +825,46 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :union with nested filter params" do
+      q = from(p in Post, where: p.published == ^true)
+      other_query = from(p in Post, where: p.published == ^false)
+
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          union: ^other_query
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{union: %{published: false}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :union_all with nested filter params" do
+      q = from(p in Post, where: p.published == ^true)
+      other_query = from(p in Post, where: p.published == ^false)
+
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          union_all: ^other_query
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{union_all: %{published: false}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports :order_by for a single field" do
       expected = from(p in Post, order_by: [desc: p.title])
       q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: :title}, [])
