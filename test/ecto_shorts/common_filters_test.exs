@@ -289,20 +289,20 @@ defmodule EctoShorts.CommonFiltersTest do
       q =
         from(p in Post,
           join: a in assoc(p, :author),
-          as: :author
+          as: :example
         )
 
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
-          as: :author,
+          as: :example,
           preload: [author: a]
         )
 
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [as: :author]]},
+          %{preload: [as: [example: :author]]},
           []
         )
 
@@ -324,31 +324,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [at: 2]]},
-          []
-        )
-
-      assert_query(expected, q2)
-    end
-
-    test "supports binding-aware :preload with direct named selector" do
-      q =
-        from(p in Post,
-          join: a in assoc(p, :author),
-          as: :author
-        )
-
-      expected =
-        from(p in Post,
-          join: a in assoc(p, :author),
-          as: :author,
-          preload: [author: a]
-        )
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{preload: [author: [as: :author]]},
+          %{preload: [at: [{2, :author}]]},
           []
         )
 
@@ -370,7 +346,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [at: 2, posts: [:comments]]]},
+          %{preload: [at: [{2, :author}], posts: [:comments]]},
           []
         )
 
