@@ -1,4 +1,4 @@
-defmodule EctoShorts.CommonFilters.All do
+defmodule EctoShorts.Dynamics.All do
   @moduledoc false
 
   alias EctoShorts.CommonFilters

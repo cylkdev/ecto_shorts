@@ -1,7 +1,7 @@
 defmodule EctoShorts.Dynamics do
   @moduledoc false
 
-  alias EctoShorts.CommonFilters.All
+  alias EctoShorts.Dynamics.All
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
   alias EctoShorts.Dynamics.Adapters.Postgres
