@@ -52,6 +52,47 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports top-level :dynamic payload (defaults to :where)" do
+      dyn = dynamic([p], p.views > ^10)
+      expected = from(p in Post, where: p.views > ^10)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{dynamic: dyn}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :where with :dynamic payload" do
+      dyn = dynamic([p], p.published == ^true)
+      expected = from(p in Post, where: p.published == ^true)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{where: %{dynamic: dyn}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :or_where with :dynamic payload" do
+      dyn = dynamic([p], p.views > ^100)
+      expected = from(p in Post, or_where: p.views > ^100)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{or_where: %{dynamic: dyn}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :dynamic payload logs warning and leaves query unchanged" do
+      q = from(p in Post, where: p.published == ^true)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{dynamic: "bad"}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :dynamic payload to be an Ecto.Query.DynamicExpr, got: \"bad\""
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
     test "supports Ecto.Query.t() source" do
       expected = from p in Post, where: p.published == ^true
       q = from(p in Post)

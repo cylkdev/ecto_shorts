@@ -57,6 +57,27 @@ defmodule EctoShorts.CommonFilters.Filter do
     apply_where_expr(filter, query, dyn)
   end
 
+  def build(
+        _schema_source,
+        filter,
+        query,
+        _binding_selector,
+        {:dynamic, value},
+        _opts
+      )
+      when filter in [:where, :or_where] do
+    if is_struct(value, Ecto.Query.DynamicExpr) do
+      apply_where_expr(filter, query, value)
+    else
+      EctoShorts.Logger.warning(
+        @logger_prefix,
+        "Expected :dynamic payload to be an Ecto.Query.DynamicExpr, got: #{inspect(value)}"
+      )
+
+      query
+    end
+  end
+
   def build(schema_source, filter, query, binding_selector, value, opts)
       when filter in @query_filters do
     apply_expr(schema_source, filter, query, binding_selector, value, opts)
