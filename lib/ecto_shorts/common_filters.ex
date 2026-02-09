@@ -16,21 +16,27 @@ defmodule EctoShorts.CommonFilters do
   @logger_prefix "EctoShorts.CommonFilters"
 
   @binding_operators [:as, :at]
+
   @default_binding_selector {:as, nil}
 
   @where :where
+
   @schema_filters [:where, :or_where]
+
   @query_filters [
+    :distinct,
+    :except,
+    :except_all,
+    :exclude,
+    :first,
     :join,
-    :offset,
+    :last,
     :limit,
+    :offset,
+    :order_by,
+    :preload,
     :select,
     :select_merge,
-    :first,
-    :last,
-    :order_by,
-    :distinct,
-    :preload,
     :subquery
   ]
 

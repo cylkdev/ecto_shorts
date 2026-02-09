@@ -710,6 +710,41 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :exclude for a single expression" do
+      expected =
+        from(p in Post,
+          limit: ^10
+        )
+
+      q =
+        from(p in Post,
+          order_by: [desc: :id],
+          limit: ^10
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(q, %{exclude: :order_by}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :exclude with a list of expressions" do
+      expected =
+        from(p in Post,
+          where: p.published == ^true
+        )
+
+      q =
+        from(p in Post,
+          where: p.published == ^true,
+          order_by: [desc: :id],
+          limit: ^10
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(q, %{exclude: [:order_by, :limit]}, [])
+
+      assert_sql(expected, q2)
+    end
+
     test "supports :distinct true" do
       expected = from p in Post, distinct: true
       q = Post
