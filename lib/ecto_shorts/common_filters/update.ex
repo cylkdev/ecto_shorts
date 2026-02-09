@@ -7,7 +7,7 @@ defmodule EctoShorts.CommonFilters.Update do
   require Ecto.Query
   require EctoShorts.Compiler
 
-  @boolean_directives [:as, :at]
+  @boolean_operators [:as, :at]
 
   @doc false
   def build(_schema_source, :update, query, binding_selector, term, opts)
@@ -20,7 +20,7 @@ defmodule EctoShorts.CommonFilters.Update do
   end
 
   def build(_schema_source, :update, query, _binding_selector, {binding_mode, params}, opts)
-      when binding_mode in @boolean_directives and (is_map(params) or is_list(params)) do
+      when binding_mode in @boolean_operators and (is_map(params) or is_list(params)) do
     Enum.reduce(params, query, fn {binding_target, term}, query_acc ->
       build(nil, :update, query_acc, {binding_mode, binding_target}, term, opts)
     end)
@@ -28,20 +28,20 @@ defmodule EctoShorts.CommonFilters.Update do
 
   def build(_schema_source, :update, query, binding_selector, term, opts) when is_list(term) do
     if Keyword.keyword?(term) do
-      case Enum.split_with(term, fn {k, _} -> k in @boolean_directives end) do
+      case Enum.split_with(term, fn {k, _} -> k in @boolean_operators end) do
         {[], entries} ->
           apply_update_expr(query, binding_selector, normalize_update_entries(entries))
 
-        {boolean_directives, []} ->
-          Enum.reduce(boolean_directives, query, fn entry, query_acc ->
+        {boolean_operators, []} ->
+          Enum.reduce(boolean_operators, query, fn entry, query_acc ->
             build(nil, :update, query_acc, binding_selector, entry, opts)
           end)
 
-        {boolean_directives, entries} ->
+        {boolean_operators, entries} ->
           query_with_update =
             apply_update_expr(query, binding_selector, normalize_update_entries(entries))
 
-          Enum.reduce(boolean_directives, query_with_update, fn entry, query_acc ->
+          Enum.reduce(boolean_operators, query_with_update, fn entry, query_acc ->
             build(nil, :update, query_acc, binding_selector, entry, opts)
           end)
       end

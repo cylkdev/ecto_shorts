@@ -205,6 +205,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
         unquote(op_var) in unquote(@alias_comparison_ops)
       end
 
+    default_value_guard =
+      quote do
+        not is_tuple(unquote(value_var))
+      end
+
     Enum.flat_map(@aggregate_helpers, fn helper ->
       aggregate_expr_ast =
         case helper do
@@ -220,6 +225,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
           binding_head: binding_head_ast,
           key: key_var,
           head: quote(do: {unquote(helper), unquote(value_var)}),
+          guard: default_value_guard,
           body:
             quote do
               apply_dynamic_expr(
@@ -233,6 +239,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
           binding_head: binding_head_ast,
           key: key_var,
           head: quote(do: {:not, {unquote(helper), unquote(value_var)}}),
+          guard: default_value_guard,
           body:
             quote do
               apply_dynamic_expr(

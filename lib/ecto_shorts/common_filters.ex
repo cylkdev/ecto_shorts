@@ -19,7 +19,7 @@ defmodule EctoShorts.CommonFilters do
 
   @logger_prefix "EctoShorts.CommonFilters"
 
-  @boolean_directives [:as, :at]
+  @boolean_operators [:as, :at]
   @default_binding_selector {:as, nil}
 
   @where :where
@@ -104,7 +104,7 @@ defmodule EctoShorts.CommonFilters do
       key in Keyword.get(opts, :query_filters, @query_filters) ->
         apply_query_builder(schema_source, query, binding_selector, key, value, opts)
 
-      key in @boolean_directives ->
+      key in @boolean_operators ->
         if is_map(value) or is_list(value) do
           Enum.reduce(value, query, fn {binding_target, params}, query_acc ->
             reduce_binding_params(

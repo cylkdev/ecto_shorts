@@ -7,7 +7,7 @@ defmodule EctoShorts.CommonFilters.GroupBy do
   require Ecto.Query
   require EctoShorts.Compiler
 
-  @boolean_directives [:as, :at]
+  @boolean_operators [:as, :at]
 
   @doc false
   def build(_schema_source, :group_by, query, binding_selector, params, _opts) do
@@ -20,7 +20,7 @@ defmodule EctoShorts.CommonFilters.GroupBy do
   end
 
   defp reduce_group_by(query, binding_selector, {key, value}) do
-    if key in @boolean_directives do
+    if key in @boolean_operators do
       Enum.reduce(value, query, fn {binding_target, next_value}, q ->
         reduce_group_by(q, {key, binding_target}, next_value)
       end)

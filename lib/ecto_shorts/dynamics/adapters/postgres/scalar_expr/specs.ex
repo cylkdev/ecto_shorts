@@ -6,9 +6,9 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
 
-  @aggregate_helpers [:avg, :count, :max, :min, :sum]
-  @comparison_ops [:==, :!=, :>, :>=, :<, :<=]
-  @alias_comparison_ops [:eq, :gt, :gte, :lt, :lte]
+  @aggregate_operators [:avg, :count, :max, :min, :sum]
+  @comparison_operators [:==, :!=, :>, :>=, :<, :<=]
+  @comparison_alias_operators [:eq, :gt, :gte, :lt, :lte]
 
   @doc false
   @impl true
@@ -254,15 +254,20 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
 
     op_guard =
       quote do
-        unquote(op_var) in unquote(@comparison_ops)
+        unquote(op_var) in unquote(@comparison_operators)
       end
 
     alias_guard =
       quote do
-        unquote(op_var) in unquote(@alias_comparison_ops)
+        unquote(op_var) in unquote(@comparison_alias_operators)
       end
 
-    Enum.flat_map(@aggregate_helpers, fn helper ->
+    default_value_guard =
+      quote do
+        not is_tuple(unquote(value_var))
+      end
+
+    Enum.flat_map(@aggregate_operators, fn helper ->
       aggregate_expr_ast =
         case helper do
           :avg -> quote(do: avg(unquote(field_ast)))
@@ -277,6 +282,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
           binding_head: binding_head_ast,
           key: key_var,
           head: quote(do: {unquote(helper), unquote(value_var)}),
+          guard: default_value_guard,
           body:
             quote do
               apply_dynamic_expr(
@@ -290,6 +296,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
           binding_head: binding_head_ast,
           key: key_var,
           head: quote(do: {:not, {unquote(helper), unquote(value_var)}}),
+          guard: default_value_guard,
           body:
             quote do
               apply_dynamic_expr(

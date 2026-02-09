@@ -10,7 +10,7 @@ defmodule EctoShorts.CommonFilters.Having do
 
   @logger_prefix "EctoShorts.CommonFilters.Having"
 
-  @boolean_directives [:and, :or]
+  @boolean_operators [:and, :or]
 
   @doc false
   def build(schema_source, filter_op, query, binding_selector, params, opts)
@@ -50,17 +50,17 @@ defmodule EctoShorts.CommonFilters.Having do
          schema_source,
          query,
          binding_selector,
-         {boolean_directive, params},
+         {boolean_operator, params},
          opts
        )
-       when boolean_directive in @boolean_directives do
+       when boolean_operator in @boolean_operators do
     if is_map(params) and not is_struct(params) do
       reduce_having(
         filter_op,
         schema_source,
         query,
         binding_selector,
-        {boolean_directive, Map.to_list(params)},
+        {boolean_operator, Map.to_list(params)},
         opts
       )
     else
@@ -69,7 +69,7 @@ defmodule EctoShorts.CommonFilters.Having do
         schema_source,
         query,
         binding_selector,
-        {boolean_directive, params},
+        {boolean_operator, params},
         opts
       )
     end

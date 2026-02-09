@@ -7,7 +7,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   require Ecto.Query
   require EctoShorts.Compiler
 
-  @boolean_directives [:as, :at]
+  @boolean_operators [:as, :at]
 
   @order_directions [
     :asc,
@@ -30,7 +30,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   end
 
   defp reduce_order_by(filter_op, query, binding_selector, {key, value}) do
-    if key in @boolean_directives do
+    if key in @boolean_operators do
       Enum.reduce(value, query, fn {binding_target, next_value}, q ->
         reduce_order_by(filter_op, q, {key, binding_target}, next_value)
       end)
@@ -46,20 +46,20 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   defp reduce_order_by(filter_op, query, binding_selector, entries) when is_list(entries) do
     if Keyword.keyword?(entries) do
-      case Enum.split_with(entries, fn {k, _} -> k in @boolean_directives end) do
+      case Enum.split_with(entries, fn {k, _} -> k in @boolean_operators end) do
         {[], order_entries} ->
           reduce_order_by_expr(filter_op, query, binding_selector, order_entries)
 
-        {boolean_directives, []} ->
-          Enum.reduce(boolean_directives, query, fn entry, query_acc ->
+        {boolean_operators, []} ->
+          Enum.reduce(boolean_operators, query, fn entry, query_acc ->
             reduce_order_by(filter_op, query_acc, binding_selector, entry)
           end)
 
-        {boolean_directives, order_entries} ->
+        {boolean_operators, order_entries} ->
           query_with_order =
             reduce_order_by_expr(filter_op, query, binding_selector, order_entries)
 
-          Enum.reduce(boolean_directives, query_with_order, fn entry, query_acc ->
+          Enum.reduce(boolean_operators, query_with_order, fn entry, query_acc ->
             reduce_order_by(filter_op, query_acc, binding_selector, entry)
           end)
       end

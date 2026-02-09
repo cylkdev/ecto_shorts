@@ -10,7 +10,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   @logger_prefix "EctoShorts.CommonFilters.Filter"
 
-  @boolean_directives [:and, :or]
+  @boolean_operators [:and, :or]
 
   @pagination_filters [
     :except,
@@ -30,13 +30,13 @@ defmodule EctoShorts.CommonFilters.Filter do
   @custom_filters [:ids, :before, :after, :start_date, :end_date]
 
   @doc "Applies the given filter to the query."
-  def build(schema_source, filter, query, binding_selector, {boolean_directive, params}, opts)
-      when boolean_directive in @boolean_directives and is_list(params) do
+  def build(schema_source, filter, query, binding_selector, {boolean_operator, params}, opts)
+      when boolean_operator in @boolean_operators and is_list(params) do
     dyn =
       Dynamics.convert_to_dynamic(
         schema_source,
         binding_selector,
-        {boolean_directive, params},
+        {boolean_operator, params},
         opts
       )
 

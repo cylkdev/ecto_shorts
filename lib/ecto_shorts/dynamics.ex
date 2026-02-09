@@ -10,8 +10,8 @@ defmodule EctoShorts.Dynamics do
   @logger_prefix "EctoShorts.Dynamics"
 
   @equal :==
-  @boolean_directives [:and, :or]
-  @aggregate_directives [:avg, :count, :max, :min, :sum]
+  @boolean_operators [:and, :or]
+  @aggregate_operators [:avg, :count, :max, :min, :sum]
 
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
     source = CommonSchema.normalize_source(source)
@@ -33,7 +33,7 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp reduce_dynamic_params(source, left_dynamic, binding_selector, {key, value}, opts)
-       when key in @boolean_directives do
+       when key in @boolean_operators do
     if is_map(value) and not is_struct(value) do
       reduce_dynamic_params(
         source,
@@ -58,7 +58,7 @@ defmodule EctoShorts.Dynamics do
     dynamic_adapter = dynamic_adapter!(opts)
 
     cond do
-      key in @aggregate_directives ->
+      key in @aggregate_operators ->
         reduce_helper_dynamic_params(source, left_dynamic, binding_selector, key, value, opts)
 
       key in Postgres.operators() ->
@@ -208,18 +208,18 @@ defmodule EctoShorts.Dynamics do
   #
   # Each entry is first converted into an independent predicate
   # (starting from `nil`), and then combined with the accumulator
-  # using `boolean_directive` (`:and` or `:or`).
+  # using `boolean_operator` (`:and` or `:or`).
   #
   # Returns the combined `dynamic()` expression (or the first built
   # predicate when the accumulator is `nil`).
   #
   # ## Examples
   #
-  #     # boolean_directive:  :or
+  #     # boolean_operator:  :or
   #     # input:    [left_dynamic, right_dynamic]
   #     # output:   left_dynamic or right_dynamic
   #
-  #     # boolean_directive:  :and
+  #     # boolean_operator:  :and
   #     # input:    [left_dynamic, right_dynamic]
   #     # output:   left_dynamic and right_dynamic
   #
@@ -233,7 +233,7 @@ defmodule EctoShorts.Dynamics do
          source,
          left_dynamic,
          binding_selector,
-         boolean_directive,
+         boolean_operator,
          entries,
          opts
        ) do
@@ -256,7 +256,7 @@ defmodule EctoShorts.Dynamics do
             reduce_dynamic_params(source, nil, binding_selector, entry, opts)
         end
 
-      merge_dynamic(dyn_acc, boolean_directive, right_dynamic)
+      merge_dynamic(dyn_acc, boolean_operator, right_dynamic)
     end)
   end
 
@@ -302,7 +302,7 @@ defmodule EctoShorts.Dynamics do
   end
 
   #
-  # `{boolean_directive, values}` can mean two different things:
+  # `{boolean_operator, values}` can mean two different things:
   #
   # 1) Same-field comparisons (apply to `key`):
   #
@@ -319,10 +319,10 @@ defmodule EctoShorts.Dynamics do
          left_dynamic,
          binding_selector,
          key,
-         {boolean_directive, values},
+         {boolean_operator, values},
          opts
        )
-       when boolean_directive in @boolean_directives and is_list(values) do
+       when boolean_operator in @boolean_operators and is_list(values) do
     entries =
       if composite_predicate_entries?(values) do
         values
@@ -335,7 +335,7 @@ defmodule EctoShorts.Dynamics do
         source,
         nil,
         binding_selector,
-        boolean_directive,
+        boolean_operator,
         entries,
         opts
       )
