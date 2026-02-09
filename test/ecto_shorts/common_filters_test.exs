@@ -93,6 +93,42 @@ defmodule EctoShorts.CommonFiltersTest do
       assert q2 == q
     end
 
+    test "supports scalar all helper expression in :where" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected =
+        from(p in Post,
+          where: p.id > all(subquery_expr)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{all: %{>: subquery_expr}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports scalar all helper expression query-builder payload in :where" do
+      subquery_expr = CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
+
+      expected =
+        from(p in Post,
+          where: p.id > all(subquery_expr)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{all: %{>: [source: Post, query: %{id: 1}]}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports Ecto.Query.t() source" do
       expected = from p in Post, where: p.published == ^true
       q = from(p in Post)

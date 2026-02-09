@@ -45,15 +45,14 @@ defmodule EctoShorts.CommonFilters.WithCte do
   end
 
   defp apply_cte_entry(schema_source, query, cte_name, cte_definition, opts) do
-    with {:ok, normalized_name} <- normalize_cte_name(cte_name),
-         {:ok, normalized_definition} <- normalize_cte_definition(cte_name, cte_definition),
-         {:ok, cte_query} <-
-           normalize_cte_query(schema_source, normalized_name, normalized_definition, opts),
-         {:ok, materialized} <- normalize_materialized(normalized_name, normalized_definition),
-         {:ok, operation} <- normalize_operation(normalized_name, normalized_definition) do
+    with {:ok, cte_query} <-
+           build_cte_query(schema_source, cte_name, cte_definition, opts) do
+      materialized = Keyword.get(cte_definition, :materialized)
+      operation = Keyword.get(cte_definition, :operation)
+
       Query.with_cte(
         query,
-        ^normalized_name,
+        ^cte_name,
         as: ^cte_query,
         materialized: materialized,
         operation: operation
@@ -63,41 +62,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
     end
   end
 
-  defp normalize_cte_name(cte_name) when is_binary(cte_name), do: {:ok, cte_name}
-  defp normalize_cte_name(cte_name) when is_atom(cte_name), do: {:ok, Atom.to_string(cte_name)}
-
-  defp normalize_cte_name(cte_name) do
-    EctoShorts.Logger.warning(
-      @logger_prefix,
-      "Expected CTE name to be an atom or string, got: #{inspect(cte_name)}"
-    )
-
-    :error
-  end
-
-  defp normalize_cte_definition(cte_name, cte_definition)
-       when is_map(cte_definition) and not is_struct(cte_definition) do
-    normalize_cte_definition(cte_name, Map.to_list(cte_definition))
-  end
-
-  defp normalize_cte_definition(_cte_name, cte_definition) when is_list(cte_definition) do
-    if Keyword.keyword?(cte_definition) do
-      {:ok, cte_definition}
-    else
-      :error
-    end
-  end
-
-  defp normalize_cte_definition(cte_name, cte_definition) do
-    EctoShorts.Logger.warning(
-      @logger_prefix,
-      "Expected CTE definition for #{inspect(cte_name)} to be a keyword list/map, got: #{inspect(cte_definition)}"
-    )
-
-    :error
-  end
-
-  defp normalize_cte_query(schema_source, cte_name, cte_definition, opts) do
+  defp build_cte_query(schema_source, cte_name, cte_definition, opts) do
     case Keyword.fetch(cte_definition, :as) do
       {:ok, as_value} ->
         case as_value do
@@ -109,7 +74,6 @@ defmodule EctoShorts.CommonFilters.WithCte do
 
           query_params when is_map(query_params) and not is_struct(query_params) ->
             from_source = Map.get(query_params, :source, schema_source)
-
             filter_params = Map.get(query_params, :query, [])
             {:ok, CommonFilters.convert_params_to_filter(from_source, filter_params, opts)}
 
@@ -141,39 +105,6 @@ defmodule EctoShorts.CommonFilters.WithCte do
         EctoShorts.Logger.warning(
           @logger_prefix,
           "Expected CTE definition for #{inspect(cte_name)} to include an :as key, got: #{inspect(cte_definition)}"
-        )
-
-        :error
-    end
-  end
-
-  defp normalize_materialized(cte_name, cte_definition) do
-    case Keyword.get(cte_definition, :materialized) do
-      value when is_nil(value) or is_boolean(value) ->
-        {:ok, value}
-
-      value ->
-        EctoShorts.Logger.warning(
-          @logger_prefix,
-          "Expected :materialized for #{inspect(cte_name)} to be nil or boolean, got: #{inspect(value)}"
-        )
-
-        :error
-    end
-  end
-
-  defp normalize_operation(cte_name, cte_definition) do
-    case Keyword.get(cte_definition, :operation) do
-      nil ->
-        {:ok, nil}
-
-      operation when operation in @cte_operations ->
-        {:ok, operation}
-
-      operation ->
-        EctoShorts.Logger.warning(
-          @logger_prefix,
-          "Expected :operation for #{inspect(cte_name)} to be one of #{inspect(@cte_operations)}, got: #{inspect(operation)}"
         )
 
         :error

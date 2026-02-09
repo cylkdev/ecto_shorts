@@ -566,6 +566,58 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports scalar all helper expression on a field" do
+    binding = {:as, nil}
+    subquery_expr = from(c in "comments", select: c.post_id)
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{id: %{all: %{>: subquery_expr}}})
+
+    expected = dynamic([q], field(q, ^:id) > all(subquery_expr))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar all helper expression query-builder payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        id: %{all: %{>: [source: Post, query: %{id: 1}]}}
+      })
+
+    subquery_expr = EctoShorts.CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
+    expected = dynamic([q], field(q, ^:id) > all(subquery_expr))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports negated scalar all helper expression on a field" do
+    binding = {:as, nil}
+    subquery_expr = from(c in "comments", select: c.post_id)
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{id: %{not: %{all: %{>: subquery_expr}}}})
+
+    expected = dynamic([q], not (field(q, ^:id) > all(subquery_expr)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports negated scalar all helper expression query-builder payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        id: %{not: %{all: %{>: [source: Post, query: %{id: 1}]}}}
+      })
+
+    subquery_expr = EctoShorts.CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
+    expected = dynamic([q], not (field(q, ^:id) > all(subquery_expr)))
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports array nil equality" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{==: nil}})

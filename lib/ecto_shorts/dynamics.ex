@@ -1,6 +1,7 @@
 defmodule EctoShorts.Dynamics do
   @moduledoc false
 
+  alias EctoShorts.CommonFilters.All
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
   alias EctoShorts.Dynamics.Adapters.Postgres
@@ -341,6 +342,46 @@ defmodule EctoShorts.Dynamics do
       )
 
     merge_dynamic(left_dynamic, :and, right_dynamic)
+  end
+
+  defp reduce_dynamic_expr(
+         source,
+         left_dynamic,
+         binding_selector,
+         key,
+         {:all, value},
+         opts
+       ) do
+    value = All.resolve_value(source, value, opts)
+
+    value
+    |> normalize_expression_params()
+    |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
+      right_dynamic =
+        dynamic_adapter!(opts).build_dynamic(source, binding_selector, key, {:all, item})
+
+      merge_dynamic(dyn_acc, :and, right_dynamic)
+    end)
+  end
+
+  defp reduce_dynamic_expr(
+         source,
+         left_dynamic,
+         binding_selector,
+         key,
+         {:not, {:all, value}},
+         opts
+       ) do
+    value = All.resolve_value(source, value, opts)
+
+    value
+    |> normalize_expression_params()
+    |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
+      right_dynamic =
+        dynamic_adapter!(opts).build_dynamic(source, binding_selector, key, {:not, {:all, item}})
+
+      merge_dynamic(dyn_acc, :and, right_dynamic)
+    end)
   end
 
   defp reduce_dynamic_expr(
