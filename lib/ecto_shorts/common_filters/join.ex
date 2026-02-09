@@ -249,9 +249,9 @@ defmodule EctoShorts.CommonFilters.Join do
               subquery
 
             subquery_params ->
-              from = subquery_params[:from] || schema_source
+              subquery_source = subquery_params[:source] || schema_source
               filter_params = subquery_params[:query] || []
-              CommonFilters.convert_params_to_filter(from, filter_params, opts)
+              CommonFilters.convert_params_to_filter(subquery_source, filter_params, opts)
           end
 
         build_join(

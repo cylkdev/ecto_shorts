@@ -956,7 +956,21 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{with_cte: [published_posts: [as: %{from: Post, query: %{published: true}}]]},
+          %{with_cte: [published_posts: [as: %{source: Post, query: %{published: true}}]]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :with_cte with nested :as payload using :source" do
+      cte_query = from(p in Post, where: p.id == ^1)
+      expected = Ecto.Query.with_cte(Post, "published_posts", as: ^cte_query)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{with_cte: [published_posts: [as: [source: Post, query: [id: 1]]]]},
           []
         )
 
