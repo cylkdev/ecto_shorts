@@ -299,10 +299,10 @@ defmodule EctoShorts.CommonFilters do
 
     case filter_op do
       :join ->
-        Join.build(binding_source, filter_op, query, binding_selector, params, opts)
+        Join.build(binding_source, :join, query, binding_selector, params, opts)
 
       :preload ->
-        Preload.build(binding_source, filter_op, query, binding_selector, params, opts)
+        Preload.build(binding_source, :preload, query, binding_selector, params, opts)
 
       :subquery ->
         if is_map(params) or is_list(params) do
@@ -318,7 +318,7 @@ defmodule EctoShorts.CommonFilters do
 
           SubQuery.build(
             binding_source,
-            filter_op,
+            :subquery,
             filtered_query,
             binding_selector,
             params,
