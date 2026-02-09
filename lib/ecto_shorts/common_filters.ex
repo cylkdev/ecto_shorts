@@ -74,6 +74,9 @@ defmodule EctoShorts.CommonFilters do
   def convert_params_to_filter(source, entries, opts) when is_list(entries) do
     query = CommonSchema.to_query(source)
 
+    has_source_or_query? =
+      Keyword.has_key?(entries, :source) or Keyword.has_key?(entries, :query)
+
     if Keyword.keyword?(entries) do
       {schema_source, params} = Keyword.pop(entries, :source, source)
 
@@ -87,8 +90,8 @@ defmodule EctoShorts.CommonFilters do
         |> Keyword.merge(params)
 
       merged_params =
-        case normalized_source do
-          {_table, nil} ->
+        case {has_source_or_query?, normalized_source} do
+          {true, {_table, nil}} ->
             if Keyword.has_key?(merged_params, :select) do
               merged_params
             else
