@@ -33,21 +33,17 @@ defmodule EctoShorts.Dynamics.HelperExpressions do
   end
 
   defp build_subquery_from_payload(source, field_name, payload, opts) do
-    payload_source = Keyword.get(payload, :source, source)
-    original_filter_params = Keyword.get(payload, :query, [])
+    payload_source = payload[:source] || source
+    payload_query = payload[:query] || []
 
-    filter_params =
-      case original_filter_params do
-        map when is_map(map) and not is_struct(map) ->
-          Map.put_new(map, :select, field_name)
-
-        list when is_list(list) ->
-          if Keyword.keyword?(list), do: Keyword.put_new(list, :select, field_name), else: list
-
-        _ ->
-          original_filter_params
-      end
-
-    CommonFilters.convert_params_to_filter(payload_source, filter_params, opts)
+    CommonFilters.convert_params_to_filter(
+      source,
+      [
+        source: payload_source,
+        query: payload_query,
+        select: payload_query[:select] || field_name
+      ],
+      opts
+    )
   end
 end
