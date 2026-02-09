@@ -21,7 +21,8 @@ defmodule EctoShorts.CommonFilters.Filter do
     :intersect_all,
     :last,
     :limit,
-    :offset
+    :offset,
+    :reverse_order
   ]
 
   @custom_filters [:ids, :before, :after, :start_date, :end_date]
@@ -191,6 +192,17 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   defp apply_pagination_expr(_schema_source, :offset, query, _binding_selector, value, _opts) do
     Query.offset(query, ^value)
+  end
+
+  defp apply_pagination_expr(
+         _schema_source,
+         :reverse_order,
+         query,
+         _binding_selector,
+         _value,
+         _opts
+       ) do
+    Query.reverse_order(query)
   end
 
   defp apply_where_expr(_, query, nil) do

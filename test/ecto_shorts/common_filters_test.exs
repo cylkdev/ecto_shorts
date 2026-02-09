@@ -710,6 +710,26 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :reverse_order with existing order_by expressions" do
+      q = from(p in Post, order_by: [asc: :id, desc: :title])
+
+      expected =
+        from(p in Post,
+          order_by: [desc: p.id, asc: p.title]
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(q, %{reverse_order: true}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :reverse_order with no existing order_by expressions" do
+      expected = reverse_order(Post)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{reverse_order: true}, [])
+
+      assert_sql(expected, q2)
+    end
+
     test "supports :exclude for a single expression" do
       expected =
         from(p in Post,

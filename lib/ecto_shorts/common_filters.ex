@@ -41,6 +41,7 @@ defmodule EctoShorts.CommonFilters do
     :limit,
     :offset,
     :order_by,
+    :reverse_order,
     :prepend_order_by,
     :preload,
     :select,
