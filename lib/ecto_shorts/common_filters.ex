@@ -6,6 +6,7 @@ defmodule EctoShorts.CommonFilters do
     Distinct,
     Filter,
     GroupBy,
+    Having,
     Join,
     Preload,
     Select,
@@ -16,8 +17,7 @@ defmodule EctoShorts.CommonFilters do
 
   @logger_prefix "EctoShorts.CommonFilters"
 
-  @binding_operators [:as, :at]
-
+  @boolean_directives [:as, :at]
   @default_binding_selector {:as, nil}
 
   @where :where
@@ -31,6 +31,7 @@ defmodule EctoShorts.CommonFilters do
     :exclude,
     :first,
     :group_by,
+    :having,
     :join,
     :last,
     :limit,
@@ -93,7 +94,7 @@ defmodule EctoShorts.CommonFilters do
       key in Keyword.get(opts, :query_filters, @query_filters) ->
         apply_query_builder(schema_source, query, binding_selector, key, value, opts)
 
-      key in @binding_operators ->
+      key in @boolean_directives ->
         if is_map(value) or is_list(value) do
           Enum.reduce(value, query, fn {binding_target, params}, query_acc ->
             reduce_binding_params(
@@ -308,6 +309,9 @@ defmodule EctoShorts.CommonFilters do
     binding_source = to_binding_source(schema_source, query, binding_selector)
 
     case filter_op do
+      :having ->
+        Having.build(binding_source, :having, query, binding_selector, params, opts)
+
       :distinct ->
         Distinct.build(binding_source, :distinct, query, binding_selector, params, opts)
 

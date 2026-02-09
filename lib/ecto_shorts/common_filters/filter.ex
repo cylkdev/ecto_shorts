@@ -12,8 +12,6 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   @boolean_directives [:and, :or]
 
-  @common_filters [:ids, :before, :after, :start_date, :end_date]
-
   @pagination_filters [
     :except,
     :except_all,
@@ -25,23 +23,30 @@ defmodule EctoShorts.CommonFilters.Filter do
     :order_by
   ]
 
-  @doc "Applies the given filter to the query."
-  def build(schema_source, filter, query, binding_selector, {bool_op, params}, opts)
-      when bool_op in @boolean_directives and is_list(params) do
-    dynamic =
-      Dynamics.convert_to_dynamic(schema_source, binding_selector, {bool_op, params}, opts)
+  @custom_filters [:ids, :before, :after, :start_date, :end_date]
 
-    apply_where_expr(filter, query, dynamic)
+  @doc "Applies the given filter to the query."
+  def build(schema_source, filter, query, binding_selector, {boolean_directive, params}, opts)
+      when boolean_directive in @boolean_directives and is_list(params) do
+    dyn =
+      Dynamics.convert_to_dynamic(
+        schema_source,
+        binding_selector,
+        {boolean_directive, params},
+        opts
+      )
+
+    apply_where_expr(filter, query, dyn)
   end
 
-  def build(schema_source, filter, query, binding_selector, {common_op, params}, opts)
-      when common_op in @common_filters do
-    dynamic =
+  def build(schema_source, filter, query, binding_selector, {key, params}, opts)
+      when key in @custom_filters do
+    dyn =
       schema_source
       |> CommonSchema.get_schema_source()
-      |> Dynamics.convert_to_dynamic(binding_selector, {common_op, params}, opts)
+      |> Dynamics.convert_to_dynamic(binding_selector, {key, params}, opts)
 
-    apply_where_expr(filter, query, dynamic)
+    apply_where_expr(filter, query, dyn)
   end
 
   def build(schema_source, filter, query, binding_selector, value, opts)

@@ -98,18 +98,18 @@ defmodule EctoShorts.Dynamics do
   #
   # Each entry is first converted into an independent predicate
   # (starting from `nil`), and then combined with the accumulator
-  # using `bool_op` (`:and` or `:or`).
+  # using `boolean_directive` (`:and` or `:or`).
   #
   # Returns the combined `dynamic()` expression (or the first built
   # predicate when the accumulator is `nil`).
   #
   # ## Examples
   #
-  #     # bool_op:  :or
+  #     # boolean_directive:  :or
   #     # input:    [left_dynamic, right_dynamic]
   #     # output:   left_dynamic or right_dynamic
   #
-  #     # bool_op:  :and
+  #     # boolean_directive:  :and
   #     # input:    [left_dynamic, right_dynamic]
   #     # output:   left_dynamic and right_dynamic
   #
@@ -123,7 +123,7 @@ defmodule EctoShorts.Dynamics do
          source,
          left_dynamic,
          binding_selector,
-         bool_op,
+         boolean_directive,
          entries,
          opts
        ) do
@@ -146,7 +146,7 @@ defmodule EctoShorts.Dynamics do
             reduce_dynamic_params(source, nil, binding_selector, entry, opts)
         end
 
-      merge_dynamic(dyn_acc, bool_op, right_dynamic)
+      merge_dynamic(dyn_acc, boolean_directive, right_dynamic)
     end)
   end
 
@@ -192,7 +192,7 @@ defmodule EctoShorts.Dynamics do
   end
 
   #
-  # `{bool_op, values}` can mean two different things:
+  # `{boolean_directive, values}` can mean two different things:
   #
   # 1) Same-field comparisons (apply to `key`):
   #
@@ -209,10 +209,10 @@ defmodule EctoShorts.Dynamics do
          left_dynamic,
          binding_selector,
          key,
-         {bool_op, values},
+         {boolean_directive, values},
          opts
        )
-       when bool_op in @boolean_directives and is_list(values) do
+       when boolean_directive in @boolean_directives and is_list(values) do
     entries =
       if composite_predicate_entries?(values) do
         values
@@ -225,7 +225,7 @@ defmodule EctoShorts.Dynamics do
         source,
         nil,
         binding_selector,
-        bool_op,
+        boolean_directive,
         entries,
         opts
       )

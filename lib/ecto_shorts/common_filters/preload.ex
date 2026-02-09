@@ -7,34 +7,34 @@ defmodule EctoShorts.CommonFilters.Preload do
   require Ecto.Query
   require EctoShorts.Compiler
 
-  @binding_operators [:as, :at]
+  @boolean_directives [:as, :at]
 
   def build(schema_source, :preload, query, binding_selector, arg, _opts) do
     reduce_preload(schema_source, query, binding_selector, arg)
   end
 
-  defp reduce_preload(schema_source, query, _binding_selector, {binding_op, params})
-       when binding_op in @binding_operators do
+  defp reduce_preload(schema_source, query, _binding_selector, {boolean_directive, params})
+       when boolean_directive in @boolean_directives do
     Enum.reduce(params, query, fn {binding_target, value}, q2 ->
-      reduce_preload(schema_source, q2, {binding_op, binding_target}, value)
+      reduce_preload(schema_source, q2, {boolean_directive, binding_target}, value)
     end)
   end
 
   defp reduce_preload(schema_source, query, binding_selector, values) when is_list(values) do
     if Keyword.keyword?(values) do
-      case Enum.split_with(values, fn {k, _} -> k in @binding_operators end) do
+      case Enum.split_with(values, fn {k, _} -> k in @boolean_directives end) do
         {[], entries} ->
           apply_preload_expr(query, binding_selector, entries)
 
-        {binding_ops, []} ->
-          Enum.reduce(binding_ops, query, fn {binding_op, value}, query_acc ->
-            reduce_preload(schema_source, query_acc, binding_selector, {binding_op, value})
+        {boolean_directives, []} ->
+          Enum.reduce(boolean_directives, query, fn {boolean_directive, value}, query_acc ->
+            reduce_preload(schema_source, query_acc, binding_selector, {boolean_directive, value})
           end)
 
-        {binding_ops, entries} ->
-          Enum.reduce(binding_ops, query, fn {binding_op, params}, query_acc ->
+        {boolean_directives, entries} ->
+          Enum.reduce(boolean_directives, query, fn {boolean_directive, params}, query_acc ->
             Enum.reduce(params, query_acc, fn {binding_target, assoc_key}, q2 ->
-              apply_preload_expr(q2, {binding_op, binding_target}, assoc_key, entries)
+              apply_preload_expr(q2, {boolean_directive, binding_target}, assoc_key, entries)
             end)
           end)
       end

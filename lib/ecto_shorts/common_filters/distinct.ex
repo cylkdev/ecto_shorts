@@ -7,7 +7,7 @@ defmodule EctoShorts.CommonFilters.Distinct do
   require Ecto.Query
   require EctoShorts.Compiler
 
-  @binding_operators [:as, :at]
+  @boolean_directives [:as, :at]
 
   @order_directions [
     :asc,
@@ -29,7 +29,7 @@ defmodule EctoShorts.CommonFilters.Distinct do
   end
 
   defp reduce_distinct(query, binding_selector, {key, value}) do
-    if key in @binding_operators do
+    if key in @boolean_directives do
       Enum.reduce(value, query, fn {binding_target, next_value}, q ->
         reduce_distinct(q, {key, binding_target}, next_value)
       end)

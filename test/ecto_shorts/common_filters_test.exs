@@ -805,6 +805,223 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :having with grouped query field" do
+      expected =
+        from(p in Post,
+          group_by: p.published,
+          having: p.published == ^true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :published, having: %{published: true}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :having targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          group_by: a.first_name,
+          having: a.first_name == ^"John"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{author: %{group_by: :first_name, having: %{first_name: "John"}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :having boolean :and payload as a map" do
+      expected =
+        from(p in Post,
+          group_by: [p.published, p.views],
+          having: p.published == ^true and p.views > ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            group_by: [:published, :views],
+            having: [and: [published: true, views: %{>: 10}]]
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :having boolean :or payload as a keyword list" do
+      expected =
+        from(p in Post,
+          group_by: p.views,
+          having: p.views > ^10 or p.views < ^5
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            group_by: :views,
+            having: [or: [views: %{>: 10}, views: %{<: 5}]]
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :having with operator payloads" do
+      expected =
+        from(p in Post,
+          group_by: p.views,
+          having: p.views > ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :views, having: %{views: %{>: 10}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :having with Ecto.Query.dynamic/2 payload" do
+      dyn = dynamic([p], p.views > ^10)
+
+      expected =
+        from(p in Post,
+          group_by: p.views,
+          having: p.views > ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :views, having: dyn},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :having supports boolean map payloads" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          group_by: [a.first_name, a.age],
+          having: a.first_name == ^"John" and a.age > ^30
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{
+            as: %{
+              author: %{
+                group_by: [:first_name, :age],
+                having: [and: [first_name: "John", age: %{>: 30}]]
+              }
+            }
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :having supports Ecto.Query.dynamic/2 payloads" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      dyn = dynamic([_p, a], a.first_name == ^"John")
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          group_by: a.first_name,
+          having: a.first_name == ^"John"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{author: %{group_by: :first_name, having: dyn}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "positional binding selector :having supports Ecto.Query.dynamic/2 payloads" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      dyn = dynamic([_p, a], a.first_name == ^"John")
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          group_by: a.first_name,
+          having: a.first_name == ^"John"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{at: %{2 => %{group_by: :first_name, having: dyn}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :having params container logs warning and returns query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{having: "bad"}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected params for having to be a map or keyword list, got: \"bad\""
+
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
     test "supports :distinct true" do
       expected = from p in Post, distinct: true
       q = Post
