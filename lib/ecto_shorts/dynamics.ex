@@ -349,9 +349,14 @@ defmodule EctoShorts.Dynamics do
        ) do
     case value do
       map when is_map(map) and not is_struct(map) ->
-        Enum.reduce(Map.to_list(map), left_dynamic, fn entry, dyn_acc ->
-          append_field_predicate(source, dyn_acc, binding_selector, key, {:not, entry}, opts)
-        end)
+        append_field_predicate(
+          source,
+          left_dynamic,
+          binding_selector,
+          key,
+          {:not, Map.to_list(map)},
+          opts
+        )
 
       list when is_list(list) ->
         Enum.reduce(list, left_dynamic, fn entry, dyn_acc ->
@@ -448,12 +453,7 @@ defmodule EctoShorts.Dynamics do
 
   defp resolve_all_operator_rhs(source, key, rhs, opts) when is_list(rhs) do
     if Keyword.keyword?(rhs) and (Keyword.has_key?(rhs, :source) or Keyword.has_key?(rhs, :query)) do
-      payload_source = Keyword.get(rhs, :source, source)
-      filter_params = Keyword.get(rhs, :query, [])
-
-      payload_source
-      |> EctoShorts.CommonFilters.convert_params_to_filter(filter_params, opts)
-      |> ensure_all_operator_scalar_select(key)
+      all_operator_query_from_payload(source, key, rhs, opts)
     else
       rhs
     end
@@ -549,15 +549,11 @@ defmodule EctoShorts.Dynamics do
   defp flatten_expression_params(list, acc) when is_list(list) do
     case list do
       [head | _] when is_map(head) ->
-        Enum.reduce(list, acc, fn entry, acc_inner ->
-          flatten_expression_params(entry, acc_inner)
-        end)
+        flatten_expression_entries(list, acc)
 
       _ ->
         if Keyword.keyword?(list) do
-          Enum.reduce(list, acc, fn entry, acc_inner ->
-            flatten_expression_params(entry, acc_inner)
-          end)
+          flatten_expression_entries(list, acc)
         else
           [list | acc]
         end
@@ -571,17 +567,11 @@ defmodule EctoShorts.Dynamics do
   defp flatten_expression_params({k, v}, acc) when is_list(v) do
     case v do
       [head | _] when is_map(head) ->
-        v
-        |> normalize_expression_params()
-        |> Enum.map(&{k, &1})
-        |> flatten_expression_params(acc)
+        flatten_keyed_expression_entries(k, v, acc)
 
       _ ->
         if Keyword.keyword?(v) do
-          v
-          |> normalize_expression_params()
-          |> Enum.map(&{k, &1})
-          |> flatten_expression_params(acc)
+          flatten_keyed_expression_entries(k, v, acc)
         else
           [{k, v} | acc]
         end
@@ -590,6 +580,19 @@ defmodule EctoShorts.Dynamics do
 
   defp flatten_expression_params(v, acc) do
     [v | acc]
+  end
+
+  defp flatten_expression_entries(list, acc) do
+    Enum.reduce(list, acc, fn entry, acc_inner ->
+      flatten_expression_params(entry, acc_inner)
+    end)
+  end
+
+  defp flatten_keyed_expression_entries(key, list, acc) do
+    list
+    |> normalize_expression_params()
+    |> Enum.map(&{key, &1})
+    |> flatten_expression_params(acc)
   end
 
   defp dynamic_adapter!(opts) do

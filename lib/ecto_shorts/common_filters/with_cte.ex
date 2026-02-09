@@ -44,7 +44,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
   end
 
   defp apply_cte(schema_source, query, cte_name, cte_definition, opts) do
-    case build_query(schema_source, cte_name, cte_definition, opts) do
+    case build_cte_query(schema_source, cte_name, cte_definition, opts) do
       {:ok, cte_query} ->
         materialized = Keyword.get(cte_definition, :materialized)
         operation = Keyword.get(cte_definition, :operation)
@@ -62,7 +62,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
     end
   end
 
-  defp build_query(schema_source, cte_name, cte_definition, opts) do
+  defp build_cte_query(schema_source, cte_name, cte_definition, opts) do
     case Keyword.get(cte_definition, :as) do
       %Ecto.Query{} = query ->
         {:ok, query}
@@ -71,14 +71,10 @@ defmodule EctoShorts.CommonFilters.WithCte do
         {:ok, query}
 
       query_params when is_map(query_params) and not is_struct(query_params) ->
-        from_source = Keyword.get(query_params, :source, schema_source)
-        filter_params = Keyword.get(query_params, :query, %{})
-        {:ok, CommonFilters.convert_params_to_filter(from_source, filter_params, opts)}
+        {:ok, params_to_query(schema_source, Map.to_list(query_params), opts)}
 
       query_params when is_list(query_params) ->
-        from_source = Keyword.get(query_params, :source, schema_source)
-        filter_params = Keyword.get(query_params, :query, %{})
-        {:ok, CommonFilters.convert_params_to_filter(from_source, filter_params, opts)}
+        {:ok, params_to_query(schema_source, query_params, opts)}
 
       term ->
         EctoShorts.Logger.warning(
@@ -88,5 +84,11 @@ defmodule EctoShorts.CommonFilters.WithCte do
 
         :error
     end
+  end
+
+  defp params_to_query(schema_source, query_params, opts) do
+    from_source = Keyword.get(query_params, :source, schema_source)
+    filter_params = Keyword.get(query_params, :query, %{})
+    CommonFilters.convert_params_to_filter(from_source, filter_params, opts)
   end
 end

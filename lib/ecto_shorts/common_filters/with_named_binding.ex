@@ -54,20 +54,13 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
         CommonFilters.convert_params_to_filter(query_acc, binding_params, opts)
       end)
     else
-      EctoShorts.Logger.warning(
-        @logger_prefix,
-        "Expected :with_named_binding params for #{inspect(binding_key)} to be a map or keyword list, got: #{inspect(binding_params)}"
-      )
-
+      warn_invalid_binding_params(binding_key, binding_params)
       query
     end
   end
 
   defp apply_entry(query, binding_key, binding_params, _opts) when is_atom(binding_key) do
-    EctoShorts.Logger.warning(
-      @logger_prefix,
-      "Expected :with_named_binding params for #{inspect(binding_key)} to be a map or keyword list, got: #{inspect(binding_params)}"
-    )
+    warn_invalid_binding_params(binding_key, binding_params)
 
     query
   end
@@ -79,5 +72,12 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
     )
 
     query
+  end
+
+  defp warn_invalid_binding_params(binding_key, binding_params) do
+    EctoShorts.Logger.warning(
+      @logger_prefix,
+      "Expected :with_named_binding params for #{inspect(binding_key)} to be a map or keyword list, got: #{inspect(binding_params)}"
+    )
   end
 end

@@ -127,57 +127,27 @@ defmodule EctoShorts.CommonFilters.Filter do
   end
 
   defp apply_expr(schema_source, :except, query, _binding_selector, value, opts) do
-    if is_struct(value, Ecto.Query) do
-      Query.except(query, ^value)
-    else
-      other_query = CommonFilters.convert_params_to_filter(schema_source, value, opts)
-      Query.except(query, ^other_query)
-    end
+    Query.except(query, ^resolve_compound_query(schema_source, value, opts))
   end
 
   defp apply_expr(schema_source, :except_all, query, _binding_selector, value, opts) do
-    if is_struct(value, Ecto.Query) do
-      Query.except_all(query, ^value)
-    else
-      other_query = CommonFilters.convert_params_to_filter(schema_source, value, opts)
-      Query.except_all(query, ^other_query)
-    end
+    Query.except_all(query, ^resolve_compound_query(schema_source, value, opts))
   end
 
   defp apply_expr(schema_source, :intersect, query, _binding_selector, value, opts) do
-    if is_struct(value, Ecto.Query) do
-      Query.intersect(query, ^value)
-    else
-      other_query = CommonFilters.convert_params_to_filter(schema_source, value, opts)
-      Query.intersect(query, ^other_query)
-    end
+    Query.intersect(query, ^resolve_compound_query(schema_source, value, opts))
   end
 
   defp apply_expr(schema_source, :intersect_all, query, _binding_selector, value, opts) do
-    if is_struct(value, Ecto.Query) do
-      Query.intersect_all(query, ^value)
-    else
-      other_query = CommonFilters.convert_params_to_filter(schema_source, value, opts)
-      Query.intersect_all(query, ^other_query)
-    end
+    Query.intersect_all(query, ^resolve_compound_query(schema_source, value, opts))
   end
 
   defp apply_expr(schema_source, :union, query, _binding_selector, value, opts) do
-    if is_struct(value, Ecto.Query) do
-      Query.union(query, ^value)
-    else
-      other_query = CommonFilters.convert_params_to_filter(schema_source, value, opts)
-      Query.union(query, ^other_query)
-    end
+    Query.union(query, ^resolve_compound_query(schema_source, value, opts))
   end
 
   defp apply_expr(schema_source, :union_all, query, _binding_selector, value, opts) do
-    if is_struct(value, Ecto.Query) do
-      Query.union_all(query, ^value)
-    else
-      other_query = CommonFilters.convert_params_to_filter(schema_source, value, opts)
-      Query.union_all(query, ^other_query)
-    end
+    Query.union_all(query, ^resolve_compound_query(schema_source, value, opts))
   end
 
   defp apply_expr(schema_source, :first, query, binding_selector, limit, opts) do
@@ -384,6 +354,14 @@ defmodule EctoShorts.CommonFilters.Filter do
 
           query
       end
+    end
+  end
+
+  defp resolve_compound_query(schema_source, value, opts) do
+    if is_struct(value, Ecto.Query) do
+      value
+    else
+      CommonFilters.convert_params_to_filter(schema_source, value, opts)
     end
   end
 end
