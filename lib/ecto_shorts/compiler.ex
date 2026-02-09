@@ -69,7 +69,6 @@ defmodule EctoShorts.Compiler do
       defmodule unquote(compiled_module) do
         @moduledoc false
 
-        import Ecto.Query
         require Ecto.Query
 
         unquote_splicing(clause_asts)

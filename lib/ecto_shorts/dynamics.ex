@@ -3,9 +3,10 @@ defmodule EctoShorts.Dynamics do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
+  alias EctoShorts.Dynamics.All
   alias EctoShorts.Dynamics.Adapters.Postgres
 
-  import Ecto.Query, only: [dynamic: 2, select: 3]
+  require Ecto.Query
 
   @logger_prefix "EctoShorts.Dynamics"
 
@@ -109,7 +110,11 @@ defmodule EctoShorts.Dynamics do
             )
           end)
         else
-          warn_invalid_aggregate_params(helper_op, params)
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Expected params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
+          )
+
           left_dynamic
         end
 
@@ -125,7 +130,11 @@ defmodule EctoShorts.Dynamics do
         )
 
       _ ->
-        warn_invalid_aggregate_params(helper_op, params)
+        EctoShorts.Logger.warning(
+          @logger_prefix,
+          "Expected params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
+        )
+
         left_dynamic
     end
   end
@@ -291,7 +300,7 @@ defmodule EctoShorts.Dynamics do
          {:all, value},
          opts
        ) do
-    value = apply_all_operator(source, key, value, opts)
+    value = All.build_all(source, key, value, opts)
 
     append_predicate_items(
       source,
@@ -314,7 +323,7 @@ defmodule EctoShorts.Dynamics do
        ) do
     case inner_key do
       :all ->
-        value = apply_all_operator(source, key, value, opts)
+        value = All.build_all(source, key, value, opts)
 
         append_predicate_items(
           source,
@@ -421,68 +430,6 @@ defmodule EctoShorts.Dynamics do
     end)
   end
 
-  defp apply_all_operator(source, key, value, opts)
-       when is_map(value) and not is_struct(value) do
-    apply_all_operator(source, key, Map.to_list(value), opts)
-  end
-
-  defp apply_all_operator(source, key, value, opts) when is_list(value) do
-    if Keyword.keyword?(value) do
-      if Keyword.has_key?(value, :source) or Keyword.has_key?(value, :query) do
-        all_operator_query_from_payload(source, key, value, opts)
-      else
-        Enum.map(value, fn {inner_op, rhs} ->
-          {inner_op, resolve_all_operator_rhs(source, key, rhs, opts)}
-        end)
-      end
-    else
-      value
-    end
-  end
-
-  defp apply_all_operator(source, key, {inner_op, rhs}, opts) when is_atom(inner_op) do
-    {inner_op, resolve_all_operator_rhs(source, key, rhs, opts)}
-  end
-
-  defp apply_all_operator(_source, _key, value, _opts), do: value
-
-  defp resolve_all_operator_rhs(source, key, rhs, opts)
-       when is_map(rhs) and not is_struct(rhs) do
-    resolve_all_operator_rhs(source, key, Map.to_list(rhs), opts)
-  end
-
-  defp resolve_all_operator_rhs(source, key, rhs, opts) when is_list(rhs) do
-    if Keyword.keyword?(rhs) and (Keyword.has_key?(rhs, :source) or Keyword.has_key?(rhs, :query)) do
-      all_operator_query_from_payload(source, key, rhs, opts)
-    else
-      rhs
-    end
-  end
-
-  defp resolve_all_operator_rhs(_source, _key, rhs, _opts), do: rhs
-
-  defp all_operator_query_from_payload(source, key, payload, opts) do
-    payload_source = Keyword.get(payload, :source, source)
-    filter_params = Keyword.get(payload, :query, [])
-
-    payload_source
-    |> EctoShorts.CommonFilters.convert_params_to_filter(filter_params, opts)
-    |> ensure_all_operator_scalar_select(key)
-  end
-
-  defp ensure_all_operator_scalar_select(query, field_name)
-       when is_struct(query, Ecto.Query) and is_atom(field_name) and not is_nil(field_name) do
-    case query.select do
-      nil ->
-        select(query, [q], field(q, ^field_name))
-
-      _ ->
-        query
-    end
-  end
-
-  defp ensure_all_operator_scalar_select(query, _field_name), do: query
-
   defp append_operator_predicates(
          source,
          left_dynamic,
@@ -503,23 +450,16 @@ defmodule EctoShorts.Dynamics do
     key in Postgres.operators() or key in dynamic_adapter.operators()
   end
 
-  defp warn_invalid_aggregate_params(helper_op, params) do
-    EctoShorts.Logger.warning(
-      @logger_prefix,
-      "Expected params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
-    )
-  end
-
   defp merge_dynamic(nil, _, right_dynamic) do
     right_dynamic
   end
 
   defp merge_dynamic(left_dynamic, :and, right_dynamic) do
-    dynamic([], ^left_dynamic and ^right_dynamic)
+    Ecto.Query.dynamic([], ^left_dynamic and ^right_dynamic)
   end
 
   defp merge_dynamic(left_dynamic, :or, right_dynamic) do
-    dynamic([], ^left_dynamic or ^right_dynamic)
+    Ecto.Query.dynamic([], ^left_dynamic or ^right_dynamic)
   end
 
   defp composite_predicate_entries?(values) when is_list(values) do
