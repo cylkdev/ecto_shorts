@@ -1,12 +1,11 @@
 defmodule EctoShorts.Dynamics do
   @moduledoc false
 
-  alias EctoShorts.Dynamics.All
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
   alias EctoShorts.Dynamics.Adapters.Postgres
 
-  import Ecto.Query, only: [dynamic: 2]
+  import Ecto.Query, only: [dynamic: 2, select: 3]
 
   @logger_prefix "EctoShorts.Dynamics"
 
@@ -292,7 +291,7 @@ defmodule EctoShorts.Dynamics do
          {:all, value},
          opts
        ) do
-    value = All.resolve_value(source, key, value, opts)
+    value = apply_all_operator(source, key, value, opts)
 
     append_predicate_items(
       source,
@@ -315,7 +314,7 @@ defmodule EctoShorts.Dynamics do
        ) do
     case inner_key do
       :all ->
-        value = All.resolve_value(source, key, value, opts)
+        value = apply_all_operator(source, key, value, opts)
 
         append_predicate_items(
           source,
@@ -416,6 +415,82 @@ defmodule EctoShorts.Dynamics do
       merge_dynamic(dyn_acc, :and, right_dynamic)
     end)
   end
+
+  defp apply_all_operator(source, key, value, opts)
+       when is_map(value) and not is_struct(value) do
+    apply_all_operator(source, key, Map.to_list(value), opts)
+  end
+
+  defp apply_all_operator(source, key, value, opts) when is_list(value) do
+    if Keyword.keyword?(value) do
+      if Keyword.has_key?(value, :source) or Keyword.has_key?(value, :query) do
+        all_operator_query_from_payload(source, key, value, opts)
+      else
+        Enum.map(value, fn {inner_op, rhs} ->
+          {inner_op, resolve_all_operator_rhs(source, key, rhs, opts)}
+        end)
+      end
+    else
+      value
+    end
+  end
+
+  defp apply_all_operator(source, key, {inner_op, rhs}, opts) when is_atom(inner_op) do
+    {inner_op, resolve_all_operator_rhs(source, key, rhs, opts)}
+  end
+
+  defp apply_all_operator(_source, _key, value, _opts), do: value
+
+  defp resolve_all_operator_rhs(source, key, rhs, opts)
+       when is_map(rhs) and not is_struct(rhs) do
+    if Map.has_key?(rhs, :source) or Map.has_key?(rhs, :query) do
+      payload_source = Map.get(rhs, :source, source)
+      filter_params = Map.get(rhs, :query, [])
+
+      payload_source
+      |> EctoShorts.CommonFilters.convert_params_to_filter(filter_params, opts)
+      |> ensure_all_operator_scalar_select(key)
+    else
+      rhs
+    end
+  end
+
+  defp resolve_all_operator_rhs(source, key, rhs, opts) when is_list(rhs) do
+    if Keyword.keyword?(rhs) and (Keyword.has_key?(rhs, :source) or Keyword.has_key?(rhs, :query)) do
+      payload_source = Keyword.get(rhs, :source, source)
+      filter_params = Keyword.get(rhs, :query, [])
+
+      payload_source
+      |> EctoShorts.CommonFilters.convert_params_to_filter(filter_params, opts)
+      |> ensure_all_operator_scalar_select(key)
+    else
+      rhs
+    end
+  end
+
+  defp resolve_all_operator_rhs(_source, _key, rhs, _opts), do: rhs
+
+  defp all_operator_query_from_payload(source, key, payload, opts) do
+    payload_source = Keyword.get(payload, :source, source)
+    filter_params = Keyword.get(payload, :query, [])
+
+    payload_source
+    |> EctoShorts.CommonFilters.convert_params_to_filter(filter_params, opts)
+    |> ensure_all_operator_scalar_select(key)
+  end
+
+  defp ensure_all_operator_scalar_select(query, field_name)
+       when is_struct(query, Ecto.Query) and is_atom(field_name) and not is_nil(field_name) do
+    case query.select do
+      nil ->
+        select(query, [q], field(q, ^field_name))
+
+      _ ->
+        query
+    end
+  end
+
+  defp ensure_all_operator_scalar_select(query, _field_name), do: query
 
   defp append_operator_predicates(
          source,
