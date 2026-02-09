@@ -127,27 +127,33 @@ defmodule EctoShorts.CommonFilters.Filter do
   end
 
   defp apply_expr(schema_source, :except, query, _binding_selector, value, opts) do
-    Query.except(query, ^resolve_compound_query(schema_source, value, opts))
+    expr = to_query(schema_source, value, opts)
+    Query.except(query, ^expr)
   end
 
   defp apply_expr(schema_source, :except_all, query, _binding_selector, value, opts) do
-    Query.except_all(query, ^resolve_compound_query(schema_source, value, opts))
+    expr = to_query(schema_source, value, opts)
+    Query.except_all(query, ^expr)
   end
 
   defp apply_expr(schema_source, :intersect, query, _binding_selector, value, opts) do
-    Query.intersect(query, ^resolve_compound_query(schema_source, value, opts))
+    expr = to_query(schema_source, value, opts)
+    Query.intersect(query, ^expr)
   end
 
   defp apply_expr(schema_source, :intersect_all, query, _binding_selector, value, opts) do
-    Query.intersect_all(query, ^resolve_compound_query(schema_source, value, opts))
+    expr = to_query(schema_source, value, opts)
+    Query.intersect_all(query, ^expr)
   end
 
   defp apply_expr(schema_source, :union, query, _binding_selector, value, opts) do
-    Query.union(query, ^resolve_compound_query(schema_source, value, opts))
+    expr = to_query(schema_source, value, opts)
+    Query.union(query, ^expr)
   end
 
   defp apply_expr(schema_source, :union_all, query, _binding_selector, value, opts) do
-    Query.union_all(query, ^resolve_compound_query(schema_source, value, opts))
+    expr = to_query(schema_source, value, opts)
+    Query.union_all(query, ^expr)
   end
 
   defp apply_expr(schema_source, :first, query, binding_selector, limit, opts) do
@@ -357,7 +363,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     end
   end
 
-  defp resolve_compound_query(schema_source, value, opts) do
+  defp to_query(schema_source, value, opts) do
     if is_struct(value, Ecto.Query) do
       value
     else
