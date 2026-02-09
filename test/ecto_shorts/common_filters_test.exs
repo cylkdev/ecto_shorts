@@ -765,6 +765,46 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :group_by for a single field" do
+      expected = from p in Post, group_by: p.author_id
+      q = Post
+      q2 = CommonFilters.convert_params_to_filter(q, %{group_by: :author_id}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :group_by with a list of fields" do
+      expected = from p in Post, group_by: [p.author_id, p.published]
+      q = Post
+      q2 = CommonFilters.convert_params_to_filter(q, %{group_by: [:author_id, :published]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :group_by targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          group_by: a.first_name
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{author: %{group_by: :first_name}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports :distinct true" do
       expected = from p in Post, distinct: true
       q = Post

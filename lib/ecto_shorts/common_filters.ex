@@ -5,6 +5,7 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonFilters.{
     Distinct,
     Filter,
+    GroupBy,
     Join,
     Preload,
     Select,
@@ -29,6 +30,7 @@ defmodule EctoShorts.CommonFilters do
     :except_all,
     :exclude,
     :first,
+    :group_by,
     :join,
     :last,
     :limit,
@@ -306,6 +308,12 @@ defmodule EctoShorts.CommonFilters do
     binding_source = to_binding_source(schema_source, query, binding_selector)
 
     case filter_op do
+      :distinct ->
+        Distinct.build(binding_source, :distinct, query, binding_selector, params, opts)
+
+      :group_by ->
+        GroupBy.build(binding_source, :group_by, query, binding_selector, params, opts)
+
       :join ->
         Join.build(binding_source, :join, query, binding_selector, params, opts)
 
@@ -340,9 +348,6 @@ defmodule EctoShorts.CommonFilters do
 
           query
         end
-
-      :distinct ->
-        Distinct.build(binding_source, :distinct, query, binding_selector, params, opts)
 
       filter_op when filter_op in [:select, :select_merge] ->
         Select.build(binding_source, filter_op, query, binding_selector, params, opts)
