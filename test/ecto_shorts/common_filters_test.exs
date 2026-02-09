@@ -371,7 +371,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [as: :author, at: 2, posts: [:comments]]]},
+          %{preload: [as: [author: :author], at: [{2, :author}], posts: [:comments]]},
           []
         )
 
@@ -395,7 +395,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [as: :author, posts: [:comments]]]},
+          %{preload: [as: [author: :author], posts: [:comments]]},
           []
         )
 
@@ -412,7 +412,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_raise FunctionClauseError, fn ->
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [at: [2]]]},
+          %{preload: [at: [2]]},
           []
         )
       end
@@ -424,7 +424,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_raise Ecto.QueryError, ~r/unknown bind name `:missing`/, fn ->
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [author: [as: :missing]]},
+          %{preload: [as: [missing: :author]]},
           []
         )
       end
