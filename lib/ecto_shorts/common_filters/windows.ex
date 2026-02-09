@@ -7,7 +7,8 @@ defmodule EctoShorts.CommonFilters.Windows do
   require EctoShorts.Compiler
 
   @logger_prefix "EctoShorts.CommonFilters.Windows"
-  @boolean_operators [:as, :at]
+  @binding_selector_key :bind
+  @binding_selector_modes [:as, :at]
   @window_keys [:partition_by, :order_by, :frame]
 
   @doc false
@@ -20,33 +21,14 @@ defmodule EctoShorts.CommonFilters.Windows do
     reduce_windows(query, binding_selector, Map.to_list(params))
   end
 
-  defp reduce_windows(query, _binding_selector, {boolean_operator, values})
-       when boolean_operator in @boolean_operators do
-    values =
-      if is_map(values) and not is_struct(values) do
-        Map.to_list(values)
-      else
-        values
-      end
-
-    if is_list(values) do
-      Enum.reduce(values, query, fn {binding_target, next_value}, query_acc ->
-        reduce_windows(query_acc, {boolean_operator, binding_target}, next_value)
-      end)
-    else
-      EctoShorts.Logger.warning(
-        @logger_prefix,
-        "Expected :windows binding selector params to be a map or keyword list, got: #{inspect(values)}"
-      )
-
-      query
-    end
+  defp reduce_windows(query, binding_selector, {@binding_selector_key, bind_params}) do
+    reduce_windows_bind(query, binding_selector, bind_params)
   end
 
   defp reduce_windows(query, binding_selector, params) when is_list(params) do
     cond do
       Keyword.keyword?(params) ->
-        case Enum.split_with(params, fn {k, _} -> k in @boolean_operators end) do
+        case Enum.split_with(params, fn {k, _} -> k == @binding_selector_key end) do
           {[], window_entries} ->
             reduce_window_entries(query, binding_selector, window_entries)
 
@@ -84,6 +66,47 @@ defmodule EctoShorts.CommonFilters.Windows do
     )
 
     query
+  end
+
+  defp reduce_windows_bind(query, binding_selector, bind_params)
+       when is_map(bind_params) and not is_struct(bind_params) do
+    reduce_windows_bind(query, binding_selector, Map.to_list(bind_params))
+  end
+
+  defp reduce_windows_bind(query, _binding_selector, bind_params) when is_list(bind_params) do
+    if Keyword.keyword?(bind_params) do
+      Enum.reduce(bind_params, query, fn {binding_mode, scoped_params}, query_acc ->
+        if binding_mode in @binding_selector_modes do
+          scoped_params =
+            cond do
+              is_map(scoped_params) and not is_struct(scoped_params) ->
+                Map.to_list(scoped_params)
+
+              Keyword.keyword?(scoped_params) ->
+                scoped_params
+
+              true ->
+                raise ArgumentError,
+                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(scoped_params)}"
+            end
+
+          Enum.reduce(scoped_params, query_acc, fn {binding_target, next_value}, q ->
+            reduce_windows(q, {binding_mode, binding_target}, next_value)
+          end)
+        else
+          raise ArgumentError,
+                "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+        end
+      end)
+    else
+      raise ArgumentError,
+            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    end
+  end
+
+  defp reduce_windows_bind(_query, _binding_selector, bind_params) do
+    raise ArgumentError,
+          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
   end
 
   defp reduce_window_entries(query, binding_selector, entries) do

@@ -7,7 +7,8 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   require Ecto.Query
   require EctoShorts.Compiler
 
-  @boolean_operators [:as, :at]
+  @binding_selector_key :bind
+  @binding_selector_modes [:as, :at]
 
   @order_directions [
     :asc,
@@ -29,14 +30,12 @@ defmodule EctoShorts.CommonFilters.OrderBy do
     reduce_order_by(filter_op, query, binding_selector, {key, Map.to_list(params)})
   end
 
+  defp reduce_order_by(filter_op, query, binding_selector, {@binding_selector_key, bind_params}) do
+    reduce_order_by_bind(filter_op, query, binding_selector, bind_params)
+  end
+
   defp reduce_order_by(filter_op, query, binding_selector, {key, value}) do
-    if key in @boolean_operators do
-      Enum.reduce(value, query, fn {binding_target, next_value}, q ->
-        reduce_order_by(filter_op, q, {key, binding_target}, next_value)
-      end)
-    else
-      reduce_order_by_expr(filter_op, query, binding_selector, {key, value})
-    end
+    reduce_order_by_expr(filter_op, query, binding_selector, {key, value})
   end
 
   defp reduce_order_by(filter_op, query, binding_selector, params)
@@ -46,20 +45,20 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   defp reduce_order_by(filter_op, query, binding_selector, entries) when is_list(entries) do
     if Keyword.keyword?(entries) do
-      case Enum.split_with(entries, fn {k, _} -> k in @boolean_operators end) do
+      case Enum.split_with(entries, fn {k, _} -> k == @binding_selector_key end) do
         {[], order_entries} ->
           reduce_order_by_expr(filter_op, query, binding_selector, order_entries)
 
-        {boolean_operators, []} ->
-          Enum.reduce(boolean_operators, query, fn entry, query_acc ->
+        {bind_entries, []} ->
+          Enum.reduce(bind_entries, query, fn entry, query_acc ->
             reduce_order_by(filter_op, query_acc, binding_selector, entry)
           end)
 
-        {boolean_operators, order_entries} ->
+        {bind_entries, order_entries} ->
           query_with_order =
             reduce_order_by_expr(filter_op, query, binding_selector, order_entries)
 
-          Enum.reduce(boolean_operators, query_with_order, fn entry, query_acc ->
+          Enum.reduce(bind_entries, query_with_order, fn entry, query_acc ->
             reduce_order_by(filter_op, query_acc, binding_selector, entry)
           end)
       end
@@ -70,6 +69,48 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   defp reduce_order_by(filter_op, query, binding_selector, expr) do
     reduce_order_by_expr(filter_op, query, binding_selector, expr)
+  end
+
+  defp reduce_order_by_bind(filter_op, query, binding_selector, bind_params)
+       when is_map(bind_params) and not is_struct(bind_params) do
+    reduce_order_by_bind(filter_op, query, binding_selector, Map.to_list(bind_params))
+  end
+
+  defp reduce_order_by_bind(filter_op, query, _binding_selector, bind_params)
+       when is_list(bind_params) do
+    if Keyword.keyword?(bind_params) do
+      Enum.reduce(bind_params, query, fn {binding_mode, scoped_params}, query_acc ->
+        if binding_mode in @binding_selector_modes do
+          scoped_params =
+            cond do
+              is_map(scoped_params) and not is_struct(scoped_params) ->
+                Map.to_list(scoped_params)
+
+              Keyword.keyword?(scoped_params) ->
+                scoped_params
+
+              true ->
+                raise ArgumentError,
+                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(scoped_params)}"
+            end
+
+          Enum.reduce(scoped_params, query_acc, fn {binding_target, next_value}, q ->
+            reduce_order_by(filter_op, q, {binding_mode, binding_target}, next_value)
+          end)
+        else
+          raise ArgumentError,
+                "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+        end
+      end)
+    else
+      raise ArgumentError,
+            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    end
+  end
+
+  defp reduce_order_by_bind(_filter_op, _query, _binding_selector, bind_params) do
+    raise ArgumentError,
+          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
   end
 
   defp reduce_order_by_expr(:order_by, query, binding_selector, expr) do

@@ -20,7 +20,8 @@ defmodule EctoShorts.CommonFilters do
 
   @logger_prefix "EctoShorts.CommonFilters"
 
-  @boolean_operators [:as, :at]
+  @binding_selector_key :bind
+  @binding_selector_modes [:as, :at]
   @default_binding_selector {:as, nil}
 
   @where :where
@@ -107,26 +108,15 @@ defmodule EctoShorts.CommonFilters do
       key in Keyword.get(opts, :query_filters, @query_filters) ->
         apply_query_builder(schema_source, query, binding_selector, key, value, opts)
 
-      key in @boolean_operators ->
-        if is_map(value) or is_list(value) do
-          Enum.reduce(value, query, fn {binding_target, params}, query_acc ->
-            reduce_binding_params(
-              schema_source,
-              query_acc,
-              {key, binding_target},
-              filter_op,
-              params,
-              opts
-            )
-          end)
-        else
-          EctoShorts.Logger.warning(
-            @logger_prefix,
-            "Expected value for binding selector to be a map or keyword list, got: #{inspect(value)}"
-          )
-
-          query
-        end
+      key == @binding_selector_key ->
+        reduce_bind_params(
+          schema_source,
+          query,
+          binding_selector,
+          filter_op,
+          value,
+          opts
+        )
 
       true ->
         case CommonSchema.get_schema_reflection(schema_source, :associations) do
@@ -193,6 +183,83 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
+  defp reduce_bind_params(
+         schema_source,
+         query,
+         binding_selector,
+         filter_op,
+         bind_params,
+         opts
+       )
+       when is_map(bind_params) and not is_struct(bind_params) do
+    reduce_bind_params(
+      schema_source,
+      query,
+      binding_selector,
+      filter_op,
+      Map.to_list(bind_params),
+      opts
+    )
+  end
+
+  defp reduce_bind_params(
+         schema_source,
+         query,
+         _binding_selector,
+         filter_op,
+         bind_params,
+         opts
+       )
+       when is_list(bind_params) do
+    if Keyword.keyword?(bind_params) do
+      Enum.reduce(bind_params, query, fn {binding_mode, scoped_params}, query_acc ->
+        if binding_mode in @binding_selector_modes do
+          scoped_params =
+            cond do
+              is_map(scoped_params) and not is_struct(scoped_params) ->
+                Map.to_list(scoped_params)
+
+              Keyword.keyword?(scoped_params) ->
+                scoped_params
+
+              true ->
+                raise ArgumentError,
+                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(scoped_params)}"
+            end
+
+          Enum.reduce(scoped_params, query_acc, fn {binding_target, params}, q2 ->
+            reduce_binding_params(
+              schema_source,
+              q2,
+              {binding_mode, binding_target},
+              filter_op,
+              params,
+              opts
+            )
+          end)
+        else
+          raise ArgumentError,
+                "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+        end
+      end)
+    else
+      raise ArgumentError,
+            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    end
+  end
+
+  defp reduce_bind_params(
+         _schema_source,
+         _query,
+         _binding_selector,
+         _filter_op,
+         bind_params,
+         _opts
+       ) do
+    raise ArgumentError,
+          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+  end
+
   defp reduce_binding_params(
          schema_source,
          query,
@@ -209,12 +276,8 @@ defmodule EctoShorts.CommonFilters do
         reduce_filter_params(schema_source, query, {:at, bind_index}, filter, params, opts)
 
       binding_selector ->
-        EctoShorts.Logger.warning(
-          @logger_prefix,
-          "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: #{inspect(binding_selector)}"
-        )
-
-        query
+        raise ArgumentError,
+              "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: #{inspect(binding_selector)}"
     end
   end
 

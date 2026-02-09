@@ -7,7 +7,8 @@ defmodule EctoShorts.CommonFilters.Update do
   require Ecto.Query
   require EctoShorts.Compiler
 
-  @boolean_operators [:as, :at]
+  @binding_selector_key :bind
+  @binding_selector_modes [:as, :at]
 
   @doc false
   def build(_schema_source, :update, query, binding_selector, term, opts)
@@ -19,29 +20,33 @@ defmodule EctoShorts.CommonFilters.Update do
     end)
   end
 
-  def build(_schema_source, :update, query, _binding_selector, {binding_mode, params}, opts)
-      when binding_mode in @boolean_operators and (is_map(params) or is_list(params)) do
-    Enum.reduce(params, query, fn {binding_target, term}, query_acc ->
-      build(nil, :update, query_acc, {binding_mode, binding_target}, term, opts)
-    end)
+  def build(
+        _schema_source,
+        :update,
+        query,
+        binding_selector,
+        {@binding_selector_key, bind_params},
+        opts
+      ) do
+    reduce_update_bind(query, binding_selector, bind_params, opts)
   end
 
   def build(_schema_source, :update, query, binding_selector, term, opts) when is_list(term) do
     if Keyword.keyword?(term) do
-      case Enum.split_with(term, fn {k, _} -> k in @boolean_operators end) do
+      case Enum.split_with(term, fn {k, _} -> k == @binding_selector_key end) do
         {[], entries} ->
           apply_update_expr(query, binding_selector, normalize_update_entries(entries))
 
-        {boolean_operators, []} ->
-          Enum.reduce(boolean_operators, query, fn entry, query_acc ->
+        {bind_entries, []} ->
+          Enum.reduce(bind_entries, query, fn entry, query_acc ->
             build(nil, :update, query_acc, binding_selector, entry, opts)
           end)
 
-        {boolean_operators, entries} ->
+        {bind_entries, entries} ->
           query_with_update =
             apply_update_expr(query, binding_selector, normalize_update_entries(entries))
 
-          Enum.reduce(boolean_operators, query_with_update, fn entry, query_acc ->
+          Enum.reduce(bind_entries, query_with_update, fn entry, query_acc ->
             build(nil, :update, query_acc, binding_selector, entry, opts)
           end)
       end
@@ -62,6 +67,48 @@ defmodule EctoShorts.CommonFilters.Update do
       {op, value} ->
         {op, value}
     end)
+  end
+
+  defp reduce_update_bind(query, binding_selector, bind_params, opts)
+       when is_map(bind_params) and not is_struct(bind_params) do
+    reduce_update_bind(query, binding_selector, Map.to_list(bind_params), opts)
+  end
+
+  defp reduce_update_bind(query, _binding_selector, bind_params, opts)
+       when is_list(bind_params) do
+    if Keyword.keyword?(bind_params) do
+      Enum.reduce(bind_params, query, fn {binding_mode, scoped_params}, query_acc ->
+        if binding_mode in @binding_selector_modes do
+          scoped_params =
+            cond do
+              is_map(scoped_params) and not is_struct(scoped_params) ->
+                Map.to_list(scoped_params)
+
+              Keyword.keyword?(scoped_params) ->
+                scoped_params
+
+              true ->
+                raise ArgumentError,
+                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(scoped_params)}"
+            end
+
+          Enum.reduce(scoped_params, query_acc, fn {binding_target, term}, q2 ->
+            build(nil, :update, q2, {binding_mode, binding_target}, term, opts)
+          end)
+        else
+          raise ArgumentError,
+                "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+        end
+      end)
+    else
+      raise ArgumentError,
+            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    end
+  end
+
+  defp reduce_update_bind(_query, _binding_selector, bind_params, _opts) do
+    raise ArgumentError,
+          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
   end
 
   Compiler.define_clauses do

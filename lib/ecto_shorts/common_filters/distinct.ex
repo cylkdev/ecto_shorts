@@ -7,7 +7,8 @@ defmodule EctoShorts.CommonFilters.Distinct do
   require Ecto.Query
   require EctoShorts.Compiler
 
-  @boolean_operators [:as, :at]
+  @binding_selector_key :bind
+  @binding_selector_modes [:as, :at]
 
   @order_directions [
     :asc,
@@ -28,14 +29,12 @@ defmodule EctoShorts.CommonFilters.Distinct do
     reduce_distinct(query, binding_selector, {key, Map.to_list(params)})
   end
 
+  defp reduce_distinct(query, binding_selector, {@binding_selector_key, bind_params}) do
+    reduce_distinct_bind(query, binding_selector, bind_params)
+  end
+
   defp reduce_distinct(query, binding_selector, {key, value}) do
-    if key in @boolean_operators do
-      Enum.reduce(value, query, fn {binding_target, next_value}, q ->
-        reduce_distinct(q, {key, binding_target}, next_value)
-      end)
-    else
-      apply_distinct_expr(query, binding_selector, {key, value})
-    end
+    apply_distinct_expr(query, binding_selector, {key, value})
   end
 
   defp reduce_distinct(query, binding_selector, params)
@@ -45,9 +44,27 @@ defmodule EctoShorts.CommonFilters.Distinct do
 
   defp reduce_distinct(query, binding_selector, entries) when is_list(entries) do
     if Keyword.keyword?(entries) do
-      Enum.reduce(entries, query, fn {key, value}, q ->
-        reduce_distinct(q, binding_selector, {key, value})
-      end)
+      case Enum.split_with(entries, fn {k, _} -> k == @binding_selector_key end) do
+        {[], distinct_entries} ->
+          Enum.reduce(distinct_entries, query, fn {key, value}, q ->
+            reduce_distinct(q, binding_selector, {key, value})
+          end)
+
+        {bind_entries, []} ->
+          Enum.reduce(bind_entries, query, fn entry, query_acc ->
+            reduce_distinct(query_acc, binding_selector, entry)
+          end)
+
+        {bind_entries, distinct_entries} ->
+          query_with_distinct =
+            Enum.reduce(distinct_entries, query, fn {key, value}, q ->
+              reduce_distinct(q, binding_selector, {key, value})
+            end)
+
+          Enum.reduce(bind_entries, query_with_distinct, fn entry, query_acc ->
+            reduce_distinct(query_acc, binding_selector, entry)
+          end)
+      end
     else
       apply_distinct_expr(query, binding_selector, entries)
     end
@@ -55,6 +72,47 @@ defmodule EctoShorts.CommonFilters.Distinct do
 
   defp reduce_distinct(query, binding_selector, expr) do
     apply_distinct_expr(query, binding_selector, expr)
+  end
+
+  defp reduce_distinct_bind(query, binding_selector, bind_params)
+       when is_map(bind_params) and not is_struct(bind_params) do
+    reduce_distinct_bind(query, binding_selector, Map.to_list(bind_params))
+  end
+
+  defp reduce_distinct_bind(query, _binding_selector, bind_params) when is_list(bind_params) do
+    if Keyword.keyword?(bind_params) do
+      Enum.reduce(bind_params, query, fn {binding_mode, scoped_params}, query_acc ->
+        if binding_mode in @binding_selector_modes do
+          scoped_params =
+            cond do
+              is_map(scoped_params) and not is_struct(scoped_params) ->
+                Map.to_list(scoped_params)
+
+              Keyword.keyword?(scoped_params) ->
+                scoped_params
+
+              true ->
+                raise ArgumentError,
+                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(scoped_params)}"
+            end
+
+          Enum.reduce(scoped_params, query_acc, fn {binding_target, next_value}, q ->
+            reduce_distinct(q, {binding_mode, binding_target}, next_value)
+          end)
+        else
+          raise ArgumentError,
+                "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+        end
+      end)
+    else
+      raise ArgumentError,
+            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    end
+  end
+
+  defp reduce_distinct_bind(_query, _binding_selector, bind_params) do
+    raise ArgumentError,
+          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
   end
 
   Compiler.define_clauses do

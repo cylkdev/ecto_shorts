@@ -7,35 +7,36 @@ defmodule EctoShorts.CommonFilters.Preload do
   require Ecto.Query
   require EctoShorts.Compiler
 
-  @boolean_operators [:as, :at]
+  @binding_selector_key :bind
+  @binding_selector_modes [:as, :at]
 
   def build(schema_source, :preload, query, binding_selector, arg, _opts) do
     reduce_preload(schema_source, query, binding_selector, arg)
   end
 
-  defp reduce_preload(schema_source, query, _binding_selector, {boolean_operator, params})
-       when boolean_operator in @boolean_operators do
-    Enum.reduce(params, query, fn {binding_target, value}, q2 ->
-      reduce_preload(schema_source, q2, {boolean_operator, binding_target}, value)
-    end)
+  defp reduce_preload(
+         schema_source,
+         query,
+         binding_selector,
+         {@binding_selector_key, bind_params}
+       ) do
+    reduce_preload_bind(schema_source, query, binding_selector, bind_params)
   end
 
   defp reduce_preload(schema_source, query, binding_selector, values) when is_list(values) do
     if Keyword.keyword?(values) do
-      case Enum.split_with(values, fn {k, _} -> k in @boolean_operators end) do
+      case Enum.split_with(values, fn {k, _} -> k == @binding_selector_key end) do
         {[], entries} ->
           apply_preload_expr(query, binding_selector, entries)
 
-        {boolean_operators, []} ->
-          Enum.reduce(boolean_operators, query, fn {boolean_operator, value}, query_acc ->
-            reduce_preload(schema_source, query_acc, binding_selector, {boolean_operator, value})
+        {bind_entries, []} ->
+          Enum.reduce(bind_entries, query, fn entry, query_acc ->
+            reduce_preload(schema_source, query_acc, binding_selector, entry)
           end)
 
-        {boolean_operators, entries} ->
-          Enum.reduce(boolean_operators, query, fn {boolean_operator, params}, query_acc ->
-            Enum.reduce(params, query_acc, fn {binding_target, assoc_key}, q2 ->
-              apply_preload_expr(q2, {boolean_operator, binding_target}, assoc_key, entries)
-            end)
+        {bind_entries, entries} ->
+          Enum.reduce(bind_entries, query, fn {@binding_selector_key, bind_params}, query_acc ->
+            reduce_preload_bind(schema_source, query_acc, binding_selector, bind_params, entries)
           end)
       end
     else
@@ -45,6 +46,62 @@ defmodule EctoShorts.CommonFilters.Preload do
 
   defp reduce_preload(_schema_source, query, binding_selector, key) do
     apply_preload_expr(query, binding_selector, key, nil)
+  end
+
+  defp reduce_preload_bind(schema_source, query, binding_selector, bind_params, entries \\ nil)
+
+  defp reduce_preload_bind(schema_source, query, binding_selector, bind_params, entries)
+       when is_map(bind_params) and not is_struct(bind_params) do
+    reduce_preload_bind(
+      schema_source,
+      query,
+      binding_selector,
+      Map.to_list(bind_params),
+      entries
+    )
+  end
+
+  defp reduce_preload_bind(schema_source, query, _binding_selector, bind_params, entries)
+       when is_list(bind_params) do
+    if Keyword.keyword?(bind_params) do
+      Enum.reduce(bind_params, query, fn {binding_mode, scoped_params}, query_acc ->
+        if binding_mode in @binding_selector_modes do
+          scoped_params =
+            cond do
+              is_map(scoped_params) and not is_struct(scoped_params) ->
+                Map.to_list(scoped_params)
+
+              Keyword.keyword?(scoped_params) ->
+                scoped_params
+
+              true ->
+                raise ArgumentError,
+                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(scoped_params)}"
+            end
+
+          Enum.reduce(scoped_params, query_acc, fn {binding_target, value}, q2 ->
+            scoped_binding_selector = {binding_mode, binding_target}
+
+            if is_nil(entries) do
+              reduce_preload(schema_source, q2, scoped_binding_selector, value)
+            else
+              apply_preload_expr(q2, scoped_binding_selector, value, entries)
+            end
+          end)
+        else
+          raise ArgumentError,
+                "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+        end
+      end)
+    else
+      raise ArgumentError,
+            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    end
+  end
+
+  defp reduce_preload_bind(_schema_source, _query, _binding_selector, bind_params, _entries) do
+    raise ArgumentError,
+          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
   end
 
   Compiler.define_clauses do
