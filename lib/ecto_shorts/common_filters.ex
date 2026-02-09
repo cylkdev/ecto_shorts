@@ -32,6 +32,7 @@ defmodule EctoShorts.CommonFilters do
     :first,
     :group_by,
     :having,
+    :or_having,
     :intersect,
     :intersect_all,
     :join,
@@ -311,8 +312,8 @@ defmodule EctoShorts.CommonFilters do
     binding_source = to_binding_source(schema_source, query, binding_selector)
 
     case filter_op do
-      :having ->
-        Having.build(binding_source, :having, query, binding_selector, params, opts)
+      filter_op when filter_op in [:having, :or_having] ->
+        Having.build(binding_source, filter_op, query, binding_selector, params, opts)
 
       :distinct ->
         Distinct.build(binding_source, :distinct, query, binding_selector, params, opts)

@@ -963,6 +963,58 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :or_having with operator payloads" do
+      expected =
+        from(p in Post,
+          group_by: p.views,
+          having: p.views > ^10,
+          or_having: p.views < ^5
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :views, having: %{views: %{>: 10}}, or_having: %{views: %{<: 5}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding selector :or_having targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          group_by: [a.first_name, a.age],
+          having: a.first_name == ^"John",
+          or_having: a.age > ^30
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{
+            as: %{
+              author: %{
+                group_by: [:first_name, :age],
+                having: %{first_name: "John"},
+                or_having: %{age: %{>: 30}}
+              }
+            }
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "binding selector :having supports boolean map payloads" do
       q =
         from(p in Post,
@@ -1057,6 +1109,21 @@ defmodule EctoShorts.CommonFiltersTest do
         end)
 
       assert log =~ "Expected params for having to be a map or keyword list, got: \"bad\""
+
+      assert_received {:q2, q2}
+      assert q2 == q
+    end
+
+    test "invalid :or_having params container logs warning and returns query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{or_having: "bad"}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected params for or_having to be a map or keyword list, got: \"bad\""
 
       assert_received {:q2, q2}
       assert q2 == q
