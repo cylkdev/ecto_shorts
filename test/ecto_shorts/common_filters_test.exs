@@ -2069,7 +2069,7 @@ defmodule EctoShorts.CommonFiltersTest do
             join: [
               subquery: [
                 source: [
-                  from: User,
+                  source: User,
                   query: [age: [>=: 18]]
                 ],
                 as: :adult_users_subquery,
