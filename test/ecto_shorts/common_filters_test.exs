@@ -865,6 +865,84 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :update with update operators" do
+      updates = [set: [title: "After"], inc: [views: 1]]
+      expected = Ecto.Query.update(Post, ^updates)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{update: [set: [title: "After"], inc: [views: 1]]},
+          []
+        )
+
+      assert_update_sql(expected, q2)
+    end
+
+    test "supports :update with operation payload maps" do
+      updates = [set: [title: "After"]]
+      expected = Ecto.Query.update(Post, ^updates)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{update: %{set: %{title: "After"}}},
+          []
+        )
+
+      assert_update_sql(expected, q2)
+    end
+
+    test "binding selector :update targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      dynamic_title = dynamic([author: a], a.first_name)
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          update: [set: [first_name: a.first_name]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{as: %{author: %{update: [set: [first_name: dynamic_title]]}}},
+          []
+        )
+
+      assert_update_sql(expected, q2)
+    end
+
+    test "positional binding selector :update targets the selected binding" do
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      dynamic_title = dynamic([_p, a], a.first_name)
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          update: [set: [first_name: a.first_name]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{at: %{2 => %{update: [set: [first_name: dynamic_title]]}}},
+          []
+        )
+
+      assert_update_sql(expected, q2)
+    end
+
     test "supports :order_by for a single field" do
       expected = from(p in Post, order_by: [desc: p.title])
       q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: :title}, [])
@@ -3023,5 +3101,11 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_received {:q2, q2}
       assert q2 == q
     end
+  end
+
+  defp assert_update_sql(query_a, query_b) do
+    left = Ecto.Adapters.SQL.to_sql(:update_all, EctoShorts.Repo, query_a)
+    right = Ecto.Adapters.SQL.to_sql(:update_all, EctoShorts.Repo, query_b)
+    assert left == right
   end
 end

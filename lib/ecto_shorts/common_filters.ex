@@ -11,7 +11,8 @@ defmodule EctoShorts.CommonFilters do
     OrderBy,
     Preload,
     Select,
-    SubQuery
+    SubQuery,
+    Update
   }
 
   alias EctoShorts.SchemaHelpers
@@ -48,7 +49,8 @@ defmodule EctoShorts.CommonFilters do
     :preload,
     :select,
     :select_merge,
-    :subquery
+    :subquery,
+    :update
   ]
 
   def convert_params_to_filter(source, params, opts \\ []) do
@@ -373,6 +375,9 @@ defmodule EctoShorts.CommonFilters do
 
       filter_op when filter_op in [:select, :select_merge] ->
         Select.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :update ->
+        Update.build(binding_source, :update, query, binding_selector, params, opts)
 
       filter_op ->
         Filter.build(binding_source, filter_op, query, binding_selector, params, opts)
