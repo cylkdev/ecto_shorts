@@ -1,7 +1,6 @@
 defmodule EctoShorts.Dynamics do
   @moduledoc false
 
-  alias EctoShorts.Dynamics.All
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
   alias EctoShorts.Dynamics.Adapters.Postgres
@@ -349,99 +348,18 @@ defmodule EctoShorts.Dynamics do
          left_dynamic,
          binding_selector,
          key,
-         {:all, value},
-         opts
-       ) do
-    value = All.resolve_value(source, key, value, opts)
-
-    reduce_dynamic_expr_values(
-      source,
-      left_dynamic,
-      binding_selector,
-      key,
-      value,
-      opts,
-      fn item -> {:all, item} end
-    )
-  end
-
-  defp reduce_dynamic_expr(
-         source,
-         left_dynamic,
-         binding_selector,
-         key,
-         {:not, {inner_key, value}},
-         opts
-       ) do
-    case inner_key do
-      :all ->
-        value = All.resolve_value(source, key, value, opts)
-
-        reduce_dynamic_expr_values(
-          source,
-          left_dynamic,
-          binding_selector,
-          key,
-          value,
-          opts,
-          fn item -> {:not, {:all, item}} end
-        )
-
-      _ ->
-        reduce_dynamic_expr_values(
-          source,
-          left_dynamic,
-          binding_selector,
-          key,
-          value,
-          opts,
-          fn item -> {:not, {inner_key, item}} end
-        )
-    end
-  end
-
-  defp reduce_dynamic_expr(
-         source,
-         left_dynamic,
-         binding_selector,
-         key,
-         {:not, value},
-         opts
-       ) do
-    case value do
-      map when is_map(map) and not is_struct(map) ->
-        Enum.reduce(Map.to_list(map), left_dynamic, fn entry, dyn_acc ->
-          reduce_dynamic_expr(source, dyn_acc, binding_selector, key, {:not, entry}, opts)
-        end)
-
-      list when is_list(list) ->
-        Enum.reduce(list, left_dynamic, fn entry, dyn_acc ->
-          reduce_dynamic_expr(source, dyn_acc, binding_selector, key, {:not, entry}, opts)
-        end)
-
-      _ ->
-        reduce_dynamic_expr_values(
-          source,
-          left_dynamic,
-          binding_selector,
-          key,
-          value,
-          opts,
-          fn item -> {:not, item} end
-        )
-    end
-  end
-
-  defp reduce_dynamic_expr(
-         source,
-         left_dynamic,
-         binding_selector,
-         key,
          {op, value},
          opts
        ) do
-    reduce_dynamic_expr_values(source, left_dynamic, binding_selector, key, value, opts, fn item ->
-      {op, item}
+    dynamic_adapter = dynamic_adapter!(opts)
+
+    value
+    |> normalize_expression_params()
+    |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
+      right_dynamic =
+        dynamic_adapter.build_dynamic(source, binding_selector, key, {op, item})
+
+      merge_dynamic(dyn_acc, :and, right_dynamic)
     end)
   end
 
@@ -454,27 +372,6 @@ defmodule EctoShorts.Dynamics do
       {@equal, value},
       opts
     )
-  end
-
-  defp reduce_dynamic_expr_values(
-         source,
-         left_dynamic,
-         binding_selector,
-         key,
-         value,
-         opts,
-         build_expr
-       ) do
-    dynamic_adapter = dynamic_adapter!(opts)
-
-    value
-    |> normalize_expression_params()
-    |> Enum.reduce(left_dynamic, fn item, dyn_acc ->
-      right_dynamic =
-        dynamic_adapter.build_dynamic(source, binding_selector, key, build_expr.(item))
-
-      merge_dynamic(dyn_acc, :and, right_dynamic)
-    end)
   end
 
   defp merge_dynamic(nil, _, right_dynamic) do

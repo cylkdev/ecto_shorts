@@ -586,7 +586,10 @@ defmodule EctoShorts.DynamicsTest do
         id: %{all: %{>: [source: Post, query: %{id: 1}]}}
       })
 
-    subquery_expr = EctoShorts.CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
+    subquery_expr =
+      Post
+      |> EctoShorts.CommonFilters.convert_params_to_filter(%{id: 1}, [])
+      |> select([p], p.id)
     expected = dynamic([q], field(q, ^:id) > all(subquery_expr))
 
     assert_dynamic(expected, actual)
@@ -612,7 +615,10 @@ defmodule EctoShorts.DynamicsTest do
         id: %{not: %{all: %{>: [source: Post, query: %{id: 1}]}}}
       })
 
-    subquery_expr = EctoShorts.CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
+    subquery_expr =
+      Post
+      |> EctoShorts.CommonFilters.convert_params_to_filter(%{id: 1}, [])
+      |> select([p], p.id)
     expected = dynamic([q], not (field(q, ^:id) > all(subquery_expr)))
 
     assert_dynamic(expected, actual)

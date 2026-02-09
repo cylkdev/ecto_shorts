@@ -28,6 +28,10 @@ defmodule EctoShorts.Dynamics.All do
     end
   end
 
+  def resolve_value(source, key, {inner_op, rhs}, opts) when is_atom(inner_op) do
+    {inner_op, resolve_rhs(source, key, rhs, opts)}
+  end
+
   def resolve_value(_source, _key, value, _opts), do: value
 
   defp resolve_rhs(source, key, rhs, opts) when is_map(rhs) and not is_struct(rhs) do
