@@ -767,6 +767,82 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports datetime_add helper map payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        inserted_at: %{>=: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}
+      })
+
+    expected =
+      dynamic(
+        [q],
+        field(q, ^:inserted_at) >= datetime_add(field(q, ^:inserted_at), ^1, ^"day")
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports date_add helper map payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        inserted_at: %{==: %{date_add: %{field: :inserted_at, count: 1, interval: "month"}}}
+      })
+
+    expected =
+      dynamic(
+        [q],
+        field(q, ^:inserted_at) == date_add(field(q, ^:inserted_at), ^1, ^"month")
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports from_now helper map payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        inserted_at: %{<: %{from_now: %{count: 2, interval: "week"}}}
+      })
+
+    actual_ast = Macro.to_string(actual)
+
+    assert actual_ast =~ "q.inserted_at < datetime_add("
+    assert actual_ast =~ "^2, \"week\""
+  end
+
+  test "convert_to_dynamic supports ago helper map payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        inserted_at: %{>: %{ago: %{count: 7, interval: "day"}}}
+      })
+
+    actual_ast = Macro.to_string(actual)
+
+    assert actual_ast =~ "q.inserted_at > datetime_add("
+    assert actual_ast =~ "^-7, \"day\""
+  end
+
+  test "convert_to_dynamic supports implicit equality for date/time helper map payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        inserted_at: %{from_now: %{count: 1, interval: "day"}}
+      })
+
+    actual_ast = Macro.to_string(actual)
+
+    assert actual_ast =~ "q.inserted_at == datetime_add("
+    assert actual_ast =~ "^1, \"day\""
+  end
+
   test "convert_to_dynamic supports array nil equality" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{==: nil}})

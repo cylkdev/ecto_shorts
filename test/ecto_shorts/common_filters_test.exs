@@ -184,6 +184,46 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports datetime_add helper map payload in :where" do
+      expected =
+        from(p in Post,
+          where: p.inserted_at >= datetime_add(p.inserted_at, ^1, ^"day")
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            inserted_at: %{>=: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports ago helper map payload in :having" do
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            group_by: :id,
+            having: %{inserted_at: %{>: %{ago: %{count: 1, interval: "day"}}}}
+          },
+          []
+        )
+
+      {sql, params} = Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Repo, q2)
+
+      assert sql =~ "GROUP BY p0.\"id\""
+
+      assert sql =~
+               "HAVING (p0.\"inserted_at\" > $1::timestamp + ($2::numeric * interval '1 day'))"
+
+      assert match?([%DateTime{}, %Decimal{}], params)
+      assert Enum.at(params, 1) == Decimal.new("-1")
+    end
+
     test "supports Ecto.Query.t() source" do
       expected = from p in Post, where: p.published == ^true
       q = from(p in Post)

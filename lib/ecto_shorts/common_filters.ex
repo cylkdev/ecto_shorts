@@ -28,6 +28,7 @@ defmodule EctoShorts.CommonFilters do
   @default_binding_selector {:as, nil}
 
   @where :where
+  @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
 
   @schema_filters [:where, :or_where]
 
@@ -465,6 +466,27 @@ defmodule EctoShorts.CommonFilters do
          {key, value},
          opts
        )
+       when is_map(value) and not is_struct(value) and
+              (is_map_key(value, :datetime_add) or is_map_key(value, :date_add) or
+                 is_map_key(value, :from_now) or is_map_key(value, :ago)) do
+    apply_query_builder(
+      schema_source,
+      query,
+      binding_selector,
+      filter_op,
+      {key, value},
+      opts
+    )
+  end
+
+  defp build_schema_filters(
+         schema_source,
+         query,
+         binding_selector,
+         filter_op,
+         {key, value},
+         opts
+       )
        when is_map(value) and not is_struct(value) do
     reduce_filter_params(
       schema_source,
@@ -648,6 +670,11 @@ defmodule EctoShorts.CommonFilters do
 
   defp to_binding_source(_schema_source, query, {_binding_mode, binding_target}) do
     CommonQuery.get_query_binding_source(query, binding_target)
+  end
+
+  defp normalize_filter_params({k, v})
+       when k in @map_payload_helper_operators and is_map(v) and not is_struct(v) do
+    {k, v}
   end
 
   defp normalize_filter_params({k, v}) when is_map(v) or is_list(v) do

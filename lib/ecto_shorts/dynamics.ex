@@ -13,56 +13,50 @@ defmodule EctoShorts.Dynamics do
   @equal :==
   @boolean_operators [:and, :or]
   @aggregate_operators [:avg, :count, :max, :min, :sum]
+  @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
 
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
     source = CommonSchema.normalize_source(source)
 
     if is_map(params) or is_list(params) do
       Enum.reduce(params, nil, fn entry, dyn_acc ->
-        append_param_predicates(source, dyn_acc, binding_selector, entry, opts)
+        append_predicates(source, dyn_acc, binding_selector, entry, opts)
       end)
     else
-      append_param_predicates(source, nil, binding_selector, params, opts)
+      append_predicates(source, nil, binding_selector, params, opts)
     end
   end
 
-  defp append_param_predicates(source, dyn_a, binding_selector, params, opts)
-       when is_map(params) or is_list(params) do
-    Enum.reduce(params, dyn_a, fn entry, dyn_acc ->
-      append_param_predicates(source, dyn_acc, binding_selector, entry, opts)
+  defp append_predicates(source, dyn_a, binding_selector, params, opts)
+       when is_map(params) and not is_struct(params) do
+    append_predicates(source, dyn_a, binding_selector, Map.to_list(params), opts)
+  end
+
+  defp append_predicates(source, dyn_a, binding_selector, list, opts) when is_list(list) do
+    Enum.reduce(list, dyn_a, fn entry, dyn_acc ->
+      append_predicates(source, dyn_acc, binding_selector, entry, opts)
     end)
   end
 
-  defp append_param_predicates(source, dyn_a, binding_selector, {key, value}, opts)
-       when key in @boolean_operators do
-    if is_map(value) and not is_struct(value) do
-      append_param_predicates(
-        source,
-        dyn_a,
-        binding_selector,
-        {key, Map.to_list(value)},
-        opts
-      )
-    else
-      merge_boolean_predicates(
-        source,
-        dyn_a,
-        binding_selector,
-        key,
-        value,
-        opts
-      )
-    end
-  end
-
-  defp append_param_predicates(source, dyn_a, binding_selector, {key, value}, opts) do
+  defp append_predicates(source, dyn_a, binding_selector, {key, value}, opts) do
     dynamic_adapter = dynamic_adapter!(opts)
+    adapter_operators = dynamic_adapter.operators()
 
     cond do
-      key in @aggregate_operators ->
-        append_aggregate_predicates(source, dyn_a, binding_selector, key, value, opts)
+      key in @boolean_operators ->
+        merge_boolean_predicates(
+          source,
+          dyn_a,
+          binding_selector,
+          key,
+          value,
+          opts
+        )
 
-      source_has_schema?(source) and key not in dynamic_adapter.operators() ->
+      key in @aggregate_operators ->
+        append_aggregate_predicates(source, dyn_a, binding_selector, {key, value}, opts)
+
+      source_has_schema?(source) and key not in adapter_operators ->
         append_schema_predicate(source, dyn_a, binding_selector, {key, value}, opts)
 
       true ->
@@ -81,8 +75,7 @@ defmodule EctoShorts.Dynamics do
          source,
          dyn_a,
          binding_selector,
-         helper_op,
-         params,
+         {key, params},
          opts
        ) do
     case params do
@@ -91,8 +84,7 @@ defmodule EctoShorts.Dynamics do
           source,
           dyn_a,
           binding_selector,
-          helper_op,
-          Map.to_list(map),
+          {key, Map.to_list(map)},
           opts
         )
 
@@ -103,16 +95,15 @@ defmodule EctoShorts.Dynamics do
               source,
               dyn_acc,
               binding_selector,
-              helper_op,
-              field,
-              expr,
+              key,
+              {field, expr},
               opts
             )
           end)
         else
           EctoShorts.Logger.warning(
             @logger_prefix,
-            "Expected params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
+            "Expected params for #{key} to be a map or keyword list, got: #{inspect(params)}"
           )
 
           dyn_a
@@ -123,16 +114,15 @@ defmodule EctoShorts.Dynamics do
           source,
           dyn_a,
           binding_selector,
-          helper_op,
-          field,
-          expr,
+          key,
+          {field, expr},
           opts
         )
 
       _ ->
         EctoShorts.Logger.warning(
           @logger_prefix,
-          "Expected params for #{helper_op} to be a map or keyword list, got: #{inspect(params)}"
+          "Expected params for #{key} to be a map or keyword list, got: #{inspect(params)}"
         )
 
         dyn_a
@@ -144,8 +134,7 @@ defmodule EctoShorts.Dynamics do
          dyn_a,
          binding_selector,
          helper_op,
-         field,
-         expr,
+         {field, expr},
          opts
        ) do
     helper_expr =
@@ -179,7 +168,7 @@ defmodule EctoShorts.Dynamics do
         end
 
       dyn_b =
-        append_param_predicates(source, nil, binding_selector, entry, opts)
+        append_predicates(source, nil, binding_selector, entry, opts)
 
       merge_dynamic(dyn_acc, boolean_operator, dyn_b)
     end)
@@ -203,13 +192,22 @@ defmodule EctoShorts.Dynamics do
   defp append_schema_predicate_value(source, dyn_a, binding_selector, key, value, opts) do
     case value do
       map when is_map(map) and not is_struct(map) ->
-        append_schema_predicate(
-          source,
-          dyn_a,
-          binding_selector,
-          {key, Map.to_list(map)},
-          opts
-        )
+        helper_only? =
+          Enum.reduce(map, true, fn {map_key, _map_value}, valid? ->
+            valid? and map_key in @map_payload_helper_operators
+          end)
+
+        if helper_only? do
+          append_field_predicate(source, dyn_a, binding_selector, key, map, opts)
+        else
+          append_schema_predicate(
+            source,
+            dyn_a,
+            binding_selector,
+            {key, Map.to_list(map)},
+            opts
+          )
+        end
 
       list when is_list(list) ->
         if Keyword.keyword?(list) do
@@ -501,8 +499,16 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp flatten_expression_params({k, v}, acc) when is_map(v) and not is_struct(v) do
-    flatten_expression_params({k, Map.to_list(v)}, acc)
+    if k in @map_payload_helper_operators do
+      [{k, v} | acc]
+    else
+      flatten_expression_params({k, Map.to_list(v)}, acc)
+    end
   end
+
+  defp flatten_expression_params({k, v}, acc)
+       when k in @map_payload_helper_operators and is_list(v),
+       do: [{k, v} | acc]
 
   defp flatten_expression_params({k, v}, acc) when is_list(v) do
     case v do
