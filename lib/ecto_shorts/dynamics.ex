@@ -12,7 +12,6 @@ defmodule EctoShorts.Dynamics do
 
   @equal :==
   @boolean_operators [:and, :or]
-  @aggregate_operators [:avg, :count, :max, :min, :sum]
   @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
 
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
@@ -25,6 +24,11 @@ defmodule EctoShorts.Dynamics do
     else
       append_predicates(source, nil, binding_selector, params, opts)
     end
+  end
+
+  defp append_predicates(source, dyn_a, binding_selector, {key, value}, opts)
+       when key in @boolean_operators do
+    merge_boolean_predicates(source, dyn_a, binding_selector, key, value, opts)
   end
 
   defp append_predicates(source, dyn_a, binding_selector, params, opts)
@@ -42,112 +46,17 @@ defmodule EctoShorts.Dynamics do
     dynamic_adapter = dynamic_adapter!(opts)
     adapter_operators = dynamic_adapter.operators()
 
-    cond do
-      key in @boolean_operators ->
-        merge_boolean_predicates(
-          source,
-          dyn_a,
-          binding_selector,
-          key,
-          value,
-          opts
-        )
-
-      key in @aggregate_operators ->
-        append_aggregate_predicates(source, dyn_a, binding_selector, {key, value}, opts)
-
-      source_has_schema?(source) and key not in adapter_operators ->
-        append_schema_predicate(source, dyn_a, binding_selector, {key, value}, opts)
-
-      true ->
-        append_operator_predicates(
-          source,
-          dyn_a,
-          binding_selector,
-          key,
-          value,
-          dynamic_adapter
-        )
-    end
-  end
-
-  defp append_aggregate_predicates(
-         source,
-         dyn_a,
-         binding_selector,
-         {key, params},
-         opts
-       ) do
-    case params do
-      map when is_map(map) and not is_struct(map) ->
-        append_aggregate_predicates(
-          source,
-          dyn_a,
-          binding_selector,
-          {key, Map.to_list(map)},
-          opts
-        )
-
-      list when is_list(list) ->
-        if Keyword.keyword?(list) do
-          Enum.reduce(list, dyn_a, fn {field, expr}, dyn_acc ->
-            append_aggregate_predicate(
-              source,
-              dyn_acc,
-              binding_selector,
-              key,
-              {field, expr},
-              opts
-            )
-          end)
-        else
-          EctoShorts.Logger.warning(
-            @logger_prefix,
-            "Expected params for #{key} to be a map or keyword list, got: #{inspect(params)}"
-          )
-
-          dyn_a
-        end
-
-      {field, expr} ->
-        append_aggregate_predicate(
-          source,
-          dyn_a,
-          binding_selector,
-          key,
-          {field, expr},
-          opts
-        )
-
-      _ ->
-        EctoShorts.Logger.warning(
-          @logger_prefix,
-          "Expected params for #{key} to be a map or keyword list, got: #{inspect(params)}"
-        )
-
-        dyn_a
-    end
-  end
-
-  defp append_aggregate_predicate(
-         source,
-         dyn_a,
-         binding_selector,
-         helper_op,
-         {field, expr},
-         opts
-       ) do
-    helper_expr =
-      if is_map(expr) and not is_struct(expr) do
-        {helper_op, Map.to_list(expr)}
-      else
-        {helper_op, expr}
-      end
-
-    if source_has_schema?(source) do
-      append_schema_predicate(source, dyn_a, binding_selector, {field, helper_expr}, opts)
+    if source_has_schema?(source) and key not in adapter_operators do
+      append_schema_predicate(source, dyn_a, binding_selector, {key, value}, opts)
     else
-      append_field_predicate(source, dyn_a, binding_selector, field, helper_expr, opts)
+      append_operator_predicates(
+        source,
+        dyn_a,
+        binding_selector,
+        key,
+        value,
+        dynamic_adapter
+      )
     end
   end
 

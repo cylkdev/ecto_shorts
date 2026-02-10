@@ -2,6 +2,7 @@
 # and its dependencies with the aid of the Mix.Config module.
 import Config
 
+config :logger, level: :warning
 config :ecto_shorts, ecto_repos: [EctoShorts.Repo]
 
 if Mix.env() === :test do
