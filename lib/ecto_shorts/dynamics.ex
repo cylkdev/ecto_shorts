@@ -259,9 +259,10 @@ defmodule EctoShorts.Dynamics do
          left_dynamic,
          binding_selector,
          key,
-         {:all, value},
+         {inner_key, value},
          opts
-       ) do
+       )
+       when inner_key in [:any, :all] do
     value = apply_helper_expressions(source, key, value, opts)
 
     append_predicate_items(
@@ -271,28 +272,7 @@ defmodule EctoShorts.Dynamics do
       key,
       value,
       opts,
-      fn item -> {:all, item} end
-    )
-  end
-
-  defp append_field_predicate(
-         source,
-         left_dynamic,
-         binding_selector,
-         key,
-         {:any, value},
-         opts
-       ) do
-    value = apply_helper_expressions(source, key, value, opts)
-
-    append_predicate_items(
-      source,
-      left_dynamic,
-      binding_selector,
-      key,
-      value,
-      opts,
-      fn item -> {:any, item} end
+      fn item -> {inner_key, item} end
     )
   end
 
@@ -304,43 +284,28 @@ defmodule EctoShorts.Dynamics do
          {:not, {inner_key, value}},
          opts
        ) do
-    case inner_key do
-      :all ->
-        value = apply_helper_expressions(source, key, value, opts)
+    if inner_key in [:any, :all] do
+      value = apply_helper_expressions(source, key, value, opts)
 
-        append_predicate_items(
-          source,
-          left_dynamic,
-          binding_selector,
-          key,
-          value,
-          opts,
-          fn item -> {:not, {:all, item}} end
-        )
-
-      :any ->
-        value = apply_helper_expressions(source, key, value, opts)
-
-        append_predicate_items(
-          source,
-          left_dynamic,
-          binding_selector,
-          key,
-          value,
-          opts,
-          fn item -> {:not, {:any, item}} end
-        )
-
-      _ ->
-        append_predicate_items(
-          source,
-          left_dynamic,
-          binding_selector,
-          key,
-          value,
-          opts,
-          fn item -> {:not, {inner_key, item}} end
-        )
+      append_predicate_items(
+        source,
+        left_dynamic,
+        binding_selector,
+        key,
+        value,
+        opts,
+        fn item -> {:not, {inner_key, item}} end
+      )
+    else
+      append_predicate_items(
+        source,
+        left_dynamic,
+        binding_selector,
+        key,
+        value,
+        opts,
+        fn item -> {:not, {inner_key, item}} end
+      )
     end
   end
 
