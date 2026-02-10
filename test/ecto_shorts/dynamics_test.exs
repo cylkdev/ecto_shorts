@@ -706,6 +706,67 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports arithmetic helper expression +" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{views: %{>: {:+, [:views, 10]}}})
+
+    expected = dynamic([q], field(q, ^:views) > field(q, ^:views) + ^10)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports arithmetic helper expression -" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{views: %{>=: {:-, [:views, 2]}}})
+
+    expected = dynamic([q], field(q, ^:views) >= field(q, ^:views) - ^2)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports arithmetic helper expression *" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{views: %{<: {:*, [:views, 3]}}})
+
+    expected = dynamic([q], field(q, ^:views) < field(q, ^:views) * ^3)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports arithmetic helper expression /" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{views: %{<=: {:/, [:views, 4]}}})
+
+    expected = dynamic([q], field(q, ^:views) <= field(q, ^:views) / ^4)
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports nested arithmetic helper expressions" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        views: %{not: %{>: {:*, [{:+, [:views, 10]}, 2]}}}
+      })
+
+    expected =
+      dynamic(
+        [q],
+        not (field(q, ^:views) > (field(q, ^:views) + ^10) * ^2)
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports array nil equality" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{==: nil}})

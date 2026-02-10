@@ -168,6 +168,22 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports arithmetic helper expressions in :where" do
+      expected =
+        from(p in Post,
+          where: p.views > p.views + ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{views: %{>: {:+, [:views, 10]}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports Ecto.Query.t() source" do
       expected = from p in Post, where: p.published == ^true
       q = from(p in Post)

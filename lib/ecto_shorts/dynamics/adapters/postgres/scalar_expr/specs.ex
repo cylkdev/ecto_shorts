@@ -7,6 +7,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
   alias EctoShorts.Compiler.ClauseSpec
 
   @aggregate_operators [:avg, :count, :max, :min, :sum]
+  @arithmetic_operators [:+, :-, :*, :/]
   @comparison_operators [:==, :!=, :>, :>=, :<, :<=]
   @comparison_alias_operators [:eq, :gt, :gte, :lt, :lte]
 
@@ -17,6 +18,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
       alias_op_specs(context, binding_head_ast) ++
       nil_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       aggregate_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
+      arithmetic_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       all_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       any_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       lower_upper_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
@@ -591,6 +593,77 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
           end
       }
     ]
+  end
+
+  @doc false
+  def arithmetic_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
+    key_var = Macro.var(:key, context)
+    left_var = Macro.var(:left, context)
+    right_var = Macro.var(:right, context)
+    rhs_dynamic_var = Macro.var(:rhs_dynamic, context)
+
+    field_ast = AST.field_ast(target_binding_var, key_var)
+
+    Enum.flat_map(@comparison_operators, fn op ->
+      Enum.flat_map(@arithmetic_operators, fn arithmetic_op ->
+        arithmetic_expr_ast =
+          quote(do: {unquote(arithmetic_op), [unquote(left_var), unquote(right_var)]})
+
+        rhs_dynamic_expr_ast =
+          arithmetic_dynamic_expr_ast(
+            binding_body_asts,
+            target_binding_var,
+            arithmetic_expr_ast
+          )
+
+        comparison_ast = comparison_dynamic_expr_ast(field_ast, op, rhs_dynamic_var)
+
+        [
+          %ClauseSpec{
+            binding_head: binding_head_ast,
+            key: key_var,
+            head:
+              quote(
+                do:
+                  {unquote(op), {unquote(arithmetic_op), [unquote(left_var), unquote(right_var)]}}
+              ),
+            body:
+              quote do
+                unquote(rhs_dynamic_var) = unquote(rhs_dynamic_expr_ast)
+
+                unquote(
+                  AST.dynamic_ast(
+                    binding_body_asts,
+                    comparison_ast
+                  )
+                )
+              end
+          },
+          %ClauseSpec{
+            binding_head: binding_head_ast,
+            key: key_var,
+            head:
+              quote(
+                do:
+                  {:not,
+                   {unquote(op),
+                    {unquote(arithmetic_op), [unquote(left_var), unquote(right_var)]}}}
+              ),
+            body:
+              quote do
+                unquote(rhs_dynamic_var) = unquote(rhs_dynamic_expr_ast)
+
+                unquote(
+                  AST.dynamic_ast(
+                    binding_body_asts,
+                    AST.not_ast(comparison_ast)
+                  )
+                )
+              end
+          }
+        ]
+      end)
+    end)
   end
 
   @doc false
@@ -1251,6 +1324,78 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
             )
           )
       end
+    end
+  end
+
+  defp comparison_dynamic_expr_ast(field_ast, op, rhs_dynamic_var) do
+    case op do
+      :== -> quote(do: unquote(field_ast) == ^unquote(rhs_dynamic_var))
+      :!= -> quote(do: unquote(field_ast) != ^unquote(rhs_dynamic_var))
+      :> -> quote(do: unquote(field_ast) > ^unquote(rhs_dynamic_var))
+      :>= -> quote(do: unquote(field_ast) >= ^unquote(rhs_dynamic_var))
+      :< -> quote(do: unquote(field_ast) < ^unquote(rhs_dynamic_var))
+      :<= -> quote(do: unquote(field_ast) <= ^unquote(rhs_dynamic_var))
+    end
+  end
+
+  defp arithmetic_dynamic_expr_ast(binding_body_asts, target_binding_var, arithmetic_expr_ast) do
+    quote do
+      build_dynamic_expr = fn build_dynamic_expr, expr ->
+        case expr do
+          {op, [left_expr, right_expr]} when op in unquote(@arithmetic_operators) ->
+            left_dynamic = build_dynamic_expr.(build_dynamic_expr, left_expr)
+            right_dynamic = build_dynamic_expr.(build_dynamic_expr, right_expr)
+
+            case op do
+              :+ ->
+                unquote(
+                  AST.dynamic_ast(
+                    binding_body_asts,
+                    quote(do: ^left_dynamic + ^right_dynamic)
+                  )
+                )
+
+              :- ->
+                unquote(
+                  AST.dynamic_ast(
+                    binding_body_asts,
+                    quote(do: ^left_dynamic - ^right_dynamic)
+                  )
+                )
+
+              :* ->
+                unquote(
+                  AST.dynamic_ast(
+                    binding_body_asts,
+                    quote(do: ^left_dynamic * ^right_dynamic)
+                  )
+                )
+
+              :/ ->
+                unquote(
+                  AST.dynamic_ast(
+                    binding_body_asts,
+                    quote(do: ^left_dynamic / ^right_dynamic)
+                  )
+                )
+            end
+
+          field_name when is_atom(field_name) ->
+            unquote(
+              AST.dynamic_ast(
+                binding_body_asts,
+                quote do
+                  field(unquote(target_binding_var), ^field_name)
+                end
+              )
+            )
+
+          literal ->
+            unquote(AST.dynamic_ast(binding_body_asts, quote(do: ^literal)))
+        end
+      end
+
+      build_dynamic_expr.(build_dynamic_expr, unquote(arithmetic_expr_ast))
     end
   end
 end
