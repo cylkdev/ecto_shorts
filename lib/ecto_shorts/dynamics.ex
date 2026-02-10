@@ -472,7 +472,7 @@ defmodule EctoShorts.Dynamics do
       list when is_list(list) ->
         if Keyword.keyword?(list) and
              (Keyword.has_key?(list, :source) or Keyword.has_key?(list, :query)) do
-          build_subquery(source, field_name, list, opts)
+          build_helper_expr_subquery(source, field_name, list, opts)
         else
           Enum.map(list, fn {key, value} ->
             {key, apply_helper_expressions(source, field_name, value, opts)}
@@ -487,16 +487,16 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  defp build_subquery(source, field_name, payload, opts) do
-    payload_source = payload[:source] || source
-    payload_query = payload[:query] || []
+  defp build_helper_expr_subquery(source, field_name, params, opts) do
+    schema_source = params[:source] || source
+    filter_params = params[:query] || []
 
     CommonFilters.convert_params_to_filter(
       source,
       [
-        source: payload_source,
-        query: payload_query,
-        select: payload_query[:select] || field_name
+        source: schema_source,
+        query: filter_params,
+        select: filter_params[:select] || field_name
       ],
       opts
     )
