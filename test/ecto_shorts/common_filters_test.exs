@@ -1959,7 +1959,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{group_by: :author_id, having: %{avg: %{views: %{>: 10}}}},
+          %{group_by: :author_id, having: %{views: %{avg: %{>: 10}}}},
           []
         )
 

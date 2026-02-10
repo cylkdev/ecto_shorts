@@ -526,9 +526,9 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports top-level avg helper expression" do
+  test "convert_to_dynamic supports avg helper expression on a field from keyword params" do
     binding = {:as, nil}
-    actual = Dynamics.convert_to_dynamic(Post, binding, %{avg: %{views: %{>: 10}}})
+    actual = Dynamics.convert_to_dynamic(Post, binding, views: %{avg: %{>: 10}})
     expected = dynamic([q], avg(field(q, ^:views)) > ^10)
 
     assert_dynamic(expected, actual)
