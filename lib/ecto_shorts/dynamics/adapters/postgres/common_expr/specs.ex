@@ -12,6 +12,14 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExpr.Specs do
     id_values_var = Macro.var(:id_values, context)
     cursor_value_var = Macro.var(:cursor_value, context)
     date_value_var = Macro.var(:date_value, context)
+    exists_value_var = Macro.var(:exists_value, context)
+
+    non_negated_exists_guard =
+      quote do
+        not (is_tuple(unquote(exists_value_var)) and
+               tuple_size(unquote(exists_value_var)) == 2 and
+               elem(unquote(exists_value_var), 0) == :not)
+      end
 
     [
       %{
@@ -71,6 +79,31 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExpr.Specs do
             binding_body_asts,
             quote do
               field(unquote(target_binding_var), :inserted_at) <= ^unquote(date_value_var)
+            end
+          )
+      },
+      %{
+        binding_head: binding_head_ast,
+        key: :exists,
+        head: exists_value_var,
+        guard: non_negated_exists_guard,
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote do
+              exists(unquote(exists_value_var))
+            end
+          )
+      },
+      %{
+        binding_head: binding_head_ast,
+        key: :exists,
+        head: quote(do: {:not, unquote(exists_value_var)}),
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote do
+              not exists(unquote(exists_value_var))
             end
           )
       }

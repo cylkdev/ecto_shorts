@@ -6,7 +6,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
 
   @behaviour EctoShorts.Dynamics.Adapter
 
-  @operators [:ids, :before, :after, :start_date, :end_date]
+  @operators [:ids, :before, :after, :start_date, :end_date, :exists]
 
   @impl true
   def operators, do: @operators

@@ -31,7 +31,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     :reverse_order
   ]
 
-  @custom_filters [:ids, :before, :after, :start_date, :end_date]
+  @custom_filters [:ids, :before, :after, :start_date, :end_date, :exists]
 
   @doc "Applies the given filter to the query."
   def build(schema_source, filter, query, binding_selector, {boolean_operator, params}, opts)
