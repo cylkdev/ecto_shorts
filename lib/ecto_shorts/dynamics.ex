@@ -383,7 +383,7 @@ defmodule EctoShorts.Dynamics do
 
     value
     |> normalize_expression_params()
-    |> Enum.reduce(dyn_a, fn params, dyn_acc ->
+    |> Enum.reduce(dyn_a, fn params, acc ->
       dyn_b =
         dynamic_adapter.build_dynamic(
           source,
@@ -392,7 +392,7 @@ defmodule EctoShorts.Dynamics do
           fun.(params)
         )
 
-      merge_dynamic(dyn_acc, :and, dyn_b)
+      merge_dynamic(acc, :and, dyn_b)
     end)
   end
 
