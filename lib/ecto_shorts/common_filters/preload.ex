@@ -45,7 +45,7 @@ defmodule EctoShorts.CommonFilters.Preload do
   end
 
   defp reduce_preload(_schema_source, query, binding_selector, key) do
-    apply_preload_expr(query, binding_selector, key, nil)
+    apply_preload_expr(query, binding_selector, [key])
   end
 
   defp reduce_preload_bind(schema_source, query, binding_selector, bind_params, entries \\ nil)

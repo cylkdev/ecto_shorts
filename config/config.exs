@@ -2,11 +2,12 @@
 # and its dependencies with the aid of the Mix.Config module.
 import Config
 
-config :logger, level: :warning
+config :ecto_shorts, repo: EctoShorts.Repo
 config :ecto_shorts, ecto_repos: [EctoShorts.Repo]
 
 if Mix.env() === :test do
-  config :ecto_shorts, repo: EctoShorts.Repo
+  config :logger, level: :warning
+
   config :ecto_shorts, :sql_sandbox, true
 
   config :ecto_shorts,
@@ -22,6 +23,8 @@ if Mix.env() === :test do
     pool: Ecto.Adapters.SQL.Sandbox,
     pool_size: 20
 else
+  config :logger, level: :debug
+
   config :ecto_shorts,
     repo: nil,
     replica: nil,

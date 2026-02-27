@@ -255,6 +255,28 @@ defmodule EctoShorts.ActionsTest do
 
       assert {:ok, %Post{title: "Only"}} = Actions.find(query, %{}, [])
     end
+
+    test "supports nested :preload" do
+      author =
+        %User{}
+        |> User.changeset(%{first_name: "Nested"})
+        |> Repo.insert!()
+
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "WithComments", author_id: author.id})
+        |> Repo.insert!()
+
+      %Comment{}
+      |> Comment.changeset(%{body: "A comment", post_id: post.id, author_id: author.id})
+      |> Repo.insert!()
+
+      assert {:ok, %Post{title: "WithComments"} = result} =
+               Actions.find(Post, %{id: post.id, preload: [comments: :author]}, [])
+
+      assert [%Comment{body: "A comment"} = comment] = result.comments
+      assert %User{first_name: "Nested"} = comment.author
+    end
   end
 
   describe "update/4" do
@@ -1264,6 +1286,31 @@ defmodule EctoShorts.ActionsTest do
                })
 
       assert %User{first_name: "Preload"} = result.author
+    end
+
+    test "supports nested :preload" do
+      author =
+        %User{}
+        |> User.changeset(%{first_name: "Nested"})
+        |> Repo.insert!()
+
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "WithComments", author_id: author.id})
+        |> Repo.insert!()
+
+      %Comment{}
+      |> Comment.changeset(%{body: "A comment", post_id: post.id, author_id: author.id})
+      |> Repo.insert!()
+
+      assert [%Post{title: "WithComments"} = result] =
+               Actions.all(Post, %{
+                 id: post.id,
+                 preload: [comments: :author]
+               })
+
+      assert [%Comment{body: "A comment"} = comment] = result.comments
+      assert %User{first_name: "Nested"} = comment.author
     end
 
     test "supports :last" do

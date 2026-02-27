@@ -494,6 +494,13 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, q2)
     end
 
+    test "supports plain :preload atom" do
+      expected = from p in Post, preload: [:author]
+      q2 = CommonFilters.convert_params_to_filter(Post, %{preload: :author}, [])
+
+      assert_query(expected, q2)
+    end
+
     test "supports plain nested :preload keyword list" do
       expected = from p in Post, preload: [author: [:posts]]
       q2 = CommonFilters.convert_params_to_filter(Post, %{preload: [author: [:posts]]}, [])

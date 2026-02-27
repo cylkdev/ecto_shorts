@@ -19,9 +19,12 @@ defmodule EctoShorts.MixProject do
         doctor: :test,
         coverage: :test,
         dialyzer: :test,
-        "coveralls.lcov": :test,
+        "coveralls.cobertura": :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test,
         "coveralls.json": :test,
-        "coveralls.html": :test
+        "coveralls.lcov": :test,
+        "coveralls.post": :test
       ],
       dialyzer: [
         plt_add_apps: [:ex_unit, :mix],
@@ -50,10 +53,14 @@ defmodule EctoShorts.MixProject do
       {:postgrex, ">= 0.0.0", optional: true},
       {:error_message, "~> 0.1"},
       {:nimble_options, "~> 1.0"},
-      {:credo, ">= 0.0.0", only: [:dev, :test]},
+      {:credo, ">= 0.0.0", runtime: false},
       {:excoveralls, ">= 0.0.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.0.0", only: :dev},
-      {:dialyxir, "~> 1.1", only: :test, runtime: false}
+      {:dialyxir, "~> 1.1", only: :test, runtime: false},
+      {:blitz_credo_checks, "~> 0.1.5", runtime: false},
+      {:rexbug, "~> 1.0"},
+      {:observer_cli, "~> 1.8"},
+      {:etop, "~> 0.7"}
     ]
   end
 
