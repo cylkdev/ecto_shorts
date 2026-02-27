@@ -48,16 +48,10 @@ defmodule EctoShorts.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ecto, "~> 3.0"},
-      {:ecto_sql, "~> 3.10"},
-      {:postgrex, ">= 0.0.0", optional: true},
-      {:error_message, "~> 0.1"},
-      {:nimble_options, "~> 1.0"},
-      {:credo, ">= 0.0.0", runtime: false},
-      {:excoveralls, ">= 0.0.0", only: [:dev, :test]},
-      {:ex_doc, ">= 0.0.0", only: :dev},
-      {:dialyxir, "~> 1.1", only: :test, runtime: false},
+      {:credo, "~> 1.4", runtime: false},
       {:blitz_credo_checks, "~> 0.1.5", runtime: false},
+      {:dialyxir, "~> 1.4", runtime: false},
+      {:excoveralls, "~> 0.13", only: :test},
       {:rexbug, "~> 1.0"},
       {:observer_cli, "~> 1.8"},
       {:etop, "~> 0.7"}
