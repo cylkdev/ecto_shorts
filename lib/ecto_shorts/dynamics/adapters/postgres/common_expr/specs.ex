@@ -100,6 +100,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExpr.Specs do
           )
       }
     ]
-    |> Enum.map(&ClauseSpec.new!/1)
+    |> Enum.map(&ClauseSpec.new/1)
   end
 end

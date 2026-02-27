@@ -33,7 +33,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
     v_var = Macro.var(:v, nil)
 
     spec =
-      ClauseSpec.new!(%{
+      ClauseSpec.new(%{
         binding_head: quote(do: {:as, nil}),
         key: key_var,
         head: quote(do: {:==, unquote(v_var)}),
@@ -43,7 +43,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
           end
       })
 
-    assert {:ok, clause_ast} = ClauseBuilder.clause_ast(spec)
+    clause_ast = ClauseBuilder.clause_ast(spec)
 
     module = compile_clause_module!(clause_ast)
 
@@ -64,7 +64,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
     values_var = Macro.var(:values, nil)
 
     spec =
-      ClauseSpec.new!(%{
+      ClauseSpec.new(%{
         binding_head: quote(do: {:as, nil}),
         key: key_var,
         head: quote(do: {:==, unquote(values_var)}),
@@ -75,7 +75,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
           end
       })
 
-    assert {:ok, clause_ast} = ClauseBuilder.clause_ast(spec)
+    clause_ast = ClauseBuilder.clause_ast(spec)
 
     # Sanity check the emitted source includes the guard.
     assert Macro.to_string(clause_ast) |> String.contains?("when is_list(values)")
@@ -86,13 +86,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
     assert_dynamic(expected_dyn, actual_dyn)
   end
 
-  test "clause_ast/1 returns error for missing keys" do
-    assert {:error,
-            %NimbleOptions.ValidationError{
-              message: "required :binding_head option not found, received options: [:key]",
-              key: :binding_head,
-              value: nil,
-              keys_path: []
-            }} = ClauseBuilder.clause_ast(%{key: :id})
+  test "clause_ast/1 raises for missing keys" do
+    assert_raise ArgumentError, fn -> ClauseBuilder.clause_ast(%{key: :id}) end
   end
 end

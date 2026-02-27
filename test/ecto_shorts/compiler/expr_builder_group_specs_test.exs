@@ -9,11 +9,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
   import EctoShorts.Testing, only: [assert_dynamic: 2]
 
   defp compile_specs_module!(specs) do
-    clause_asts =
-      Enum.map(specs, fn spec ->
-        assert {:ok, clause_ast} = ClauseBuilder.clause_ast(spec)
-        clause_ast
-      end)
+    clause_asts = Enum.map(specs, &ClauseBuilder.clause_ast/1)
 
     module =
       Module.concat([__MODULE__, :"Tmp#{System.unique_integer([:positive])}"])

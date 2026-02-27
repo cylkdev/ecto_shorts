@@ -61,7 +61,7 @@ defmodule EctoShorts.CommonFilters.Preload do
     )
   end
 
-  defp reduce_preload_bind(schema_source, query, _binding_selector, bind_params, entries)
+  defp reduce_preload_bind(_schema_source, query, _binding_selector, bind_params, entries)
        when is_list(bind_params) do
     if Keyword.keyword?(bind_params) do
       Enum.reduce(bind_params, query, fn
@@ -82,12 +82,7 @@ defmodule EctoShorts.CommonFilters.Preload do
           Enum.reduce(scoped_params, query_acc, fn
             {binding_target, value}, q2 ->
               scoped_binding_selector = {binding_mode, binding_target}
-
-              if is_nil(entries) do
-                reduce_preload(schema_source, q2, scoped_binding_selector, value)
-              else
-                apply_preload_expr(q2, scoped_binding_selector, value, entries)
-              end
+              apply_preload_expr(q2, scoped_binding_selector, value, entries)
 
             entry, _q2 ->
               raise ArgumentError,

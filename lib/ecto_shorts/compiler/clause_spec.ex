@@ -32,21 +32,14 @@ defmodule EctoShorts.Compiler.ClauseSpec do
     ...> }
     ...> EctoShorts.Compiler.ClauseSpec.new(spec)
 
-  ## Error Reasons
+  ## Errors
 
-  `new/1` returns `{:error, reason}` for invalid specs:
-
-    * `:missing_key` - a required key is missing
-    * `:invalid_spec` - the input is not a map, keyword list, or `%ClauseSpec{}`
-
-    iex> EctoShorts.Compiler.ClauseSpec.new(%{key: :id})
-    {:error, :missing_key}
+  `new/1` raises `ArgumentError` when required keys are missing and
+  `KeyError` when unknown keys are provided.
 
   > NOTE: ClauseSpec does not validate the *meaning* of `:head` or `:body`.
   > It only checks that required keys exist.
   """
-
-  alias NimbleOptions
 
   @typedoc """
   A normalized clause spec.
@@ -69,18 +62,8 @@ defmodule EctoShorts.Compiler.ClauseSpec do
             body: nil,
             guard: nil
 
-  @schema [
-    binding_head: [type: :any, required: true],
-    key: [type: :any, required: true],
-    head: [type: :any, required: true],
-    body: [type: :any, required: true],
-    guard: [type: :any]
-  ]
-
   @doc """
   Creates a `%ClauseSpec{}` from a map or keyword list.
-
-  This function validates options with `NimbleOptions`.
 
   ## Return values
 
@@ -96,28 +79,19 @@ defmodule EctoShorts.Compiler.ClauseSpec do
       ...>     head: quote(do: {:==, vals}),
       ...>     body: quote(do: Ecto.Query.dynamic([q], field(q, ^key) in ^vals))
       ...>   })
-      iex> match?({:ok, %EctoShorts.Compiler.ClauseSpec{}}, spec)
+      iex> match?(%EctoShorts.Compiler.ClauseSpec{}, spec)
       true
   """
-  @spec new(attrs :: map() | keyword()) :: {:ok, t()} | {:error, term()}
+  @spec new(attrs :: map() | keyword() | t()) :: t()
   def new(%__MODULE__{} = spec) do
-    spec |> Map.from_struct() |> Map.to_list() |> new()
+    spec
   end
 
   def new(attrs) when is_map(attrs) do
-    attrs |> Map.to_list() |> new()
+    new(Map.to_list(attrs))
   end
 
-  def new(attrs) do
-    with {:ok, validated} <- NimbleOptions.validate(attrs, @schema) do
-      {:ok, struct!(__MODULE__, validated)}
-    end
-  end
-
-  def new!(attrs) do
-    case new(attrs) do
-      {:ok, spec} -> spec
-      {:error, reason} -> raise ArgumentError, "Failed to create clause spec: #{inspect(reason)}"
-    end
+  def new(attrs) when is_list(attrs) do
+    struct!(__MODULE__, attrs)
   end
 end

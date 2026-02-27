@@ -166,9 +166,6 @@ defmodule EctoShorts.Compiler do
   end
 
   defp clause_ast!(spec) do
-    case ClauseBuilder.clause_ast(spec) do
-      {:ok, ast} -> ast
-      {:error, reason} -> raise ArgumentError, "Failed to build clause: #{inspect(reason)}"
-    end
+    ClauseBuilder.clause_ast(spec)
   end
 end
