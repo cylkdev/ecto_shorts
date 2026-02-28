@@ -1,27 +1,44 @@
 defmodule EctoShorts.CommonQuery do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Provides functions for introspecting `Ecto.Query` structures.
+  Provides functions for introspecting `Ecto.Query` structures at runtime.
 
-  This module is useful when you need to inspect a query and determine which
-  schema (or source) is associated with a given binding.
+  Use this module to resolve the source, prefix, binding count, or
+  per-binding source of an `Ecto.Query`. Useful when composing queries
+  dynamically or when debugging generated queries.
 
   ## Bindings
 
   Bindings can be resolved in two ways:
 
-    * By **name** (the `:as` binding), when the query uses `as: :name`
-    * By **position**, where `1` is the `from` binding and positive integers
-      above `1` address joins
+  * By **name** (the `:as` binding) — pass an atom matching the `as:` key
+    used in `from` or `join`.
+  * By **position** — pass an integer where `1` is the root `from` binding
+    and each subsequent join increments the position.
 
   ## Source tuples
 
-  Ecto represents sources as `{source, schema}` tuples, such as:
+  Ecto represents sources as `{source, schema}` tuples:
 
-      {"posts", MyApp.Post}
-      {"posts", nil}
+      {"posts", MyApp.Post}    # schema module present
+      {"posts", nil}            # bare table name, no schema
 
-  where `schema` is `nil` when the query is built from a bare table name.
+  Functions in this module return `nil` when a source or binding cannot be
+  resolved.
+
+  ## Quick start
+
+      iex> import Ecto.Query
+      ...> q = from p in EctoShorts.Schema.Post, as: :post
+      ...> EctoShorts.CommonQuery.get_query_source(q)
+      {"posts", EctoShorts.Schema.Post}
+
+      iex> import Ecto.Query
+      ...> q = from p in EctoShorts.Schema.Post, join: c in assoc(p, :comments), as: :comment
+      ...> EctoShorts.CommonQuery.query_binding_count(q)
+      2
+
+  See also `EctoShorts.CommonSchema` and `EctoShorts.CommonFilters`.
   """
 
   alias Ecto.Queryable
@@ -29,6 +46,23 @@ defmodule EctoShorts.CommonQuery do
 
   @doc """
   Returns the query prefix for the given queryable, or `nil` if none is set.
+
+  The prefix corresponds to the PostgreSQL schema (or equivalent) set via
+  `Ecto.put_meta/2` or configured in the schema module.
+
+  ## Examples
+
+      iex> import Ecto.Query
+      ...> q = from p in EctoShorts.Schema.PostHasSchemaPrefix
+      ...> EctoShorts.CommonQuery.get_query_prefix(q)
+      "custom_schema_prefix"
+
+      iex> import Ecto.Query
+      ...> q = from p in EctoShorts.Schema.Post
+      ...> EctoShorts.CommonQuery.get_query_prefix(q)
+      nil
+
+  See also `get_query_source/1` and `EctoShorts.CommonSchema.get_schema_prefix/1`.
   """
   def get_query_prefix(queryable) do
     case queryable |> to_query!() |> get_query_source_expr() do
@@ -40,8 +74,9 @@ defmodule EctoShorts.CommonQuery do
   @doc """
   Returns the root source tuple for the given query.
 
-  This function traverses composed queries and subqueries until it reaches an
-  expression with a concrete source tuple.
+  Traverses composed queries and subqueries until it reaches an expression
+  with a concrete `{source, schema}` source tuple. Returns `nil` when the
+  source cannot be resolved.
 
   ## Examples
 
@@ -59,6 +94,8 @@ defmodule EctoShorts.CommonQuery do
       ...> q = from {"custom_source", EctoShorts.Schema.User}
       ...> EctoShorts.CommonQuery.get_query_source(q)
       {"custom_source", EctoShorts.Schema.User}
+
+  See also `get_query_prefix/1` and `get_query_binding_source/2`.
   """
   def get_query_source(queryable) do
     case queryable |> to_query!() |> get_query_source_expr() do
@@ -98,7 +135,21 @@ defmodule EctoShorts.CommonQuery do
   @doc """
   Returns the number of bindings in the given query.
 
-  This counts the root `from` binding as `1`, plus one binding per join.
+  Counts the root `from` binding as `1`, plus one for each join. Useful
+  when building dynamic queries that need to stay within the binding limit
+  configured via `:max_binding_positings`.
+
+  ## Examples
+
+      iex> EctoShorts.CommonQuery.query_binding_count(EctoShorts.Schema.Post)
+      1
+
+      iex> import Ecto.Query
+      ...> q = from p in EctoShorts.Schema.Post, join: c in assoc(p, :comments), as: :comment
+      ...> EctoShorts.CommonQuery.query_binding_count(q)
+      2
+
+  See also `get_query_binding_source/2` and `EctoShorts.Config.max_binding_positings/0`.
   """
   def query_binding_count(queryable) do
     query = to_query!(queryable)
@@ -108,10 +159,13 @@ defmodule EctoShorts.CommonQuery do
   @doc """
   Returns the source tuple for the given binding.
 
-  If the binding points to an association join (for example, `assoc(p, :comments)`),
-  this function attempts to resolve the related schema and returns `{nil, Schema}`.
+  `binding_alias_or_pos` can be a named binding atom (matching the `as:` key
+  in the query) or an integer position (`1` for the root `from`, `2` for the
+  first join, etc.).
 
-  If the binding cannot be resolved, returns `nil`.
+  When the binding points to an association join (`assoc/2`), this function
+  resolves the related schema from the parent binding and returns
+  `{nil, RelatedSchema}`. Returns `nil` when the binding cannot be resolved.
 
   ## Examples
 
@@ -139,6 +193,8 @@ defmodule EctoShorts.CommonQuery do
       ...> q = from u in EctoShorts.Schema.User, as: :user, join: p in assoc(u, :posts), as: :post
       ...> EctoShorts.CommonQuery.get_query_binding_source(q, 2)
       {nil, EctoShorts.Schema.Post}
+
+  See also `query_binding_count/1` and `get_query_source/1`.
   """
   def get_query_binding_source(queryable, binding_alias_or_pos) do
     case get_binding_expr(queryable, binding_alias_or_pos) do

@@ -176,7 +176,7 @@ defmodule EctoShorts.CommonFilters.BindParams do
        ) do
     case {binding_mode, binding_target} do
       {:as, bind_alias} when is_atom(bind_alias) ->
-        CommonFilters.reduce_filter_params(
+        CommonFilters.create_schema_filter(
           schema_source,
           query,
           {:as, bind_alias},
@@ -186,7 +186,7 @@ defmodule EctoShorts.CommonFilters.BindParams do
         )
 
       {:at, bind_index} when is_integer(bind_index) ->
-        CommonFilters.reduce_filter_params(
+        CommonFilters.create_schema_filter(
           schema_source,
           query,
           {:at, bind_index},

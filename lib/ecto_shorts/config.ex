@@ -2,10 +2,48 @@ defmodule EctoShorts.Config do
   @moduledoc """
   Reads and resolves EctoShorts configuration from the application environment.
 
-  Provides accessor functions for all configurable keys (`:repo`, `:replica`,
-  `:error_module`, `:dynamic_adapter`, `:query_source_provider`,
-  `:max_query_bindings`). The bang variants (`repo!/1`, `replica!/1`) raise
-  when no value is found.
+  Provides accessor functions for every configurable key. The bang variants
+  (`repo!/1`, `replica!/1`) raise a descriptive runtime error when no value
+  is found, guiding the caller to either pass the value at runtime or set it
+  in the application config.
+
+  ## Configuration keys
+
+  * `:repo` — the primary `Ecto.Repo` module used for write operations.
+    Required by most `EctoShorts.Actions` functions. Defaults to `nil`.
+
+  * `:replica` — a read-only `Ecto.Repo` module. Falls back to `:repo` when
+    not set. Used by read operations in `EctoShorts.Actions`. Defaults to `nil`.
+
+  * `:error_module` — a module implementing the `EctoShorts.Actions.Error`
+    behaviour. Used to construct error values returned by `EctoShorts.Actions`
+    functions. Defaults to `EctoShorts.Actions.Error`.
+
+  * `:dynamic_adapter` — a module implementing `EctoShorts.Dynamics.Adapter`.
+    Auto-resolved to `EctoShorts.Dynamics.Adapters.Postgres` when the repo uses
+    `Ecto.Adapters.Postgres`. Defaults to resolved from the repo's adapter.
+
+  * `:fragment_provider` — a module that resolves fragment-based join and lock
+    expressions. Must export `build_fragment_expression/3`. Defaults to `nil`.
+
+  * `:max_binding_positings` — controls how many positional query binding clauses
+    `EctoShorts.Compiler` generates. Increase when your queries join more than
+    three tables. Defaults to `3`.
+
+  ## Quick start
+
+      # config/config.exs
+      import Config
+
+      config :ecto_shorts,
+        repo: MyApp.Repo,
+        replica: MyApp.Repo.Replica,
+        error_module: MyApp.Error,
+        dynamic_adapter: MyApp.DynamicAdapter,
+        max_binding_positings: 3
+
+  See also `EctoShorts.Actions.Error`, `EctoShorts.Dynamics.Adapter`, and
+  `EctoShorts.FragmentProvider`.
   """
 
   @app :ecto_shorts
@@ -14,12 +52,14 @@ defmodule EctoShorts.Config do
   @doc """
   Returns the configured `:error_module` value from the `:ecto_shorts` application environment.
 
-  Defaults to `nil` if not set.
+  Defaults to `EctoShorts.Actions.Error` when not set.
 
   ## Examples
 
       iex> EctoShorts.Config.error_module()
       EctoShorts.Actions.Error
+
+  See also `EctoShorts.Actions.Error` and `repo!/1`.
   """
   @spec error_module :: module()
   def error_module do
@@ -35,6 +75,8 @@ defmodule EctoShorts.Config do
 
       iex> EctoShorts.Config.repo()
       EctoShorts.Repo
+
+  See also `repo!/1` and `replica/0`.
   """
   @spec repo :: module() | nil
   def repo do
@@ -51,6 +93,8 @@ defmodule EctoShorts.Config do
 
       iex> EctoShorts.Config.replica()
       nil
+
+  See also `replica!/1` and `repo/0`.
   """
   @spec replica :: module() | nil
   def replica do
@@ -163,13 +207,19 @@ defmodule EctoShorts.Config do
 
   @doc since: "3.0.0"
   @doc """
-  Returns the dynamic adapter module.
+  Returns the configured `:dynamic_adapter` module from the `:ecto_shorts` application environment.
 
-  Defaults to `nil`.
+  Defaults to `nil`. When `nil`, `EctoShorts.Dynamics` auto-resolves the
+  adapter from the repo's database adapter (Postgres only, out of the box).
+  Set this to a custom module implementing `EctoShorts.Dynamics.Adapter` to
+  override expression-building behaviour.
 
   ## Examples
 
       iex> EctoShorts.Config.dynamic_adapter()
+      nil
+
+  See also `EctoShorts.Dynamics.Adapter` and `repo!/1`.
   """
   @spec dynamic_adapter :: module() | nil
   def dynamic_adapter do
@@ -178,23 +228,37 @@ defmodule EctoShorts.Config do
 
   @doc since: "3.0.0"
   @doc """
-  Returns the configured join source module.
+  Returns the configured `:fragment_provider` module from the `:ecto_shorts` application environment.
+
+  Defaults to `nil`. When `nil`, `EctoShorts.FragmentProvider` falls back to
+  `EctoShorts.CommonFilters.FragmentProviders.NoOp`. Set this to a custom module
+  that exports `build_fragment_expression/3` to control how join and lock
+  expressions are resolved at runtime.
+
+  ## Examples
+
+      iex> EctoShorts.Config.fragment_provider()
+      nil
+
+  See also `EctoShorts.FragmentProvider` and `dynamic_adapter/0`.
   """
-  @spec query_source_provider :: module() | nil
-  def query_source_provider do
-    Application.get_env(@app, :query_source_provider)
+  @spec fragment_provider :: module() | nil
+  def fragment_provider do
+    Application.get_env(@app, :fragment_provider)
   end
 
   @doc since: "3.0.0"
   @doc """
-  Returns the max positional bindings.
+  Returns the configured `:max_binding_positings` value from the `:ecto_shorts` application environment.
 
-  ## Examples
+  Defaults to `3`. Used by `EctoShorts.Compiler` to determine how many
+  positional binding clauses to generate. Increase when your queries join
+  more than ten tables.
 
-      iex> EctoShorts.Config.max_query_bindings()
+  See also `EctoShorts.Compiler` and `dynamic_adapter/0`.
   """
-  @spec max_query_bindings :: integer()
-  def max_query_bindings do
-    Application.get_env(@app, :max_query_bindings) || 10
+  @spec max_binding_positings :: integer()
+  def max_binding_positings do
+    Application.get_env(@app, :max_binding_positings) || 3
   end
 end

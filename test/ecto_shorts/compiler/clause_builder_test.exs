@@ -40,6 +40,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
         head: quote(do: {:==, unquote(v_var)}),
         body:
           quote do
+            # credo:disable-for-next-line BlitzCredoChecks.StrictComparison
             unquote(Query).dynamic([q], field(q, ^unquote(key_var)) == ^unquote(v_var))
           end
       })

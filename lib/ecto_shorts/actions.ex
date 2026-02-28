@@ -4,39 +4,66 @@ defmodule EctoShorts.Actions do
 
   Use this module when you need to create, read, update, or delete records
   through a standardized API that handles query building, error wrapping,
-  and changeset management automatically. Do not use this module when you
-  need fine-grained control over raw Ecto queries or multi-step repo
-  interactions that fall outside the patterns provided here.
+  and changeset management automatically.
 
-  This module is responsible for CRUD operations (`create/3`, `find/3`,
-  `update/4`, `delete/1-3`), bulk operations (`insert_all/3`, `update_all/4`,
-  `delete_all/3`), transactional multi-record operations (`create_many/3`,
-  `update_many/3`, `delete_many/3`), batch lookups (`batch/5`,
-  `batch_preload/4`), and transaction wrappers (`transaction/2`, `transact/2`).
+  ## Quick start
 
-  All functions accept an `:repo` option to override the configured repo at
-  runtime. Read operations also accept a `:replica` option. Filter params
-  are converted to queries via `EctoShorts.CommonFilters.convert_params_to_filter/3`.
+      # Create a record
+      {:ok, post} = EctoShorts.Actions.create(EctoShorts.Schema.Post, %{title: "Hello"}, repo: MyApp.Repo)
 
-  On success, single-record functions return `{:ok, struct}`. On failure,
-  they return `{:error, reason}` where `reason` is typically an
-  `ErrorMessage` struct (from the configured error module) or an
-  `Ecto.Changeset`. Bulk functions return `{count, nil | [struct]}` per
-  Ecto conventions. Multi functions return `{:ok, [struct]}` or
-  `{:error, reason}`.
+      # Find one record
+      {:ok, post} = EctoShorts.Actions.find(EctoShorts.Schema.Post, %{id: 1})
 
-  ## Options
+      # Fetch all matching records
+      posts = EctoShorts.Actions.all(EctoShorts.Schema.Post, %{published: true, limit: 10})
 
-  These options are accepted by most functions in this module:
+      # Update a record
+      {:ok, post} = EctoShorts.Actions.update(EctoShorts.Schema.Post, post, %{title: "Updated"})
 
-    * `:repo` — the `Ecto.Repo` module to use for write operations.
-    * `:replica` — the `Ecto.Repo` module to use for read operations.
-      Falls back to `:repo` if not set.
-    * `:changeset` — a 1-, 2-, or 3-arity function that overrides the
-      schema's default `changeset/2` when building changesets.
-    * `:dynamic_adapter` — a module implementing
-      `EctoShorts.Dynamics.Adapter` for custom dynamic expression handling.
+      # Delete a record
+      {:ok, _} = EctoShorts.Actions.delete(post)
+
+  ## Function groups
+
+  * **CRUD** — `all/1-3`, `create/3`, `find/3`, `update/4`, `delete/1-3`,
+    `get/3`, `exists?/3`, `stream/3`, `aggregate/5`, `preload/3`, and
+    find-and-\* variants.
+  * **Bulk** — `insert_all/3`, `update_all/4`, `delete_all/3` (no transactions).
+  * **Multi** — `create_many/3`, `update_many/3`, `delete_many/3`,
+    `find_many/3`, `find_or_create_many/3`, `find_and_upsert_many/3`
+    (all transactional).
+  * **Batch** — `batch/5` and `batch_preload/4`.
+  * **Transaction** — `transaction/2` and `transact/2`.
+
+  ## Return values
+
+  * Single-record functions return `{:ok, struct}` or `{:error, reason}`
+    where `reason` is an `%ErrorMessage{}` or an `Ecto.Changeset`.
+  * Bulk functions return `{count, nil | [struct]}` per Ecto conventions.
+  * Multi functions return `{:ok, [struct]}` or `{:error, reason}`.
+
+  ## Shared options
+
+  * `:repo` — the `Ecto.Repo` module to use for write operations.
+    Defaults to `EctoShorts.Config.repo/0`.
+  * `:replica` — the `Ecto.Repo` to use for read operations.
+    Falls back to `:repo` when not set.
+  * `:changeset` — a 1-, 2-, or 3-arity function that overrides the
+    schema's default `changeset/2` when building changesets.
+  * `:dynamic_adapter` — a module implementing
+    `EctoShorts.Dynamics.Adapter` for custom dynamic expression handling.
+
+  See also `EctoShorts.CommonFilters`, `EctoShorts.CommonChanges`, and
+  `EctoShorts.Config`.
   """
+
+  @moduledoc groups: [
+               %{title: "CRUD", description: "Single-record create, read, update, and delete operations."},
+               %{title: "Bulk", description: "Multi-row operations without transactions."},
+               %{title: "Multi", description: "Transactional multi-record operations using Ecto.Multi."},
+               %{title: "Batch", description: "Batch lookups and preloads."},
+               %{title: "Transaction", description: "Transaction wrappers."}
+             ]
 
   alias EctoShorts.Actions.Batch
   alias EctoShorts.Actions.Error
@@ -62,9 +89,16 @@ defmodule EctoShorts.Actions do
   Returns the struct(s) with the requested associations loaded. Uses the
   configured replica repo for the database query.
 
+  ## Examples
+
+      post_with_author = EctoShorts.Actions.preload(post, :author)
+      posts_with_tags  = EctoShorts.Actions.preload(posts, [:author, :comments])
+
   ## Options
 
   See [Ecto.Repo.preload/3](https://hexdocs.pm/ecto/Ecto.Repo.html#c:preload/3) for more information.
+
+  See also `all/3` and `EctoShorts.CommonChanges.preload_change_assoc/3`.
   """
   def preload(data, preloads, opts \\ []) do
     Config.replica!(opts).preload(data, preloads, opts)
@@ -82,9 +116,15 @@ defmodule EctoShorts.Actions do
   Returns `true` if at least one matching record exists, `false` otherwise.
   Uses the configured replica repo.
 
+  ## Examples
+
+      true = EctoShorts.Actions.exists?(EctoShorts.Schema.Post, %{published: true})
+
   ## Options
 
   See [Ecto.Repo.exists?/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:exists?/2) for more information.
+
+  See also `find/3` and `all/3`.
   """
   def exists?(source, params, opts \\ []) do
     source
@@ -97,6 +137,8 @@ defmodule EctoShorts.Actions do
   Fetches all entries from the data store for the given queryable.
 
   Equivalent to `all(queryable, %{}, [])`. Returns a list of structs.
+
+  See also `all/2`, `all/3`, and `find/3`.
   """
   def all(queryable) do
     all(queryable, %{}, [])
@@ -114,8 +156,13 @@ defmodule EctoShorts.Actions do
 
   ## Examples
 
-      iex> EctoShorts.Actions.all(Post, %{})
-      iex> EctoShorts.Actions.all(Post, replica: MyApp.Repo.Replica)
+      # Pass a map of filter params
+      posts = EctoShorts.Actions.all(EctoShorts.Schema.Post, %{published: true})
+
+      # Pass opts only (no filter params)
+      posts = EctoShorts.Actions.all(EctoShorts.Schema.Post, replica: MyApp.Repo)
+
+  See also `all/1`, `all/3`, and `find/3`.
   """
   def all(queryable, params) when is_map(params) do
     all(queryable, params, [])
@@ -140,12 +187,18 @@ defmodule EctoShorts.Actions do
 
   Returns a list of structs.
 
+  ## Examples
+
+      posts = EctoShorts.Actions.all(EctoShorts.Schema.Post, %{published: true}, order_by: :title)
+
   ## Options
 
-    * `:order_by` — forwarded into filter params.
-    * `:group_by` — forwarded into filter params.
+  * `:order_by` — forwarded into filter params.
+  * `:group_by` — forwarded into filter params.
 
   See [Ecto.Repo.all/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:all/2) for additional options.
+
+  See also `find/3`, `stream/3`, and `EctoShorts.CommonFilters`.
   """
   def all(queryable, params, opts) do
     params =
@@ -170,9 +223,16 @@ defmodule EctoShorts.Actions do
   Returns `{:ok, struct}` on success or `{:error, changeset}` on validation
   failure.
 
+  ## Examples
+
+      iex> EctoShorts.Actions.create(EctoShorts.Schema.Post, %{title: "Hello", body: "World"}, repo: EctoShorts.Repo)
+      {:ok, %EctoShorts.Schema.Post{title: "Hello", body: "World", ...}}
+
   ## Options
 
   See [Ecto.Repo.insert/2](https://hexdocs.pm/ecto/Ecto.Repo.html#c:insert/2) for more information.
+
+  See also `find/3`, `update/4`, and `EctoShorts.CommonChanges`.
   """
   def create(schema, params, opts \\ []) do
     schema
@@ -190,9 +250,15 @@ defmodule EctoShorts.Actions do
   Returns the struct or `nil` if no record is found. Uses the configured
   replica repo.
 
+  ## Examples
+
+      post = EctoShorts.Actions.get(EctoShorts.Schema.Post, 1)
+
   ## Options
 
   See [Ecto.Repo.get/3](https://hexdocs.pm/ecto/Ecto.Repo.html#c:get/3) for more information.
+
+  See also `find/3` and `all/3`.
   """
   def get(queryable, id, opts \\ []) do
     Config.replica!(opts).get(queryable, id, opts)
@@ -207,15 +273,24 @@ defmodule EctoShorts.Actions do
   `:group_by` keys are also accepted in `opts` and merged into `params`.
 
   Returns `{:ok, struct}` when exactly one record is found.
-  Returns `{:error, error}` when no record matches, where `error` is an
-  `ErrorMessage` struct with code `:not_found`. If `params` is an empty
-  map and `queryable` is not an `Ecto.Query`, returns `{:error, error}`
-  immediately without querying.
+  Returns `{:error, %ErrorMessage{code: :not_found}}` when no record matches.
+  When `params` is an empty map and `queryable` is not an `Ecto.Query`,
+  returns the error immediately without querying.
 
   ## Options
 
-    * `:order_by` — forwarded into filter params.
-    * `:group_by` — forwarded into filter params.
+  * `:order_by` — forwarded into filter params.
+  * `:group_by` — forwarded into filter params.
+
+  ## Examples
+
+      iex> EctoShorts.Actions.find(EctoShorts.Schema.Post, %{id: 1})
+      {:ok, %EctoShorts.Schema.Post{id: 1, ...}}
+
+      iex> EctoShorts.Actions.find(EctoShorts.Schema.Post, %{id: -1})
+      {:error, %ErrorMessage{code: :not_found, message: "record not found."}}
+
+  See also `all/3`, `create/3`, and `find_or_create/3`.
   """
   def find(queryable, params, opts \\ [])
 
@@ -272,6 +347,16 @@ defmodule EctoShorts.Actions do
 
   Returns `{:ok, updated_struct}` on success, `{:error, changeset}` on
   validation failure, or `{:error, error}` if the record is not found.
+
+  ## Examples
+
+      # Update by id
+      {:ok, post} = EctoShorts.Actions.update(EctoShorts.Schema.Post, 1, %{title: "New"}, repo: EctoShorts.Repo)
+
+      # Update by struct
+      {:ok, post} = EctoShorts.Actions.update(EctoShorts.Schema.Post, post, %{title: "New"})
+
+  See also `find_and_update/4`, `create/3`, and `EctoShorts.CommonChanges`.
   """
   def update(queryable, id_or_schema_struct, params, opts \\ [])
 
@@ -298,7 +383,17 @@ defmodule EctoShorts.Actions do
   Returns `{:ok, struct}` on success. When given a list, returns
   `{:ok, [struct]}` if all succeed, or `{:error, reason}` on the first
   failure (already-deleted entries are not rolled back). Returns
-  `{:error, error}` with code `:conflict` if the delete changeset fails.
+  `{:error, %ErrorMessage{code: :conflict}}` if the delete changeset fails.
+
+  ## Examples
+
+      # Delete by struct
+      {:ok, deleted} = EctoShorts.Actions.delete(post)
+
+      # Delete many at once
+      {:ok, deleted_list} = EctoShorts.Actions.delete([post1, post2])
+
+  See also `delete/2`, `delete/3`, and `find_and_delete/3`.
   """
   def delete(data) do
     delete(data, [])
@@ -309,6 +404,8 @@ defmodule EctoShorts.Actions do
   Deletes a record, changeset, or list of records/changesets with options.
 
   See `delete/1` for accepted inputs and return values.
+
+  See also `delete/3` and `find_and_delete/3`.
   """
   def delete(data, opts)
 
@@ -346,6 +443,12 @@ defmodule EctoShorts.Actions do
 
   Returns `{:ok, struct}` on success, or `{:error, error}` if the record
   is not found or the delete fails.
+
+  ## Examples
+
+      {:ok, deleted} = EctoShorts.Actions.delete(EctoShorts.Schema.Post, 1)
+
+  See also `delete/1`, `delete_all/3`, and `find_and_delete/3`.
   """
   def delete(queryable, id, opts) when is_integer(id) or is_binary(id) do
     with {:ok, record} <- find(queryable, %{id: id}, opts) do
@@ -366,6 +469,17 @@ defmodule EctoShorts.Actions do
 
   Returns an `Ecto.Repo.stream` result (a stream that must be used inside
   a transaction).
+
+  ## Examples
+
+      EctoShorts.Actions.transact(fn ->
+        EctoShorts.Schema.Post
+        |> EctoShorts.Actions.stream(%{published: true})
+        |> Stream.each(&process_post/1)
+        |> Stream.run()
+      end)
+
+  See also `all/3`, `transact/2`, and `EctoShorts.CommonFilters`.
   """
   def stream(queryable, params \\ %{}, opts \\ []) do
     queryable
@@ -384,6 +498,13 @@ defmodule EctoShorts.Actions do
 
   Returns the aggregate result (e.g., an integer for `:count`). Uses the
   configured replica repo.
+
+  ## Examples
+
+      count = EctoShorts.Actions.aggregate(EctoShorts.Schema.Post, %{published: true})
+      total = EctoShorts.Actions.aggregate(EctoShorts.Schema.Post, %{}, :sum, :views)
+
+  See also `all/3` and `exists?/3`.
   """
   def aggregate(queryable, params \\ %{}, aggregate \\ :count, key \\ :id, opts \\ []) do
     queryable
@@ -398,6 +519,16 @@ defmodule EctoShorts.Actions do
 
   Returns `{:ok, struct}` in both cases (found or created), or
   `{:error, changeset}` if creation fails validation.
+
+  ## Examples
+
+      {:ok, post} = EctoShorts.Actions.find_and_create(
+        EctoShorts.Schema.Post,
+        %{title: "Hello"},
+        %{title: "Hello", body: "World"}
+      )
+
+  See also `find_or_create/3`, `find_and_update/4`, and `create/3`.
   """
   def find_and_create(queryable, find_params, create_params, opts \\ []) do
     with {:error, _} <- find(queryable, find_params, opts) do
@@ -411,6 +542,16 @@ defmodule EctoShorts.Actions do
 
   Returns `{:ok, updated_struct}` on success, `{:error, changeset}` on
   validation failure, or `{:error, error}` if the record is not found.
+
+  ## Examples
+
+      {:ok, post} = EctoShorts.Actions.find_and_update(
+        EctoShorts.Schema.Post,
+        %{id: 1},
+        %{title: "Updated"}
+      )
+
+  See also `update/4`, `find_and_upsert/4`, and `find/3`.
   """
   def find_and_update(source, find_params, update_params, opts \\ []) do
     with {:ok, record} <- find(source, find_params, opts) do
@@ -426,6 +567,16 @@ defmodule EctoShorts.Actions do
   creates a new record by merging `find_params` and `upsert_params`.
 
   Returns `{:ok, struct}` on success or `{:error, changeset}` on failure.
+
+  ## Examples
+
+      {:ok, post} = EctoShorts.Actions.find_and_upsert(
+        EctoShorts.Schema.Post,
+        %{title: "Hello"},
+        %{body: "Updated body"}
+      )
+
+  See also `find_and_update/4`, `find_or_create/3`, and `create/3`.
   """
   def find_and_upsert(source, find_params, upsert_params, opts \\ []) do
     case find(source, find_params, opts) do
@@ -441,6 +592,12 @@ defmodule EctoShorts.Actions do
 
   Returns `{:ok, deleted_struct}` on success, or `{:error, error}` if the
   record is not found or the delete fails.
+
+  ## Examples
+
+      {:ok, deleted} = EctoShorts.Actions.find_and_delete(EctoShorts.Schema.Post, %{title: "Hello"})
+
+  See also `delete/1`, `delete_all/3`, and `find/3`.
   """
   def find_and_delete(source, find_params, opts \\ []) do
     with {:ok, record} <- find(source, find_params, opts) do
@@ -457,6 +614,15 @@ defmodule EctoShorts.Actions do
 
   Returns `{:ok, struct}` in both cases (found or created), or
   `{:error, changeset}` if creation fails validation.
+
+  ## Examples
+
+      {:ok, post} = EctoShorts.Actions.find_or_create(
+        EctoShorts.Schema.Post,
+        %{title: "Hello", body: "World"}
+      )
+
+  See also `find_and_create/4`, `find_or_create_many/3`, and `create/3`.
   """
   def find_or_create(source, params, opts \\ []) do
     with {:error, _} <-
@@ -478,7 +644,15 @@ defmodule EctoShorts.Actions do
 
   `fun_or_multi` is either an `Ecto.Multi` struct or a function.
 
-  Returns `{:ok, result}` or `{:error, reason}` per `Ecto.Repo.transaction/2` semantics.
+  Returns `{:ok, result}` or `{:error, reason}` per `c:Ecto.Repo.transaction/2` semantics.
+
+  ## Examples
+
+      {:ok, _} = EctoShorts.Actions.transaction(fn ->
+        EctoShorts.Actions.create(EctoShorts.Schema.Post, %{title: "Hello"})
+      end)
+
+  See also `transact/2` and `create_many/3`.
   """
   def transaction(fun_or_multi, opts \\ []) do
     Config.repo!(opts).transaction(fun_or_multi, opts)
@@ -500,8 +674,10 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:strict` (default `true`) — when `true`, automatically rolls back
-      on `{:error, reason}` and unwraps `{:ok, value}`.
+  * `:strict` — when `true`, automatically rolls back on `{:error, reason}`
+    and unwraps `{:ok, value}`. Defaults to `true`.
+
+  See also `transaction/2` and `create_many/3`.
   """
   def transact(fun_or_multi, opts \\ [])
 
@@ -614,7 +790,7 @@ defmodule EctoShorts.Actions do
   @doc group: "Bulk"
   @doc since: "3.0.0"
   @doc """
-  Inserts many records from a params list using `Ecto.Repo.insert_all/3` semantics.
+  Inserts many records from a params list using `c:Ecto.Repo.insert_all/3` semantics.
 
   `source` is a schema module or `{source, schema}` tuple.
   `params_list` is a list of maps, keyword lists, schema structs,
@@ -629,13 +805,17 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` — an atom or list of atoms identifying keys to batch-preload.
-    * `:validate` — set to `false` to skip changeset validation.
-    * `:on_conflict_replace` — controls which fields are replaced on conflict.
-      Accepts `:none`, `:insert_keys` (default), or a list of field atoms.
-    * `:placeholders` — a map of `{field, match_value}` for placeholder substitution.
-    * `:on_placeholder_conflict` — `:nothing` (default), `:replace_all`, or
-      `{:replace, [fields]}`.
+  * `:preload` — an atom or list of atoms identifying keys to batch-preload.
+
+  * `:validate` — set to `false` to skip changeset validation.
+
+  * `:on_conflict_replace` — controls which fields are replaced on conflict.
+    Accepts `:none`, `:insert_keys` (default), or a list of field atoms.
+
+  * `:placeholders` — a map of `{field, match_value}` for placeholder substitution.
+
+  * `:on_placeholder_conflict` — `:nothing` (default), `:replace_all`, or
+    `{:replace, [fields]}`.
 
   See `EctoShorts.CommonParams.convert_to_insert_params/3` for timestamp options.
   """
@@ -667,9 +847,11 @@ defmodule EctoShorts.Actions do
   `source` is a schema module or `{source, schema}` tuple.
   `find_params` is a map or keyword list of filter params.
   `update_params` is a map of fields to update, supporting `:set`, `:inc`,
-  `:push`, and `:pull` operations (see `EctoShorts.CommonParams.convert_to_update_params/3`).
+  `:push`, and `:pull` operations.
 
   Returns `{count, nil}` where `count` is the number of updated rows.
+
+  See also `EctoShorts.CommonParams.convert_to_update_params/3` and `update_many/3`.
   """
   def update_all(source, find_params, update_params, opts \\ []) do
     updates =
@@ -691,6 +873,8 @@ defmodule EctoShorts.Actions do
   `params` is a map or keyword list of filter params.
 
   Returns `{count, nil}` where `count` is the number of deleted rows.
+
+  See also `delete_many/3` and `EctoShorts.CommonFilters`.
   """
   def delete_all(queryable, params \\ %{}, opts \\ []) do
     queryable
@@ -710,6 +894,15 @@ defmodule EctoShorts.Actions do
   insert fails, the entire transaction is rolled back.
 
   Returns `{:ok, [struct]}` on success or `{:error, reason}` on failure.
+
+  ## Examples
+
+      {:ok, posts} = EctoShorts.Actions.create_many(EctoShorts.Schema.Post, [
+        %{title: "Post 1", body: "Body 1"},
+        %{title: "Post 2", body: "Body 2"}
+      ])
+
+  See also `create/3`, `insert_all/3`, and `transact/2`.
   """
   def create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     schema
@@ -730,6 +923,12 @@ defmodule EctoShorts.Actions do
   the transaction is rolled back with a `:not_found` error.
 
   Returns `{:ok, [struct]}` on success or `{:error, reason}` on failure.
+
+  ## Examples
+
+      {:ok, posts} = EctoShorts.Actions.find_many(EctoShorts.Schema.Post, [%{id: 1}, %{id: 2}])
+
+  See also `find/3`, `find_or_create_many/3`, and `transact/2`.
   """
   def find_many(schema, params_list, opts \\ []) when is_list(params_list) do
     schema
@@ -750,6 +949,15 @@ defmodule EctoShorts.Actions do
 
   Returns `{:ok, [struct]}` on success or `{:error, reason}` on failure.
   Raises `ArgumentError` if an entry is not a recognized shape.
+
+  ## Examples
+
+      {:ok, posts} = EctoShorts.Actions.update_many(EctoShorts.Schema.Post, [
+        {%{id: 1}, %{title: "Updated 1"}},
+        {%{id: 2}, %{title: "Updated 2"}}
+      ])
+
+  See also `update/4`, `find_and_update/4`, and `update_all/4`.
   """
   def update_many(schema, entries, opts \\ []) when is_list(entries) do
     schema
@@ -769,6 +977,12 @@ defmodule EctoShorts.Actions do
   `Ecto.Multi`.
 
   Returns `{:ok, [struct]}` on success or `{:error, reason}` on failure.
+
+  ## Examples
+
+      {:ok, deleted} = EctoShorts.Actions.delete_many(EctoShorts.Schema.Post, [post1, post2])
+
+  See also `delete/1`, `delete_all/3`, and `transact/2`.
   """
   def delete_many(schema, records, opts \\ []) when is_list(records) do
     schema
@@ -787,6 +1001,15 @@ defmodule EctoShorts.Actions do
   matching record; if not found, creates one using the same params.
 
   Returns `{:ok, [struct]}` on success or `{:error, reason}` on failure.
+
+  ## Examples
+
+      {:ok, posts} = EctoShorts.Actions.find_or_create_many(EctoShorts.Schema.Post, [
+        %{title: "Post 1", body: "Body 1"},
+        %{title: "Post 2", body: "Body 2"}
+      ])
+
+  See also `find_or_create/3`, `create_many/3`, and `find_many/3`.
   """
   def find_or_create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     schema
@@ -807,6 +1030,15 @@ defmodule EctoShorts.Actions do
 
   Returns `{:ok, [struct]}` on success or `{:error, reason}` on failure.
   Raises `ArgumentError` if an entry is not a recognized shape.
+
+  ## Examples
+
+      {:ok, posts} = EctoShorts.Actions.find_and_upsert_many(EctoShorts.Schema.Post, [
+        {%{id: 1}, %{title: "Updated"}},
+        {%{title: "New"}, %{body: "New body"}}
+      ])
+
+  See also `find_and_upsert/4`, `update_many/3`, and `find_or_create_many/3`.
   """
   def find_and_upsert_many(schema, entries, opts \\ []) when is_list(entries) do
     schema

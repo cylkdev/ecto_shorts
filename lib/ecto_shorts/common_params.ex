@@ -1,27 +1,57 @@
 defmodule EctoShorts.CommonParams do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Provides helper functions for preparing data used with the
-  Ecto repo functions `update_all` and `insert_all`.
+  Prepares data for `c:Ecto.Repo.insert_all/3` and `c:Ecto.Repo.update_all/3`.
 
-  This module is responsible for taking application-level data
-  and transforming it into the structures required by Ecto for
-  performing bulk operations. It offers a simple interface for
-  validating records, generating timestamps, handling placeholder
-  values, and preparing conflict resolution behavior.
+  Takes application-level data (plain maps, keyword lists, schema structs,
+  or changesets) and transforms it into the keyword-list structures Ecto
+  expects for bulk operations. Handles schema validation, automatic
+  timestamp generation, placeholder substitution, and conflict resolution.
 
-  It works by normalizing params data (such as maps or structs),
-  optionally validating it through the schema’s `changeset/2`,
-  and then generating the appropriate keyword lists or maps used
-  by Ecto’s insert and update functions. If configured, it also
-  automatically manages timestamps for `inserted_at` and
-  `updated_at`, and handles scenarios where placeholder values
-  need to be substituted during insert operations.
+  ## Key concepts
 
-  This is especially useful when performing batch inserts or
-  updates, ensuring consistent timestamp handling, optional
-  schema validation, and support for placeholder values across
-  your application.
+  ### Insert params
+
+  `convert_to_insert_params/3` produces a list of maps ready for
+  `c:Ecto.Repo.insert_all/3`. Each entry is validated (optionally via the
+  schema's `changeset/2`), filtered to schema query fields, and enriched
+  with `:inserted_at` and `:updated_at` timestamps.
+
+  ### Update params
+
+  `convert_to_update_params/3` produces a keyword list of Ecto update
+  operations (`:set`, `:inc`, `:push`, `:pull`) ready for
+  `c:Ecto.Repo.update_all/3`. Automatically appends `:updated_at`.
+
+  ### Conflict resolution
+
+  `build_on_conflict_options/3` derives the `:conflict_target` and
+  `:on_conflict` options from the schema's primary key and the prepared
+  insert data, for use with `c:Ecto.Repo.insert_all/3`.
+
+  ## Quick start
+
+      params = [
+        %{title: "First post", published: true},
+        %{title: "Second post", published: false}
+      ]
+
+      {:ok, inserts} =
+        EctoShorts.CommonParams.convert_to_insert_params(
+          EctoShorts.Schema.Post,
+          params
+        )
+
+      conflict_opts =
+        EctoShorts.CommonParams.build_on_conflict_options(
+          EctoShorts.Schema.Post,
+          inserts,
+          []
+        )
+
+      Repo.insert_all(EctoShorts.Schema.Post, inserts, conflict_opts)
+
+  See also `EctoShorts.Actions` and `EctoShorts.CommonSchema`.
   """
 
   alias Ecto.Changeset
@@ -31,10 +61,10 @@ defmodule EctoShorts.CommonParams do
   alias EctoShorts.Utils
 
   @doc """
-  Builds conflict resolution options for use with `Ecto.Repo.insert_all/3` calls.
+  Builds conflict resolution options for use with `c:Ecto.Repo.insert_all/3`.
 
-  `source` is a schema module or `{source, schema}` tuple.
-  `inserts` is a list of maps (the prepared insert data).
+  `source` is a schema module or `{source, schema}` tuple. `inserts` is the
+  list of prepared insert maps (output of `convert_to_insert_params/3`).
   `opts` is a keyword list of options.
 
   When the schema has a primary key and at least one insert contains all
@@ -42,15 +72,36 @@ defmodule EctoShorts.CommonParams do
   set to the primary key fields. If there are non-primary-key fields to
   replace, also includes `on_conflict: {:replace, fields}`.
 
-  The `:on_conflict_replace` option controls which fields are replaced:
+  Returns an empty list when no conflict handling applies (e.g. when the
+  schema has no primary key, or all primary key values are `nil`).
 
-    * `:insert_keys` (default) — replaces all non-primary-key fields
-      present in the inserts.
+  ## Options
+
+  * `:on_conflict_replace` — controls which fields are replaced on conflict.
+    Defaults to `:insert_keys`.
+    * `:insert_keys` — replaces all non-primary-key fields present in the inserts.
     * `:none` — no fields are replaced (insert-or-nothing).
     * a list of atoms — only the listed fields are replaced.
 
-  Returns an empty list when no conflict handling applies.
+  ## Examples
+
+      iex> inserts = [%{id: 1, title: "Hello", published: true}]
+      iex> opts = EctoShorts.CommonParams.build_on_conflict_options(
+      ...>   EctoShorts.Schema.Post, inserts, []
+      ...> )
+      iex> Keyword.has_key?(opts, :conflict_target)
+      true
+
+      iex> EctoShorts.CommonParams.build_on_conflict_options(EctoShorts.Schema.Post, [], [])
+      []
+
+  See also `convert_to_insert_params/3` and `c:Ecto.Repo.insert_all/3`.
   """
+  @spec build_on_conflict_options(
+          source :: module() | {binary(), module()},
+          inserts :: [map()],
+          opts :: keyword()
+        ) :: keyword()
   def build_on_conflict_options(source, inserts, opts) when is_list(inserts) do
     with schema when not is_nil(schema) <- normalize_schema(source),
          true <- inserts !== [],
@@ -98,54 +149,68 @@ defmodule EctoShorts.CommonParams do
   end
 
   @doc """
-  Converts a list of parameters or structs into the format
-  expected by [Ecto.Repo.insert_all](https://hexdocs.pm/ecto/Ecto.Repo.html#c:insert_all/3), with support for
-  validation, timestamps, and placeholder substitution.
+  Converts a list of parameters or structs into the format expected by
+  `c:Ecto.Repo.insert_all/3`, with support for validation, timestamps, and
+  placeholder substitution.
+
+  `source` is a schema module or `{source, schema}` tuple (or `nil` for
+  schemaless inserts). `params_list` is a list of maps, keyword lists,
+  schema structs, changesets, or `{struct, params}` tuples.
+
+  Returns `{:ok, [map()]}` on success, or `{:error, [changeset]}` when
+  one or more entries fail validation.
 
   ## Options
 
-  ### Placeholder Options
+  ### Placeholder options
 
-  These control how certain field values are replaced with placeholders.
-  Placeholders are useful when you want to defer resolution of the final
-  value to a later process, or signal that a special condition applies.
+  * `:placeholders` — a map where each key is a field atom and each value is
+    the placeholder value to match. When a field value matches, it is replaced
+    with `{:placeholder, field_name}` for use with `c:Ecto.Repo.insert_all/3`'s
+    `:placeholders` option. Defaults to `%{}`.
+  * `:on_placeholder_conflict` — controls what happens when a placeholder value
+    is provided but the record already has a different value. Defaults to
+    `:nothing`.
+    * `:nothing` — keep the existing value unchanged.
+    * `:replace_all` — always use the placeholder regardless of conflict.
+    * `{:replace, fields}` — only replace the listed fields.
 
-    * `placeholders`: A map where the key is the field name (as an atom)
-      and the value is the placeholder value to match against.
-      If the field value matches, it will be replaced with a tuple like
-      `{:placeholder, :field_name}`, where `:field_name` refers to the
-      actual name of the field being substituted.
+  ### Timestamp options
 
-    * `on_placeholder_conflict`: Controls what happens when a placeholder
-      value is provided but the record already contains a different value.
-      You can choose from:
+  * `:inserted_at` — manually set the `:inserted_at` timestamp value.
+  * `:updated_at` — manually set the `:updated_at` timestamp value.
+  * `:inserted_at_source` — override the field name (e.g. `:created_on`).
+  * `:updated_at_source` — override the field name.
+  * `:inserted_at_timestamp_type` — override the timestamp type (`:naive_datetime` or `:utc_datetime`).
+  * `:updated_at_timestamp_type` — override the timestamp type.
+  * `:timestamp_type` — fallback type for both fields when specific overrides are absent.
 
-        * `nothing` – Keep the existing value unchanged.
+  ### Validation options
 
-        * `replace_all` – Always use the placeholder regardless of conflict.
+  * `:validate` — when `true`, each entry is passed through the schema's
+    `changeset/2` for validation. Set to `false` to construct raw structs
+    without calling `changeset/2`. Defaults to `true`.
 
-        * `{replace, fields}` – Only replace fields listed in the provided list.
+  ## Examples
 
-  ### Timestamp Options
+      iex> {:ok, inserts} =
+      ...>   EctoShorts.CommonParams.convert_to_insert_params(
+      ...>     EctoShorts.Schema.Post,
+      ...>     [%{title: "Hello", body: "World"}]
+      ...>   )
+      iex> is_list(inserts)
+      true
 
-  These let you configure how inserted and updated timestamps are applied.
+      iex> EctoShorts.CommonParams.convert_to_insert_params(EctoShorts.Schema.Post, [])
+      {:ok, []}
 
-    * `inserted_at`, `updated_at`: Manually set the values for each timestamp.
-
-    * `inserted_at_source`, `updated_at_source`: Customize the field name
-      (for example, use `created_on` instead of `inserted_at`).
-
-    * `inserted_at_timestamp_type`, `updated_at_timestamp_type`: Override
-      the timestamp format type (e.g. naive or UTC).
-
-    * `timestamp_type`: A fallback type for both inserted and updated fields.
-
-  ### Validation Options
-
-    * `validate`: If `true`, each entry is passed through the schema’s
-      `changeset/2` function for validation. If `false`, raw structs are
-      constructed without validation.
+  See also `build_on_conflict_options/3` and `convert_to_update_params/3`.
   """
+  @spec convert_to_insert_params(
+          source :: module() | {binary(), module()} | nil,
+          params_list :: list(),
+          opts :: keyword()
+        ) :: {:ok, [map()]} | {:error, [Ecto.Changeset.t()]}
   def convert_to_insert_params(source, params_list \\ [], opts \\ []) do
     schema = normalize_schema(source)
 
@@ -358,22 +423,45 @@ defmodule EctoShorts.CommonParams do
 
   @doc """
   Converts a map of update parameters into the format expected by
-  [Ecto.Repo.update_all](https://hexdocs.pm/ecto/Ecto.Repo.html#c:update_all/3).
+  `c:Ecto.Repo.update_all/3`.
 
-  This is useful when you need to perform a bulk update on a set of records.
-  The parameters are grouped by action (for example, set, increment, push),
-  and the result is returned in the format required by `update_all/3`.
+  `source` is a schema module or `{source, schema}` tuple (or `nil` for
+  schemaless updates). `params` is a map of `{field, value}` pairs, where
+  the value can be a plain value (`:set` is implied), or a tagged tuple
+  such as `{:inc, 1}`, `{:push, "tag"}`, or `{:pull, "tag"}`.
 
-  You can also choose to automatically update the `updated_at` field.
+  Returns a keyword list of update operations (e.g.
+  `[set: [title: "New"], inc: [views: 1]]`) ready to be passed as the
+  second argument to `c:Ecto.Repo.update_all/3`. Returns an empty list when
+  no valid fields are found in `params`.
 
   ## Options
 
-    * `updated_at` – Manually provide the timestamp value for the `updated_at` field.
-    * `updated_at_source` – Change the field name that is used instead of `:updated_at`.
-    * `updated_at_timestamp_type` – Override the format of the `updated_at` field
-      (for example, UTC or naive datetime).
-    * `timestamp_type` – Fallback timestamp format type if the above is not provided.
+  * `:updated_at` — manually provide the timestamp value for `:updated_at`.
+  * `:updated_at_source` — override the field name. Defaults to `:updated_at`.
+  * `:updated_at_timestamp_type` — override the timestamp type
+    (`:naive_datetime` or `:utc_datetime`).
+  * `:timestamp_type` — fallback timestamp type when the specific override
+    is not provided.
+
+  ## Examples
+
+      iex> EctoShorts.CommonParams.convert_to_update_params(
+      ...>   EctoShorts.Schema.Post,
+      ...>   %{title: "Updated", views: {:inc, 1}}
+      ...> )
+      [inc: [views: 1], set: [title: "Updated", updated_at: ...]]
+
+      iex> EctoShorts.CommonParams.convert_to_update_params(EctoShorts.Schema.Post, %{})
+      []
+
+  See also `convert_to_insert_params/3` and `build_on_conflict_options/3`.
   """
+  @spec convert_to_update_params(
+          source :: module() | {binary(), module()} | nil,
+          params :: map(),
+          opts :: keyword()
+        ) :: keyword()
   def convert_to_update_params(source, params, opts \\ []) do
     utc_now = DateTime.utc_now()
 

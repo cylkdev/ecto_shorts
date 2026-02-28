@@ -1,34 +1,66 @@
 defmodule EctoShorts.Actions.Error do
   @moduledoc """
-  Defines a standard error structure used across EctoShorts actions and
-  provides a flexible interface for generating actionable errors.
+  Defines the default error structure and a pluggable behaviour for building
+  action errors across EctoShorts.
 
-  This module can be overridden via configuration by setting
-  `:error_module` in your application config or passing it in explicitly
-  via options to `call/4`.
+  Every `EctoShorts.Actions` function that can fail returns an error value
+  produced by calling `call/4` on the configured error module. By default,
+  `call/4` delegates to this module's own `create_error/3`, which builds an
+  `%ErrorMessage{}` struct from the `error_message` library.
+
+  ## Implementing a custom error module
+
+  Implement the `EctoShorts.Actions.Error` behaviour to control the shape of
+  error values across your application:
+
+      defmodule MyApp.Error do
+        @behaviour EctoShorts.Actions.Error
+
+        @impl true
+        def create_error(code, message, details) do
+          %{code: code, message: "[MyApp] " <> message, details: details}
+        end
+      end
+
+  ## Configuration
+
+  Register your custom error module globally in your application config:
+
+      # config/config.exs
+      config :ecto_shorts, error_module: MyApp.Error
+
+  Or pass it at runtime via the `:error_module` option on any
+  `EctoShorts.Actions` function.
+
+  See also `EctoShorts.Config.error_module/0` and `EctoShorts.Actions`.
   """
 
   @doc """
-  Defines the callback used to construct an error struct.
+  Builds an error value from the given `code`, `message`, and `details`.
 
-  This callback must be implemented by custom error modules and
-  is invoked by `EctoShorts.Actions.Error.call/4`.
+  Called by `EctoShorts.Actions.Error.call/4` once the error module is
+  resolved. Must return any value — the shape is determined entirely by the
+  implementing module.
 
-  The returned map must include the keys `:code`, `:message`, and `:details`.
+  ## Arguments
 
-  ## Usage
+  * `code` — an atom representing the error type (e.g. `:not_found`,
+    `:conflict`, `:bad_request`).
+  * `message` — a human-readable string describing the error.
+  * `details` — a map containing additional context (e.g. IDs, params).
 
-  ```elixir
+  ## Return value
 
-  defmodule MyApp.CustomError do
-    @behaviour EctoShorts.Actions.Error
+  Any term. The default implementation returns `%ErrorMessage{}`.
 
-    def create_error(code, message, details) do
-      %{code: code, message: "[MyApp] " <> message, details: details}
-    end
-  end
+  ## Example implementation
 
-  ```
+      @impl true
+      def create_error(code, message, details) do
+        %{code: code, message: "[MyApp] " <> message, details: details}
+      end
+
+  See also `call/4`.
   """
   @callback create_error(atom(), binary(), map()) :: any()
 
@@ -53,15 +85,18 @@ defmodule EctoShorts.Actions.Error do
 
   ## Options
 
-    * `:error_module` — a module implementing the
-      `EctoShorts.Actions.Error` behaviour.
+  * `:error_module` — a module implementing the `EctoShorts.Actions.Error`
+    behaviour. Defaults to `EctoShorts.Config.error_module/0`.
 
   ## Examples
 
       iex> EctoShorts.Actions.Error.call(:not_found, "User not found", %{id: 123})
       %ErrorMessage{code: :not_found, message: "User not found", details: %{id: 123}}
 
-      iex> EctoShorts.Actions.Error.call(:bad_request, "Missing param", nil, error_module: MyApp.CustomError)
+      # Using a custom error module at runtime
+      # EctoShorts.Actions.Error.call(:bad_request, "Missing param", nil, error_module: MyApp.Error)
+
+  See also `create_error/3` and `EctoShorts.Config.error_module/0`.
   """
   @spec call(atom(), binary(), map() | nil, keyword()) :: any()
   def call(code, message, details, opts \\ []) do
@@ -77,11 +112,13 @@ defmodule EctoShorts.Actions.Error do
   @doc """
   Default implementation of `create_error/3`.
 
-  Builds an `ErrorMessage` struct from the given `code`, `message`, and
+  Builds an `%ErrorMessage{}` struct from the given `code`, `message`, and
   `details`. This is the fallback used when no custom error module is
-  configured.
+  configured via `:error_module`.
 
   Returns `%ErrorMessage{code: code, message: message, details: details}`.
+
+  See also `call/4` and the `c:create_error/3` callback.
   """
   def create_error(code, message, details) do
     struct!(ErrorMessage,

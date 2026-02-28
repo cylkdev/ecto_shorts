@@ -8,24 +8,49 @@ defmodule EctoShorts.CommonFilters do
   `{source, schema}` tuple) together with a map or keyword list of params
   to `convert_params_to_filter/3` and receive an `Ecto.Query` back.
 
+  ## Quick start
+
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(
+      ...>   EctoShorts.Schema.Post,
+      ...>   %{title: "Hello", published: true, limit: 10}
+      ...> )
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post,
+        where: p0.title == ^"Hello" and p0.published == ^true,
+        limit: ^10>
+
+  ## Filter categories
+
   Params are split into two categories:
 
-    * **Schema filters** — keys that match schema field names or
-      associations become `WHERE` clauses (or `OR WHERE` when nested
-      under `:or_where`).
-    * **Query filters** — reserved keys that map to Ecto query operations:
-      `:distinct`, `:group_by`, `:having`, `:or_having`, `:join`, `:order_by`,
-      `:prepend_order_by`, `:preload`, `:select`, `:select_merge`, `:limit`,
-      `:offset`, `:lock`, `:union`, `:union_all`, `:except`, `:except_all`,
-      `:intersect`, `:intersect_all`, `:exclude`, `:first`, `:last`,
-      `:put_query_prefix`, `:recursive_ctes`, `:reverse_order`, `:subquery`,
-      `:with_cte`, `:with_named_binding`, `:with_ties`, `:windows`, `:update`.
+  * **Schema filters** — keys that match schema field names or associations
+    become `WHERE` clauses. Nest under `:or_where` for `OR WHERE` clauses.
+  * **Query filters** — reserved keys that map to Ecto query operations:
+    `:distinct`, `:group_by`, `:having`, `:or_having`, `:join`, `:order_by`,
+    `:prepend_order_by`, `:preload`, `:select`, `:select_merge`, `:limit`,
+    `:offset`, `:lock`, `:union`, `:union_all`, `:except`, `:except_all`,
+    `:intersect`, `:intersect_all`, `:exclude`, `:first`, `:last`,
+    `:put_query_prefix`, `:recursive_ctes`, `:reverse_order`, `:subquery`,
+    `:with_cte`, `:with_named_binding`, `:with_ties`, `:windows`, `:update`.
 
-  Bindings can be targeted using the `:bind` key with `:as` (named) or
-  `:at` (positional) selectors.
+  ## Binding targeting
+
+  Target a specific query binding using the `:bind` key:
+
+      %{bind: {:as, :post}, title: "Hello"}  # named binding
+      %{bind: {:at, 2}, title: "Hello"}       # positional binding
 
   Unknown keys that are not schema fields are logged as warnings and
   silently skipped.
+
+  ## Boolean operators
+
+  Combine conditions using `:and` and `:or` operators:
+
+      %{or: [%{published: true}, %{published: false}]}
+      %{and: [%{title: "Hi"}, %{published: true}]}
+
+  See also `EctoShorts.Dynamics`, `EctoShorts.CommonFilters.Having`, and
+  `EctoShorts.Actions`.
   """
 
   alias EctoShorts.CommonSchema
@@ -100,18 +125,55 @@ defmodule EctoShorts.CommonFilters do
   Converts filter params into an `Ecto.Query`.
 
   `source` is a schema module, `{source, schema}` tuple, or `Ecto.Query`.
-  `params` is a map or keyword list of filter params.
-  `opts` is an optional keyword list forwarded to query builders.
+  `params` is a map or keyword list of filter params. `opts` is an optional
+  keyword list forwarded to all sub-query builders.
 
-  Returns an `Ecto.Query` struct with all filter params applied.
+  Schema field keys become `WHERE` conditions. Query filter keys (`:limit`,
+  `:order_by`, `:preload`, etc.) are applied as the corresponding Ecto query
+  operations. Unknown keys not in the schema's `:query_fields` are logged as
+  warnings and skipped.
+
+  Returns an `Ecto.Query` struct with all params applied.
+
+  ## Options
+
+  * `:repo` — the `Ecto.Repo` module used to resolve the dynamic expression
+    adapter. Defaults to `EctoShorts.Config.repo/0`.
+  * `:dynamic_adapter` — a module implementing `EctoShorts.Dynamics.Adapter`
+    for this call. Defaults to resolved from repo.
+  * `:query_fields` — list of field atoms to limit which fields are accepted
+    as schema filters.
 
   ## Examples
 
-      iex> EctoShorts.CommonFilters.convert_params_to_filter(Post, %{title: "Hello"})
-      #Ecto.Query<from p0 in Post, where: p0.title == ^"Hello">
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(
+      ...>   EctoShorts.Schema.Post,
+      ...>   %{title: "Hello"}
+      ...> )
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.title == ^"Hello">
 
-      iex> EctoShorts.CommonFilters.convert_params_to_filter(Post, %{published: true, order_by: {:asc, :title}})
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(
+      ...>   EctoShorts.Schema.Post,
+      ...>   %{published: true, or_where: %{published: false}}
+      ...> )
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post,
+        where: p0.published == ^true or p0.published == ^false>
+
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(
+      ...>   EctoShorts.Schema.Post,
+      ...>   %{limit: 5, order_by: {:desc, :inserted_at}}
+      ...> )
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post,
+        order_by: [desc: p0.inserted_at], limit: ^5>
+
+  See also `EctoShorts.Actions.all/3`, `EctoShorts.Dynamics`, and
+  `EctoShorts.CommonFilters.Having`.
   """
+  @spec convert_params_to_filter(
+          source :: module() | {binary(), module()} | Ecto.Query.t(),
+          params :: map() | keyword(),
+          opts :: keyword()
+        ) :: Ecto.Query.t()
   def convert_params_to_filter(source, params, opts \\ [])
 
   def convert_params_to_filter(source, params, opts) when is_map(params) do

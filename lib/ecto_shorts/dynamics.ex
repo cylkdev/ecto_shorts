@@ -1,12 +1,62 @@
 defmodule EctoShorts.Dynamics do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Converts filter params into dynamic expressions.
+  Converts filter parameter maps into composable dynamic expressions.
 
   Used internally by `EctoShorts.CommonFilters.Filter` and other query
   builders to translate `{field, value}` pairs and boolean operator trees
   into composable dynamic expressions. Delegates the actual expression
-  construction to the configured dynamic adapter (e.g., the Postgres adapter).
+  construction to the configured dynamic adapter.
+
+  ## Key concepts
+
+  ### Params format
+
+  Filter params are plain maps or keyword lists of `{field, value}` pairs:
+
+      %{title: "hello", published: true}
+
+  Boolean sub-groups use the `:and` and `:or` keys with a list of sub-params:
+
+      %{or: [%{published: true}, %{published: false}]}
+
+  Helper operators such as `:datetime_add` and `:date_add` can be embedded
+  inside field values to produce relative date expressions at the database level.
+
+  ### Adapter delegation
+
+  `EctoShorts.Dynamics` does not build Ecto expressions itself. Instead it
+  resolves the configured `EctoShorts.Dynamics.Adapter` implementation and
+  calls `build_dynamic/4` for each field. The built-in adapter is
+  `EctoShorts.Dynamics.Adapters.Postgres`. Override it by configuring
+  `:dynamic_adapter` in your application config.
+
+  ### Schema-aware filtering
+
+  When a source with a schema module is provided, the module's
+  `:query_fields` reflection is used to warn on unknown filter keys
+  rather than silently ignoring them.
+
+  ## Quick start
+
+      import Ecto.Query
+
+      params = %{title: "hello", published: true}
+
+      dynamic_expr =
+        EctoShorts.Dynamics.convert_to_dynamic(EctoShorts.Schema.Post, nil, params)
+
+      from p in EctoShorts.Schema.Post, where: ^dynamic_expr
+
+  ## Configuration
+
+  * `:dynamic_adapter` — a module implementing `EctoShorts.Dynamics.Adapter`.
+    Configurable globally via `config :ecto_shorts, dynamic_adapter: MyApp.Adapter`
+    or at runtime via the `:dynamic_adapter` option on `convert_to_dynamic/4`.
+    Defaults to resolved from repo adapter.
+
+  See also `EctoShorts.Dynamics.Adapter`, `EctoShorts.CommonFilters`, and
+  `EctoShorts.Config`.
   """
 
   alias Ecto.Query
@@ -24,6 +74,45 @@ defmodule EctoShorts.Dynamics do
   @boolean_operators [:and, :or]
   @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
 
+  @doc """
+  Converts filter params into a single composable dynamic expression.
+
+  Accepts a source (schema module, `{table_name, schema}` tuple, or
+  `Ecto.Query`), a `binding_selector` used to resolve the correct query
+  binding inside `dynamic/2`, a `params` map or keyword list of
+  `{field, value}` pairs, and an optional `opts` keyword list.
+
+  Returns `nil` when `params` is empty. Otherwise returns a
+  dynamic expression that can be spliced into a query with `^`.
+
+  ## Options
+
+  * `:dynamic_adapter` — a module implementing `EctoShorts.Dynamics.Adapter`
+    to use for this call. Defaults to resolved from repo adapter.
+
+  * `:repo` — the `Ecto.Repo` module used to auto-resolve the adapter when
+    `:dynamic_adapter` is not set. Defaults to `EctoShorts.Config.repo/0`.
+
+  ## Examples
+
+      iex> import Ecto.Query
+      ...> dyn = EctoShorts.Dynamics.convert_to_dynamic(
+      ...>   EctoShorts.Schema.Post, nil, %{published: true}
+      ...> )
+      ...> is_struct(dyn, Ecto.Query.DynamicExpr)
+      true
+
+      iex> EctoShorts.Dynamics.convert_to_dynamic(EctoShorts.Schema.Post, nil, %{})
+      nil
+
+  See also `apply_helper_expressions/4` and `EctoShorts.Dynamics.Adapter`.
+  """
+  @spec convert_to_dynamic(
+          source :: term(),
+          binding_selector :: term(),
+          params :: term(),
+          opts :: keyword()
+        ) :: Ecto.Query.dynamic_expr() | nil
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
     source = CommonSchema.normalize_source(source)
 
@@ -142,6 +231,37 @@ defmodule EctoShorts.Dynamics do
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
   defp source_has_schema?(_), do: false
 
+  @doc """
+  Applies helper expression transformations to a field value before
+  building a dynamic expression.
+
+  Accepts a `source` (used for subquery building), the `field_name` atom,
+  the raw `expression` value, and an `opts` keyword list. Recursively
+  walks the expression, replacing helper operator tuples (such as
+  `{:datetime_add, [...]}`, `{:date_add, [...]}`, `{:from_now, [...]}`,
+  `{:ago, [...]}`) with their corresponding Ecto sub-expressions.
+
+  When the expression is a keyword list containing a `:source` or `:query`
+  key, the function builds a subquery via
+  `EctoShorts.CommonFilters.convert_params_to_filter/3` and returns the
+  result as the expression value.
+
+  Returns the transformed expression, or the original expression unchanged
+  when no helper operators are found.
+
+  ## Examples
+
+      iex> EctoShorts.Dynamics.apply_helper_expressions(EctoShorts.Schema.Post, :title, "hello", [])
+      "hello"
+
+  See also `convert_to_dynamic/4`.
+  """
+  @spec apply_helper_expressions(
+          source :: term(),
+          field_name :: atom(),
+          expression :: term(),
+          opts :: keyword()
+        ) :: term()
   def apply_helper_expressions(source, field_name, expression, opts) do
     case expression do
       map when is_map(map) and not is_struct(map) ->

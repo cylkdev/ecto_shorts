@@ -1066,7 +1066,7 @@ defmodule EctoShorts.CommonFiltersTest do
         CommonFilters.convert_params_to_filter(
           q,
           %{lock: %{name: :for_share, values: []}},
-          query_source_provider: EctoShorts.TestQueryProvider
+          fragment_provider: EctoShorts.TestFragmentProvider
         )
 
       assert_sql(expected, q2)
@@ -2671,16 +2671,16 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "supports join source key dispatch through canonical :join source entry" do
-      previous = Application.get_env(:ecto_shorts, :query_source_provider)
+      previous = Application.get_env(:ecto_shorts, :fragment_provider)
 
       on_exit(fn ->
-        Application.put_env(:ecto_shorts, :query_source_provider, previous)
+        Application.put_env(:ecto_shorts, :fragment_provider, previous)
       end)
 
       Application.put_env(
         :ecto_shorts,
-        :query_source_provider,
-        EctoShorts.TestQueryProvider
+        :fragment_provider,
+        EctoShorts.TestFragmentProvider
       )
 
       expected_source_query =
@@ -2699,7 +2699,7 @@ defmodule EctoShorts.CommonFiltersTest do
           %{
             join: [
               fragment: [
-                source: %{name: :active_users, values: [min_age: 21]},
+                source: [name: :active_users, values: [min_age: 21]],
                 as: :active_users,
                 on: true
               ]
@@ -2711,7 +2711,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports join source key dispatch through runtime :query_source_provider option" do
+    test "supports join source key dispatch through runtime :fragment_provider option" do
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -2734,13 +2734,13 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          query_source_provider: EctoShorts.TestQueryProvider
+          fragment_provider: EctoShorts.TestFragmentProvider
         )
 
       assert_sql(expected, q2)
     end
 
-    test "supports join hint key resolution through runtime :query_source_provider option" do
+    test "supports join hint key resolution through runtime :fragment_provider option" do
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -2758,17 +2758,17 @@ defmodule EctoShorts.CommonFiltersTest do
           %{
             join: [
               fragment: [
-                source: %{
+                source: [
                   name: :active_users,
                   values: [min_age: 21]
-                },
+                ],
                 hints: :test_index,
                 as: :active_users,
                 on: true
               ]
             ]
           },
-          query_source_provider: EctoShorts.TestQueryProvider
+          fragment_provider: EctoShorts.TestFragmentProvider
         )
 
       assert_sql(expected, q2)
@@ -2791,7 +2791,7 @@ defmodule EctoShorts.CommonFiltersTest do
                   ]
                 ]
               },
-              query_source_provider: EctoShorts.TestQueryProvider
+              fragment_provider: EctoShorts.TestFragmentProvider
             )
 
           send(self(), {:q2, q2})
@@ -2815,13 +2815,16 @@ defmodule EctoShorts.CommonFiltersTest do
               %{
                 join: [
                   fragment: [
-                    source: %{name: :active_users, values: [a: [x: 1], b: [y: 2]]},
+                    source: [
+                      name: :active_users,
+                      values: [a: [x: 1], b: [y: 2]]
+                    ],
                     as: :x,
                     on: true
                   ]
                 ]
               },
-              query_source_provider: EctoShorts.TestQueryProvider
+              fragment_provider: EctoShorts.TestFragmentProvider
             )
 
           send(self(), {:q2, q2})
@@ -3623,6 +3626,7 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "supports composite :or where inner maps also use field-level :or" do
+      # credo:disable-for-this-file Credo.Check.Warning.BoolOperationOnSameValues
       expected =
         from(p in Post,
           where:

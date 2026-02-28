@@ -7,7 +7,7 @@ defmodule EctoShorts.Compiler.UsingTest do
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
 
-  defp compile_compiled_module!(compiler_opts \\ [max_query_bindings: 1]) do
+  defp compile_compiled_module!(compiler_opts \\ [max_binding_positings: 1]) do
     unique = System.unique_integer([:positive])
 
     specs_module = Module.concat([__MODULE__, :"TmpSpecs#{unique}"])
@@ -25,6 +25,7 @@ defmodule EctoShorts.Compiler.UsingTest do
 
             expr_ast =
               quote do
+                # credo:disable-for-next-line BlitzCredoChecks.StrictComparison
                 field(unquote(target_binding_var), ^unquote(key_var)) == ^unquote(v_var)
               end
 
@@ -65,7 +66,7 @@ defmodule EctoShorts.Compiler.UsingTest do
     assert_dynamic(expected, actual)
   end
 
-  test "max_query_bindings limits generated positional heads" do
+  test "max_binding_positings limits generated positional heads" do
     compiled_module = compile_compiled_module!()
 
     assert_raise FunctionClauseError, fn ->
@@ -77,12 +78,12 @@ defmodule EctoShorts.Compiler.UsingTest do
     previous_compiler_config = Application.get_env(:ecto_shorts, :compiler)
     on_exit(fn -> Application.put_env(:ecto_shorts, :compiler, previous_compiler_config) end)
 
-    Application.put_env(:ecto_shorts, :max_query_bindings, 10)
+    Application.put_env(:ecto_shorts, :max_binding_positings, 10)
     compiled_module = compile_compiled_module!([])
 
     refute compiled_module.__mix_recompile__?()
 
-    Application.put_env(:ecto_shorts, :max_query_bindings, 11)
+    Application.put_env(:ecto_shorts, :max_binding_positings, 11)
 
     assert compiled_module.__mix_recompile__?()
   end
@@ -91,10 +92,10 @@ defmodule EctoShorts.Compiler.UsingTest do
     previous_compiler_config = Application.get_env(:ecto_shorts, :compiler)
     on_exit(fn -> Application.put_env(:ecto_shorts, :compiler, previous_compiler_config) end)
 
-    Application.put_env(:ecto_shorts, :max_query_bindings, 10)
-    compiled_module = compile_compiled_module!(max_query_bindings: 1)
+    Application.put_env(:ecto_shorts, :max_binding_positings, 10)
+    compiled_module = compile_compiled_module!(max_binding_positings: 1)
 
-    Application.put_env(:ecto_shorts, :max_query_bindings, 11)
+    Application.put_env(:ecto_shorts, :max_binding_positings, 11)
 
     refute compiled_module.__mix_recompile__?()
   end

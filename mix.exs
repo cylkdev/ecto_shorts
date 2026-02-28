@@ -95,7 +95,7 @@ defmodule EctoShorts.MixProject do
           EctoShorts.CommonFilters.BindParams,
           EctoShorts.CommonFilters.Distinct,
           EctoShorts.CommonFilters.Filter,
-          EctoShorts.CommonFilters.FragmentProvider,
+          EctoShorts.CommonFilters.FragmentProviders.NoOp,
           EctoShorts.CommonFilters.GroupBy,
           EctoShorts.CommonFilters.Having,
           EctoShorts.CommonFilters.Join,
@@ -137,7 +137,7 @@ defmodule EctoShorts.MixProject do
         "Configuration & Utilities": [
           EctoShorts.Config,
           EctoShorts.Logger,
-          EctoShorts.QueryProvider,
+          EctoShorts.FragmentProvider,
           EctoShorts.Utils
         ]
       ]

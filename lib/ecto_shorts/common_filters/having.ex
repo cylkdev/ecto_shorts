@@ -4,8 +4,59 @@ defmodule EctoShorts.CommonFilters.Having do
   Builds `:having` and `:or_having` expressions from data-driven params.
 
   Converts filter params into dynamic expressions and applies them as
-  `Ecto.Query.having/3` or `Ecto.Query.or_having/3` clauses. Supports
-  nested boolean operators, keyword lists, maps, and raw dynamic expressions.
+  `Ecto.Query.having/3` or `Ecto.Query.or_having/3` clauses on an existing
+  `Ecto.Query`. Used internally by `EctoShorts.CommonFilters` when it
+  encounters the `:having` or `:or_having` filter keys.
+
+  ## Key concepts
+
+  ### `:having` vs `:or_having`
+
+  * `:having` appends an `AND HAVING` clause to the query.
+  * `:or_having` appends an `OR HAVING` clause.
+
+  ### Accepted param shapes
+
+  Params can be any of the following:
+
+  * A keyword list of `{aggregate_field, value}` pairs:
+
+        [count_comments: 5]
+
+  * A plain map:
+
+        %{count_comments: 5}
+
+  * A nested boolean operator `{:and, [...]}` or `{:or, [...]}`:
+
+        {or: [%{count_comments: 1}, %{count_comments: 2}]}
+
+  * A raw dynamic expression (passed through unchanged):
+
+        import Ecto.Query
+        dynamic([p], count(p.id) > 10)
+
+  Unknown param shapes are logged as warnings and the query is returned
+  unchanged.
+
+  ## Examples
+
+      import Ecto.Query
+
+      query =
+        from p in EctoShorts.Schema.Post,
+          group_by: p.author_id,
+          select: {p.author_id, count(p.id)}
+
+      # Add a HAVING clause using data-driven params
+      EctoShorts.CommonFilters.convert_params_to_filter(
+        EctoShorts.Schema.Post,
+        %{having: [count_comments: [gt: 3]]},
+        repo: EctoShorts.Repo
+      )
+
+  See also `EctoShorts.CommonFilters`, `EctoShorts.Dynamics`, and
+  `Ecto.Query.having/3`.
   """
 
   alias Ecto.Query

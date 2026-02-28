@@ -15,7 +15,7 @@ defmodule EctoShorts.CommonFilters.Filter do
   alias EctoShorts.CommonFilters
   alias EctoShorts.Dynamics
   alias EctoShorts.Logger
-  alias EctoShorts.QueryProvider
+  alias EctoShorts.FragmentProvider
 
   alias Ecto.Query
   require Ecto.Query
@@ -343,7 +343,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
       query
     else
-      case QueryProvider.resolve_expression(binding_selector, lock_name, lock_values, opts) do
+      case FragmentProvider.build_fragment_expression(binding_selector, lock_name, lock_values, opts) do
         {:ok, lock_builder} when is_function(lock_builder, 1) ->
           lock_builder.(query)
 

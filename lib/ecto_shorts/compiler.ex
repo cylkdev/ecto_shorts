@@ -1,17 +1,64 @@
 defmodule EctoShorts.Compiler do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Defines the spec-driven compiler for `apply_dynamic_expr/3` clauses.
+  Provides a spec-driven, macro-based compiler for `apply_dynamic_expr/3` clauses.
 
-  A module `X` can `use #{inspect(__MODULE__)}` to:
+  Use this module when building a custom dynamic expression adapter that needs
+  to dispatch expression construction to different function clauses depending on
+  the binding pattern and expression type. `EctoShorts.Compiler` generates the
+  dispatch module at compile time from a specs module you supply.
 
-    * define a predictable compiled module named `X.Compiled` containing the
-      generated `apply_dynamic_expr/3` clauses
-    * define `X.apply_dynamic_expr/3` as the public entrypoint, delegating to
-      `X.Compiled.apply_dynamic_expr/3`
+  ## How it works
 
-  The clause specs must be defined in a separate, already-compiled specs module
-  that exports `clause_specs/4`.
+  When a module `X` calls `use EctoShorts.Compiler, specs: MySpecs`:
+
+  1. `EctoShorts.Compiler` calls `MySpecs.clause_specs/4` with each
+     query binding pattern (named and positional) to collect
+     `%EctoShorts.Compiler.ClauseSpec{}` structs.
+  2. It compiles those specs into `apply_dynamic_expr/3` function clauses and
+     injects them into a generated submodule `X.Compiled`.
+  3. It defines `X.apply_dynamic_expr/3` as a public delegator to
+     `X.Compiled.apply_dynamic_expr/3`.
+
+  The specs module (`MySpecs`) must be already compiled before `X` is compiled,
+  and must export `clause_specs/4`.
+
+  ## Quick start
+
+      defmodule MyApp.Adapter.Specs do
+        alias EctoShorts.Compiler.ClauseSpec
+
+        def clause_specs(_context, binding_head, _target_binding, binding_bodies) do
+          Enum.map(binding_bodies, fn binding_body ->
+            ClauseSpec.new(%{
+              binding_head: binding_head,
+              key: Macro.var(:key, nil),
+              head: quote(do: {:==, val}),
+              body: quote(do: Ecto.Query.dynamic([{^binding_head, r}], field(r, ^key) == ^val))
+            })
+          end)
+        end
+      end
+
+      defmodule MyApp.Adapter do
+        use EctoShorts.Compiler, specs: MyApp.Adapter.Specs
+      end
+
+  After compilation, `MyApp.Adapter.apply_dynamic_expr/3` is available.
+
+  ## Recompilation
+
+  `EctoShorts.Compiler` implements `__mix_recompile__?/0` so that `X` is
+  automatically recompiled whenever the configured `:max_binding_positings`
+  changes (for example, when you update the config value between builds).
+
+  ## Configuration
+
+  * `:max_binding_positings` — controls how many positional binding patterns are
+    generated. Increase this when your queries join more tables than the default
+    supports. Defaults to `EctoShorts.Config.max_binding_positings/0`.
+
+  See also `EctoShorts.Compiler.ClauseSpec` and `EctoShorts.Dynamics.Adapter`.
   """
 
   alias EctoShorts.Config
@@ -21,10 +68,40 @@ defmodule EctoShorts.Compiler do
   @doc """
   Defines `X.Compiled` and `X.apply_dynamic_expr/3` in the caller module `X`.
 
+  Injects a `@before_compile` hook that generates the compiled clause module
+  and the public delegator at the end of the caller's compilation. The caller
+  module also receives a `__mix_recompile__?/0` implementation that returns
+  `true` whenever `:max_binding_positings` changes, triggering a full recompile.
+
   ## Options
 
-    * `:specs` (required) - a module that exports `clause_specs/4`
-    * `:max_query_bindings` - passed to `QueryBindingBuilder` (defaults to `10`)
+  * `:specs` (required) — a module, already compiled, that exports
+    `clause_specs/4`. Called once per binding pattern to collect
+    `%EctoShorts.Compiler.ClauseSpec{}` values.
+  * `:max_binding_positings` — the maximum number of positional query bindings
+    to generate clauses for. Defaults to `EctoShorts.Config.max_binding_positings/0`.
+
+  ## Errors
+
+  Raises `ArgumentError` at compile time when:
+
+  * `:specs` is missing from the options.
+  * `:specs` does not resolve to a compiled module atom.
+  * The resolved specs module does not export `clause_specs/4`.
+
+  ## Examples
+
+      defmodule MyApp.Adapter do
+        use EctoShorts.Compiler, specs: MyApp.Adapter.Specs
+      end
+
+      defmodule MyApp.Adapter do
+        use EctoShorts.Compiler,
+          specs: MyApp.Adapter.Specs,
+          max_binding_positings: 20
+      end
+
+  See also `EctoShorts.Compiler.ClauseSpec` and `EctoShorts.Config.max_binding_positings/0`.
   """
   defmacro __using__(opts) do
     quote do
@@ -65,7 +142,7 @@ defmodule EctoShorts.Compiler do
     clause_asts = build_clauses(context, specs_module, opts)
 
     quote do
-      @compile_time_max_query_bindings unquote(__MODULE__).max_query_bindings(@compiler_options)
+      @compile_time_max_binding_positings unquote(__MODULE__).max_binding_positings(@compiler_options)
 
       defmodule unquote(compiled_module) do
         @moduledoc false
@@ -82,8 +159,8 @@ defmodule EctoShorts.Compiler do
 
       @doc false
       def __mix_recompile__? do
-        unquote(__MODULE__).max_query_bindings(@compiler_options) !==
-          @compile_time_max_query_bindings
+        unquote(__MODULE__).max_binding_positings(@compiler_options) !==
+          @compile_time_max_binding_positings
       end
     end
   end
@@ -152,13 +229,13 @@ defmodule EctoShorts.Compiler do
   def get_query_binding_contracts(context, opts \\ []) do
     QueryBindingBuilder.query_binding_contracts(
       context,
-      max_query_bindings(opts)
+      max_binding_positings(opts)
     )
   end
 
   @doc false
-  def max_query_bindings(opts \\ []) do
-    opts[:max_query_bindings] || Config.max_query_bindings()
+  def max_binding_positings(opts \\ []) do
+    opts[:max_binding_positings] || Config.max_binding_positings()
   end
 
   defp clause_ast!(spec) do

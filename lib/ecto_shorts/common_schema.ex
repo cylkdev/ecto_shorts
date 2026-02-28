@@ -1,31 +1,65 @@
 defmodule EctoShorts.CommonSchema do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Provides utility functions for working with Ecto schemas,
-  particularly when dealing with polymorphic associations.
+  Provides utility functions for source normalization, schema introspection,
+  struct creation, and changeset building.
 
-  ## Polymorphic Associations
+  ## Polymorphic associations
 
   This module supports [polymorphic associations](https://hexdocs.pm/ecto/Ecto.Schema.html#belongs_to/3-polymorphic-associations)
-  by allowing you to use a `{source :: binary(), queryable :: Ecto.Queryable.t()}` tuple
-  in place of a traditional schema module. This is useful when you want to query
-  different tables using a shared schema definition.
+  by accepting a `{source :: binary(), queryable :: Ecto.Queryable.t()}` tuple
+  in place of a schema module. This lets you query different tables using a
+  shared schema definition.
 
-  For example:
+      EctoShorts.Actions.all({"posts", EctoShorts.Schema.PostAbstract}, %{id: 1})
 
-      EctoSchema.Actions.all({"posts", EctoShorts.Schema.PostAbstract}, %{id: 1})
+  When both a `source` and `queryable` are provided, the explicit `source`
+  takes precedence over the table name defined in the schema.
 
-  In this example, the query runs against the "posts" table instead of the default
-  source defined in the schema. When both a `source` and `queryable` are provided,
-  the explicit `source` takes precedence.
+  ## Accepted source forms
 
-  This approach allows reusing schema modules across different tables,
-  as long as the table structure matches the schema definition.
+  Most functions in this module accept any of these as a `source`:
+
+  * A schema module atom (e.g. `EctoShorts.Schema.Post`)
+  * A table name string (e.g. `"posts"`)
+  * A `{table_name, schema}` tuple (e.g. `{"posts", EctoShorts.Schema.PostAbstract}`)
+  * A schema struct (e.g. `%EctoShorts.Schema.Post{}`)
+  * An `Ecto.Changeset`
+  * An `Ecto.Query`
+
+  ## Quick start
+
+      iex> EctoShorts.CommonSchema.get_schema_source(EctoShorts.Schema.Post)
+      {"posts", EctoShorts.Schema.Post}
+
+      iex> EctoShorts.CommonSchema.to_query(EctoShorts.Schema.Post)
+      #Ecto.Query<from p0 in EctoShorts.Schema.Post>
+
+      iex> EctoShorts.CommonSchema.create_changeset(EctoShorts.Schema.Post, %{title: "Hi"}, [])
+      #Ecto.Changeset<...>
+
+  See also `EctoShorts.CommonQuery` and `EctoShorts.CommonChanges`.
   """
+
+  @moduledoc groups: [
+               %{
+                 title: "Source resolution",
+                 description: "Functions that convert sources to queries or normalize source tuples."
+               },
+               %{
+                 title: "Schema introspection",
+                 description: "Functions that inspect schema metadata, fields, and prefixes."
+               },
+               %{
+                 title: "Struct and changeset",
+                 description: "Functions that build schema structs, update metadata, and create changesets."
+               }
+             ]
   alias Ecto.Changeset
   alias Ecto.Queryable
   alias EctoShorts.CommonQuery
 
+  @doc group: "Source resolution"
   @doc """
   Converts a source into an `Ecto.Query`.
 
@@ -34,6 +68,8 @@ defmodule EctoShorts.CommonSchema do
   `normalize_source/1` before conversion.
 
   Returns an `Ecto.Query` struct.
+
+  See also `normalize_source/1` and `EctoShorts.CommonQuery`.
   """
   def to_query(%Ecto.Query{} = query), do: query
 
@@ -45,6 +81,7 @@ defmodule EctoShorts.CommonSchema do
     end
   end
 
+  @doc group: "Source resolution"
   @doc """
   Normalizes a source into a `{table_name, schema}` tuple.
 
@@ -53,6 +90,8 @@ defmodule EctoShorts.CommonSchema do
   `{binary() | nil, module() | nil}` tuple.
 
   Raises `ArgumentError` if the source cannot be recognized.
+
+  See also `to_query/1` and `get_schema/1`.
   """
   def normalize_source(%{data: %{__meta__: %{source: source, schema: schema}}}) do
     {source, schema}
@@ -108,11 +147,14 @@ defmodule EctoShorts.CommonSchema do
     """
   end
 
+  @doc group: "Source resolution"
   @doc """
   Extracts the schema module from a source.
 
   Accepts any input recognized by `normalize_source/1`. Returns the schema
   module atom, or `nil` if no schema is present.
+
+  See also `normalize_source/1` and `get_schema_source/1`.
   """
   def get_schema(source) do
     case normalize_source(source) do
@@ -124,6 +166,7 @@ defmodule EctoShorts.CommonSchema do
     end
   end
 
+  @doc group: "Schema introspection"
   @doc """
   Returns a `{source, schema}` tuple where `source`
   is the database table name string or `nil` and `schema` is an
@@ -139,6 +182,8 @@ defmodule EctoShorts.CommonSchema do
 
       iex> EctoShorts.CommonSchema.get_schema_source(EctoShorts.Schema.Post)
       {"posts", EctoShorts.Schema.Post}
+
+  See also `normalize_source/1` and `get_schema/1`.
   """
   def get_schema_source(%{from: _, joins: _} = query) do
     CommonQuery.get_query_source(query)
@@ -165,6 +210,7 @@ defmodule EctoShorts.CommonSchema do
     nil
   end
 
+  @doc group: "Schema introspection"
   @doc """
   Returns the `prefix` defined in the schema, if any.
 
@@ -178,6 +224,8 @@ defmodule EctoShorts.CommonSchema do
 
       iex> EctoShorts.CommonSchema.get_schema_prefix(%EctoShorts.Schema.PostHasSchemaPrefix{})
       "custom_schema_prefix"
+
+  See also `get_schema_source/1` and `get_schema_metadata/1`.
   """
   def get_schema_prefix(%{data: %{__meta__: %{prefix: prefix}}}) do
     prefix
@@ -193,6 +241,7 @@ defmodule EctoShorts.CommonSchema do
     end
   end
 
+  @doc group: "Schema introspection"
   @doc """
   Returns the `Ecto.Schema.Metadata` struct from the given schema struct.
 
@@ -204,21 +253,29 @@ defmodule EctoShorts.CommonSchema do
       iex> changeset = Ecto.Changeset.change(%EctoShorts.Schema.Post{})
       ...> EctoShorts.CommonSchema.get_schema_metadata(changeset)
       %Ecto.Schema.Metadata{schema: EctoShorts.Schema.Post, source: "posts", state: :built}
+
+  See also `put_schema_metadata/2` and `get_schema_prefix/1`.
   """
   def get_schema_metadata(%{data: %{__meta__: meta}} = _changeset), do: meta
   def get_schema_metadata(%{__meta__: meta} = _schema_struct), do: meta
   def get_schema_metadata(source), do: source |> build_struct() |> get_schema_metadata()
 
+  @doc group: "Schema introspection"
   @doc """
-  Invokes the `__schema__/1` get_schema_reflection function.
+  Invokes the `__schema__/1` reflection function with one argument.
 
-  ### Examples
+  Returns the result of calling `schema.__schema__(arg)`, or `nil` when
+  the source has no schema module.
+
+  ## Examples
 
       iex> EctoShorts.CommonSchema.get_schema_reflection(EctoShorts.Schema.Post, :primary_key)
       [:id]
 
       iex> EctoShorts.CommonSchema.get_schema_reflection({"posts", EctoShorts.Schema.PostAbstract}, :primary_key)
       [:id]
+
+  See also `get_schema_reflection/3` and `get_query_fields/2`.
   """
   def get_schema_reflection(source, arg) do
     with schema when schema !== nil <- get_schema(source) do
@@ -226,16 +283,22 @@ defmodule EctoShorts.CommonSchema do
     end
   end
 
+  @doc group: "Schema introspection"
   @doc """
-  Invokes the `__schema__/2` reflection function.
+  Invokes the `__schema__/2` reflection function with two arguments.
 
-  ### Examples
+  Returns the result of calling `schema.__schema__(arg1, arg2)`, or `nil`
+  when the source has no schema module.
+
+  ## Examples
 
       iex> EctoShorts.CommonSchema.get_schema_reflection(EctoShorts.Schema.Post, :type, :id)
       :id
 
       iex> EctoShorts.CommonSchema.get_schema_reflection({"posts", EctoShorts.Schema.PostAbstract}, :type, :id)
       :id
+
+  See also `get_schema_reflection/2` and `get_query_fields/2`.
   """
   def get_schema_reflection(source, arg1, arg2) do
     with schema when schema !== nil <- get_schema(source) do
@@ -243,31 +306,37 @@ defmodule EctoShorts.CommonSchema do
     end
   end
 
+  @doc group: "Schema introspection"
   @doc """
-  Returns the query fields for a source, checking opts first
-  for an explicit `:query_fields` key, then falling back to
-  the schema's `:query_fields` reflection.
+  Returns the query fields for a source.
 
-  ### Examples
+  Checks `opts` for an explicit `:query_fields` key first, then falls back
+  to the schema's `:query_fields` reflection result.
+
+  ## Examples
 
       iex> EctoShorts.CommonSchema.get_query_fields([], EctoShorts.Schema.Post)
       [:id, :title, :body, :permalink, :published, :views, :tags, :metadata, :author_id, :inserted_at, :updated_at]
 
       iex> EctoShorts.CommonSchema.get_query_fields([query_fields: [:title]], EctoShorts.Schema.Post)
       [:title]
+
+  See also `get_schema_reflection/2`.
   """
   def get_query_fields(opts, source) do
     Keyword.get(opts, :query_fields, get_schema_reflection(source, :query_fields))
   end
 
+  @doc group: "Struct and changeset"
   @doc """
   Updates the `__meta__` field on an Ecto schema struct.
 
-  ### Options
+  ## Options
 
-    See `Ecto.put_meta/2` for more information.
+  See `Ecto.put_meta/2` for supported keys (`:state`, `:source`, `:prefix`,
+  `:context`).
 
-  ### Examples
+  ## Examples
 
       iex> EctoShorts.CommonSchema.put_schema_metadata(%EctoShorts.Schema.Post{}, state: :loaded, source: "custom_source", prefix: "custom_prefix")
       %EctoShorts.Schema.Post{
@@ -299,6 +368,8 @@ defmodule EctoShorts.CommonSchema do
           prefix: "custom_prefix"
         }
       }
+
+  See also `get_schema_metadata/1` and `create_schema_struct/1`.
   """
   def put_schema_metadata(source_or_schema_struct, attrs \\ %{})
 
@@ -317,6 +388,7 @@ defmodule EctoShorts.CommonSchema do
     |> put_schema_metadata(attrs)
   end
 
+  @doc group: "Struct and changeset"
   @doc """
   Creates an Ecto schema struct from a source.
 
@@ -325,6 +397,8 @@ defmodule EctoShorts.CommonSchema do
   the struct's `__meta__` is updated to reflect that source.
 
   Returns an Ecto schema struct.
+
+  See also `put_schema_metadata/2` and `normalize_source/1`.
   """
   def build_struct({nil, schema}) do
     struct(schema)
@@ -342,23 +416,33 @@ defmodule EctoShorts.CommonSchema do
     |> build_struct()
   end
 
+  @doc group: "Struct and changeset"
   @doc """
   Builds an `Ecto.Changeset` from various source/data/params combinations.
 
-  This function has 3-arity and 4-arity variants that accept schema modules,
+  Both 3-arity and 4-arity variants accept schema modules,
   `{source, schema}` tuples, schema structs, changesets, or plain param maps
   in flexible combinations. The goal is to always produce a changeset
   regardless of how the caller provides the data.
 
   When the `:changeset` option is present in `opts`, it is used instead of
-  the schema's default `changeset/2`. It can be a 1-arity (receives the
-  built changeset), 2-arity (receives data and params), or 3-arity
-  (receives schema, data, and params) function.
+  the schema's default `changeset/2`. It can be a 1-arity function
+  (receives the built changeset), 2-arity (receives data and params), or
+  3-arity (receives schema, data, and params).
 
   If no `:changeset` option is given and the schema exports `changeset/2`,
   that function is called. Otherwise falls back to `Ecto.Changeset.change/2`.
 
   Returns an `Ecto.Changeset`.
+
+  ## Options
+
+  * `:changeset` — a 1-arity, 2-arity, or 3-arity function to call instead
+    of the schema's `changeset/2`.
+  * `:query_fields` — list of field atoms to restrict to when creating the
+    schema struct from params.
+
+  See also `create_schema_struct/1` and `EctoShorts.CommonChanges`.
   """
   def create_changeset(%{data: %{__meta__: %{schema: schema}}} = changeset, params, opts) do
     create_changeset(schema, changeset, params, opts)

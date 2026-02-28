@@ -678,7 +678,7 @@ Combinations of multiple top-level keys:
 
 - `[]`
 - `[query_filters: [:limit, :offset, :select]]`
-- `[query_source_provider: EctoShorts.TestQueryProvider]`
+- `[fragment_provider: EctoShorts.TestFragmentProvider]`
 - `[dynamic_adapter: MyApp.CustomDynamicAdapter]`
 
 ### Error / Warning Inputs

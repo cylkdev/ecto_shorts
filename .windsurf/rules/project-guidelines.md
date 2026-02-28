@@ -2,6 +2,11 @@
 trigger: always_on
 ---
 
+## Requirements
+
+NON-NEGOTIABLE REQUIREMENTS:
+* Do not modify any of these files without explicit user approval: `.windsurf/rules/project-guidelines.md`, `.credo.exs`, `mix.exs`
+
 ## Umbrella Applications Guidelines
 
 - Child apps can depend on other child apps using `in_umbrella: true` in `mix.exs`.
