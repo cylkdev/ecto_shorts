@@ -142,7 +142,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   def schema_module?(_), do: false
 
-  def any_created?(%{id: id}), do: not is_nil(id)
-  def any_created?(%{"id" => id}), do: not is_nil(id)
+  def any_created?(%{id: id}), do: id !== nil
+  def any_created?(%{"id" => id}), do: id !== nil
   def any_created?(_), do: false
 end

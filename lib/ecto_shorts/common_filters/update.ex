@@ -33,7 +33,7 @@ defmodule EctoShorts.CommonFilters.Update do
 
   def build(_schema_source, :update, query, binding_selector, term, opts) when is_list(term) do
     if Keyword.keyword?(term) do
-      case Enum.split_with(term, fn {k, _} -> k == @binding_selector_key end) do
+      case Enum.split_with(term, fn {k, _} -> k === @binding_selector_key end) do
         {[], entries} ->
           apply_update_expr(query, binding_selector, normalize_update_entries(entries))
 

@@ -15,10 +15,10 @@ defmodule EctoShorts.CommonParamsTest do
 
       assert [{:inc, inc_ops}, {:push, push_ops}, {:set, set_ops}] = updates
 
-      assert inc_ops == [views: 1]
-      assert push_ops == [tags: "elixir"]
+      assert inc_ops === [views: 1]
+      assert push_ops === [tags: "elixir"]
 
-      assert Keyword.fetch!(set_ops, :title) == "Hello"
+      assert Keyword.fetch!(set_ops, :title) === "Hello"
       assert %NaiveDateTime{} = Keyword.fetch!(set_ops, :updated_at)
     end
 
@@ -37,7 +37,7 @@ defmodule EctoShorts.CommonParamsTest do
         )
 
       assert [{:set, set_ops}] = updates
-      assert set_ops == [title: "Hello"]
+      assert set_ops === [title: "Hello"]
     end
 
     test "does not add updated_at when updated_at_source is false" do
@@ -49,7 +49,7 @@ defmodule EctoShorts.CommonParamsTest do
         )
 
       assert [{:set, set_ops}] = updates
-      assert set_ops == [title: "Hello"]
+      assert set_ops === [title: "Hello"]
     end
   end
 
@@ -63,7 +63,7 @@ defmodule EctoShorts.CommonParamsTest do
 
       assert [{:set, set_ops}] = updates
 
-      assert Keyword.fetch!(set_ops, :made_up_field) == "value"
+      assert Keyword.fetch!(set_ops, :made_up_field) === "value"
       assert %DateTime{} = Keyword.fetch!(set_ops, :updated_at)
     end
 
@@ -76,7 +76,7 @@ defmodule EctoShorts.CommonParamsTest do
 
       assert [{:set, set_ops}] = updates
 
-      assert Keyword.fetch!(set_ops, :made_up_field) == "value"
+      assert Keyword.fetch!(set_ops, :made_up_field) === "value"
       assert %DateTime{} = Keyword.fetch!(set_ops, :updated_at)
     end
 
@@ -89,7 +89,7 @@ defmodule EctoShorts.CommonParamsTest do
 
       assert [{:set, set_ops}] = updates
 
-      assert Keyword.fetch!(set_ops, :made_up_field) == "value"
+      assert Keyword.fetch!(set_ops, :made_up_field) === "value"
       assert %DateTime{} = Keyword.fetch!(set_ops, :updated_at)
     end
 
@@ -102,7 +102,7 @@ defmodule EctoShorts.CommonParamsTest do
 
       assert [{:set, set_ops}] = updates
 
-      assert Keyword.fetch!(set_ops, :title) == "Hello"
+      assert Keyword.fetch!(set_ops, :title) === "Hello"
       refute Keyword.has_key?(set_ops, :made_up_field)
     end
   end
@@ -114,7 +114,7 @@ defmodule EctoShorts.CommonParamsTest do
 
       assert [insert_map] = insert_maps
 
-      assert insert_map.title == "Hello"
+      assert insert_map.title === "Hello"
       assert %NaiveDateTime{} = insert_map.inserted_at
       assert %NaiveDateTime{} = insert_map.updated_at
     end
@@ -147,7 +147,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert {:ok, [insert_map]} =
                CommonParams.convert_to_insert_params(nil, [%{"made_up_field" => "value"}])
 
-      assert insert_map["made_up_field"] == "value"
+      assert insert_map["made_up_field"] === "value"
       assert %DateTime{} = insert_map.updated_at
     end
 
@@ -155,7 +155,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert {:ok, [insert_map]} =
                CommonParams.convert_to_insert_params("posts", [%{"made_up_field" => "value"}])
 
-      assert insert_map["made_up_field"] == "value"
+      assert insert_map["made_up_field"] === "value"
       assert %DateTime{} = insert_map.updated_at
     end
 
@@ -165,7 +165,7 @@ defmodule EctoShorts.CommonParamsTest do
                  %{"made_up_field" => "value"}
                ])
 
-      assert insert_map["made_up_field"] == "value"
+      assert insert_map["made_up_field"] === "value"
       assert %DateTime{} = insert_map.updated_at
     end
 
@@ -177,7 +177,7 @@ defmodule EctoShorts.CommonParamsTest do
                  validate: false
                )
 
-      assert insert_map.title == "Hello"
+      assert insert_map.title === "Hello"
       refute Map.has_key?(insert_map, :made_up_field)
     end
   end

@@ -81,7 +81,7 @@ defmodule EctoShorts.Compiler do
 
       @doc false
       def __mix_recompile__? do
-        EctoShorts.Compiler.max_query_bindings(@compiler_options) !=
+        EctoShorts.Compiler.max_query_bindings(@compiler_options) !==
           @compile_time_max_query_bindings
       end
     end
@@ -142,12 +142,8 @@ defmodule EctoShorts.Compiler do
       get_query_binding_contracts(context, opts)
 
     Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
-      specs_module.clause_specs(
-        context,
-        binding_head_ast,
-        target_binding_var,
-        binding_body_asts
-      )
+      context
+      |> specs_module.clause_specs(binding_head_ast, target_binding_var, binding_body_asts)
       |> Enum.map(&clause_ast!/1)
     end)
   end

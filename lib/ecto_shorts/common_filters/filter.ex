@@ -112,7 +112,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   defp schemaless_source?(source), do: not source_has_schema?(source)
 
-  defp source_has_schema?({_, schema}), do: is_atom(schema) and not is_nil(schema)
+  defp source_has_schema?({_, schema}), do: is_atom(schema) and schema !== nil
   defp source_has_schema?(_), do: false
 
   defp build_field(schema_source, filter, query, binding_selector, key, value, opts) do

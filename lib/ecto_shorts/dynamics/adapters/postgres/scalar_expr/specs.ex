@@ -1651,7 +1651,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
               )
             )
 
-          map when is_map(map) and map_size(map) == 1 ->
+          map when is_map(map) and map_size(map) === 1 ->
             case map do
               %{datetime_add: payload} ->
                 build_date_time_expr.(build_date_time_expr, {:datetime_add, payload})

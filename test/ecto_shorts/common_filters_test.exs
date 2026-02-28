@@ -90,7 +90,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert log =~ "Expected :dynamic payload to be an Ecto.Query.DynamicExpr, got: \"bad\""
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "supports scalar all helper expression in :where" do
@@ -221,7 +221,7 @@ defmodule EctoShorts.CommonFiltersTest do
                "HAVING (p0.\"inserted_at\" > $1::timestamp + ($2::numeric * interval '1 day'))"
 
       assert match?([%DateTime{}, %Decimal{}], params)
-      assert Enum.at(params, 1) == Decimal.new("-1")
+      assert Enum.at(params, 1) === Decimal.new("-1")
     end
 
     test "supports Ecto.Query.t() source" do
@@ -380,7 +380,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert log =~ "Expected params to be a map or keyword list, got: 123"
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "raises an error if top-level params is not a map or keyword list" do
@@ -928,7 +928,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert log =~ "Expected :put_query_prefix value to be a string, got: nil"
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "invalid :put_query_prefix value logs warning and leaves query unchanged" do
@@ -942,7 +942,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert log =~ "Expected :put_query_prefix value to be a string, got: [bad: \"value\"]"
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "supports :with_ties true with :limit and :order_by" do
@@ -1031,7 +1031,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert log =~ "Expected :with_ties value to be a boolean, got: \"yes\""
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "raises when :with_ties is applied without :limit" do
@@ -1328,7 +1328,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert log =~ "Expected CTE :as query params"
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "supports :recursive_ctes true with :with_cte" do
@@ -1378,7 +1378,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert log =~ "Expected :recursive_ctes value to be a boolean, got: \"yes\""
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "supports :with_named_binding when binding is missing" do
@@ -1482,7 +1482,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert log =~ "Expected :with_named_binding key to be an atom, got: \"author\""
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "invalid :with_named_binding params type warns and leaves query unchanged" do
@@ -1498,7 +1498,7 @@ defmodule EctoShorts.CommonFiltersTest do
                "Expected :with_named_binding params for :author to be a map or keyword list, got: 123"
 
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "raises when :with_named_binding callback does not create named binding" do
@@ -2144,7 +2144,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert log =~ "Expected params for having to be a map or keyword list, got: \"bad\""
 
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "invalid :or_having params container logs warning and returns query unchanged" do
@@ -2159,7 +2159,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert log =~ "Expected params for or_having to be a map or keyword list, got: \"bad\""
 
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "supports :distinct true" do
@@ -2325,7 +2325,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports == nil comparisons (generates IS NULL)" do
+    test "supports === nil comparisons (generates IS NULL)" do
       expected = from p in Post, where: is_nil(p.published_at)
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{published_at: nil}, [])
@@ -2333,7 +2333,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports != nil comparisons (generates IS NOT NULL)" do
+    test "supports !== nil comparisons (generates IS NOT NULL)" do
       expected = from p in Post, where: not is_nil(p.published_at)
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{published_at: %{!=: nil}}, [])
@@ -2341,7 +2341,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports == nil comparisons for array fields (generates IS NULL)" do
+    test "supports === nil comparisons for array fields (generates IS NULL)" do
       expected = from p in Post, where: is_nil(p.tags)
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{tags: nil}, [])
@@ -2349,7 +2349,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "supports != nil comparisons for array fields (generates IS NOT NULL)" do
+    test "supports !== nil comparisons for array fields (generates IS NOT NULL)" do
       expected = from p in Post, where: not is_nil(p.tags)
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{!=: nil}}, [])
@@ -3018,7 +3018,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "coerces != with list RHS to NOT IN for scalar fields" do
+    test "coerces !== with list RHS to NOT IN for scalar fields" do
       expected = from p in Post, where: p.published not in ^[true, false]
       q = Post
 
@@ -3032,7 +3032,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "coerces not == with list RHS to NOT IN for scalar fields" do
+    test "coerces not === with list RHS to NOT IN for scalar fields" do
       expected = from p in Post, where: p.published not in ^[true, false]
       q = Post
 
@@ -3046,7 +3046,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "coerces not != with list RHS to IN for scalar fields" do
+    test "coerces not !== with list RHS to IN for scalar fields" do
       expected = from p in Post, where: p.published in ^[true, false]
       q = Post
 
@@ -3598,7 +3598,7 @@ defmodule EctoShorts.CommonFiltersTest do
     test "boolean operator with empty params is a no-op" do
       q = from(p in Post)
       q2 = CommonFilters.convert_params_to_filter(q, %{views: %{and: []}}, [])
-      assert q2 == q
+      assert q2 === q
     end
 
     test "supports composite :or operator with multiple field maps" do
@@ -3783,7 +3783,7 @@ defmodule EctoShorts.CommonFiltersTest do
     test "composite operator with empty list is a no-op" do
       q = from(p in Post)
       q2 = CommonFilters.convert_params_to_filter(q, %{or: []}, [])
-      assert q2 == q
+      assert q2 === q
     end
 
     test "composite operator with invalid field logs warning and skips field" do
@@ -3825,7 +3825,7 @@ defmodule EctoShorts.CommonFiltersTest do
       assert log =~ "Expected params for where to be a map or keyword list, got: \"bad\""
 
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "invalid filter format logs error and returns query unchanged" do
@@ -3847,7 +3847,7 @@ defmodule EctoShorts.CommonFiltersTest do
                "Expected params to be a map or keyword list, got: \"bad\""
 
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
 
     test "invalid key logs warning and returns query unchanged" do
@@ -3863,7 +3863,7 @@ defmodule EctoShorts.CommonFiltersTest do
                "Expected a query field for schema {\"posts\", EctoShorts.Schema.Post}, got: :does_not_exist"
 
       assert_received {:q2, q2}
-      assert q2 == q
+      assert q2 === q
     end
   end
 end

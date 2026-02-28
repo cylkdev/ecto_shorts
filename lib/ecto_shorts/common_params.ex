@@ -39,7 +39,7 @@ defmodule EctoShorts.CommonParams do
   """
   def build_on_conflict_options(source, inserts, opts) when is_list(inserts) do
     with schema when not is_nil(schema) <- normalize_schema(source),
-         true <- inserts != [],
+         true <- inserts !== [],
          true <- Enum.any?(inserts, &has_all_non_nil_primary_keys?(schema, &1)) do
       build_conflict_options(schema, inserts, opts)
     else
@@ -51,7 +51,7 @@ defmodule EctoShorts.CommonParams do
     conflict_target = schema.__schema__(:primary_key)
     replace_fields = get_replace_fields(inserts, conflict_target, opts)
 
-    if replace_fields == [] do
+    if replace_fields === [] do
       [conflict_target: conflict_target]
     else
       [conflict_target: conflict_target, on_conflict: {:replace, replace_fields}]
@@ -236,12 +236,10 @@ defmodule EctoShorts.CommonParams do
   defp normalize_insert_entry(nil, params, opts) do
     params = normalize_insert_params(nil, params, opts)
 
-    cond do
-      is_map(params) and not is_struct(params) ->
-        {:ok, params, Map.keys(params)}
-
-      true ->
-        {:error, {:invalid_insert_entry, params}}
+    if is_map(params) and not is_struct(params) do
+      {:ok, params, Map.keys(params)}
+    else
+      {:error, {:invalid_insert_entry, params}}
     end
   end
 
@@ -283,7 +281,7 @@ defmodule EctoShorts.CommonParams do
 
   defp keys_changed_in_schema_data(schema_struct, map_b) do
     Enum.reduce(map_b, [], fn {key, val}, acc ->
-      if Map.get(schema_struct, key) != val do
+      if Map.get(schema_struct, key) !== val do
         [key | acc]
       else
         acc
@@ -311,7 +309,7 @@ defmodule EctoShorts.CommonParams do
 
   defp has_all_non_nil_primary_keys?(schema, schema_data_or_params) do
     Enum.all?(schema.__schema__(:primary_key), fn key ->
-      not is_nil(Map.get(schema_data_or_params, key))
+      Map.get(schema_data_or_params, key) !== nil
     end)
   end
 
@@ -412,9 +410,10 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp inserted_at_source_key(opts) do
-    cond do
-      Keyword.has_key?(opts, :inserted_at_source) -> opts[:inserted_at_source]
-      true -> @inserted_at
+    if Keyword.has_key?(opts, :inserted_at_source) do
+      opts[:inserted_at_source]
+    else
+      @inserted_at
     end
   end
 
@@ -537,15 +536,13 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp normalize_update_value(source, key, value, acc) do
-    cond do
-      is_list(value) and
-          Enum.all?(value, &match?({op, _val} when op in [:set, :inc, :push, :pull], &1)) ->
-        Enum.reduce(value, acc, fn v, acc ->
-          reduce_updates(source, key, v, acc)
-        end)
-
-      true ->
-        reduce_updates(source, key, value, acc)
+    if is_list(value) and
+         Enum.all?(value, &match?({op, _val} when op in [:set, :inc, :push, :pull], &1)) do
+      Enum.reduce(value, acc, fn v, acc ->
+        reduce_updates(source, key, v, acc)
+      end)
+    else
+      reduce_updates(source, key, value, acc)
     end
   end
 
@@ -636,9 +633,10 @@ defmodule EctoShorts.CommonParams do
   defp normalize_schema(_), do: nil
 
   defp get_updated_at_source(opts) do
-    cond do
-      Keyword.has_key?(opts, :updated_at_source) -> opts[:updated_at_source]
-      true -> @updated_at
+    if Keyword.has_key?(opts, :updated_at_source) do
+      opts[:updated_at_source]
+    else
+      @updated_at
     end
   end
 
@@ -653,7 +651,7 @@ defmodule EctoShorts.CommonParams do
 
   defp timestamp_type(opts, key, type_source, schema) do
     schema_timestamp_type =
-      if not is_nil(schema) do
+      if schema !== nil do
         schema.__schema__(:type, type_source)
       end
 

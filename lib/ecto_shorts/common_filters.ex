@@ -707,8 +707,7 @@ defmodule EctoShorts.CommonFilters do
     or_where_filters = Keyword.take(params, [:or_where])
 
     terminal_filters =
-      [:last, :subquery]
-      |> Enum.flat_map(fn key ->
+      Enum.flat_map([:last, :subquery], fn key ->
         case List.keyfind(params, key, 0) do
           nil -> []
           entry -> [entry]

@@ -35,7 +35,7 @@ defmodule EctoShorts.CommonFilters.GroupBy do
 
   defp reduce_group_by(query, binding_selector, entries) when is_list(entries) do
     if Keyword.keyword?(entries) do
-      case Enum.split_with(entries, fn {k, _} -> k == @binding_selector_key end) do
+      case Enum.split_with(entries, fn {k, _} -> k === @binding_selector_key end) do
         {[], group_entries} ->
           Enum.reduce(group_entries, query, fn {key, value}, q ->
             reduce_group_by(q, binding_selector, {key, value})

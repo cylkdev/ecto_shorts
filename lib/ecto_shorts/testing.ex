@@ -123,8 +123,8 @@ defmodule EctoShorts.Testing do
   ## Examples
 
       assert_query(
-        from(p in Post, where: p.id == 1),
-        from(p in Post, where: p.id == 1)
+        from(p in Post, where: p.id === 1),
+        from(p in Post, where: p.id === 1)
       )
   """
   def assert_query(query_a, query_b) do
@@ -146,8 +146,8 @@ defmodule EctoShorts.Testing do
   ## Examples
 
       refute_query(
-        from(p in Post, where: p.id == 1),
-        from(p in Post, where: p.id == 2)
+        from(p in Post, where: p.id === 1),
+        from(p in Post, where: p.id === 2)
       )
   """
   def refute_query(query_a, query_b) do

@@ -16,7 +16,7 @@ defmodule EctoShorts.Compiler.ClauseSpecTest do
       })
 
     assert %ClauseSpec{} = spec
-    assert spec.guard == nil
+    assert spec.guard === nil
   end
 
   test "new/1 raises when required keys are absent" do

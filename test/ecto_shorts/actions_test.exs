@@ -79,11 +79,11 @@ defmodule EctoShorts.ActionsTest do
       |> Post.changeset(%{title: "Existing"})
       |> Repo.insert!()
 
-      assert Actions.exists?(Post, %{title: "Existing"}) == true
+      assert Actions.exists?(Post, %{title: "Existing"}) === true
     end
 
     test "returns false when no matching record exists" do
-      assert Actions.exists?(Post, %{title: "NonExistent"}) == false
+      assert Actions.exists?(Post, %{title: "NonExistent"}) === false
     end
   end
 
@@ -118,7 +118,7 @@ defmodule EctoShorts.ActionsTest do
           order_by: %{asc: :title}
         })
 
-      assert Enum.map(results, & &1.title) == ["OrWhereMatch", "WhereMatch"]
+      assert Enum.map(results, & &1.title) === ["OrWhereMatch", "WhereMatch"]
     end
 
     test "filters on a join association" do
@@ -220,7 +220,7 @@ defmodule EctoShorts.ActionsTest do
     end
 
     test "returns nil when not found" do
-      assert nil == Actions.get(Post, -1, repo: Repo)
+      assert nil === Actions.get(Post, -1, repo: Repo)
     end
   end
 
@@ -238,7 +238,7 @@ defmodule EctoShorts.ActionsTest do
       assert {:error, %{code: :not_found, message: "record not found.", details: details}} =
                Actions.find(Post, %{id: -1}, [])
 
-      assert details.params == %{id: -1}
+      assert details.params === %{id: -1}
     end
 
     test "returns {:error, error} when params is empty and queryable is a schema module" do
@@ -304,7 +304,7 @@ defmodule EctoShorts.ActionsTest do
       assert {:error, %{code: :not_found, message: "record not found.", details: details}} =
                Actions.update(Post, -1, %{title: "Ignored"})
 
-      assert details.params == %{id: -1}
+      assert details.params === %{id: -1}
     end
 
     test "applies changeset callback from opts" do
@@ -336,14 +336,14 @@ defmodule EctoShorts.ActionsTest do
         |> Repo.insert!()
 
       assert {:ok, %Post{}} = Actions.delete(Post, post.id)
-      assert Repo.get(Post, post.id) == nil
+      assert Repo.get(Post, post.id) === nil
     end
 
     test "returns {:error, error} when deleting a missing id" do
       assert {:error, %{code: :not_found, message: "record not found.", details: details}} =
                Actions.delete(Post, -1)
 
-      assert details.params == %{id: -1}
+      assert details.params === %{id: -1}
     end
 
     test "deletes a record by schema struct" do
@@ -353,7 +353,7 @@ defmodule EctoShorts.ActionsTest do
         |> Repo.insert!()
 
       assert {:ok, %Post{}} = Actions.delete(post, [])
-      assert Repo.get(Post, post.id) == nil
+      assert Repo.get(Post, post.id) === nil
     end
 
     test "deletes a list of schema structs" do
@@ -368,8 +368,8 @@ defmodule EctoShorts.ActionsTest do
         |> Repo.insert!()
 
       assert {:ok, [%Post{title: "A"}, %Post{title: "B"}]} = Actions.delete([post_a, post_b], [])
-      assert Repo.get(Post, post_a.id) == nil
-      assert Repo.get(Post, post_b.id) == nil
+      assert Repo.get(Post, post_a.id) === nil
+      assert Repo.get(Post, post_b.id) === nil
     end
   end
 
@@ -381,14 +381,14 @@ defmodule EctoShorts.ActionsTest do
         |> Repo.insert!()
 
       assert {:ok, %Post{}} = Actions.delete(Post, post.id, [])
-      assert Repo.get(Post, post.id) == nil
+      assert Repo.get(Post, post.id) === nil
     end
 
     test "returns {:error, error} when deleting a missing id with opts" do
       assert {:error, %{code: :not_found, message: "record not found.", details: details}} =
                Actions.delete(Post, -1, [])
 
-      assert details.params == %{id: -1}
+      assert details.params === %{id: -1}
     end
   end
 
@@ -440,8 +440,8 @@ defmodule EctoShorts.ActionsTest do
       |> Post.changeset(%{title: "B"})
       |> Repo.insert!()
 
-      assert 2 == Actions.aggregate(Post)
-      assert 1 == Actions.aggregate(Post, %{title: "A"})
+      assert 2 === Actions.aggregate(Post)
+      assert 1 === Actions.aggregate(Post, %{title: "A"})
     end
 
     test "supports non-count aggregate functions" do
@@ -453,8 +453,8 @@ defmodule EctoShorts.ActionsTest do
       |> Post.changeset(%{title: "High", views: 10})
       |> Repo.insert!()
 
-      assert 10 == Actions.aggregate(Post, %{}, :max, :views)
-      assert 1 == Actions.aggregate(Post, %{title: "Low"}, :max, :views)
+      assert 10 === Actions.aggregate(Post, %{}, :max, :views)
+      assert 1 === Actions.aggregate(Post, %{title: "Low"}, :max, :views)
     end
   end
 
@@ -775,14 +775,14 @@ defmodule EctoShorts.ActionsTest do
       input = {post, %{title: "Ignored"}}
 
       assert [result] = Actions.batch_preload(Post, [input], :permalink, [])
-      assert result == input
+      assert result === input
     end
 
     test "preload with {struct(), keyword()} leaves entry unchanged", %{post: post} do
       input = {post, [title: "Ignored"]}
 
       assert [result] = Actions.batch_preload(Post, [input], :permalink, [])
-      assert result == input
+      assert result === input
     end
 
     test "preload with {map(), map()} replaces with {schema_struct, other_params}", %{post: post} do
@@ -791,7 +791,7 @@ defmodule EctoShorts.ActionsTest do
       assert [{%Post{id: id}, %{title: "New"}}] =
                Actions.batch_preload(Post, [input], :permalink, [])
 
-      assert id == post.id
+      assert id === post.id
     end
 
     test "preload with {keyword(), keyword()} replaces with {schema_struct, other_params}", %{
@@ -802,7 +802,7 @@ defmodule EctoShorts.ActionsTest do
       assert [{%Post{id: id}, [title: "New"]}] =
                Actions.batch_preload(Post, [input], :permalink, [])
 
-      assert id == post.id
+      assert id === post.id
     end
 
     test "preload with {keyword(), map()} replaces with {schema_struct, other_params}", %{
@@ -813,7 +813,7 @@ defmodule EctoShorts.ActionsTest do
       assert [{%Post{id: id}, %{title: "New"}}] =
                Actions.batch_preload(Post, [input], :permalink, [])
 
-      assert id == post.id
+      assert id === post.id
     end
 
     test "preload with {map(), keyword()} replaces with {schema_struct, other_params}", %{
@@ -824,23 +824,23 @@ defmodule EctoShorts.ActionsTest do
       assert [{%Post{id: id}, [title: "New"]}] =
                Actions.batch_preload(Post, [input], :permalink, [])
 
-      assert id == post.id
+      assert id === post.id
     end
 
     test "preload with map() replaces with {schema_struct, params}", %{post: post} do
       input = %{permalink: "existing", title: "New"}
 
       assert [{%Post{id: id}, params}] = Actions.batch_preload(Post, [input], :permalink, [])
-      assert id == post.id
-      assert params == input
+      assert id === post.id
+      assert params === input
     end
 
     test "preload with keyword() replaces with {schema_struct, params}", %{post: post} do
       input = [permalink: "existing", title: "New"]
 
       assert [{%Post{id: id}, params}] = Actions.batch_preload(Post, [input], :permalink, [])
-      assert id == post.id
-      assert params == input
+      assert id === post.id
+      assert params === input
     end
 
     test "preload with nil leaves entry unchanged", %{post: _post} do
@@ -1047,7 +1047,7 @@ defmodule EctoShorts.ActionsTest do
       assert {:error, %{code: :not_found, message: "record not found.", details: details}} =
                Actions.update_many(Post, params)
 
-      assert details.index == 1
+      assert details.index === 1
 
       # transaction rollback: first record should not be updated
       assert %Post{title: "Existing"} = Repo.get!(Post, post.id)
@@ -1069,8 +1069,8 @@ defmodule EctoShorts.ActionsTest do
       assert {:ok, [%Post{title: "A"}, %Post{title: "B"}]} =
                Actions.delete_many(Post, [post_a, post_b])
 
-      assert Repo.get(Post, post_a.id) == nil
-      assert Repo.get(Post, post_b.id) == nil
+      assert Repo.get(Post, post_a.id) === nil
+      assert Repo.get(Post, post_b.id) === nil
     end
 
     test "returns {:error, error} when a delete fails" do
@@ -1155,7 +1155,7 @@ defmodule EctoShorts.ActionsTest do
         |> Repo.insert!()
 
       assert [id] = Actions.all(Post, %{select: :id, id: post.id})
-      assert id == post.id
+      assert id === post.id
     end
 
     test "supports :select {:map, map} for custom field aliases" do
@@ -1170,7 +1170,7 @@ defmodule EctoShorts.ActionsTest do
                  id: post.id
                })
 
-      assert id == post.id
+      assert id === post.id
     end
 
     test "supports :select {:map, fields} (Ecto map/2)" do
@@ -1185,8 +1185,8 @@ defmodule EctoShorts.ActionsTest do
                  id: post.id
                })
 
-      assert id == post.id
-      assert title == "SelectMap"
+      assert id === post.id
+      assert title === "SelectMap"
     end
 
     test "supports :select {:struct, fields} (Ecto struct/2)" do
@@ -1201,7 +1201,7 @@ defmodule EctoShorts.ActionsTest do
                  id: post.id
                })
 
-      assert id == post.id
+      assert id === post.id
     end
 
     test "supports :or_where filter key" do
@@ -1328,8 +1328,8 @@ defmodule EctoShorts.ActionsTest do
 
       results = Actions.all(Post, %{last: 2})
 
-      assert Enum.count(results) == 2
-      assert Enum.map(results, & &1.title) == ["Two", "Three"]
+      assert Enum.count(results) === 2
+      assert Enum.map(results, & &1.title) === ["Two", "Three"]
     end
 
     test "supports :last with key" do
@@ -1347,8 +1347,8 @@ defmodule EctoShorts.ActionsTest do
 
       results = Actions.all(Post, %{last: %{id: 2}})
 
-      assert Enum.count(results) == 2
-      assert Enum.map(results, & &1.title) == ["Two", "Three"]
+      assert Enum.count(results) === 2
+      assert Enum.map(results, & &1.title) === ["Two", "Three"]
     end
 
     test "supports positional binding selector via :bind/:at" do
@@ -1464,7 +1464,7 @@ defmodule EctoShorts.ActionsTest do
                Actions.all(Post, %{published: %{not: %{in: [true]}}})
     end
 
-    test "coerces not == with list RHS to NOT IN for scalar fields" do
+    test "coerces not === with list RHS to NOT IN for scalar fields" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -1477,7 +1477,7 @@ defmodule EctoShorts.ActionsTest do
                Actions.all(Post, %{published: %{not: %{==: [true]}}})
     end
 
-    test "coerces not != with list RHS to IN for scalar fields" do
+    test "coerces not !== with list RHS to IN for scalar fields" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -1628,7 +1628,7 @@ defmodule EctoShorts.ActionsTest do
 
       results = Actions.all(Post, %{title: %{like: ["Hello", "World"]}, order_by: [asc: :title]})
 
-      assert Enum.count(results) == 2
+      assert Enum.count(results) === 2
       assert Enum.any?(results, &match?(%Post{title: "Hello"}, &1))
       assert Enum.any?(results, &match?(%Post{title: "World"}, &1))
     end
@@ -1852,7 +1852,7 @@ defmodule EctoShorts.ActionsTest do
       |> Repo.insert!()
 
       results = Actions.all(Post, %{tags: %{not: %{==: ["elixir"]}}})
-      assert Enum.count(results) == 1
+      assert Enum.count(results) === 1
       assert Enum.any?(results, &match?(%Post{title: "Match"}, &1))
     end
 
@@ -2016,7 +2016,7 @@ defmodule EctoShorts.ActionsTest do
           or_where: %{views: %{or: [<: 5, >: 10]}}
         })
 
-      assert Enum.count(results) == 2
+      assert Enum.count(results) === 2
       assert Enum.any?(results, &match?(%Post{title: "Published"}, &1))
       assert Enum.any?(results, &match?(%Post{title: "Unpublished"}, &1))
     end
@@ -2050,7 +2050,7 @@ defmodule EctoShorts.ActionsTest do
 
     #     assert [result] = Repo.all(q)
     #     assert %Post{title: "Authored"} = result
-    #     assert result.author_id == author.id
+    #     assert result.author_id === author.id
     #   end
 
     #   test "can join association with :as and filter on association field" do
@@ -2086,7 +2086,7 @@ defmodule EctoShorts.ActionsTest do
 
     #     assert [result] = Repo.all(q)
     #     assert %Post{title: "Authored"} = result
-    #     assert result.author_id == author.id
+    #     assert result.author_id === author.id
     #   end
 
     #   test "can recursively filter through nested associations" do
@@ -2166,10 +2166,10 @@ defmodule EctoShorts.ActionsTest do
 
     #     assert [result] = Repo.all(q)
     #     assert %Post{title: "Authored"} = result
-    #     assert result.author_id == author.id
+    #     assert result.author_id === author.id
     #   end
 
-    #   test "scalar field: != with list RHS behaves like NOT IN" do
+    #   test "scalar field: !== with list RHS behaves like NOT IN" do
     #     _a =
     #       %Post{}
     #       |> Post.changeset(%{title: "A", views: 10})
@@ -2312,7 +2312,7 @@ defmodule EctoShorts.ActionsTest do
     #     assert %Post{title: "Match", tags: ["ruby"]} = result
     #   end
 
-    #   test "scalar field: == nil generates IS NULL semantics" do
+    #   test "scalar field: === nil generates IS NULL semantics" do
     #     %Post{}
     #     |> Post.changeset(%{title: "Nil", permalink: "scalar-nil", published_at: nil})
     #     |> Repo.insert!()
@@ -2337,7 +2337,7 @@ defmodule EctoShorts.ActionsTest do
     #     assert %Post{title: "Nil", published_at: nil} = result
     #   end
 
-    #   test "scalar field: != nil generates IS NOT NULL semantics" do
+    #   test "scalar field: !== nil generates IS NOT NULL semantics" do
     #     %Post{}
     #     |> Post.changeset(%{title: "Nil", permalink: "scalar-ne-nil-nil", published_at: nil})
     #     |> Repo.insert!()
@@ -2359,10 +2359,10 @@ defmodule EctoShorts.ActionsTest do
 
     #     assert [result] = Repo.all(q)
     #     assert %Post{title: "NotNil"} = result
-    #     assert result.published_at != nil
+    #     assert result.published_at !== nil
     #   end
 
-    #   test "scalar field: == with list RHS behaves like IN" do
+    #   test "scalar field: === with list RHS behaves like IN" do
     #     %Post{}
     #     |> Post.changeset(%{title: "A", permalink: "scalar-eq-list-a", views: 10})
     #     |> Repo.insert!()
@@ -2449,7 +2449,7 @@ defmodule EctoShorts.ActionsTest do
 
     #     assert [result] = Repo.all(q)
     #     assert %Post{title: "A"} = result
-    #     assert result.id == a.id
+    #     assert result.id === a.id
     #   end
 
     #   test "supports :after (scalar special filter)" do
@@ -2472,10 +2472,10 @@ defmodule EctoShorts.ActionsTest do
 
     #     assert [result] = Repo.all(q)
     #     assert %Post{title: "B"} = result
-    #     assert result.id == b.id
+    #     assert result.id === b.id
     #   end
 
-    #   test "array field: negated != with list RHS behaves like ==" do
+    #   test "array field: negated !== with list RHS behaves like ==" do
     #     %Post{}
     #     |> Post.changeset(%{title: "Match", tags: ["elixir"]})
     #     |> Repo.insert!()

@@ -218,7 +218,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar == lower" do
+  test "convert_to_dynamic supports scalar === lower" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{==: %{lower: "foo"}}})
     expected = dynamic([q], fragment("lower(?)", field(q, ^:title)) == ^"foo")
@@ -226,7 +226,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar == upper" do
+  test "convert_to_dynamic supports scalar === upper" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{==: %{upper: "foo"}}})
     expected = dynamic([q], fragment("upper(?)", field(q, ^:title)) == ^"foo")
@@ -234,7 +234,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar != lower" do
+  test "convert_to_dynamic supports scalar !== lower" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{!=: %{lower: "foo"}}})
     expected = dynamic([q], fragment("lower(?)", field(q, ^:title)) != ^"foo")
@@ -242,7 +242,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar != upper" do
+  test "convert_to_dynamic supports scalar !== upper" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{!=: %{upper: "foo"}}})
     expected = dynamic([q], fragment("upper(?)", field(q, ^:title)) != ^"foo")
@@ -318,7 +318,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar not == with list" do
+  test "convert_to_dynamic supports scalar not === with list" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{not: %{==: ["a", "b"]}}})
     expected = dynamic([q], field(q, ^:title) not in ^["a", "b"])
@@ -326,7 +326,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar not != with list" do
+  test "convert_to_dynamic supports scalar not !== with list" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{not: %{!=: ["a", "b"]}}})
     expected = dynamic([q], field(q, ^:title) in ^["a", "b"])
@@ -334,7 +334,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar == with list" do
+  test "convert_to_dynamic supports scalar === with list" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{==: ["a", "b"]}})
     expected = dynamic([q], field(q, ^:title) in ^["a", "b"])
@@ -342,7 +342,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar != with list" do
+  test "convert_to_dynamic supports scalar !== with list" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{!=: ["a", "b"]}})
     expected = dynamic([q], field(q, ^:title) not in ^["a", "b"])
@@ -350,7 +350,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar not == with value" do
+  test "convert_to_dynamic supports scalar not === with value" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{not: %{==: "a"}}})
     expected = dynamic([q], field(q, ^:title) != ^"a")
@@ -358,7 +358,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar not != with value" do
+  test "convert_to_dynamic supports scalar not !== with value" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{not: %{!=: "a"}}})
     expected = dynamic([q], field(q, ^:title) == ^"a")
@@ -959,7 +959,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array == lower" do
+  test "convert_to_dynamic supports array === lower" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{==: %{lower: "foo"}}})
 
@@ -982,7 +982,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array == upper" do
+  test "convert_to_dynamic supports array === upper" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{==: %{upper: "foo"}}})
 
@@ -1005,7 +1005,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array != lower" do
+  test "convert_to_dynamic supports array !== lower" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{!=: %{lower: "foo"}}})
 
@@ -1028,7 +1028,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array != upper" do
+  test "convert_to_dynamic supports array !== upper" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{!=: %{upper: "foo"}}})
 
@@ -1147,7 +1147,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array not == with list" do
+  test "convert_to_dynamic supports array not === with list" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{not: %{==: ["a", "b"]}}})
     expected = dynamic([q], field(q, ^:tags) != ^["a", "b"])
@@ -1155,7 +1155,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array not != with list" do
+  test "convert_to_dynamic supports array not !== with list" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{not: %{!=: ["a", "b"]}}})
     expected = dynamic([q], field(q, ^:tags) == ^["a", "b"])
@@ -1219,7 +1219,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array == list" do
+  test "convert_to_dynamic supports array === list" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{==: ["a", "b"]}})
     expected = dynamic([q], field(q, ^:tags) == ^["a", "b"])
@@ -1227,7 +1227,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array != list" do
+  test "convert_to_dynamic supports array !== list" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{!=: ["a", "b"]}})
     expected = dynamic([q], field(q, ^:tags) != ^["a", "b"])
@@ -1339,7 +1339,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array == value" do
+  test "convert_to_dynamic supports array === value" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{==: "a"}})
     expected = dynamic([q], ^"a" in field(q, ^:tags))
@@ -1347,7 +1347,7 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports array != value" do
+  test "convert_to_dynamic supports array !== value" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{!=: "a"}})
     expected = dynamic([q], ^"a" not in field(q, ^:tags))

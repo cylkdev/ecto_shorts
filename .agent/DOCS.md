@@ -7,6 +7,7 @@ Follow it so a beginner can understand the public API, call it correctly on the 
 ## What counts as “documentation” in Elixir
 
 Elixir documentation is Markdown attached to code.
+
 Use `@moduledoc` for modules.
 Use `@doc` for public functions, macros, and callbacks.
 Use `@typedoc` for public types.

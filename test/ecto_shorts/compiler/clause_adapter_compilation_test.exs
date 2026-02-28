@@ -1,5 +1,5 @@
 defmodule EctoShorts.Compiler.UsingTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case
 
   alias EctoShorts.Compiler
   alias EctoShorts.Compiler.AST

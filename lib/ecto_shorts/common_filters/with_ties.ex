@@ -31,7 +31,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
 
   defp reduce_with_ties(query, binding_selector, params) when is_list(params) do
     if Keyword.keyword?(params) do
-      case Enum.split_with(params, fn {k, _} -> k == @binding_selector_key end) do
+      case Enum.split_with(params, fn {k, _} -> k === @binding_selector_key end) do
         {[], entries} ->
           Enum.reduce(entries, query, fn entry, query_acc ->
             reduce_with_ties(query_acc, binding_selector, entry)

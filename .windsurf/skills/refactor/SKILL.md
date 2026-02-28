@@ -1,0 +1,68 @@
+---
+name: refactor
+description: Guides a safe, behaviour-preserving refactor from smell identification through implementation using a RefactorPlan. Use this skill when refactoring code in any project.
+---
+
+## When to use
+
+Use this skill when you need to refactor code, whether improving structure, reducing duplication, simplifying complex logic, or addressing a code smell.
+
+## What to do
+
+Read `.agent/REFACTOR_PLANS.md` and load it into your context. If it already exists in context, read it again to refresh your memory. Follow it exactly.
+
+### 1. Identify the smell
+
+Browse the code smell catalog in `.agent/refactor/code_smells/` to find the smell that best matches the problem. The categories are:
+
+- `bloaters/` — code that has grown too large to work with easily.
+- `change_preventers/` — code that makes changes difficult.
+- `couplers/` — code with excessive coupling between modules.
+- `dispensables/` — code that could be removed without loss.
+- `abstraction_abusers/` — patterns that misuse abstraction mechanisms.
+
+Read the matching smell file. Use its signs, symptoms, and examples to confirm the diagnosis.
+
+### 2. Select the technique
+
+Browse the technique catalog in `.agent/refactor/techniques/` to find the technique that addresses the smell. Read the matching technique file. Confirm the technique preserves the existing behaviour.
+
+### 3. Write the RefactorPlan
+
+Create a new `.md` file at the path specified by the `document-artifacts` rule in `.windsurf/rules/document-artifacts.md`. Follow the skeleton and all requirements in `.agent/REFACTOR_PLANS.md`. The plan must be self-contained: a novice with only the plan and the working tree must be able to execute it end-to-end.
+
+At minimum the plan must include:
+
+- **Purpose / Big Picture** — why the refactor matters.
+- **Behaviour Boundary** — the exact observable behaviour that must not change.
+- **Code Smell Identified** — the smell, where it appears, and a brief summary.
+- **Refactoring Technique Selected** — the technique and why it fits.
+- **Plan of Work** — the sequence of edits, naming files and functions precisely.
+- **Validation and Acceptance** — commands to run and expected outputs.
+- **Milestones** — independently verifiable steps.
+- **Progress** — checklist updated as work proceeds.
+- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** — living sections.
+
+### 4. Execute the plan
+
+Work through each milestone in order. After each milestone:
+
+1. Run `mix format` to ensure formatting is correct.
+2. Run `mix test` to confirm behaviour is preserved.
+3. Update the **Progress** section in the plan.
+
+Do not skip validation between milestones.
+
+### 5. Final validation
+
+Run the full quality check suite:
+
+- `mix credo --strict`
+- `mix dialyzer`
+- `mix test`
+
+Fix any issues. Repeat until all three pass.
+
+### 6. Close the plan
+
+Update the **Outcomes & Retrospective** section with a summary of what changed, what was preserved, and any follow-up opportunities.

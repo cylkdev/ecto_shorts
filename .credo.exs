@@ -43,7 +43,14 @@ allowed_imports = [
           "apps/*/test/",
           "apps/*/web/"
         ],
-        excluded: [~r"_build/", ~r"deps/"]
+        excluded: [
+          ~r"_build/",
+          ~r"deps/",
+          # Ecto query DSL requires == and != operators, not === and !==
+          ~r"lib/ecto_shorts/dynamics/adapters/postgres/.*/specs\.ex$",
+          ~r"lib/ecto_shorts/testing\.ex$",
+          ~r"lib/ecto_shorts/compiler/clause_spec\.ex$"
+        ]
       },
       plugins: [],
       requires: ["deps/blitz_credo/lib/blitz_credo/"],
@@ -60,7 +67,19 @@ allowed_imports = [
         {BlitzCredoChecks.NoAsyncFalse, []},
         {BlitzCredoChecks.NoDSLParentheses, []},
         {BlitzCredoChecks.NoIsBitstring, []},
-        {BlitzCredoChecks.StrictComparison, []},
+        {BlitzCredoChecks.StrictComparison,
+         [
+           excluded_paths: [
+             # Ecto query DSL requires == and != operators, not === and !==
+             ~r"lib/ecto_shorts/dynamics/adapters/postgres/.*/specs\.ex$",
+             ~r"lib/ecto_shorts/testing\.ex$",
+             ~r"lib/ecto_shorts/compiler/clause_spec\.ex$",
+             ~r"test/ecto_shorts/compiler/",
+             ~r"test/ecto_shorts/dynamics_test\.exs$",
+             ~r"test/ecto_shorts/common_filters_test\.exs$",
+             ~r"test/ecto_shorts/query_builder/"
+           ]
+         ]},
         {BlitzCredoChecks.LowercaseTestNames, []},
         {BlitzCredoChecks.ImproperImport, allowed_modules: allowed_imports},
 

@@ -64,7 +64,7 @@ CommonFilters.convert_params_to_filter(User, %{id: 5})
 ```
 is the same as
 ```elixir
-from u in User, where: u.id == ^5
+from u in User, where: u.id === ^5
 ```
 
 This allows for filters to be constructed from data such as
@@ -82,7 +82,7 @@ which the equivalent would be
 from u in User,
   preload: [:address],
   limit: 5,
-  where: u.favorite_food == "curry" and
+  where: u.favorite_food === "curry" and
          u.age >= 18 and u.age <= 50 and
          ilike(u.name, "%steven%")
 ```
@@ -115,7 +115,7 @@ which for an array field would be the equivalent to:
 
 ```elixir
 from u in User,
-  where: ^3 in u.cart and u.items == [1, 2]
+  where: ^3 in u.cart and u.items === [1, 2]
 ```
 
 ###### List of common filters

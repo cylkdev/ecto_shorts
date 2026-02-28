@@ -55,12 +55,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
         }
 
   @enforce_keys [:binding_head, :key, :head, :body]
-
-  defstruct binding_head: nil,
-            key: nil,
-            head: nil,
-            body: nil,
-            guard: nil
+  defstruct [:binding_head, :key, :head, :body, :guard]
 
   @doc """
   Creates a `%ClauseSpec{}` from a map or keyword list.

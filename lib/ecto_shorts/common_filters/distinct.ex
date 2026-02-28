@@ -44,7 +44,7 @@ defmodule EctoShorts.CommonFilters.Distinct do
 
   defp reduce_distinct(query, binding_selector, entries) when is_list(entries) do
     if Keyword.keyword?(entries) do
-      case Enum.split_with(entries, fn {k, _} -> k == @binding_selector_key end) do
+      case Enum.split_with(entries, fn {k, _} -> k === @binding_selector_key end) do
         {[], distinct_entries} ->
           Enum.reduce(distinct_entries, query, fn {key, value}, q ->
             reduce_distinct(q, binding_selector, {key, value})

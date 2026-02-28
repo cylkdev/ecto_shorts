@@ -249,7 +249,7 @@ defmodule EctoShorts.Dynamics do
   defp dynamic_adapter!(opts) do
     adapter = opts[:dynamic_adapter] || Config.dynamic_adapter()
 
-    if not is_nil(adapter) do
+    if adapter !== nil do
       adapter
     else
       repo = Config.repo!(opts)

@@ -28,7 +28,7 @@ defmodule EctoShorts.CommonFilters.Windows do
   defp reduce_windows(query, binding_selector, params) when is_list(params) do
     cond do
       Keyword.keyword?(params) ->
-        case Enum.split_with(params, fn {k, _} -> k == @binding_selector_key end) do
+        case Enum.split_with(params, fn {k, _} -> k === @binding_selector_key end) do
           {[], window_entries} ->
             reduce_window_entries(query, binding_selector, window_entries)
 
@@ -131,36 +131,40 @@ defmodule EctoShorts.CommonFilters.Windows do
   end
 
   defp apply_windows_expr(query, binding_selector, window_name, window_definition) do
-    with {:ok, normalized_definition} <- normalize_window_definition(window_definition) do
-      unknown_keys = normalized_definition |> Keyword.keys() |> Enum.reject(&(&1 in @window_keys))
+    case normalize_window_definition(window_definition) do
+      {:ok, normalized_definition} ->
+        unknown_keys =
+          normalized_definition
+          |> Keyword.keys()
+          |> Enum.reject(&(&1 in @window_keys))
 
-      if unknown_keys != [] do
-        EctoShorts.Logger.warning(
-          @logger_prefix,
-          "Ignoring unsupported window keys #{inspect(unknown_keys)} for #{inspect(window_name)}"
-        )
-      end
+        if unknown_keys !== [] do
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Ignoring unsupported window keys #{inspect(unknown_keys)} for #{inspect(window_name)}"
+          )
+        end
 
-      definition = Keyword.take(normalized_definition, @window_keys)
+        definition = Keyword.take(normalized_definition, @window_keys)
 
-      partition_by =
-        definition
-        |> Keyword.get(:partition_by, [])
-        |> normalize_partition_by(binding_selector)
+        partition_by =
+          definition
+          |> Keyword.get(:partition_by, [])
+          |> normalize_partition_by(binding_selector)
 
-      order_by =
-        definition
-        |> Keyword.get(:order_by, [])
-        |> normalize_order_by(binding_selector)
+        order_by =
+          definition
+          |> Keyword.get(:order_by, [])
+          |> normalize_order_by(binding_selector)
 
-      frame = Keyword.get(definition, :frame)
+        frame = Keyword.get(definition, :frame)
 
-      if is_nil(frame) do
-        compose_window(query, binding_selector, window_name, partition_by, order_by)
-      else
-        compose_window(query, binding_selector, window_name, partition_by, order_by, frame)
-      end
-    else
+        if is_nil(frame) do
+          compose_window(query, binding_selector, window_name, partition_by, order_by)
+        else
+          compose_window(query, binding_selector, window_name, partition_by, order_by, frame)
+        end
+
       :error ->
         EctoShorts.Logger.warning(
           @logger_prefix,

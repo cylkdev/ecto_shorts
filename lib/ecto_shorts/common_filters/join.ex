@@ -83,7 +83,7 @@ defmodule EctoShorts.CommonFilters.Join do
   defp reduce_join(schema_source, query, binding_selector, {join_type, join_options}, opts) do
     {op_source, join_options} = Keyword.pop(join_options, :source)
 
-    if not is_nil(op_source) do
+    if op_source !== nil do
       apply_join_expr(
         schema_source,
         query,

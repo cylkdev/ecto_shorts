@@ -1,6 +1,6 @@
 # Project
 
-This is an Elixir umbrella application.
+This is an application written using Elixir.
 
 ## Purpose / Big Picture
 
@@ -10,10 +10,10 @@ This library provides a standardzied API that makes working with the Ecto API ea
 
 ### Database
 
-- **Name:** Ecto
-  **Dependency:** `{:ecto, "~> 3.0"}`
-  **Purpose:** ...
+**Ecto**
+- Dependency: `{:ecto, "~> 3.0"}`
+- Purpose: Database access and query composition
 
-- **Name:** Ecto SQL
-  **Dependency:** `{:ecto_sql, "~> 3.10"}`
-  **Purpose:** ..
+**Ecto SQL**
+- Dependency: `{:ecto_sql, "~> 3.10"}`
+- Purpose: Database access and query composition

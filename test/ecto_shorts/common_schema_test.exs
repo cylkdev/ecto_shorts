@@ -10,11 +10,11 @@ defmodule EctoShorts.CommonSchemaTest do
 
   describe "get_schema_reflection/2" do
     test "delegates to schema module" do
-      assert CommonSchema.get_schema_reflection(Post, :primary_key) == [:id]
+      assert CommonSchema.get_schema_reflection(Post, :primary_key) === [:id]
     end
 
     test "delegates to tuple schema module" do
-      assert CommonSchema.get_schema_reflection({"posts", PostAbstract}, :primary_key) == [
+      assert CommonSchema.get_schema_reflection({"posts", PostAbstract}, :primary_key) === [
                :id
              ]
     end
@@ -22,30 +22,30 @@ defmodule EctoShorts.CommonSchemaTest do
 
   describe "get_schema_reflection/3" do
     test "delegates to schema module" do
-      assert CommonSchema.get_schema_reflection(Post, :type, :id) == :id
+      assert CommonSchema.get_schema_reflection(Post, :type, :id) === :id
     end
 
     test "delegates to tuple schema module" do
-      assert CommonSchema.get_schema_reflection({"posts", PostAbstract}, :type, :id) == :id
+      assert CommonSchema.get_schema_reflection({"posts", PostAbstract}, :type, :id) === :id
     end
   end
 
   describe "get_schema_prefix/1" do
     test "returns nil for schemas without @schema_prefix" do
-      assert CommonSchema.get_schema_prefix(Post) == nil
+      assert CommonSchema.get_schema_prefix(Post) === nil
     end
 
     test "returns prefix from schema module" do
-      assert CommonSchema.get_schema_prefix(PostHasSchemaPrefix) == "custom_schema_prefix"
+      assert CommonSchema.get_schema_prefix(PostHasSchemaPrefix) === "custom_schema_prefix"
     end
 
     test "returns prefix from source tuple" do
-      assert CommonSchema.get_schema_prefix({"posts", PostAbstractHasSchemaPrefix}) ==
+      assert CommonSchema.get_schema_prefix({"posts", PostAbstractHasSchemaPrefix}) ===
                "custom_schema_prefix"
     end
 
     test "returns prefix from schema struct" do
-      assert CommonSchema.get_schema_prefix(%PostHasSchemaPrefix{}) == "custom_schema_prefix"
+      assert CommonSchema.get_schema_prefix(%PostHasSchemaPrefix{}) === "custom_schema_prefix"
     end
   end
 
@@ -53,21 +53,21 @@ defmodule EctoShorts.CommonSchemaTest do
     import Ecto.Query
 
     test "returns source tuple from schema struct" do
-      assert CommonSchema.get_schema_source(%Post{}) == {"posts", Post}
+      assert CommonSchema.get_schema_source(%Post{}) === {"posts", Post}
     end
 
     test "returns source tuple from schema module" do
-      assert CommonSchema.get_schema_source(Post) == {"posts", Post}
+      assert CommonSchema.get_schema_source(Post) === {"posts", Post}
     end
 
     test "returns source tuple from explicit source tuple" do
-      assert CommonSchema.get_schema_source({"custom_posts", PostAbstract}) ==
+      assert CommonSchema.get_schema_source({"custom_posts", PostAbstract}) ===
                {"custom_posts", PostAbstract}
     end
 
     test "returns source tuple from query" do
       q = from(u in "users")
-      assert CommonSchema.get_schema_source(q) == {"users", nil}
+      assert CommonSchema.get_schema_source(q) === {"users", nil}
     end
   end
 
@@ -75,8 +75,8 @@ defmodule EctoShorts.CommonSchemaTest do
     test "returns metadata from schema struct" do
       meta = CommonSchema.get_schema_metadata(%Post{})
       assert %Ecto.Schema.Metadata{} = meta
-      assert meta.schema == Post
-      assert meta.source == "posts"
+      assert meta.schema === Post
+      assert meta.source === "posts"
     end
 
     test "returns metadata from changeset" do
@@ -86,15 +86,15 @@ defmodule EctoShorts.CommonSchemaTest do
         |> CommonSchema.get_schema_metadata()
 
       assert %Ecto.Schema.Metadata{} = meta
-      assert meta.schema == Post
-      assert meta.source == "posts"
+      assert meta.schema === Post
+      assert meta.source === "posts"
     end
 
     test "returns metadata for schema module" do
       meta = CommonSchema.get_schema_metadata(Post)
       assert %Ecto.Schema.Metadata{} = meta
-      assert meta.schema == Post
-      assert meta.source == "posts"
+      assert meta.schema === Post
+      assert meta.source === "posts"
     end
   end
 
@@ -105,18 +105,18 @@ defmodule EctoShorts.CommonSchemaTest do
 
       meta = CommonSchema.get_schema_metadata(struct)
 
-      assert meta.state == :loaded
-      assert meta.source == "custom_posts"
-      assert meta.schema == Post
+      assert meta.state === :loaded
+      assert meta.source === "custom_posts"
+      assert meta.schema === Post
     end
 
     test "builds struct for schema module and updates metadata" do
       struct = CommonSchema.put_schema_metadata(Post, state: :loaded, source: "custom_posts")
       meta = CommonSchema.get_schema_metadata(struct)
 
-      assert meta.state == :loaded
-      assert meta.source == "custom_posts"
-      assert meta.schema == Post
+      assert meta.state === :loaded
+      assert meta.source === "custom_posts"
+      assert meta.schema === Post
     end
 
     test "builds struct for source tuple and applies tuple source" do
@@ -125,9 +125,9 @@ defmodule EctoShorts.CommonSchemaTest do
 
       meta = CommonSchema.get_schema_metadata(struct)
 
-      assert meta.state == :loaded
-      assert meta.source == "custom_posts"
-      assert meta.schema == PostAbstract
+      assert meta.state === :loaded
+      assert meta.source === "custom_posts"
+      assert meta.schema === PostAbstract
     end
   end
 
@@ -140,8 +140,8 @@ defmodule EctoShorts.CommonSchemaTest do
       struct = CommonSchema.create_schema_struct({"custom_posts", PostAbstract})
       meta = CommonSchema.get_schema_metadata(struct)
 
-      assert meta.schema == PostAbstract
-      assert meta.source == "custom_posts"
+      assert meta.schema === PostAbstract
+      assert meta.source === "custom_posts"
     end
   end
 
@@ -150,14 +150,14 @@ defmodule EctoShorts.CommonSchemaTest do
       changeset = CommonSchema.create_changeset(Post, %{title: "Hello"}, [])
 
       assert %Ecto.Changeset{} = changeset
-      assert changeset.changes.title == "Hello"
+      assert changeset.changes.title === "Hello"
     end
 
     test "creates changeset from schema struct + params" do
       changeset = CommonSchema.create_changeset(%Post{}, %{title: "Hello"}, [])
 
       assert %Ecto.Changeset{} = changeset
-      assert changeset.changes.title == "Hello"
+      assert changeset.changes.title === "Hello"
     end
 
     test "creates changeset from changeset + params" do
@@ -166,7 +166,7 @@ defmodule EctoShorts.CommonSchemaTest do
       changeset = CommonSchema.create_changeset(base, %{title: "Override"}, [])
 
       assert %Ecto.Changeset{} = changeset
-      assert changeset.changes.title == "Override"
+      assert changeset.changes.title === "Override"
     end
 
     test "creates changeset from {source, schema} + params and applies source" do

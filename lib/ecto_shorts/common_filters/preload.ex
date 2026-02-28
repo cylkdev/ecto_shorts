@@ -25,7 +25,7 @@ defmodule EctoShorts.CommonFilters.Preload do
 
   defp reduce_preload(schema_source, query, binding_selector, values) when is_list(values) do
     if Keyword.keyword?(values) do
-      case Enum.split_with(values, fn {k, _} -> k == @binding_selector_key end) do
+      case Enum.split_with(values, fn {k, _} -> k === @binding_selector_key end) do
         {[], entries} ->
           apply_preload_expr(query, binding_selector, entries)
 

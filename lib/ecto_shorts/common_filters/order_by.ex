@@ -45,7 +45,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   defp reduce_order_by(filter_op, query, binding_selector, entries) when is_list(entries) do
     if Keyword.keyword?(entries) do
-      case Enum.split_with(entries, fn {k, _} -> k == @binding_selector_key end) do
+      case Enum.split_with(entries, fn {k, _} -> k === @binding_selector_key end) do
         {[], order_entries} ->
           reduce_order_by_expr(filter_op, query, binding_selector, order_entries)
 
