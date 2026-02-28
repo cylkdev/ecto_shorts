@@ -24,15 +24,13 @@ defmodule EctoShorts.CommonFilters do
   appropriate Ecto query clauses. The `title` and `published` fields become
   `WHERE` conditions, while `limit` becomes a query operation.
 
-  ## Filter categories
+  ## Filtering
 
-  We split params into two categories to make query building intuitive:
+  This api splits the action of filtering into two groups:
 
-  * **Schema filters** - keys that match schema field names or associations
-    become `WHERE` clauses. You can nest these under `:or_where` for
-    `OR WHERE` clauses when you need alternative conditions.
+  * Schema filters - Keys that match schema field names or associations.
 
-  * **Query filters** - Reserved keys that map to Ecto query operations:
+  * Query filters - Reserved keys that map to Ecto query operations:
 
     - `:distinct`
     - `:group_by`
@@ -66,18 +64,49 @@ defmodule EctoShorts.CommonFilters do
     - `:windows`
     - `:update`
 
-  ## Binding targeting
+  > [!IMPORTANT]
+  > These keys are reserved. Reserved means those keys have a special meaning
+  > in this library and are handled internally. This will short-circuit the
+  > normal filter conversion process and instead be passed to the corresponding
+  > Ecto query operation. Avoid using schema field names or association names
+  > that match any of these keys to prevent unexpected behavior.
 
-  Sometimes you need to target a specific query binding. You can do this
-  using the `:bind` key:
+  ## Binding Selector
 
-      %{bind: %{as: %{post: %{title: "Hello"}}}}  # named binding
-      %{bind: %{at: %{2 => %{title: "Hello"}}}}   # positional binding
+  One of the strengths of `Ecto.Query` is bindings which allows queries to be
+  composable. A binding is a variable that represents an entity in the query
+  (e.g. a schema, table or subquery). `Ecto.Query` provides [positional bindings](https://hexdocs.pm/ecto/Ecto.Query.html#module-positional-bindings)
+  and [named bindings](https://hexdocs.pm/ecto/Ecto.Query.html#module-named-bindings) as two
+  different ways to target a binding. This api supports both in what we
+  refer to as a "binding selector" in this library.
 
-  This is particularly useful when you have complex queries with multiple
-  joins and need to specify which binding you're referring to. This works
-  for existing queries as well as new queries which allows you to easily
-  build data-driven workflows on top of EctoShorts.
+  A binding selector is just a fancy way of saying "which binding are we
+  referring to?". It can be either a named binding or a positional binding.
+
+  We use a map or keyword to represent this intent:
+
+  ```elixir
+  %{bind: %{as: %{post: %{title: "Hello"}}}}  # named binding
+  %{bind: %{at: %{2 => %{title: "Hello"}}}}   # positional binding
+  ```
+
+  The `:bind` key is used as an explicit way to specify which binding you're
+  referring to in a query. This allows binding selectors to work nicely
+  with other data mappers. It also has an additional benefit of following
+  the filtering language used in EctoShorts which reads like a sentence.
+
+  For example, given this map:
+
+      %{bind: %{as: %{post: %{title: "Hello"}}}}
+
+  We would read it as:
+
+      "Bind the query to the named binding :post, and return the records where the title equals \"Hello\"."
+
+  This is useful when you have complex queries or queries that are pre-composed
+  with multiple joins and need to specify which binding you're referring to.
+  This works for existing queries as well as new queries which allows you to
+  easily build data-driven workflows on top of EctoShorts.
 
   Unknown keys that are not schema fields are logged as warnings and
   skipped for that filter entry.

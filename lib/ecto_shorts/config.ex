@@ -1,32 +1,28 @@
 defmodule EctoShorts.Config do
   @moduledoc """
-  Reads and resolves EctoShorts configuration from the application environment.
-
-  Provides accessor functions for every configurable key. The bang variants
-  (`repo!/1`, `replica!/1`) raise a descriptive runtime error when no value
-  is found, guiding the caller to either pass the value at runtime or set it
-  in the application config.
+  Provides helper functions for reading the EctoShorts configuration from
+  the application environment.
 
   ## Configuration keys
 
-  * `:repo` - the primary `Ecto.Repo` module used for write operations.
+  * `:repo` - The primary `Ecto.Repo` module used for write operations.
     Required by most `EctoShorts.Actions` functions. Defaults to `nil`.
 
-  * `:replica` - a read-only `Ecto.Repo` module. Falls back to `:repo` when
+  * `:replica` - A read-only `Ecto.Repo` module. Falls back to `:repo` when
     not set. Used by read operations in `EctoShorts.Actions`. Defaults to `nil`.
 
-  * `:error_module` - a module implementing the `EctoShorts.Actions.Error`
+  * `:error_module` - A module implementing the `EctoShorts.Actions.Error`
     behaviour. Used to construct error values returned by `EctoShorts.Actions`
     functions. Defaults to `EctoShorts.Actions.Error`.
 
-  * `:dynamic_adapter` - a module implementing `EctoShorts.Dynamics.Adapter`.
+  * `:dynamic_adapter` - A module implementing `EctoShorts.Dynamics.Adapter`.
     Auto-resolved to `EctoShorts.Dynamics.Adapters.Postgres` when the repo uses
     `Ecto.Adapters.Postgres`. Defaults to resolved from the repo's adapter.
 
-  * `:fragment_provider` - a module that resolves fragment-based join and lock
+  * `:fragment_provider` - A module that resolves fragment-based join and lock
     expressions. Must export `build_fragment_expression/3`. Defaults to `nil`.
 
-  * `:max_binding_positings` - controls how many positional query binding clauses
+  * `:max_binding_positings` - Controls how many positional query binding clauses
     `EctoShorts.Compiler` generates. Increase when your queries join more than
     three tables. Defaults to `3`.
 

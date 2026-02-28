@@ -1,12 +1,10 @@
 # Project
 
-This is an application written using Elixir.
+This is an application written using Elixir and Ecto.
 
-## Purpose / Big Picture
+EctoShorts is a standardized, data-driven API library that simplifies common Ecto database operations by providing a concise filtering language for query composition, CRUD actions, and changeset helpers, allowing developers to write shorter, more readable code when working with Ecto queries and database operations through modules like Actions, CommonFilters, CommonChanges, and SchemaHelpers.
 
-This library provides a standardzied API that makes working with the Ecto API easily. It takes a data-driven approach to query composition.
-
-## Tech Stack
+## Dependencies
 
 ### Database
 

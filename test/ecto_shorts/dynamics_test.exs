@@ -1,5 +1,5 @@
 defmodule EctoShorts.DynamicsTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use EctoShorts.Testing
 
   import Ecto.Query

@@ -1,130 +1,118 @@
 # EctoShorts
 
- [![Hex version badge](https://img.shields.io/hexpm/v/ecto_shorts.svg)](https://hex.pm/packages/ecto_shorts)
- [![Coveralls](https://github.com/MikaAK/ecto_shorts/actions/workflows/coveralls.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/coveralls.yml)
- [![Credo](https://github.com/MikaAK/ecto_shorts/actions/workflows/credo.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/credo.yml)
- [![Dialyzer](https://github.com/MikaAK/ecto_shorts/actions/workflows/dialyzer.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/dialyzer.yml)
+[![Hex version badge](https://img.shields.io/hexpm/v/ecto_shorts.svg)](https://hex.pm/packages/ecto_shorts)
+[![Coveralls](https://github.com/MikaAK/ecto_shorts/actions/workflows/coveralls.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/coveralls.yml)
+[![Credo](https://github.com/MikaAK/ecto_shorts/actions/workflows/credo.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/credo.yml)
+[![Dialyzer](https://github.com/MikaAK/ecto_shorts/actions/workflows/dialyzer.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/dialyzer.yml)
 
-Ecto Shorts is a library focused around making Ecto easier to use in an
-application and helping to write shorter code
+EctoShorts is a standardized, data-driven API library that simplifies common
+Ecto database operations by providing a concise filtering language for query
+composition, CRUD actions, and changeset helpers, allowing developers to write
+shorter, more readable code when working with Ecto queries and database
+operations through modules like Actions, CommonFilters, CommonChanges, and
+SchemaHelpers.
+
+The library abstracts away Ecto's complexity with a clean, intuitive interface
+that handles the heavy lifting behind the scenes, while comprehensive
+documentation with practical examples ensures developers can quickly understand
+and confidently implement database operations without getting bogged down in
+implementation details.
+
+The API is split into the following components:
+
+  * `EctoShorts.Actions` - Provides functions for executing database operations,
+    including CRUD, batch, bulk, `Ecto.Multi`, and transaction workflows. This
+    is the primary API module for most callers.
+
+  * `EctoShorts.CommonFilters` - Provides a filtering language for building
+    queries from data. It supports polymorphic sources and schemaless operations.
+
+  * `EctoShorts.CommonChanges` - Provides helpers for working with `Ecto.Changeset`,
+    including association preloading, conditional `put_*` operations, and field
+    validation.
+
+  * `EctoShorts.CommonSchema` - Provides helpers for schema introspection,
+    polymorphic source handling, and changeset construction.
+
+  * `EctoShorts.CommonParams` - Provides parameter and option helpers for
+    `m:Ecto.Repo.insert_all/3`, `m:Ecto.Repo.update_all/3`, and
+    `m:Ecto.Repo.delete_all/2`, including timestamp handling, placeholders, and
+    validation.
+
+  * `EctoShorts.CommonQuery` - Provides query introspection helpers, including
+    binding and source resolution.
+
+  * `EctoShorts.Compiler` - Provides helpers for generating function clauses
+    dynamically.
+
+  * `EctoShorts.Dynamics` - Provides helpers for building `Ecto.Query.dynamic/2`
+    expressions.
+
+  * `EctoShorts.Testing` - Provides test helpers for asserting on SQL, queries,
+    and dynamic expressions.
+
+## Special Thank you
+
+EctoShorts was built on the shoulders of giants, and owes a debt of gratitude
+to the Ecto team and the Ecto community for their hard work and dedication to
+the project.
 
 ## Installation
 
-Documentation can be found at [https://hexdocs.pm/ecto_shorts](https://hexdocs.pm/ecto_shorts).
+Add EctoShorts to your dependencies:
 
-```elixir
-def deps do
-  [
-    {:ecto_shorts, "~> 2.3"}
-  ]
-end
-```
+    {:ecto_shorts, "~> 3.0"}
 
+Configure a repo:
 
-### Usage
-There are 4 main modules to `EctoShorts`. `SchemaHelpers`, `CommonFilters`, `CommonChanges` and `Actions`
+    # config/config.exs
+    config :ecto_shorts, repo: MyApp.Repo
 
-With our `Actions.create` and related functions we can also define `create_changeset(params)` on our schema, this usually looks like:
-```elixir
-def create_changeset(params \\ %{}), do: changeset(%__MODULE__{}, params)
-```
-or some other variation of changeset that runs specifically on creates
+## Getting Started
 
-#### Actions
-This module takes a schema and filter parameters and runs them through CommonFilters, essentially a wrapper
-around Repo. All actions can accept an optional argument of a keyword list that can be used to configure which Repo the Action should use.
+Once you have completed the installation steps, you can start using the API:
 
-## Options
-    * `:repo` - A module that uses the Ecto.Repo Module.
-    * `:replica` - If you don't want to perform any reads against your Primary, you can specify a replica to read from.
+    # create a record
+    {:ok, post} = EctoShorts.Actions.create(MyApp.Post, %{title: "Hello"})
 
-For more info on filter options take a look at Common Filters
+    # list records
+    posts = EctoShorts.Actions.all(MyApp.Post, %{published: true, limit: 10})
 
-#### Common Changes
-This module is responsible for determining put/cast assoc as well as creating and updating model relations
+    # retrieve a record
+    {:ok, post} = EctoShorts.Actions.find(MyApp.Post, %{id: 1})
 
-###### Extra Magic
-If you pass a list of id's to a many to many relation it will count that as a `member_update` and remove or add members to the relations list
+    # update a record
+    {:ok, post} = EctoShorts.Actions.update(MyApp.Post, post, %{title: "Updated"})
 
-E.G. User many_to_many Fruit
+    # delete a record
+    {:ok, _} = EctoShorts.Actions.delete(post)
 
-This would update the user to have only fruits with id 1 and 3
-```elixir
-CommonChanges.put_or_cast_assoc(change(user, fruits: [%{id: 1}, %{id: 3}]), :fruits)
-```
+## Configuration
 
-#### Schema Helpers
-This module contains helpers to check schema data
+Configure the library in your application config:
 
-#### Common Filters
-This module creates query from filter paramters like
+    config :ecto_shorts,
+      repo: MyApp.Repo,
+      replica: MyApp.Repo.Replica,
+      error_module: MyApp.CustomError,
+      dynamic_adapter: MyApp.DynamicAdapter,
+      max_binding_positings: 3
 
-```elixir
-CommonFilters.convert_params_to_filter(User, %{id: 5})
-```
-is the same as
-```elixir
-from u in User, where: u.id === ^5
-```
+Options:
 
-This allows for filters to be constructed from data such as
-```elixir
-CommonFilters.convert_params_to_filter(User, %{
-  favorite_food: "curry",
-  age: %{gte: 18, lte: 50},
-  name: %{ilike: "steven"},
-  preload: [:address],
-  last: 5
-})
-```
-which the equivalent would be
-```elixir
-from u in User,
-  preload: [:address],
-  limit: 5,
-  where: u.favorite_food === "curry" and
-         u.age >= 18 and u.age <= 50 and
-         ilike(u.name, "%steven%")
-```
+  * `:repo` - The default `Ecto.Repo` for write operations.
 
-We are also able to query on the first layer of relations like so:
-```elixir
-EctoShorts.Actions.all(User, %{
-  roles: ["ADMIN", "SUPERUSER"]
-})
-```
+  * `:replica` - The `Ecto.Repo` for read operations. Defaults to the value of
+    `:repo`.
 
-which would be equivalent to:
+  * `:error_module` - A module implementing the `EctoShorts.Actions.Error`
+    behaviour. This module formats error messages.
 
-```elixir
-from u in User,
-  inner_join: r in assoc(u, :roles), as: :ecto_shorts_roles,
-  where: r.code in ["ADMIN", "SUPERUSER"]
-```
+  * `:dynamic_adapter` - A module implementing the `EctoShorts.Dynamics.Adapter`
+    behaviour. This module builds dynamic expressions.
 
-Finally we can also query array fields by doing the following
+  * `:max_binding_positings` - The maximum number of query bindings allowed
+    before EctoShorts falls back to a subquery strategy. Defaults to `3`.
 
-```elixir
-EctoShorts.Actions.all(User, %{
-  items: [1, 2],
-  cart: 3
-})
-```
-
-which for an array field would be the equivalent to:
-
-```elixir
-from u in User,
-  where: ^3 in u.cart and u.items === [1, 2]
-```
-
-###### List of common filters
-- `preload` - Preloads fields onto the query results
-- `start_date` - Query for items inserted after this date
-- `end_date` - Query for items inserted before this date
-- `before` - Get items with ID's before this value
-- `after` - Get items with ID's after this value
-- `ids` - Get items with a list of ids
-- `first` - Gets the first n items
-- `last` - Gets the last n items
-- `search` - ***Warning:*** This requires schemas using this to have a `&by_search(query, val)` function
+All configuration keys are optional. You can also pass `:repo` and `:replica` at
+runtime via options on most `EctoShorts.Actions` functions.
