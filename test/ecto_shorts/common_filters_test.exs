@@ -163,7 +163,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{where: %{exists: {:not, subquery_expr}}},
+          %{where: %{exists: %{not: subquery_expr}}},
           []
         )
 
@@ -179,7 +179,7 @@ defmodule EctoShorts.CommonFiltersTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{views: %{>: {:+, [:views, 10]}}},
+          %{views: %{>: %{+: [:views, 10]}}},
           []
         )
 
@@ -698,7 +698,7 @@ defmodule EctoShorts.CommonFiltersTest do
     test "supports LOWER operator for scalar fields via explicit ==" do
       expected = from p in Post, where: fragment("lower(?)", p.title) == ^"hello"
       q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{title: %{==: {:lower, "hello"}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(q, %{title: %{==: %{lower: "hello"}}}, [])
 
       assert_sql(expected, q2)
     end
@@ -706,7 +706,7 @@ defmodule EctoShorts.CommonFiltersTest do
     test "supports UPPER operator for scalar fields via explicit ==" do
       expected = from p in Post, where: fragment("upper(?)", p.title) == ^"HELLO"
       q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{title: %{==: {:upper, "HELLO"}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(q, %{title: %{==: %{upper: "HELLO"}}}, [])
 
       assert_sql(expected, q2)
     end
@@ -714,7 +714,7 @@ defmodule EctoShorts.CommonFiltersTest do
     test "supports LOWER operator for scalar fields via explicit !=" do
       expected = from p in Post, where: fragment("lower(?)", p.title) != ^"hello"
       q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{title: %{!=: {:lower, "hello"}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(q, %{title: %{!=: %{lower: "hello"}}}, [])
 
       assert_sql(expected, q2)
     end
@@ -722,7 +722,7 @@ defmodule EctoShorts.CommonFiltersTest do
     test "supports UPPER operator for scalar fields via explicit !=" do
       expected = from p in Post, where: fragment("upper(?)", p.title) != ^"HELLO"
       q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{title: %{!=: {:upper, "HELLO"}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(q, %{title: %{!=: %{upper: "HELLO"}}}, [])
 
       assert_sql(expected, q2)
     end
@@ -4054,6 +4054,889 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert_received {:q2, q2}
       assert q2 === q
+    end
+
+    # ------------------------------------------------------------------
+    # P1: Custom/Common filters
+    # ------------------------------------------------------------------
+
+    test "supports :ids custom filter" do
+      expected = from p in Post, where: p.id in ^[1, 2, 3]
+      q2 = CommonFilters.convert_params_to_filter(Post, %{ids: [1, 2, 3]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :after custom filter" do
+      expected = from p in Post, where: p.id > ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{after: 10}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :before custom filter" do
+      expected = from p in Post, where: p.id < ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{before: 10}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :start_date custom filter" do
+      dt = ~U[2026-01-01 00:00:00Z]
+      expected = from p in Post, where: p.inserted_at >= ^dt
+      q2 = CommonFilters.convert_params_to_filter(Post, %{start_date: dt}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :end_date custom filter" do
+      dt = ~U[2026-12-31 23:59:59Z]
+      expected = from p in Post, where: p.inserted_at <= ^dt
+      q2 = CommonFilters.convert_params_to_filter(Post, %{end_date: dt}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P1: Comparison alias operators
+    # ------------------------------------------------------------------
+
+    test "supports :gt alias operator for scalar fields" do
+      expected = from p in Post, where: p.views > ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{gt: 10}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :gte alias operator for scalar fields" do
+      expected = from p in Post, where: p.views >= ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{gte: 10}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :lt alias operator for scalar fields" do
+      expected = from p in Post, where: p.views < ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{lt: 10}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :lte alias operator for scalar fields" do
+      expected = from p in Post, where: p.views <= ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{lte: 10}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P1: Explicit == and eq operators
+    # ------------------------------------------------------------------
+
+    test "supports explicit == operator for scalar fields" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{==: 1}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :eq alias operator for scalar fields" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{eq: 1}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports explicit == with list RHS coercing to IN for scalar fields" do
+      expected = from p in Post, where: p.published in ^[true, false]
+      q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{==: [true, false]}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P1: :first filter
+    # ------------------------------------------------------------------
+
+    test "supports :first filter (delegates to :limit)" do
+      expected = from p in Post, limit: ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{first: 10}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P2: Scalar :any subquery helper
+    # ------------------------------------------------------------------
+
+    test "supports scalar any helper expression with > in :where" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected =
+        from(p in Post,
+          where: p.id > any(subquery_expr)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{any: %{>: subquery_expr}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports scalar any helper expression with implicit == in :where" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected =
+        from(p in Post,
+          where: p.id == any(subquery_expr)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{any: subquery_expr}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated scalar any helper expression in :where" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected =
+        from(p in Post,
+          where: not (p.id > any(subquery_expr))
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{not: %{any: %{>: subquery_expr}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated scalar any helper expression with implicit == in :where" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected =
+        from(p in Post,
+          where: p.id != any(subquery_expr)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{not: %{any: subquery_expr}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P2: Negated scalar :all
+    # ------------------------------------------------------------------
+
+    test "supports negated scalar all helper expression in :where" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected =
+        from(p in Post,
+          where: not (p.id > all(subquery_expr))
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{not: %{all: %{>: subquery_expr}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports scalar all helper expression with implicit == in :where" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected =
+        from(p in Post,
+          where: p.id == all(subquery_expr)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{all: subquery_expr}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated scalar all helper expression with implicit == in :where" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected =
+        from(p in Post,
+          where: p.id != all(subquery_expr)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{not: %{all: subquery_expr}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P2: Aggregate operators beyond avg
+    # ------------------------------------------------------------------
+
+    test "supports :count aggregate operator in :having" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: count(p.views) > ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{views: %{count: %{>: 10}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :max aggregate operator in :having" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: max(p.views) > ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{views: %{max: %{>: 10}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :min aggregate operator in :having" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: min(p.views) > ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{views: %{min: %{>: 10}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :sum aggregate operator in :having" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: sum(p.views) > ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{views: %{sum: %{>: 10}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports aggregate with implicit == operator" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: avg(p.views) == ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{views: %{avg: 10}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated aggregate operator" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: not (avg(p.views) > ^10)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{views: %{not: %{avg: %{>: 10}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports aggregate with alias comparison operator" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: avg(p.views) >= ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{views: %{avg: %{gte: 10}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P2: Date/time helpers
+    # ------------------------------------------------------------------
+
+    test "supports datetime_add helper with implicit == operator" do
+      expected =
+        from(p in Post,
+          where: p.inserted_at == datetime_add(p.inserted_at, ^1, ^"day")
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            inserted_at: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports date_add helper with >= operator" do
+      expected =
+        from(p in Post,
+          where: p.inserted_at >= date_add(p.inserted_at, ^1, ^"day")
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            inserted_at: %{>=: %{date_add: %{field: :inserted_at, count: 1, interval: "day"}}}
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports from_now helper with > operator" do
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            inserted_at: %{>: %{from_now: %{count: 1, interval: "day"}}}
+          },
+          []
+        )
+
+      {sql, params} = SQL.to_sql(:all, EctoShorts.Repo, q2)
+
+      assert sql =~
+               "WHERE (p0.\"inserted_at\" > $1::timestamp + ($2::numeric * interval '1 day'))"
+
+      assert match?([%DateTime{}, %Decimal{}], params)
+      assert Enum.at(params, 1) === Decimal.new("1")
+    end
+
+    test "supports ago helper with > operator in :where" do
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            inserted_at: %{>: %{ago: %{count: 1, interval: "day"}}}
+          },
+          []
+        )
+
+      {sql, params} = SQL.to_sql(:all, EctoShorts.Repo, q2)
+
+      assert sql =~
+               "WHERE (p0.\"inserted_at\" > $1::timestamp + ($2::numeric * interval '1 day'))"
+
+      assert match?([%DateTime{}, %Decimal{}], params)
+      assert Enum.at(params, 1) === Decimal.new("-1")
+    end
+
+    # ------------------------------------------------------------------
+    # P2: Arithmetic beyond +
+    # ------------------------------------------------------------------
+
+    test "supports subtraction arithmetic helper expression in :where" do
+      expected =
+        from(p in Post,
+          where: p.views > p.views - ^10
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{views: %{>: %{-: [:views, 10]}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports multiplication arithmetic helper expression in :where" do
+      expected =
+        from(p in Post,
+          where: p.views > p.views * ^2
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{views: %{>: %{*: [:views, 2]}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports division arithmetic helper expression in :where" do
+      expected =
+        from(p in Post,
+          where: p.views > p.views / ^2
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{views: %{>: %{/: [:views, 2]}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated arithmetic helper expression in :where" do
+      expected =
+        from(p in Post,
+          where: not (p.views > p.views + ^10)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{views: %{not: %{>: %{+: [:views, 10]}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P2: Remaining negated comparison operators
+    # ------------------------------------------------------------------
+
+    test "supports negated >= comparison for scalar fields" do
+      expected = from p in Post, where: not (p.views >= ^10)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{>=: 10}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated < comparison for scalar fields" do
+      expected = from p in Post, where: not (p.views < ^10)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{<: 10}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated <= comparison for scalar fields" do
+      expected = from p in Post, where: not (p.views <= ^10)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{<=: 10}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated == comparison for scalar fields" do
+      expected = from p in Post, where: p.views != ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{==: 10}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P3: Array alias operators
+    # ------------------------------------------------------------------
+
+    test "supports :gt alias operator for array fields" do
+      expected =
+        from(p in Post,
+          where: fragment("? < ANY(?)", ^"elixir", p.tags)
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{gt: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :gte alias operator for array fields" do
+      expected =
+        from(p in Post,
+          where: fragment("? <= ANY(?)", ^"elixir", p.tags)
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{gte: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :lt alias operator for array fields" do
+      expected =
+        from(p in Post,
+          where: fragment("? > ANY(?)", ^"elixir", p.tags)
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{lt: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :lte alias operator for array fields" do
+      expected =
+        from(p in Post,
+          where: fragment("? >= ANY(?)", ^"elixir", p.tags)
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{lte: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :eq alias operator for array fields (membership)" do
+      expected =
+        from(p in Post,
+          where: ^"elixir" in p.tags
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{eq: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P3: Array aggregate operators
+    # ------------------------------------------------------------------
+
+    test "supports :count aggregate operator for array fields in :having" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: count(p.tags) > ^0
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{tags: %{count: %{>: 0}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :count aggregate operator for array fields with implicit == in :having" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: count(p.tags) == ^0
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{tags: %{count: 0}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P3: Array LOWER/UPPER via explicit == and !=
+    # ------------------------------------------------------------------
+
+    test "supports LOWER operator for array fields via explicit ==" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              """
+              EXISTS (
+                SELECT 1
+                FROM unnest(?) AS t
+                WHERE lower(t) = ?
+              )
+              """,
+              p.tags,
+              ^"elixir"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: %{lower: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports UPPER operator for array fields via explicit ==" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              """
+              EXISTS (
+                SELECT 1
+                FROM unnest(?) AS t
+                WHERE upper(t) = ?
+              )
+              """,
+              p.tags,
+              ^"ELIXIR"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: %{upper: "ELIXIR"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports LOWER operator for array fields via explicit !=" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              """
+              NOT EXISTS (
+                SELECT 1
+                FROM unnest(?) AS t
+                WHERE lower(t) = ?
+              )
+              """,
+              p.tags,
+              ^"elixir"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: %{lower: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports UPPER operator for array fields via explicit !=" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              """
+              NOT EXISTS (
+                SELECT 1
+                FROM unnest(?) AS t
+                WHERE upper(t) = ?
+              )
+              """,
+              p.tags,
+              ^"ELIXIR"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: %{upper: "ELIXIR"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P3: Negated array comparisons (not >=, not <, not <=)
+    # ------------------------------------------------------------------
+
+    test "supports negated >= comparison for array fields" do
+      expected =
+        from(p in Post,
+          where: not fragment("? <= ANY(?)", ^"elixir", p.tags)
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{>=: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated < comparison for array fields" do
+      expected =
+        from(p in Post,
+          where: not fragment("? > ANY(?)", ^"elixir", p.tags)
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{<: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports negated <= comparison for array fields" do
+      expected =
+        from(p in Post,
+          where: not fragment("? >= ANY(?)", ^"elixir", p.tags)
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{<=: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P3: :last with sort keys
+    # ------------------------------------------------------------------
+
+    test "supports :last with explicit sort key as a map" do
+      expected =
+        Post
+        |> exclude(:order_by)
+        |> from(order_by: [desc: :title], limit: ^2)
+        |> subquery()
+        |> order_by(:title)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{last: %{title: 2}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :last with explicit sort key as a keyword list" do
+      expected =
+        Post
+        |> exclude(:order_by)
+        |> from(order_by: [desc: :title], limit: ^2)
+        |> subquery()
+        |> order_by(:title)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{last: [title: 2]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :last with nil sort key (uses primary key)" do
+      expected =
+        Post
+        |> exclude(:order_by)
+        |> from(order_by: [desc: :id], limit: ^2)
+        |> subquery()
+        |> order_by(:id)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{last: {nil, 2}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P3: Meta-key extraction
+    # ------------------------------------------------------------------
+
+    test "supports :source meta-key to override source module" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, query: %{id: 1}], [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :source meta-key with direct field params" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, id: 1], [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :query meta-key merged with field params" do
+      expected =
+        from(p in Post,
+          where: p.id == ^1,
+          where: p.published == ^true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [query: %{id: 1}, published: true],
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P4: Explicit nil operators
+    # ------------------------------------------------------------------
+
+    test "supports explicit == nil (IS NULL)" do
+      expected = from p in Post, where: is_nil(p.published_at)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: %{==: nil}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :eq nil alias (IS NULL)" do
+      expected = from p in Post, where: is_nil(p.published_at)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: %{eq: nil}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    # ------------------------------------------------------------------
+    # P4: Negated NOT IN → IN (double negation)
+    # ------------------------------------------------------------------
+
+    test "supports negated NOT IN coercing to IN for scalar fields (double negation)" do
+      expected = from p in Post, where: p.published in ^[true, false]
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{published: %{not: %{!=: [true, false]}}},
+          []
+        )
+
+      assert_sql(expected, q2)
     end
   end
 end

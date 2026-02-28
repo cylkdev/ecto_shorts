@@ -91,24 +91,6 @@ defmodule EctoShorts.MixProject do
           EctoShorts.Actions.Multi,
           EctoShorts.Actions.Error
         ],
-        Filters: [
-          EctoShorts.CommonFilters.BindingParams,
-          EctoShorts.CommonFilters.Distinct,
-          EctoShorts.CommonFilters.Filter,
-          EctoShorts.CommonFilters.FragmentProviders.NoOp,
-          EctoShorts.CommonFilters.GroupBy,
-          EctoShorts.CommonFilters.Having,
-          EctoShorts.CommonFilters.Join,
-          EctoShorts.CommonFilters.OrderBy,
-          EctoShorts.CommonFilters.Preload,
-          EctoShorts.CommonFilters.Select,
-          EctoShorts.CommonFilters.SubQuery,
-          EctoShorts.CommonFilters.Update,
-          EctoShorts.CommonFilters.Windows,
-          EctoShorts.CommonFilters.WithCte,
-          EctoShorts.CommonFilters.WithNamedBinding,
-          EctoShorts.CommonFilters.WithTies
-        ],
         Params: [
           EctoShorts.CommonParams.Placeholders,
           EctoShorts.CommonParams.Timestamps
@@ -125,7 +107,7 @@ defmodule EctoShorts.MixProject do
         ],
         Compiler: [
           EctoShorts.Compiler,
-          EctoShorts.Compiler.Ast,
+          EctoShorts.Compiler.AST,
           EctoShorts.Compiler.ClauseBuilder,
           EctoShorts.Compiler.ClauseSpec,
           EctoShorts.Compiler.ClauseSpecProvider,
