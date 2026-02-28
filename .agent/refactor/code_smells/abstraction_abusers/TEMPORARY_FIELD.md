@@ -181,7 +181,7 @@ end
 
 ## Why Refactor
 
-- Each struct has only the fields it needs—no `nil` checks required.
+- Each struct has only the fields it needs-no `nil` checks required.
 - Type specs document valid state transitions.
 - Pattern matching enforces correct operation order at compile time.
 - Dialyzer can catch invalid state transitions.

@@ -31,15 +31,15 @@ Follow the skeleton and all requirements in `.agent/PLANS.md`. The plan must be 
 
 At minimum the plan must include:
 
-- **Purpose / Big Picture** — what the user gains and how to see it working.
-- **Context and Orientation** — key files, modules, and terms defined for a novice.
-- **Plan of Work** — the sequence of edits, naming files and functions precisely.
-- **Concrete Steps** — exact commands, working directories, and expected output.
-- **Validation and Acceptance** — how to exercise the system and what to observe.
-- **Interfaces and Dependencies** — modules, behaviours, and function signatures that must exist.
-- **Milestones** — independently verifiable steps.
-- **Progress** — checklist updated as work proceeds.
-- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** — living sections.
+- **Purpose / Big Picture** - what the user gains and how to see it working.
+- **Context and Orientation** - key files, modules, and terms defined for a novice.
+- **Plan of Work** - the sequence of edits, naming files and functions precisely.
+- **Concrete Steps** - exact commands, working directories, and expected output.
+- **Validation and Acceptance** - how to exercise the system and what to observe.
+- **Interfaces and Dependencies** - modules, behaviours, and function signatures that must exist.
+- **Milestones** - independently verifiable steps.
+- **Progress** - checklist updated as work proceeds.
+- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** - living sections.
 
 ### 4. Execute the plan
 

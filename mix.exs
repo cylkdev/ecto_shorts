@@ -50,7 +50,7 @@ defmodule EctoShorts.MixProject do
     [
       {:ex_doc, "~> 0.40.1"},
       {:credo, "~> 1.4", runtime: false},
-      {:blitz_credo_checks, "~> 0.1.5", runtime: false},
+      {:blitz_credo_checks, "~> 0.1.10", runtime: false},
       {:dialyxir, "~> 1.4", runtime: false},
       {:excoveralls, "~> 0.13", only: :test},
       {:rexbug, "~> 1.0"},

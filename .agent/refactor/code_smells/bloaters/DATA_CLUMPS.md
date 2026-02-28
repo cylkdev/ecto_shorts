@@ -6,7 +6,7 @@ Bloaters
 
 ## Description
 
-The same group of data items appears together in multiple places—as function parameters, struct fields, or local variables. These related values should be extracted into their own struct or module.
+The same group of data items appears together in multiple places-as function parameters, struct fields, or local variables. These related values should be extracted into their own struct or module.
 
 ## Signs and Symptoms
 

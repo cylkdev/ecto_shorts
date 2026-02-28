@@ -8,6 +8,9 @@ defmodule EctoShorts.CommonFilters.Join do
   `:source` key identifying what to join against, plus optional `:qualifier`
   (default `:inner`), `:on`, `:as`, `:prefix`, and `:hints` keys.
 
+  Invalid join payloads are logged and skipped for that join entry. This
+  includes invalid `:on` payloads, which are not applied as `on: true`.
+
   Association keys found in the schema's associations list are automatically
   wrapped as `{:association, ...}` joins.
   """
@@ -122,23 +125,27 @@ defmodule EctoShorts.CommonFilters.Join do
              {:association, assoc_key, join_options},
              opts
            ) do
-        on_value = on_expr(schema_source, binding_selector, join_options[:on], opts)
+        case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+          {:ok, on_value} ->
+            qualifier = join_options[:qualifier] || :inner
+            prefix = join_options[:prefix]
+            as = join_options[:as]
+            hints = join_options[:hints]
 
-        qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix]
-        as = join_options[:as]
-        hints = join_options[:hints]
+            build_join(
+              query,
+              binding_selector,
+              qualifier,
+              {:association, assoc_key},
+              as,
+              on_value,
+              prefix,
+              hints
+            )
 
-        build_join(
-          query,
-          binding_selector,
-          qualifier,
-          {:association, assoc_key},
-          as,
-          on_value,
-          prefix,
-          hints
-        )
+          :error ->
+            query
+        end
       end
 
       defp apply_join_expr(
@@ -148,37 +155,41 @@ defmodule EctoShorts.CommonFilters.Join do
              {:schema, target_schema, join_options},
              opts
            ) do
-        on_value = on_expr(schema_source, binding_selector, join_options[:on], opts)
+        case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+          {:ok, on_value} ->
+            qualifier = join_options[:qualifier] || :inner
+            prefix = join_options[:prefix]
+            as = join_options[:as]
+            hints = join_options[:hints]
 
-        qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix]
-        as = join_options[:as]
-        hints = join_options[:hints]
+            schema_source =
+              case target_schema do
+                {table, schema}
+                when is_binary(table) and table !== "" and is_atom(schema) and not is_nil(schema) ->
+                  {table, schema}
 
-        schema_source =
-          case target_schema do
-            {table, schema}
-            when is_binary(table) and table !== "" and is_atom(schema) and not is_nil(schema) ->
-              {table, schema}
+                schema when is_atom(schema) and not is_nil(schema) ->
+                  schema
 
-            schema when is_atom(schema) and not is_nil(schema) ->
-              schema
+                _ ->
+                  raise ArgumentError,
+                        "Expected target schema to be an atom or a tuple of {table, schema}, got: #{inspect(target_schema)}"
+              end
 
-            _ ->
-              raise ArgumentError,
-                    "Expected target schema to be an atom or a tuple of {table, schema}, got: #{inspect(target_schema)}"
-          end
+            build_join(
+              query,
+              binding_selector,
+              qualifier,
+              {:source, schema_source},
+              as,
+              on_value,
+              prefix,
+              hints
+            )
 
-        build_join(
-          query,
-          binding_selector,
-          qualifier,
-          {:source, schema_source},
-          as,
-          on_value,
-          prefix,
-          hints
-        )
+          :error ->
+            query
+        end
       end
 
       defp apply_join_expr(
@@ -188,23 +199,27 @@ defmodule EctoShorts.CommonFilters.Join do
              {:table, table_name, join_options},
              opts
            ) do
-        on_value = on_expr(schema_source, binding_selector, join_options[:on], opts)
+        case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+          {:ok, on_value} ->
+            qualifier = join_options[:qualifier] || :inner
+            prefix = join_options[:prefix]
+            as = join_options[:as]
+            hints = join_options[:hints]
 
-        qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix]
-        as = join_options[:as]
-        hints = join_options[:hints]
+            build_join(
+              query,
+              binding_selector,
+              qualifier,
+              {:source, table_name},
+              as,
+              on_value,
+              prefix,
+              hints
+            )
 
-        build_join(
-          query,
-          binding_selector,
-          qualifier,
-          {:source, table_name},
-          as,
-          on_value,
-          prefix,
-          hints
-        )
+          :error ->
+            query
+        end
       end
 
       defp apply_join_expr(
@@ -214,28 +229,32 @@ defmodule EctoShorts.CommonFilters.Join do
              {:query, source_query, join_options},
              opts
            ) do
-        on_value = on_expr(schema_source, binding_selector, join_options[:on], opts)
+        case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+          {:ok, on_value} ->
+            qualifier = join_options[:qualifier] || :inner
+            prefix = join_options[:prefix]
+            as = join_options[:as]
+            hints = join_options[:hints]
 
-        qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix]
-        as = join_options[:as]
-        hints = join_options[:hints]
+            unless is_struct(source_query, Ecto.Query) do
+              raise ArgumentError,
+                    "Expected source query to be a struct, got: #{inspect(source_query)}"
+            end
 
-        unless is_struct(source_query, Ecto.Query) do
-          raise ArgumentError,
-                "Expected source query to be a struct, got: #{inspect(source_query)}"
+            build_join(
+              query,
+              binding_selector,
+              qualifier,
+              {:source, source_query},
+              as,
+              on_value,
+              prefix,
+              hints
+            )
+
+          :error ->
+            query
         end
-
-        build_join(
-          query,
-          binding_selector,
-          qualifier,
-          {:source, source_query},
-          as,
-          on_value,
-          prefix,
-          hints
-        )
       end
 
       defp apply_join_expr(
@@ -245,37 +264,41 @@ defmodule EctoShorts.CommonFilters.Join do
              {:subquery, params, join_options},
              opts
            ) do
-        on_value = on_expr(schema_source, binding_selector, join_options[:on], opts)
+        case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+          {:ok, on_value} ->
+            qualifier = join_options[:qualifier] || :inner
+            prefix = join_options[:prefix]
+            as = join_options[:as]
+            hints = join_options[:hints]
 
-        qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix]
-        as = join_options[:as]
-        hints = join_options[:hints]
+            subquery_source =
+              case params do
+                %Ecto.Query{} = query ->
+                  query
 
-        subquery_source =
-          case params do
-            %Ecto.Query{} = query ->
-              query
+                %Ecto.SubQuery{} = subquery ->
+                  subquery
 
-            %Ecto.SubQuery{} = subquery ->
-              subquery
+                subquery_params ->
+                  subquery_source = subquery_params[:source] || schema_source
+                  filter_params = subquery_params[:query] || %{}
+                  CommonFilters.convert_params_to_filter(subquery_source, filter_params, opts)
+              end
 
-            subquery_params ->
-              subquery_source = subquery_params[:source] || schema_source
-              filter_params = subquery_params[:query] || %{}
-              CommonFilters.convert_params_to_filter(subquery_source, filter_params, opts)
-          end
+            build_join(
+              query,
+              binding_selector,
+              qualifier,
+              {:subquery, subquery_source},
+              as,
+              on_value,
+              prefix,
+              hints
+            )
 
-        build_join(
-          query,
-          binding_selector,
-          qualifier,
-          {:subquery, subquery_source},
-          as,
-          on_value,
-          prefix,
-          hints
-        )
+          :error ->
+            query
+        end
       end
 
       defp apply_join_expr(
@@ -285,36 +308,40 @@ defmodule EctoShorts.CommonFilters.Join do
              {:fragment, params, join_options},
              opts
            ) do
-        on_value = on_expr(schema_source, binding_selector, join_options[:on], opts)
+        case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+          {:ok, on_value} ->
+            qualifier = join_options[:qualifier] || :inner
+            prefix = join_options[:prefix]
+            as = join_options[:as]
+            hints = join_options[:hints]
 
-        qualifier = join_options[:qualifier] || :inner
-        prefix = join_options[:prefix]
-        as = join_options[:as]
-        hints = join_options[:hints]
+            source_name = params[:name]
+            source_values = params[:values]
 
-        source_name = params[:name]
-        source_values = params[:values]
+            if is_nil(source_name) do
+              raise ArgumentError, "Join source name is required, got: #{inspect(params)}"
+            end
 
-        if is_nil(source_name) do
-          raise ArgumentError, "Join source name is required, got: #{inspect(params)}"
-        end
+            if is_nil(source_values) do
+              raise ArgumentError, "Join source values are required, got: #{inspect(params)}"
+            end
 
-        if is_nil(source_values) do
-          raise ArgumentError, "Join source values are required, got: #{inspect(params)}"
-        end
+            case resolve_expr_source(binding_selector, source_name, source_values, opts) do
+              {:ok, expr} ->
+                build_join(
+                  query,
+                  binding_selector,
+                  qualifier,
+                  {:source, expr},
+                  as,
+                  on_value,
+                  prefix,
+                  hints
+                )
 
-        case resolve_expr_source(binding_selector, source_name, source_values, opts) do
-          {:ok, expr} ->
-            build_join(
-              query,
-              binding_selector,
-              qualifier,
-              {:source, expr},
-              as,
-              on_value,
-              prefix,
-              hints
-            )
+              :error ->
+                query
+            end
 
           :error ->
             query
@@ -483,33 +510,33 @@ defmodule EctoShorts.CommonFilters.Join do
   defp on_expr(schema_source, binding_selector, on_param, opts) do
     case on_param do
       true ->
-        true
+        {:ok, true}
 
       nil ->
-        true
+        {:ok, true}
 
       list when is_list(list) ->
         if Keyword.keyword?(list) do
-          Dynamics.convert_to_dynamic(schema_source, binding_selector, list, opts)
+          {:ok, Dynamics.convert_to_dynamic(schema_source, binding_selector, list, opts)}
         else
-          Logger.error(
+          Logger.warning(
             @logger_prefix,
-            "Expected :on to be a keyword list, got: #{inspect(list)}"
+            "Expected :on to be a keyword list, map, or true, got: #{inspect(list)}"
           )
 
-          true
+          :error
         end
 
       on_params when is_map(on_params) ->
-        Dynamics.convert_to_dynamic(schema_source, binding_selector, on_params, opts)
+        {:ok, Dynamics.convert_to_dynamic(schema_source, binding_selector, on_params, opts)}
 
       term ->
-        Logger.error(
+        Logger.warning(
           @logger_prefix,
           "Expected :on to be a keyword list, map, or true, got: #{inspect(term)}"
         )
 
-        true
+        :error
     end
   end
 end

@@ -668,7 +668,7 @@ defmodule MyAppWeb.Schema.Mutations.Message do
   - The `input` argument uses a distinct input object type (e.g. `:message_create_input`).
   - The mutation returns a distinct payload type (e.g. `:message_create_payload`).
 
-  ## Getting Started
+  ## Getting started
 
   To use the api a client calls one mutation field and passes an `input` object. The client then chooses which response fields to return from the payload.
 
@@ -688,7 +688,7 @@ defmodule MyAppWeb.Schema.Mutations.Message do
 
   ### Why `userErrors` is shown in the examples
 
-  Many GraphQL APIs return validation and business-rule failures in the mutation payload (for example in a `userErrors` field) instead of relying only on top-level GraphQL errors. Requesting `userErrors` makes client behavior easier to debug.
+  Many GraphQL APIs return validation and business-rule failures in the mutation payload (for example in a `userErrors` field) instead of relying only on top-level GraphQL errors. Requesting `userErrors` makes client behaviour easier to debug.
 
   ### What this module does not define
 
@@ -1069,7 +1069,7 @@ defmodule MyAppWeb.Schema.Subscriptions.Message do
   - The subscription returns an object type that matches the event payload
     (for example, a `:message` or a custom payload type).
 
-  ## Getting Started
+  ## Getting started
 
   To use the API a client subscribes to one of the defined fields and supplies
   any required arguments. The server will push new results to the client

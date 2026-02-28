@@ -11,9 +11,9 @@ defmodule EctoShorts.CommonQuery do
 
   Bindings can be resolved in two ways:
 
-  * By **name** (the `:as` binding) — pass an atom matching the `as:` key
+  * By **name** (the `:as` binding) - pass an atom matching the `as:` key
     used in `from` or `join`.
-  * By **position** — pass an integer where `1` is the root `from` binding
+  * By **position** - pass an integer where `1` is the root `from` binding
     and each subsequent join increments the position.
 
   ## Source tuples
@@ -26,7 +26,7 @@ defmodule EctoShorts.CommonQuery do
   Functions in this module return `nil` when a source or binding cannot be
   resolved.
 
-  ## Quick start
+  ## Getting started
 
       iex> import Ecto.Query
       ...> q = from p in EctoShorts.Schema.Post, as: :post

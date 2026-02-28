@@ -5,7 +5,7 @@ description: Guides the creation of a self-contained SpecPlan for producing beha
 
 ## When to use
 
-Use this skill when you need to write behaviour specifications — example-driven scenarios that define what the system must do from a user-observable point of view. Use it when you want to define Given/When/Then scenarios, map them to runnable tests, and prove the behaviour end-to-end.
+Use this skill when you need to write behaviour specifications - example-driven scenarios that define what the system must do from a user-observable point of view. Use it when you want to define Given/When/Then scenarios, map them to runnable tests, and prove the behaviour end-to-end.
 
 ## When not to use
 
@@ -31,15 +31,15 @@ Follow the skeleton and all requirements in `.agent/SPEC_PLANS.md`. The plan mus
 
 At minimum the plan must include:
 
-- **Purpose / Big Picture** — what the user gains and how to see it working.
-- **Context and Orientation** — key files, modules, and terms defined for a novice.
-- **Behaviour Vocabulary** — domain terms with clear definitions mapped to system data.
-- **Behaviour Spec Draft** — the initial spec in the target format with concrete example values.
-- **Traceability Map** — spec files, test files, step definitions, and shared fixtures.
-- **Validation and Acceptance** — exact commands and expected outputs.
-- **Milestones** — independently verifiable steps.
-- **Progress** — checklist updated as work proceeds.
-- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** — living sections.
+- **Purpose / Big Picture** - what the user gains and how to see it working.
+- **Context and Orientation** - key files, modules, and terms defined for a novice.
+- **Behaviour Vocabulary** - domain terms with clear definitions mapped to system data.
+- **Behaviour Spec Draft** - the initial spec in the target format with concrete example values.
+- **Traceability Map** - spec files, test files, step definitions, and shared fixtures.
+- **Validation and Acceptance** - exact commands and expected outputs.
+- **Milestones** - independently verifiable steps.
+- **Progress** - checklist updated as work proceeds.
+- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** - living sections.
 
 ### 4. Draft the behaviour spec
 

@@ -5,7 +5,7 @@ description: Runs the project's ADR workflow after an architecture decision by c
 
 ## When to use
 
-Use this skill when you make or discover an architecture decision — a choice between two or more plausible options that changes how the system is built or operated. Examples: choosing a library, defining a data model boundary, selecting a concurrency strategy, or establishing a module contract.
+Use this skill when you make or discover an architecture decision - a choice between two or more plausible options that changes how the system is built or operated. Examples: choosing a library, defining a data model boundary, selecting a concurrency strategy, or establishing a module contract.
 
 ## When not to use
 
@@ -31,7 +31,7 @@ Copy the skeleton from `.agent/ADRS.md` into the new file. Fill in every section
 
 ### 4. Make the decision testable
 
-In "Validation", include at least one concrete way to confirm the decision was applied correctly. Prefer a command to run, a test to run, or an observable runtime behavior.
+In "Validation", include at least one concrete way to confirm the decision was applied correctly. Prefer a command to run, a test to run, or an observable runtime behaviour.
 
 ### 5. Ensure the ADR is reviewable
 

@@ -6,7 +6,7 @@ Accepted
 
 ## Context and Problem Statement
 
-The three largest modules in EctoShorts — `EctoShorts.Actions` (983 lines), `EctoShorts.CommonFilters` (727 lines), and `EctoShorts.CommonParams` (676 lines) — each bundled multiple unrelated responsibilities into a single file. This made it hard to navigate, increased merge-conflict risk on hot files, and forced unrelated logic to change together. For example, `Actions` mixed CRUD operations, batch logic, multi-transaction building, and transaction response handling. A change to batch key normalization required editing the same file as a change to multi-transaction error formatting.
+The three largest modules in EctoShorts - `EctoShorts.Actions` (983 lines), `EctoShorts.CommonFilters` (727 lines), and `EctoShorts.CommonParams` (676 lines) - each bundled multiple unrelated responsibilities into a single file. This made it hard to navigate, increased merge-conflict risk on hot files, and forced unrelated logic to change together. For example, `Actions` mixed CRUD operations, batch logic, multi-transaction building, and transaction response handling. A change to batch key normalization required editing the same file as a change to multi-transaction error formatting.
 
 The question was: how should we restructure these modules to reduce their size and improve separation of concerns, without changing the public API that downstream callers depend on?
 
@@ -22,7 +22,7 @@ The question was: how should we restructure these modules to reduce their size a
 
 1. **Extract focused submodules** (chosen): Create child modules under each namespace (`Actions.Multi`, `Actions.Batch`, `CommonFilters.BindParams`, `CommonParams.Timestamps`, `CommonParams.Placeholders`) and move cohesive groups of private functions there. The parent modules delegate to the children internally. Replace repetitive function-clause dispatch in `CommonFilters` with a map-based lookup. Consolidate duplicated `get_query_fields/2` into `CommonSchema`.
 
-2. **Inline refactor only**: Keep all code in the same modules but restructure internally — extract private helper functions, rename for clarity, reorder for readability. This would not reduce module size and would not address the divergent-change smell.
+2. **Inline refactor only**: Keep all code in the same modules but restructure internally - extract private helper functions, rename for clarity, reorder for readability. This would not reduce module size and would not address the divergent-change smell.
 
 3. **Behaviour-based dispatch for CommonFilters**: Define a `QueryBuilder` behaviour and have each filter module implement it. Use a registry or config to dispatch. This would add significant abstraction overhead for a pattern that is stable and unlikely to gain new filter types frequently.
 

@@ -317,14 +317,18 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, q2)
     end
 
-    test "invalid binding params raises ArgumentError" do
+    test "invalid binding params logs warning and leaves query unchanged" do
       q = from(p in Post)
 
-      assert_raise ArgumentError,
-                   "Expected :bind payload to be a keyword list or map, got: 123",
-                   fn ->
-                     CommonFilters.convert_params_to_filter(q, %{bind: 123}, [])
-                   end
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{bind: 123}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :bind payload to be a keyword list or map, got: 123"
+      assert_received {:q2, q2}
+      assert q2 === q
     end
 
     test "supports binding selector with explicit operator tuple" do
@@ -385,14 +389,18 @@ defmodule EctoShorts.CommonFiltersTest do
       assert q2 === q
     end
 
-    test "raises an error if top-level params is not a map or keyword list" do
+    test "invalid top-level params logs warning and leaves query unchanged" do
       q = from(p in Post)
 
-      assert_raise ArgumentError,
-                   "Expected params to be a map or list, got: {123, \"oops\"}",
-                   fn ->
-                     CommonFilters.convert_params_to_filter(q, %{123 => "oops"}, [])
-                   end
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{123 => "oops"}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected params to be a map or list, got: {123, \"oops\"}"
+      assert_received {:q2, q2}
+      assert q2 === q
     end
 
     test "supports :select true (selects the binding)" do
@@ -627,34 +635,48 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, q2)
     end
 
-    test "invalid positional preload binding operator target fails" do
+    test "invalid positional preload binding operator target logs warning and skips entry" do
       q =
         from(p in Post,
           join: a in assoc(p, :author),
           as: :author
         )
 
-      assert_raise ArgumentError,
-                   "Expected :bind -> :at entries to be {target, params} tuples, got: 2",
-                   fn ->
-                     CommonFilters.convert_params_to_filter(
-                       q,
-                       %{preload: [bind: [at: [2]]]},
-                       []
-                     )
-                   end
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{preload: [bind: [at: [2]]]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :bind -> :at entries to be {target, params} tuples, got: 2"
+      assert_received {:q2, q2}
+      assert q2 === q
     end
 
-    test "missing preload binding alias raises Ecto.QueryError" do
+    test "missing preload binding alias logs warning and leaves query unchanged" do
       q = from(p in Post)
 
-      assert_raise Ecto.QueryError, ~r/unknown bind name `:missing`/, fn ->
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{preload: [bind: [as: [missing: :author]]]},
-          []
-        )
-      end
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{preload: [bind: [as: [missing: :author]]]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "unknown bind name `:missing`"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
     end
 
     test "supports LOWER operator for scalar fields" do
@@ -1032,12 +1054,18 @@ defmodule EctoShorts.CommonFiltersTest do
       assert q2 === q
     end
 
-    test "raises when :with_ties is applied without :limit" do
-      assert_raise Query.CompileError,
-                   "`with_ties` can only be applied to queries containing a `limit`",
-                   fn ->
-                     CommonFilters.convert_params_to_filter(Post, %{with_ties: true}, [])
-                   end
+    test "invalid :with_ties application logs warning and leaves query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: true}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "`with_ties` can only be applied to queries containing a `limit`"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
     end
 
     test "supports :lock with direct query-builder function" do
@@ -1499,16 +1527,24 @@ defmodule EctoShorts.CommonFiltersTest do
       assert q2 === q
     end
 
-    test "raises when :with_named_binding callback does not create named binding" do
-      assert_raise RuntimeError,
-                   "callback function for with_named_binding/3 should create a named binding for key :author",
-                   fn ->
-                     CommonFilters.convert_params_to_filter(
-                       Post,
-                       %{with_named_binding: [author: %{where: %{published: true}}]},
-                       []
-                     )
-                   end
+    test "missing named binding callback result logs warning and leaves query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{with_named_binding: [author: %{where: %{published: true}}]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "should create a named binding for key :author"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
     end
 
     test "supports :update with update operators" do
@@ -2237,24 +2273,38 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :distinct payload raises ArgumentError" do
-      assert_raise ArgumentError,
-                   ~r/`distinct` interpolated on root expects a field or a keyword list/,
-                   fn ->
-                     CommonFilters.convert_params_to_filter(Post, %{distinct: 123}, [])
-                   end
+    test "invalid :distinct payload logs warning and leaves query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{distinct: 123}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "`distinct` interpolated on root expects a field or a keyword list"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
     end
 
-    test "multiple :distinct entries raise compile error" do
-      assert_raise Query.CompileError,
-                   "only one distinct expression is allowed in query",
-                   fn ->
-                     CommonFilters.convert_params_to_filter(
-                       Post,
-                       [distinct: :title, distinct: :id],
-                       []
-                     )
-                   end
+    test "multiple :distinct entries logs warning and skips failing distinct operation" do
+      expected = from(p in Post, distinct: p.title)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              [distinct: :title, distinct: :id],
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "only one distinct expression is allowed in query"
+      assert_received {:q2, q2}
+      assert_sql(expected, q2)
     end
 
     test "supports :last" do
@@ -2355,12 +2405,18 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid nil operator raises helpful error" do
-      assert_raise ArgumentError,
-                   "Expected the operator to be one of [:eq, :==, :!=] for nil comparison, got: :>",
-                   fn ->
-                     CommonFilters.convert_params_to_filter(Post, %{published_at: %{>: nil}}, [])
-                   end
+    test "invalid nil operator logs warning and leaves query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{published_at: %{>: nil}}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected the operator to be one of [:eq, :==, :!=] for nil comparison, got: :>"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
     end
 
     test "supports multiple filters (where and or_where)" do
@@ -2395,25 +2451,33 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :at binding selector key raises ArgumentError" do
+    test "invalid :at binding selector key logs warning and skips bind operation" do
       q = Post
 
-      assert_raise ArgumentError,
-                   "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: {:at, \"1\"}",
-                   fn ->
-                     CommonFilters.convert_params_to_filter(
-                       q,
-                       %{
-                         bind: %{
-                           at: %{
-                             "1" => %{published: false},
-                             1 => %{published: true}
-                           }
-                         }
-                       },
-                       []
-                     )
-                   end
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{
+                bind: %{
+                  at: %{
+                    "1" => %{published: false},
+                    1 => %{published: true}
+                  }
+                }
+              },
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~
+               "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: {:at, \"1\"}"
+
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
     end
 
     test "supports named binding selector via :as" do
@@ -2478,6 +2542,27 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "association shorthand applies filters on the joined binding under selector scope" do
+      q = from(p in Post, as: :post)
+
+      expected =
+        from(p in Post,
+          as: :post,
+          join: a in assoc(p, :author),
+          as: :author,
+          where: a.first_name == ^"John"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          [bind: [as: [post: [author: [as: :author, first_name: "John"]]]]],
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports canonical :join association entry" do
       expected =
         from(p in Post,
@@ -2486,6 +2571,21 @@ defmodule EctoShorts.CommonFiltersTest do
         )
 
       q2 = CommonFilters.convert_params_to_filter(Post, %{join: [author: [as: :author]]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "canonical :join defaults to root from binding when selector is omitted" do
+      q = from(p in Post, as: :post)
+
+      expected =
+        from(p in Post,
+          as: :post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(q, [join: [author: [as: :author]]], [])
 
       assert_sql(expected, q2)
     end
@@ -2670,6 +2770,61 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, q2)
     end
 
+    test "supports canonical :join under positional binding selector" do
+      q =
+        from(p in Post,
+          join: c in assoc(p, :comments),
+          as: :comment
+        )
+
+      expected =
+        from(p in Post,
+          join: c in assoc(p, :comments),
+          as: :comment,
+          join: a in assoc(c, :author),
+          as: :author
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{bind: %{at: %{2 => %{join: [author: [as: :author]]}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "canonical :join keeps sibling bind filters on the joined binding" do
+      q = from(p in Post, as: :post)
+
+      expected =
+        from(p in Post,
+          as: :post,
+          join: a in assoc(p, :author),
+          as: :author,
+          where: a.first_name == ^"John"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          [
+            bind: [
+              as: [
+                post: [
+                  join: [author: [as: :author]],
+                  bind: [as: [author: [first_name: "John"]]]
+                ]
+              ]
+            ]
+          ],
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports join source key dispatch through canonical :join source entry" do
       previous = Application.get_env(:ecto_shorts, :fragment_provider)
 
@@ -2800,6 +2955,40 @@ defmodule EctoShorts.CommonFiltersTest do
       assert log =~
                "Join source callback returned error for key :unknown_key: :unsupported_fragment_key"
 
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
+    end
+
+    test "invalid association filter payload logs warning and skips entry" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{author: 123}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected association params for :author to be a keyword list, got: 123"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
+    end
+
+    test "invalid :join :on payload logs warning and skips join entry" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{join: [association: [source: :author, as: :author, on: [1, 2]]]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :on to be a keyword list, map, or true, got: [1, 2]"
       assert_received {:q2, q2}
       assert_sql(q, q2)
     end

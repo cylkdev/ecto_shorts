@@ -77,7 +77,7 @@ Validation is how a reader can confirm the decision was applied correctly.
 Validation must be concrete. Prefer one of:
 a repeatable command and the expected output
 a test to run and what it proves
-an observable runtime behavior (logs, metrics, endpoints, UI behavior)
+an observable runtime behaviour (logs, metrics, endpoints, UI behaviour)
 a code review checklist with specific files and patterns to look for
 
 If the decision is about architecture boundaries, name the boundaries and how violations will be detected.
@@ -132,7 +132,7 @@ If you include code, logs, commands, or transcripts, include them as indented bl
     ## Validation
 
     Describe how a reader can confirm the decision is implemented and being followed.
-    Include exact commands, tests, or observable behaviors.
+    Include exact commands, tests, or observable behaviours.
     If the validation is ongoing, say how often it should be checked and by whom.
 
     ## Pros and Cons of the Options

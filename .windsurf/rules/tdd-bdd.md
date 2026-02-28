@@ -4,7 +4,7 @@ trigger: always_on
 
 ## Why use TDD + BDD
 
-Starting with a boundary test made of plain data removes ambiguity. There is nothing to misinterpret — the test is the specification. The outside-in approach (concentric circles) ensures you only build what the boundary test demands, and the red-green-refactor cycle at every level keeps the implementation growing from proven behaviour, not assumptions.
+Starting with a boundary test made of plain data removes ambiguity. There is nothing to misinterpret - the test is the specification. The outside-in approach (concentric circles) ensures you only build what the boundary test demands, and the red-green-refactor cycle at every level keeps the implementation growing from proven behaviour, not assumptions.
 
 ## Requirements
 
@@ -14,13 +14,13 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 ## What to do
 
-Before implementing a feature or making a change, take a TDD + BDD approach as described in `.agent/TDD_BDD.md`. Write a failing boundary test first that shows the user-observable outcome in plain data — no implementation details, just inputs and expected outputs. This catches misinterpretations of the user's intent early, before any production code exists.
+Before implementing a feature or making a change, take a TDD + BDD approach as described in `.agent/TDD_BDD.md`. Write a failing boundary test first that shows the user-observable outcome in plain data - no implementation details, just inputs and expected outputs. This catches misinterpretations of the user's intent early, before any production code exists.
 
 ## TDD + BDD Workflow
 
 1. Clarify the expected behaviour at the boundary. If multiple interpretations exist, use an `ExampleMapDoc` (`.agent/EXAMPLE_MAP_PLANS.md`) to reach agreement before writing code.
 
-2. Write one failing boundary test that expresses the next observable outcome. The test should be pure data in, data out — no implementation details.
+2. Write one failing boundary test that expresses the next observable outcome. The test should be pure data in, data out - no implementation details.
 
 3. Show the test to the user and confirm it matches their intent before proceeding.
 

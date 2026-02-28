@@ -34,25 +34,25 @@ This repository maintains a catalog of code smells and refactoring techniques in
 
 Code smells are located in `.agent/refactor/code_smells/` and organized by category:
 
-**Bloaters** — code that has grown too large to work with easily:
+**Bloaters** - code that has grown too large to work with easily:
 - `.agent/refactor/code_smells/bloaters/DATA_CLUMPS.md`
 - `.agent/refactor/code_smells/bloaters/LARGE_MODULE.md`
 - `.agent/refactor/code_smells/bloaters/LONG_FUNCTION.md`
 - `.agent/refactor/code_smells/bloaters/LONG_PARAMETER_LIST.md`
 - `.agent/refactor/code_smells/bloaters/PRIMITIVE_OBSESSION.md`
 
-**Change Preventers** — code that makes changes difficult:
+**Change Preventers** - code that makes changes difficult:
 - `.agent/refactor/code_smells/change_preventers/DIVERGENT_CHANGE.md`
 - `.agent/refactor/code_smells/change_preventers/PARALLEL_MODULE_HIERARCHIES.md`
 - `.agent/refactor/code_smells/change_preventers/SHOTGUN_SURGERY.md`
 
-**Couplers** — code with excessive coupling between modules:
+**Couplers** - code with excessive coupling between modules:
 - `.agent/refactor/code_smells/couplers/FEATURE_ENVY.md`
 - `.agent/refactor/code_smells/couplers/INAPPROPRIATE_INTIMACY.md`
 - `.agent/refactor/code_smells/couplers/MESSAGE_CHAINS.md`
 - `.agent/refactor/code_smells/couplers/MIDDLE_MAN.md`
 
-**Dispensables** — code that could be removed without loss:
+**Dispensables** - code that could be removed without loss:
 - `.agent/refactor/code_smells/dispensables/COMMENTS.md`
 - `.agent/refactor/code_smells/dispensables/DATA_MODULE.md`
 - `.agent/refactor/code_smells/dispensables/DEAD_CODE.md`
@@ -60,7 +60,7 @@ Code smells are located in `.agent/refactor/code_smells/` and organized by categ
 - `.agent/refactor/code_smells/dispensables/LAZY_MODULE.md`
 - `.agent/refactor/code_smells/dispensables/SPECULATIVE_GENERALITY.md`
 
-**Abstraction Abusers** — patterns that misuse abstraction mechanisms (behaviours, protocols, use/import, structs):
+**Abstraction Abusers** - patterns that misuse abstraction mechanisms (behaviours, protocols, use/import, structs):
 - `.agent/refactor/code_smells/abstraction_abusers/ALTERNATIVE_MODULES_WITH_DIFFERENT_INTERFACES.md`
 - `.agent/refactor/code_smells/abstraction_abusers/REFUSED_BEQUEST.md`
 - `.agent/refactor/code_smells/abstraction_abusers/SWITCH_STATEMENTS.md`
@@ -70,7 +70,7 @@ Code smells are located in `.agent/refactor/code_smells/` and organized by categ
 
 Refactoring techniques are located in `.agent/refactor/techniques/` and organized by category:
 
-**Composing Functions** — techniques for restructuring functions:
+**Composing Functions** - techniques for restructuring functions:
 - `.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`
 - `.agent/refactor/techniques/composing_functions/EXTRACT_VARIABLE.md`
 - `.agent/refactor/techniques/composing_functions/INLINE_FUNCTION.md`
@@ -142,7 +142,7 @@ Each milestone must be independently verifiable and incrementally move the code 
 
 ## Prototyping milestones and parallel implementations
 
-It is acceptable—and often encouraged—to include explicit prototyping milestones when they de-risk a larger refactor. Examples: extracting a helper in one call site first to validate naming and return shape, or introducing a parallel implementation behind an internal switch to compare outcomes while preserving external behaviour. Keep prototypes additive and testable. Clearly label the scope as "prototyping"; describe how to run and observe results; and state the criteria for promoting or discarding the prototype.
+It is acceptable-and often encouraged-to include explicit prototyping milestones when they de-risk a larger refactor. Examples: extracting a helper in one call site first to validate naming and return shape, or introducing a parallel implementation behind an internal switch to compare outcomes while preserving external behaviour. Keep prototypes additive and testable. Clearly label the scope as "prototyping"; describe how to run and observe results; and state the criteria for promoting or discarding the prototype.
 
 Prefer additive code changes followed by subtractions that keep tests passing. Parallel implementations (for example, preserving the old function path while a new helper path is introduced and validated) are fine when they reduce risk or enable tests to continue passing during a large refactor. Describe how to validate both paths and how to retire one safely with tests.
 
@@ -252,6 +252,6 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     When you revise this RefactorPlan, add a note describing what changed and why.
 
-If you follow the guidance above, a single, stateless agent—or a human novice—can read your RefactorPlan from top to bottom and produce a safe, observable refactor. That is the bar: SELF-CONTAINED, SELF-SUFFICIENT, NOVICE-GUIDING, BEHAVIOUR-PRESERVING.
+If you follow the guidance above, a single, stateless agent-or a human novice-can read your RefactorPlan from top to bottom and produce a safe, observable refactor. That is the bar: SELF-CONTAINED, SELF-SUFFICIENT, NOVICE-GUIDING, BEHAVIOUR-PRESERVING.
 
 When you revise a plan, you must ensure your changes are comprehensively reflected across all sections, including the living document sections, and you must write a note at the bottom of the plan describing the change and the reason why. RefactorPlans must describe not just what changed, but why that change is safe.

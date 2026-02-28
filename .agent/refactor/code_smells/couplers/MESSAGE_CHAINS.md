@@ -165,7 +165,7 @@ The Law of Demeter (or "principle of least knowledge") suggests a function shoul
 - Functions on objects it creates
 - Functions on its direct dependencies
 
-Avoid: `a.b().c().d()` — this violates the law by reaching through multiple objects.
+Avoid: `a.b().c().d()` - this violates the law by reaching through multiple objects.
 
 ## Elixir Pipelines vs Message Chains
 

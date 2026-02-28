@@ -11,7 +11,7 @@ Complex conditional logic based on type checking or value discrimination that is
 ## Signs and Symptoms
 
 - The same `case` or `cond` expression appears in multiple functions.
-- Functions check the type of a value using guards like `is_map/1`, `is_list/1`, or struct matching to decide behavior.
+- Functions check the type of a value using guards like `is_map/1`, `is_list/1`, or struct matching to decide behaviour.
 - Adding a new variant requires modifying multiple functions.
 - Large `case` statements with many clauses handling different "types" of the same concept.
 - Atoms or strings are used as type discriminators (e.g., `type: :admin`, `type: :guest`).

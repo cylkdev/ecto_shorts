@@ -3,12 +3,14 @@ defmodule EctoShorts.CommonFilters do
   @moduledoc """
   Converts maps and keyword lists of filter params into `Ecto.Query` structs.
 
-  Use this module when you need to build a query from a data structure
-  instead of writing Ecto query macros by hand. Pass a schema module (or
+  Let's explore how you can build queries from data structures instead of
+  writing Ecto query macros by hand. We'll pass a schema module (or
   `{source, schema}` tuple) together with a map or keyword list of params
   to `convert_params_to_filter/3` and receive an `Ecto.Query` back.
 
-  ## Quick start
+  ## Getting started
+
+  Let's see how this works with a simple example:
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(
       ...>   EctoShorts.Schema.Post,
@@ -18,39 +20,83 @@ defmodule EctoShorts.CommonFilters do
         where: p0.title == ^"Hello" and p0.published == ^true,
         limit: ^10>
 
+  You can see how the map parameters are automatically converted into
+  appropriate Ecto query clauses. The `title` and `published` fields become
+  `WHERE` conditions, while `limit` becomes a query operation.
+
   ## Filter categories
 
-  Params are split into two categories:
+  We split params into two categories to make query building intuitive:
 
-  * **Schema filters** — keys that match schema field names or associations
-    become `WHERE` clauses. Nest under `:or_where` for `OR WHERE` clauses.
-  * **Query filters** — reserved keys that map to Ecto query operations:
-    `:distinct`, `:group_by`, `:having`, `:or_having`, `:join`, `:order_by`,
-    `:prepend_order_by`, `:preload`, `:select`, `:select_merge`, `:limit`,
-    `:offset`, `:lock`, `:union`, `:union_all`, `:except`, `:except_all`,
-    `:intersect`, `:intersect_all`, `:exclude`, `:first`, `:last`,
-    `:put_query_prefix`, `:recursive_ctes`, `:reverse_order`, `:subquery`,
-    `:with_cte`, `:with_named_binding`, `:with_ties`, `:windows`, `:update`.
+  * **Schema filters** - keys that match schema field names or associations
+    become `WHERE` clauses. You can nest these under `:or_where` for
+    `OR WHERE` clauses when you need alternative conditions.
+
+  * **Query filters** - Reserved keys that map to Ecto query operations:
+
+    - `:distinct`
+    - `:group_by`
+    - `:having`
+    - `:or_having`
+    - `:join`
+    - `:order_by`
+    - `:prepend_order_by`
+    - `:preload`
+    - `:select`
+    - `:select_merge`
+    - `:limit`
+    - `:offset`
+    - `:lock`
+    - `:union`
+    - `:union_all`
+    - `:except`
+    - `:except_all`
+    - `:intersect`
+    - `:intersect_all`
+    - `:exclude`
+    - `:first`
+    - `:last`
+    - `:put_query_prefix`
+    - `:recursive_ctes`
+    - `:reverse_order`
+    - `:subquery`
+    - `:with_cte`
+    - `:with_named_binding`
+    - `:with_ties`
+    - `:windows`
+    - `:update`
 
   ## Binding targeting
 
-  Target a specific query binding using the `:bind` key:
+  Sometimes you need to target a specific query binding. You can do this
+  using the `:bind` key:
 
-      %{bind: {:as, :post}, title: "Hello"}  # named binding
-      %{bind: {:at, 2}, title: "Hello"}       # positional binding
+      %{bind: %{as: %{post: %{title: "Hello"}}}}  # named binding
+      %{bind: %{at: %{2 => %{title: "Hello"}}}}   # positional binding
+
+  This is particularly useful when you have complex queries with multiple
+  joins and need to specify which binding you're referring to. This works
+  for existing queries as well as new queries which allows you to easily
+  build data-driven workflows on top of EctoShorts.
 
   Unknown keys that are not schema fields are logged as warnings and
-  silently skipped.
+  skipped for that filter entry.
+
+  Invalid query-building payloads are also logged as warnings and skipped for
+  the failing operation, so the rest of the query can continue building.
 
   ## Boolean operators
 
-  Combine conditions using `:and` and `:or` operators:
+  Let's see how you can combine conditions using `:and` and `:or` operators:
 
       %{or: [%{published: true}, %{published: false}]}
       %{and: [%{title: "Hi"}, %{published: true}]}
 
+  These operators give you fine-grained control over your query logic,
+  allowing you to build complex conditions while keeping your code readable.
+
   See also `EctoShorts.Dynamics`, `EctoShorts.CommonFilters.Having`, and
-  `EctoShorts.Actions`.
+  `EctoShorts.Actions` for more advanced query building capabilities.
   """
 
   alias EctoShorts.CommonSchema
@@ -124,27 +170,33 @@ defmodule EctoShorts.CommonFilters do
   @doc """
   Converts filter params into an `Ecto.Query`.
 
-  `source` is a schema module, `{source, schema}` tuple, or `Ecto.Query`.
-  `params` is a map or keyword list of filter params. `opts` is an optional
-  keyword list forwarded to all sub-query builders.
+  Let's see how we can transform your filter parameters into a fully-formed
+  Ecto query. You'll provide a `source` (schema module, `{source, schema}` tuple,
+  or `Ecto.Query`), `params` (map or keyword list of filter params), and optional
+  `opts` that get forwarded to all sub-query builders.
 
-  Schema field keys become `WHERE` conditions. Query filter keys (`:limit`,
-  `:order_by`, `:preload`, etc.) are applied as the corresponding Ecto query
-  operations. Unknown keys not in the schema's `:query_fields` are logged as
-  warnings and skipped.
+  We automatically convert schema field keys into `WHERE` conditions for you.
+  Query filter keys like `:limit`, `:order_by`, `:preload`, etc. are applied as
+  the corresponding Ecto query operations. If we encounter unknown keys that aren't
+  in the schema's `:query_fields`, we'll log warnings and skip only the failing
+  filter operation. Invalid query-building operations also log warnings and are
+  skipped instead of raising.
 
-  Returns an `Ecto.Query` struct with all params applied.
+  You'll receive back an `Ecto.Query` struct with all your parameters applied,
+  ready to use with your repository.
 
   ## Options
 
-  * `:repo` — the `Ecto.Repo` module used to resolve the dynamic expression
+  * `:repo` - the `Ecto.Repo` module used to resolve the dynamic expression
     adapter. Defaults to `EctoShorts.Config.repo/0`.
-  * `:dynamic_adapter` — a module implementing `EctoShorts.Dynamics.Adapter`
+  * `:dynamic_adapter` - a module implementing `EctoShorts.Dynamics.Adapter`
     for this call. Defaults to resolved from repo.
-  * `:query_fields` — list of field atoms to limit which fields are accepted
+  * `:query_fields` - list of field atoms to limit which fields are accepted
     as schema filters.
 
   ## Examples
+
+  Let's start with a simple field filter:
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(
       ...>   EctoShorts.Schema.Post,
@@ -152,12 +204,16 @@ defmodule EctoShorts.CommonFilters do
       ...> )
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.title == ^"Hello">
 
+  Now let's see how we can combine conditions with OR logic:
+
       iex> EctoShorts.CommonFilters.convert_params_to_filter(
       ...>   EctoShorts.Schema.Post,
       ...>   %{published: true, or_where: %{published: false}}
       ...> )
       #Ecto.Query<from p0 in EctoShorts.Schema.Post,
         where: p0.published == ^true or p0.published == ^false>
+
+  Finally, let's add some query operations like ordering and limiting:
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(
       ...>   EctoShorts.Schema.Post,
@@ -167,7 +223,7 @@ defmodule EctoShorts.CommonFilters do
         order_by: [desc: p0.inserted_at], limit: ^5>
 
   See also `EctoShorts.Actions.all/3`, `EctoShorts.Dynamics`, and
-  `EctoShorts.CommonFilters.Having`.
+  `EctoShorts.CommonFilters.Having` for more ways to work with queries.
   """
   @spec convert_params_to_filter(
           source :: module() | {binary(), module()} | Ecto.Query.t(),
@@ -195,7 +251,7 @@ defmodule EctoShorts.CommonFilters do
 
       merged_params =
         other_params
-        |> ensure_kw!()
+        |> ensure_kw()
         |> Keyword.merge(params)
 
       merged_params =
@@ -219,14 +275,20 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp ensure_kw!(map) when is_map(map), do: Map.to_list(map)
+  defp ensure_kw(map) when is_map(map), do: Map.to_list(map)
 
-  defp ensure_kw!(list) when is_list(list) do
-    unless Keyword.keyword?(list) do
-      raise ArgumentError, "Expected params to be a keyword list, got: #{inspect(list)}"
+  defp ensure_kw(list) when is_list(list) do
+    if Keyword.keyword?(list) do
+      list
+    else
+      Logger.warning(@logger_prefix, "Expected params to be a keyword list, got: #{inspect(list)}")
+      []
     end
+  end
 
-    list
+  defp ensure_kw(term) do
+    Logger.warning(@logger_prefix, "Expected params to be a keyword list, got: #{inspect(term)}")
+    []
   end
 
   defp do_convert(schema_source, query, params, opts) do
@@ -242,7 +304,8 @@ defmodule EctoShorts.CommonFilters do
         opts
       )
     else
-      raise ArgumentError, "Expected params to be a map or list, got: #{inspect(params)}"
+      Logger.warning(@logger_prefix, "Expected params to be a map or list, got: #{inspect(params)}")
+      query
     end
   end
 
@@ -267,14 +330,16 @@ defmodule EctoShorts.CommonFilters do
         {@binding_selector_key, bind_params},
         opts
       ) do
-    BindParams.reduce_bind_params(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      bind_params,
-      opts
-    )
+    safe_query_operation(query, filter_op, {@binding_selector_key, bind_params}, fn ->
+      BindParams.reduce_bind_params(
+        schema_source,
+        query,
+        binding_selector,
+        filter_op,
+        bind_params,
+        opts
+      )
+    end)
   end
 
   def create_schema_filter(
@@ -285,21 +350,23 @@ defmodule EctoShorts.CommonFilters do
         {key, value},
         opts
       ) do
-    query_filters = Keyword.get(opts, :query_filters, @query_filters)
+    safe_query_operation(query, filter_op, {key, value}, fn ->
+      query_filters = Keyword.get(opts, :query_filters, @query_filters)
 
-    if key in query_filters do
-      build_query(schema_source, query, binding_selector, key, value, opts)
-    else
-      reduce_default_filter_params(
-        schema_source,
-        query,
-        binding_selector,
-        filter_op,
-        key,
-        value,
-        opts
-      )
-    end
+      if key in query_filters do
+        build_query(schema_source, query, binding_selector, key, value, opts)
+      else
+        reduce_default_filter_params(
+          schema_source,
+          query,
+          binding_selector,
+          filter_op,
+          key,
+          value,
+          opts
+        )
+      end
+    end)
   end
 
   def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts)
@@ -328,7 +395,9 @@ defmodule EctoShorts.CommonFilters do
         )
       end)
     else
-      build_query(schema_source, query, binding_selector, filter_op, params, opts)
+      safe_query_operation(query, filter_op, params, fn ->
+        build_query(schema_source, query, binding_selector, filter_op, params, opts)
+      end)
     end
   end
 
@@ -340,7 +409,9 @@ defmodule EctoShorts.CommonFilters do
   defp reduce_schema_filter_params(schema_source, query, binding_selector, filter_op, value, opts) do
     if is_map(value) or is_list(value) do
       Enum.reduce(value, query, fn entry, query_acc ->
-        build_schema_filters(schema_source, query_acc, binding_selector, filter_op, entry, opts)
+        safe_query_operation(query_acc, filter_op, entry, fn ->
+          build_schema_filters(schema_source, query_acc, binding_selector, filter_op, entry, opts)
+        end)
       end)
     else
       Logger.warning(
@@ -438,6 +509,11 @@ defmodule EctoShorts.CommonFilters do
         opts
       )
     else
+      Logger.warning(
+        @logger_prefix,
+        "Expected association params for #{inspect(assoc_key)} to be a keyword list, got: #{inspect(params)}"
+      )
+
       query
     end
   end
@@ -587,6 +663,26 @@ defmodule EctoShorts.CommonFilters do
     binding_source = to_binding_source(schema_source, query, binding_selector)
     module = Map.get(@query_builder_modules, filter_op, Filter)
     module.build(binding_source, filter_op, query, binding_selector, params, opts)
+  end
+
+  defp safe_query_operation(query, filter_op, params, callback) do
+    callback.()
+  rescue
+    exception ->
+      Logger.warning(
+        @logger_prefix,
+        "Skipping #{inspect(filter_op)} operation for #{inspect(params)} due to query-building error: #{Exception.message(exception)}"
+      )
+
+      query
+  catch
+    kind, reason ->
+      Logger.warning(
+        @logger_prefix,
+        "Skipping #{inspect(filter_op)} operation for #{inspect(params)} due to #{kind}: #{inspect(reason)}"
+      )
+
+      query
   end
 
   defp to_binding_source(schema_source, _query, {:as, nil}) do

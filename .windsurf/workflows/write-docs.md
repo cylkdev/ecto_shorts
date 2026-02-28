@@ -41,8 +41,8 @@ You will identify which modules and public functions changed, update their docum
      - One-line summary starting with a verb.
      - Orientation paragraph (when to use, when not to, how it fits, entry points).
      - `##` section headers for each concept (Key concepts, Configuration, Error handling, etc.).
-     - Inline code examples in every section — not just in a final Examples section.
-     - `## Quick start` or `## Examples` with a copy-paste-able happy-path snippet.
+     - Inline code examples in every section - not just in a final Examples section.
+     - `## Getting started` or `## Examples` with a copy-paste-able happy-path snippet.
      - `## Configuration` with options in `* `:key` (default: `val`) - effect` format.
      - `## Fields` if the module defines a public struct.
      - Edge cases and warnings using callout boxes (`> #### Title {: .warning}`).

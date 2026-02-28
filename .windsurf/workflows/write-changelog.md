@@ -1,5 +1,5 @@
 ---
-description: Compares old and new code versions and writes a concise changelog entry describing only user-facing changes to the public interface — new features, removed or renamed functions/parameters, behavior changes, and breaking changes — ignoring internal refactors or implementation details.
+description: Compares old and new code versions and writes a concise changelog entry describing only user-facing changes to the public interface - new features, removed or renamed functions/parameters, behaviour changes, and breaking changes - ignoring internal refactors or implementation details.
 ---
 
 # What to do

@@ -74,11 +74,11 @@ You will generate a text coverage report, find uncovered lines, write tests that
    - Example: if the source module is `MyApp.Widget`, name the test module `MyApp.WidgetTest`.
 
 10. Write one test that executes the uncovered block.
-   - Name the test after the behavior it verifies.
+   - Name the test after the behaviour it verifies.
    - Call the entry point you identified in step 7 with inputs that will cause the uncovered lines to run.
    - Add at least one assertion that checks a user-observable result.
    - A user-observable result is a return value, a raised error, a sent message you can assert, or a persisted change you can query.
-   - Do not write a test that only asserts `true` or only checks that the code “does not crash” unless the intended behavior is “does not raise”.
+   - Do not write a test that only asserts `true` or only checks that the code “does not crash” unless the intended behaviour is “does not raise”.
 
 11. Run only the test file you changed until it passes.
    - Run `mix test path/to/test_file.exs`.

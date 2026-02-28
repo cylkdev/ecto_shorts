@@ -12,7 +12,7 @@ A module uses another module (via `use`, `import`, or behaviour implementation) 
 
 - A module implements a behaviour but has stub implementations that raise or return dummy values.
 - A module uses `use SomeModule` but only needs one or two functions from it.
-- Imported functions are immediately overridden or wrapped to change behavior.
+- Imported functions are immediately overridden or wrapped to change behaviour.
 - Documentation warns "don't call these functions directly" for inherited functionality.
 - A behaviour callback returns `:not_implemented` or similar sentinel values.
 

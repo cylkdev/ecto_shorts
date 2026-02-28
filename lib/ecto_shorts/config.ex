@@ -9,28 +9,28 @@ defmodule EctoShorts.Config do
 
   ## Configuration keys
 
-  * `:repo` — the primary `Ecto.Repo` module used for write operations.
+  * `:repo` - the primary `Ecto.Repo` module used for write operations.
     Required by most `EctoShorts.Actions` functions. Defaults to `nil`.
 
-  * `:replica` — a read-only `Ecto.Repo` module. Falls back to `:repo` when
+  * `:replica` - a read-only `Ecto.Repo` module. Falls back to `:repo` when
     not set. Used by read operations in `EctoShorts.Actions`. Defaults to `nil`.
 
-  * `:error_module` — a module implementing the `EctoShorts.Actions.Error`
+  * `:error_module` - a module implementing the `EctoShorts.Actions.Error`
     behaviour. Used to construct error values returned by `EctoShorts.Actions`
     functions. Defaults to `EctoShorts.Actions.Error`.
 
-  * `:dynamic_adapter` — a module implementing `EctoShorts.Dynamics.Adapter`.
+  * `:dynamic_adapter` - a module implementing `EctoShorts.Dynamics.Adapter`.
     Auto-resolved to `EctoShorts.Dynamics.Adapters.Postgres` when the repo uses
     `Ecto.Adapters.Postgres`. Defaults to resolved from the repo's adapter.
 
-  * `:fragment_provider` — a module that resolves fragment-based join and lock
+  * `:fragment_provider` - a module that resolves fragment-based join and lock
     expressions. Must export `build_fragment_expression/3`. Defaults to `nil`.
 
-  * `:max_binding_positings` — controls how many positional query binding clauses
+  * `:max_binding_positings` - controls how many positional query binding clauses
     `EctoShorts.Compiler` generates. Increase when your queries join more than
     three tables. Defaults to `3`.
 
-  ## Quick start
+  ## Getting started
 
       # config/config.exs
       import Config

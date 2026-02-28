@@ -23,7 +23,7 @@ defmodule EctoShorts.Compiler do
   The specs module (`MySpecs`) must be already compiled before `X` is compiled,
   and must export `clause_specs/4`.
 
-  ## Quick start
+  ## Getting started
 
       defmodule MyApp.Adapter.Specs do
         alias EctoShorts.Compiler.ClauseSpec
@@ -54,7 +54,7 @@ defmodule EctoShorts.Compiler do
 
   ## Configuration
 
-  * `:max_binding_positings` — controls how many positional binding patterns are
+  * `:max_binding_positings` - controls how many positional binding patterns are
     generated. Increase this when your queries join more tables than the default
     supports. Defaults to `EctoShorts.Config.max_binding_positings/0`.
 
@@ -75,10 +75,10 @@ defmodule EctoShorts.Compiler do
 
   ## Options
 
-  * `:specs` (required) — a module, already compiled, that exports
+  * `:specs` (required) - a module, already compiled, that exports
     `clause_specs/4`. Called once per binding pattern to collect
     `%EctoShorts.Compiler.ClauseSpec{}` values.
-  * `:max_binding_positings` — the maximum number of positional query bindings
+  * `:max_binding_positings` - the maximum number of positional query bindings
     to generate clauses for. Defaults to `EctoShorts.Config.max_binding_positings/0`.
 
   ## Errors

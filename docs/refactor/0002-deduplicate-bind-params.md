@@ -20,7 +20,7 @@ To verify behaviour is preserved, run `mix test` from the repository root. All t
 - [x] (2026-02-28 12:51Z) Milestone 1: Added `reduce_submodule_bind_params/3` to BindParams. Tests pass (645 tests, 0 failures).
 - [x] (2026-02-28 12:53Z) Milestone 2: Replaced duplicates in Distinct, GroupBy, WithTies, Windows. Tests pass (645 tests, 0 failures).
 - [x] (2026-02-28 12:55Z) Milestone 3: Replaced duplicates in OrderBy, Update, Select, Preload. Tests pass (645 tests, 0 failures).
-- [x] (2026-02-28 12:56Z) Milestone 4: Final validation. `mix format` clean. `mix test` — 645 tests, 0 failures. `mix credo --strict` — no new warnings (pre-existing only). Credo `mods/funs` count dropped from 749 to 735 (14 fewer function clauses).
+- [x] (2026-02-28 12:56Z) Milestone 4: Final validation. `mix format` clean. `mix test` - 645 tests, 0 failures. `mix credo --strict` - no new warnings (pre-existing only). Credo `mods/funs` count dropped from 749 to 735 (14 fewer function clauses).
 
 ## Surprises & Discoveries
 
@@ -44,15 +44,15 @@ The refactor is complete. Eight near-identical `reduce_*_bind` private functions
 The behaviour boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same `ArgumentError` messages are raised for invalid bind params. `mix format` is clean. `mix credo --strict` shows no new warnings.
 
 Files changed:
-- `lib/ecto_shorts/common_filters/bind_params.ex` — added `reduce_submodule_bind_params/3`
-- `lib/ecto_shorts/common_filters/distinct.ex` — replaced `reduce_distinct_bind/3` (removed ~40 lines)
-- `lib/ecto_shorts/common_filters/group_by.ex` — replaced `reduce_group_by_bind/3` (removed ~40 lines)
-- `lib/ecto_shorts/common_filters/order_by.ex` — replaced `reduce_order_by_bind/4` (removed ~40 lines)
-- `lib/ecto_shorts/common_filters/preload.ex` — replaced `reduce_preload_bind/5` (removed ~50 lines)
-- `lib/ecto_shorts/common_filters/select.ex` — replaced `reduce_select_bind/6` (removed ~40 lines)
-- `lib/ecto_shorts/common_filters/update.ex` — replaced `reduce_update_bind/4` (removed ~40 lines)
-- `lib/ecto_shorts/common_filters/windows.ex` — replaced `reduce_windows_bind/3` (removed ~40 lines)
-- `lib/ecto_shorts/common_filters/with_ties.ex` — replaced `reduce_with_ties_bind/3` (removed ~40 lines)
+- `lib/ecto_shorts/common_filters/bind_params.ex` - added `reduce_submodule_bind_params/3`
+- `lib/ecto_shorts/common_filters/distinct.ex` - replaced `reduce_distinct_bind/3` (removed ~40 lines)
+- `lib/ecto_shorts/common_filters/group_by.ex` - replaced `reduce_group_by_bind/3` (removed ~40 lines)
+- `lib/ecto_shorts/common_filters/order_by.ex` - replaced `reduce_order_by_bind/4` (removed ~40 lines)
+- `lib/ecto_shorts/common_filters/preload.ex` - replaced `reduce_preload_bind/5` (removed ~50 lines)
+- `lib/ecto_shorts/common_filters/select.ex` - replaced `reduce_select_bind/6` (removed ~40 lines)
+- `lib/ecto_shorts/common_filters/update.ex` - replaced `reduce_update_bind/4` (removed ~40 lines)
+- `lib/ecto_shorts/common_filters/windows.ex` - replaced `reduce_windows_bind/3` (removed ~40 lines)
+- `lib/ecto_shorts/common_filters/with_ties.ex` - replaced `reduce_with_ties_bind/3` (removed ~40 lines)
 
 Follow-up opportunity: The `Having` module does not use the `:bind` pattern at all (it uses dynamic expressions directly), so it was not affected by this refactor. If `:bind` support is added to `Having` in the future, it should use `BindParams.reduce_submodule_bind_params/3` rather than adding a private copy.
 
@@ -65,15 +65,15 @@ Most submodules support a `:bind` key in their params that allows callers to tar
 The existing `EctoShorts.CommonFilters.BindParams` module at `lib/ecto_shorts/common_filters/bind_params.ex` already handles bind-parameter dispatch for the top-level `CommonFilters` module. This refactor extends it with a reusable helper for submodules.
 
 Key files:
-- `lib/ecto_shorts/common_filters/bind_params.ex` — existing bind-param helper (will be extended)
-- `lib/ecto_shorts/common_filters/distinct.ex` — has `reduce_distinct_bind/3`
-- `lib/ecto_shorts/common_filters/group_by.ex` — has `reduce_group_by_bind/3`
-- `lib/ecto_shorts/common_filters/order_by.ex` — has `reduce_order_by_bind/4`
-- `lib/ecto_shorts/common_filters/preload.ex` — has `reduce_preload_bind/5`
-- `lib/ecto_shorts/common_filters/select.ex` — has `reduce_select_bind/6`
-- `lib/ecto_shorts/common_filters/update.ex` — has `reduce_update_bind/4`
-- `lib/ecto_shorts/common_filters/windows.ex` — has `reduce_windows_bind/3`
-- `lib/ecto_shorts/common_filters/with_ties.ex` — has `reduce_with_ties_bind/3`
+- `lib/ecto_shorts/common_filters/bind_params.ex` - existing bind-param helper (will be extended)
+- `lib/ecto_shorts/common_filters/distinct.ex` - has `reduce_distinct_bind/3`
+- `lib/ecto_shorts/common_filters/group_by.ex` - has `reduce_group_by_bind/3`
+- `lib/ecto_shorts/common_filters/order_by.ex` - has `reduce_order_by_bind/4`
+- `lib/ecto_shorts/common_filters/preload.ex` - has `reduce_preload_bind/5`
+- `lib/ecto_shorts/common_filters/select.ex` - has `reduce_select_bind/6`
+- `lib/ecto_shorts/common_filters/update.ex` - has `reduce_update_bind/4`
+- `lib/ecto_shorts/common_filters/windows.ex` - has `reduce_windows_bind/3`
+- `lib/ecto_shorts/common_filters/with_ties.ex` - has `reduce_with_ties_bind/3`
 
 ## Behaviour Boundary (Must Remain Unchanged)
 
@@ -107,7 +107,7 @@ All commands run from the repository root: `/Users/kurthogarth/Documents/GitHub/
 
 ## Validation and Acceptance
 
-Run `mix test` after every milestone. All tests must pass. The refactor introduces no new tests because it is purely structural — the existing tests already exercise all bind-parameter paths through integration. If any test fails, the milestone must be rolled back and investigated before proceeding.
+Run `mix test` after every milestone. All tests must pass. The refactor introduces no new tests because it is purely structural - the existing tests already exercise all bind-parameter paths through integration. If any test fails, the milestone must be rolled back and investigated before proceeding.
 
 Run `mix credo --strict` at Milestone 4. No new warnings should appear.
 

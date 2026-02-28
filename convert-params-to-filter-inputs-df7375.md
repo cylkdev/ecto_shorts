@@ -61,7 +61,7 @@ Every distinct shape the first argument accepts:
 - `%Post{}`
 - `Ecto.Changeset.change(%Post{})`
 
-### Argument 2: params — Top-Level Container Shapes
+### Argument 2: params - Top-Level Container Shapes
 
 Every distinct shape the second argument accepts at the outermost level:
 
@@ -72,7 +72,7 @@ Every distinct shape the second argument accepts at the outermost level:
 - `[%{id: 1}, %{published: true}]`
 - `[[id: 1], [published: true]]`
 
-### Argument 2: params — Meta-Keys
+### Argument 2: params - Meta-Keys
 
 These keys are extracted before any filtering occurs. Only valid inside a keyword list (or map converted to keyword list).
 
@@ -84,7 +84,7 @@ These keys are extracted before any filtering occurs. Only valid inside a keywor
 - `[query: %{id: 1}, published: true]`
 - `[source: "posts", query: %{select: [:id]}]`
 
-### Argument 2: params — Schema Filter Keys
+### Argument 2: params - Schema Filter Keys
 
 - `%{where: %{published: true}}`
 - `%{where: [published: true]}`
@@ -93,7 +93,7 @@ These keys are extracted before any filtering occurs. Only valid inside a keywor
 - `%{or_where: [published: false]}`
 - `%{where: %{published: true}, or_where: %{published: false}}`
 
-### Argument 2: params — Binding Selector
+### Argument 2: params - Binding Selector
 
 - `%{bind: %{as: %{post: %{published: true}}}}`
 - `%{bind: %{as: [post: %{published: true}]}}`
@@ -103,7 +103,7 @@ These keys are extracted before any filtering occurs. Only valid inside a keywor
 - `%{bind: [as: [post: %{published: true}]]}`
 - `%{bind: [at: %{1 => %{published: true}}]]}`
 
-### Argument 2: params — Field Values for Scalar Fields
+### Argument 2: params - Field Values for Scalar Fields
 
 Given a schema with scalar fields like `:id` (integer), `:title` (string), `:published` (boolean), `:views` (integer), `:published_at` (utc_datetime):
 
@@ -280,7 +280,7 @@ Given a schema with scalar fields like `:id` (integer), `:title` (string), `:pub
 
 - `%{views: %{not: %{>: {:+, [:views, 10]}}}}`
 
-**Date/time helper expressions — :datetime_add**
+**Date/time helper expressions - :datetime_add**
 
 - `%{inserted_at: %{>=: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}}`
 - `%{inserted_at: %{>=: {:datetime_add, %{field: :inserted_at, count: 1, interval: "day"}}}}`
@@ -288,17 +288,17 @@ Given a schema with scalar fields like `:id` (integer), `:title` (string), `:pub
 - `%{inserted_at: %{not: %{>=: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}}}`
 - `%{inserted_at: %{not: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}}`
 
-**Date/time helper expressions — :date_add**
+**Date/time helper expressions - :date_add**
 
 - `%{inserted_at: %{>=: %{date_add: %{field: :inserted_at, count: 1, interval: "day"}}}}`
 - `%{inserted_at: %{date_add: %{field: :inserted_at, count: 1, interval: "day"}}}`
 
-**Date/time helper expressions — :ago**
+**Date/time helper expressions - :ago**
 
 - `%{inserted_at: %{>: %{ago: %{count: 1, interval: "day"}}}}`
 - `%{inserted_at: %{ago: %{count: 1, interval: "day"}}}`
 
-**Date/time helper expressions — :from_now**
+**Date/time helper expressions - :from_now**
 
 - `%{inserted_at: %{>: %{from_now: %{count: 1, interval: "day"}}}}`
 - `%{inserted_at: %{from_now: %{count: 1, interval: "day"}}}`
@@ -314,17 +314,17 @@ Given a schema with scalar fields like `:id` (integer), `:title` (string), `:pub
 - `%{where: %{exists: subquery_expr}}`
 - `%{where: %{exists: {:not, subquery_expr}}}`
 
-### Argument 2: params — Field Values for Array Fields
+### Argument 2: params - Field Values for Array Fields
 
 Given a schema with an array field like `:tags` (`{:array, :string}`):
 
-**Scalar value (membership — "elixir" in tags)**
+**Scalar value (membership - "elixir" in tags)**
 
 - `%{tags: "elixir"}`
 - `%{tags: %{==: "elixir"}}`
 - `%{tags: %{in: "elixir"}}`
 
-**List value (array equality — tags === ["elixir", "erlang"])**
+**List value (array equality - tags === ["elixir", "erlang"])**
 
 - `%{tags: ["elixir", "erlang"]}`
 - `%{tags: %{==: ["elixir", "erlang"]}}`
@@ -340,7 +340,7 @@ Given a schema with an array field like `:tags` (`{:array, :string}`):
 - `%{tags: %{==: nil}}`
 - `%{tags: %{!=: nil}}`
 
-**Overlap (any element matches — && operator)**
+**Overlap (any element matches - && operator)**
 
 - `%{tags: %{in: ["elixir"]}}`
 - `%{tags: %{in: ["elixir", "erlang"]}}`
@@ -417,7 +417,7 @@ Given a schema with an array field like `:tags` (`{:array, :string}`):
 - `%{tags: %{count: %{>: 0}}}`
 - `%{tags: %{count: 0}}`
 
-### Argument 2: params — Common/Custom Filter Keys
+### Argument 2: params - Common/Custom Filter Keys
 
 These are dispatched through the adapter's `@operators` list and have hardcoded field semantics:
 
@@ -427,7 +427,7 @@ These are dispatched through the adapter's `@operators` list and have hardcoded 
 - `%{start_date: ~U[2026-01-01 00:00:00Z]}`
 - `%{end_date: ~U[2026-12-31 23:59:59Z]}`
 
-### Argument 2: params — Composite Boolean Operators (top-level :and / :or)
+### Argument 2: params - Composite Boolean Operators (top-level :and / :or)
 
 - `%{or: [[published: true, views: 20], [published: false, views: 10]]}`
 - `%{and: [[published: true, views: 20], [title: "hello", views: 15]]}`
@@ -437,7 +437,7 @@ These are dispatched through the adapter's `@operators` list and have hardcoded 
 - `%{and: []}`
 - `%{or: [[views: %{>: 10}, published: true], [views: %{<: 5}, published: false]]}`
 
-### Argument 2: params — Association Auto-Join
+### Argument 2: params - Association Auto-Join
 
 When a key matches a schema association name (e.g. `:author`, `:comments`):
 
@@ -446,7 +446,7 @@ When a key matches a schema association name (e.g. `:author`, `:comments`):
 - `%{author: [as: :author, on: true, first_name: "John"]}`
 - `%{author: [as: :author, type: :left, first_name: "John"]}`
 
-### Argument 2: params — Query Filter Keys
+### Argument 2: params - Query Filter Keys
 
 **:select**
 
@@ -615,7 +615,7 @@ When a key matches a schema association name (e.g. `:author`, `:comments`):
 - `%{join: [fragment: [source: %{name: :active_users, values: [min_age: 21]}, hints: :test_index, as: :active_users, on: true]]}`
 - `%{join: [author: [as: :author], table: [source: "users", as: :users_table, on: true]]}`
 
-### Argument 2: params — Binding Selector Combinations
+### Argument 2: params - Binding Selector Combinations
 
 The `:bind` key can wrap any of the above query filter or field params, targeting a specific binding:
 
@@ -659,7 +659,7 @@ The `:bind` key can wrap any of the above query filter or field params, targetin
 
 - `%{bind: %{as: [post: %{published: true}, author: %{first_name: "John"}]}}`
 
-### Argument 2: params — Composition Examples
+### Argument 2: params - Composition Examples
 
 Combinations of multiple top-level keys:
 
@@ -685,25 +685,25 @@ Combinations of multiple top-level keys:
 
 These inputs trigger errors or warnings rather than valid queries:
 
-- `%{dynamic: "bad"}` — warns, returns query unchanged
-- `%{123 => "oops"}` — raises ArgumentError (non-atom key in map)
-- `%{bind: 123}` — raises ArgumentError
-- `%{bind: %{as: %{post: 123}}}` — warns, returns query unchanged
-- `%{bind: %{at: %{"1" => %{published: true}}}}` — raises ArgumentError
-- `%{where: "bad"}` — warns, returns query unchanged
-- `%{or_having: "bad"}` — warns, returns query unchanged
-- `%{put_query_prefix: nil}` — warns, returns query unchanged
-- `%{put_query_prefix: %{bad: "value"}}` — warns, returns query unchanged
-- `%{with_ties: "yes"}` — warns, returns query unchanged
-- `%{recursive_ctes: "yes"}` — warns, returns query unchanged
-- `%{does_not_exist: true}` — warns (unknown field), returns query unchanged
-- `%{published_at: %{>: nil}}` — raises ArgumentError (invalid nil operator)
+- `%{dynamic: "bad"}` - warns, returns query unchanged
+- `%{123 => "oops"}` - raises ArgumentError (non-atom key in map)
+- `%{bind: 123}` - raises ArgumentError
+- `%{bind: %{as: %{post: 123}}}` - warns, returns query unchanged
+- `%{bind: %{at: %{"1" => %{published: true}}}}` - raises ArgumentError
+- `%{where: "bad"}` - warns, returns query unchanged
+- `%{or_having: "bad"}` - warns, returns query unchanged
+- `%{put_query_prefix: nil}` - warns, returns query unchanged
+- `%{put_query_prefix: %{bad: "value"}}` - warns, returns query unchanged
+- `%{with_ties: "yes"}` - warns, returns query unchanged
+- `%{recursive_ctes: "yes"}` - warns, returns query unchanged
+- `%{does_not_exist: true}` - warns (unknown field), returns query unchanged
+- `%{published_at: %{>: nil}}` - raises ArgumentError (invalid nil operator)
 
 ## Plan of Work
 
 ### Milestone 1: Write BehaviourSpec
 
-Create `docs/behaviors/2026-02-27-behaviour-convert-params-to-filter.md` containing the Accepted Inputs section above plus SQL output for each input.
+Create `docs/behaviours/2026-02-27-behaviour-convert-params-to-filter.md` containing the Accepted Inputs section above plus SQL output for each input.
 
 ### Milestone 2: Write Typespecs
 

@@ -37,7 +37,7 @@ defmodule EctoShorts.Dynamics do
   `:query_fields` reflection is used to warn on unknown filter keys
   rather than silently ignoring them.
 
-  ## Quick start
+  ## Getting started
 
       import Ecto.Query
 
@@ -50,7 +50,7 @@ defmodule EctoShorts.Dynamics do
 
   ## Configuration
 
-  * `:dynamic_adapter` — a module implementing `EctoShorts.Dynamics.Adapter`.
+  * `:dynamic_adapter` - A module that implements the `EctoShorts.Dynamics.Adapter` behaviour.
     Configurable globally via `config :ecto_shorts, dynamic_adapter: MyApp.Adapter`
     or at runtime via the `:dynamic_adapter` option on `convert_to_dynamic/4`.
     Defaults to resolved from repo adapter.
@@ -87,18 +87,16 @@ defmodule EctoShorts.Dynamics do
 
   ## Options
 
-  * `:dynamic_adapter` — a module implementing `EctoShorts.Dynamics.Adapter`
-    to use for this call. Defaults to resolved from repo adapter.
+  * `:dynamic_adapter` - A module that implements the `EctoShorts.Dynamics.Adapter`
+    behaviour to use for this call. Defaults to resolved from repo adapter.
 
-  * `:repo` — the `Ecto.Repo` module used to auto-resolve the adapter when
-    `:dynamic_adapter` is not set. Defaults to `EctoShorts.Config.repo/0`.
+  * `:repo` - The `Ecto.Repo` module used to resolve the dynamic expression adapter
+    when the option `:dynamic_adapter` is not set. Defaults to `EctoShorts.Config.repo/0`.
 
   ## Examples
 
       iex> import Ecto.Query
-      ...> dyn = EctoShorts.Dynamics.convert_to_dynamic(
-      ...>   EctoShorts.Schema.Post, nil, %{published: true}
-      ...> )
+      ...> dyn = EctoShorts.Dynamics.convert_to_dynamic(EctoShorts.Schema.Post, nil, %{published: true})
       ...> is_struct(dyn, Ecto.Query.DynamicExpr)
       true
 

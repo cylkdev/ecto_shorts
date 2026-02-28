@@ -1694,11 +1694,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
 
   defp arithmetic_dynamic_expr_ast(binding_body_asts, target_binding_var, arithmetic_expr_ast) do
     quote do
-      build_dynamic_expr = fn build_dynamic_expr, expr ->
+      outer_func = fn inner_func, expr ->
         case expr do
           {op, [left_expr, right_expr]} when op in unquote(@arithmetic_operators) ->
-            left_dynamic = build_dynamic_expr.(build_dynamic_expr, left_expr)
-            right_dynamic = build_dynamic_expr.(build_dynamic_expr, right_expr)
+            left_dynamic = inner_func.(inner_func, left_expr)
+            right_dynamic = inner_func.(inner_func, right_expr)
 
             case op do
               :+ ->
@@ -1749,7 +1749,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
         end
       end
 
-      build_dynamic_expr.(build_dynamic_expr, unquote(arithmetic_expr_ast))
+      outer_func.(outer_func, unquote(arithmetic_expr_ast))
     end
   end
 end

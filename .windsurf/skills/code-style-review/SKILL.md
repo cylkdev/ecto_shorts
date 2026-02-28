@@ -19,15 +19,15 @@ Read all files in `.agent/code-styles/` and load them into your context. If they
 
 Read every file in `.agent/code-styles/`. The current files are:
 
-- **ABSINTHE.md** — Absinthe GraphQL conventions.
-- **CODE_RELATED_ANTI_PATTERNS.md** — code-level anti-patterns to avoid.
-- **DESIGN_RELATED_ANTI_PATTERNS.md** — design-level anti-patterns to avoid.
-- **META_PROGRAMMING_ANTI_PATTERNS.md** — meta-programming anti-patterns to avoid.
-- **NAMING_CONVENTIONS.md** — naming rules for modules, functions, variables, and files.
-- **PROCESS_RELATED_ANTI_PATTERNS.md** — process and OTP anti-patterns to avoid.
-- **PUBLIC_API_AND_INTERFACES.md** — rules for public API surface and interfaces.
-- **STRUCT_ANTI_PATTERNS.md** — struct-related anti-patterns to avoid.
-- **TESTING.md** — test style and structure rules.
+- **ABSINTHE.md** - Absinthe GraphQL conventions.
+- **CODE_RELATED_ANTI_PATTERNS.md** - code-level anti-patterns to avoid.
+- **DESIGN_RELATED_ANTI_PATTERNS.md** - design-level anti-patterns to avoid.
+- **META_PROGRAMMING_ANTI_PATTERNS.md** - meta-programming anti-patterns to avoid.
+- **NAMING_CONVENTIONS.md** - naming rules for modules, functions, variables, and files.
+- **PROCESS_RELATED_ANTI_PATTERNS.md** - process and OTP anti-patterns to avoid.
+- **PUBLIC_API_AND_INTERFACES.md** - rules for public API surface and interfaces.
+- **STRUCT_ANTI_PATTERNS.md** - struct-related anti-patterns to avoid.
+- **TESTING.md** - test style and structure rules.
 
 ### 2. Determine scope
 

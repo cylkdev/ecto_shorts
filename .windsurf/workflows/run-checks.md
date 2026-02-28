@@ -11,7 +11,7 @@ Run the project's standard quality checks after implementing a feature or making
 
 ## When not to use
 
-Do **not** use this workflow as a substitute for a code style review. Use the `code-style-review` workflow for that. Do **not** use this workflow to run a single tool in isolation — invoke the tool directly instead.
+Do **not** use this workflow as a substitute for a code style review. Use the `code-style-review` workflow for that. Do **not** use this workflow to run a single tool in isolation - invoke the tool directly instead.
 
 ## How to do it
 

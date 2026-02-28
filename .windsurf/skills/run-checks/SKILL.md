@@ -9,7 +9,7 @@ Use this skill after implementing a feature or making a change to the codebase. 
 
 ## When not to use
 
-Do **not** use this skill as a substitute for a code style review. Use the `code-style-review` skill for that. Do **not** use this skill to run a single tool in isolation — invoke the tool directly instead.
+Do **not** use this skill as a substitute for a code style review. Use the `code-style-review` skill for that. Do **not** use this skill to run a single tool in isolation - invoke the tool directly instead.
 
 ## What to do
 

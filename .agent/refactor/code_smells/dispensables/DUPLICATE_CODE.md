@@ -209,7 +209,7 @@ end
 - Bug fixes apply everywhere automatically.
 - Reduced code size and cognitive load.
 - Easier testing of shared functionality.
-- Consistent behavior across the codebase.
+- Consistent behaviour across the codebase.
 
 ## Related Smells
 

@@ -44,7 +44,7 @@ end)
 # Create posts
 posts = [
   %Post{
-    title: "Getting Started with Elixir",
+    title: "Getting started with Elixir",
     body: "Elixir is a functional programming language designed for building scalable and maintainable applications.",
     permalink: "getting-started-elixir",
     published: true,

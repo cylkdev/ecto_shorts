@@ -472,12 +472,12 @@ defmodule EctoShorts.CommonChanges do
   Inspects the raw value in `changeset.params` for the given `key` and
   selects the appropriate strategy:
 
-  * When params contains a list of schema structs — `put_assoc`.
-  * When params contains a list of `%{id: id}` maps only (member update) —
+  * When params contains a list of schema structs - `put_assoc`.
+  * When params contains a list of `%{id: id}` maps only (member update) -
     loads the matching records and calls `put_assoc`.
-  * When params contains a list with some persisted IDs — preloads existing
+  * When params contains a list with some persisted IDs - preloads existing
     records and calls `cast_assoc`.
-  * Otherwise — `cast_assoc`.
+  * Otherwise - `cast_assoc`.
 
   ## Examples
 

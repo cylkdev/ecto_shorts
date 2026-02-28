@@ -15,11 +15,11 @@ Read `.agent/REFACTOR_PLANS.md` and load it into your context. If it already exi
 
 Browse the code smell catalog in `.agent/refactor/code_smells/` to find the smell that best matches the problem. The categories are:
 
-- `bloaters/` — code that has grown too large to work with easily.
-- `change_preventers/` — code that makes changes difficult.
-- `couplers/` — code with excessive coupling between modules.
-- `dispensables/` — code that could be removed without loss.
-- `abstraction_abusers/` — patterns that misuse abstraction mechanisms.
+- `bloaters/` - code that has grown too large to work with easily.
+- `change_preventers/` - code that makes changes difficult.
+- `couplers/` - code with excessive coupling between modules.
+- `dispensables/` - code that could be removed without loss.
+- `abstraction_abusers/` - patterns that misuse abstraction mechanisms.
 
 Read the matching smell file. Use its signs, symptoms, and examples to confirm the diagnosis.
 
@@ -33,15 +33,15 @@ Create a new `.md` file at the path specified by the `document-artifacts` rule i
 
 At minimum the plan must include:
 
-- **Purpose / Big Picture** — why the refactor matters.
-- **Behaviour Boundary** — the exact observable behaviour that must not change.
-- **Code Smell Identified** — the smell, where it appears, and a brief summary.
-- **Refactoring Technique Selected** — the technique and why it fits.
-- **Plan of Work** — the sequence of edits, naming files and functions precisely.
-- **Validation and Acceptance** — commands to run and expected outputs.
-- **Milestones** — independently verifiable steps.
-- **Progress** — checklist updated as work proceeds.
-- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** — living sections.
+- **Purpose / Big Picture** - why the refactor matters.
+- **Behaviour Boundary** - the exact observable behaviour that must not change.
+- **Code Smell Identified** - the smell, where it appears, and a brief summary.
+- **Refactoring Technique Selected** - the technique and why it fits.
+- **Plan of Work** - the sequence of edits, naming files and functions precisely.
+- **Validation and Acceptance** - commands to run and expected outputs.
+- **Milestones** - independently verifiable steps.
+- **Progress** - checklist updated as work proceeds.
+- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** - living sections.
 
 ### 4. Execute the plan
 

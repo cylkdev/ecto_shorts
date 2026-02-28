@@ -29,21 +29,21 @@ Create a new `.md` file at the path specified by the `document-artifacts` rule i
 
 At minimum the document must include:
 
-- **Purpose / Big Picture** — what risk you are reducing and what "good" looks like.
-- **Constraints and Requirements** — availability, durability, latency, throughput, operational constraints.
-- **Context and Orientation** — system description, key modules, runtime shape, supervision trees.
-- **Review Approach** — traversal order from deep modules upward.
-- **Progress** — checklist updated as work proceeds.
-- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** — living sections.
+- **Purpose / Big Picture** - what risk you are reducing and what "good" looks like.
+- **Constraints and Requirements** - availability, durability, latency, throughput, operational constraints.
+- **Context and Orientation** - system description, key modules, runtime shape, supervision trees.
+- **Review Approach** - traversal order from deep modules upward.
+- **Progress** - checklist updated as work proceeds.
+- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** - living sections.
 
 ### 4. Scan for high-scale risk areas
 
 For each subsystem, evaluate:
 
-- **Serialized work and backpressure** — GenServer bottlenecks, mailbox growth, missing bounded concurrency.
-- **Crash behavior and cascade control** — restart storms, missing circuit breakers, blast radius.
-- **State ownership and durability** — in-memory-only state, non-idempotent replay, at-least-once without dedup.
-- **Distributed behavior** — partition assumptions, global singletons, cross-node coordination.
+- **Serialized work and backpressure** - GenServer bottlenecks, mailbox growth, missing bounded concurrency.
+- **Crash behaviour and cascade control** - restart storms, missing circuit breakers, blast radius.
+- **State ownership and durability** - in-memory-only state, non-idempotent replay, at-least-once without dedup.
+- **Distributed behaviour** - partition assumptions, global singletons, cross-node coordination.
 
 ### 5. Apply the standard questions
 

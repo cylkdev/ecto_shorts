@@ -62,7 +62,7 @@ This section describes the core workflow. Every feature follows this pattern.
 
   ┌─────────────────────────────────────────────────────────┐
   │                                                         │
-  │  OUTER CIRCLE — the boundary test                       │
+  │  OUTER CIRCLE - the boundary test                       │
   │                                                         │
   │  This is a test for your public function.               │
   │  It calls the function, passes in data,                 │
@@ -74,7 +74,7 @@ This section describes the core workflow. Every feature follows this pattern.
   │                                                         │
   │      ┌─────────────────────────────────────────┐        │
   │      │                                         │        │
-  │      │  INNER CIRCLE — focused tests           │        │
+  │      │  INNER CIRCLE - focused tests           │        │
   │      │                                         │        │
   │      │  When the function exists but returns   │        │
   │      │  the wrong answer, you step in here     │        │
@@ -127,7 +127,7 @@ This is the rhythm: outer test fails, follow errors, step in when business logic
      │       │
      │       ▼
      │    A1. Create the missing module or define the missing function.
-     │        Do not write any logic yet — just enough to stop this error.
+     │        Do not write any logic yet - just enough to stop this error.
      │       │
      │       ▼
      │    A2. Go back to step 1. ─────────────────────────────────┐
@@ -187,7 +187,7 @@ This is the rhythm: outer test fails, follow errors, step in when business logic
   You spend most of your time in the smallest loop.
 
 
-  LOOP 1 — THE WHOLE FEATURE  (runs once)
+  LOOP 1 - THE WHOLE FEATURE  (runs once)
   ────────────────────────────────────────
   A request comes in. You break it into small slices.
   Each slice is one testable outcome.
@@ -200,7 +200,7 @@ This is the rhythm: outer test fails, follow errors, step in when business logic
     For each slice, enter Loop 2.
          │
          ▼
-  LOOP 2 — ONE SLICE  (runs once per slice)
+  LOOP 2 - ONE SLICE  (runs once per slice)
   ──────────────────────────────────────────
   Write one boundary test for this slice.
   Run it. It will fail. Now enter Loop 3 to make it pass.
@@ -209,7 +209,7 @@ This is the rhythm: outer test fails, follow errors, step in when business logic
     For each error, enter Loop 3.
          │
          ▼
-  LOOP 3 — ONE ERROR AT A TIME  (runs many times per slice)
+  LOOP 3 - ONE ERROR AT A TIME  (runs many times per slice)
   ──────────────────────────────────────────────────────────
   This is where you spend most of your time.
 
@@ -300,13 +300,13 @@ When to exit: the test that triggered entry is now green and has been refactored
   these three steps, in order, every time.
 
 
-  RED — the test fails
+  RED - the test fails
   │
   │  You just wrote a test, or the last change revealed a new error.
   │  The test output is red. That is expected.
   │
   ▼
-  GREEN — make it pass with the smallest change
+  GREEN - make it pass with the smallest change
   │
   │  Write the least amount of code that makes the test pass.
   │  It is fine to hard-code a value or return an empty list
@@ -314,11 +314,11 @@ When to exit: the test that triggered entry is now green and has been refactored
   │  force you to replace it with real logic.
   │
   ▼
-  REFACTOR — clean up while the test stays green
+  REFACTOR - clean up while the test stays green
   │
   │  Rename variables, extract helpers, remove duplication.
   │  Run the test after every change. If it turns red,
-  │  undo the last change — you accidentally changed behaviour.
+  │  undo the last change - you accidentally changed behaviour.
   │
   ▼
   Done. Pick up the next failing test and repeat.
@@ -371,7 +371,7 @@ This section restates the three loops above as a single numbered procedure. Foll
      │
      └── Yes → continue
   4. Write one boundary test
-  5. Run `mix test` — confirm it fails
+  5. Run `mix test` - confirm it fails
      │
      ▼
   FIX ERRORS (repeat until the test passes)
@@ -399,7 +399,7 @@ This section restates the three loops above as a single numbered procedure. Foll
   WRAP UP
   ───────
   10. Clean up the code while the boundary test stays green
-  11. Run `mix test` — make sure nothing else broke
+  11. Run `mix test` - make sure nothing else broke
   12. More slices left? → Go back to step 1 for the next slice
 ```
 
@@ -442,7 +442,7 @@ The request is clear enough for a single boundary test. No ExampleMapDoc needed.
 
 The test is pure data. It sets up two products, calls the public API with a filter, and asserts the returned list contains only the matching product. There are no implementation details, no mocks, and no internal module references.
 
-### Step 5: Run the test — confirm it fails
+### Step 5: Run the test - confirm it fails
 
     $ mix test test/my_app/catalog_test.exs
 
@@ -451,7 +451,7 @@ The test is pure data. It sets up two products, calls the public API with a filt
 
 The test fails because the module does not exist. This is the right kind of failure.
 
-### Step 6: Follow the errors — fix compile errors
+### Step 6: Follow the errors - fix compile errors
 
 Create the module with no functions:
 
@@ -478,7 +478,7 @@ Run the test again:
 
 The error has changed from a compile error (missing module, undefined function) to an assertion error (wrong return value). This is progress.
 
-### Step 7: Step in — write a focused test
+### Step 7: Step in - write a focused test
 
 Since this is a library and the boundary is already a single function, the boundary test and the focused test are the same in this case. In a web application, this would be the point to step from a feature test (HTTP request) into a context test (function call). Here, the implementation continues at the same level.
 

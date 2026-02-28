@@ -15,12 +15,12 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
 ## Progress
 
 - [x] (2026-02-28 13:00Z) Wrote RefactorPlan.
-- [x] (2026-02-28 13:01Z) Milestone 1: Extracted `do_delete/3`, consolidated both `delete/2` clause bodies. `mix format && mix test` — 645 tests, 0 failures.
-- [x] (2026-02-28 13:02Z) Milestone 2: Final validation. `mix format` clean. `mix test` — 645 tests, 0 failures. `mix credo --strict` — no new warnings.
+- [x] (2026-02-28 13:01Z) Milestone 1: Extracted `do_delete/3`, consolidated both `delete/2` clause bodies. `mix format && mix test` - 645 tests, 0 failures.
+- [x] (2026-02-28 13:02Z) Milestone 2: Final validation. `mix format` clean. `mix test` - 645 tests, 0 failures. `mix credo --strict` - no new warnings.
 
 ## Surprises & Discoveries
 
-- Observation: The refactor is net +1 mods/funs in credo (736 vs 735) because we added one `defp do_delete/3` while not removing any function heads — we only shortened the bodies of the two existing clauses.
+- Observation: The refactor is net +1 mods/funs in credo (736 vs 735) because we added one `defp do_delete/3` while not removing any function heads - we only shortened the bodies of the two existing clauses.
   Evidence: `mix credo --strict` reports 736 mods/funs.
 
 ## Decision Log
@@ -35,7 +35,7 @@ The refactor is complete. Two near-identical `delete/2` clause bodies (each 16 l
 
 The behaviour boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same error shapes (`:conflict` code, "failed to delete record." message, `%{schema: _, changeset: _}` details) are returned for both changeset and schema struct inputs. `mix format` is clean. `mix credo --strict` shows no new warnings.
 
-File changed: `lib/ecto_shorts/actions.ex` — added `defp do_delete/3`, simplified two `delete/2` clause bodies.
+File changed: `lib/ecto_shorts/actions.ex` - added `defp do_delete/3`, simplified two `delete/2` clause bodies.
 
 ## Context and Orientation
 
@@ -49,9 +49,9 @@ The two clauses in question are at lines 210-226 (changeset input) and 228-244 (
 4. If `{:ok, record}`, pass through
 
 Key modules:
-- `lib/ecto_shorts/actions.ex` — the file being refactored
-- `lib/ecto_shorts/common_schema.ex` — provides `create_changeset/3` which handles both changesets and structs
-- `lib/ecto_shorts/actions/error.ex` — provides `Error.call/4` for error wrapping
+- `lib/ecto_shorts/actions.ex` - the file being refactored
+- `lib/ecto_shorts/common_schema.ex` - provides `create_changeset/3` which handles both changesets and structs
+- `lib/ecto_shorts/actions/error.ex` - provides `Error.call/4` for error wrapping
 
 ## Behaviour Boundary (Must Remain Unchanged)
 

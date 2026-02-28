@@ -141,7 +141,7 @@ end
 - Simpler code is easier to understand and maintain.
 - Removes indirection that adds no value.
 - Reduces the surface area for bugs.
-- Makes actual behavior clearer.
+- Makes actual behaviour clearer.
 - Easier onboarding for new developers.
 
 ## When Abstraction Is Warranted

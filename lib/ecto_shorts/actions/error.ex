@@ -39,15 +39,15 @@ defmodule EctoShorts.Actions.Error do
   Builds an error value from the given `code`, `message`, and `details`.
 
   Called by `EctoShorts.Actions.Error.call/4` once the error module is
-  resolved. Must return any value — the shape is determined entirely by the
+  resolved. Must return any value - the shape is determined entirely by the
   implementing module.
 
   ## Arguments
 
-  * `code` — an atom representing the error type (e.g. `:not_found`,
+  * `code` - an atom representing the error type (e.g. `:not_found`,
     `:conflict`, `:bad_request`).
-  * `message` — a human-readable string describing the error.
-  * `details` — a map containing additional context (e.g. IDs, params).
+  * `message` - a human-readable string describing the error.
+  * `details` - a map containing additional context (e.g. IDs, params).
 
   ## Return value
 
@@ -85,7 +85,7 @@ defmodule EctoShorts.Actions.Error do
 
   ## Options
 
-  * `:error_module` — a module implementing the `EctoShorts.Actions.Error`
+  * `:error_module` - a module implementing the `EctoShorts.Actions.Error`
     behaviour. Defaults to `EctoShorts.Config.error_module/0`.
 
   ## Examples

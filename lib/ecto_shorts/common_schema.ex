@@ -27,7 +27,7 @@ defmodule EctoShorts.CommonSchema do
   * An `Ecto.Changeset`
   * An `Ecto.Query`
 
-  ## Quick start
+  ## Getting started
 
       iex> EctoShorts.CommonSchema.get_schema_source(EctoShorts.Schema.Post)
       {"posts", EctoShorts.Schema.Post}
@@ -437,9 +437,9 @@ defmodule EctoShorts.CommonSchema do
 
   ## Options
 
-  * `:changeset` — a 1-arity, 2-arity, or 3-arity function to call instead
+  * `:changeset` - a 1-arity, 2-arity, or 3-arity function to call instead
     of the schema's `changeset/2`.
-  * `:query_fields` — list of field atoms to restrict to when creating the
+  * `:query_fields` - list of field atoms to restrict to when creating the
     schema struct from params.
 
   See also `create_schema_struct/1` and `EctoShorts.CommonChanges`.

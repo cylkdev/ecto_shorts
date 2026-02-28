@@ -29,7 +29,7 @@ defmodule EctoShorts.CommonParams do
   `:on_conflict` options from the schema's primary key and the prepared
   insert data, for use with `c:Ecto.Repo.insert_all/3`.
 
-  ## Quick start
+  ## Getting started
 
       params = [
         %{title: "First post", published: true},
@@ -77,11 +77,11 @@ defmodule EctoShorts.CommonParams do
 
   ## Options
 
-  * `:on_conflict_replace` — controls which fields are replaced on conflict.
+  * `:on_conflict_replace` - controls which fields are replaced on conflict.
     Defaults to `:insert_keys`.
-    * `:insert_keys` — replaces all non-primary-key fields present in the inserts.
-    * `:none` — no fields are replaced (insert-or-nothing).
-    * a list of atoms — only the listed fields are replaced.
+    * `:insert_keys` - replaces all non-primary-key fields present in the inserts.
+    * `:none` - no fields are replaced (insert-or-nothing).
+    * a list of atoms - only the listed fields are replaced.
 
   ## Examples
 
@@ -164,30 +164,30 @@ defmodule EctoShorts.CommonParams do
 
   ### Placeholder options
 
-  * `:placeholders` — a map where each key is a field atom and each value is
+  * `:placeholders` - a map where each key is a field atom and each value is
     the placeholder value to match. When a field value matches, it is replaced
     with `{:placeholder, field_name}` for use with `c:Ecto.Repo.insert_all/3`'s
     `:placeholders` option. Defaults to `%{}`.
-  * `:on_placeholder_conflict` — controls what happens when a placeholder value
+  * `:on_placeholder_conflict` - controls what happens when a placeholder value
     is provided but the record already has a different value. Defaults to
     `:nothing`.
-    * `:nothing` — keep the existing value unchanged.
-    * `:replace_all` — always use the placeholder regardless of conflict.
-    * `{:replace, fields}` — only replace the listed fields.
+    * `:nothing` - keep the existing value unchanged.
+    * `:replace_all` - always use the placeholder regardless of conflict.
+    * `{:replace, fields}` - only replace the listed fields.
 
   ### Timestamp options
 
-  * `:inserted_at` — manually set the `:inserted_at` timestamp value.
-  * `:updated_at` — manually set the `:updated_at` timestamp value.
-  * `:inserted_at_source` — override the field name (e.g. `:created_on`).
-  * `:updated_at_source` — override the field name.
-  * `:inserted_at_timestamp_type` — override the timestamp type (`:naive_datetime` or `:utc_datetime`).
-  * `:updated_at_timestamp_type` — override the timestamp type.
-  * `:timestamp_type` — fallback type for both fields when specific overrides are absent.
+  * `:inserted_at` - manually set the `:inserted_at` timestamp value.
+  * `:updated_at` - manually set the `:updated_at` timestamp value.
+  * `:inserted_at_source` - override the field name (e.g. `:created_on`).
+  * `:updated_at_source` - override the field name.
+  * `:inserted_at_timestamp_type` - override the timestamp type (`:naive_datetime` or `:utc_datetime`).
+  * `:updated_at_timestamp_type` - override the timestamp type.
+  * `:timestamp_type` - fallback type for both fields when specific overrides are absent.
 
   ### Validation options
 
-  * `:validate` — when `true`, each entry is passed through the schema's
+  * `:validate` - when `true`, each entry is passed through the schema's
     `changeset/2` for validation. Set to `false` to construct raw structs
     without calling `changeset/2`. Defaults to `true`.
 
@@ -437,11 +437,11 @@ defmodule EctoShorts.CommonParams do
 
   ## Options
 
-  * `:updated_at` — manually provide the timestamp value for `:updated_at`.
-  * `:updated_at_source` — override the field name. Defaults to `:updated_at`.
-  * `:updated_at_timestamp_type` — override the timestamp type
+  * `:updated_at` - manually provide the timestamp value for `:updated_at`.
+  * `:updated_at_source` - override the field name. Defaults to `:updated_at`.
+  * `:updated_at_timestamp_type` - override the timestamp type
     (`:naive_datetime` or `:utc_datetime`).
-  * `:timestamp_type` — fallback timestamp type when the specific override
+  * `:timestamp_type` - fallback timestamp type when the specific override
     is not provided.
 
   ## Examples

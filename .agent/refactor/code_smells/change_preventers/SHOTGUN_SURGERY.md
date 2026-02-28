@@ -6,7 +6,7 @@ Change Preventers
 
 ## Description
 
-A single change requires modifications to many different modules scattered across the codebase. This is the opposite of Divergent Change—instead of one module changing for many reasons, one reason causes changes in many modules.
+A single change requires modifications to many different modules scattered across the codebase. This is the opposite of Divergent Change-instead of one module changing for many reasons, one reason causes changes in many modules.
 
 ## Signs and Symptoms
 

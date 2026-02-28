@@ -15,9 +15,9 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
 ## Progress
 
 - [x] (2026-02-28 13:05Z) Wrote RefactorPlan.
-- [x] (2026-02-28 13:06Z) Milestone 1: Extracted `validate_changeset!/1`, replaced 3 inline blocks, removed `changeset?/1` and `raise_not_changeset!/1`. `mix format && mix test` — 645 tests, 0 failures.
+- [x] (2026-02-28 13:06Z) Milestone 1: Extracted `validate_changeset!/1`, replaced 3 inline blocks, removed `changeset?/1` and `raise_not_changeset!/1`. `mix format && mix test` - 645 tests, 0 failures.
 - [x] (2026-02-28 13:07Z) Fixed 3 credo single-function pipeline warnings by using direct function call syntax instead of pipe.
-- [x] (2026-02-28 13:07Z) Milestone 2: Final validation. `mix format` clean. `mix test` — 645 tests, 0 failures. `mix credo --strict` — no new warnings.
+- [x] (2026-02-28 13:07Z) Milestone 2: Final validation. `mix format` clean. `mix test` - 645 tests, 0 failures. `mix credo --strict` - no new warnings.
 
 ## Surprises & Discoveries
 
@@ -36,23 +36,23 @@ The refactor is complete. Three copies of a 5-line `if changeset?(term) do term 
 
 The behaviour boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same `RuntimeError` with "Expected an Ecto.Changeset, got: ..." is raised for invalid callback returns. `mix format` is clean. `mix credo --strict` shows no new warnings.
 
-File changed: `lib/ecto_shorts/common_schema.ex` — added `defp validate_changeset!/1`, simplified 3 case branches in `apply_changeset!/4`, removed `changeset?/1` and `raise_not_changeset!/1`.
+File changed: `lib/ecto_shorts/common_schema.ex` - added `defp validate_changeset!/1`, simplified 3 case branches in `apply_changeset!/4`, removed `changeset?/1` and `raise_not_changeset!/1`.
 
 ## Context and Orientation
 
 EctoShorts is an Elixir library providing a data-driven API for Ecto. The `EctoShorts.CommonSchema` module at `lib/ecto_shorts/common_schema.ex` provides utility functions for working with Ecto schemas and changesets. The `create_changeset/4` function accepts an optional `:changeset` callback in opts, which is dispatched through `apply_changeset!/4`.
 
 The function `apply_changeset!/4` (lines 387-427) has a `case callback do` with four branches:
-- `is_function(fun, 3)` — calls `fun.(schema, data_or_changeset, params)`, validates result
-- `is_function(fun, 2)` — calls `fun.(data_or_changeset, params)`, validates result
-- `is_function(fun, 1)` — builds a default changeset first, then calls `fun.(changeset)`, validates result
-- Catch-all — raises `ArgumentError`
+- `is_function(fun, 3)` - calls `fun.(schema, data_or_changeset, params)`, validates result
+- `is_function(fun, 2)` - calls `fun.(data_or_changeset, params)`, validates result
+- `is_function(fun, 1)` - builds a default changeset first, then calls `fun.(changeset)`, validates result
+- Catch-all - raises `ArgumentError`
 
 The validation in each of the first three branches is identical: check if `term` is a changeset struct, return it if so, raise if not.
 
 Two existing helpers support this:
 - `defp changeset?(%Ecto.Changeset{}), do: true` / `defp changeset?(_), do: false`
-- `defp raise_not_changeset!(term)` — raises with an error message
+- `defp raise_not_changeset!(term)` - raises with an error message
 
 These will be replaced by a single `defp validate_changeset!/1`.
 
@@ -65,7 +65,7 @@ These will be replaced by a single `defp validate_changeset!/1`.
 
 ## Code Smell Identified
 
-Duplicate Code, from `.agent/refactor/code_smells/dispensables/DUPLICATE_CODE.md`. The same 5-line validation block (`if changeset?(term) do term else raise_not_changeset!(term) end`) appears 3 times within the same function. This is exact duplication — identical code copied verbatim within a single function body.
+Duplicate Code, from `.agent/refactor/code_smells/dispensables/DUPLICATE_CODE.md`. The same 5-line validation block (`if changeset?(term) do term else raise_not_changeset!(term) end`) appears 3 times within the same function. This is exact duplication - identical code copied verbatim within a single function body.
 
 Location: `lib/ecto_shorts/common_schema.ex`, lines 392-396, 401-405, and 417-421.
 

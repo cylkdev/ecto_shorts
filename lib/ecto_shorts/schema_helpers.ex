@@ -7,7 +7,7 @@ defmodule EctoShorts.SchemaHelpers do
   whether a record has been persisted, or to resolve association schemas
   and field types without reaching into Ecto internals directly.
 
-  ## Quick start
+  ## Getting started
 
       iex> EctoShorts.SchemaHelpers.schema_struct?(%EctoShorts.Schema.Post{})
       true

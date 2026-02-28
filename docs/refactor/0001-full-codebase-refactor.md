@@ -6,7 +6,7 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 ## Purpose / Big Picture
 
-The three largest modules in EctoShorts — `EctoShorts.Actions` (983 lines), `EctoShorts.CommonFilters` (727 lines), and `EctoShorts.CommonParams` (676 lines) — each contained multiple unrelated responsibilities bundled into a single file. This made it difficult to locate specific logic, increased merge-conflict risk, and forced unrelated concerns to change together.
+The three largest modules in EctoShorts - `EctoShorts.Actions` (983 lines), `EctoShorts.CommonFilters` (727 lines), and `EctoShorts.CommonParams` (676 lines) - each contained multiple unrelated responsibilities bundled into a single file. This made it difficult to locate specific logic, increased merge-conflict risk, and forced unrelated concerns to change together.
 
 This refactor extracts cohesive submodules from each, reducing per-module size and giving each module a single clear purpose. The existing public API entry points (`Actions.all`, `Actions.create`, `CommonFilters.convert_params_to_filter`, `CommonParams.convert_to_insert_params`, etc.) remain unchanged. All 645 tests continue to pass after every milestone.
 
@@ -24,14 +24,14 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
 
 ## Progress
 
-- [x] (2026-02-28 11:52Z) Milestone 1A: Extracted `EctoShorts.Actions.Multi` — all multi-transaction helpers (build_*_many_multi, repo_*, handle_multi_response). 645 tests pass.
-- [x] (2026-02-28 11:54Z) Milestone 1B: Extracted `EctoShorts.Actions.Batch` — all batch helpers (build_batch_params, normalize_batch_key, handle_batch_response, extract_lookup_params, etc.). 645 tests pass.
+- [x] (2026-02-28 11:52Z) Milestone 1A: Extracted `EctoShorts.Actions.Multi` - all multi-transaction helpers (build_*_many_multi, repo_*, handle_multi_response). 645 tests pass.
+- [x] (2026-02-28 11:54Z) Milestone 1B: Extracted `EctoShorts.Actions.Batch` - all batch helpers (build_batch_params, normalize_batch_key, handle_batch_response, extract_lookup_params, etc.). 645 tests pass.
 - [x] (2026-02-28 11:56Z) Milestone 1C: Deduplicated `put_order_by`/`put_group_by` into `put_param/3`. Consolidated `get_query_fields/2` into `CommonSchema`. Removed duplicate from `Actions` and `CommonParams`. 645 tests pass.
 - [x] (2026-02-28 11:58Z) Milestone 2A: Replaced 15 `apply_query_builder` function clauses with `@query_builder_modules` map-based dispatch. Kept `:subquery` as special case. 645 tests pass.
-- [x] (2026-02-28 12:00Z) Milestone 2B: Extracted `EctoShorts.CommonFilters.BindParams` — bind-param reduction chain. Promoted `reduce_filter_params` from `defp` to `@doc false def`. 645 tests pass.
-- [x] (2026-02-28 12:02Z) Milestone 3A: Extracted `EctoShorts.CommonParams.Timestamps` — all timestamp logic (put_timestamps, put_set_updated_at, cast_datetime, truncate_datetime, timestamp_type). 645 tests pass.
-- [x] (2026-02-28 12:04Z) Milestone 3B: Extracted `EctoShorts.CommonParams.Placeholders` — all placeholder logic (put_placeholders, on_placeholder_conflict). 645 tests pass.
-- [x] (2026-02-28 12:05Z) Milestone 4A: Full quality check. `mix test` — 645 tests, 0 failures. `mix credo --strict` — passes (pre-existing warnings only). `mix dialyzer` — 1 pre-existing error in `dynamics.ex` unrelated to this refactor.
+- [x] (2026-02-28 12:00Z) Milestone 2B: Extracted `EctoShorts.CommonFilters.BindParams` - bind-param reduction chain. Promoted `reduce_filter_params` from `defp` to `@doc false def`. 645 tests pass.
+- [x] (2026-02-28 12:02Z) Milestone 3A: Extracted `EctoShorts.CommonParams.Timestamps` - all timestamp logic (put_timestamps, put_set_updated_at, cast_datetime, truncate_datetime, timestamp_type). 645 tests pass.
+- [x] (2026-02-28 12:04Z) Milestone 3B: Extracted `EctoShorts.CommonParams.Placeholders` - all placeholder logic (put_placeholders, on_placeholder_conflict). 645 tests pass.
+- [x] (2026-02-28 12:05Z) Milestone 4A: Full quality check. `mix test` - 645 tests, 0 failures. `mix credo --strict` - passes (pre-existing warnings only). `mix dialyzer` - 1 pre-existing error in `dynamics.ex` unrelated to this refactor.
 
 ## Surprises & Discoveries
 
@@ -51,7 +51,7 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
   Date/Author: 2026-02-28 / Cascade
 
 - Decision: Keep `:subquery` as a separate `apply_query_builder` clause instead of including it in the `@query_builder_modules` map.
-  Rationale: The `:subquery` handler has unique pre-filtering logic (it applies filters to the query before calling `SubQuery.build`) and a fallback clause for invalid params. This special behavior doesn't fit the uniform `module.build(...)` pattern.
+  Rationale: The `:subquery` handler has unique pre-filtering logic (it applies filters to the query before calling `SubQuery.build`) and a fallback clause for invalid params. This special behaviour doesn't fit the uniform `module.build(...)` pattern.
   Date/Author: 2026-02-28 / Cascade
 
 - Decision: Consolidate `get_query_fields/2` into `CommonSchema` rather than creating a new shared module.
@@ -92,10 +92,10 @@ Follow-up opportunities:
 
 EctoShorts is an Elixir library that provides a standardized, data-driven API for working with Ecto. The key modules are:
 
-- `lib/ecto_shorts/actions.ex` — Public CRUD, batch, bulk, multi, and transaction operations. The main entry point for users. All public functions remain here; internal helpers were extracted to `actions/multi.ex` and `actions/batch.ex`.
-- `lib/ecto_shorts/common_filters.ex` — Converts parameter maps/keyword lists into Ecto queries. The `convert_params_to_filter/3` function is the entry point. Internally dispatches to query builder modules in `lib/ecto_shorts/common_filters/`. Binding-parameter reduction was extracted to `bind_params.ex`.
-- `lib/ecto_shorts/common_params.ex` — Converts application-level data into Ecto-compatible insert/update structures. Timestamp and placeholder logic were extracted to `timestamps.ex` and `placeholders.ex`.
-- `lib/ecto_shorts/common_schema.ex` — Schema introspection utilities. Now also houses the shared `get_query_fields/2`.
+- `lib/ecto_shorts/actions.ex` - Public CRUD, batch, bulk, multi, and transaction operations. The main entry point for users. All public functions remain here; internal helpers were extracted to `actions/multi.ex` and `actions/batch.ex`.
+- `lib/ecto_shorts/common_filters.ex` - Converts parameter maps/keyword lists into Ecto queries. The `convert_params_to_filter/3` function is the entry point. Internally dispatches to query builder modules in `lib/ecto_shorts/common_filters/`. Binding-parameter reduction was extracted to `bind_params.ex`.
+- `lib/ecto_shorts/common_params.ex` - Converts application-level data into Ecto-compatible insert/update structures. Timestamp and placeholder logic were extracted to `timestamps.ex` and `placeholders.ex`.
+- `lib/ecto_shorts/common_schema.ex` - Schema introspection utilities. Now also houses the shared `get_query_fields/2`.
 
 ## Behaviour Boundary (Must Remain Unchanged)
 
@@ -114,7 +114,7 @@ Three code smells from the catalog:
 
 1. **Large Module** (`.agent/refactor/code_smells/bloaters/LARGE_MODULE.md`): All three target modules exceeded 500 lines, making them hard to navigate and understand. A large module indicates that multiple concerns have been bundled together.
 
-2. **Divergent Change** (`.agent/refactor/code_smells/change_preventers/DIVERGENT_CHANGE.md`): `actions.ex` changed for CRUD reasons, batch reasons, multi-transaction reasons, and transaction-handling reasons — four unrelated axes of change in one file.
+2. **Divergent Change** (`.agent/refactor/code_smells/change_preventers/DIVERGENT_CHANGE.md`): `actions.ex` changed for CRUD reasons, batch reasons, multi-transaction reasons, and transaction-handling reasons - four unrelated axes of change in one file.
 
 3. **Duplicate Code** (`.agent/refactor/code_smells/dispensables/DUPLICATE_CODE.md`): `get_query_fields/2` was duplicated in both `Actions` and `CommonParams`. `put_order_by/2` and `put_group_by/2` were structurally identical functions differing only in the key name.
 
@@ -184,4 +184,4 @@ See the Progress section. All 8 milestones are complete. Each was independently 
 
 ## Revision Note
 
-Initial completion — all milestones executed, validated, and retrospective written. 2026-02-28.
+Initial completion - all milestones executed, validated, and retrospective written. 2026-02-28.

@@ -12,11 +12,11 @@ defmodule EctoShorts.Compiler.ClauseSpec do
 
   ## Clause spec fields
 
-  * `:binding_head` — AST for the first argument pattern (the binding selector)
-  * `:key` — AST for the second argument pattern (the filter field atom)
-  * `:head` — AST for the third argument pattern (the expression head)
-  * `:body` — AST returned by the clause body (the dynamic expression)
-  * `:guard` — optional AST for a `when` guard; omit or pass `nil` for no guard
+  * `:binding_head` - AST for the first argument pattern (the binding selector)
+  * `:key` - AST for the second argument pattern (the filter field atom)
+  * `:head` - AST for the third argument pattern (the expression head)
+  * `:body` - AST returned by the clause body (the dynamic expression)
+  * `:guard` - optional AST for a `when` guard; omit or pass `nil` for no guard
 
   Create AST values using `quote/1` and `Macro.var/2`.
 
@@ -39,7 +39,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
 
   > #### Shape only {: .info}
   >
-  > `ClauseSpec` does not validate the *meaning* of `:head` or `:body` —
+  > `ClauseSpec` does not validate the *meaning* of `:head` or `:body` -
   > only that the required keys exist and the struct can be constructed.
 
   See also `EctoShorts.Compiler` and `EctoShorts.Dynamics.Adapter`.
@@ -52,15 +52,15 @@ defmodule EctoShorts.Compiler.ClauseSpec do
   All field values are Elixir AST terms produced by `quote/1` or
   `Macro.var/2`.
 
-  * `:binding_head` — AST for the first argument pattern (the binding
+  * `:binding_head` - AST for the first argument pattern (the binding
     selector, e.g. `{:as, nil}` or a positional binding expression).
-  * `:key` — AST for the second argument pattern (the filter field atom,
+  * `:key` - AST for the second argument pattern (the filter field atom,
     e.g. `Macro.var(:key, nil)`).
-  * `:head` — AST for the third argument pattern (the expression head,
+  * `:head` - AST for the third argument pattern (the expression head,
     e.g. `{:==, vals}`).
-  * `:body` — AST returned by the generated clause body. This is the
+  * `:body` - AST returned by the generated clause body. This is the
     dynamic expression that Ecto will evaluate.
-  * `:guard` — optional AST for a `when` guard on the generated clause.
+  * `:guard` - optional AST for a `when` guard on the generated clause.
     `nil` means no guard.
   """
   @type t() :: %__MODULE__{
@@ -90,7 +90,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
     `:key`, `:head`, `:body`) are missing.
   * Raises `KeyError` when an unrecognised key is provided.
 
-  Note: `new/1` does not validate the *meaning* of `:head` or `:body` — only
+  Note: `new/1` does not validate the *meaning* of `:head` or `:body` - only
   that those keys exist and the struct can be constructed.
 
   ## Examples

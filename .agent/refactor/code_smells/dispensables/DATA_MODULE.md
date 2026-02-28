@@ -6,7 +6,7 @@ Dispensables
 
 ## Description
 
-A module that contains only data (struct definition and fields) with no behavior. While structs are valuable in Elixir, a module that only defines a struct without any functions operating on that data often indicates that behavior is scattered elsewhere or missing entirely.
+A module that contains only data (struct definition and fields) with no behaviour. While structs are valuable in Elixir, a module that only defines a struct without any functions operating on that data often indicates that behaviour is scattered elsewhere or missing entirely.
 
 ## Signs and Symptoms
 
@@ -18,9 +18,9 @@ A module that contains only data (struct definition and fields) with no behavior
 
 ## Causes
 
-- Separating data from behavior (anemic domain model).
+- Separating data from behaviour (anemic domain model).
 - Treating Elixir structs like database records without logic.
-- Over-application of "single responsibility" to mean "data OR behavior."
+- Over-application of "single responsibility" to mean "data OR behaviour."
 - Migrating from languages where data classes are common.
 
 ## Example
@@ -30,7 +30,7 @@ defmodule MyApp.Order do
   defstruct [:id, :items, :customer_id, :status, :total]
 end
 
-# All behavior lives elsewhere
+# All behaviour lives elsewhere
 defmodule MyApp.OrderService do
   alias MyApp.Order
 

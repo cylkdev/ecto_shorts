@@ -13,7 +13,7 @@ A module that does too little to justify its existence. It may have been created
 - A module with only 1-2 small functions.
 - A module that simply delegates to another module without adding value.
 - A module created "for future expansion" that never expanded.
-- A wrapper module that adds no behavior or abstraction.
+- A wrapper module that adds no behaviour or abstraction.
 - A module whose functions could easily live in a related module.
 
 ## Causes

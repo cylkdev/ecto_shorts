@@ -31,15 +31,15 @@ Follow the skeleton and all requirements in `.agent/EXAMPLE_MAP_PLANS.md`. The p
 
 At minimum the plan must include:
 
-- **Purpose / Big Picture** — what the user gains and how to see it working.
-- **Context and Orientation** — key files, modules, and terms defined for a novice.
-- **Story** — one or two sentences in "As a / I want / So that" form.
-- **Rules** — short, testable statements describing what must always be true.
-- **Examples** — concrete cases with inputs and expected observable outcomes for each rule.
-- **Questions** — unknowns that block correct implementation, with why each matters.
-- **Mapping to acceptance tests** — how examples become tests in this repo.
-- **Progress** — checklist updated as work proceeds.
-- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** — living sections.
+- **Purpose / Big Picture** - what the user gains and how to see it working.
+- **Context and Orientation** - key files, modules, and terms defined for a novice.
+- **Story** - one or two sentences in "As a / I want / So that" form.
+- **Rules** - short, testable statements describing what must always be true.
+- **Examples** - concrete cases with inputs and expected observable outcomes for each rule.
+- **Questions** - unknowns that block correct implementation, with why each matters.
+- **Mapping to acceptance tests** - how examples become tests in this repo.
+- **Progress** - checklist updated as work proceeds.
+- **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** - living sections.
 
 ### 4. Resolve questions
 
