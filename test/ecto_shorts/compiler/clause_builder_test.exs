@@ -78,7 +78,8 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
     clause_ast = ClauseBuilder.clause_ast(spec)
 
     # Sanity check the emitted source includes the guard.
-    assert Macro.to_string(clause_ast) |> String.contains?("when is_list(values)")
+    clause_source = Macro.to_string(clause_ast)
+    assert String.contains?(clause_source, "when is_list(values)")
 
     module = compile_clause_module!(clause_ast)
     expected_dyn = dynamic([q], field(q, ^:id) in ^[1, 2])

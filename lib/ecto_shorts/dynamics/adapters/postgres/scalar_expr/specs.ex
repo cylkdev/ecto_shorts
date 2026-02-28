@@ -236,9 +236,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: is_nil(unquote(field_ast)))))
 
               :!= ->
-                unquote(
-                  AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast))))
-                )
+                unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
 
               _ ->
                 raise ArgumentError,
@@ -624,11 +622,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
           %ClauseSpec{
             binding_head: binding_head_ast,
             key: key_var,
-            head:
-              quote(
-                do:
-                  {unquote(op), {unquote(arithmetic_op), [unquote(left_var), unquote(right_var)]}}
-              ),
+            head: quote(do: {unquote(op), {unquote(arithmetic_op), [unquote(left_var), unquote(right_var)]}}),
             body:
               quote do
                 unquote(rhs_dynamic_var) = unquote(rhs_dynamic_expr_ast)
@@ -646,10 +640,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
             key: key_var,
             head:
               quote(
-                do:
-                  {:not,
-                   {unquote(op),
-                    {unquote(arithmetic_op), [unquote(left_var), unquote(right_var)]}}}
+                do: {:not, {unquote(op), {unquote(arithmetic_op), [unquote(left_var), unquote(right_var)]}}}
               ),
             body:
               quote do

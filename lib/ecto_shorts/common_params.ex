@@ -25,14 +25,10 @@ defmodule EctoShorts.CommonParams do
   """
 
   alias Ecto.Changeset
+  alias EctoShorts.CommonParams.Placeholders
+  alias EctoShorts.CommonParams.Timestamps
   alias EctoShorts.CommonSchema
   alias EctoShorts.Utils
-
-  @utc_datetime :utc_datetime
-  @naive_datetime :naive_datetime
-
-  @inserted_at :inserted_at
-  @updated_at :updated_at
 
   @doc """
   ...
@@ -170,7 +166,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp normalize_insert_params(schema, params, opts) do
-    query_fields = get_query_fields(opts, schema)
+    query_fields = CommonSchema.get_query_fields(opts, schema)
 
     params
     |> to_map!()
@@ -262,7 +258,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp normalize_insert_entry(schema, %_{} = schema_struct, opts) do
-    changed_keys = get_query_fields(opts, schema)
+    changed_keys = CommonSchema.get_query_fields(opts, schema)
 
     with {:ok, insert_data} <- build_struct(schema, schema_struct, %{}, opts) do
       {:ok, insert_data, changed_keys}
@@ -271,7 +267,7 @@ defmodule EctoShorts.CommonParams do
 
   defp normalize_insert_entry(schema, params, opts) do
     params = normalize_insert_params(schema, params, opts)
-    query_fields = get_query_fields(opts, schema)
+    query_fields = CommonSchema.get_query_fields(opts, schema)
     changed_keys = keys_changed_in_params(query_fields, params)
 
     with {:ok, insert_data} <- build_schema_data(schema, params, opts) do
@@ -308,7 +304,9 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp has_all_non_nil_primary_keys?(schema, schema_data_or_params) do
-    Enum.all?(schema.__schema__(:primary_key), fn key ->
+    primary_key = schema.__schema__(:primary_key)
+
+    Enum.all?(primary_key, fn key ->
       Map.get(schema_data_or_params, key) !== nil
     end)
   end
@@ -316,18 +314,18 @@ defmodule EctoShorts.CommonParams do
   defp build_insert_map(nil, insert_data, utc_now, changed_keys, opts) do
     insert_data
     |> filter_insert_changes(changed_keys)
-    |> put_placeholders(opts[:placeholders] || %{}, opts)
-    |> put_timestamps(utc_now, nil, opts)
+    |> Placeholders.put_placeholders(opts[:placeholders] || %{}, opts)
+    |> Timestamps.put_timestamps(utc_now, nil, opts)
   end
 
   defp build_insert_map(schema, insert_data, utc_now, changed_keys, opts) do
-    query_fields = get_query_fields(opts, schema)
+    query_fields = CommonSchema.get_query_fields(opts, schema)
 
     insert_data
     |> Map.take(query_fields)
     |> filter_insert_changes(changed_keys)
-    |> put_placeholders(opts[:placeholders] || %{}, opts)
-    |> put_timestamps(utc_now, schema, opts)
+    |> Placeholders.put_placeholders(opts[:placeholders] || %{}, opts)
+    |> Timestamps.put_timestamps(utc_now, schema, opts)
   end
 
   defp filter_insert_changes(insert_data, changed_keys) do
@@ -338,108 +336,6 @@ defmodule EctoShorts.CommonParams do
         acc
       end
     end)
-  end
-
-  defp put_placeholders(data, placeholders, opts) do
-    Enum.reduce(placeholders, data, &put_placeholder(&1, &2, opts))
-  end
-
-  defp put_placeholder({key, placeholder_value}, data, opts) do
-    if Map.has_key?(data, key) do
-      if Map.get(data, key) === placeholder_value do
-        put_placeholder(data, key)
-      else
-        on_placeholder_conflict(data, key, opts)
-      end
-    else
-      data
-    end
-  end
-
-  defp on_placeholder_conflict(input, key, opts) do
-    case Keyword.get(opts, :on_placeholder_conflict, :nothing) do
-      {:replace, keys} ->
-        if Enum.member?(keys, key) do
-          put_placeholder(input, key)
-        else
-          input
-        end
-
-      :replace_all ->
-        put_placeholder(input, key)
-
-      :nothing ->
-        input
-
-      term ->
-        raise ArgumentError,
-              "Expected the value for option :on_placeholder_conflict to be one of " <>
-                "[:replace, :replace_all, :nothing], got: #{inspect(term)}"
-    end
-  end
-
-  defp put_placeholder(input, key), do: Map.put(input, key, {:placeholder, key})
-
-  defp put_timestamps(input, datetime, schema, opts) do
-    input
-    |> maybe_put_inserted_at(datetime, schema, opts)
-    |> put_timestamp_updated_at(datetime, schema, opts)
-  end
-
-  defp maybe_put_inserted_at(input, datetime, schema, opts) do
-    source_key = inserted_at_source_key(opts)
-
-    if source_key === false do
-      input
-    else
-      result =
-        if Map.has_key?(input, source_key) do
-          case Map.get(input, source_key) do
-            nil ->
-              normalize_timestamp_inserted_at(datetime, source_key, schema, opts)
-
-            existing_timestamp ->
-              normalize_timestamp_inserted_at(existing_timestamp, source_key, schema, opts)
-          end
-        else
-          normalize_timestamp_inserted_at(datetime, source_key, schema, opts)
-        end
-
-      Map.put(input, source_key, result)
-    end
-  end
-
-  defp inserted_at_source_key(opts) do
-    if Keyword.has_key?(opts, :inserted_at_source) do
-      opts[:inserted_at_source]
-    else
-      @inserted_at
-    end
-  end
-
-  defp normalize_timestamp_inserted_at(datetime, inserted_at_source, schema, opts) do
-    timestamp_type = timestamp_type(opts, :inserted_at, inserted_at_source, schema)
-
-    datetime
-    |> cast_datetime(timestamp_type)
-    |> truncate_datetime()
-  end
-
-  defp put_timestamp_updated_at(input, datetime, schema, opts) do
-    source_key = get_updated_at_source(opts)
-    value = Keyword.get(opts, :updated_at)
-
-    cond do
-      source_key === false ->
-        input
-
-      value === false ->
-        input
-
-      true ->
-        value = prepare_timestamp_updated_at(value || datetime, source_key, schema, opts)
-        Map.put(input, source_key, value)
-    end
   end
 
   @doc """
@@ -470,32 +366,9 @@ defmodule EctoShorts.CommonParams do
            |> build_update_operations(params, [], opts)
            |> group_update_operations() do
       updates
-      |> put_set_updated_at(utc_now, schema, opts)
+      |> Timestamps.put_set_updated_at(utc_now, schema, opts)
       |> Enum.map(fn {key, values} -> {key, Enum.sort(values)} end)
       |> Enum.sort()
-    end
-  end
-
-  defp put_set_updated_at(updates, datetime, schema, opts) do
-    source_key = get_updated_at_source(opts)
-    value = Keyword.get(opts, :updated_at)
-
-    cond do
-      source_key === false ->
-        updates
-
-      value === false ->
-        updates
-
-      true ->
-        value = prepare_timestamp_updated_at(value || datetime, source_key, schema, opts)
-
-        Keyword.update(
-          updates,
-          :set,
-          [{source_key, value}],
-          &Keyword.put(&1, source_key, value)
-        )
     end
   end
 
@@ -516,9 +389,8 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp build_update_operations(source, [head | tail], acc, opts) do
-    with acc <- build_update_operations(source, head, acc, opts) do
-      build_update_operations(source, tail, acc, opts)
-    end
+    acc = build_update_operations(source, head, acc, opts)
+    build_update_operations(source, tail, acc, opts)
   end
 
   defp build_update_operations(source, {key, value}, acc, opts) do
@@ -527,7 +399,7 @@ defmodule EctoShorts.CommonParams do
         normalize_update_value(nil, key, value, acc)
 
       schema ->
-        if key in get_query_fields(opts, schema) do
+        if key in CommonSchema.get_query_fields(opts, schema) do
           normalize_update_value(schema, key, value, acc)
         else
           acc
@@ -631,46 +503,4 @@ defmodule EctoShorts.CommonParams do
   defp normalize_schema(nil), do: nil
   defp normalize_schema(schema) when is_atom(schema), do: schema
   defp normalize_schema(_), do: nil
-
-  defp get_updated_at_source(opts) do
-    if Keyword.has_key?(opts, :updated_at_source) do
-      opts[:updated_at_source]
-    else
-      @updated_at
-    end
-  end
-
-  defp cast_datetime(%NaiveDateTime{} = naive_datetime, _), do: naive_datetime
-  defp cast_datetime(datetime, @naive_datetime), do: DateTime.to_naive(datetime)
-  defp cast_datetime(datetime, @utc_datetime), do: datetime
-
-  defp truncate_datetime(%DateTime{} = datetime), do: DateTime.truncate(datetime, :second)
-
-  defp truncate_datetime(%NaiveDateTime{} = naive_datetime),
-    do: NaiveDateTime.truncate(naive_datetime, :second)
-
-  defp timestamp_type(opts, key, type_source, schema) do
-    schema_timestamp_type =
-      if schema !== nil do
-        schema.__schema__(:type, type_source)
-      end
-
-    opts[:"#{key}_timestamp_type"] ||
-      Keyword.get(opts[:timestamps] || [], key) ||
-      opts[:timestamp_type] ||
-      schema_timestamp_type ||
-      @utc_datetime
-  end
-
-  defp prepare_timestamp_updated_at(datetime, updated_at_source, schema, opts) do
-    timestamp_type = timestamp_type(opts, :updated_at, updated_at_source, schema)
-
-    datetime
-    |> cast_datetime(timestamp_type)
-    |> truncate_datetime()
-  end
-
-  defp get_query_fields(opts, source) do
-    Keyword.get(opts, :query_fields, CommonSchema.get_schema_reflection(source, :query_fields))
-  end
 end

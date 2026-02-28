@@ -952,9 +952,7 @@ defmodule EctoShorts.CommonFiltersTest do
           limit: ^10
         )
 
-      expected =
-        q
-        |> Ecto.Query.with_ties(true)
+      expected = Ecto.Query.with_ties(q, true)
 
       q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: true}, [])
 
@@ -968,9 +966,7 @@ defmodule EctoShorts.CommonFiltersTest do
           limit: ^10
         )
 
-      expected =
-        q
-        |> Ecto.Query.with_ties(false)
+      expected = Ecto.Query.with_ties(q, false)
 
       q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: false}, [])
 
@@ -3650,8 +3646,7 @@ defmodule EctoShorts.CommonFiltersTest do
     test "supports composite :and operator with multiple field maps" do
       expected =
         from(p in Post,
-          where:
-            p.published == ^true and p.views == ^20 and (p.title == ^"hello" and p.views == ^15)
+          where: p.published == ^true and p.views == ^20 and (p.title == ^"hello" and p.views == ^15)
         )
 
       q2 =

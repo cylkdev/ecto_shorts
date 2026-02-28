@@ -3,7 +3,9 @@ defmodule EctoShorts.Actions do
   Public actions API for common CRUD, batch, bulk, multi, and transaction operations.
   """
 
+  alias EctoShorts.Actions.Batch
   alias EctoShorts.Actions.Error
+  alias EctoShorts.Actions.Multi
 
   alias EctoShorts.{
     Config,
@@ -83,8 +85,8 @@ defmodule EctoShorts.Actions do
   def all(queryable, params, opts) do
     params =
       params
-      |> put_order_by(opts)
-      |> put_group_by(opts)
+      |> put_param(opts, :order_by)
+      |> put_param(opts, :group_by)
 
     queryable
     |> CommonFilters.convert_params_to_filter(params, opts)
@@ -144,8 +146,8 @@ defmodule EctoShorts.Actions do
   def find(source, params, opts) do
     params =
       params
-      |> put_order_by(opts)
-      |> put_group_by(opts)
+      |> put_param(opts, :order_by)
+      |> put_param(opts, :group_by)
 
     opts = Keyword.drop(opts, [:order_by, :group_by])
 
@@ -206,39 +208,11 @@ defmodule EctoShorts.Actions do
   end
 
   def delete(%{data: %{__meta__: %{schema: schema}}} = changeset, opts) do
-    with {:error, failed_changeset} <-
-           schema
-           |> CommonSchema.create_changeset(changeset, opts)
-           |> Config.repo!(opts).delete(opts) do
-      {:error,
-       Error.call(
-         :conflict,
-         "failed to delete record.",
-         %{
-           schema: schema,
-           changeset: failed_changeset
-         },
-         opts
-       )}
-    end
+    do_delete(changeset, schema, opts)
   end
 
   def delete(%{__meta__: %{schema: schema}} = schema_struct, opts) do
-    with {:error, failed_changeset} <-
-           schema
-           |> CommonSchema.create_changeset(schema_struct, opts)
-           |> Config.repo!(opts).delete(opts) do
-      {:error,
-       Error.call(
-         :conflict,
-         "failed to delete record.",
-         %{
-           schema: schema,
-           changeset: failed_changeset
-         },
-         opts
-       )}
-    end
+    do_delete(schema_struct, schema, opts)
   end
 
   def delete(records_or_changesets, opts) when is_list(records_or_changesets) do
@@ -336,7 +310,7 @@ defmodule EctoShorts.Actions do
     with {:error, _} <-
            find(
              source,
-             Map.take(params, get_query_fields(opts, source)),
+             Map.take(params, CommonSchema.get_query_fields(opts, source)),
              opts
            ) do
       source
@@ -362,7 +336,7 @@ defmodule EctoShorts.Actions do
   def transact(%Ecto.Multi{} = multi, opts) do
     multi
     |> transaction(opts)
-    |> handle_multi_response(opts)
+    |> Multi.handle_multi_response(opts)
   end
 
   def transact(fun, opts) when is_function(fun) do
@@ -385,7 +359,7 @@ defmodule EctoShorts.Actions do
       when is_list(batch_keys) and cardinality in @cardinalities do
     batch_keys = Enum.uniq(batch_keys)
 
-    case build_batch_params(schema, params, batch_keys, opts) do
+    case Batch.build_batch_params(schema, params, batch_keys, opts) do
       [] ->
         %{}
 
@@ -394,7 +368,7 @@ defmodule EctoShorts.Actions do
         |> CommonFilters.convert_params_to_filter(batch_params, opts)
         |> Config.repo!(opts).all(opts)
         |> Enum.group_by(&Map.take(&1, batch_keys))
-        |> handle_batch_response(cardinality, batch_keys)
+        |> Batch.handle_batch_response(cardinality, batch_keys)
     end
   end
 
@@ -402,7 +376,7 @@ defmodule EctoShorts.Actions do
       when cardinality in @cardinalities do
     values =
       params
-      |> Enum.map(&normalize_batch_key(&1, batch_key))
+      |> Enum.map(&Batch.normalize_batch_key(&1, batch_key))
       |> Enum.uniq()
 
     if values === [] do
@@ -411,8 +385,8 @@ defmodule EctoShorts.Actions do
       schema
       |> CommonFilters.convert_params_to_filter(%{batch_key => values}, opts)
       |> Config.repo!(opts).all(opts)
-      |> Enum.group_by(&normalize_batch_key(&1, batch_key))
-      |> handle_batch_response(cardinality, batch_key)
+      |> Enum.group_by(&Batch.normalize_batch_key(&1, batch_key))
+      |> Batch.handle_batch_response(cardinality, batch_key)
     end
   end
 
@@ -421,9 +395,9 @@ defmodule EctoShorts.Actions do
   Preloads batch lookup records and zips them with original entries.
   """
   def batch_preload(schema, entries, keys, opts \\ []) do
-    {params_list, index_to_key} = extract_lookup_params(entries, keys)
+    {params_list, index_to_key} = Batch.extract_lookup_params(entries, keys)
 
-    key_fields = normalize_key_fields(keys)
+    key_fields = Batch.normalize_key_fields(keys)
 
     fetched_records = batch(schema, params_list, key_fields, :one, opts)
 
@@ -434,7 +408,7 @@ defmodule EctoShorts.Actions do
 
         record ->
           current_entry = get_in(acc, [Access.at!(index)])
-          updated_entry = zip_batch_result(current_entry, record)
+          updated_entry = Batch.zip_batch_result(current_entry, record)
           put_in(acc, [Access.at!(index)], updated_entry)
       end
     end)
@@ -497,9 +471,9 @@ defmodule EctoShorts.Actions do
   """
   def create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     schema
-    |> build_create_many_multi(params_list, opts)
+    |> Multi.build_create_many_multi(params_list, opts)
     |> transaction(opts)
-    |> handle_multi_response(opts)
+    |> Multi.handle_multi_response(opts)
   end
 
   @doc group: "Multi"
@@ -508,9 +482,9 @@ defmodule EctoShorts.Actions do
   """
   def find_many(schema, params_list, opts \\ []) when is_list(params_list) do
     schema
-    |> build_find_many_multi(params_list, opts)
+    |> Multi.build_find_many_multi(params_list, opts)
     |> transaction(opts)
-    |> handle_multi_response(opts)
+    |> Multi.handle_multi_response(opts)
   end
 
   @doc group: "Multi"
@@ -519,9 +493,9 @@ defmodule EctoShorts.Actions do
   """
   def update_many(schema, entries, opts \\ []) when is_list(entries) do
     schema
-    |> build_update_many_multi(entries, opts)
+    |> Multi.build_update_many_multi(entries, opts)
     |> transaction(opts)
-    |> handle_multi_response(opts)
+    |> Multi.handle_multi_response(opts)
   end
 
   @doc group: "Multi"
@@ -530,9 +504,9 @@ defmodule EctoShorts.Actions do
   """
   def delete_many(schema, records, opts \\ []) when is_list(records) do
     schema
-    |> build_delete_many_multi(records, opts)
+    |> Multi.build_delete_many_multi(records, opts)
     |> transaction(opts)
-    |> handle_multi_response(opts)
+    |> Multi.handle_multi_response(opts)
   end
 
   @doc group: "Multi"
@@ -541,9 +515,9 @@ defmodule EctoShorts.Actions do
   """
   def find_or_create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     schema
-    |> build_find_or_create_multi(params_list, opts)
+    |> Multi.build_find_or_create_multi(params_list, opts)
     |> transaction(opts)
-    |> handle_multi_response(opts)
+    |> Multi.handle_multi_response(opts)
   end
 
   @doc group: "Multi"
@@ -552,35 +526,39 @@ defmodule EctoShorts.Actions do
   """
   def find_and_upsert_many(schema, entries, opts \\ []) when is_list(entries) do
     schema
-    |> build_upsert_multi(entries, opts)
+    |> Multi.build_upsert_multi(entries, opts)
     |> transaction(opts)
-    |> handle_multi_response(opts)
+    |> Multi.handle_multi_response(opts)
   end
 
-  defp put_order_by(enum, opts) do
-    case Keyword.get(opts, :order_by) do
-      nil ->
-        enum
-
-      order_by ->
-        if is_map(enum) do
-          Map.put(enum, :order_by, order_by)
-        else
-          enum ++ [order_by: order_by]
-        end
+  defp do_delete(schema_data, schema, opts) do
+    with {:error, failed_changeset} <-
+           schema
+           |> CommonSchema.create_changeset(schema_data, opts)
+           |> Config.repo!(opts).delete(opts) do
+      {:error,
+       Error.call(
+         :conflict,
+         "failed to delete record.",
+         %{
+           schema: schema,
+           changeset: failed_changeset
+         },
+         opts
+       )}
     end
   end
 
-  defp put_group_by(enum, opts) do
-    case Keyword.get(opts, :group_by) do
+  defp put_param(enum, opts, key) do
+    case Keyword.get(opts, key) do
       nil ->
         enum
 
-      group_by ->
+      value ->
         if is_map(enum) do
-          Map.put(enum, :group_by, group_by)
+          Map.put(enum, key, value)
         else
-          enum ++ [group_by: group_by]
+          enum ++ [{key, value}]
         end
     end
   end
@@ -623,361 +601,4 @@ defmodule EctoShorts.Actions do
   defp maybe_rollback({:error, reason}, repo), do: repo.rollback(reason)
   defp maybe_rollback({:ok, value}, _repo), do: value
   defp maybe_rollback(term, _repo), do: term
-
-  defp build_batch_params(_schema, _list_of_params, [], _opts) do
-    []
-  end
-
-  defp build_batch_params(schema, params_list, batch_keys, opts) do
-    query_fields = get_query_fields(opts, schema)
-
-    if Enum.all?(batch_keys, &(&1 in query_fields)) do
-      params_list
-      |> Enum.map(fn params -> normalize_batch_key(params, batch_keys) end)
-      |> Enum.uniq()
-      |> Enum.map(&{:or_where, &1})
-    else
-      raise ArgumentError,
-            "Expected batch keys to be a subset of query fields #{inspect(query_fields)}, got: #{inspect(batch_keys)}"
-    end
-  end
-
-  defp normalize_batch_key(params, keys) when is_list(params) and is_list(keys) do
-    params |> Map.new() |> normalize_batch_key(keys)
-  end
-
-  defp normalize_batch_key(params, keys) when is_map(params) and is_list(keys) do
-    Map.take(params, keys)
-  end
-
-  defp normalize_batch_key(params, key) when is_map(params) do
-    Map.get(params, key)
-  end
-
-  defp normalize_batch_key(value, key) when is_atom(key) do
-    %{key => value}
-  end
-
-  defp handle_batch_response(records, cardinality, batch_key) do
-    records
-    |> Enum.map(fn {key, values} ->
-      case {cardinality, values} do
-        {:one, [value]} ->
-          {key, value}
-
-        {:one, _} ->
-          raise ArgumentError,
-                "Expected at most one value for batch key #{inspect(batch_key)}, got #{length(values)}"
-
-        {_, grouped_values} ->
-          {key, grouped_values}
-      end
-    end)
-    |> Map.new()
-  end
-
-  defp normalize_key_fields(key) when is_atom(key), do: [key]
-  defp normalize_key_fields(keys) when is_list(keys), do: keys
-  defp normalize_key_fields(keys), do: keys
-
-  defp zip_batch_result({_find_params, other_params}, record) do
-    {record, other_params}
-  end
-
-  defp zip_batch_result(original_params, record) do
-    {record, original_params}
-  end
-
-  defp extract_lookup_params(entries, keys) do
-    entries
-    |> Stream.with_index()
-    |> Enum.reduce({[], %{}}, &reduce_preload_entry(&1, &2, keys))
-  end
-
-  defp reduce_preload_entry({entry, index}, {values_acc, index_map}, keys) do
-    case normalize_preload_params(entry) do
-      nil ->
-        {values_acc, index_map}
-
-      params ->
-        batch_key = build_batch_key(params, keys)
-
-        if batch_key === %{} do
-          {values_acc, index_map}
-        else
-          {[batch_key | values_acc], Map.put(index_map, index, batch_key)}
-        end
-    end
-  end
-
-  defp normalize_preload_params({params, _other}) do
-    normalize_preload_params(params)
-  end
-
-  defp normalize_preload_params(params) when is_list(params) do
-    Map.new(params)
-  end
-
-  defp normalize_preload_params(params) when is_map(params) and not is_struct(params) do
-    params
-  end
-
-  defp normalize_preload_params(_), do: nil
-
-  defp build_batch_key(params, true) do
-    params
-  end
-
-  defp build_batch_key(params, keys) when is_list(keys) do
-    Map.take(params, keys)
-  end
-
-  defp build_batch_key(params, key) when is_atom(key) do
-    Map.take(params, [key])
-  end
-
-  defp build_batch_key(params, key_fn) when is_function(key_fn) do
-    case key_fn.(params) do
-      map when is_map(map) -> map
-      term -> raise "Expected batch key function to return a map, got: #{inspect(term)}"
-    end
-  end
-
-  defp build_create_many_multi(schema, params_list, opts) do
-    params_list
-    |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {params, index}, multi ->
-      Ecto.Multi.run(multi, {:create, index}, fn repo, _changes ->
-        repo_create(repo, schema, params, index, opts)
-      end)
-    end)
-  end
-
-  defp build_find_many_multi(schema, params_list, opts) do
-    params_list
-    |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {params, index}, multi ->
-      Ecto.Multi.run(multi, {:find, index}, fn repo, _changes ->
-        repo_find(repo, schema, params, index, opts)
-      end)
-    end)
-  end
-
-  defp build_update_many_multi(schema, entries, opts) do
-    entries
-    |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {arg, index}, multi ->
-      Ecto.Multi.run(multi, {:update, index}, fn repo, _changes ->
-        run_multi_update_many(repo, schema, arg, index, opts)
-      end)
-    end)
-  end
-
-  defp run_multi_update_many(repo, schema, {find_params, update_params}, index, opts) do
-    with {:ok, record} <- repo_find(repo, schema, find_params, index, opts) do
-      repo_update(repo, schema, record, update_params, index, opts)
-    end
-  end
-
-  defp run_multi_update_many(repo, schema, %{id: id} = params, index, opts) do
-    update_params = Map.delete(params, :id)
-
-    with {:ok, record} <- repo_find(repo, schema, %{id: id}, index, opts) do
-      repo_update(repo, schema, record, update_params, index, opts)
-    end
-  end
-
-  defp run_multi_update_many(_repo, _schema, term, _index, _opts) do
-    raise ArgumentError,
-          """
-          expected one of:
-
-          - a tuple of {map(), map()}
-          - a map with an :id key
-
-          got: #{inspect(term)}
-          """
-  end
-
-  defp build_delete_many_multi(schema, entries, opts) do
-    entries
-    |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {entry, index}, multi ->
-      Ecto.Multi.run(multi, {:delete, index}, fn repo, _changes ->
-        run_multi_delete(repo, schema, entry, index, opts)
-      end)
-    end)
-  end
-
-  defp run_multi_delete(repo, schema, %_{} = schema_struct, index, opts) do
-    repo_delete(repo, schema, schema_struct, index, opts)
-  end
-
-  defp run_multi_delete(repo, schema, params, index, opts)
-       when is_map(params) or is_list(params) do
-    with {:ok, record} <- repo_find(repo, schema, params, index, opts) do
-      repo_delete(repo, schema, record, index, opts)
-    end
-  end
-
-  defp run_multi_delete(repo, schema, id, index, opts) do
-    run_multi_delete(repo, schema, %{id: id}, index, opts)
-  end
-
-  defp build_find_or_create_multi(schema, params_list, opts) do
-    params_list
-    |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {params, index}, multi ->
-      Ecto.Multi.run(multi, {:find_or_create, index}, fn repo, _changes ->
-        case repo_one(repo, schema, params, opts) do
-          nil -> repo_create(repo, schema, params, index, opts)
-          record -> {:ok, record}
-        end
-      end)
-    end)
-  end
-
-  defp build_upsert_multi(schema, entries, opts) do
-    entries
-    |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {arg, index}, multi ->
-      case arg do
-        {find_params, upsert_params} ->
-          Ecto.Multi.run(multi, {:find_and_upsert, index}, fn repo, _changes ->
-            repo_upsert(repo, schema, find_params, upsert_params, index, opts)
-          end)
-
-        %{id: id} = params ->
-          upsert_params = Map.delete(params, :id)
-
-          Ecto.Multi.run(multi, {:find_and_upsert, index}, fn repo, _changes ->
-            repo_upsert(repo, schema, %{id: id}, upsert_params, index, opts)
-          end)
-
-        term ->
-          raise ArgumentError,
-                """
-                expected one of:
-
-                - a tuple of {map(), map()}
-                - a map with an :id key
-
-                got: #{inspect(term)}
-                """
-      end
-    end)
-  end
-
-  defp repo_one(repo, schema, find_params, opts) do
-    schema
-    |> CommonFilters.convert_params_to_filter(find_params, opts)
-    |> repo.one(opts)
-  end
-
-  defp repo_find(repo, schema, params, index, opts) do
-    case repo_one(repo, schema, params, opts) do
-      nil ->
-        {:error,
-         {:not_found, "record not found.",
-          %{
-            schema: schema,
-            action: :find,
-            index: index,
-            params: params
-          }}}
-
-      record ->
-        {:ok, record}
-    end
-  end
-
-  defp repo_create(repo, schema, params, index, opts) do
-    case schema
-         |> CommonSchema.create_changeset(params, opts)
-         |> repo.insert(opts) do
-      {:ok, record} ->
-        {:ok, record}
-
-      {:error, changeset} ->
-        {:error,
-         {:conflict, "failed to create record.",
-          %{
-            schema: schema,
-            action: :create,
-            index: index,
-            params: params,
-            changeset: changeset
-          }}}
-    end
-  end
-
-  defp repo_update(repo, schema, record, params, index, opts) do
-    case schema
-         |> CommonSchema.create_changeset(record, params, opts)
-         |> repo.update(opts) do
-      {:ok, updated_record} ->
-        {:ok, updated_record}
-
-      {:error, changeset} ->
-        {:error,
-         {:conflict, "failed to update record.",
-          %{
-            schema: schema,
-            action: :update,
-            index: index,
-            params: params,
-            changeset: changeset
-          }}}
-    end
-  end
-
-  defp repo_delete(repo, schema, record, index, opts) do
-    case record |> schema.changeset(%{}) |> repo.delete(opts) do
-      {:ok, deleted_record} ->
-        {:ok, deleted_record}
-
-      {:error, changeset} ->
-        {:error,
-         {:conflict, "failed to delete record.",
-          %{
-            schema: schema,
-            action: :delete,
-            index: index,
-            changeset: changeset
-          }}}
-    end
-  end
-
-  defp repo_upsert(repo, schema, find_params, upsert_params, index, opts) do
-    params = Map.merge(find_params, upsert_params)
-
-    case repo_one(repo, schema, find_params, opts) do
-      nil -> repo_create(repo, schema, params, index, opts)
-      record -> repo_update(repo, schema, record, params, index, opts)
-    end
-  end
-
-  defp handle_multi_response(
-         {:error, _failed_operation, {code, message, details}, changes_so_far},
-         opts
-       ) do
-    details =
-      details
-      |> Map.new()
-      |> Map.put(:changes_so_far, Map.values(changes_so_far))
-
-    {:error, Error.call(code, message, details, opts)}
-  end
-
-  defp handle_multi_response({:error, _failed_operation, reason, _changes_so_far}, _opts) do
-    {:error, reason}
-  end
-
-  defp handle_multi_response({:ok, operations}, _opts) do
-    {:ok, Map.values(operations)}
-  end
-
-  defp get_query_fields(opts, source) do
-    Keyword.get(opts, :query_fields, CommonSchema.get_schema_reflection(source, :query_fields))
-  end
 end

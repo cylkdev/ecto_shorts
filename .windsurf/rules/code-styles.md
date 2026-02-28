@@ -8,8 +8,6 @@ Before you write or change any code, read every code style document that applies
 
 While you work, apply the rules as you make each change. Do not “fix style later”. If you are unsure how a rule applies, look for an existing example in the codebase and copy the pattern.
 
-When you finish, run the repo’s formatting and linting commands and adjust the code until it matches the rules with no exceptions. If you cannot run commands, review the code for rule compliance by comparing it to the style docs and nearby code, and then explain which rules you followed and where they are defined.
-
 ## Code Style Documents
 
 Read the descriptions to decide which documents apply. Do not read documents that do not apply. 

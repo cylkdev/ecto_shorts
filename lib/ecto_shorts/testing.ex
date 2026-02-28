@@ -34,9 +34,7 @@ defmodule EctoShorts.Testing do
     right = Macro.to_string(dyn_b)
 
     if left !== right do
-      Assertions.flunk(
-        "Expected dynamic expressions to be equal:\n\nleft:  #{left}\nright: #{right}"
-      )
+      Assertions.flunk("Expected dynamic expressions to be equal:\n\nleft:  #{left}\nright: #{right}")
     end
 
     :ok
@@ -107,9 +105,7 @@ defmodule EctoShorts.Testing do
     right = Ecto.Adapters.SQL.to_sql(kind, repo, query_b)
 
     if left === right do
-      Assertions.flunk(
-        "Expected queries to produce different SQL, but both were:\n\n#{inspect(left)}"
-      )
+      Assertions.flunk("Expected queries to produce different SQL, but both were:\n\n#{inspect(left)}")
     end
 
     :ok

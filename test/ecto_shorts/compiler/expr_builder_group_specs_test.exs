@@ -39,14 +39,15 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
   test "scalar nil_specs/4 builds clauses without needing other groups" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
-    module =
+    specs =
       ScalarExprSpecs.nil_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
         binding_body_asts
       )
-      |> compile_specs_module!()
+
+    module = compile_specs_module!(specs)
 
     key = :archived_at
 
@@ -90,14 +91,15 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
   test "array lower_upper_specs/4 builds the unnest fragments" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
-    module =
+    specs =
       ArrayExprSpecs.lower_upper_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
         binding_body_asts
       )
-      |> compile_specs_module!()
+
+    module = compile_specs_module!(specs)
 
     key = :tags
 

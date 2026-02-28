@@ -89,8 +89,7 @@ defmodule EctoShorts.Compiler do
 
   @doc false
   defmacro define_clauses(opts \\ [], do: block) do
-    {quoted_binding_head_var, quoted_binding_body_var, target_binding_var, binding_patterns_var,
-     body_ast} =
+    {quoted_binding_head_var, quoted_binding_body_var, target_binding_var, binding_patterns_var, body_ast} =
       parse_query_binding_clauses_block!(block)
 
     context = __CALLER__.module

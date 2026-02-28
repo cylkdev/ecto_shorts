@@ -1,12 +1,14 @@
 defmodule EctoShorts.CommonFilters.Select do
   @moduledoc false
+
   alias Ecto.Query
+  alias EctoShorts.CommonFilters.BindParams
   alias EctoShorts.Compiler
 
   require EctoShorts.Compiler
   require Ecto.Query
+
   @binding_selector_key :bind
-  @binding_selector_modes [:as, :at]
 
   @doc "Builds a select expression for the query."
   def build(schema, filter_op, query, binding_selector, term, opts)
@@ -43,51 +45,10 @@ defmodule EctoShorts.CommonFilters.Select do
     apply_select_merge_expr(schema, query, binding_selector, term)
   end
 
-  defp reduce_select_bind(schema, filter_op, query, binding_selector, bind_params, opts)
-       when is_map(bind_params) and not is_struct(bind_params) do
-    reduce_select_bind(schema, filter_op, query, binding_selector, Map.to_list(bind_params), opts)
-  end
-
-  defp reduce_select_bind(schema, filter_op, query, _binding_selector, bind_params, opts)
-       when is_list(bind_params) do
-    if Keyword.keyword?(bind_params) do
-      Enum.reduce(bind_params, query, fn
-        {binding_mode, scoped_params}, query_acc when binding_mode in @binding_selector_modes ->
-          scoped_params =
-            case scoped_params do
-              value when is_map(value) and not is_struct(value) ->
-                Map.to_list(value)
-
-              value when is_list(value) ->
-                value
-
-              value ->
-                raise ArgumentError,
-                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(value)}"
-            end
-
-          Enum.reduce(scoped_params, query_acc, fn
-            {binding_target, term}, updated_query ->
-              build(schema, filter_op, updated_query, {binding_mode, binding_target}, term, opts)
-
-            entry, _updated_query ->
-              raise ArgumentError,
-                    "Expected :bind -> #{inspect(binding_mode)} entries to be {target, params} tuples, got: #{inspect(entry)}"
-          end)
-
-        {binding_mode, _scoped_params}, _query_acc ->
-          raise ArgumentError,
-                "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
-      end)
-    else
-      raise ArgumentError,
-            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
-    end
-  end
-
-  defp reduce_select_bind(_schema, _filter_op, _query, _binding_selector, bind_params, _opts) do
-    raise ArgumentError,
-          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+  defp reduce_select_bind(schema, filter_op, query, _binding_selector, bind_params, opts) do
+    BindParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
+      build(schema, filter_op, q, {mode, target}, value, opts)
+    end)
   end
 
   Compiler.define_clauses do

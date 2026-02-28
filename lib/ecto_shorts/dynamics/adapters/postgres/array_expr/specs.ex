@@ -173,9 +173,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: is_nil(unquote(field_ast)))))
 
               :!= ->
-                unquote(
-                  AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast))))
-                )
+                unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
 
               _ ->
                 raise ArgumentError,
@@ -815,8 +813,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:in, unquote(value_var)}),
-        body:
-          AST.dynamic_ast(binding_body_asts, quote(do: ^unquote(value_var) in unquote(field_ast)))
+        body: AST.dynamic_ast(binding_body_asts, quote(do: ^unquote(value_var) in unquote(field_ast)))
       }
     ]
   end

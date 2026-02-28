@@ -228,6 +228,23 @@ defmodule EctoShorts.CommonSchema do
   end
 
   @doc """
+  Returns the query fields for a source, checking opts first
+  for an explicit `:query_fields` key, then falling back to
+  the schema's `:query_fields` reflection.
+
+  ### Examples
+
+      iex> EctoShorts.CommonSchema.get_query_fields([], EctoShorts.Schema.Post)
+      [:id, :title, :body, :permalink, :published, :views, :tags, :metadata, :author_id, :inserted_at, :updated_at]
+
+      iex> EctoShorts.CommonSchema.get_query_fields([query_fields: [:title]], EctoShorts.Schema.Post)
+      [:title]
+  """
+  def get_query_fields(opts, source) do
+    Keyword.get(opts, :query_fields, get_schema_reflection(source, :query_fields))
+  end
+
+  @doc """
   Updates the `__meta__` field on an Ecto schema struct.
 
   ### Options
@@ -370,22 +387,10 @@ defmodule EctoShorts.CommonSchema do
   defp apply_changeset!(schema, data_or_changeset, params, callback) do
     case callback do
       fun when is_function(fun, 3) ->
-        term = fun.(schema, data_or_changeset, params)
-
-        if changeset?(term) do
-          term
-        else
-          raise_not_changeset!(term)
-        end
+        validate_changeset!(fun.(schema, data_or_changeset, params))
 
       fun when is_function(fun, 2) ->
-        term = fun.(data_or_changeset, params)
-
-        if changeset?(term) do
-          term
-        else
-          raise_not_changeset!(term)
-        end
+        validate_changeset!(fun.(data_or_changeset, params))
 
       fun when is_function(fun, 1) ->
         changeset =
@@ -395,13 +400,7 @@ defmodule EctoShorts.CommonSchema do
             Ecto.Changeset.change(data_or_changeset, params)
           end
 
-        term = fun.(changeset)
-
-        if changeset?(term) do
-          term
-        else
-          raise_not_changeset!(term)
-        end
+        validate_changeset!(fun.(changeset))
 
       term ->
         raise ArgumentError,
@@ -409,12 +408,11 @@ defmodule EctoShorts.CommonSchema do
     end
   end
 
-  defp raise_not_changeset!(term) do
+  defp validate_changeset!(%Ecto.Changeset{} = changeset), do: changeset
+
+  defp validate_changeset!(term) do
     raise "Expected an Ecto.Changeset, got: #{inspect(term)}"
   end
-
-  defp changeset?(%Ecto.Changeset{}), do: true
-  defp changeset?(_), do: false
 
   defp put_source(%{data: schema_struct} = changeset, {source, schema}) do
     %{changeset | data: put_schema_metadata(schema_struct, source: source, schema: schema)}

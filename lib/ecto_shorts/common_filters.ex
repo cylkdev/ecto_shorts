@@ -3,6 +3,7 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonQuery
 
   alias EctoShorts.CommonFilters.{
+    BindParams,
     Distinct,
     Filter,
     GroupBy,
@@ -24,7 +25,6 @@ defmodule EctoShorts.CommonFilters do
   @logger_prefix "EctoShorts.CommonFilters"
 
   @binding_selector_key :bind
-  @binding_selector_modes [:as, :at]
   @default_binding_selector {:as, nil}
 
   @where :where
@@ -138,27 +138,28 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_filter_params(
-         schema_source,
-         query,
-         binding_selector,
-         _filter_op,
-         {key, value},
-         opts
-       )
-       when key in @schema_filters do
+  @doc false
+  def reduce_filter_params(
+        schema_source,
+        query,
+        binding_selector,
+        _filter_op,
+        {key, value},
+        opts
+      )
+      when key in @schema_filters do
     reduce_schema_filter_params(schema_source, query, binding_selector, key, value, opts)
   end
 
-  defp reduce_filter_params(
-         schema_source,
-         query,
-         binding_selector,
-         filter_op,
-         {@binding_selector_key, bind_params},
-         opts
-       ) do
-    reduce_bind_params(
+  def reduce_filter_params(
+        schema_source,
+        query,
+        binding_selector,
+        filter_op,
+        {@binding_selector_key, bind_params},
+        opts
+      ) do
+    BindParams.reduce_bind_params(
       schema_source,
       query,
       binding_selector,
@@ -168,14 +169,14 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp reduce_filter_params(
-         schema_source,
-         query,
-         binding_selector,
-         filter_op,
-         {key, value},
-         opts
-       ) do
+  def reduce_filter_params(
+        schema_source,
+        query,
+        binding_selector,
+        filter_op,
+        {key, value},
+        opts
+      ) do
     query_filters = Keyword.get(opts, :query_filters, @query_filters)
 
     if key in query_filters do
@@ -193,8 +194,8 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_filter_params(schema_source, query, binding_selector, filter_op, params, opts)
-       when is_map(params) do
+  def reduce_filter_params(schema_source, query, binding_selector, filter_op, params, opts)
+      when is_map(params) do
     reduce_filter_params(
       schema_source,
       query,
@@ -205,8 +206,8 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp reduce_filter_params(schema_source, query, binding_selector, filter_op, params, opts)
-       when is_list(params) do
+  def reduce_filter_params(schema_source, query, binding_selector, filter_op, params, opts)
+      when is_list(params) do
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn {key, value}, query_acc ->
         reduce_filter_params(
@@ -223,7 +224,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_filter_params(schema_source, query, binding_selector, filter_op, params, opts) do
+  def reduce_filter_params(schema_source, query, binding_selector, filter_op, params, opts) do
     apply_query_builder(schema_source, query, binding_selector, filter_op, params, opts)
   end
 
@@ -283,132 +284,6 @@ defmodule EctoShorts.CommonFilters do
             opts
           )
         end
-    end
-  end
-
-  defp reduce_bind_params(
-         schema_source,
-         query,
-         binding_selector,
-         filter_op,
-         bind_params,
-         opts
-       )
-       when is_map(bind_params) and not is_struct(bind_params) do
-    reduce_bind_params(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      Map.to_list(bind_params),
-      opts
-    )
-  end
-
-  defp reduce_bind_params(
-         schema_source,
-         query,
-         _binding_selector,
-         filter_op,
-         bind_params,
-         opts
-       )
-       when is_list(bind_params) do
-    unless Keyword.keyword?(bind_params) do
-      raise ArgumentError,
-            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
-    end
-
-    Enum.reduce(bind_params, query, fn
-      {binding_mode, scoped_params}, query_acc ->
-        reduce_scoped_bind_params(
-          schema_source,
-          query_acc,
-          binding_mode,
-          scoped_params,
-          filter_op,
-          opts
-        )
-
-      entry, _query_acc ->
-        raise ArgumentError,
-              "Expected :bind entries to be {mode, params} tuples, got: #{inspect(entry)}"
-    end)
-  end
-
-  defp reduce_bind_params(
-         _schema_source,
-         _query,
-         _binding_selector,
-         _filter_op,
-         bind_params,
-         _opts
-       ) do
-    raise ArgumentError,
-          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
-  end
-
-  defp reduce_scoped_bind_params(
-         schema_source,
-         query,
-         binding_mode,
-         scoped_params,
-         filter_op,
-         opts
-       ) do
-    unless binding_mode in @binding_selector_modes do
-      raise ArgumentError,
-            "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
-    end
-
-    scoped_entries =
-      case scoped_params do
-        params when is_map(params) and not is_struct(params) ->
-          Map.to_list(params)
-
-        params when is_list(params) ->
-          params
-
-        params ->
-          raise ArgumentError,
-                "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(params)}"
-      end
-
-    Enum.reduce(scoped_entries, query, fn
-      {binding_target, params}, query_acc ->
-        reduce_binding_params(
-          schema_source,
-          query_acc,
-          {binding_mode, binding_target},
-          filter_op,
-          params,
-          opts
-        )
-
-      entry, _query_acc ->
-        raise ArgumentError,
-              "Expected :bind -> #{inspect(binding_mode)} entries to be {target, params} tuples, got: #{inspect(entry)}"
-    end)
-  end
-
-  defp reduce_binding_params(
-         schema_source,
-         query,
-         {binding_mode, binding_target},
-         filter,
-         params,
-         opts
-       ) do
-    case {binding_mode, binding_target} do
-      {:as, bind_alias} when is_atom(bind_alias) ->
-        reduce_filter_params(schema_source, query, {:as, bind_alias}, filter, params, opts)
-
-      {:at, bind_index} when is_integer(bind_index) ->
-        reduce_filter_params(schema_source, query, {:at, bind_index}, filter, params, opts)
-
-      binding_selector ->
-        raise ArgumentError,
-              "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: #{inspect(binding_selector)}"
     end
   end
 
@@ -548,42 +423,23 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp apply_query_builder(schema_source, query, binding_selector, filter_op, params, opts)
-       when filter_op in [:having, :or_having] do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    Having.build(binding_source, filter_op, query, binding_selector, params, opts)
-  end
-
-  defp apply_query_builder(schema_source, query, binding_selector, :distinct, params, opts) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    Distinct.build(binding_source, :distinct, query, binding_selector, params, opts)
-  end
-
-  defp apply_query_builder(schema_source, query, binding_selector, :group_by, params, opts) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    GroupBy.build(binding_source, :group_by, query, binding_selector, params, opts)
-  end
-
-  defp apply_query_builder(schema_source, query, binding_selector, :join, params, opts) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    Join.build(binding_source, :join, query, binding_selector, params, opts)
-  end
-
-  defp apply_query_builder(schema_source, query, binding_selector, :preload, params, opts) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    Preload.build(binding_source, :preload, query, binding_selector, params, opts)
-  end
-
-  defp apply_query_builder(schema_source, query, binding_selector, :windows, params, opts) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    Windows.build(binding_source, :windows, query, binding_selector, params, opts)
-  end
-
-  defp apply_query_builder(schema_source, query, binding_selector, filter_op, params, opts)
-       when filter_op in [:order_by, :prepend_order_by] do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    OrderBy.build(binding_source, filter_op, query, binding_selector, params, opts)
-  end
+  @query_builder_modules %{
+    distinct: Distinct,
+    group_by: GroupBy,
+    having: Having,
+    or_having: Having,
+    join: Join,
+    order_by: OrderBy,
+    prepend_order_by: OrderBy,
+    preload: Preload,
+    select: Select,
+    select_merge: Select,
+    update: Update,
+    windows: Windows,
+    with_cte: WithCte,
+    with_named_binding: WithNamedBinding,
+    with_ties: WithTies
+  }
 
   defp apply_query_builder(schema_source, query, binding_selector, :subquery, params, opts)
        when is_map(params) or is_list(params) do
@@ -618,50 +474,10 @@ defmodule EctoShorts.CommonFilters do
     query
   end
 
-  defp apply_query_builder(schema_source, query, binding_selector, :with_cte, params, opts) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    WithCte.build(binding_source, :with_cte, query, binding_selector, params, opts)
-  end
-
-  defp apply_query_builder(
-         schema_source,
-         query,
-         binding_selector,
-         :with_named_binding,
-         params,
-         opts
-       ) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-
-    WithNamedBinding.build(
-      binding_source,
-      :with_named_binding,
-      query,
-      binding_selector,
-      params,
-      opts
-    )
-  end
-
-  defp apply_query_builder(schema_source, query, binding_selector, :with_ties, params, opts) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    WithTies.build(binding_source, :with_ties, query, binding_selector, params, opts)
-  end
-
-  defp apply_query_builder(schema_source, query, binding_selector, filter_op, params, opts)
-       when filter_op in [:select, :select_merge] do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    Select.build(binding_source, filter_op, query, binding_selector, params, opts)
-  end
-
-  defp apply_query_builder(schema_source, query, binding_selector, :update, params, opts) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
-    Update.build(binding_source, :update, query, binding_selector, params, opts)
-  end
-
   defp apply_query_builder(schema_source, query, binding_selector, filter_op, params, opts) do
     binding_source = to_binding_source(schema_source, query, binding_selector)
-    Filter.build(binding_source, filter_op, query, binding_selector, params, opts)
+    module = Map.get(@query_builder_modules, filter_op, Filter)
+    module.build(binding_source, filter_op, query, binding_selector, params, opts)
   end
 
   defp to_binding_source(schema_source, _query, {:as, nil}) do
