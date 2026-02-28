@@ -4,44 +4,37 @@ trigger: always_on
 
 After implementing a feature or making a change to the codebase, use the documentation workflow to update the documentation.
 
-## Documentation Workflow
+## How to run
 
-1. Read `.agent/DOCS.md` and load it into your context. If it already exists read it again and refresh your memory.
+Read `.agent/DOCS.md` in full before writing any documentation. It is the single source of truth for style, structure, and formatting. Then follow the `/write-docs` workflow.
 
-2. Decide the scope before writing anything.
+## Quick-reference checklist
 
-Choose either a focused update that only touches what changed, or a full pass that re-documents the whole area. Write down which scope you picked so the reviewer can see it.
+These are the most commonly missed rules from `.agent/DOCS.md`. Check every one before finishing a documentation update.
 
-2. Identify the user-visible changes.
+**Formatting**
 
-List the modules and public APIs whose behavior, inputs, outputs, error cases, or performance characteristics changed. Include new modules or new public functions.
+* Bullet lists use `*` as the prefix, never `-`.
+* Options use this exact format: `* `:key` (default: `value`) - Observable effect.`
+* Cross-references use backtick links: `See also `func/2` and `OtherModule`.`
+* Callout boxes use admonition syntax: `> #### Title {: .warning}`
+* Bold for critical emphasis: `**wrong**`, `**all**`.
 
-3. Update module documentation for each affected module.
+**Module docs**
 
-If the module has no `@moduledoc`, add one.
-If it already has `@moduledoc`, update it so it matches the current behavior.
-Describe what the module is for, what it does that a user can observe, and how it fits into the surrounding system if that matters to correct usage.
+* Every `@moduledoc` has `##` section headers organizing its content.
+* Every section contains at least one inline code example.
+* Modules with 5+ public functions use `@moduledoc groups:` and `@doc group:`.
+* Cross-references to related modules appear at the end.
 
-4. Update function documentation for each affected public function.
+**Function docs**
 
-If the function has no `@doc`, add one.
-If it already has `@doc`, update it so it matches the current behavior.
-Document inputs, outputs, and the important cases a caller must handle. Prefer describing the full returned shape and meaning over repeating field-by-field assertions.
+* Every public function has a `@doc` with a one-line summary, argument descriptions, exact return shapes, and examples.
+* Every function has a "See also" cross-reference to related functions.
+* Bang variants use "Similar to `func/arity` but raises..." instead of duplicating.
+* `@doc false` is used for internal public functions (`__using__/1`, internal delegation targets).
 
-5. Add documentation for new public surfaces.
+**Types and callbacks**
 
-If you introduced a new type, add a `@typedoc` and a `@type`.
-If you introduced a new macro, document what it expands to from a caller’s point of view and any hygiene or quoting constraints a caller must respect.
-If you introduced a new callback or behavior, document the contract, when it is called, and what happens if it fails.
-
-6. Include a verification note.
-
-Add a short, concrete way to verify the docs match reality. Prefer pointing at an existing test or a command that demonstrates the behavior. If you add a new doc example, ensure it is correct and runnable if the project’s doc tooling checks examples.
-
-7. Keep changes small and reviewable.
-
-Do not rewrite unrelated docs in a focused update. If you notice unrelated doc debt, record it as a follow-up instead of bundling it into this change.
-
-8. Do a final consistency pass.
-
-Ensure names, terms, and examples match the code. Ensure the docs describe the current public API and do not mention removed options or old behavior.
+* Complex public types have `@typedoc` documenting each variant.
+* Callbacks document when they are invoked, every return value and its effect, and include an implementation example.

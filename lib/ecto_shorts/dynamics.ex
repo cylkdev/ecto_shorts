@@ -1,7 +1,7 @@
 defmodule EctoShorts.Dynamics do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Converts filter params into `Ecto.Query.DynamicExpr` values.
+  Converts filter params into dynamic expressions.
 
   Used internally by `EctoShorts.CommonFilters.Filter` and other query
   builders to translate `{field, value}` pairs and boolean operator trees

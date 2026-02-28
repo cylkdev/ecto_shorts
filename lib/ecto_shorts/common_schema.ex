@@ -207,7 +207,7 @@ defmodule EctoShorts.CommonSchema do
   """
   def get_schema_metadata(%{data: %{__meta__: meta}} = _changeset), do: meta
   def get_schema_metadata(%{__meta__: meta} = _schema_struct), do: meta
-  def get_schema_metadata(source), do: source |> create_schema_struct() |> get_schema_metadata()
+  def get_schema_metadata(source), do: source |> build_struct() |> get_schema_metadata()
 
   @doc """
   Invokes the `__schema__/1` get_schema_reflection function.
@@ -313,7 +313,7 @@ defmodule EctoShorts.CommonSchema do
 
   def put_schema_metadata(source, attrs) do
     source
-    |> create_schema_struct()
+    |> build_struct()
     |> put_schema_metadata(attrs)
   end
 
@@ -326,20 +326,20 @@ defmodule EctoShorts.CommonSchema do
 
   Returns an Ecto schema struct.
   """
-  def create_schema_struct({nil, schema}) do
+  def build_struct({nil, schema}) do
     struct(schema)
   end
 
-  def create_schema_struct({source, schema}) do
+  def build_struct({source, schema}) do
     schema
     |> struct()
     |> put_schema_metadata(state: :loaded, source: source, prefix: get_schema_prefix(schema))
   end
 
-  def create_schema_struct(source) do
+  def build_struct(source) do
     source
     |> normalize_source()
-    |> create_schema_struct()
+    |> build_struct()
   end
 
   @doc """
@@ -377,7 +377,7 @@ defmodule EctoShorts.CommonSchema do
   end
 
   def create_changeset({source, schema}, params, opts) do
-    create_changeset(schema, create_schema_struct({source, schema}), params, opts)
+    create_changeset(schema, build_struct({source, schema}), params, opts)
   end
 
   def create_changeset(schema, %{data: %{__meta__: _}} = changeset, opts) do
@@ -389,7 +389,7 @@ defmodule EctoShorts.CommonSchema do
   end
 
   def create_changeset(schema, params, opts) do
-    create_changeset(schema, create_schema_struct(schema), params, opts)
+    create_changeset(schema, build_struct(schema), params, opts)
   end
 
   # ---

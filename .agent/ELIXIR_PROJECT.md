@@ -22,77 +22,6 @@
 
 Run this command from the `apps/` directory.
 
-## Directory Layout
-
-Example layout of an elixir application:
-
-    MyApp/
-      .credo.exs
-      .dialyzer-ignore.exs
-      .formatter.exs
-      mix.exs
-      README.md
-      config/
-        config.exs
-        ...
-      lib/
-        my_app.ex
-        my_app/
-          application.ex
-          ...
-      priv/
-        ...
-      test/
-        my_app/
-          ...
-        test_helper.exs
-
-Example layout of an elixir umbrella project:
-
-    MyUmbrella/
-      .credo.exs
-      .dialyzer-ignore.exs
-      .formatter.exs
-      mix.exs
-      README.md
-      config/
-        config.exs
-        ...
-      apps/
-        my_app/
-          mix.exs
-          lib/
-            my_app.ex
-            my_app/
-              application.ex
-              ...
-          priv/
-            ...
-          test/
-            my_app/
-              ...
-            test_helper.exs
-
-        my_app_web/
-          mix.exs
-          lib/
-            my_app_web.ex
-            my_app_web/
-              endpoint.ex
-              router.ex
-              controllers/
-              live/
-              components/
-              views/
-              templates/
-          priv/
-            static/
-              assets/
-          test/
-            my_app_web/
-              ...
-            test_helper.exs
-
 ## mix.exs
 
 ### Dependencies
@@ -103,6 +32,7 @@ Only add dependencies that do not already exist.
 
 The following dependencies are required:
 
+- `{:ex_doc, "~> 0.40.1"}`
 - `{:excoveralls, "~> 0.13", only: :test}`
 - `{:rexbug, "~> 1.0"}`
 - `{:observer_cli, "~> 1.8"}`
@@ -113,6 +43,7 @@ Add the dependencies to the `mix.exs` file:
     # mix.exs
     defp deps do
       [
+        {:ex_doc, "~> 0.40.1"},
         {:excoveralls, "~> 0.13", only: :test},
         {:rexbug, "~> 1.0"},
         {:observer_cli, "~> 1.8"},

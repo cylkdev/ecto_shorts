@@ -4,8 +4,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
   Validates clause specs so they can generate `apply_dynamic_expr/3` clauses.
 
   A clause spec is a struct that contains AST values. You use it to describe one
-  function clause for `apply_dynamic_expr/3`. You then pass the spec to
-  `EctoShorts.Compiler.clause_ast/1`.
+  function clause for `apply_dynamic_expr/3`.  You then pass the spec to the clause AST builder in `EctoShorts.Compiler`.
 
   This module does not build Ecto query expressions. It only checks the shape
   of the spec and returns a `%ClauseSpec{}` struct.

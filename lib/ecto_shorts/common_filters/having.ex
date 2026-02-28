@@ -5,8 +5,7 @@ defmodule EctoShorts.CommonFilters.Having do
 
   Converts filter params into dynamic expressions and applies them as
   `Ecto.Query.having/3` or `Ecto.Query.or_having/3` clauses. Supports
-  nested boolean operators, keyword lists, maps, and raw
-  `Ecto.Query.DynamicExpr` values.
+  nested boolean operators, keyword lists, maps, and raw dynamic expressions.
   """
 
   alias Ecto.Query

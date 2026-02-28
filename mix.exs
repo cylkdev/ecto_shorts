@@ -5,11 +5,11 @@ defmodule EctoShorts.MixProject do
     [
       app: :ecto_shorts,
       version: "3.0.0",
-      elixir: "~> 1.17",
+      elixir: "~> 1.15",
       start_permanent: Mix.env() === :prod,
       aliases: aliases(),
       deps: deps(),
-      description: "Helper tools for making ecto interactions more pleasant and shorter",
+      description: "Build and compose Ecto queries with a data-driven API",
       docs: docs(),
       package: package(),
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -48,9 +48,7 @@ defmodule EctoShorts.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ecto, "~> 3.0"},
-      {:ecto_sql, "~> 3.10"},
-      {:postgrex, ">= 0.0.0", optional: true},
+      {:ex_doc, "~> 0.40.1"},
       {:credo, "~> 1.4", runtime: false},
       {:blitz_credo_checks, "~> 0.1.5", runtime: false},
       {:dialyxir, "~> 1.4", runtime: false},
@@ -58,7 +56,10 @@ defmodule EctoShorts.MixProject do
       {:rexbug, "~> 1.0"},
       {:observer_cli, "~> 1.8"},
       {:etop, "~> 0.7"},
-      {:error_message, "~> 0.3.3"}
+      {:ecto, "~> 3.0"},
+      {:ecto_sql, "~> 3.10"},
+      {:postgrex, ">= 0.0.0", optional: true},
+      {:error_message, "~> 0.1"}
     ]
   end
 
@@ -67,7 +68,7 @@ defmodule EctoShorts.MixProject do
 
   defp package do
     [
-      maintainers: ["Mika Kalathil"],
+      maintainers: ["Mika Kalathil", "cylkdev"],
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/MikaAK/ecto_shorts"},
       files: ~w(mix.exs README.md CHANGELOG.md lib config)
@@ -79,26 +80,65 @@ defmodule EctoShorts.MixProject do
       main: "EctoShorts",
       source_url: "https://github.com/MikaAK/ecto_shorts",
       groups_for_modules: [
-        "Main Modules": [
+        Core: [
           EctoShorts.Actions,
           EctoShorts.CommonChanges,
           EctoShorts.CommonFilters,
           EctoShorts.CommonParams
         ],
-        "Reflection API": [
-          EctoShorts.CommonQuery,
-          EctoShorts.CommonSchema
+        Actions: [
+          EctoShorts.Actions.Batch,
+          EctoShorts.Actions.Multi,
+          EctoShorts.Actions.Error
         ],
-        "Testing API": [
+        Filters: [
+          EctoShorts.CommonFilters.BindParams,
+          EctoShorts.CommonFilters.Distinct,
+          EctoShorts.CommonFilters.Filter,
+          EctoShorts.CommonFilters.FragmentProvider,
+          EctoShorts.CommonFilters.GroupBy,
+          EctoShorts.CommonFilters.Having,
+          EctoShorts.CommonFilters.Join,
+          EctoShorts.CommonFilters.OrderBy,
+          EctoShorts.CommonFilters.Preload,
+          EctoShorts.CommonFilters.Select,
+          EctoShorts.CommonFilters.SubQuery,
+          EctoShorts.CommonFilters.Update,
+          EctoShorts.CommonFilters.Windows,
+          EctoShorts.CommonFilters.WithCte,
+          EctoShorts.CommonFilters.WithNamedBinding,
+          EctoShorts.CommonFilters.WithTies
+        ],
+        Params: [
+          EctoShorts.CommonParams.Placeholders,
+          EctoShorts.CommonParams.Timestamps
+        ],
+        "Schema & Query Introspection": [
+          EctoShorts.CommonQuery,
+          EctoShorts.CommonSchema,
+          EctoShorts.SchemaHelpers
+        ],
+        "Dynamic Expressions": [
+          EctoShorts.Dynamics,
+          EctoShorts.Dynamics.Adapter,
+          EctoShorts.Dynamics.Adapters.Postgres
+        ],
+        Compiler: [
+          EctoShorts.Compiler,
+          EctoShorts.Compiler.Ast,
+          EctoShorts.Compiler.ClauseBuilder,
+          EctoShorts.Compiler.ClauseSpec,
+          EctoShorts.Compiler.ClauseSpecProvider,
+          EctoShorts.Compiler.QueryBindingBuilder
+        ],
+        Testing: [
           EctoShorts.Testing
         ],
-        "Query Builder API": [
-          EctoShorts.QueryBuilder.Dynamics,
-          EctoShorts.QueryBuilder.ParamPreprocessor
-        ],
-        "Utility API": [
-          EctoShorts.Actions.Error,
-          EctoShorts.SchemaHelpers
+        "Configuration & Utilities": [
+          EctoShorts.Config,
+          EctoShorts.Logger,
+          EctoShorts.QueryProvider,
+          EctoShorts.Utils
         ]
       ]
     ]

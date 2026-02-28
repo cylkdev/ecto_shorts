@@ -4,8 +4,7 @@ defmodule EctoShorts.Dynamics.Adapter do
   Defines the behaviour for dynamic expression adapters.
 
   A dynamic adapter must implement `operators/0` (returning the list of
-  special operator atoms it handles) and `build_dynamic/4` (returning an
-  `Ecto.Query.DynamicExpr` for a given source, binding, key, and expression).
+  special operator atoms it handles) and `build_dynamic/4` (returning a dynamic expression for a given source, binding, key, and expression).
   """
 
   @callback operators() :: [atom()]

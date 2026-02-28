@@ -478,7 +478,7 @@ defmodule EctoShorts.Actions do
 
   `fun_or_multi` is either an `Ecto.Multi` struct or a function.
 
-  Returns `{:ok, result}` or `{:error, reason}` per `Ecto.Repo.transaction/2`.
+  Returns `{:ok, result}` or `{:error, reason}` per `Ecto.Repo.transaction/2` semantics.
   """
   def transaction(fun_or_multi, opts \\ []) do
     Config.repo!(opts).transaction(fun_or_multi, opts)
@@ -614,7 +614,7 @@ defmodule EctoShorts.Actions do
   @doc group: "Bulk"
   @doc since: "3.0.0"
   @doc """
-  Inserts many records from a params list using `Ecto.Repo.insert_all/3`.
+  Inserts many records from a params list using `Ecto.Repo.insert_all/3` semantics.
 
   `source` is a schema module or `{source, schema}` tuple.
   `params_list` is a list of maps, keyword lists, schema structs,

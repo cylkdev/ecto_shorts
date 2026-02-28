@@ -31,7 +31,7 @@ defmodule EctoShorts.CommonParams do
   alias EctoShorts.Utils
 
   @doc """
-  Builds conflict resolution options for `Ecto.Repo.insert_all/3`.
+  Builds conflict resolution options for use with `Ecto.Repo.insert_all/3` calls.
 
   `source` is a schema module or `{source, schema}` tuple.
   `inserts` is a list of maps (the prepared insert data).
