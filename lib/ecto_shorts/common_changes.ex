@@ -61,7 +61,12 @@ defmodule EctoShorts.CommonChanges do
 
   @doc since: "2.5.0"
   @doc """
-  ...
+  Returns `true` if the given field (or all fields in a list) have no pending change.
+
+  Checks `Ecto.Changeset.get_change/2` for each field. If the change is
+  `nil` (meaning no change was set), returns `true`.
+
+  When `fields` is a list, returns `true` only if every field has a `nil` change.
   """
   def has_nil_change?(changeset, fields) when is_list(fields) do
     Enum.all?(fields, &has_nil_change?(changeset, &1))
@@ -75,7 +80,12 @@ defmodule EctoShorts.CommonChanges do
 
   @doc since: "2.5.0"
   @doc """
-  ...
+  Returns `true` if the given field (or all fields in a list) have an empty change.
+
+  A change is considered empty if it is `[]` or `%{}`. Fields with `nil`
+  changes or non-empty values return `false`.
+
+  When `fields` is a list, returns `true` only if every field has an empty change.
   """
   def has_empty_change?(changeset, fields) when is_list(fields) do
     Enum.all?(fields, &has_empty_change?(changeset, &1))
@@ -110,17 +120,17 @@ defmodule EctoShorts.CommonChanges do
     # skip if already errored
     should_error? =
       original !== nil and
-        Ecto.Changeset.changed?(changeset, field, to: nil) and
+        Changeset.changed?(changeset, field, to: nil) and
         not Keyword.has_key?(changeset.errors, field)
 
     if should_error? do
-      Ecto.Changeset.add_error(changeset, field, "can't be blank")
+      Changeset.add_error(changeset, field, "can't be blank")
     else
       changeset
     end
   end
 
-  @doc "Truncates a list of fields to a datetime"
+  @doc "Truncates datetime changes on the given field(s) to the specified precision."
   def truncate_datetime_change(changeset, fields, precision \\ :second)
 
   def truncate_datetime_change(changeset, fields, precision) when is_list(fields) do
@@ -141,7 +151,7 @@ defmodule EctoShorts.CommonChanges do
     end)
   end
 
-  @doc "Validates a value doesn't get set to nil after it's been set to a non nil value"
+  @doc "Trims whitespace from string changes on the given field(s)."
   def trim_string_change(changeset, fields) do
     fields
     |> List.wrap()
@@ -153,6 +163,12 @@ defmodule EctoShorts.CommonChanges do
     end)
   end
 
+  @doc """
+  Puts a change only if the field has no pending change.
+
+  `value` can be a literal value, a 0-arity function, or a 1-arity function
+  that receives the field name.
+  """
   def put_new_change(changeset, field, value) do
     if Changeset.get_change(changeset, field) === nil do
       Changeset.put_change(
@@ -165,6 +181,12 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
+  @doc """
+  Puts a change only if the field's current value (data or changes) is `nil`.
+
+  `value` can be a literal value, a 0-arity function, or a 1-arity function
+  that receives the field name.
+  """
   def put_new_value(changeset, field, value) do
     if Changeset.get_field(changeset, field) === nil do
       Changeset.put_change(
@@ -181,7 +203,7 @@ defmodule EctoShorts.CommonChanges do
   defp resolve_value(fun, _) when is_function(fun, 0), do: fun.()
   defp resolve_value(value, _), do: value
 
-  @doc "Run's changeset function if when function returns true"
+  @doc "Applies `change_func` to the changeset only when `when_func` returns `true`."
   def apply_when(changeset, when_func, change_func) do
     if when_func.(changeset) do
       case change_func.(changeset) do
@@ -246,7 +268,7 @@ defmodule EctoShorts.CommonChanges do
       iex> CommonChanges.preload_change_assoc(changeset, :my_relation, required_when_missing: :my_relation_id)
   """
   @spec preload_change_assoc(Changeset.t(), atom(), keyword()) :: Changeset.t()
-  def preload_change_assoc(changeset, key, opts) do
+  def preload_change_assoc(changeset, key, opts \\ []) do
     required? =
       if opts[:required_when_missing] do
         changeset_field_nil?(changeset, opts[:required_when_missing])
@@ -262,17 +284,6 @@ defmodule EctoShorts.CommonChanges do
       |> put_or_cast_assoc(key, opts)
     else
       Changeset.cast_assoc(changeset, key, opts)
-    end
-  end
-
-  @spec preload_change_assoc(Changeset.t(), atom()) :: Changeset.t()
-  def preload_change_assoc(changeset, key) do
-    if Map.has_key?(changeset.params, Atom.to_string(key)) do
-      changeset
-      |> preload_changeset_assoc(key)
-      |> put_or_cast_assoc(key)
-    else
-      Changeset.cast_assoc(changeset, key)
     end
   end
 

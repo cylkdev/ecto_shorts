@@ -1,6 +1,7 @@
 defmodule EctoShorts.CommonChangesTest do
   use EctoShorts.DataCase
 
+  alias Ecto.Changeset
   alias EctoShorts.{Actions, CommonChanges, Repo}
 
   alias EctoShorts.Schema.{
@@ -13,14 +14,14 @@ defmodule EctoShorts.CommonChangesTest do
     test "returns changeset without changes if evaluator function returns false" do
       when_func = fn _changeset -> false end
 
-      change_func = fn changeset -> Ecto.Changeset.put_change(changeset, :title, "title") end
+      change_func = fn changeset -> Changeset.put_change(changeset, :title, "title") end
 
       changeset =
         %Post{}
         |> Post.changeset(%{})
         |> CommonChanges.apply_when(when_func, change_func)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                changes: changes,
                params: params
              } = changeset
@@ -33,14 +34,14 @@ defmodule EctoShorts.CommonChangesTest do
     test "returns changeset with changes if evaluator function returns true" do
       when_func = fn _changeset -> true end
 
-      change_func = fn changeset -> Ecto.Changeset.put_change(changeset, :title, "title") end
+      change_func = fn changeset -> Changeset.put_change(changeset, :title, "title") end
 
       changeset =
         %Post{}
         |> Post.changeset(%{})
         |> CommonChanges.apply_when(when_func, change_func)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                changes: changes
              } = changeset
 
@@ -88,12 +89,12 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset =
         %Post{}
-        |> Ecto.Changeset.change()
-        |> Ecto.Changeset.put_change(:published_at, datetime)
+        |> Changeset.change()
+        |> Changeset.put_change(:published_at, datetime)
 
       changeset = CommonChanges.truncate_datetime_change(changeset, :published_at)
 
-      assert ~U[2026-01-20 23:39:04Z] = Ecto.Changeset.get_change(changeset, :published_at)
+      assert ~U[2026-01-20 23:39:04Z] = Changeset.get_change(changeset, :published_at)
     end
 
     test "truncates NaiveDateTime changes to a given precision" do
@@ -101,12 +102,12 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset =
         %Comment{}
-        |> Ecto.Changeset.change()
-        |> Ecto.Changeset.put_change(:published_at, naive)
+        |> Changeset.change()
+        |> Changeset.put_change(:published_at, naive)
 
       changeset = CommonChanges.truncate_datetime_change(changeset, :published_at, :millisecond)
 
-      assert ~N[2026-01-20 23:39:04.123] = Ecto.Changeset.get_change(changeset, :published_at)
+      assert ~N[2026-01-20 23:39:04.123] = Changeset.get_change(changeset, :published_at)
     end
 
     test "supports truncating a list of fields" do
@@ -114,12 +115,12 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset =
         %Post{}
-        |> Ecto.Changeset.change()
-        |> Ecto.Changeset.put_change(:published_at, datetime)
+        |> Changeset.change()
+        |> Changeset.put_change(:published_at, datetime)
 
       changeset = CommonChanges.truncate_datetime_change(changeset, [:published_at])
 
-      assert ~U[2026-01-20 23:39:04Z] = Ecto.Changeset.get_change(changeset, :published_at)
+      assert ~U[2026-01-20 23:39:04Z] = Changeset.get_change(changeset, :published_at)
     end
   end
 
@@ -129,7 +130,7 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset = CommonChanges.trim_string_change(changeset, :title)
 
-      assert "title" = Ecto.Changeset.get_change(changeset, :title)
+      assert "title" = Changeset.get_change(changeset, :title)
     end
 
     test "supports trimming a list of fields" do
@@ -137,8 +138,8 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset = CommonChanges.trim_string_change(changeset, [:title, :permalink])
 
-      assert "title" = Ecto.Changeset.get_change(changeset, :title)
-      assert "permalink" = Ecto.Changeset.get_change(changeset, :permalink)
+      assert "title" = Changeset.get_change(changeset, :title)
+      assert "permalink" = Changeset.get_change(changeset, :permalink)
     end
   end
 
@@ -148,7 +149,7 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset = CommonChanges.put_new_change(changeset, :title, "title")
 
-      assert "title" = Ecto.Changeset.get_change(changeset, :title)
+      assert "title" = Changeset.get_change(changeset, :title)
     end
 
     test "does not override an existing change" do
@@ -156,7 +157,7 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset = CommonChanges.put_new_change(changeset, :title, "new")
 
-      assert "existing" = Ecto.Changeset.get_change(changeset, :title)
+      assert "existing" = Changeset.get_change(changeset, :title)
     end
 
     test "supports resolving value via function" do
@@ -165,7 +166,7 @@ defmodule EctoShorts.CommonChangesTest do
       changeset =
         CommonChanges.put_new_change(changeset, :title, fn field -> Atom.to_string(field) end)
 
-      assert "title" = Ecto.Changeset.get_change(changeset, :title)
+      assert "title" = Changeset.get_change(changeset, :title)
     end
   end
 
@@ -175,7 +176,7 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset = CommonChanges.put_new_value(changeset, :title, "title")
 
-      assert "title" = Ecto.Changeset.get_change(changeset, :title)
+      assert "title" = Changeset.get_change(changeset, :title)
     end
 
     test "does not override when field already has a value in data" do
@@ -183,7 +184,7 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset = CommonChanges.put_new_value(changeset, :title, "new")
 
-      refute Ecto.Changeset.changed?(changeset, :title)
+      refute Changeset.changed?(changeset, :title)
     end
 
     test "supports resolving value via zero-arity function" do
@@ -191,7 +192,7 @@ defmodule EctoShorts.CommonChangesTest do
 
       changeset = CommonChanges.put_new_value(changeset, :title, fn -> "title" end)
 
-      assert "title" = Ecto.Changeset.get_change(changeset, :title)
+      assert "title" = Changeset.get_change(changeset, :title)
     end
   end
 
@@ -202,7 +203,7 @@ defmodule EctoShorts.CommonChangesTest do
       changeset =
         %Post{}
         |> Post.changeset(params)
-        |> Ecto.Changeset.put_assoc(:comments, [%{body: "body"}])
+        |> Changeset.put_assoc(:comments, [%{body: "body"}])
 
       refute CommonChanges.changeset_field_empty?(changeset, :comments)
     end
@@ -285,10 +286,10 @@ defmodule EctoShorts.CommonChangesTest do
         })
         |> CommonChanges.preload_change_assoc(:post)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{
-                 post: %Ecto.Changeset{
+                 post: %Changeset{
                    action: :update,
                    data: %Post{
                      id: ^post_id
@@ -336,11 +337,11 @@ defmodule EctoShorts.CommonChangesTest do
         })
         |> CommonChanges.preload_change_assoc(:comments)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{
                  comments: [
-                   %Ecto.Changeset{
+                   %Changeset{
                      action: :update,
                      data: %Comment{
                        id: ^comment_id
@@ -375,7 +376,7 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, user} =
                %User{}
                |> User.changeset(%{email: "email"})
-               |> Ecto.Changeset.put_assoc(:posts, [post])
+               |> Changeset.put_assoc(:posts, [post])
                |> Repo.insert()
 
       user_id = user.id
@@ -392,11 +393,11 @@ defmodule EctoShorts.CommonChangesTest do
         })
         |> CommonChanges.preload_change_assoc(:authors)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{
                  authors: [
-                   %Ecto.Changeset{
+                   %Changeset{
                      action: :update,
                      data: %User{
                        id: ^user_id
@@ -435,7 +436,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Post.changeset(%{})
         |> CommonChanges.preload_change_assoc(:authors)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{},
                data: %Post{
@@ -464,7 +465,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Comment.changeset(%{post: post})
         |> CommonChanges.preload_change_assoc(:post)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: changes,
                data: %Comment{
@@ -496,10 +497,10 @@ defmodule EctoShorts.CommonChangesTest do
         |> Comment.changeset(%{post: post})
         |> CommonChanges.preload_change_assoc(:post)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{
-                 post: %Ecto.Changeset{
+                 post: %Changeset{
                    action: :update,
                    data: %Post{
                      id: ^post_id
@@ -529,11 +530,11 @@ defmodule EctoShorts.CommonChangesTest do
         |> Post.changeset(%{comments: [%{body: "new_comment_body"}]})
         |> CommonChanges.preload_change_assoc(:comments)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{
                  comments: [
-                   %Ecto.Changeset{
+                   %Changeset{
                      action: :insert,
                      changes: %{body: "new_comment_body"},
                      data: %Comment{},
@@ -580,11 +581,11 @@ defmodule EctoShorts.CommonChangesTest do
         })
         |> CommonChanges.preload_change_assoc(:comments)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{
                  comments: [
-                   %Ecto.Changeset{
+                   %Changeset{
                      action: :insert,
                      changes: %{body: "new_comment_body"},
                      data: %Comment{},
@@ -628,7 +629,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Comment.changeset(%{})
         |> CommonChanges.preload_change_assoc(:post, required: true)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                data: %Comment{post: %Post{id: 1}},
                valid?: true
              } = changeset
@@ -640,7 +641,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Comment.changeset(%{post: %{id: 1}})
         |> CommonChanges.preload_change_assoc(:post, required: true)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                data: %Comment{post: nil},
                params: %{"post" => %{id: 1}},
                valid?: true
@@ -664,7 +665,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Comment.changeset(%{})
         |> CommonChanges.preload_change_assoc(:post, required_when_missing: :post_id)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                data: %Comment{post: %Post{id: 1}},
                valid?: true
              } = changeset
@@ -676,7 +677,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Comment.changeset(%{post_id: 1})
         |> CommonChanges.preload_change_assoc(:post, required_when_missing: :post_id)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                data: %Comment{post: %Ecto.Association.NotLoaded{}},
                changes: %{post_id: 1},
                params: %{"post_id" => 1},
@@ -708,7 +709,7 @@ defmodule EctoShorts.CommonChangesTest do
         })
         |> CommonChanges.preload_changeset_assoc(:post)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{},
                data: %Comment{
@@ -747,7 +748,7 @@ defmodule EctoShorts.CommonChangesTest do
         })
         |> CommonChanges.preload_changeset_assoc(:comments)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{},
                data: %Post{
@@ -770,7 +771,7 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, user} =
                %User{}
                |> User.changeset(%{email: "created_email"})
-               |> Ecto.Changeset.put_assoc(:posts, [post])
+               |> Changeset.put_assoc(:posts, [post])
                |> Repo.insert()
 
       user_id = user.id
@@ -787,7 +788,7 @@ defmodule EctoShorts.CommonChangesTest do
         })
         |> CommonChanges.preload_changeset_assoc(:authors)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{},
                data: %Post{
@@ -832,7 +833,7 @@ defmodule EctoShorts.CommonChangesTest do
         })
         |> CommonChanges.preload_changeset_assoc(:comments, ids: [comment_1_id, comment_2_id])
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{},
                data: %Post{
@@ -858,13 +859,13 @@ defmodule EctoShorts.CommonChangesTest do
       assert {:ok, user_1} =
                %User{}
                |> User.changeset(%{email: "user_1_created_email"})
-               |> Ecto.Changeset.put_assoc(:posts, [post])
+               |> Changeset.put_assoc(:posts, [post])
                |> Repo.insert()
 
       assert {:ok, user_2} =
                %User{}
                |> User.changeset(%{email: "user_2_created_email"})
-               |> Ecto.Changeset.put_assoc(:posts, [post])
+               |> Changeset.put_assoc(:posts, [post])
                |> Repo.insert()
 
       user_1_id = user_1.id
@@ -882,7 +883,7 @@ defmodule EctoShorts.CommonChangesTest do
         })
         |> CommonChanges.preload_changeset_assoc(:authors, ids: [user_1_id, user_2_id])
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: %{},
                data: %Post{
@@ -925,7 +926,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Comment.changeset(params)
         |> CommonChanges.put_or_cast_assoc(:post)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: changes,
                data: %Comment{},
@@ -948,7 +949,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Post.changeset(params)
         |> CommonChanges.put_or_cast_assoc(:comments)
 
-      assert %Ecto.Changeset{
+      assert %Changeset{
                action: nil,
                changes: changes,
                data: %Post{},
@@ -959,7 +960,7 @@ defmodule EctoShorts.CommonChangesTest do
 
       assert %{
                comments: [
-                 %Ecto.Changeset{
+                 %Changeset{
                    action: :update,
                    changes: %{},
                    data: ^existing_comment,

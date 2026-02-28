@@ -1,5 +1,11 @@
 defmodule EctoShorts.CommonFilters.Select do
-  @moduledoc false
+  @moduledoc """
+  Builds `:select` and `:select_merge` expressions from data-driven params.
+
+  Accepts field atoms, `{:map, fields}` tuples, `{:struct, fields}` tuples,
+  `true` (select entire binding), keyword lists, and maps. Supports
+  binding-scoped params via the `:bind` key.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters.BindParams

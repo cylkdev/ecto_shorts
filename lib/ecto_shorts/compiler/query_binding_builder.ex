@@ -1,5 +1,13 @@
 defmodule EctoShorts.Compiler.QueryBindingBuilder do
-  @moduledoc false
+  @moduledoc """
+  Generates positional and named binding pattern ASTs at compile time.
+
+  Produces a list of `{binding_head, binding_body}` tuples for every
+  positional index from 1 to `max_query_bindings`, plus two named binding
+  patterns (`{:as, nil}` and `{:as, alias}`). These patterns are used by
+  `EctoShorts.Compiler` and `Compiler.define_clauses/2` to generate
+  multi-clause functions that match on binding selectors.
+  """
 
   def query_binding_contracts(context, max_query_bindings) do
     binding_alias_var = Macro.var(:binding_alias, context)

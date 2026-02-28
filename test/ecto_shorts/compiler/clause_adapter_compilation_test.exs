@@ -60,12 +60,7 @@ defmodule EctoShorts.Compiler.UsingTest do
 
     expected = dynamic([q], field(q, ^:id) == ^1)
 
-    actual =
-      apply(compiled_module, :apply_dynamic_expr, [
-        {:as, nil},
-        :id,
-        {:==, 1}
-      ])
+    actual = compiled_module.apply_dynamic_expr({:as, nil}, :id, {:==, 1})
 
     assert_dynamic(expected, actual)
   end
@@ -74,11 +69,7 @@ defmodule EctoShorts.Compiler.UsingTest do
     compiled_module = compile_compiled_module!()
 
     assert_raise FunctionClauseError, fn ->
-      apply(compiled_module, :apply_dynamic_expr, [
-        {:at, 2},
-        :id,
-        {:==, 1}
-      ])
+      compiled_module.apply_dynamic_expr({:at, 2}, :id, {:==, 1})
     end
   end
 
@@ -89,11 +80,11 @@ defmodule EctoShorts.Compiler.UsingTest do
     Application.put_env(:ecto_shorts, :max_query_bindings, 10)
     compiled_module = compile_compiled_module!([])
 
-    refute apply(compiled_module, :__mix_recompile__?, [])
+    refute compiled_module.__mix_recompile__?()
 
     Application.put_env(:ecto_shorts, :max_query_bindings, 11)
 
-    assert apply(compiled_module, :__mix_recompile__?, [])
+    assert compiled_module.__mix_recompile__?()
   end
 
   test "__mix_recompile__?/0 ignores config max changes when module overrides max" do
@@ -105,6 +96,6 @@ defmodule EctoShorts.Compiler.UsingTest do
 
     Application.put_env(:ecto_shorts, :max_query_bindings, 11)
 
-    refute apply(compiled_module, :__mix_recompile__?, [])
+    refute compiled_module.__mix_recompile__?()
   end
 end

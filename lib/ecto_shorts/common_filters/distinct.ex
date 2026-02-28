@@ -1,5 +1,11 @@
 defmodule EctoShorts.CommonFilters.Distinct do
-  @moduledoc false
+  @moduledoc """
+  Builds `:distinct` expressions from data-driven params.
+
+  Accepts booleans, single field atoms, lists of fields, and
+  `{direction, field}` tuples. Supports binding-scoped params via the
+  `:bind` key.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters.BindParams

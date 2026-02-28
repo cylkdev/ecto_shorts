@@ -1,5 +1,12 @@
 defmodule EctoShorts.Compiler.AST do
-  @moduledoc false
+  @moduledoc """
+  AST helper functions for building dynamic query expressions at compile time.
+
+  Provides quoted AST builders for `Ecto.Query.dynamic/2`, `field/2`,
+  `not/1`, and search/pattern expressions used by the clause spec providers.
+  """
+
+  alias Ecto.Query
 
   @doc false
   def field_ast(target_binding_var_ast, key_var_ast) do
@@ -11,7 +18,7 @@ defmodule EctoShorts.Compiler.AST do
   @doc false
   def dynamic_ast(binding_body_asts, expr_ast) do
     quote do
-      Ecto.Query.dynamic([unquote_splicing(binding_body_asts)], unquote(expr_ast))
+      unquote(Query).dynamic([unquote_splicing(binding_body_asts)], unquote(expr_ast))
     end
   end
 

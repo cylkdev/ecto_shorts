@@ -1,5 +1,10 @@
 defmodule EctoShorts.CommonFilters.GroupBy do
-  @moduledoc false
+  @moduledoc """
+  Builds `:group_by` expressions from data-driven params.
+
+  Accepts single field atoms, lists of fields, and dynamic expressions.
+  Supports binding-scoped params via the `:bind` key.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters.BindParams

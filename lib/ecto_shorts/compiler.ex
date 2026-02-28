@@ -29,7 +29,7 @@ defmodule EctoShorts.Compiler do
     quote do
       opts = unquote(opts)
       @compiler_options opts
-      @before_compile EctoShorts.Compiler
+      @before_compile unquote(__MODULE__)
     end
   end
 
@@ -64,7 +64,7 @@ defmodule EctoShorts.Compiler do
     clause_asts = build_clauses(context, specs_module, opts)
 
     quote do
-      @compile_time_max_query_bindings EctoShorts.Compiler.max_query_bindings(@compiler_options)
+      @compile_time_max_query_bindings unquote(__MODULE__).max_query_bindings(@compiler_options)
 
       defmodule unquote(compiled_module) do
         @moduledoc false
@@ -81,7 +81,7 @@ defmodule EctoShorts.Compiler do
 
       @doc false
       def __mix_recompile__? do
-        EctoShorts.Compiler.max_query_bindings(@compiler_options) !==
+        unquote(__MODULE__).max_query_bindings(@compiler_options) !==
           @compile_time_max_query_bindings
       end
     end

@@ -1,10 +1,19 @@
 defmodule EctoShorts.Dynamics do
-  @moduledoc false
+  @moduledoc """
+  Converts filter params into `Ecto.Query.DynamicExpr` values.
 
+  Used internally by `EctoShorts.CommonFilters.Filter` and other query
+  builders to translate `{field, value}` pairs and boolean operator trees
+  into composable dynamic expressions. Delegates the actual expression
+  construction to the configured dynamic adapter (e.g., the Postgres adapter).
+  """
+
+  alias Ecto.Query
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
   alias EctoShorts.Dynamics.Adapters.Postgres
+  alias EctoShorts.Logger
 
   require Ecto.Query
 
@@ -50,7 +59,7 @@ defmodule EctoShorts.Dynamics do
       schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
 
       if is_list(schema_fields) and key not in schema_fields do
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
         )
@@ -122,11 +131,11 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp merge_dynamic(dyn_a, :and, dyn_b) do
-    Ecto.Query.dynamic([], ^dyn_a and ^dyn_b)
+    Query.dynamic([], ^dyn_a and ^dyn_b)
   end
 
   defp merge_dynamic(dyn_a, :or, dyn_b) do
-    Ecto.Query.dynamic([], ^dyn_a or ^dyn_b)
+    Query.dynamic([], ^dyn_a or ^dyn_b)
   end
 
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true

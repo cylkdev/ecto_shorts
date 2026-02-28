@@ -1,6 +1,7 @@
 defmodule EctoShorts.CommonSchemaTest do
   use EctoShorts.DataCase
 
+  alias Ecto.Changeset
   alias EctoShorts.CommonSchema
   alias EctoShorts.Schema.Post
   alias EctoShorts.Schema.PostAbstract
@@ -149,14 +150,14 @@ defmodule EctoShorts.CommonSchemaTest do
     test "creates changeset from schema module + params" do
       changeset = CommonSchema.create_changeset(Post, %{title: "Hello"}, [])
 
-      assert %Ecto.Changeset{} = changeset
+      assert %Changeset{} = changeset
       assert changeset.changes.title === "Hello"
     end
 
     test "creates changeset from schema struct + params" do
       changeset = CommonSchema.create_changeset(%Post{}, %{title: "Hello"}, [])
 
-      assert %Ecto.Changeset{} = changeset
+      assert %Changeset{} = changeset
       assert changeset.changes.title === "Hello"
     end
 
@@ -165,12 +166,12 @@ defmodule EctoShorts.CommonSchemaTest do
 
       changeset = CommonSchema.create_changeset(base, %{title: "Override"}, [])
 
-      assert %Ecto.Changeset{} = changeset
+      assert %Changeset{} = changeset
       assert changeset.changes.title === "Override"
     end
 
     test "creates changeset from {source, schema} + params and applies source" do
-      assert %Ecto.Changeset{data: %{__meta__: %{source: "custom_posts"}}} =
+      assert %Changeset{data: %{__meta__: %{source: "custom_posts"}}} =
                CommonSchema.create_changeset(
                  {"custom_posts", PostAbstract},
                  %{title: "Hello"},
@@ -179,7 +180,7 @@ defmodule EctoShorts.CommonSchemaTest do
     end
 
     test "creates changeset from {source, schema} + schema struct and applies source" do
-      assert %Ecto.Changeset{data: %{__meta__: %{source: "custom_posts"}}} =
+      assert %Changeset{data: %{__meta__: %{source: "custom_posts"}}} =
                CommonSchema.create_changeset(
                  {"custom_posts", PostAbstract},
                  %PostAbstract{},
@@ -188,32 +189,32 @@ defmodule EctoShorts.CommonSchemaTest do
     end
 
     test "supports :changeset callback 3-arity" do
-      assert %Ecto.Changeset{data: %Post{}, changes: %{title: "Custom"}} =
+      assert %Changeset{data: %Post{}, changes: %{title: "Custom"}} =
                CommonSchema.create_changeset(Post, %Post{}, %{title: "Hello"},
                  changeset: fn _schema, schema_data_or_changeset, params ->
                    schema_data_or_changeset
-                   |> Ecto.Changeset.change(params)
-                   |> Ecto.Changeset.put_change(:title, "Custom")
+                   |> Changeset.change(params)
+                   |> Changeset.put_change(:title, "Custom")
                  end
                )
     end
 
     test "supports :changeset callback 2-arity" do
-      assert %Ecto.Changeset{data: %Post{}, changes: %{title: "Custom"}} =
+      assert %Changeset{data: %Post{}, changes: %{title: "Custom"}} =
                CommonSchema.create_changeset(Post, %Post{}, %{title: "Hello"},
                  changeset: fn schema_data_or_changeset, params ->
                    schema_data_or_changeset
-                   |> Ecto.Changeset.change(params)
-                   |> Ecto.Changeset.put_change(:title, "Custom")
+                   |> Changeset.change(params)
+                   |> Changeset.put_change(:title, "Custom")
                  end
                )
     end
 
     test "supports :changeset callback 1-arity (receives a changeset)" do
-      assert %Ecto.Changeset{data: %Post{}, changes: %{title: "Custom"}} =
+      assert %Changeset{data: %Post{}, changes: %{title: "Custom"}} =
                CommonSchema.create_changeset(Post, %Post{}, %{title: "Hello"},
                  changeset: fn changeset ->
-                   Ecto.Changeset.put_change(changeset, :title, "Custom")
+                   Changeset.put_change(changeset, :title, "Custom")
                  end
                )
     end

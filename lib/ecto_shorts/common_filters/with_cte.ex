@@ -1,8 +1,15 @@
 defmodule EctoShorts.CommonFilters.WithCte do
-  @moduledoc false
+  @moduledoc """
+  Builds `:with_cte` (Common Table Expression) clauses from data-driven params.
+
+  Accepts keyword lists of `{cte_name, definition}` entries where each
+  definition contains an `:as` key (an `Ecto.Query`, `Ecto.SubQuery`, or
+  filter params) and optional `:materialized` and `:operation` keys.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters
+  alias EctoShorts.Logger
 
   require Ecto.Query
 
@@ -35,7 +42,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
   end
 
   defp reduce_cte(_schema_source, query, value, _opts) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :with_cte params to be a map or keyword list, got: #{inspect(value)}"
     )
@@ -77,7 +84,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
         {:ok, params_to_query(schema_source, query_params, opts)}
 
       term ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected CTE :as query params for #{inspect(cte_name)} to be a query, subquery, or keyword/map payload, got: #{inspect(term)}"
         )

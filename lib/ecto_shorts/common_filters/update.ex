@@ -1,5 +1,11 @@
 defmodule EctoShorts.CommonFilters.Update do
-  @moduledoc false
+  @moduledoc """
+  Builds `:update` expressions from data-driven params.
+
+  Accepts keyword lists of `{operation, fields}` entries (e.g.,
+  `[set: [name: \"new\"], inc: [counter: 1]]`) and maps. Supports
+  binding-scoped params via the `:bind` key.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters.BindParams

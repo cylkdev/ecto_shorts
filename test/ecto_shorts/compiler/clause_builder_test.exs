@@ -1,6 +1,7 @@
 defmodule EctoShorts.Compiler.ClauseBuilderTest do
   use ExUnit.Case, async: true
 
+  alias Ecto.Query
   alias EctoShorts.Compiler.ClauseBuilder
   alias EctoShorts.Compiler.ClauseSpec
 
@@ -39,7 +40,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
         head: quote(do: {:==, unquote(v_var)}),
         body:
           quote do
-            Ecto.Query.dynamic([q], field(q, ^unquote(key_var)) == ^unquote(v_var))
+            unquote(Query).dynamic([q], field(q, ^unquote(key_var)) == ^unquote(v_var))
           end
       })
 
@@ -54,7 +55,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
     expected_dyn = dynamic([q], field(q, ^:title) == ^"hello")
 
     # Call the generated function clause and compare to the expected dynamic.
-    actual_dyn = apply(module, :apply_dynamic_expr, [{:as, nil}, :title, {:==, "hello"}])
+    actual_dyn = module.apply_dynamic_expr({:as, nil}, :title, {:==, "hello"})
     assert_dynamic(expected_dyn, actual_dyn)
   end
 
@@ -71,7 +72,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
         guard: quote(do: is_list(unquote(values_var))),
         body:
           quote do
-            Ecto.Query.dynamic([q], field(q, ^unquote(key_var)) in ^unquote(values_var))
+            unquote(Query).dynamic([q], field(q, ^unquote(key_var)) in ^unquote(values_var))
           end
       })
 
@@ -83,7 +84,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
 
     module = compile_clause_module!(clause_ast)
     expected_dyn = dynamic([q], field(q, ^:id) in ^[1, 2])
-    actual_dyn = apply(module, :apply_dynamic_expr, [{:as, nil}, :id, {:==, [1, 2]}])
+    actual_dyn = module.apply_dynamic_expr({:as, nil}, :id, {:==, [1, 2]})
     assert_dynamic(expected_dyn, actual_dyn)
   end
 

@@ -1,10 +1,20 @@
 defmodule EctoShorts.CommonFilters.Filter do
-  @moduledoc false
+  @moduledoc """
+  Default query builder for WHERE clauses, set operations, and query-level filters.
+
+  Handles schema field filters (converting them to dynamic WHERE expressions),
+  custom filters (`:ids`, `:before`, `:after`, `:start_date`, `:end_date`,
+  `:exists`), boolean operators (`:and`, `:or`), raw `:dynamic` expressions,
+  and query-level operations like `:limit`, `:offset`, `:lock`, `:exclude`,
+  `:union`, `:intersect`, `:except`, `:first`, `:last`, `:put_query_prefix`,
+  `:recursive_ctes`, and `:reverse_order`.
+  """
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonFilters
-  alias EctoShorts.QueryProvider
   alias EctoShorts.Dynamics
+  alias EctoShorts.Logger
+  alias EctoShorts.QueryProvider
 
   alias Ecto.Query
   require Ecto.Query
@@ -69,7 +79,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     if is_struct(value, Ecto.Query.DynamicExpr) do
       apply_where_expr(filter, query, value)
     else
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Expected :dynamic payload to be an Ecto.Query.DynamicExpr, got: #{inspect(value)}"
       )
@@ -92,7 +102,7 @@ defmodule EctoShorts.CommonFilters.Filter do
         build_field(schema_source, filter, query, binding_selector, key, value, opts)
 
       true ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected a query field for schema #{inspect(schema_source)}, got: #{inspect(key)}"
         )
@@ -102,7 +112,7 @@ defmodule EctoShorts.CommonFilters.Filter do
   end
 
   def build(_schema, _filter, query, _binding_selector, term, _opts) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected params to be a map or keyword list, got: #{inspect(term)}"
     )
@@ -222,7 +232,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     if Keyword.keyword?(params) do
       apply_lock_from_resolver(query, binding_selector, params, opts)
     else
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Expected :lock params to be a unary function or a keyword/map resolver payload, got: #{inspect(params)}"
       )
@@ -232,7 +242,7 @@ defmodule EctoShorts.CommonFilters.Filter do
   end
 
   defp apply_expr(_schema_source, :lock, query, _binding_selector, value, _opts) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :lock params to be a unary function or a keyword/map resolver payload, got: #{inspect(value)}"
     )
@@ -254,7 +264,7 @@ defmodule EctoShorts.CommonFilters.Filter do
   end
 
   defp apply_expr(_schema_source, :put_query_prefix, query, _binding_selector, value, _opts) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :put_query_prefix value to be a string, got: #{inspect(value)}"
     )
@@ -282,7 +292,7 @@ defmodule EctoShorts.CommonFilters.Filter do
          value,
          _opts
        ) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :recursive_ctes value to be a boolean, got: #{inspect(value)}"
     )
@@ -325,7 +335,7 @@ defmodule EctoShorts.CommonFilters.Filter do
     lock_values = Keyword.get(params, :values, [])
 
     if is_nil(lock_name) do
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Expected :lock resolver payload to have a :name key, got: #{inspect(params)}"
       )
@@ -337,7 +347,7 @@ defmodule EctoShorts.CommonFilters.Filter do
           lock_builder.(query)
 
         {:ok, other} ->
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Expected :lock resolver to return {:ok, (Ecto.Query.t() -> Ecto.Query.t())}, got: #{inspect(other)}"
           )
@@ -345,7 +355,7 @@ defmodule EctoShorts.CommonFilters.Filter do
           query
 
         {:error, reason} ->
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Lock expression callback returned error for key #{inspect(lock_name)}: #{inspect(reason)}"
           )
@@ -353,7 +363,7 @@ defmodule EctoShorts.CommonFilters.Filter do
           query
 
         other ->
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Expected :lock resolver callback to return {:ok, query_builder_fun} | {:error, reason}, got: #{inspect(other)}"
           )

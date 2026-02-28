@@ -1,5 +1,10 @@
 defmodule EctoShorts.CommonFilters.Preload do
-  @moduledoc false
+  @moduledoc """
+  Builds `:preload` expressions from data-driven params.
+
+  Accepts atoms, lists of atoms, and keyword lists for nested preloads.
+  Supports binding-scoped params via the `:bind` key.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters.BindParams

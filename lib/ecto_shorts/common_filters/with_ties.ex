@@ -1,9 +1,15 @@
 defmodule EctoShorts.CommonFilters.WithTies do
-  @moduledoc false
+  @moduledoc """
+  Builds `:with_ties` expressions from data-driven params.
+
+  Accepts boolean values to enable or disable `WITH TIES` on the query.
+  Supports binding-scoped params via the `:bind` key.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters.BindParams
   alias EctoShorts.Compiler
+  alias EctoShorts.Logger
 
   require Ecto.Query
   require EctoShorts.Compiler
@@ -76,7 +82,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
   end
 
   defp apply_with_ties_expr(query, _binding_selector, value) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :with_ties value to be a boolean, got: #{inspect(value)}"
     )

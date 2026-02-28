@@ -1,5 +1,12 @@
 defmodule EctoShorts.Config do
-  @moduledoc false
+  @moduledoc """
+  Reads and resolves EctoShorts configuration from the application environment.
+
+  Provides accessor functions for all configurable keys (`:repo`, `:replica`,
+  `:error_module`, `:dynamic_adapter`, `:query_source_provider`,
+  `:max_query_bindings`). The bang variants (`repo!/1`, `replica!/1`) raise
+  when no value is found.
+  """
 
   @app :ecto_shorts
 

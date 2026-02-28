@@ -1,9 +1,17 @@
 defmodule EctoShorts.CommonFilters.Having do
-  @moduledoc false
+  @moduledoc """
+  Builds `:having` and `:or_having` expressions from data-driven params.
+
+  Converts filter params into dynamic expressions and applies them as
+  `Ecto.Query.having/3` or `Ecto.Query.or_having/3` clauses. Supports
+  nested boolean operators, keyword lists, maps, and raw
+  `Ecto.Query.DynamicExpr` values.
+  """
 
   alias Ecto.Query
   alias EctoShorts.Compiler
   alias EctoShorts.Dynamics
+  alias EctoShorts.Logger
 
   require Ecto.Query
   require EctoShorts.Compiler
@@ -110,7 +118,7 @@ defmodule EctoShorts.CommonFilters.Having do
   end
 
   defp reduce_having(filter_op, _schema_source, query, _binding_selector, params, _opts) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected params for #{filter_op} to be a map or keyword list, got: #{inspect(params)}"
     )

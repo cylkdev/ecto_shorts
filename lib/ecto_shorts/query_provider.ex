@@ -1,5 +1,13 @@
 defmodule EctoShorts.QueryProvider do
-  @moduledoc false
+  @moduledoc """
+  Resolves expression callbacks via the configured query source provider.
+
+  Used internally by `EctoShorts.CommonFilters.Join` and
+  `EctoShorts.CommonFilters.Filter` to resolve fragment-based join sources
+  and lock expressions. Delegates to the module configured via
+  `:query_source_provider`, falling back to
+  `EctoShorts.CommonFilters.FragmentProvider`.
+  """
 
   alias EctoShorts.Config
 

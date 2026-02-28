@@ -1,5 +1,10 @@
 defmodule EctoShorts.Logger do
-  @moduledoc false
+  @moduledoc """
+  Prefixed logging wrapper used internally by EctoShorts modules.
+
+  Each log function prepends a `[prefix]` tag to the message before
+  delegating to Elixir's `Logger`.
+  """
   require Logger
 
   def debug(prefix, message) do

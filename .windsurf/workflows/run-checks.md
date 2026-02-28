@@ -31,6 +31,8 @@ Use the following steps for this workflow. Do not skip any steps.
    - Read the flagged source files
    - Apply the minimal fix needed for each issue
    - Do not change unrelated code
+   - Fix all refactoring opportunities
+   - Fix all software design suggestions
 
 5. If `mix dialyzer` reported warnings:
    - Read the flagged source files

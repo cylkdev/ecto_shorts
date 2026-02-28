@@ -1,8 +1,15 @@
 defmodule EctoShorts.CommonFilters.WithNamedBinding do
-  @moduledoc false
+  @moduledoc """
+  Builds `:with_named_binding` expressions from data-driven params.
+
+  Accepts keyword lists of `{binding_key, binding_params}` entries. Each
+  entry calls `Ecto.Query.with_named_binding/3` with a callback that
+  converts `binding_params` to filters via `CommonFilters.convert_params_to_filter/3`.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters
+  alias EctoShorts.Logger
 
   require Ecto.Query
 
@@ -34,7 +41,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
   end
 
   defp reduce_entries(query, value, _opts) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :with_named_binding params to be a map or keyword list, got: #{inspect(value)}"
     )
@@ -66,7 +73,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
   end
 
   defp apply_entry(query, binding_key, _binding_params, _opts) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :with_named_binding key to be an atom, got: #{inspect(binding_key)}"
     )
@@ -75,7 +82,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
   end
 
   defp warn_invalid_binding_params(binding_key, binding_params) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :with_named_binding params for #{inspect(binding_key)} to be a map or keyword list, got: #{inspect(binding_params)}"
     )

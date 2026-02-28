@@ -56,12 +56,12 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
 
     assert_dynamic(
       expected_is_nil,
-      apply(module, :apply_dynamic_expr, [{:as, nil}, key, {:eq, nil}])
+      module.apply_dynamic_expr({:as, nil}, key, {:eq, nil})
     )
 
     assert_dynamic(
       expected_not_nil,
-      apply(module, :apply_dynamic_expr, [{:as, nil}, key, {:!=, nil}])
+      module.apply_dynamic_expr({:as, nil}, key, {:!=, nil})
     )
   end
 
@@ -84,7 +84,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
 
     assert_dynamic(
       expected,
-      apply(module, :apply_dynamic_expr, [{:as, nil}, key, {:gt, 1}])
+      module.apply_dynamic_expr({:as, nil}, key, {:gt, 1})
     )
   end
 
@@ -121,7 +121,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
 
     assert_dynamic(
       expected,
-      apply(module, :apply_dynamic_expr, [{:as, nil}, key, {:lower, "elixir"}])
+      module.apply_dynamic_expr({:as, nil}, key, {:lower, "elixir"})
     )
   end
 
@@ -149,7 +149,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
 
     assert_dynamic(
       expected,
-      apply(module, :apply_dynamic_expr, [{:as, nil}, key, {:gt, 10}])
+      module.apply_dynamic_expr({:as, nil}, key, {:gt, 10})
     )
   end
 end

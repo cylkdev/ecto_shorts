@@ -1,6 +1,16 @@
 defmodule EctoShorts.Actions.Multi do
-  @moduledoc false
+  @moduledoc """
+  Builds `Ecto.Multi` structs for transactional batch operations.
 
+  Each `build_*_multi/3` function constructs an `Ecto.Multi` where every
+  entry in the params list becomes an individual multi step. If any step
+  fails, the entire multi is rolled back when run inside a transaction.
+
+  `handle_multi_response/2` normalizes the multi transaction result into
+  `{:ok, [values]}` or `{:error, reason}`.
+  """
+
+  alias Ecto.Multi
   alias EctoShorts.Actions.Error
 
   alias EctoShorts.{
@@ -11,8 +21,8 @@ defmodule EctoShorts.Actions.Multi do
   def build_create_many_multi(schema, params_list, opts) do
     params_list
     |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {params, index}, multi ->
-      Ecto.Multi.run(multi, {:create, index}, fn repo, _changes ->
+    |> Enum.reduce(Multi.new(), fn {params, index}, multi ->
+      Multi.run(multi, {:create, index}, fn repo, _changes ->
         repo_create(repo, schema, params, index, opts)
       end)
     end)
@@ -21,8 +31,8 @@ defmodule EctoShorts.Actions.Multi do
   def build_find_many_multi(schema, params_list, opts) do
     params_list
     |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {params, index}, multi ->
-      Ecto.Multi.run(multi, {:find, index}, fn repo, _changes ->
+    |> Enum.reduce(Multi.new(), fn {params, index}, multi ->
+      Multi.run(multi, {:find, index}, fn repo, _changes ->
         repo_find(repo, schema, params, index, opts)
       end)
     end)
@@ -31,8 +41,8 @@ defmodule EctoShorts.Actions.Multi do
   def build_update_many_multi(schema, entries, opts) do
     entries
     |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {arg, index}, multi ->
-      Ecto.Multi.run(multi, {:update, index}, fn repo, _changes ->
+    |> Enum.reduce(Multi.new(), fn {arg, index}, multi ->
+      Multi.run(multi, {:update, index}, fn repo, _changes ->
         run_multi_update_many(repo, schema, arg, index, opts)
       end)
     end)
@@ -41,8 +51,8 @@ defmodule EctoShorts.Actions.Multi do
   def build_delete_many_multi(schema, entries, opts) do
     entries
     |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {entry, index}, multi ->
-      Ecto.Multi.run(multi, {:delete, index}, fn repo, _changes ->
+    |> Enum.reduce(Multi.new(), fn {entry, index}, multi ->
+      Multi.run(multi, {:delete, index}, fn repo, _changes ->
         run_multi_delete(repo, schema, entry, index, opts)
       end)
     end)
@@ -51,8 +61,8 @@ defmodule EctoShorts.Actions.Multi do
   def build_find_or_create_multi(schema, params_list, opts) do
     params_list
     |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {params, index}, multi ->
-      Ecto.Multi.run(multi, {:find_or_create, index}, fn repo, _changes ->
+    |> Enum.reduce(Multi.new(), fn {params, index}, multi ->
+      Multi.run(multi, {:find_or_create, index}, fn repo, _changes ->
         case repo_one(repo, schema, params, opts) do
           nil -> repo_create(repo, schema, params, index, opts)
           record -> {:ok, record}
@@ -64,17 +74,17 @@ defmodule EctoShorts.Actions.Multi do
   def build_upsert_multi(schema, entries, opts) do
     entries
     |> Enum.with_index()
-    |> Enum.reduce(Ecto.Multi.new(), fn {arg, index}, multi ->
+    |> Enum.reduce(Multi.new(), fn {arg, index}, multi ->
       case arg do
         {find_params, upsert_params} ->
-          Ecto.Multi.run(multi, {:find_and_upsert, index}, fn repo, _changes ->
+          Multi.run(multi, {:find_and_upsert, index}, fn repo, _changes ->
             repo_upsert(repo, schema, find_params, upsert_params, index, opts)
           end)
 
         %{id: id} = params ->
           upsert_params = Map.delete(params, :id)
 
-          Ecto.Multi.run(multi, {:find_and_upsert, index}, fn repo, _changes ->
+          Multi.run(multi, {:find_and_upsert, index}, fn repo, _changes ->
             repo_upsert(repo, schema, %{id: id}, upsert_params, index, opts)
           end)
 

@@ -1,11 +1,19 @@
 defmodule EctoShorts.CommonFilters.Windows do
-  @moduledoc false
+  @moduledoc """
+  Builds `:windows` expressions from data-driven params.
+
+  Accepts keyword lists of `{window_name, definition}` entries where each
+  definition contains `:partition_by`, `:order_by`, and optional `:frame`
+  keys. Supports binding-scoped params via the `:bind` key.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters.BindParams
+  alias EctoShorts.Compiler
+  alias EctoShorts.Logger
 
   require Ecto.Query
-  require EctoShorts.Compiler
+  require Compiler
 
   @logger_prefix "EctoShorts.CommonFilters.Windows"
   @binding_selector_key :bind
@@ -46,7 +54,7 @@ defmodule EctoShorts.CommonFilters.Windows do
         end
 
       not Keyword.keyword?(params) ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected :windows params to be a keyword list of window definitions, got: #{inspect(params)}"
         )
@@ -60,7 +68,7 @@ defmodule EctoShorts.CommonFilters.Windows do
   end
 
   defp reduce_windows(query, _binding_selector, value) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :windows params to be a keyword list/map of window definitions, got: #{inspect(value)}"
     )
@@ -82,7 +90,7 @@ defmodule EctoShorts.CommonFilters.Windows do
 
   defp apply_windows_expr(query, _binding_selector, window_name, _window_definition)
        when not is_atom(window_name) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected window name to be an atom, got: #{inspect(window_name)}"
     )
@@ -99,7 +107,7 @@ defmodule EctoShorts.CommonFilters.Windows do
           |> Enum.reject(&(&1 in @window_keys))
 
         if unknown_keys !== [] do
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Ignoring unsupported window keys #{inspect(unknown_keys)} for #{inspect(window_name)}"
           )
@@ -126,7 +134,7 @@ defmodule EctoShorts.CommonFilters.Windows do
         end
 
       :error ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected window definition for #{inspect(window_name)} to be a map or keyword list, got: #{inspect(window_definition)}"
         )
@@ -208,7 +216,7 @@ defmodule EctoShorts.CommonFilters.Windows do
 
   defp normalize_order_by(value, _binding_selector), do: value
 
-  EctoShorts.Compiler.define_clauses do
+  Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
       defp compose_window(
              query,

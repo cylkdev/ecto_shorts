@@ -157,6 +157,19 @@ defmodule EctoShorts.Testing do
     :ok
   end
 
+  @doc """
+  Injects test assertion helpers into the calling module.
+
+  Defines local `assert_dynamic/2`, `refute_dynamic/2`, `assert_sql/2-3`,
+  `refute_sql/2-3`, `assert_query/2`, and `refute_query/2` functions that
+  delegate to this module. The `assert_sql` and `refute_sql` helpers
+  automatically use the repo from `:repo` in `opts` or the configured
+  `EctoShorts.Config.repo/0`.
+
+  ## Options
+
+    * `:repo` — the `Ecto.Repo` module used for SQL comparison helpers.
+  """
   defmacro __using__(opts) do
     quote do
       opts = unquote(opts)

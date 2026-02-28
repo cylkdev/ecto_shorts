@@ -1,5 +1,10 @@
 defmodule EctoShorts.Utils do
-  @moduledoc false
+  @moduledoc """
+  General-purpose utility functions used internally by EctoShorts.
+
+  Provides `atomize_keys/1` for recursively converting string keys in maps
+  and keyword lists to existing atoms.
+  """
 
   def atomize_keys(enum) do
     transform_keys(enum, fn

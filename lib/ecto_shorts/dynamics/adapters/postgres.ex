@@ -1,5 +1,13 @@
 defmodule EctoShorts.Dynamics.Adapters.Postgres do
-  @moduledoc false
+  @moduledoc """
+  Postgres-specific dynamic expression adapter.
+
+  Routes expression building to `CommonExpr`, `ArrayExpr`, or `ScalarExpr`
+  based on the key and the schema field type. Handles special operators
+  (`:ids`, `:before`, `:after`, `:start_date`, `:end_date`, `:exists`) via
+  `CommonExpr`, array-typed fields via `ArrayExpr`, and everything else via
+  `ScalarExpr`.
+  """
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Dynamics.Adapters.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}

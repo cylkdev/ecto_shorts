@@ -1,4 +1,32 @@
 defmodule EctoShorts.CommonFilters do
+  @moduledoc """
+  Converts maps and keyword lists of filter params into `Ecto.Query` structs.
+
+  Use this module when you need to build a query from a data structure
+  instead of writing Ecto query macros by hand. Pass a schema module (or
+  `{source, schema}` tuple) together with a map or keyword list of params
+  to `convert_params_to_filter/3` and receive an `Ecto.Query` back.
+
+  Params are split into two categories:
+
+    * **Schema filters** — keys that match schema field names or
+      associations become `WHERE` clauses (or `OR WHERE` when nested
+      under `:or_where`).
+    * **Query filters** — reserved keys that map to Ecto query operations:
+      `:distinct`, `:group_by`, `:having`, `:or_having`, `:join`, `:order_by`,
+      `:prepend_order_by`, `:preload`, `:select`, `:select_merge`, `:limit`,
+      `:offset`, `:lock`, `:union`, `:union_all`, `:except`, `:except_all`,
+      `:intersect`, `:intersect_all`, `:exclude`, `:first`, `:last`,
+      `:put_query_prefix`, `:recursive_ctes`, `:reverse_order`, `:subquery`,
+      `:with_cte`, `:with_named_binding`, `:with_ties`, `:windows`, `:update`.
+
+  Bindings can be targeted using the `:bind` key with `:as` (named) or
+  `:at` (positional) selectors.
+
+  Unknown keys that are not schema fields are logged as warnings and
+  silently skipped.
+  """
+
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
 
@@ -20,6 +48,7 @@ defmodule EctoShorts.CommonFilters do
     Update
   }
 
+  alias EctoShorts.Logger
   alias EctoShorts.SchemaHelpers
 
   @logger_prefix "EctoShorts.CommonFilters"
@@ -66,6 +95,22 @@ defmodule EctoShorts.CommonFilters do
     :update
   ]
 
+  @doc """
+  Converts filter params into an `Ecto.Query`.
+
+  `source` is a schema module, `{source, schema}` tuple, or `Ecto.Query`.
+  `params` is a map or keyword list of filter params.
+  `opts` is an optional keyword list forwarded to query builders.
+
+  Returns an `Ecto.Query` struct with all filter params applied.
+
+  ## Examples
+
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(Post, %{title: "Hello"})
+      #Ecto.Query<from p0 in Post, where: p0.title == ^"Hello">
+
+      iex> EctoShorts.CommonFilters.convert_params_to_filter(Post, %{published: true, order_by: {:asc, :title}})
+  """
   def convert_params_to_filter(source, params, opts \\ [])
 
   def convert_params_to_filter(source, params, opts) when is_map(params) do
@@ -234,7 +279,7 @@ defmodule EctoShorts.CommonFilters do
         build_schema_filters(schema_source, query_acc, binding_selector, filter_op, entry, opts)
       end)
     else
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Expected params for #{filter_op} to be a map or keyword list, got: #{inspect(value)}"
       )
@@ -466,7 +511,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp apply_query_builder(_schema_source, query, _binding_selector, :subquery, params, _opts) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :subquery params to be a map or keyword list, got: #{inspect(params)}"
     )

@@ -2,6 +2,8 @@ defmodule EctoShorts.CommonFiltersTest do
   use ExUnit.Case
   use EctoShorts.Testing
 
+  alias Ecto.Adapters.SQL
+  alias Ecto.Query
   alias EctoShorts.CommonFilters
   alias EctoShorts.Schema.Post
   alias EctoShorts.Schema.User
@@ -213,7 +215,7 @@ defmodule EctoShorts.CommonFiltersTest do
           []
         )
 
-      {sql, params} = Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Repo, q2)
+      {sql, params} = SQL.to_sql(:all, EctoShorts.Repo, q2)
 
       assert sql =~ "GROUP BY p0.\"id\""
 
@@ -888,14 +890,14 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "supports :put_query_prefix with schema source" do
-      expected = Ecto.Query.put_query_prefix(Post, "tenant_a")
+      expected = Query.put_query_prefix(Post, "tenant_a")
       q2 = CommonFilters.convert_params_to_filter(Post, %{put_query_prefix: "tenant_a"}, [])
 
       assert_sql(expected, q2)
     end
 
     test "supports :put_query_prefix with table source" do
-      expected = Ecto.Query.put_query_prefix("posts", "tenant_a")
+      expected = Query.put_query_prefix("posts", "tenant_a")
       q2 = CommonFilters.convert_params_to_filter("posts", %{put_query_prefix: "tenant_a"}, [])
 
       assert_query(expected, q2)
@@ -904,8 +906,8 @@ defmodule EctoShorts.CommonFiltersTest do
     test "supports :put_query_prefix override order (last wins)" do
       expected =
         Post
-        |> Ecto.Query.put_query_prefix("tenant_a")
-        |> Ecto.Query.put_query_prefix("tenant_b")
+        |> Query.put_query_prefix("tenant_a")
+        |> Query.put_query_prefix("tenant_b")
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -918,7 +920,7 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "invalid :put_query_prefix nil logs warning and leaves query unchanged" do
-      q = Ecto.Query.put_query_prefix(Post, "tenant_a")
+      q = Query.put_query_prefix(Post, "tenant_a")
 
       log =
         capture_log(fn ->
@@ -952,7 +954,7 @@ defmodule EctoShorts.CommonFiltersTest do
           limit: ^10
         )
 
-      expected = Ecto.Query.with_ties(q, true)
+      expected = Query.with_ties(q, true)
 
       q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: true}, [])
 
@@ -966,7 +968,7 @@ defmodule EctoShorts.CommonFiltersTest do
           limit: ^10
         )
 
-      expected = Ecto.Query.with_ties(q, false)
+      expected = Query.with_ties(q, false)
 
       q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: false}, [])
 
@@ -981,7 +983,7 @@ defmodule EctoShorts.CommonFiltersTest do
           limit: ^10
         )
 
-      expected = Ecto.Query.with_ties(q, [post: p], true)
+      expected = Query.with_ties(q, [post: p], true)
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -1000,7 +1002,7 @@ defmodule EctoShorts.CommonFiltersTest do
           limit: ^10
         )
 
-      expected = Ecto.Query.with_ties(q, [p], true)
+      expected = Query.with_ties(q, [p], true)
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -1031,7 +1033,7 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "raises when :with_ties is applied without :limit" do
-      assert_raise Ecto.Query.CompileError,
+      assert_raise Query.CompileError,
                    "`with_ties` can only be applied to queries containing a `limit`",
                    fn ->
                      CommonFilters.convert_params_to_filter(Post, %{with_ties: true}, [])
@@ -1227,7 +1229,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
     test "supports :with_cte with keyword payload" do
       cte_query = from(p in Post, where: p.published == ^true)
-      expected = Ecto.Query.with_cte(Post, "published_posts", as: ^cte_query)
+      expected = Query.with_cte(Post, "published_posts", as: ^cte_query)
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -1241,7 +1243,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
     test "supports :with_cte with map payload" do
       cte_query = from(p in Post, where: p.published == ^true)
-      expected = Ecto.Query.with_cte(Post, "published_posts", as: ^cte_query)
+      expected = Query.with_cte(Post, "published_posts", as: ^cte_query)
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -1257,7 +1259,7 @@ defmodule EctoShorts.CommonFiltersTest do
       cte_query = from(p in Post, select: p)
 
       expected =
-        Ecto.Query.with_cte(
+        Query.with_cte(
           Post,
           "published_posts",
           as: ^cte_query,
@@ -1281,7 +1283,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
     test "supports :with_cte with nested :as payload" do
       cte_query = from(p in Post, where: p.published == ^true)
-      expected = Ecto.Query.with_cte(Post, "published_posts", as: ^cte_query)
+      expected = Query.with_cte(Post, "published_posts", as: ^cte_query)
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -1295,7 +1297,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
     test "supports :with_cte with nested :as payload using :source" do
       cte_query = from(p in Post, where: p.id == ^1)
-      expected = Ecto.Query.with_cte(Post, "published_posts", as: ^cte_query)
+      expected = Query.with_cte(Post, "published_posts", as: ^cte_query)
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -1332,8 +1334,8 @@ defmodule EctoShorts.CommonFiltersTest do
 
       expected =
         Post
-        |> Ecto.Query.recursive_ctes(true)
-        |> Ecto.Query.with_cte("published_posts", as: ^cte_query)
+        |> Query.recursive_ctes(true)
+        |> Query.with_cte("published_posts", as: ^cte_query)
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -1350,13 +1352,13 @@ defmodule EctoShorts.CommonFiltersTest do
 
       q =
         Post
-        |> Ecto.Query.recursive_ctes(true)
-        |> Ecto.Query.with_cte("published_posts", as: ^cte_query)
+        |> Query.recursive_ctes(true)
+        |> Query.with_cte("published_posts", as: ^cte_query)
 
       expected =
         Post
-        |> Ecto.Query.with_cte("published_posts", as: ^cte_query)
-        |> Ecto.Query.recursive_ctes(false)
+        |> Query.with_cte("published_posts", as: ^cte_query)
+        |> Query.recursive_ctes(false)
 
       q2 = CommonFilters.convert_params_to_filter(q, %{recursive_ctes: false}, [])
 
@@ -1511,7 +1513,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
     test "supports :update with update operators" do
       updates = [set: [title: "After"], inc: [views: 1]]
-      expected = Ecto.Query.update(Post, ^updates)
+      expected = Query.update(Post, ^updates)
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -1525,7 +1527,7 @@ defmodule EctoShorts.CommonFiltersTest do
 
     test "supports :update with operation payload maps" do
       updates = [set: [title: "After"]]
-      expected = Ecto.Query.update(Post, ^updates)
+      expected = Query.update(Post, ^updates)
 
       q2 =
         CommonFilters.convert_params_to_filter(
@@ -2244,7 +2246,7 @@ defmodule EctoShorts.CommonFiltersTest do
     end
 
     test "multiple :distinct entries raise compile error" do
-      assert_raise Ecto.Query.CompileError,
+      assert_raise Query.CompileError,
                    "only one distinct expression is allowed in query",
                    fn ->
                      CommonFilters.convert_params_to_filter(

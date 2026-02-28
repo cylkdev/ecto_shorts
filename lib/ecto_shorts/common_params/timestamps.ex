@@ -1,5 +1,12 @@
 defmodule EctoShorts.CommonParams.Timestamps do
-  @moduledoc false
+  @moduledoc """
+  Manages `inserted_at` and `updated_at` timestamps for bulk operations.
+
+  Used internally by `EctoShorts.CommonParams` to automatically set
+  timestamp fields on insert and update data. Supports configurable
+  source field names, timestamp types (`:utc_datetime`, `:naive_datetime`),
+  and manual override values via options.
+  """
 
   @utc_datetime :utc_datetime
   @naive_datetime :naive_datetime

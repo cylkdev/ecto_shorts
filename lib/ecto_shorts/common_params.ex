@@ -31,7 +31,25 @@ defmodule EctoShorts.CommonParams do
   alias EctoShorts.Utils
 
   @doc """
-  ...
+  Builds conflict resolution options for `Ecto.Repo.insert_all/3`.
+
+  `source` is a schema module or `{source, schema}` tuple.
+  `inserts` is a list of maps (the prepared insert data).
+  `opts` is a keyword list of options.
+
+  When the schema has a primary key and at least one insert contains all
+  non-nil primary key values, returns a keyword list with `:conflict_target`
+  set to the primary key fields. If there are non-primary-key fields to
+  replace, also includes `on_conflict: {:replace, fields}`.
+
+  The `:on_conflict_replace` option controls which fields are replaced:
+
+    * `:insert_keys` (default) — replaces all non-primary-key fields
+      present in the inserts.
+    * `:none` — no fields are replaced (insert-or-nothing).
+    * a list of atoms — only the listed fields are replaced.
+
+  Returns an empty list when no conflict handling applies.
   """
   def build_on_conflict_options(source, inserts, opts) when is_list(inserts) do
     with schema when not is_nil(schema) <- normalize_schema(source),

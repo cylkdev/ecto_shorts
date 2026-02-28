@@ -22,11 +22,18 @@ defmodule EctoShorts.CommonSchema do
   This approach allows reusing schema modules across different tables,
   as long as the table structure matches the schema definition.
   """
+  alias Ecto.Changeset
   alias Ecto.Queryable
   alias EctoShorts.CommonQuery
 
   @doc """
-  ...
+  Converts a source into an `Ecto.Query`.
+
+  Accepts an `Ecto.Query` (returned as-is), a schema module, a table name
+  string, or a `{table_name, schema}` tuple. Normalizes the source via
+  `normalize_source/1` before conversion.
+
+  Returns an `Ecto.Query` struct.
   """
   def to_query(%Ecto.Query{} = query), do: query
 
@@ -39,7 +46,13 @@ defmodule EctoShorts.CommonSchema do
   end
 
   @doc """
-  ...
+  Normalizes a source into a `{table_name, schema}` tuple.
+
+  Accepts a schema module, a table name string, a `{table_name, schema}`
+  tuple, a schema struct, a changeset, or an `Ecto.Query`. Returns a
+  `{binary() | nil, module() | nil}` tuple.
+
+  Raises `ArgumentError` if the source cannot be recognized.
   """
   def normalize_source(%{data: %{__meta__: %{source: source, schema: schema}}}) do
     {source, schema}
@@ -96,7 +109,10 @@ defmodule EctoShorts.CommonSchema do
   end
 
   @doc """
-  ...
+  Extracts the schema module from a source.
+
+  Accepts any input recognized by `normalize_source/1`. Returns the schema
+  module atom, or `nil` if no schema is present.
   """
   def get_schema(source) do
     case normalize_source(source) do
@@ -302,7 +318,13 @@ defmodule EctoShorts.CommonSchema do
   end
 
   @doc """
-  ...
+  Creates an Ecto schema struct from a source.
+
+  Accepts a schema module, a `{table_name, schema}` tuple, or any input
+  recognized by `normalize_source/1`. When a custom table name is provided,
+  the struct's `__meta__` is updated to reflect that source.
+
+  Returns an Ecto schema struct.
   """
   def create_schema_struct({nil, schema}) do
     struct(schema)
@@ -321,14 +343,22 @@ defmodule EctoShorts.CommonSchema do
   end
 
   @doc """
-  `(schema_struct :: Ecto.Schema.t(), params :: map(), options :: keyword())`
-  `(changeset :: Ecto.Changeset.t(), params :: map(), options :: keyword())`
-  `(query_source :: {source_name :: binary(), schema_module :: module()}, schema_struct :: Ecto.Schema.t(), options :: keyword())`
-  `(query_source :: {source_name :: binary(), schema_module :: module()}, changeset :: Ecto.Changeset.t(), options :: keyword())`
-  `(query_source :: {source_name :: binary(), schema_module :: module()}, params :: map(), options :: keyword())`
-  `(schema_module :: module(), schema_struct :: Ecto.Schema.t(), options :: keyword())`
-  `(schema_module :: module(), changeset :: Ecto.Changeset.t(), options :: keyword())`
-  `(schema_module :: module(), params :: map(), options :: keyword())`
+  Builds an `Ecto.Changeset` from various source/data/params combinations.
+
+  This function has 3-arity and 4-arity variants that accept schema modules,
+  `{source, schema}` tuples, schema structs, changesets, or plain param maps
+  in flexible combinations. The goal is to always produce a changeset
+  regardless of how the caller provides the data.
+
+  When the `:changeset` option is present in `opts`, it is used instead of
+  the schema's default `changeset/2`. It can be a 1-arity (receives the
+  built changeset), 2-arity (receives data and params), or 3-arity
+  (receives schema, data, and params) function.
+
+  If no `:changeset` option is given and the schema exports `changeset/2`,
+  that function is called. Otherwise falls back to `Ecto.Changeset.change/2`.
+
+  Returns an `Ecto.Changeset`.
   """
   def create_changeset(%{data: %{__meta__: %{schema: schema}}} = changeset, params, opts) do
     create_changeset(schema, changeset, params, opts)
@@ -379,7 +409,7 @@ defmodule EctoShorts.CommonSchema do
       if function_exported?(schema, :changeset, 2) do
         schema.changeset(data_or_changeset, params)
       else
-        Ecto.Changeset.change(data_or_changeset, params)
+        Changeset.change(data_or_changeset, params)
       end
     end
   end
@@ -397,7 +427,7 @@ defmodule EctoShorts.CommonSchema do
           if function_exported?(schema, :changeset, 2) do
             schema.changeset(data_or_changeset, params)
           else
-            Ecto.Changeset.change(data_or_changeset, params)
+            Changeset.change(data_or_changeset, params)
           end
 
         validate_changeset!(fun.(changeset))
@@ -408,7 +438,7 @@ defmodule EctoShorts.CommonSchema do
     end
   end
 
-  defp validate_changeset!(%Ecto.Changeset{} = changeset), do: changeset
+  defp validate_changeset!(%Changeset{} = changeset), do: changeset
 
   defp validate_changeset!(term) do
     raise "Expected an Ecto.Changeset, got: #{inspect(term)}"

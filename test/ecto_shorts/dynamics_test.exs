@@ -4,6 +4,7 @@ defmodule EctoShorts.DynamicsTest do
 
   import Ecto.Query
 
+  alias EctoShorts.CommonFilters
   alias EctoShorts.Dynamics
   alias EctoShorts.Schema.Post
 
@@ -588,7 +589,7 @@ defmodule EctoShorts.DynamicsTest do
 
     subquery_expr =
       Post
-      |> EctoShorts.CommonFilters.convert_params_to_filter(%{id: 1}, [])
+      |> CommonFilters.convert_params_to_filter(%{id: 1}, [])
       |> select([p], p.id)
 
     expected = dynamic([q], field(q, ^:id) > all(subquery_expr))
@@ -618,7 +619,7 @@ defmodule EctoShorts.DynamicsTest do
 
     subquery_expr =
       Post
-      |> EctoShorts.CommonFilters.convert_params_to_filter(%{id: 1}, [])
+      |> CommonFilters.convert_params_to_filter(%{id: 1}, [])
       |> select([p], p.id)
 
     expected = dynamic([q], not (field(q, ^:id) > all(subquery_expr)))
@@ -648,7 +649,7 @@ defmodule EctoShorts.DynamicsTest do
 
     subquery_expr =
       Post
-      |> EctoShorts.CommonFilters.convert_params_to_filter(%{id: 1}, [])
+      |> CommonFilters.convert_params_to_filter(%{id: 1}, [])
       |> select([p], p.id)
 
     expected = dynamic([q], field(q, ^:id) > any(subquery_expr))
@@ -678,7 +679,7 @@ defmodule EctoShorts.DynamicsTest do
 
     subquery_expr =
       Post
-      |> EctoShorts.CommonFilters.convert_params_to_filter(%{id: 1}, [])
+      |> CommonFilters.convert_params_to_filter(%{id: 1}, [])
       |> select([p], p.id)
 
     expected = dynamic([q], not (field(q, ^:id) > any(subquery_expr)))

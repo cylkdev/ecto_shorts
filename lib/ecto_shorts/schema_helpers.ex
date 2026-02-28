@@ -134,7 +134,9 @@ defmodule EctoShorts.SchemaHelpers do
   def schema_struct?(_), do: false
 
   @doc """
-  ...
+  Returns `true` if the given module exports `__schema__/2`, indicating
+  it is an Ecto schema module. Returns `false` for `nil`, non-atoms, or
+  modules that do not export the function.
   """
   def schema_module?(module) when is_atom(module) and module !== nil do
     function_exported?(module, :__schema__, 2)
@@ -142,6 +144,10 @@ defmodule EctoShorts.SchemaHelpers do
 
   def schema_module?(_), do: false
 
+  @doc """
+  Returns `true` if the given map or struct has a non-nil `:id` (or `"id"`) key,
+  indicating the record has been persisted. Returns `false` otherwise.
+  """
   def any_created?(%{id: id}), do: id !== nil
   def any_created?(%{"id" => id}), do: id !== nil
   def any_created?(_), do: false

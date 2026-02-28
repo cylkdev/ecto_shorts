@@ -1,6 +1,8 @@
 defmodule EctoShorts.ActionsTest do
   use EctoShorts.DataCase
 
+  alias Ecto.Changeset
+  alias Ecto.Multi
   alias EctoShorts.Actions
   alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
@@ -188,7 +190,7 @@ defmodule EctoShorts.ActionsTest do
       |> Post.changeset(%{title: "A", permalink: "create-dup"})
       |> Repo.insert!()
 
-      assert {:error, %Ecto.Changeset{} = changeset} =
+      assert {:error, %Changeset{} = changeset} =
                Actions.create(Post, %{title: "B", permalink: "create-dup"})
 
       assert "has already been taken" in errors_on(changeset).permalink
@@ -485,20 +487,20 @@ defmodule EctoShorts.ActionsTest do
 
     test "runs an Ecto.Multi and returns the operation results" do
       multi =
-        Ecto.Multi.new()
-        |> Ecto.Multi.insert(:post_a, Post.changeset(%Post{}, %{title: "A"}))
-        |> Ecto.Multi.insert(:post_b, Post.changeset(%Post{}, %{title: "B"}))
+        Multi.new()
+        |> Multi.insert(:post_a, Post.changeset(%Post{}, %{title: "A"}))
+        |> Multi.insert(:post_b, Post.changeset(%Post{}, %{title: "B"}))
 
       assert {:ok, [%Post{title: "A"}, %Post{title: "B"}]} = Actions.transact(multi, repo: Repo)
     end
 
     test "returns {:error, changeset} when an Ecto.Multi operation fails and rolls back" do
       multi =
-        Ecto.Multi.new()
-        |> Ecto.Multi.insert(:post_a, Post.changeset(%Post{}, %{title: "A", permalink: "dup"}))
-        |> Ecto.Multi.insert(:post_b, Post.changeset(%Post{}, %{title: "B", permalink: "dup"}))
+        Multi.new()
+        |> Multi.insert(:post_a, Post.changeset(%Post{}, %{title: "A", permalink: "dup"}))
+        |> Multi.insert(:post_b, Post.changeset(%Post{}, %{title: "B", permalink: "dup"}))
 
-      assert {:error, %Ecto.Changeset{}} = Actions.transact(multi, repo: Repo)
+      assert {:error, %Changeset{}} = Actions.transact(multi, repo: Repo)
     end
   end
 
@@ -903,7 +905,7 @@ defmodule EctoShorts.ActionsTest do
                   schema: Post,
                   action: :create,
                   index: 1,
-                  changeset: %Ecto.Changeset{},
+                  changeset: %Changeset{},
                   params: %{permalink: "exising"}
                 }
               }} = Actions.create_many(Post, params)
@@ -921,7 +923,7 @@ defmodule EctoShorts.ActionsTest do
                 message: "failed to create record.",
                 details: %{
                   index: 1,
-                  changeset: %Ecto.Changeset{},
+                  changeset: %Changeset{},
                   params: %{permalink: "create-many-dup"}
                 }
               }} =
@@ -1022,7 +1024,7 @@ defmodule EctoShorts.ActionsTest do
                   schema: Post,
                   action: :update,
                   index: 1,
-                  changeset: %Ecto.Changeset{},
+                  changeset: %Changeset{},
                   params: %{views: "not_an_integer"}
                 }
               }} =
@@ -1079,8 +1081,8 @@ defmodule EctoShorts.ActionsTest do
         |> Post.changeset(%{title: "Blocked"})
         |> Repo.insert!()
 
-      %EctoShorts.Schema.Comment{}
-      |> EctoShorts.Schema.Comment.changeset(%{body: "hello", post_id: blocked.id})
+      %Comment{}
+      |> Comment.changeset(%{body: "hello", post_id: blocked.id})
       |> Repo.insert!()
 
       assert {:error, %{code: :conflict, message: "failed to delete record."}} =

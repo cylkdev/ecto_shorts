@@ -1,5 +1,10 @@
 defmodule EctoShorts.CommonFilters.OrderBy do
-  @moduledoc false
+  @moduledoc """
+  Builds `:order_by` and `:prepend_order_by` expressions from data-driven params.
+
+  Accepts single field atoms, `{direction, field}` tuples, lists of either,
+  and dynamic expressions. Supports binding-scoped params via the `:bind` key.
+  """
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters.BindParams

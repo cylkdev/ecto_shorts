@@ -1,5 +1,15 @@
 defmodule EctoShorts.CommonFilters.BindParams do
-  @moduledoc false
+  @moduledoc """
+  Routes `:bind` params to the correct binding selector.
+
+  When a filter params map contains a `:bind` key, this module unpacks the
+  nested `{:as, target}` or `{:at, target}` selectors and dispatches each
+  scoped param set back to `CommonFilters.reduce_filter_params/6` with the
+  appropriate binding selector. Also provides `reduce_submodule_bind_params/3`
+  for use by other query builder submodules (e.g., OrderBy, GroupBy, Windows).
+  """
+
+  alias EctoShorts.CommonFilters
 
   @binding_selector_modes [:as, :at]
 
@@ -165,7 +175,7 @@ defmodule EctoShorts.CommonFilters.BindParams do
        ) do
     case {binding_mode, binding_target} do
       {:as, bind_alias} when is_atom(bind_alias) ->
-        EctoShorts.CommonFilters.reduce_filter_params(
+        CommonFilters.reduce_filter_params(
           schema_source,
           query,
           {:as, bind_alias},
@@ -175,7 +185,7 @@ defmodule EctoShorts.CommonFilters.BindParams do
         )
 
       {:at, bind_index} when is_integer(bind_index) ->
-        EctoShorts.CommonFilters.reduce_filter_params(
+        CommonFilters.reduce_filter_params(
           schema_source,
           query,
           {:at, bind_index},

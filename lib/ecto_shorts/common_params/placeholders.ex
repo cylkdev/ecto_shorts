@@ -1,5 +1,11 @@
 defmodule EctoShorts.CommonParams.Placeholders do
-  @moduledoc false
+  @moduledoc """
+  Replaces matching field values with placeholder tuples for `insert_all`.
+
+  When a field's value matches the configured placeholder value, it is
+  replaced with `{:placeholder, field_name}`. Conflict behavior is
+  controlled by the `:on_placeholder_conflict` option.
+  """
 
   def put_placeholders(data, placeholders, opts) do
     Enum.reduce(placeholders, data, &put_placeholder(&1, &2, opts))

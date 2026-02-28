@@ -27,6 +27,9 @@ defmodule EctoShorts.CommonQuery do
   alias Ecto.Queryable
   alias EctoShorts.SchemaHelpers
 
+  @doc """
+  Returns the query prefix for the given queryable, or `nil` if none is set.
+  """
   def get_query_prefix(queryable) do
     case queryable |> to_query!() |> get_query_source_expr() do
       %{prefix: prefix} -> prefix
