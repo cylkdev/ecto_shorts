@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonParams.Placeholders do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Replaces matching field values with placeholder tuples for `insert_all`.
 

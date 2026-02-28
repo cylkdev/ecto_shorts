@@ -1,4 +1,5 @@
 defmodule EctoShorts.Testing do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   This API provides helpers to make testing easier in Ecto.
 

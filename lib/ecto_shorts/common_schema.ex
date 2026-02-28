@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonSchema do
-  @moduledoc since: "2.5.0"
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Provides utility functions for working with Ecto schemas,
   particularly when dealing with polymorphic associations.

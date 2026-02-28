@@ -1,4 +1,5 @@
 defmodule EctoShorts.Compiler.ClauseSpec do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Validates clause specs so they can generate `apply_dynamic_expr/3` clauses.
 

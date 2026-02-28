@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.Join do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds join expressions from data-driven params.
 

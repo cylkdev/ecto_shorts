@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.Update do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:update` expressions from data-driven params.
 

@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.GroupBy do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:group_by` expressions from data-driven params.
 

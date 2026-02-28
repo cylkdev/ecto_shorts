@@ -1,4 +1,5 @@
 defmodule EctoShorts.Dynamics.Adapters.Postgres do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Postgres-specific dynamic expression adapter.
 

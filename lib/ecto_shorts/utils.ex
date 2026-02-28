@@ -1,4 +1,5 @@
 defmodule EctoShorts.Utils do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   General-purpose utility functions used internally by EctoShorts.
 

@@ -1,4 +1,5 @@
 defmodule EctoShorts.Compiler.AST do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   AST helper functions for building dynamic query expressions at compile time.
 

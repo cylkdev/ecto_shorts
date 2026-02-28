@@ -52,7 +52,7 @@ defmodule EctoShorts.Actions do
   @cardinalities [:one, :many]
 
   @doc group: "CRUD"
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Preloads associations on the given struct or list of structs.
 
@@ -71,7 +71,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "CRUD"
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Checks if there exists an entry that matches the given filter params.
 
@@ -392,6 +392,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "CRUD"
+  @doc since: "3.0.0"
   @doc """
   Finds a record matching `find_params` and creates one with `create_params` when not found.
 
@@ -434,6 +435,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "CRUD"
+  @doc since: "3.0.0"
   @doc """
   Finds a record matching `find_params` and deletes it.
 
@@ -470,6 +472,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Transaction"
+  @doc since: "3.0.0"
   @doc """
   Runs the given function or `Ecto.Multi` in a transaction.
 
@@ -482,6 +485,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Transaction"
+  @doc since: "3.0.0"
   @doc """
   Runs a transaction with normalized return values.
 
@@ -514,6 +518,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Batch"
+  @doc since: "3.0.0"
   @doc """
   Batches records by key(s) and cardinality.
 
@@ -572,6 +577,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Batch"
+  @doc since: "3.0.0"
   @doc """
   Preloads batch lookup records and zips them with original entries.
 
@@ -606,6 +612,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Bulk"
+  @doc since: "3.0.0"
   @doc """
   Inserts many records from a params list using `Ecto.Repo.insert_all/3`.
 
@@ -653,6 +660,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Bulk"
+  @doc since: "3.0.0"
   @doc """
   Updates all records matching `find_params` with `update_params`.
 
@@ -675,6 +683,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Bulk"
+  @doc since: "3.0.0"
   @doc """
   Deletes all records matching the given filter params.
 
@@ -690,6 +699,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Multi"
+  @doc since: "3.0.0"
   @doc """
   Creates many records in a transaction.
 
@@ -709,6 +719,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Multi"
+  @doc since: "3.0.0"
   @doc """
   Finds many records in a transaction.
 
@@ -728,6 +739,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Multi"
+  @doc since: "3.0.0"
   @doc """
   Updates many records in a transaction.
 
@@ -747,6 +759,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Multi"
+  @doc since: "3.0.0"
   @doc """
   Deletes many records in a transaction.
 
@@ -765,6 +778,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Multi"
+  @doc since: "3.0.0"
   @doc """
   Finds or creates many records in a transaction.
 
@@ -782,6 +796,7 @@ defmodule EctoShorts.Actions do
   end
 
   @doc group: "Multi"
+  @doc since: "3.0.0"
   @doc """
   Finds and upserts many records in a transaction.
 

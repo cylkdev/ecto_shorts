@@ -1,4 +1,5 @@
 defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExpr do
+  @moduledoc since: "3.0.0"
   @moduledoc false
 
   use EctoShorts.Compiler,

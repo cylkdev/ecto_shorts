@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.WithNamedBinding do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:with_named_binding` expressions from data-driven params.
 

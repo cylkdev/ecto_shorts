@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.SubQuery do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Wraps a filtered query in `Ecto.Query.subquery/1`.
   """

@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.Filter do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Default query builder for WHERE clauses, set operations, and query-level filters.
 

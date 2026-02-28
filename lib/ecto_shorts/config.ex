@@ -10,6 +10,7 @@ defmodule EctoShorts.Config do
 
   @app :ecto_shorts
 
+  @doc since: "3.0.0"
   @doc """
   Returns the configured `:error_module` value from the `:ecto_shorts` application environment.
 
@@ -40,7 +41,7 @@ defmodule EctoShorts.Config do
     Application.get_env(@app, :repo)
   end
 
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Returns the configured `:replica` value from the `:ecto_shorts` application environment.
 
@@ -56,7 +57,7 @@ defmodule EctoShorts.Config do
     Application.get_env(@app, :replica)
   end
 
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Returns the `Ecto.Repo` module to use.
 
@@ -100,7 +101,7 @@ defmodule EctoShorts.Config do
     end
   end
 
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Returns the `Ecto.Repo` module to use for read (replica) operations.
 
@@ -160,7 +161,7 @@ defmodule EctoShorts.Config do
     end
   end
 
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Returns the dynamic adapter module.
 
@@ -175,7 +176,7 @@ defmodule EctoShorts.Config do
     Application.get_env(@app, :dynamic_adapter)
   end
 
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Returns the configured join source module.
   """
@@ -184,7 +185,7 @@ defmodule EctoShorts.Config do
     Application.get_env(@app, :query_source_provider)
   end
 
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Returns the max positional bindings.
 

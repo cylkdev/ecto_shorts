@@ -4,7 +4,7 @@ defmodule EctoShorts.MixProject do
   def project do
     [
       app: :ecto_shorts,
-      version: "2.5.0",
+      version: "3.0.0",
       elixir: "~> 1.17",
       start_permanent: Mix.env() === :prod,
       aliases: aliases(),

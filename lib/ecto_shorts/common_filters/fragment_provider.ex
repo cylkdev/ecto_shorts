@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.FragmentProvider do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Default no-op fragment expression provider.
 

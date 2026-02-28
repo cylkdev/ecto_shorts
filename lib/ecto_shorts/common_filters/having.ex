@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.Having do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:having` and `:or_having` expressions from data-driven params.
 

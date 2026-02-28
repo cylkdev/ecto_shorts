@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.WithTies do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:with_ties` expressions from data-driven params.
 

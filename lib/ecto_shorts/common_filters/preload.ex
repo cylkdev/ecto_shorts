@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.Preload do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:preload` expressions from data-driven params.
 

@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.OrderBy do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:order_by` and `:prepend_order_by` expressions from data-driven params.
 

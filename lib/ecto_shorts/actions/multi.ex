@@ -1,4 +1,5 @@
 defmodule EctoShorts.Actions.Multi do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `Ecto.Multi` structs for transactional batch operations.
 

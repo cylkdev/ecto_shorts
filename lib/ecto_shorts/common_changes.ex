@@ -59,7 +59,7 @@ defmodule EctoShorts.CommonChanges do
 
   require Logger
 
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Returns `true` if the given field (or all fields in a list) have no pending change.
 
@@ -78,7 +78,7 @@ defmodule EctoShorts.CommonChanges do
     |> is_nil()
   end
 
-  @doc since: "2.5.0"
+  @doc since: "3.0.0"
   @doc """
   Returns `true` if the given field (or all fields in a list) have an empty change.
 
@@ -99,6 +99,7 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
+  @doc since: "3.0.0"
   @doc """
   Prevents a field or list of fields from being set to nil if it already exists in persisted data.
 
@@ -130,6 +131,7 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
+  @doc since: "3.0.0"
   @doc "Truncates datetime changes on the given field(s) to the specified precision."
   def truncate_datetime_change(changeset, fields, precision \\ :second)
 
@@ -151,6 +153,7 @@ defmodule EctoShorts.CommonChanges do
     end)
   end
 
+  @doc since: "3.0.0"
   @doc "Trims whitespace from string changes on the given field(s)."
   def trim_string_change(changeset, fields) do
     fields
@@ -163,6 +166,7 @@ defmodule EctoShorts.CommonChanges do
     end)
   end
 
+  @doc since: "3.0.0"
   @doc """
   Puts a change only if the field has no pending change.
 
@@ -181,6 +185,7 @@ defmodule EctoShorts.CommonChanges do
     end
   end
 
+  @doc since: "3.0.0"
   @doc """
   Puts a change only if the field's current value (data or changes) is `nil`.
 
@@ -203,6 +208,7 @@ defmodule EctoShorts.CommonChanges do
   defp resolve_value(fun, _) when is_function(fun, 0), do: fun.()
   defp resolve_value(value, _), do: value
 
+  @doc since: "3.0.0"
   @doc "Applies `change_func` to the changeset only when `when_func` returns `true`."
   def apply_when(changeset, when_func, change_func) do
     if when_func.(changeset) do

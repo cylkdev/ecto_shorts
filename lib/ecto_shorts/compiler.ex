@@ -1,4 +1,5 @@
 defmodule EctoShorts.Compiler do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Defines the spec-driven compiler for `apply_dynamic_expr/3` clauses.
 

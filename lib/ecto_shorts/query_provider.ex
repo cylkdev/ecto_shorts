@@ -1,4 +1,5 @@
 defmodule EctoShorts.QueryProvider do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Resolves expression callbacks via the configured query source provider.
 

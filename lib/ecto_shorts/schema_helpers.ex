@@ -1,10 +1,11 @@
 defmodule EctoShorts.SchemaHelpers do
-  @moduledoc since: "2.5.0"
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Provides helper functions for common checks on
   Ecto schema data.
   """
 
+  @doc since: "3.0.0"
   @doc """
   Recursively resolves the related schema module for an association
   key on a given schema module.
@@ -44,6 +45,7 @@ defmodule EctoShorts.SchemaHelpers do
     end
   end
 
+  @doc since: "3.0.0"
   @doc """
   Returns the declared Ecto type of a given field in a schema.
 
@@ -63,6 +65,7 @@ defmodule EctoShorts.SchemaHelpers do
   """
   def schema_field_type(schema, key), do: schema.__schema__(:type, key)
 
+  @doc since: "3.0.0"
   @doc """
   Returns `true` if the value of `key` is an `Ecto.Association.NotLoaded`
   struct, otherwise `false.`
@@ -80,6 +83,7 @@ defmodule EctoShorts.SchemaHelpers do
     |> is_struct(Ecto.Association.NotLoaded)
   end
 
+  @doc since: "3.0.0"
   @doc """
   Returns `true` if all items in the given list are Ecto
   schema structs, otherwise returns `false`.
@@ -100,6 +104,7 @@ defmodule EctoShorts.SchemaHelpers do
   def all_schema_struct?(map) when map === %{}, do: false
   def all_schema_struct?(enum), do: Enum.all?(enum, &schema_struct?/1)
 
+  @doc since: "3.0.0"
   @doc """
   Returns `true` if any item in the given list is an Ecto
   schema struct, otherwise returns `false`.
@@ -118,6 +123,7 @@ defmodule EctoShorts.SchemaHelpers do
   """
   def any_schema_struct?(values), do: Enum.any?(values, &schema_struct?/1)
 
+  @doc since: "3.0.0"
   @doc """
   Returns `true` if the given value is an Ecto schema struct,
   otherwise returns `false`.
@@ -133,6 +139,7 @@ defmodule EctoShorts.SchemaHelpers do
   def schema_struct?(%{__meta__: %{schema: schema}}), do: schema_module?(schema)
   def schema_struct?(_), do: false
 
+  @doc since: "3.0.0"
   @doc """
   Returns `true` if the given module exports `__schema__/2`, indicating
   it is an Ecto schema module. Returns `false` for `nil`, non-atoms, or

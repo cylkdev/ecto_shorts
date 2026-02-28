@@ -1,4 +1,5 @@
 defmodule EctoShorts.Compiler.QueryBindingBuilder do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Generates positional and named binding pattern ASTs at compile time.
 

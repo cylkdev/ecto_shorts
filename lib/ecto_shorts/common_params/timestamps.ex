@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonParams.Timestamps do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Manages `inserted_at` and `updated_at` timestamps for bulk operations.
 

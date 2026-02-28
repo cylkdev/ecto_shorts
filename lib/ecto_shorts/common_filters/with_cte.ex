@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.WithCte do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:with_cte` (Common Table Expression) clauses from data-driven params.
 

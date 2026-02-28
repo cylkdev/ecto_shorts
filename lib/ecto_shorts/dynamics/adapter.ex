@@ -1,4 +1,5 @@
 defmodule EctoShorts.Dynamics.Adapter do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Defines the behaviour for dynamic expression adapters.
 

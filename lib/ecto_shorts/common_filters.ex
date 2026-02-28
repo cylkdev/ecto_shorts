@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Converts maps and keyword lists of filter params into `Ecto.Query` structs.
 

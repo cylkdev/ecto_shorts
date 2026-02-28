@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.Distinct do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:distinct` expressions from data-driven params.
 

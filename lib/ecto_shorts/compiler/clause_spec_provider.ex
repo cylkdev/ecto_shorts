@@ -1,4 +1,5 @@
 defmodule EctoShorts.Compiler.ClauseSpecProvider do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Defines the behaviour for clause spec providers.
 

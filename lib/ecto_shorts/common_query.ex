@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonQuery do
-  @moduledoc since: "2.5.0"
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Provides functions for introspecting `Ecto.Query` structures.
 

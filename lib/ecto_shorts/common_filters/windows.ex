@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.Windows do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:windows` expressions from data-driven params.
 

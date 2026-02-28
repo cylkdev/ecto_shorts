@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonParams do
-  @moduledoc since: "2.5.0"
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Provides helper functions for preparing data used with the
   Ecto repo functions `update_all` and `insert_all`.

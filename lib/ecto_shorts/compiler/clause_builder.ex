@@ -1,4 +1,5 @@
 defmodule EctoShorts.Compiler.ClauseBuilder do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds quoted `apply_dynamic_expr/3` clauses from validated clause specs.
   """

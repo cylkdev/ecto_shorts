@@ -1,4 +1,5 @@
 defmodule EctoShorts.Actions.Batch do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Normalizes batch lookup params and groups fetched records by batch key.
 

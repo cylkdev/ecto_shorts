@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.Select do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Builds `:select` and `:select_merge` expressions from data-driven params.
 

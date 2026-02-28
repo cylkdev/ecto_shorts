@@ -1,4 +1,5 @@
 defmodule EctoShorts.CommonFilters.BindParams do
+  @moduledoc since: "3.0.0"
   @moduledoc """
   Routes `:bind` params to the correct binding selector.
 
