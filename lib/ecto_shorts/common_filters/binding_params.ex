@@ -1,4 +1,4 @@
-defmodule EctoShorts.CommonFilters.BindParams do
+defmodule EctoShorts.CommonFilters.BindingParams do
   @moduledoc since: "3.0.0"
   @moduledoc """
   Routes `:bind` params to the correct binding selector.
@@ -14,7 +14,7 @@ defmodule EctoShorts.CommonFilters.BindParams do
 
   @binding_selector_modes [:as, :at]
 
-  def reduce_bind_params(
+  def build_binding_params(
         schema_source,
         query,
         binding_selector,
@@ -23,7 +23,7 @@ defmodule EctoShorts.CommonFilters.BindParams do
         opts
       )
       when is_map(bind_params) and not is_struct(bind_params) do
-    reduce_bind_params(
+    build_binding_params(
       schema_source,
       query,
       binding_selector,
@@ -33,7 +33,7 @@ defmodule EctoShorts.CommonFilters.BindParams do
     )
   end
 
-  def reduce_bind_params(
+  def build_binding_params(
         schema_source,
         query,
         _binding_selector,
@@ -64,7 +64,7 @@ defmodule EctoShorts.CommonFilters.BindParams do
     end)
   end
 
-  def reduce_bind_params(
+  def build_binding_params(
         _schema_source,
         _query,
         _binding_selector,

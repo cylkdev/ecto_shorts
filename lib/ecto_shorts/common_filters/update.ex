@@ -9,7 +9,7 @@ defmodule EctoShorts.CommonFilters.Update do
   """
 
   alias Ecto.Query
-  alias EctoShorts.CommonFilters.BindParams
+  alias EctoShorts.CommonFilters.BindingParams
   alias EctoShorts.Compiler
 
   require Ecto.Query
@@ -77,7 +77,7 @@ defmodule EctoShorts.CommonFilters.Update do
   end
 
   defp reduce_update_bind(query, _binding_selector, bind_params, opts) do
-    BindParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
+    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
       build(nil, :update, q, {mode, target}, value, opts)
     end)
   end

@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
   """
 
   alias Ecto.Query
-  alias EctoShorts.CommonFilters.BindParams
+  alias EctoShorts.CommonFilters.BindingParams
   alias EctoShorts.Compiler
   alias EctoShorts.Logger
 
@@ -69,7 +69,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
   end
 
   defp reduce_with_ties_bind(query, _binding_selector, bind_params) do
-    BindParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
+    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
       reduce_with_ties(q, {mode, target}, value)
     end)
   end

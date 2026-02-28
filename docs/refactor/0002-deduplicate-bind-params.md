@@ -10,14 +10,14 @@ Eight filter submodules under `lib/ecto_shorts/common_filters/` each contain a p
 
 This duplication means that any bug fix or behaviour change to bind-parameter handling must be applied in eight places. It also inflates total line count by approximately 280 lines of near-identical code.
 
-This refactor extracts the common algorithm into a single shared function in `EctoShorts.CommonFilters.BindParams`, parameterized by a callback. Each submodule replaces its private copy with a one-line call to the shared function, passing a closure that dispatches to its own reducer. No public API changes. All existing tests continue to pass.
+This refactor extracts the common algorithm into a single shared function in `EctoShorts.CommonFilters.BindingParams`, parameterized by a callback. Each submodule replaces its private copy with a one-line call to the shared function, passing a closure that dispatches to its own reducer. No public API changes. All existing tests continue to pass.
 
 To verify behaviour is preserved, run `mix test` from the repository root. All tests must pass after every milestone.
 
 ## Progress
 
 - [x] (2026-02-28 12:50Z) Wrote RefactorPlan.
-- [x] (2026-02-28 12:51Z) Milestone 1: Added `reduce_submodule_bind_params/3` to BindParams. Tests pass (645 tests, 0 failures).
+- [x] (2026-02-28 12:51Z) Milestone 1: Added `reduce_submodule_bind_params/3` to BindingParams. Tests pass (645 tests, 0 failures).
 - [x] (2026-02-28 12:53Z) Milestone 2: Replaced duplicates in Distinct, GroupBy, WithTies, Windows. Tests pass (645 tests, 0 failures).
 - [x] (2026-02-28 12:55Z) Milestone 3: Replaced duplicates in OrderBy, Update, Select, Preload. Tests pass (645 tests, 0 failures).
 - [x] (2026-02-28 12:56Z) Milestone 4: Final validation. `mix format` clean. `mix test` - 645 tests, 0 failures. `mix credo --strict` - no new warnings (pre-existing only). Credo `mods/funs` count dropped from 749 to 735 (14 fewer function clauses).
@@ -29,8 +29,8 @@ To verify behaviour is preserved, run `mix test` from the repository root. All t
 
 ## Decision Log
 
-- Decision: Add a new public function `reduce_submodule_bind_params/3` to the existing `BindParams` module rather than creating a new module.
-  Rationale: `BindParams` already exists as the centralized bind-parameter handling module. Adding to it keeps the abstraction in one place. The function is `@doc false` since it is internal.
+- Decision: Add a new public function `reduce_submodule_bind_params/3` to the existing `BindingParams` module rather than creating a new module.
+  Rationale: `BindingParams` already exists as the centralized bind-parameter handling module. Adding to it keeps the abstraction in one place. The function is `@doc false` since it is internal.
   Date/Author: 2026-02-28 / Cascade
 
 - Decision: The callback signature is `callback.(query, {binding_mode, binding_target}, value)` returning the updated query.
@@ -39,7 +39,7 @@ To verify behaviour is preserved, run `mix test` from the repository root. All t
 
 ## Outcomes & Retrospective
 
-The refactor is complete. Eight near-identical `reduce_*_bind` private functions (each ~40 lines) were replaced with single-line calls to the new shared `BindParams.reduce_submodule_bind_params/3`. This eliminated approximately 280 lines of duplicated code and reduced the credo `mods/funs` count from 749 to 735 (14 fewer function clauses).
+The refactor is complete. Eight near-identical `reduce_*_bind` private functions (each ~40 lines) were replaced with single-line calls to the new shared `BindingParams.reduce_submodule_bind_params/3`. This eliminated approximately 280 lines of duplicated code and reduced the credo `mods/funs` count from 749 to 735 (14 fewer function clauses).
 
 The behaviour boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same `ArgumentError` messages are raised for invalid bind params. `mix format` is clean. `mix credo --strict` shows no new warnings.
 
@@ -54,7 +54,7 @@ Files changed:
 - `lib/ecto_shorts/common_filters/windows.ex` - replaced `reduce_windows_bind/3` (removed ~40 lines)
 - `lib/ecto_shorts/common_filters/with_ties.ex` - replaced `reduce_with_ties_bind/3` (removed ~40 lines)
 
-Follow-up opportunity: The `Having` module does not use the `:bind` pattern at all (it uses dynamic expressions directly), so it was not affected by this refactor. If `:bind` support is added to `Having` in the future, it should use `BindParams.reduce_submodule_bind_params/3` rather than adding a private copy.
+Follow-up opportunity: The `Having` module does not use the `:bind` pattern at all (it uses dynamic expressions directly), so it was not affected by this refactor. If `:bind` support is added to `Having` in the future, it should use `BindingParams.reduce_submodule_bind_params/3` rather than adding a private copy.
 
 ## Context and Orientation
 
@@ -62,7 +62,7 @@ EctoShorts is an Elixir library that provides a data-driven API for Ecto query c
 
 Most submodules support a `:bind` key in their params that allows callers to target specific query bindings (by name with `:as` or by position with `:at`). The handling of this `:bind` key follows an identical pattern across all eight modules, but each module has its own private copy.
 
-The existing `EctoShorts.CommonFilters.BindParams` module at `lib/ecto_shorts/common_filters/bind_params.ex` already handles bind-parameter dispatch for the top-level `CommonFilters` module. This refactor extends it with a reusable helper for submodules.
+The existing `EctoShorts.CommonFilters.BindingParams` module at `lib/ecto_shorts/common_filters/bind_params.ex` already handles bind-parameter dispatch for the top-level `CommonFilters` module. This refactor extends it with a reusable helper for submodules.
 
 Key files:
 - `lib/ecto_shorts/common_filters/bind_params.ex` - existing bind-param helper (will be extended)
@@ -95,7 +95,7 @@ Extract Function (`.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTI
 
 The work proceeds in four milestones. Each milestone is independently verifiable.
 
-Milestone 1 adds the shared helper function to `BindParams`. Milestones 2 and 3 replace the duplicated private functions in the eight submodules, split into two batches for manageable diffs. Milestone 4 runs the full quality check suite.
+Milestone 1 adds the shared helper function to `BindingParams`. Milestones 2 and 3 replace the duplicated private functions in the eight submodules, split into two batches for manageable diffs. Milestone 4 runs the full quality check suite.
 
 ## Concrete Steps
 
@@ -128,17 +128,17 @@ In `lib/ecto_shorts/common_filters/bind_params.ex`, the new function:
 
 Where `callback` is `(query, {binding_mode, binding_target}, value) -> query`.
 
-All existing public functions in `BindParams` remain unchanged. All `defp` functions in the eight submodules that are being replaced are private and have no external callers.
+All existing public functions in `BindingParams` remain unchanged. All `defp` functions in the eight submodules that are being replaced are private and have no external callers.
 
 ## Milestones
 
-### Milestone 1: Add shared helper to BindParams
+### Milestone 1: Add shared helper to BindingParams
 
 Add `reduce_submodule_bind_params/3` to `lib/ecto_shorts/common_filters/bind_params.ex`. This function implements the common bind-parameter validation and dispatch algorithm, taking a callback for the variable step. No existing code is modified. Run `mix format` and `mix test`. All tests pass because the new function is not yet called.
 
 ### Milestone 2: Replace duplicates in batch 1 (Distinct, GroupBy, WithTies, Windows)
 
-In each of these four modules, delete the private `reduce_*_bind` function clauses and replace the call site with a call to `BindParams.reduce_submodule_bind_params/3`, passing a closure that calls the module's own reducer. Remove the now-unused `@binding_selector_modes` module attribute if it becomes unused. Run `mix format` and `mix test` after each file.
+In each of these four modules, delete the private `reduce_*_bind` function clauses and replace the call site with a call to `BindingParams.reduce_submodule_bind_params/3`, passing a closure that calls the module's own reducer. Remove the now-unused `@binding_selector_modes` module attribute if it becomes unused. Run `mix format` and `mix test` after each file.
 
 ### Milestone 3: Replace duplicates in batch 2 (OrderBy, Update, Select, Preload)
 

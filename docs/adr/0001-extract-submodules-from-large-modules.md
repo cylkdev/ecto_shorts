@@ -20,7 +20,7 @@ The question was: how should we restructure these modules to reduce their size a
 
 ## Considered Options
 
-1. **Extract focused submodules** (chosen): Create child modules under each namespace (`Actions.Multi`, `Actions.Batch`, `CommonFilters.BindParams`, `CommonParams.Timestamps`, `CommonParams.Placeholders`) and move cohesive groups of private functions there. The parent modules delegate to the children internally. Replace repetitive function-clause dispatch in `CommonFilters` with a map-based lookup. Consolidate duplicated `get_query_fields/2` into `CommonSchema`.
+1. **Extract focused submodules** (chosen): Create child modules under each namespace (`Actions.Multi`, `Actions.Batch`, `CommonFilters.BindingParams`, `CommonParams.Timestamps`, `CommonParams.Placeholders`) and move cohesive groups of private functions there. The parent modules delegate to the children internally. Replace repetitive function-clause dispatch in `CommonFilters` with a map-based lookup. Consolidate duplicated `get_query_fields/2` into `CommonSchema`.
 
 2. **Inline refactor only**: Keep all code in the same modules but restructure internally - extract private helper functions, rename for clarity, reorder for readability. This would not reduce module size and would not address the divergent-change smell.
 
@@ -45,7 +45,7 @@ Chosen option: **Extract focused submodules**, because it directly reduces modul
 **Neutral:**
 
 - Total line count across all affected files increased slightly due to module boilerplate (`defmodule`, `alias`, `@moduledoc false`). This is expected for any extraction.
-- `reduce_filter_params/6` in `CommonFilters` was promoted from `defp` to `@doc false def` so `BindParams` can call back into it. This is an internal-only API change.
+- `reduce_filter_params/6` in `CommonFilters` was promoted from `defp` to `@doc false def` so `BindingParams` can call back into it. This is an internal-only API change.
 
 **Bad:**
 

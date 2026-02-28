@@ -92,7 +92,7 @@ defmodule EctoShorts.MixProject do
           EctoShorts.Actions.Error
         ],
         Filters: [
-          EctoShorts.CommonFilters.BindParams,
+          EctoShorts.CommonFilters.BindingParams,
           EctoShorts.CommonFilters.Distinct,
           EctoShorts.CommonFilters.Filter,
           EctoShorts.CommonFilters.FragmentProviders.NoOp,

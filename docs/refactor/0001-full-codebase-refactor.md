@@ -28,14 +28,14 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
 - [x] (2026-02-28 11:54Z) Milestone 1B: Extracted `EctoShorts.Actions.Batch` - all batch helpers (build_batch_params, normalize_batch_key, handle_batch_response, extract_lookup_params, etc.). 645 tests pass.
 - [x] (2026-02-28 11:56Z) Milestone 1C: Deduplicated `put_order_by`/`put_group_by` into `put_param/3`. Consolidated `get_query_fields/2` into `CommonSchema`. Removed duplicate from `Actions` and `CommonParams`. 645 tests pass.
 - [x] (2026-02-28 11:58Z) Milestone 2A: Replaced 15 `apply_query_builder` function clauses with `@query_builder_modules` map-based dispatch. Kept `:subquery` as special case. 645 tests pass.
-- [x] (2026-02-28 12:00Z) Milestone 2B: Extracted `EctoShorts.CommonFilters.BindParams` - bind-param reduction chain. Promoted `reduce_filter_params` from `defp` to `@doc false def`. 645 tests pass.
+- [x] (2026-02-28 12:00Z) Milestone 2B: Extracted `EctoShorts.CommonFilters.BindingParams` - bind-param reduction chain. Promoted `reduce_filter_params` from `defp` to `@doc false def`. 645 tests pass.
 - [x] (2026-02-28 12:02Z) Milestone 3A: Extracted `EctoShorts.CommonParams.Timestamps` - all timestamp logic (put_timestamps, put_set_updated_at, cast_datetime, truncate_datetime, timestamp_type). 645 tests pass.
 - [x] (2026-02-28 12:04Z) Milestone 3B: Extracted `EctoShorts.CommonParams.Placeholders` - all placeholder logic (put_placeholders, on_placeholder_conflict). 645 tests pass.
 - [x] (2026-02-28 12:05Z) Milestone 4A: Full quality check. `mix test` - 645 tests, 0 failures. `mix credo --strict` - passes (pre-existing warnings only). `mix dialyzer` - 1 pre-existing error in `dynamics.ex` unrelated to this refactor.
 
 ## Surprises & Discoveries
 
-- Observation: The `@binding_selector_modes` module attribute in `CommonFilters` became unused after extracting `BindParams`. Removing it was required to avoid a compiler warning.
+- Observation: The `@binding_selector_modes` module attribute in `CommonFilters` became unused after extracting `BindingParams`. Removing it was required to avoid a compiler warning.
   Evidence: Compiler warning during `mix format && mix test` after Milestone 2B.
 
 - Observation: The `@updated_at`, `@inserted_at`, `@utc_datetime`, and `@naive_datetime` module attributes in `CommonParams` became unused after extracting `Timestamps`. They were all removed.
@@ -46,8 +46,8 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
 
 ## Decision Log
 
-- Decision: Promote `reduce_filter_params` from `defp` to `@doc false def` in `CommonFilters` so that `BindParams` can call back into it.
-  Rationale: `BindParams.reduce_binding_params` needs to dispatch back to the main filter reduction pipeline. Making it public with `@doc false` keeps it internal while avoiding circular module dependencies.
+- Decision: Promote `reduce_filter_params` from `defp` to `@doc false def` in `CommonFilters` so that `BindingParams` can call back into it.
+  Rationale: `BindingParams.reduce_binding_params` needs to dispatch back to the main filter reduction pipeline. Making it public with `@doc false` keeps it internal while avoiding circular module dependencies.
   Date/Author: 2026-02-28 / Cascade
 
 - Decision: Keep `:subquery` as a separate `apply_query_builder` clause instead of including it in the `@query_builder_modules` map.
@@ -120,7 +120,7 @@ Three code smells from the catalog:
 
 ## Refactoring Technique Selected
 
-1. **Extract Module** (`.agent/refactor/techniques/moving_features_between_modules/EXTRACT_MODULE.md`): Used to create `Actions.Multi`, `Actions.Batch`, `CommonFilters.BindParams`, `CommonParams.Timestamps`, and `CommonParams.Placeholders`. Each extracted module has one clear responsibility.
+1. **Extract Module** (`.agent/refactor/techniques/moving_features_between_modules/EXTRACT_MODULE.md`): Used to create `Actions.Multi`, `Actions.Batch`, `CommonFilters.BindingParams`, `CommonParams.Timestamps`, and `CommonParams.Placeholders`. Each extracted module has one clear responsibility.
 
 2. **Extract Function** (`.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`): Used to deduplicate `put_order_by`/`put_group_by` into a single parameterized `put_param/3` helper.
 

@@ -191,10 +191,10 @@ Given a schema with scalar fields like `:id` (integer), `:title` (string), `:pub
 
 - `%{title: %{lower: "hello"}}`
 - `%{title: %{upper: "HELLO"}}`
-- `%{title: %{==: {:lower, "hello"}}}`
-- `%{title: %{==: {:upper, "HELLO"}}}`
-- `%{title: %{!=: {:lower, "hello"}}}`
-- `%{title: %{!=: {:upper, "HELLO"}}}`
+- `%{title: %{==: %{lower: "hello"}}}`
+- `%{title: %{==: %{upper: "HELLO"}}}`
+- `%{title: %{!=: %{lower: "hello"}}}`
+- `%{title: %{!=: %{upper: "HELLO"}}}`
 
 **Negated LOWER / UPPER**
 
@@ -266,24 +266,24 @@ Given a schema with scalar fields like `:id` (integer), `:title` (string), `:pub
 
 **Arithmetic helper expressions**
 
-- `%{views: %{>: {:+, [:views, 10]}}}`
-- `%{views: %{>: {:-, [:views, 10]}}}`
-- `%{views: %{>: {:*, [:views, 2]}}}`
-- `%{views: %{>: {:/, [:views, 2]}}}`
-- `%{views: %{>=: {:+, [:views, 10]}}}`
-- `%{views: %{<: {:+, [:views, 10]}}}`
-- `%{views: %{<=: {:+, [:views, 10]}}}`
-- `%{views: %{==: {:+, [:views, 10]}}}`
-- `%{views: %{!=: {:+, [:views, 10]}}}`
+- `%{views: %{>:  %{+: [:views, 10]}}}`
+- `%{views: %{>:  %{-: [:views, 10]}}}`
+- `%{views: %{>:  %{*: [:views, 2]}}}`
+- `%{views: %{>:  %{/: [:views, 2]}}}`
+- `%{views: %{>=: %{+: [:views, 10]}}}`
+- `%{views: %{<:  %{+: [:views, 10]}}}`
+- `%{views: %{<=: %{+: [:views, 10]}}}`
+- `%{views: %{==: %{+: [:views, 10]}}}`
+- `%{views: %{!=: %{+: [:views, 10]}}}`
 
 **Negated arithmetic**
 
-- `%{views: %{not: %{>: {:+, [:views, 10]}}}}`
+- `%{views: %{not: %{>: %{+: [:views, 10]}}}}`
 
 **Date/time helper expressions - :datetime_add**
 
 - `%{inserted_at: %{>=: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}}`
-- `%{inserted_at: %{>=: {:datetime_add, %{field: :inserted_at, count: 1, interval: "day"}}}}`
+- `%{inserted_at: %{>=: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}}`
 - `%{inserted_at: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}`
 - `%{inserted_at: %{not: %{>=: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}}}`
 - `%{inserted_at: %{not: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}}`
@@ -312,7 +312,7 @@ Given a schema with scalar fields like `:id` (integer), `:title` (string), `:pub
 **Exists expressions**
 
 - `%{where: %{exists: subquery_expr}}`
-- `%{where: %{exists: {:not, subquery_expr}}}`
+- `%{where: %{exists: %{not: subquery_expr}}}`
 
 ### Argument 2: params - Field Values for Array Fields
 
@@ -394,10 +394,10 @@ Given a schema with an array field like `:tags` (`{:array, :string}`):
 
 - `%{tags: %{lower: "elixir"}}`
 - `%{tags: %{upper: "ELIXIR"}}`
-- `%{tags: %{==: {:lower, "elixir"}}}`
-- `%{tags: %{==: {:upper, "ELIXIR"}}}`
-- `%{tags: %{!=: {:lower, "elixir"}}}`
-- `%{tags: %{!=: {:upper, "ELIXIR"}}}`
+- `%{tags: %{==: %{lower: "elixir"}}}`
+- `%{tags: %{==: %{upper: "ELIXIR"}}}`
+- `%{tags: %{!=: %{lower: "elixir"}}}`
+- `%{tags: %{!=: %{upper: "ELIXIR"}}}`
 
 **Negated LOWER / UPPER**
 
@@ -511,7 +511,7 @@ When a key matches a schema association name (e.g. `:author`, `:comments`):
 - `%{last: %{title: 2}}`
 - `%{last: [title: 2]}`
 - `%{last: {nil, 2}}`
-- `%{last: {:id, 2}}`
+- `%{last: %{id: 2}}`
 
 **:exclude**
 

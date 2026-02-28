@@ -9,7 +9,7 @@ defmodule EctoShorts.CommonFilters.Select do
   """
 
   alias Ecto.Query
-  alias EctoShorts.CommonFilters.BindParams
+  alias EctoShorts.CommonFilters.BindingParams
   alias EctoShorts.Compiler
 
   require EctoShorts.Compiler
@@ -53,7 +53,7 @@ defmodule EctoShorts.CommonFilters.Select do
   end
 
   defp reduce_select_bind(schema, filter_op, query, _binding_selector, bind_params, opts) do
-    BindParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
+    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
       build(schema, filter_op, q, {mode, target}, value, opts)
     end)
   end

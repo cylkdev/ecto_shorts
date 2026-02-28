@@ -16,7 +16,7 @@ After this change, callers of `EctoShorts.CommonFilters.convert_params_to_filter
 [~] - In progress
 [x] - Completed
 
-- [x] (2026-02-28 19:03Z) Investigated current `CommonFilters`, `Join`, `BindParams`, `Filter`, and `Dynamics` behavior and mapped raise/warn/skip paths.
+- [x] (2026-02-28 19:03Z) Investigated current `CommonFilters`, `Join`, `BindingParams`, `Filter`, and `Dynamics` behavior and mapped raise/warn/skip paths.
 - [x] (2026-02-28 19:04Z) Confirmed product decisions from user: catch Ecto-raised query-building errors; invalid `:join` `:on` payload must skip join entry.
 - [x] (2026-02-28 19:07Z) Added failing boundary tests converting raise expectations to warning+skip behavior and added regressions for invalid association params and invalid `:join` `:on` payload.
 - [x] (2026-02-28 19:10Z) Implemented warning+skip behavior in `CommonFilters` operation boundaries and exception wrapping.
@@ -32,7 +32,7 @@ After this change, callers of `EctoShorts.CommonFilters.convert_params_to_filter
   Evidence: `lib/ecto_shorts/common_filters.ex` returns `query` directly in that branch without `Logger.warning`.
 
 - Observation: Invalid `:bind` selector entries are handled as operation-level skip, not per-entry continuation.
-  Evidence: Mixed invalid/valid `:bind -> :at` input now logs warning and leaves query unchanged, because `BindParams.reduce_bind_params/6` raises before returning partial progress.
+  Evidence: Mixed invalid/valid `:bind -> :at` input now logs warning and leaves query unchanged, because `BindingParams.build_binding_params/6` raises before returning partial progress.
 
 ## Decision Log
 
@@ -110,7 +110,7 @@ Public boundary remains unchanged:
 Internal interfaces to adjust:
 
 * `EctoShorts.CommonFilters.build_query/6` should safely apply builder modules (`Filter`, `Distinct`, `Join`, etc.) and convert exceptions to warning+skip.
-* `EctoShorts.CommonFilters.create_schema_filter/6` bind-path should not bubble `BindParams` errors.
+* `EctoShorts.CommonFilters.create_schema_filter/6` bind-path should not bubble `BindingParams` errors.
 * `EctoShorts.CommonFilters.Join.on_expr/4` (or equivalent helper) should return skip signal for invalid payloads so the join entry is not applied.
 
 Revision note: Initial ExecPlan created to capture approved behavior decisions and implementation sequence before code edits.

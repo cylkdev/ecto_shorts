@@ -103,7 +103,7 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonQuery
 
   alias EctoShorts.CommonFilters.{
-    BindParams,
+    BindingParams,
     Distinct,
     Filter,
     GroupBy,
@@ -331,7 +331,7 @@ defmodule EctoShorts.CommonFilters do
         opts
       ) do
     safe_query_operation(query, filter_op, {@binding_selector_key, bind_params}, fn ->
-      BindParams.reduce_bind_params(
+      BindingParams.build_binding_params(
         schema_source,
         query,
         binding_selector,

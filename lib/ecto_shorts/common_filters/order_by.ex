@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   """
 
   alias Ecto.Query
-  alias EctoShorts.CommonFilters.BindParams
+  alias EctoShorts.CommonFilters.BindingParams
   alias EctoShorts.Compiler
 
   require Ecto.Query
@@ -78,7 +78,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   end
 
   defp reduce_order_by_bind(filter_op, query, _binding_selector, bind_params) do
-    BindParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
+    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
       reduce_order_by(filter_op, q, {mode, target}, value)
     end)
   end

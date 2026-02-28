@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonFilters.Preload do
   """
 
   alias Ecto.Query
-  alias EctoShorts.CommonFilters.BindParams
+  alias EctoShorts.CommonFilters.BindingParams
   alias EctoShorts.Compiler
 
   require Ecto.Query
@@ -55,7 +55,7 @@ defmodule EctoShorts.CommonFilters.Preload do
   end
 
   defp reduce_preload_bind(_schema_source, query, _binding_selector, bind_params, entries \\ nil) do
-    BindParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
+    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
       apply_preload_expr(q, {mode, target}, value, entries)
     end)
   end

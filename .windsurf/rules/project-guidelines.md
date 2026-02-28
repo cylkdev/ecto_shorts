@@ -4,7 +4,13 @@ trigger: always_on
 
 ## Requirements
 
-- Do not modify any of these files without explicit user approval: `.windsurf/rules/project-guidelines.md`, `.credo.exs`, `mix.exs`
+- Do not modify any of these files without explicit user approval:
+
+    - `.windsurf/rules/project-guidelines.md`
+    - `.credo.exs`
+    - `mix.exs`
+
+If you want to modify any of these files you must first ask the user for approval, then stop and wait for the user to respond.
 
 - Child apps can depend on other child apps using `in_umbrella: true` in `mix.exs`. All apps share `config/` at the umbrella root.
 
