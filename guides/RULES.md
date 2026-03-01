@@ -168,14 +168,23 @@ Examples:
 - `%{bind: %{at: %{1 => %{published: true}}}}` - `:bind` is at top level
 - `%{bind: [as: [post: %{published: true}]]}` - `:bind` is at top level
 
-**Rule 16:** Within a `:bind` key, the `:as` or `:at` selector must wrap the filter parameters.
+**Rule 16:** Within a `:bind` key, the binding mode (`:as`, `:at`, `:first`, or `:last`) must wrap the filter parameters.
 
-The binding mode (`:as` for named bindings or `:at` for positional bindings) must wrap the actual filter parameters.
+The binding mode selects how the target binding is identified:
+
+- `:as` for named bindings — wraps `{binding_alias, params}` pairs.
+- `:at` for positional bindings — wraps `{position, params}` pairs.
+- `:first` for the first binding — wraps params directly (always targets the root `from` binding at position 1).
+- `:last` for the last binding — wraps params directly (targets the highest positional binding in the query; the last join, or the `from` binding if there are no joins).
+
+`:first` and `:last` are flat modes: their params are the filter parameters directly, without the extra `{target, params}` nesting that `:as` and `:at` use.
 
 Examples:
 - `%{bind: %{as: %{post: %{published: true}}}}` - `:as` wraps the binding target and filters
 - `%{bind: %{at: %{1 => %{published: true}}}}` - `:at` wraps the positional index and filters
 - `%{bind: [as: [post: %{published: true}, author: %{first_name: "example"}]]}` - `:as` wraps multiple bindings
+- `%{bind: %{first: %{published: true}}}` - `:first` wraps filters directly (targets root binding)
+- `%{bind: %{last: %{first_name: "John"}}}` - `:last` wraps filters directly (targets last binding)
 
 ## Schema Filter Precedence Rules
 

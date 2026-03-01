@@ -945,4 +945,168 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_query(expected, q2)
     end
   end
+
+  describe "convert_params_to_filter/3 :first binding selector" do
+    test "binding — %{bind: %{first: %{published: true}}} on bare schema" do
+      expected = from(p in Post, where: p.published == ^true)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{bind: %{first: %{published: true}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding — %{bind: %{first: %{published: true}}} on query with join targets from binding" do
+      q = from(p in Post, join: a in assoc(p, :author), as: :author)
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          where: p.published == ^true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{bind: %{first: %{published: true}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding — %{bind: %{first: %{order_by: %{asc: :title}}}}" do
+      expected = from(p in Post, order_by: [asc: p.title])
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{bind: %{first: %{order_by: %{asc: :title}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding — %{bind: %{first: %{group_by: :title}}}" do
+      expected = from(p in Post, group_by: p.title)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{bind: %{first: %{group_by: :title}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :first params logs warning and leaves query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{first: 123}}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :bind -> :first"
+      assert_received {:q2, q2}
+      assert q2 === q
+    end
+  end
+
+  describe "convert_params_to_filter/3 :last binding selector" do
+    test "binding — %{bind: %{last: %{published: true}}} on bare schema targets from binding" do
+      expected = from(p in Post, where: p.published == ^true)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{bind: %{last: %{published: true}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding — %{bind: %{last: %{first_name: \"John\"}}} on query with join targets last join" do
+      q = from(p in Post, join: a in assoc(p, :author), as: :author)
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          where: a.first_name == ^"John"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{bind: %{last: %{first_name: "John"}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding — %{bind: %{last: %{order_by: %{asc: :first_name}}}} on query with join" do
+      q = from(p in Post, join: a in assoc(p, :author), as: :author)
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          order_by: [asc: a.first_name]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{bind: %{last: %{order_by: %{asc: :first_name}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "binding — %{bind: %{last: %{group_by: :first_name}}} on query with join" do
+      q = from(p in Post, join: a in assoc(p, :author), as: :author)
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          group_by: a.first_name
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{bind: %{last: %{group_by: :first_name}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "invalid :last params logs warning and leaves query unchanged" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{last: 123}}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :bind -> :last"
+      assert_received {:q2, q2}
+      assert q2 === q
+    end
+  end
 end

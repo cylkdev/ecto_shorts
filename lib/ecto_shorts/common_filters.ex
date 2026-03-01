@@ -51,9 +51,7 @@ defmodule EctoShorts.CommonFilters do
   When you pass a map with multiple keys, the system sorts them into
   a fixed processing order before building the query:
 
-      ┌───────────────────┐   ┌────────────┐   ┌──────────────────┐   ┌──────────────────┐
-      │ where / fields    │ → │ or_where   │ → │ query operations │ → │ terminal filters │
-      └───────────────────┘   └────────────┘   └──────────────────┘   └──────────────────┘
+      where / fields -> or_where -> query operations -> terminal filters
 
   * **where / fields** — Explicit `:where` keys and bare field keys
     (like `published: true`) are processed first. They produce
@@ -88,33 +86,35 @@ defmodule EctoShorts.CommonFilters do
   occupies exactly one **slot** in the chain. The slots are processed
   from outermost to innermost:
 
-      ┌───────┐   ┌─────┐   ┌───────────┐   ┌──────────┐   ┌──────────────────┐
-      │ field │ → │ not │ → │ aggregate │ → │ operator │ → │ value expression │
-      └───────┘   └─────┘   └───────────┘   └──────────┘   └──────────────────┘
+      field -> negation -> aggregate -> operator -> value expression
 
-  * **Field** — the outermost key. A schema field name like `:views`
+  * **Field** is the outermost key. This is a schema field name like `:views`
     or `:title`.
 
-  * **Negation** (`:not`) — optional wrapper that negates everything
+  * **Negation** (`:not`) is an optional wrapper that negates everything
     inside it.
 
-  * **Aggregate** (`:avg`, `:count`, `:sum`, `:max`, `:min`) —
+  * **Aggregate** (`:avg`, `:count`, `:sum`, `:max`, `:min`) is an
     optional wrapper that applies an aggregate function. Typically
     used inside `:having`.
 
-  * **Operator** — the comparison or matching key. Symbol operators:
-    `:==`, `:!=`, `:>`, `:>=`, `:<`, `:<=`. Word aliases: `:eq`,
-    `:gt`, `:gte`, `:lt`, `:lte`. Membership: `:in`. String matching:
-    `:like`, `:ilike`.
+  * **Operator** is comparison or matching key.
+    - Symbol operators: `:==`, `:!=`, `:>`, `:>=`, `:<`, `:<=`.
+    - Word aliases: `:eq`, `:gt`, `:gte`, `:lt`, `:lte`.
+    - Membership: `:in`.
+    - String matching: `:like`, `:ilike`.
 
-  * **Value expression** — the innermost value. Can be a literal, or
-    a special expression key: `:lower` / `:upper` (string transforms),
-    `:+` / `:-` / `:*` / `:/` (arithmetic), `:all` / `:any` (subquery
-    set comparison), `:datetime` / `:date` (date/time helpers).
+  * **Value expression** is the innermost value.
+    - Can be a literal, or
+    - a special expression key:
+      - `:lower` / `:upper` (string transforms)
+      - `:+` / `:-` / `:*` / `:/` (arithmetic)
+      - `:all` / `:any` (subquery set comparison)
+      - `:datetime` / `:date` (date/time helpers)
 
   Here is an example that fills every slot:
 
-      # field   not    aggregate  operator  value expression
+      # field   negation    aggregate  operator  value expression
       %{views: %{not: %{avg:     %{>:      %{+: [:views, 10]}}}}}
 
   Not every slot needs to be filled. A simple equality filter only
@@ -450,6 +450,17 @@ defmodule EctoShorts.CommonFilters do
       %{bind: %{at: %{1 => %{published: true}}}}
       # Targets binding at position 1
 
+  **Shortcut bindings** use `:first` or `:last`:
+
+      %{bind: %{first: %{published: true}}}
+      # Targets the first binding (the root from binding, position 1)
+
+      %{bind: %{last: %{first_name: "John"}}}
+      # Targets the last binding (the last join, or from if no joins)
+
+  `:first` always resolves to position 1. `:last` resolves at runtime
+  to the highest positional binding in the query.
+
   **Multiple bindings** in a single call:
 
       # Given a query with :post and :author named bindings:
@@ -462,6 +473,7 @@ defmodule EctoShorts.CommonFilters do
 
       %{bind: %{as: %{author: %{order_by: %{asc: :first_name}}}}}
       %{bind: %{at: %{2 => %{group_by: :first_name}}}}
+      %{bind: %{last: %{order_by: %{asc: :first_name}}}}
 
   You can read a binding selector as a sentence. For example:
 
