@@ -16,10 +16,6 @@ defmodule EctoShorts.Actions do
 
   Do not use this module when you need:
 
-  * Complex multi-table joins with custom select expressions - use
-    `EctoShorts.CommonFilters` directly or raw Ecto queries
-  * Fine-grained control over transaction isolation levels - use
-    `c:Ecto.Repo.transaction/2` directly
   * Streaming with custom chunk sizes - use `c:Ecto.Repo.stream/2` directly
 
   ## Getting started
@@ -250,15 +246,19 @@ defmodule EctoShorts.Actions do
   * `{:ok, [struct]}` - all operations succeeded
   * `{:error, reason}` - one operation failed, all rolled back
 
-  ### ErrorMessage codes
+  ### Error messages
 
-  When a function returns `{:error, %ErrorMessage{}}`, the `:code` field
-  indicates what went wrong:
+  When a functions in this API fails, it returns an error tuple:
 
-  * `:not_found` - no record matched the query
-  * `:conflict` - delete failed due to constraints
+      {:error, message()}
 
-  See `EctoShorts.Actions.Error` for customizing error shapes.
+  `message()` is the “error payload”. It can be any Elixir term
+  (for example: a string, a map, or a struct). The exact shape
+  is decided by the error adapter.
+
+  By default, the error adapter is `ErrorMessage`.
+
+  See EctoShorts.Actions.Error for customizing the error payload.
 
   ## CRUD operations
 
