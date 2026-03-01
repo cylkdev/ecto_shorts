@@ -159,9 +159,7 @@ defmodule EctoShorts.CommonFilters do
 
   @where :where
   @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
-
   @schema_filters [:where, :or_where]
-
   @query_filters [
     :distinct,
     :except,
@@ -359,16 +357,14 @@ defmodule EctoShorts.CommonFilters do
         {@binding_selector_key, bind_params},
         opts
       ) do
-    safe_query_operation(query, filter_op, {@binding_selector_key, bind_params}, fn ->
-      BindingParams.build_binding_params(
-        schema_source,
-        query,
-        binding_selector,
-        filter_op,
-        bind_params,
-        opts
-      )
-    end)
+    BindingParams.build_binding_params(
+      schema_source,
+      query,
+      binding_selector,
+      filter_op,
+      bind_params,
+      opts
+    )
   end
 
   def create_schema_filter(
@@ -379,23 +375,21 @@ defmodule EctoShorts.CommonFilters do
         {key, value},
         opts
       ) do
-    safe_query_operation(query, filter_op, {key, value}, fn ->
-      query_filters = Keyword.get(opts, :query_filters, @query_filters)
+    query_filters = Keyword.get(opts, :query_filters, @query_filters)
 
-      if key in query_filters do
-        build_query(schema_source, query, binding_selector, key, value, opts)
-      else
-        reduce_default_filter_params(
-          schema_source,
-          query,
-          binding_selector,
-          filter_op,
-          key,
-          value,
-          opts
-        )
-      end
-    end)
+    if key in query_filters do
+      build_query(schema_source, query, binding_selector, key, value, opts)
+    else
+      reduce_default_filter_params(
+        schema_source,
+        query,
+        binding_selector,
+        filter_op,
+        key,
+        value,
+        opts
+      )
+    end
   end
 
   def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts)
@@ -424,9 +418,7 @@ defmodule EctoShorts.CommonFilters do
         )
       end)
     else
-      safe_query_operation(query, filter_op, params, fn ->
-        build_query(schema_source, query, binding_selector, filter_op, params, opts)
-      end)
+      build_query(schema_source, query, binding_selector, filter_op, params, opts)
     end
   end
 
@@ -438,9 +430,7 @@ defmodule EctoShorts.CommonFilters do
   defp reduce_schema_filter_params(schema_source, query, binding_selector, filter_op, value, opts) do
     if is_map(value) or is_list(value) do
       Enum.reduce(value, query, fn entry, query_acc ->
-        safe_query_operation(query_acc, filter_op, entry, fn ->
-          build_schema_filters(schema_source, query_acc, binding_selector, filter_op, entry, opts)
-        end)
+        build_schema_filters(schema_source, query_acc, binding_selector, filter_op, entry, opts)
       end)
     else
       Logger.warning(
@@ -556,8 +546,7 @@ defmodule EctoShorts.CommonFilters do
          opts
        )
        when is_map(value) and not is_struct(value) and
-              (is_map_key(value, :datetime_add) or is_map_key(value, :date_add) or
-                 is_map_key(value, :from_now) or is_map_key(value, :ago)) do
+              (is_map_key(value, :datetime) or is_map_key(value, :date)) do
     build_query(
       schema_source,
       query,
@@ -694,26 +683,6 @@ defmodule EctoShorts.CommonFilters do
     module.build(binding_source, filter_op, query, binding_selector, params, opts)
   end
 
-  defp safe_query_operation(query, filter_op, params, callback) do
-    callback.()
-  rescue
-    exception ->
-      Logger.warning(
-        @logger_prefix,
-        "Skipping #{inspect(filter_op)} operation for #{inspect(params)} due to query-building error: #{Exception.message(exception)}"
-      )
-
-      query
-  catch
-    kind, reason ->
-      Logger.warning(
-        @logger_prefix,
-        "Skipping #{inspect(filter_op)} operation for #{inspect(params)} due to #{kind}: #{inspect(reason)}"
-      )
-
-      query
-  end
-
   defp to_binding_source(schema_source, _query, {:as, nil}) do
     schema_source
   end
@@ -753,16 +722,8 @@ defmodule EctoShorts.CommonFilters do
 
   defp sort_params(params) do
     where_filters = Keyword.take(params, [:where])
-
     or_where_filters = Keyword.take(params, [:or_where])
-
-    terminal_filters =
-      Enum.flat_map([:last, :subquery], fn key ->
-        case List.keyfind(params, key, 0) do
-          nil -> []
-          entry -> [entry]
-        end
-      end)
+    terminal_filters = Enum.filter(params, fn {key, _val} -> key in [:last, :subquery] end)
 
     # Regular field filters should be processed with where_filters
     # since they can contain implicit WHERE clauses and must come

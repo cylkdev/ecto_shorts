@@ -11,7 +11,12 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
   @arithmetic_operators [:+, :-, :*, :/]
   @comparison_operators [:==, :!=, :>, :>=, :<, :<=]
   @comparison_alias_operators [:eq, :gt, :gte, :lt, :lte]
-  @date_time_helpers [:datetime_add, :date_add, :from_now, :ago]
+  @date_time_helpers [
+    {:datetime, :add},
+    {:datetime, :ago},
+    {:datetime, :from_now},
+    {:date, :add}
+  ]
 
   @doc false
   @impl true
@@ -240,9 +245,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
 
               _ ->
-                raise ArgumentError,
-                  message:
-                    "Expected the operator to be one of [:eq, :==, :!=] for nil comparison, got: #{inspect(unquote(op_var))}"
+                nil
             end
           end
       }
@@ -673,8 +676,9 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
         unquote(op_var) in unquote(@comparison_operators)
       end
 
-    Enum.flat_map(@date_time_helpers, fn helper ->
-      helper_expr_ast = quote(do: {unquote(helper), unquote(payload_var)})
+    Enum.flat_map(@date_time_helpers, fn {wrapper, operation} ->
+      helper_expr_ast =
+        quote(do: {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]})
 
       rhs_dynamic_expr_ast =
         date_time_dynamic_expr_ast(binding_body_asts, target_binding_var, helper_expr_ast)
@@ -683,7 +687,8 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
         %ClauseSpec{
           binding_head: binding_head_ast,
           key: key_var,
-          head: quote(do: {unquote(op_var), {unquote(helper), unquote(payload_var)}}),
+          head:
+            quote(do: {unquote(op_var), {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}),
           guard: op_guard,
           body:
             quote do
@@ -702,7 +707,10 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
         %ClauseSpec{
           binding_head: binding_head_ast,
           key: key_var,
-          head: quote(do: {:not, {unquote(op_var), {unquote(helper), unquote(payload_var)}}}),
+          head:
+            quote(
+              do: {:not, {unquote(op_var), {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}}
+            ),
           guard: op_guard,
           body:
             quote do
@@ -721,80 +729,86 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
         %ClauseSpec{
           binding_head: binding_head_ast,
           key: key_var,
-          head: quote(do: {unquote(helper), unquote(payload_var)}),
+          head: quote(do: {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}),
           body:
             quote do
               apply_dynamic_expr(
                 unquote(binding_head_ast),
                 unquote(key_var),
-                {:==, {unquote(helper), unquote(payload_var)}}
+                {:==, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
               )
             end
         },
         %ClauseSpec{
           binding_head: binding_head_ast,
           key: key_var,
-          head: quote(do: {:not, {unquote(helper), unquote(payload_var)}}),
+          head: quote(do: {:not, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}),
           body:
             quote do
               apply_dynamic_expr(
                 unquote(binding_head_ast),
                 unquote(key_var),
-                {:!=, {unquote(helper), unquote(payload_var)}}
+                {:!=, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
               )
             end
         },
         %ClauseSpec{
           binding_head: binding_head_ast,
           key: key_var,
-          head: quote(do: {unquote(op_var), %{unquote(helper) => unquote(payload_var)}}),
+          head:
+            quote(do: {unquote(op_var), %{unquote(wrapper) => %{unquote(operation) => unquote(payload_var)}}}),
           guard: op_guard,
           body:
             quote do
               apply_dynamic_expr(
                 unquote(binding_head_ast),
                 unquote(key_var),
-                {unquote(op_var), {unquote(helper), unquote(payload_var)}}
+                {unquote(op_var), {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
               )
             end
         },
         %ClauseSpec{
           binding_head: binding_head_ast,
           key: key_var,
-          head: quote(do: {:not, {unquote(op_var), %{unquote(helper) => unquote(payload_var)}}}),
+          head:
+            quote(
+              do:
+                {:not,
+                 {unquote(op_var), %{unquote(wrapper) => %{unquote(operation) => unquote(payload_var)}}}}
+            ),
           guard: op_guard,
           body:
             quote do
               apply_dynamic_expr(
                 unquote(binding_head_ast),
                 unquote(key_var),
-                {:not, {unquote(op_var), {unquote(helper), unquote(payload_var)}}}
+                {:not, {unquote(op_var), {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}}
               )
             end
         },
         %ClauseSpec{
           binding_head: binding_head_ast,
           key: key_var,
-          head: quote(do: %{unquote(helper) => unquote(payload_var)}),
+          head: quote(do: %{unquote(wrapper) => %{unquote(operation) => unquote(payload_var)}}),
           body:
             quote do
               apply_dynamic_expr(
                 unquote(binding_head_ast),
                 unquote(key_var),
-                {:==, {unquote(helper), unquote(payload_var)}}
+                {:==, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
               )
             end
         },
         %ClauseSpec{
           binding_head: binding_head_ast,
           key: key_var,
-          head: quote(do: {:not, %{unquote(helper) => unquote(payload_var)}}),
+          head: quote(do: {:not, %{unquote(wrapper) => %{unquote(operation) => unquote(payload_var)}}}),
           body:
             quote do
               apply_dynamic_expr(
                 unquote(binding_head_ast),
                 unquote(key_var),
-                {:!=, {unquote(helper), unquote(payload_var)}}
+                {:!=, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
               )
             end
         }
@@ -1574,49 +1588,38 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
   defp date_time_dynamic_expr_ast(binding_body_asts, target_binding_var, helper_expr_ast) do
     quote do
       normalize_payload = fn
-        helper, payload when helper in [:datetime_add, :date_add] and is_map(payload) ->
+        label, payload when is_map(payload) and not is_struct(payload) ->
           payload
 
-        helper, payload when helper in [:datetime_add, :date_add] and is_list(payload) ->
+        label, payload when is_list(payload) ->
           if Keyword.keyword?(payload) do
             Map.new(payload)
           else
             raise ArgumentError,
-                  "Expected #{inspect(helper)} payload to be a map or keyword list, got: #{inspect(payload)}"
+                  "Expected #{inspect(label)} payload to be a map or keyword list, got: #{inspect(payload)}"
           end
 
-        helper, payload when helper in [:from_now, :ago] and is_map(payload) ->
-          payload
-
-        helper, payload when helper in [:from_now, :ago] and is_list(payload) ->
-          if Keyword.keyword?(payload) do
-            Map.new(payload)
-          else
-            raise ArgumentError,
-                  "Expected #{inspect(helper)} payload to be a map or keyword list, got: #{inspect(payload)}"
-          end
-
-        helper, payload ->
+        label, payload ->
           raise ArgumentError,
-                "Expected #{inspect(helper)} payload to be a map or keyword list, got: #{inspect(payload)}"
+                "Expected #{inspect(label)} payload to be a map or keyword list, got: #{inspect(payload)}"
       end
 
       build_date_time_expr = fn build_date_time_expr, expr ->
         case expr do
-          {:from_now, payload} ->
-            payload = normalize_payload.(:from_now, payload)
+          {:datetime, [{:from_now, payload}]} ->
+            payload = normalize_payload.({:datetime, :from_now}, payload)
             count = Map.fetch!(payload, :count)
             interval = Map.fetch!(payload, :interval)
             unquote(AST.dynamic_ast(binding_body_asts, quote(do: from_now(^count, ^interval))))
 
-          {:ago, payload} ->
-            payload = normalize_payload.(:ago, payload)
+          {:datetime, [{:ago, payload}]} ->
+            payload = normalize_payload.({:datetime, :ago}, payload)
             count = Map.fetch!(payload, :count)
             interval = Map.fetch!(payload, :interval)
             unquote(AST.dynamic_ast(binding_body_asts, quote(do: ago(^count, ^interval))))
 
-          {:datetime_add, payload} ->
-            payload = normalize_payload.(:datetime_add, payload)
+          {:datetime, [{:add, payload}]} ->
+            payload = normalize_payload.({:datetime, :add}, payload)
             field_expr = Map.fetch!(payload, :field)
             count = Map.fetch!(payload, :count)
             interval = Map.fetch!(payload, :interval)
@@ -1629,8 +1632,8 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
               )
             )
 
-          {:date_add, payload} ->
-            payload = normalize_payload.(:date_add, payload)
+          {:date, [{:add, payload}]} ->
+            payload = normalize_payload.({:date, :add}, payload)
             field_expr = Map.fetch!(payload, :field)
             count = Map.fetch!(payload, :count)
             interval = Map.fetch!(payload, :interval)
@@ -1643,24 +1646,13 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
               )
             )
 
-          map when is_map(map) and map_size(map) === 1 ->
-            case map do
-              %{datetime_add: payload} ->
-                build_date_time_expr.(build_date_time_expr, {:datetime_add, payload})
+          %{datetime: inner} when is_map(inner) and map_size(inner) === 1 ->
+            inner_list = Map.to_list(inner)
+            build_date_time_expr.(build_date_time_expr, {:datetime, inner_list})
 
-              %{date_add: payload} ->
-                build_date_time_expr.(build_date_time_expr, {:date_add, payload})
-
-              %{from_now: payload} ->
-                build_date_time_expr.(build_date_time_expr, {:from_now, payload})
-
-              %{ago: payload} ->
-                build_date_time_expr.(build_date_time_expr, {:ago, payload})
-
-              _ ->
-                raise ArgumentError,
-                      "Expected one of [:datetime_add, :date_add, :from_now, :ago], got: #{inspect(map)}"
-            end
+          %{date: inner} when is_map(inner) and map_size(inner) === 1 ->
+            inner_list = Map.to_list(inner)
+            build_date_time_expr.(build_date_time_expr, {:date, inner_list})
 
           field_name when is_atom(field_name) ->
             unquote(

@@ -51,23 +51,17 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   defp reduce_order_by(filter_op, query, binding_selector, entries) when is_list(entries) do
     if Keyword.keyword?(entries) do
-      case Enum.split_with(entries, fn {k, _} -> k === @binding_selector_key end) do
-        {[], order_entries} ->
-          reduce_order_by_expr(filter_op, query, binding_selector, order_entries)
+      {bind_entries, order_entries} =
+        Enum.split_with(entries, fn {k, _} -> k === @binding_selector_key end)
 
-        {bind_entries, []} ->
-          Enum.reduce(bind_entries, query, fn entry, query_acc ->
-            reduce_order_by(filter_op, query_acc, binding_selector, entry)
-          end)
+      query =
+        if order_entries != [],
+          do: reduce_order_by_expr(filter_op, query, binding_selector, order_entries),
+          else: query
 
-        {bind_entries, order_entries} ->
-          query_with_order =
-            reduce_order_by_expr(filter_op, query, binding_selector, order_entries)
-
-          Enum.reduce(bind_entries, query_with_order, fn entry, query_acc ->
-            reduce_order_by(filter_op, query_acc, binding_selector, entry)
-          end)
-      end
+      Enum.reduce(bind_entries, query, fn entry, query_acc ->
+        reduce_order_by(filter_op, query_acc, binding_selector, entry)
+      end)
     else
       reduce_order_by_expr(filter_op, query, binding_selector, entries)
     end
@@ -78,8 +72,8 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   end
 
   defp reduce_order_by_bind(filter_op, query, _binding_selector, bind_params) do
-    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
-      reduce_order_by(filter_op, q, {mode, target}, value)
+    Enum.reduce(BindingParams.normalize_bind_params(bind_params), query, fn {binding_selector, value}, q ->
+      reduce_order_by(filter_op, q, binding_selector, value)
     end)
   end
 

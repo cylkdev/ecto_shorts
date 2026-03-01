@@ -53,8 +53,8 @@ defmodule EctoShorts.CommonFilters.Select do
   end
 
   defp reduce_select_bind(schema, filter_op, query, _binding_selector, bind_params, opts) do
-    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
-      build(schema, filter_op, q, {mode, target}, value, opts)
+    Enum.reduce(BindingParams.normalize_bind_params(bind_params), query, fn {binding_selector, value}, q ->
+      build(schema, filter_op, q, binding_selector, value, opts)
     end)
   end
 

@@ -8,88 +8,97 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   import Ecto.Query
   import ExUnit.CaptureLog
 
-  describe "convert_params_to_filter/3 core" do
-    test "supports map of params" do
+  describe "convert_params_to_filter/3 field equality" do
+    test "field equality — %{id: 1}" do
       expected = from p in Post, where: p.id == ^1
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{id: 1}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports keyword list of params" do
-      expected = from p in Post, where: p.id == ^1
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, [id: 1], [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports list of maps of params" do
-      expected = from p in Post, where: p.id == ^1
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, [%{id: 1}], [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports list of keywords of params" do
-      expected = from p in Post, where: p.id == ^1
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, [[id: 1]], [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "defaults to :where filter when filter not provided" do
+    test "field equality — %{published: true}" do
       expected = from p in Post, where: p.published == ^true
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{published: true}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{published: true}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports top-level :dynamic payload (defaults to :where)" do
-      dyn = dynamic([p], p.views > ^10)
-      expected = from(p in Post, where: p.views > ^10)
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{dynamic: dyn}, [])
+    test "field equality — %{title: \"hello\"}" do
+      expected = from p in Post, where: p.title == ^"hello"
+      q2 = CommonFilters.convert_params_to_filter(Post, %{title: "hello"}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports :where with :dynamic payload" do
-      dyn = dynamic([p], p.published == ^true)
-      expected = from(p in Post, where: p.published == ^true)
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{where: %{dynamic: dyn}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports :or_where with :dynamic payload" do
-      dyn = dynamic([p], p.views > ^100)
-      expected = from(p in Post, or_where: p.views > ^100)
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{or_where: %{dynamic: dyn}}, [])
+    test "field equality — %{published_at: ~U[2026-01-01 00:00:00Z]}" do
+      dt = ~U[2026-01-01 00:00:00Z]
+      expected = from p in Post, where: p.published_at == ^dt
+      q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: dt}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "invalid :dynamic payload logs warning and leaves query unchanged" do
-      q = from(p in Post, where: p.published == ^true)
+    test "field equality — %{published_at: nil}" do
+      expected = from p in Post, where: is_nil(p.published_at)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: nil}, [])
 
-      log =
-        capture_log(fn ->
-          q2 = CommonFilters.convert_params_to_filter(q, %{dynamic: "bad"}, [])
-          send(self(), {:q2, q2})
-        end)
-
-      assert log =~ "Expected :dynamic payload to be an Ecto.Query.DynamicExpr, got: \"bad\""
-      assert_received {:q2, q2}
-      assert q2 === q
+      assert_sql(expected, q2)
     end
 
+    test "field equality — %{published: [true, false]} (non-keyword list defaults to IN)" do
+      expected = from p in Post, where: p.published in ^[true, false]
+      q2 = CommonFilters.convert_params_to_filter(Post, %{published: [true, false]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "field equality — [id: 1] (keyword list)" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, [id: 1], [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "field equality — [%{id: 1}] (list of maps)" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, [%{id: 1}], [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "field equality — [[id: 1]] (list of keyword lists)" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, [[id: 1]], [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "field equality — [%{id: 1}, %{published: true}] (list of maps, multiple entries)" do
+      expected =
+        from(p in Post,
+          where: p.id == ^1,
+          where: p.published == ^true
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, [%{id: 1}, %{published: true}], [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "field equality — [[id: 1], [published: true]] (list of keyword lists, multiple entries)" do
+      expected =
+        from(p in Post,
+          where: p.id == ^1,
+          where: p.published == ^true
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, [[id: 1], [published: true]], [])
+
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 source types" do
     test "supports Ecto.Query.t() source" do
       expected = from p in Post, where: p.published == ^true
       q = from(p in Post)
@@ -98,16 +107,16 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "supports binary() table name source" do
-      expected = from p in "posts", select: [:id]
-      q2 = CommonFilters.convert_params_to_filter("posts", %{select: [:id]}, [])
+    test "supports Ecto.Schema.t() schema module source" do
+      expected = from p in Post, select: p
+      q2 = CommonFilters.convert_params_to_filter(Post, %{select: true}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports Ecto.Schema.t() schema module source" do
-      expected = from p in Post, select: p
-      q2 = CommonFilters.convert_params_to_filter(Post, %{select: true}, [])
+    test "supports binary() table name source" do
+      expected = from p in "posts", select: [:id]
+      q2 = CommonFilters.convert_params_to_filter("posts", %{select: [:id]}, [])
 
       assert_sql(expected, q2)
     end
@@ -132,53 +141,124 @@ defmodule EctoShorts.CommonFilters.CoreTest do
 
       assert_sql(expected, q2)
     end
+  end
 
-    test "supports multiple filters (where and or_where)" do
-      expected =
+  describe "convert_params_to_filter/3 source and query params" do
+    test "source and query — [published: true, subquery: %{id: 2}]" do
+      expected_inner =
         from(p in Post,
           where: p.published == ^true,
-          or_where: p.published == ^false
+          where: p.id == ^2
         )
 
-      q = Post
+      expected = subquery(expected_inner)
 
       q2 =
         CommonFilters.convert_params_to_filter(
-          q,
-          %{
-            where: %{published: true},
-            or_where: %{published: false}
-          },
+          Post,
+          [published: true, subquery: %{id: 2}],
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
+    test "source and query — [query: %{id: 1}, published: true]" do
+      expected =
+        from(p in Post,
+          where: p.id == ^1,
+          where: p.published == ^true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [query: %{id: 1}, published: true],
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "supports keyword-list params" do
-      expected = from p in Post, where: p.published == ^true
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, [published: true], [])
+    test "source and query — [source: Post, id: 1]" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, id: 1], [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports keyword-list params as a list" do
-      expected = from p in Post, where: p.published == ^true
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, [published: true], [])
+    test "source and query — [source: Post, query: %{id: 1}]" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, query: %{id: 1}], [])
 
       assert_sql(expected, q2)
     end
 
-    test "treats non-keyword lists as values (defaults operator to ==)" do
-      expected = from p in Post, where: p.published in ^[true, false]
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{published: [true, false]}, [])
+    test "source and query — [source: Post, query: [id: 1]]" do
+      expected = from p in Post, where: p.id == ^1
+      q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, query: [id: 1]], [])
 
       assert_sql(expected, q2)
     end
 
+    test "source and query — [source: \"posts\", query: %{id: 1}]" do
+      q2 = CommonFilters.convert_params_to_filter(Post, [source: "posts", query: %{id: 1}], [])
+
+      {sql, params} = Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Repo, q2)
+
+      assert sql =~ "WHERE"
+      assert sql =~ "\"id\" = $1"
+      assert params == [1]
+    end
+
+    test "source and query — [source: \"posts\", query: %{select: [:id]}]" do
+      expected = from p in "posts", select: ^[:id]
+      q2 = CommonFilters.convert_params_to_filter(Post, [source: "posts", query: %{select: [:id]}], [])
+
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 custom filters" do
+    test "custom filter — %{ids: [1, 2, 3]}" do
+      expected = from p in Post, where: p.id in ^[1, 2, 3]
+      q2 = CommonFilters.convert_params_to_filter(Post, %{ids: [1, 2, 3]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "custom filter — %{after: 10}" do
+      expected = from p in Post, where: p.id > ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{after: 10}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "custom filter — %{before: 10}" do
+      expected = from p in Post, where: p.id < ^10
+      q2 = CommonFilters.convert_params_to_filter(Post, %{before: 10}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "custom filter — %{start_date: ~U[2026-01-01 00:00:00Z]}" do
+      dt = ~U[2026-01-01 00:00:00Z]
+      expected = from p in Post, where: p.inserted_at >= ^dt
+      q2 = CommonFilters.convert_params_to_filter(Post, %{start_date: dt}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "custom filter — %{end_date: ~U[2026-12-31 23:59:59Z]}" do
+      dt = ~U[2026-12-31 23:59:59Z]
+      expected = from p in Post, where: p.inserted_at <= ^dt
+      q2 = CommonFilters.convert_params_to_filter(Post, %{end_date: dt}, [])
+
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 error handling" do
     test "invalid top-level params logs warning and leaves query unchanged" do
       q = from(p in Post)
 
@@ -246,72 +326,18 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert q2 === q
     end
 
-    test "supports :ids custom filter" do
-      expected = from p in Post, where: p.id in ^[1, 2, 3]
-      q2 = CommonFilters.convert_params_to_filter(Post, %{ids: [1, 2, 3]}, [])
+    test "invalid :dynamic payload logs warning and leaves query unchanged" do
+      q = from(p in Post, where: p.published == ^true)
 
-      assert_sql(expected, q2)
-    end
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{dynamic: "bad"}, [])
+          send(self(), {:q2, q2})
+        end)
 
-    test "supports :after custom filter" do
-      expected = from p in Post, where: p.id > ^10
-      q2 = CommonFilters.convert_params_to_filter(Post, %{after: 10}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports :before custom filter" do
-      expected = from p in Post, where: p.id < ^10
-      q2 = CommonFilters.convert_params_to_filter(Post, %{before: 10}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports :start_date custom filter" do
-      dt = ~U[2026-01-01 00:00:00Z]
-      expected = from p in Post, where: p.inserted_at >= ^dt
-      q2 = CommonFilters.convert_params_to_filter(Post, %{start_date: dt}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports :end_date custom filter" do
-      dt = ~U[2026-12-31 23:59:59Z]
-      expected = from p in Post, where: p.inserted_at <= ^dt
-      q2 = CommonFilters.convert_params_to_filter(Post, %{end_date: dt}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports :source meta-key to override source module" do
-      expected = from p in Post, where: p.id == ^1
-      q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, query: %{id: 1}], [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports :source meta-key with direct field params" do
-      expected = from p in Post, where: p.id == ^1
-      q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, id: 1], [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports :query meta-key merged with field params" do
-      expected =
-        from(p in Post,
-          where: p.id == ^1,
-          where: p.published == ^true
-        )
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          Post,
-          [query: %{id: 1}, published: true],
-          []
-        )
-
-      assert_sql(expected, q2)
+      assert log =~ "Expected :dynamic payload to be an Ecto.Query.DynamicExpr, got: \"bad\""
+      assert_received {:q2, q2}
+      assert q2 === q
     end
   end
 end

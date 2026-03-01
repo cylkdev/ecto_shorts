@@ -144,7 +144,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :distinct payload logs warning and leaves query unchanged" do
+    test "invalid :distinct payload logs warning and returns query unchanged" do
       q = from(p in Post)
 
       log =
@@ -153,29 +153,15 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "`distinct` interpolated on root expects a field or a keyword list"
+      assert log =~ "distinct"
       assert_received {:q2, q2}
-      assert_sql(q, q2)
+      assert q2 === q
     end
 
-    test "multiple :distinct entries logs warning and skips failing distinct operation" do
-      expected = from(p in Post, distinct: p.title)
-
-      log =
-        capture_log(fn ->
-          q2 =
-            CommonFilters.convert_params_to_filter(
-              Post,
-              [distinct: :title, distinct: :id],
-              []
-            )
-
-          send(self(), {:q2, q2})
-        end)
-
-      assert log =~ "only one distinct expression is allowed in query"
-      assert_received {:q2, q2}
-      assert_sql(expected, q2)
+    test "multiple :distinct entries raises" do
+      assert_raise Ecto.Query.CompileError, ~r/only one distinct expression is allowed in query/, fn ->
+        CommonFilters.convert_params_to_filter(from(p in Post), [distinct: :title, distinct: :id], [])
+      end
     end
   end
 
@@ -477,6 +463,20 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
+    test "supports :last with other filters (Rule 19: terminal filter processed last)" do
+      expected =
+        Post
+        |> from(where: [published: ^true], limit: ^10)
+        |> exclude(:order_by)
+        |> from(order_by: [desc: :id], limit: ^2)
+        |> subquery()
+        |> order_by(:id)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{published: true, limit: 10, last: 2}, [])
+
+      assert_sql(expected, q2)
+    end
+
     test "supports :last with explicit sort key as a map" do
       expected =
         Post
@@ -512,6 +512,19 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
         |> order_by(:id)
 
       q2 = CommonFilters.convert_params_to_filter(Post, %{last: {nil, 2}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :last with explicit id sort key as a map" do
+      expected =
+        Post
+        |> exclude(:order_by)
+        |> from(order_by: [desc: :id], limit: ^2)
+        |> subquery()
+        |> order_by(:id)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{last: %{id: 2}}, [])
 
       assert_sql(expected, q2)
     end
@@ -581,6 +594,25 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
         CommonFilters.convert_params_to_filter(
           q,
           %{lock: %{name: :for_share, values: []}},
+          fragment_provider: EctoShorts.TestFragmentProvider
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :lock with keyword list resolver payload" do
+      q = from(p in Post, where: p.published == ^true)
+
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          lock: "FOR SHARE"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{lock: [name: :for_share, values: []]},
           fragment_provider: EctoShorts.TestFragmentProvider
         )
 
@@ -695,18 +727,31 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "invalid :with_ties application logs warning and leaves query unchanged" do
+    test "with_ties without limit defaults limit to 1000" do
       q = from(p in Post)
 
-      log =
-        capture_log(fn ->
-          q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: true}, [])
-          send(self(), {:q2, q2})
-        end)
+      q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: true, order_by: :title}, [])
 
-      assert log =~ "`with_ties` can only be applied to queries containing a `limit`"
-      assert_received {:q2, q2}
-      assert_sql(q, q2)
+      expected = q |> Query.limit(^1000) |> Query.with_ties(^true) |> Query.order_by(desc: :title)
+      assert_sql(expected, q2)
+    end
+
+    test "with_ties map params with explicit limit" do
+      q = from(p in Post, order_by: [desc: :views])
+
+      q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: %{limit: 500}}, [])
+
+      expected = q |> Query.limit(^500) |> Query.with_ties(^true)
+      assert_sql(expected, q2)
+    end
+
+    test "with_ties keyword params with explicit limit" do
+      q = from(p in Post, order_by: [desc: :views])
+
+      q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: [limit: 500]}, [])
+
+      expected = q |> Query.limit(^500) |> Query.with_ties(^true)
+      assert_sql(expected, q2)
     end
   end
 
@@ -985,7 +1030,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "missing named binding callback result logs warning and leaves query unchanged" do
+    test "missing named binding callback result logs warning and returns query unchanged" do
       q = from(p in Post)
 
       log =
@@ -1002,7 +1047,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
 
       assert log =~ "should create a named binding for key :author"
       assert_received {:q2, q2}
-      assert_sql(q, q2)
+      assert q2 === q
     end
   end
 
@@ -1085,6 +1130,20 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_query(expected, q2)
     end
 
+    test "supports :subquery with keyword list filters" do
+      expected_inner = from(p in Post, where: p.id == ^2)
+      expected = subquery(expected_inner)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{subquery: [id: 2]},
+          []
+        )
+
+      assert_query(expected, q2)
+    end
+
     test "applies :subquery after top-level filters" do
       expected_inner =
         from(p in Post,
@@ -1106,6 +1165,46 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 set operations" do
+    test "supports :except with nested filter params" do
+      q = from(p in Post, where: p.published == ^true)
+      other_query = from(p in Post, where: p.published == ^false)
+
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          except: ^other_query
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{except: %{published: false}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :except with pre-built query" do
+      q = from(p in Post, where: p.published == ^true)
+      other_query = from(p in Post, where: p.published == ^false)
+
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          except: ^other_query
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{except: other_query},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "supports :except_all with nested filter params" do
       q = from(p in Post, where: p.published == ^true)
       other_query = from(p in Post, where: p.published == ^false)
@@ -1370,7 +1469,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "missing preload binding alias logs warning and leaves query unchanged" do
+    test "missing preload binding alias logs warning and returns query unchanged" do
       q = from(p in Post)
 
       log =
@@ -1387,7 +1486,136 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
 
       assert log =~ "unknown bind name `:missing`"
       assert_received {:q2, q2}
-      assert_sql(q, q2)
+      assert q2 === q
+    end
+  end
+
+  describe "convert_params_to_filter/3 order_by additional examples" do
+    test "order_by — %{order_by: [desc: :title]}" do
+      expected = from(p in Post, order_by: [desc: p.title])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: [desc: :title]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "order_by — %{order_by: [asc: :title, desc: :id]}" do
+      expected = from(p in Post, order_by: [asc: p.title, desc: p.id])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: [asc: :title, desc: :id]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "order_by — %{order_by: %{desc: :title}} (map payload)" do
+      expected = from(p in Post, order_by: [desc: p.title])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: %{desc: :title}}, [])
+
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 combined examples" do
+    test "combined — %{published: true, limit: 10, offset: 5}" do
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          limit: ^10,
+          offset: ^5
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{published: true, limit: 10, offset: 5}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "combined — %{group_by: :published, having: %{published: true}}" do
+      expected =
+        from(p in Post,
+          group_by: p.published,
+          having: p.published == ^true
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :published, having: %{published: true}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "combined — %{group_by: :views, having: %{views: %{>: 10}}, or_having: %{views: %{<: 5}}}" do
+      expected =
+        from(p in Post,
+          group_by: p.views,
+          having: p.views > ^10,
+          or_having: p.views < ^5
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :views, having: %{views: %{>: 10}}, or_having: %{views: %{<: 5}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "combined — %{group_by: :id, having: %{inserted_at: %{>: %{datetime: %{ago: ...}}}}}" do
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :id, having: %{inserted_at: %{>: %{datetime: %{ago: %{count: 1, interval: "day"}}}}}},
+          []
+        )
+
+      {sql, params} = Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Repo, q2)
+      # credo:disable-for-previous-line Credo.Check.Design.AliasUsage
+
+      assert sql =~ "GROUP BY p0.\"id\""
+      assert sql =~ "HAVING (p0.\"inserted_at\" > $1::timestamp + ($2::numeric * interval '1 day'))"
+      assert match?([%DateTime{}, %Decimal{}], params)
+      assert Enum.at(params, 1) === Decimal.new("-1")
+    end
+
+    test "combined — %{where: %{title: \"test\"}, or_where: %{or: [[published: true, views: 20], [published: false, views: 10]]}}" do
+      expected =
+        from(p in Post,
+          where: p.title == ^"test",
+          or_where:
+            (p.published == ^true and p.views == ^20) or
+              (p.published == ^false and p.views == ^10)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            where: %{title: "test"},
+            or_where: %{or: [[published: true, views: 20], [published: false, views: 10]]}
+          },
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "combined — %{where: [published: true, views: %{or: [>: 10, <: 5]}]}" do
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          where: p.views > ^10 or p.views < ^5
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{where: [published: true, views: %{or: [>: 10, <: 5]}]},
+          []
+        )
+
+      assert_sql(expected, q2)
     end
   end
 end

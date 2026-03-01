@@ -78,8 +78,8 @@ defmodule EctoShorts.CommonFilters.Windows do
   end
 
   defp reduce_windows_bind(query, _binding_selector, bind_params) do
-    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
-      reduce_windows(q, {mode, target}, value)
+    Enum.reduce(BindingParams.normalize_bind_params(bind_params), query, fn {binding_selector, value}, q ->
+      reduce_windows(q, binding_selector, value)
     end)
   end
 

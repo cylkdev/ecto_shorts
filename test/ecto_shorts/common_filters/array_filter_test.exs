@@ -7,605 +7,470 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
 
   import Ecto.Query
 
-  describe "convert_params_to_filter/3 array field filters" do
-    test "supports === nil comparisons for array fields (generates IS NULL)" do
+  describe "convert_params_to_filter/3 array field equality and membership" do
+    test "array — %{tags: \"elixir\"} (scalar defaults to membership)" do
+      expected = from(p in Post, where: ^"elixir" in p.tags)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: "elixir"}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{==: \"elixir\"}} (explicit == scalar is membership)" do
+      expected = from(p in Post, where: ^"elixir" in p.tags)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{!=: \"elixir\"}}" do
+      expected = from(p in Post, where: ^"elixir" not in p.tags)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{in: \"elixir\"}} (scalar in array membership)" do
+      expected = from(p in Post, where: ^"elixir" in p.tags)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{in: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: [\"elixir\", \"erlang\"]} (list defaults to == equality)" do
+      expected = from(p in Post, where: p.tags == ^["elixir", "erlang"])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: ["elixir", "erlang"]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{==: [\"elixir\", \"erlang\"]}} (explicit == list equality)" do
+      expected = from(p in Post, where: p.tags == ^["elixir", "erlang"])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: ["elixir", "erlang"]}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{!=: [\"elixir\"]}}" do
+      expected = from(p in Post, where: p.tags != ^["elixir"])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: ["elixir"]}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: nil} (IS NULL)" do
       expected = from p in Post, where: is_nil(p.tags)
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: nil}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: nil}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports !== nil comparisons for array fields (generates IS NOT NULL)" do
+    test "array — %{tags: %{==: nil}} (IS NULL)" do
+      expected = from p in Post, where: is_nil(p.tags)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: nil}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{!=: nil}} (IS NOT NULL)" do
       expected = from p in Post, where: not is_nil(p.tags)
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{!=: nil}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: nil}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array field supports overlaps-any via :in with list RHS" do
-      expected =
-        from(p in Post,
-          where: fragment("? && ?", p.tags, ^["elixir"])
-        )
+    test "array — %{tags: %{eq: \"elixir\"}} (alias membership)" do
+      expected = from(p in Post, where: ^"elixir" in p.tags)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{eq: "elixir"}}, [])
 
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{in: ["elixir"]}}, [])
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 array field overlaps and contains-all" do
+    test "array — %{tags: %{in: [\"elixir\"]}} (overlaps-any)" do
+      expected = from(p in Post, where: fragment("? && ?", p.tags, ^["elixir"]))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{in: ["elixir"]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array field supports NOT overlap via not in with list RHS" do
-      expected =
-        from(p in Post,
-          where: not fragment("? && ?", p.tags, ^["elixir"])
-        )
+    test "array — %{tags: %{in: [\"elixir\", \"erlang\"]}} (overlaps-any)" do
+      expected = from(p in Post, where: fragment("? && ?", p.tags, ^["elixir", "erlang"]))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{in: ["elixir", "erlang"]}}, [])
 
-      q = Post
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{all: %{in: [\"elixir\", \"erlang\"]}}} (contains-all)" do
+      expected = from(p in Post, where: fragment("? @> ?", p.tags, ^["elixir", "erlang"]))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{all: %{in: ["elixir", "erlang"]}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{==: [\"elixir\"]}}} (negated list equality)" do
+      expected = from(p in Post, where: p.tags != ^["elixir"])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{==: ["elixir"]}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{in: [\"elixir\"]}}} (NOT overlap)" do
+      expected = from(p in Post, where: not fragment("? && ?", p.tags, ^["elixir"]))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{in: ["elixir"]}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{in: \"elixir\"}}} (negated scalar membership)" do
+      expected = from(p in Post, where: ^"elixir" not in p.tags)
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{in: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{all: %{in: [\"elixir\", \"erlang\"]}}}}" do
+      expected = from(p in Post, where: not fragment("? @> ?", p.tags, ^["elixir", "erlang"]))
 
       q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{not: %{in: ["elixir"]}}},
-          []
-        )
+        CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{all: %{in: ["elixir", "erlang"]}}}}, [])
+
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 array field comparisons" do
+    test "array — %{tags: %{>: \"elixir\"}}" do
+      expected = from(p in Post, where: fragment("? < ANY(?)", ^"elixir", p.tags))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{>: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array field supports contains-all via in: %{all: list}" do
-      expected =
-        from(p in Post,
-          where: fragment("? @> ?", p.tags, ^["elixir", "erlang"])
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{in: %{all: ["elixir", "erlang"]}}},
-          []
-        )
+    test "array — %{tags: %{>=: \"elixir\"}}" do
+      expected = from(p in Post, where: fragment("? <= ANY(?)", ^"elixir", p.tags))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{>=: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array field supports negated contains-all via not in: %{all: list}" do
-      expected =
-        from(p in Post,
-          where: not fragment("? @> ?", p.tags, ^["elixir", "erlang"])
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{not: %{in: %{all: ["elixir", "erlang"]}}}},
-          []
-        )
+    test "array — %{tags: %{<: \"elixir\"}}" do
+      expected = from(p in Post, where: fragment("? > ANY(?)", ^"elixir", p.tags))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{<: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array field supports membership via :in with scalar RHS" do
-      expected =
-        from(p in Post,
-          where: ^"elixir" in p.tags
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{in: "elixir"}},
-          []
-        )
+    test "array — %{tags: %{<=: \"elixir\"}}" do
+      expected = from(p in Post, where: fragment("? >= ANY(?)", ^"elixir", p.tags))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{<=: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array field defaults scalar RHS to membership (== value becomes in value)" do
-      expected =
-        from(p in Post,
-          where: ^"elixir" in p.tags
-        )
-
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: "elixir"}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "array field compares equality when RHS is a list and operator defaults to ==" do
-      expected =
-        from(p in Post,
-          where: p.tags == ^["elixir", "erlang"]
-        )
-
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: ["elixir", "erlang"]}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "array field supports negated equality when RHS is a list" do
-      expected =
-        from(p in Post,
-          where: p.tags != ^["elixir"]
-        )
-
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{not: %{==: ["elixir"]}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "array field supports > comparison against scalar (any element matches)" do
-      expected =
-        from(p in Post,
-          where: fragment("? < ANY(?)", ^"elixir", p.tags)
-        )
-
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{>: "elixir"}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "array field supports >= comparison against scalar (any element matches)" do
-      expected =
-        from(p in Post,
-          where: fragment("? <= ANY(?)", ^"elixir", p.tags)
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{>=: "elixir"}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "array field supports < comparison against scalar (any element matches)" do
-      expected =
-        from(p in Post,
-          where: fragment("? > ANY(?)", ^"elixir", p.tags)
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{<: "elixir"}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "array field supports <= comparison against scalar (any element matches)" do
-      expected =
-        from(p in Post,
-          where: fragment("? >= ANY(?)", ^"elixir", p.tags)
-        )
-
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{<=: "elixir"}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "array field supports negated > comparison against scalar" do
-      expected =
-        from(p in Post,
-          where: not fragment("? < ANY(?)", ^"elixir", p.tags)
-        )
-
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{not: %{>: "elixir"}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports LIKE operator for array fields with list RHS (EXISTS ... LIKE ANY)" do
-      patterns = ["%elixir%", "%erlang%"]
-
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE t LIKE ANY (?)
-              )
-              """,
-              p.tags,
-              ^patterns
-            )
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(q, %{tags: %{like: ["elixir", "erlang"]}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports ILIKE operator for array fields with list RHS (EXISTS ... ILIKE ANY)" do
-      patterns = ["%elixir%", "%erlang%"]
-
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE t ILIKE ANY (?)
-              )
-              """,
-              p.tags,
-              ^patterns
-            )
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(q, %{tags: %{ilike: ["elixir", "erlang"]}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports LOWER operator for array fields" do
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE lower(t) = ?
-              )
-              """,
-              p.tags,
-              ^"elixir"
-            )
-        )
-
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{lower: "elixir"}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports UPPER operator for array fields" do
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE upper(t) = ?
-              )
-              """,
-              p.tags,
-              ^"ELIXIR"
-            )
-        )
-
-      q = Post
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{upper: "ELIXIR"}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports negated LOWER operator for array fields" do
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              NOT EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE lower(t) = ?
-              )
-              """,
-              p.tags,
-              ^"elixir"
-            )
-        )
-
-      q = Post
-
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{not: %{lower: "elixir"}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports negated UPPER operator for array fields" do
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              NOT EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE upper(t) = ?
-              )
-              """,
-              p.tags,
-              ^"ELIXIR"
-            )
-        )
-
-      q = Post
-
-      q2 = CommonFilters.convert_params_to_filter(q, %{tags: %{not: %{upper: "ELIXIR"}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports LIKE operator for array fields (casts to text)" do
-      patterns = ["%elixir%"]
-
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE t LIKE ANY (?)
-              )
-              """,
-              p.tags,
-              ^patterns
-            )
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{like: "elixir"}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports ILIKE operator for array fields (casts to text)" do
-      patterns = ["%elixir%"]
-
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE t ILIKE ANY (?)
-              )
-              """,
-              p.tags,
-              ^patterns
-            )
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{ilike: "elixir"}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports negated LIKE operator for array fields (casts to text)" do
-      patterns = ["%elixir%"]
-
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              NOT EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE t LIKE ANY (?)
-              )
-              """,
-              p.tags,
-              ^patterns
-            )
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{not: %{like: "elixir"}}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports negated ILIKE operator for array fields (casts to text)" do
-      patterns = ["%elixir%"]
-
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              NOT EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE t ILIKE ANY (?)
-              )
-              """,
-              p.tags,
-              ^patterns
-            )
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{not: %{ilike: "elixir"}}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports negated LIKE operator for array fields with list RHS (NOT EXISTS ... LIKE ANY)" do
-      patterns = ["%elixir%", "%erlang%"]
-
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              NOT EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE t LIKE ANY (?)
-              )
-              """,
-              p.tags,
-              ^patterns
-            )
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{not: %{like: ["elixir", "erlang"]}}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports negated ILIKE operator for array fields with list RHS (NOT EXISTS ... ILIKE ANY)" do
-      patterns = ["%elixir%", "%erlang%"]
-
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              NOT EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE t ILIKE ANY (?)
-              )
-              """,
-              p.tags,
-              ^patterns
-            )
-        )
-
-      q = Post
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          q,
-          %{tags: %{not: %{ilike: ["elixir", "erlang"]}}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports :gt alias operator for array fields" do
-      expected =
-        from(p in Post,
-          where: fragment("? < ANY(?)", ^"elixir", p.tags)
-        )
-
+    test "array — %{tags: %{gt: \"elixir\"}}" do
+      expected = from(p in Post, where: fragment("? < ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{gt: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports :gte alias operator for array fields" do
-      expected =
-        from(p in Post,
-          where: fragment("? <= ANY(?)", ^"elixir", p.tags)
-        )
-
+    test "array — %{tags: %{gte: \"elixir\"}}" do
+      expected = from(p in Post, where: fragment("? <= ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{gte: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports :lt alias operator for array fields" do
-      expected =
-        from(p in Post,
-          where: fragment("? > ANY(?)", ^"elixir", p.tags)
-        )
-
+    test "array — %{tags: %{lt: \"elixir\"}}" do
+      expected = from(p in Post, where: fragment("? > ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{lt: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports :lte alias operator for array fields" do
-      expected =
-        from(p in Post,
-          where: fragment("? >= ANY(?)", ^"elixir", p.tags)
-        )
-
+    test "array — %{tags: %{lte: \"elixir\"}}" do
+      expected = from(p in Post, where: fragment("? >= ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{lte: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports :eq alias operator for array fields (membership)" do
-      expected =
-        from(p in Post,
-          where: ^"elixir" in p.tags
-        )
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{eq: "elixir"}}, [])
+    test "array — %{tags: %{not: %{>: \"elixir\"}}}" do
+      expected = from(p in Post, where: not fragment("? < ANY(?)", ^"elixir", p.tags))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{>: "elixir"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports :count aggregate operator for array fields in :having" do
+    test "array — %{tags: %{not: %{>=: \"elixir\"}}}" do
+      expected = from(p in Post, where: not fragment("? <= ANY(?)", ^"elixir", p.tags))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{>=: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{<: \"elixir\"}}}" do
+      expected = from(p in Post, where: not fragment("? > ANY(?)", ^"elixir", p.tags))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{<: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{<=: \"elixir\"}}}" do
+      expected = from(p in Post, where: not fragment("? >= ANY(?)", ^"elixir", p.tags))
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{<=: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 array field string matching" do
+    test "array — %{tags: %{like: \"elixir\"}} (scalar, casts to list)" do
+      patterns = ["%elixir%"]
+
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{like: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{ilike: \"elixir\"}} (scalar, casts to list)" do
+      patterns = ["%elixir%"]
+
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{ilike: "elixir"}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{like: [\"elixir\", \"erlang\"]}}" do
+      patterns = ["%elixir%", "%erlang%"]
+
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{like: ["elixir", "erlang"]}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{ilike: [\"elixir\", \"erlang\"]}}" do
+      patterns = ["%elixir%", "%erlang%"]
+
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{ilike: ["elixir", "erlang"]}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{like: \"elixir\"}}}" do
+      patterns = ["%elixir%"]
+
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{like: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{ilike: \"elixir\"}}}" do
+      patterns = ["%elixir%"]
+
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{ilike: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{like: [\"elixir\", \"erlang\"]}}}" do
+      patterns = ["%elixir%", "%erlang%"]
+
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{like: ["elixir", "erlang"]}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{ilike: [\"elixir\", \"erlang\"]}}}" do
+      patterns = ["%elixir%", "%erlang%"]
+
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{ilike: ["elixir", "erlang"]}}}, [])
+
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 array field string transformations" do
+    test "array — %{tags: %{==: %{lower: \"elixir\"}}}" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n",
+              p.tags,
+              ^"elixir"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: %{lower: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{==: %{upper: \"ELIXIR\"}}}" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n",
+              p.tags,
+              ^"ELIXIR"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: %{upper: "ELIXIR"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{!=: %{lower: \"elixir\"}}}" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n",
+              p.tags,
+              ^"elixir"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: %{lower: "elixir"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{!=: %{upper: \"ELIXIR\"}}}" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n",
+              p.tags,
+              ^"ELIXIR"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: %{upper: "ELIXIR"}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{==: %{lower: \"elixir\"}}}}" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n",
+              p.tags,
+              ^"elixir"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{==: %{lower: "elixir"}}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{not: %{==: %{upper: \"ELIXIR\"}}}}" do
+      expected =
+        from(p in Post,
+          where:
+            fragment(
+              "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n",
+              p.tags,
+              ^"ELIXIR"
+            )
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{==: %{upper: "ELIXIR"}}}}, [])
+
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 array field aggregates" do
+    test "array — %{tags: %{count: %{>: 0}}} (in :having)" do
       expected =
         from(p in Post,
           group_by: p.author_id,
@@ -622,7 +487,24 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :count aggregate operator for array fields with implicit == in :having" do
+    test "array — %{tags: %{not: %{count: %{==: 0}}}} (negated count in :having)" do
+      expected =
+        from(p in Post,
+          group_by: p.author_id,
+          having: not (count(p.tags) == ^0)
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{tags: %{not: %{count: %{==: 0}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "array — %{tags: %{count: %{==: 0}}} (in :having)" do
       expected =
         from(p in Post,
           group_by: p.author_id,
@@ -632,130 +514,9 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{group_by: :author_id, having: %{tags: %{count: 0}}},
+          %{group_by: :author_id, having: %{tags: %{count: %{==: 0}}}},
           []
         )
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports LOWER operator for array fields via explicit ==" do
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE lower(t) = ?
-              )
-              """,
-              p.tags,
-              ^"elixir"
-            )
-        )
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: %{lower: "elixir"}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports UPPER operator for array fields via explicit ==" do
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE upper(t) = ?
-              )
-              """,
-              p.tags,
-              ^"ELIXIR"
-            )
-        )
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: %{upper: "ELIXIR"}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports LOWER operator for array fields via explicit !=" do
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              NOT EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE lower(t) = ?
-              )
-              """,
-              p.tags,
-              ^"elixir"
-            )
-        )
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: %{lower: "elixir"}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports UPPER operator for array fields via explicit !=" do
-      expected =
-        from(p in Post,
-          where:
-            fragment(
-              """
-              NOT EXISTS (
-                SELECT 1
-                FROM unnest(?) AS t
-                WHERE upper(t) = ?
-              )
-              """,
-              p.tags,
-              ^"ELIXIR"
-            )
-        )
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: %{upper: "ELIXIR"}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports negated >= comparison for array fields" do
-      expected =
-        from(p in Post,
-          where: not fragment("? <= ANY(?)", ^"elixir", p.tags)
-        )
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{>=: "elixir"}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports negated < comparison for array fields" do
-      expected =
-        from(p in Post,
-          where: not fragment("? > ANY(?)", ^"elixir", p.tags)
-        )
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{<: "elixir"}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "supports negated <= comparison for array fields" do
-      expected =
-        from(p in Post,
-          where: not fragment("? >= ANY(?)", ^"elixir", p.tags)
-        )
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{<=: "elixir"}}}, [])
 
       assert_sql(expected, q2)
     end

@@ -72,7 +72,7 @@ defmodule EctoShorts.Dynamics do
 
   @equal :==
   @boolean_operators [:and, :or]
-  @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
+  @map_payload_helper_operators [:datetime, :date]
 
   @doc """
   Converts filter params into a single composable dynamic expression.
@@ -143,21 +143,34 @@ defmodule EctoShorts.Dynamics do
     dynamic_adapter = dynamic_adapter!(opts)
     adapter_operators = dynamic_adapter.operators()
 
-    if source_has_schema?(source) and key not in adapter_operators do
-      schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
+    cond do
+      key in adapter_operators ->
+        build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter)
 
-      if is_list(schema_fields) and key not in schema_fields do
-        Logger.warning(
-          @logger_prefix,
-          "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
-        )
+      source_has_schema?(source) ->
+        schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
 
-        dyn_a
-      else
+        if is_list(schema_fields) and key not in schema_fields do
+          Logger.warning(
+            @logger_prefix,
+            "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
+          )
+
+          dyn_a
+        else
+          build_field_predicates(
+            source,
+            dyn_a,
+            binding_selector,
+            key,
+            value,
+            dynamic_adapter,
+            opts
+          )
+        end
+
+      true ->
         build_field_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts)
-      end
-    else
-      build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter)
     end
   end
 
@@ -171,14 +184,35 @@ defmodule EctoShorts.Dynamics do
         if is_list(inner) do
           merge_boolean_predicates(source, acc, binding_selector, boolean_op, inner, opts)
         else
-          dyn_b = dynamic_adapter.build_dynamic(source, binding_selector, key, inner)
-          merge_dynamic(acc, boolean_op, dyn_b)
+          case dynamic_adapter.build_dynamic(source, binding_selector, key, inner) do
+            nil ->
+              Logger.warning(
+                @logger_prefix,
+                "No dynamic expression generated for field #{inspect(key)} with expression: #{inspect(inner)}"
+              )
+
+              acc
+
+            dyn_b ->
+              merge_dynamic(acc, boolean_op, dyn_b)
+          end
         end
 
       item, acc ->
         expr = if is_tuple(item), do: item, else: {@equal, item}
-        dyn_b = dynamic_adapter.build_dynamic(source, binding_selector, key, expr)
-        merge_dynamic(acc, :and, dyn_b)
+
+        case dynamic_adapter.build_dynamic(source, binding_selector, key, expr) do
+          nil ->
+            Logger.warning(
+              @logger_prefix,
+              "No dynamic expression generated for field #{inspect(key)} with expression: #{inspect(expr)}"
+            )
+
+            acc
+
+          dyn_b ->
+            merge_dynamic(acc, :and, dyn_b)
+        end
     end)
   end
 
@@ -186,8 +220,18 @@ defmodule EctoShorts.Dynamics do
     value
     |> normalize_expression_params()
     |> Enum.reduce(dyn_a, fn item, dyn_acc ->
-      dyn_b = dynamic_adapter.build_dynamic(source, binding_selector, key, item)
-      merge_dynamic(dyn_acc, :and, dyn_b)
+      case dynamic_adapter.build_dynamic(source, binding_selector, key, item) do
+        nil ->
+          Logger.warning(
+            @logger_prefix,
+            "No dynamic expression generated for operator #{inspect(key)} with expression: #{inspect(item)}"
+          )
+
+          dyn_acc
+
+        dyn_b ->
+          merge_dynamic(dyn_acc, :and, dyn_b)
+      end
     end)
   end
 

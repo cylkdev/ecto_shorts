@@ -77,8 +77,8 @@ defmodule EctoShorts.CommonFilters.Update do
   end
 
   defp reduce_update_bind(query, _binding_selector, bind_params, opts) do
-    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
-      build(nil, :update, q, {mode, target}, value, opts)
+    Enum.reduce(BindingParams.normalize_bind_params(bind_params), query, fn {binding_selector, value}, q ->
+      build(nil, :update, q, binding_selector, value, opts)
     end)
   end
 

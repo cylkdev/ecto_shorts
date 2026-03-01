@@ -10,10 +10,12 @@ defmodule EctoShorts.CommonFilters.Preload do
   alias Ecto.Query
   alias EctoShorts.CommonFilters.BindingParams
   alias EctoShorts.Compiler
+  alias EctoShorts.Logger
 
   require Ecto.Query
   require EctoShorts.Compiler
 
+  @logger_prefix "EctoShorts.CommonFilters.Preload"
   @binding_selector_key :bind
 
   def build(schema_source, :preload, query, binding_selector, arg, _opts) do
@@ -55,10 +57,27 @@ defmodule EctoShorts.CommonFilters.Preload do
   end
 
   defp reduce_preload_bind(_schema_source, query, _binding_selector, bind_params, entries \\ nil) do
-    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
-      apply_preload_expr(q, {mode, target}, value, entries)
+    Enum.reduce(BindingParams.normalize_bind_params(bind_params), query, fn {binding_selector, value}, q ->
+      if valid_binding?(q, binding_selector) do
+        apply_preload_expr(q, binding_selector, value, entries)
+      else
+        Logger.warning(
+          @logger_prefix,
+          "unknown bind name `#{inspect(elem(binding_selector, 1))}` in query"
+        )
+
+        q
+      end
     end)
   end
+
+  defp valid_binding?(_query, {:as, nil}), do: true
+
+  defp valid_binding?(query, {:as, alias}) when is_atom(alias) do
+    Query.has_named_binding?(query, alias)
+  end
+
+  defp valid_binding?(_query, _binding_selector), do: true
 
   Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->

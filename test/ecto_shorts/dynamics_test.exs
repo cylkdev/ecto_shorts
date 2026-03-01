@@ -768,12 +768,12 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports datetime_add helper map payload" do
+  test "convert_to_dynamic supports datetime: add helper map payload" do
     binding = {:as, nil}
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        inserted_at: %{>=: %{datetime_add: %{field: :inserted_at, count: 1, interval: "day"}}}
+        inserted_at: %{>=: %{datetime: %{add: %{field: :inserted_at, count: 1, interval: "day"}}}}
       })
 
     expected =
@@ -785,12 +785,12 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports date_add helper map payload" do
+  test "convert_to_dynamic supports date: add helper map payload" do
     binding = {:as, nil}
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        inserted_at: %{==: %{date_add: %{field: :inserted_at, count: 1, interval: "month"}}}
+        inserted_at: %{==: %{date: %{add: %{field: :inserted_at, count: 1, interval: "month"}}}}
       })
 
     expected =
@@ -802,12 +802,12 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports from_now helper map payload" do
+  test "convert_to_dynamic supports datetime: from_now helper map payload" do
     binding = {:as, nil}
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        inserted_at: %{<: %{from_now: %{count: 2, interval: "week"}}}
+        inserted_at: %{<: %{datetime: %{from_now: %{count: 2, interval: "week"}}}}
       })
 
     actual_ast = Macro.to_string(actual)
@@ -816,12 +816,12 @@ defmodule EctoShorts.DynamicsTest do
     assert actual_ast =~ "^2, \"week\""
   end
 
-  test "convert_to_dynamic supports ago helper map payload" do
+  test "convert_to_dynamic supports datetime: ago helper map payload" do
     binding = {:as, nil}
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        inserted_at: %{>: %{ago: %{count: 7, interval: "day"}}}
+        inserted_at: %{>: %{datetime: %{ago: %{count: 7, interval: "day"}}}}
       })
 
     actual_ast = Macro.to_string(actual)
@@ -835,7 +835,7 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        inserted_at: %{from_now: %{count: 1, interval: "day"}}
+        inserted_at: %{datetime: %{from_now: %{count: 1, interval: "day"}}}
       })
 
     actual_ast = Macro.to_string(actual)
@@ -1213,7 +1213,7 @@ defmodule EctoShorts.DynamicsTest do
     binding = {:as, nil}
 
     actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{tags: %{not: %{in: %{all: ["a", "b"]}}}})
+      Dynamics.convert_to_dynamic(Post, binding, %{tags: %{not: %{all: %{in: ["a", "b"]}}}})
 
     expected = dynamic([q], not fragment("? @> ?", field(q, ^:tags), ^["a", "b"]))
 
@@ -1246,7 +1246,7 @@ defmodule EctoShorts.DynamicsTest do
 
   test "convert_to_dynamic supports array in all" do
     binding = {:as, nil}
-    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{in: %{all: ["a", "b"]}}})
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{all: %{in: ["a", "b"]}}})
     expected = dynamic([q], fragment("? @> ?", field(q, ^:tags), ^["a", "b"]))
 
     assert_dynamic(expected, actual)

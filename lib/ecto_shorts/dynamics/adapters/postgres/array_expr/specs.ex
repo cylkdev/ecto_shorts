@@ -177,9 +177,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
 
               _ ->
-                raise ArgumentError,
-                  message:
-                    "Expected the operator to be one of [:eq, :==, :!=] for nil comparison, got: #{inspect(unquote(op_var))}"
+                nil
             end
           end
       }
@@ -605,7 +603,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
-        head: quote(do: {:not, {:in, {:all, unquote(values_var)}}}),
+        head: quote(do: {:not, {:all, {:in, unquote(values_var)}}}),
         guard: list_guard,
         body:
           AST.dynamic_ast(
@@ -739,7 +737,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
-        head: quote(do: {:in, {:all, unquote(values_var)}}),
+        head: quote(do: {:all, {:in, unquote(values_var)}}),
         guard: list_guard,
         body:
           AST.dynamic_ast(

@@ -10,7 +10,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 association shorthand" do
-    test "supports joining an association via association key params" do
+    test "association — %{author: [as: :author, first_name: \"John\"]}" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -28,6 +28,46 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
+    test "association — %{author: [first_name: \"John\"]} (no :as)" do
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{author: [first_name: "John"]},
+          []
+        )
+
+      assert %Ecto.Query{} = q2
+    end
+
+    test "association — %{author: [as: :author, on: true, first_name: \"John\"]}" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          where: a.first_name == ^"John"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{author: [as: :author, on: true, first_name: "John"]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "association — %{author: [as: :author, type: :left, first_name: \"John\"]}" do
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{author: [as: :author, type: :left, first_name: "John"]},
+          []
+        )
+
+      assert %Ecto.Query{} = q2
+    end
+
     test "invalid association filter payload logs warning and skips entry" do
       q = from(p in Post)
 
@@ -40,6 +80,57 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert log =~ "Expected association params for :author to be a keyword list, got: 123"
       assert_received {:q2, q2}
       assert_sql(q, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 dynamic" do
+    test "dynamic — %{dynamic: dynamic([p], p.views > ^10)}" do
+      dyn = dynamic([p], p.views > ^10)
+      expected = from(p in Post, where: p.views > ^10)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{dynamic: dyn}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "dynamic — %{where: %{dynamic: dynamic([p], p.published === ^true)}}" do
+      dyn = dynamic([p], p.published == ^true)
+      expected = from(p in Post, where: p.published == ^true)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{where: %{dynamic: dyn}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "dynamic — %{or_where: %{dynamic: dynamic([p], p.views > ^100)}}" do
+      dyn = dynamic([p], p.views > ^100)
+      expected = from(p in Post, or_where: p.views > ^100)
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{or_where: %{dynamic: dyn}}, [])
+
+      assert_sql(expected, q2)
+    end
+  end
+
+  describe "convert_params_to_filter/3 exists" do
+    test "exists — %{where: %{exists: subquery_expr}}" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected = from(p in Post, where: exists(subquery_expr))
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{where: %{exists: subquery_expr}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "exists — %{where: %{exists: %{not: subquery_expr}}}" do
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      expected = from(p in Post, where: not exists(subquery_expr))
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{where: %{exists: %{not: subquery_expr}}}, [])
+
+      assert_sql(expected, q2)
     end
   end
 

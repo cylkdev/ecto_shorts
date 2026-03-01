@@ -31,14 +31,19 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
         apply_entry(query_acc, binding_key, binding_params, opts)
       end)
     else
-      Enum.reduce(params, query, fn entry, query_acc ->
-        reduce_entries(query_acc, entry, opts)
+      Enum.reduce(params, query, fn
+        {binding_key, binding_params}, query_acc ->
+          apply_entry(query_acc, binding_key, binding_params, opts)
+
+        other, query_acc ->
+          Logger.warning(
+            @logger_prefix,
+            "Expected :with_named_binding params to be a map or keyword list, got: #{inspect(other)}"
+          )
+
+          query_acc
       end)
     end
-  end
-
-  defp reduce_entries(query, {binding_key, binding_params}, opts) do
-    apply_entry(query, binding_key, binding_params, opts)
   end
 
   defp reduce_entries(query, value, _opts) do
@@ -57,13 +62,27 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
 
   defp apply_entry(query, binding_key, binding_params, opts)
        when is_atom(binding_key) and is_list(binding_params) do
-    if Keyword.keyword?(binding_params) do
-      Query.with_named_binding(query, binding_key, fn query_acc ->
-        CommonFilters.convert_params_to_filter(query_acc, binding_params, opts)
-      end)
-    else
-      warn_invalid_binding_params(binding_key, binding_params)
-      query
+    cond do
+      not Keyword.keyword?(binding_params) ->
+        warn_invalid_binding_params(binding_key, binding_params)
+        query
+
+      Query.has_named_binding?(query, binding_key) ->
+        query
+
+      true ->
+        new_query = CommonFilters.convert_params_to_filter(query, binding_params, opts)
+
+        if Query.has_named_binding?(new_query, binding_key) do
+          new_query
+        else
+          Logger.warning(
+            @logger_prefix,
+            "callback function for with_named_binding/3 should create a named binding for key #{inspect(binding_key)}"
+          )
+
+          query
+        end
     end
   end
 

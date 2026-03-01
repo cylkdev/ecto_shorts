@@ -34,10 +34,13 @@ Examples:
 
 Comparison operators are the keys that specify how to compare a field. They must wrap the value being compared.
 
+When the operand is `nil`, the comparison produces an IS NULL or IS NOT NULL check. Only `:==`, `:eq`, and `:!=` are valid operators for `nil` comparisons.
+
 Examples:
 - `%{views: %{>: 10}}` - `>` wraps the value `10`
 - `%{id: %{==: 1}}` - `==` wraps the value `1`
-- `%{published_at: %{!=: nil}}` - `!=` wraps `nil`
+- `%{published_at: %{!=: nil}}` - `!=` wraps `nil` (IS NOT NULL)
+- `%{published_at: %{==: nil}}` - `==` wraps `nil` (IS NULL)
 
 **Rule 4:** When used on a scalar field, the `:in` operator tests membership and must wrap a list of values.
 
@@ -47,6 +50,8 @@ Examples:
 - `%{published: %{in: [true, false]}}` - `:in` wraps a list
 - `%{published: %{not: %{in: [true, false]}}}` - `:not` wraps the `:in` operator
 - `%{id: %{in: [1, 2, 3]}}` - `:in` wraps a list of values
+
+**Note:** When `:==` or `:!=` receives a list on a scalar field, it coerces to `IN` or `NOT IN` respectively. For example, `%{published: %{==: [true, false]}}` is equivalent to `%{published: %{in: [true, false]}}`. Negation applies: `%{published: %{not: %{==: [true, false]}}}` produces `NOT IN`.
 
 ## String Matching Rules
 
@@ -75,6 +80,8 @@ Examples:
 **Rule 7:** When filtering on aggregate values with a comparison operator, the aggregate function wraps the comparison operator.
 
 Aggregate functions can wrap comparison operators to filter based on aggregate results.
+
+When an aggregate receives a non-operator value directly, it defaults to `:==`. For example, `%{views: %{avg: 10}}` is equivalent to `%{views: %{avg: %{==: 10}}}`.
 
 Examples:
 - `%{views: %{avg: %{>: 10}}}` - `:avg` wraps the `>` operator

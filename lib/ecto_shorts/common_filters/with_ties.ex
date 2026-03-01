@@ -8,7 +8,6 @@ defmodule EctoShorts.CommonFilters.WithTies do
   """
 
   alias Ecto.Query
-  alias EctoShorts.CommonFilters.BindingParams
   alias EctoShorts.Compiler
   alias EctoShorts.Logger
 
@@ -16,62 +15,57 @@ defmodule EctoShorts.CommonFilters.WithTies do
   require EctoShorts.Compiler
 
   @logger_prefix "EctoShorts.CommonFilters.WithTies"
-  @binding_selector_key :bind
+  @default_limit 1000
 
   @doc false
   def build(_schema_source, :with_ties, query, binding_selector, params, _opts) do
-    reduce_with_ties(query, binding_selector, params)
+    apply_with_ties(query, binding_selector, params)
   end
 
-  defp reduce_with_ties(query, binding_selector, params)
-       when is_map(params) and not is_struct(params) do
-    reduce_with_ties(query, binding_selector, Map.to_list(params))
+  defp apply_with_ties(query, binding_selector, params) when is_list(params) do
+    apply_with_ties(query, binding_selector, Map.new(params))
   end
 
-  defp reduce_with_ties(query, binding_selector, {@binding_selector_key, bind_params}) do
-    reduce_with_ties_bind(query, binding_selector, bind_params)
+  defp apply_with_ties(query, binding_selector, %{limit: limit}) do
+    limit = limit || @default_limit
+
+    query
+    |> Query.limit(^limit)
+    |> apply_with_ties_expr(binding_selector, true)
   end
 
-  defp reduce_with_ties(query, binding_selector, {key, value}) do
-    apply_with_ties_expr(query, binding_selector, {key, value})
-  end
+  defp apply_with_ties(query, _binding_selector, %{bind: bind_params}) do
+    bind_entries = if is_map(bind_params), do: Map.to_list(bind_params), else: bind_params
 
-  defp reduce_with_ties(query, binding_selector, params) when is_list(params) do
-    if Keyword.keyword?(params) do
-      case Enum.split_with(params, fn {k, _} -> k === @binding_selector_key end) do
-        {[], entries} ->
-          Enum.reduce(entries, query, fn entry, query_acc ->
-            reduce_with_ties(query_acc, binding_selector, entry)
-          end)
+    Enum.reduce(bind_entries, query, fn {mode, scoped}, q ->
+      scoped_entries = if is_map(scoped), do: Map.to_list(scoped), else: scoped
 
-        {bind_entries, []} ->
-          Enum.reduce(bind_entries, query, fn entry, query_acc ->
-            reduce_with_ties(query_acc, binding_selector, entry)
-          end)
-
-        {bind_entries, entries} ->
-          query_with_ties =
-            Enum.reduce(entries, query, fn entry, query_acc ->
-              reduce_with_ties(query_acc, binding_selector, entry)
-            end)
-
-          Enum.reduce(bind_entries, query_with_ties, fn entry, query_acc ->
-            reduce_with_ties(query_acc, binding_selector, entry)
-          end)
-      end
-    else
-      apply_with_ties_expr(query, binding_selector, params)
-    end
-  end
-
-  defp reduce_with_ties(query, binding_selector, value) do
-    apply_with_ties_expr(query, binding_selector, value)
-  end
-
-  defp reduce_with_ties_bind(query, _binding_selector, bind_params) do
-    BindingParams.reduce_submodule_bind_params(query, bind_params, fn q, {mode, target}, value ->
-      reduce_with_ties(q, {mode, target}, value)
+      Enum.reduce(scoped_entries, q, fn {target, value}, q2 ->
+        apply_with_ties(q2, {mode, target}, value)
+      end)
     end)
+  end
+
+  defp apply_with_ties(query, binding_selector, true) do
+    query =
+      if Query.exclude(query, :limit) === query,
+        do: Query.limit(query, ^@default_limit),
+        else: query
+
+    apply_with_ties_expr(query, binding_selector, true)
+  end
+
+  defp apply_with_ties(query, binding_selector, false) do
+    apply_with_ties_expr(query, binding_selector, false)
+  end
+
+  defp apply_with_ties(query, _binding_selector, value) do
+    Logger.warning(
+      @logger_prefix,
+      "Expected :with_ties value to be a boolean, got: #{inspect(value)}"
+    )
+
+    query
   end
 
   Compiler.define_clauses do

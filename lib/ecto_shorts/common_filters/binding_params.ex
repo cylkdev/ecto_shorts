@@ -11,7 +11,9 @@ defmodule EctoShorts.CommonFilters.BindingParams do
   """
 
   alias EctoShorts.CommonFilters
+  alias EctoShorts.Logger
 
+  @logger_prefix "EctoShorts.CommonFilters.BindingParams"
   @binding_selector_modes [:as, :at]
 
   def build_binding_params(
@@ -42,38 +44,50 @@ defmodule EctoShorts.CommonFilters.BindingParams do
         opts
       )
       when is_list(bind_params) do
-    unless Keyword.keyword?(bind_params) do
-      raise ArgumentError,
-            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    if Keyword.keyword?(bind_params) do
+      Enum.reduce(bind_params, query, fn
+        {binding_mode, scoped_params}, query_acc ->
+          reduce_scoped_bind_params(
+            schema_source,
+            query_acc,
+            binding_mode,
+            scoped_params,
+            filter_op,
+            opts
+          )
+
+        entry, query_acc ->
+          Logger.warning(
+            @logger_prefix,
+            "Expected :bind entries to be {mode, params} tuples, got: #{inspect(entry)}"
+          )
+
+          query_acc
+      end)
+    else
+      Logger.warning(
+        @logger_prefix,
+        "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+      )
+
+      query
     end
-
-    Enum.reduce(bind_params, query, fn
-      {binding_mode, scoped_params}, query_acc ->
-        reduce_scoped_bind_params(
-          schema_source,
-          query_acc,
-          binding_mode,
-          scoped_params,
-          filter_op,
-          opts
-        )
-
-      entry, _query_acc ->
-        raise ArgumentError,
-              "Expected :bind entries to be {mode, params} tuples, got: #{inspect(entry)}"
-    end)
   end
 
   def build_binding_params(
         _schema_source,
-        _query,
+        query,
         _binding_selector,
         _filter_op,
         bind_params,
         _opts
       ) do
-    raise ArgumentError,
-          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    Logger.warning(
+      @logger_prefix,
+      "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    )
+
+    query
   end
 
   defp reduce_scoped_bind_params(
@@ -84,25 +98,34 @@ defmodule EctoShorts.CommonFilters.BindingParams do
          filter_op,
          opts
        ) do
-    unless binding_mode in @binding_selector_modes do
-      raise ArgumentError,
-            "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
-    end
-
-    scoped_entries =
+    if binding_mode in @binding_selector_modes do
       case scoped_params do
         params when is_map(params) and not is_struct(params) ->
-          Map.to_list(params)
+          reduce_scoped_entries(schema_source, query, binding_mode, Map.to_list(params), filter_op, opts)
 
         params when is_list(params) ->
-          params
+          reduce_scoped_entries(schema_source, query, binding_mode, params, filter_op, opts)
 
         params ->
-          raise ArgumentError,
-                "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(params)}"
-      end
+          Logger.warning(
+            @logger_prefix,
+            "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(params)}"
+          )
 
-    Enum.reduce(scoped_entries, query, fn
+          query
+      end
+    else
+      Logger.warning(
+        @logger_prefix,
+        "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+      )
+
+      query
+    end
+  end
+
+  defp reduce_scoped_entries(schema_source, query, binding_mode, entries, filter_op, opts) do
+    Enum.reduce(entries, query, fn
       {binding_target, params}, query_acc ->
         reduce_binding_params(
           schema_source,
@@ -113,57 +136,53 @@ defmodule EctoShorts.CommonFilters.BindingParams do
           opts
         )
 
-      entry, _query_acc ->
-        raise ArgumentError,
-              "Expected :bind -> #{inspect(binding_mode)} entries to be {target, params} tuples, got: #{inspect(entry)}"
+      entry, query_acc ->
+        Logger.warning(
+          @logger_prefix,
+          "Expected :bind -> #{inspect(binding_mode)} entries to be {target, params} tuples, got: #{inspect(entry)}"
+        )
+
+        query_acc
     end)
   end
 
   @doc false
-  def reduce_submodule_bind_params(query, bind_params, callback)
+  def normalize_bind_params(bind_params)
       when is_map(bind_params) and not is_struct(bind_params) do
-    reduce_submodule_bind_params(query, Map.to_list(bind_params), callback)
+    normalize_bind_params(Map.to_list(bind_params))
   end
 
-  def reduce_submodule_bind_params(query, bind_params, callback) when is_list(bind_params) do
+  def normalize_bind_params(bind_params) when is_list(bind_params) do
     if Keyword.keyword?(bind_params) do
-      Enum.reduce(bind_params, query, fn
-        {binding_mode, scoped_params}, query_acc when binding_mode in @binding_selector_modes ->
-          scoped_params =
-            case scoped_params do
-              value when is_map(value) and not is_struct(value) ->
-                Map.to_list(value)
+      Enum.flat_map(bind_params, fn
+        {binding_mode, scoped_params} when binding_mode in @binding_selector_modes ->
+          normalize_scoped_entries(binding_mode, scoped_params)
 
-              value when is_list(value) ->
-                value
+        {binding_mode, _scoped_params} ->
+          Logger.warning(
+            @logger_prefix,
+            "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+          )
 
-              value ->
-                raise ArgumentError,
-                      "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(value)}"
-            end
-
-          Enum.reduce(scoped_params, query_acc, fn
-            {binding_target, next_value}, q ->
-              callback.(q, {binding_mode, binding_target}, next_value)
-
-            entry, _q ->
-              raise ArgumentError,
-                    "Expected :bind -> #{inspect(binding_mode)} entries to be {target, params} tuples, got: #{inspect(entry)}"
-          end)
-
-        {binding_mode, _scoped_params}, _query_acc ->
-          raise ArgumentError,
-                "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+          []
       end)
     else
-      raise ArgumentError,
-            "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+      Logger.warning(
+        @logger_prefix,
+        "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+      )
+
+      []
     end
   end
 
-  def reduce_submodule_bind_params(_query, bind_params, _callback) do
-    raise ArgumentError,
-          "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+  def normalize_bind_params(bind_params) do
+    Logger.warning(
+      @logger_prefix,
+      "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+    )
+
+    []
   end
 
   defp reduce_binding_params(
@@ -196,8 +215,45 @@ defmodule EctoShorts.CommonFilters.BindingParams do
         )
 
       binding_selector ->
-        raise ArgumentError,
-              "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: #{inspect(binding_selector)}"
+        Logger.warning(
+          @logger_prefix,
+          "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: #{inspect(binding_selector)}"
+        )
+
+        query
     end
+  end
+
+  defp normalize_scoped_entries(binding_mode, scoped_params) do
+    case scoped_params do
+      value when is_map(value) and not is_struct(value) ->
+        normalize_entries(binding_mode, Map.to_list(value))
+
+      value when is_list(value) ->
+        normalize_entries(binding_mode, value)
+
+      value ->
+        Logger.warning(
+          @logger_prefix,
+          "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(value)}"
+        )
+
+        []
+    end
+  end
+
+  defp normalize_entries(binding_mode, entries) do
+    Enum.flat_map(entries, fn
+      {binding_target, next_value} ->
+        [{{binding_mode, binding_target}, next_value}]
+
+      entry ->
+        Logger.warning(
+          @logger_prefix,
+          "Expected :bind -> #{inspect(binding_mode)} entries to be {target, params} tuples, got: #{inspect(entry)}"
+        )
+
+        []
+    end)
   end
 end
