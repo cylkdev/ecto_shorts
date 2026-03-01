@@ -91,19 +91,18 @@ defmodule EctoShorts.MixProject do
           EctoShorts.Actions.Multi,
           EctoShorts.Actions.Error
         ],
-        Params: [
-          EctoShorts.CommonParams.Placeholders,
-          EctoShorts.CommonParams.Timestamps
-        ],
-        "Schema & Query Introspection": [
-          EctoShorts.CommonQuery,
-          EctoShorts.CommonSchema,
-          EctoShorts.SchemaHelpers
+        Testing: [
+          EctoShorts.Testing
         ],
         "Dynamic Expressions": [
           EctoShorts.Dynamics,
           EctoShorts.Dynamics.Adapter,
           EctoShorts.Dynamics.Adapters.Postgres
+        ],
+        "Schema & Query Introspection": [
+          EctoShorts.CommonQuery,
+          EctoShorts.CommonSchema,
+          EctoShorts.SchemaHelpers
         ],
         Compiler: [
           EctoShorts.Compiler,
@@ -113,8 +112,30 @@ defmodule EctoShorts.MixProject do
           EctoShorts.Compiler.ClauseSpecProvider,
           EctoShorts.Compiler.QueryBindingBuilder
         ],
-        Testing: [
-          EctoShorts.Testing
+        "CommonParams API": [
+          EctoShorts.CommonParams.Placeholders,
+          EctoShorts.CommonParams.Timestamps
+        ],
+        "CommonFilter API": [
+          EctoShorts.CommonFilters.BindingParams,
+          EctoShorts.CommonFilters.Distinct,
+          EctoShorts.CommonFilters.Filter,
+          EctoShorts.CommonFilters.GroupBy,
+          EctoShorts.CommonFilters.Having,
+          EctoShorts.CommonFilters.Join,
+          EctoShorts.CommonFilters.OrderBy,
+          EctoShorts.CommonFilters.Preload,
+          EctoShorts.CommonFilters.Select,
+          EctoShorts.CommonFilters.SubQuery,
+          EctoShorts.CommonFilters.Update,
+          EctoShorts.CommonFilters.Windows,
+          EctoShorts.CommonFilters.WithCte,
+          EctoShorts.CommonFilters.WithNamedBinding,
+          EctoShorts.CommonFilters.WithTies,
+          EctoShorts.CommonFilters.Where
+        ],
+        "Fragment Providers": [
+          EctoShorts.CommonFilters.FragmentProviders.NoOp
         ],
         "Configuration & Utilities": [
           EctoShorts.Config,
