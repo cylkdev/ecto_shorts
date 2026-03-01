@@ -780,42 +780,47 @@ defmodule EctoShorts.CommonFilters do
   ## Nested Expressions
 
   CommonFilters is a data mapper. Instead of composing Ecto queries by
-  hand, you pass in plain data and CommonFilters translates each slot
-  into the correct Ecto call. The slot chain is the core of this
-  filtering language.
+  hand, you describe what you want with plain maps or keyword lists and
+  CommonFilters translates that data into the correct Ecto calls. It
+  handles the internal specifics of Ecto so you do not have to.
 
-  Every field filter is a chain of nested maps or keyword lists. Each
-  kind of key occupies one slot, processed from outermost to innermost:
+  The filtering language is built around a slot chain. Each filter you
+  write is a chain of nested params, and each nesting level fills one
+  slot. The slots are processed from outermost to innermost:
 
       field -> negation -> aggregate -> operator -> value expression
 
-  Not every slot is required. Defaults fill in the gaps:
+  Not every slot is required. When you leave a slot out, we fill in a
+  sensible default. The examples below show how adding one slot at a
+  time builds up more complex filters:
 
-  **Field only** - checks for equality:
+  **Field only** - equality check (operator defaults to `==`):
 
       %{title: "hello"}                  # WHERE title = 'hello'
 
-  **Field + operator** - controls the comparison:
+  **Field + operator** - explicit comparison:
 
       %{views: %{>: 10}}                 # WHERE views > 10
 
-  **Field + negation + operator** - flips the condition:
+  **Field + negation + operator** - negated comparison:
 
       %{views: %{not: %{>: 10}}}         # WHERE NOT (views > 10)
 
-  **Field + aggregate + operator** - wraps in an aggregate:
+  **Field + aggregate + operator** - aggregate comparison:
 
       %{views: %{avg: %{>: 10}}}         # HAVING avg(views) > 10
 
-  **All five slots** - the full chain:
+  **All five slots** - the full chain in one filter:
 
       %{views: %{not: %{avg: %{>: %{+: [:views, 10]}}}}}
 
-  1. The `field` is the key `:views`
-  2. The `negation` is the key `:not`
-  3. The `aggregate` is the key `:avg`
-  4. The `operator` is the key `:>`
-  5. The `value expression` is the map `%{+: [:views, 10]}`
+  Reading from the outside in:
+
+  1. `:views` is the **field**
+  2. `:not` is the **negation**
+  3. `:avg` is the **aggregate**
+  4. `:>` is the **operator**
+  5. `%{+: [:views, 10]}` is the **value expression**
 
   ## Processing order
 
