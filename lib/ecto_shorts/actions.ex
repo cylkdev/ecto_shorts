@@ -2,68 +2,664 @@ defmodule EctoShorts.Actions do
   @moduledoc """
   Data-driven CRUD, bulk, and transactional database operations.
 
-  All query building is delegated to `EctoShorts.CommonFilters` and all
-  changeset management to `EctoShorts.CommonChanges`. This module ties
-  them together behind a consistent function interface.
+  This module provides a consistent function interface for common database
+  operations. All query building is delegated to `EctoShorts.CommonFilters`
+  and all changeset management to `EctoShorts.CommonChanges`. You pass a
+  schema module and a params map, and Actions handles the rest.
+
+  Use this module when you want to:
+
+  * Perform standard CRUD operations with minimal boilerplate
+  * Build queries from data (maps or keyword lists) instead of macros
+  * Run transactional multi-record operations with automatic rollback
+  * Batch-fetch records by key for efficient lookups
+
+  Do not use this module when you need:
+
+  * Complex multi-table joins with custom select expressions - use
+    `EctoShorts.CommonFilters` directly or raw Ecto queries
+  * Fine-grained control over transaction isolation levels - use
+    `c:Ecto.Repo.transaction/2` directly
+  * Streaming with custom chunk sizes - use `c:Ecto.Repo.stream/2` directly
 
   ## Getting started
 
-  An `Ecto.Repo` must be configured and started. Pass a schema module
-  and a params map to any function:
+  Configure your `Ecto.Repo` in your application config:
 
-      {:ok, post} = EctoShorts.Actions.create(EctoShorts.Schema.Post, %{title: "Hello"})
-      {:ok, post} = EctoShorts.Actions.find(EctoShorts.Schema.Post, %{id: 1})
-      posts       = EctoShorts.Actions.all(EctoShorts.Schema.Post, %{published: true, limit: 10})
-      {:ok, post} = EctoShorts.Actions.update(EctoShorts.Schema.Post, post, %{title: "Updated"})
-      {:ok, _}    = EctoShorts.Actions.delete(post)
+      # config/config.exs
+      config :ecto_shorts, repo: MyApp.Repo
+
+  Then call any function with a schema module and params:
+
+      alias EctoShorts.Actions
+
+      # Create a record
+      {:ok, post} = Actions.create(Post, %{title: "Hello", body: "World"})
+
+      # Find a single record
+      {:ok, post} = Actions.find(Post, %{id: 1})
+
+      # Fetch all matching records
+      posts = Actions.all(Post, %{published: true, limit: 10})
+
+      # Update a record
+      {:ok, post} = Actions.update(Post, post, %{title: "Updated"})
+
+      # Delete a record
+      {:ok, _} = Actions.delete(post)
 
   ## Function groups
 
-    * **CRUD** - `all/1-3`, `create/3`, `find/3`, `update/4`, `delete/1-3`,
-      `get/3`, `exists?/3`, `stream/3`, `aggregate/5`, `preload/3`, and
-      the `find_and_*` variants.
+  Functions are organized into five groups based on their behavior:
 
-    * **Bulk** - `insert_all/3`, `update_all/4`, `delete_all/3`. No
-      transactions.
+  * **CRUD** - Single-record operations: `all/1-3`, `create/3`, `find/3`,
+    `update/4`, `delete/1-3`, `get/3`, `exists?/3`, `stream/3`,
+    `aggregate/5`, `preload/3`, and the `find_and_*` variants.
 
-    * **Multi** - `create_many/3`, `update_many/3`, `delete_many/3`,
-      `find_many/3`, `find_or_create_many/3`, `find_and_upsert_many/3`.
-      All transactional via `Ecto.Multi`.
+  * **Bulk** - Multi-row operations without transactions: `insert_all/3`,
+    `update_all/4`, `delete_all/3`. These map directly to Ecto.Repo
+    callbacks and do not run changesets.
 
-    * **Batch** - `batch/5` and `batch_preload/4`.
+  * **Multi** - Transactional multi-record operations using `Ecto.Multi`:
+    `create_many/3`, `update_many/3`, `delete_many/3`, `find_many/3`,
+    `find_or_create_many/3`, `find_and_upsert_many/3`. Any failure rolls
+    back the entire transaction.
 
-    * **Transaction** - `transaction/2` and `transact/2`.
+  * **Batch** - Keyed lookups for efficient fetching: `batch/5` and
+    `batch_preload/4`.
 
-  ## Return values
+  * **Transaction** - Transaction wrappers: `transaction/2` and `transact/2`.
 
-    * Single-record functions return `{:ok, struct}` or
-      `{:error, reason}` where `reason` is an `%ErrorMessage{}` or
-      an `Ecto.Changeset`.
+  ## Choosing the right function
 
-    * Bulk functions return `{count, nil | [struct]}` per
-      `c:Ecto.Repo.insert_all/3` conventions.
+  This section helps you pick the right function for your use case.
 
-    * Multi functions return `{:ok, [struct]}` or `{:error, reason}`.
+  ### Reading records
+
+  | Function | Use when | Returns |
+  |----------|----------|---------|
+  | `get/3` | You have a primary key and want the struct or `nil` | `struct \| nil` |
+  | `find/3` | You have filter params and want `{:ok, struct}` or an error | `{:ok, struct} \| {:error, reason}` |
+  | `all/3` | You want a list of matching records | `[struct]` |
+  | `exists?/3` | You only need to know if a match exists | `boolean` |
+  | `aggregate/5` | You need a count, sum, avg, min, or max | `term` |
+  | `stream/3` | You need to process large datasets without loading all into memory | `Enumerable.t()` |
+
+  Examples:
+
+      # Primary key lookup - returns nil if not found
+      post = Actions.get(Post, 1)
+
+      # Filter lookup - returns error tuple if not found
+      {:ok, post} = Actions.find(Post, %{slug: "hello-world"})
+      {:error, %ErrorMessage{code: :not_found}} = Actions.find(Post, %{slug: "missing"})
+
+      # List all matching
+      posts = Actions.all(Post, %{published: true, order_by: [desc: :inserted_at]})
+
+      # Existence check
+      true = Actions.exists?(Post, %{published: true})
+
+      # Aggregate
+      count = Actions.aggregate(Post, %{published: true}, :count, :id)
+
+  ### Creating records
+
+  | Function | Use when | Returns |
+  |----------|----------|---------|
+  | `create/3` | Creating a single record with changeset validation | `{:ok, struct} \| {:error, changeset}` |
+  | `insert_all/3` | Bulk inserting many records without changesets | `{:ok, {count, nil \| [struct]}}` |
+  | `create_many/3` | Creating many records with changesets in a transaction | `{:ok, [struct]} \| {:error, reason}` |
+
+  Use `create/3` for single records when you need validation:
+
+      {:ok, post} = Actions.create(Post, %{title: "Hello", body: "World"})
+      {:error, %Ecto.Changeset{}} = Actions.create(Post, %{title: nil})
+
+  Use `insert_all/3` for bulk inserts when performance matters more than
+  per-record validation:
+
+      {:ok, {100, nil}} = Actions.insert_all(Post, list_of_100_maps)
+
+  Use `create_many/3` when you need both validation and atomicity:
+
+      {:ok, posts} = Actions.create_many(Post, [%{title: "A"}, %{title: "B"}])
+
+  ### Updating records
+
+  | Function | Use when | Returns |
+  |----------|----------|---------|
+  | `update/4` | Updating a single record by struct or id | `{:ok, struct} \| {:error, reason}` |
+  | `find_and_update/4` | Finding then updating in one call | `{:ok, struct} \| {:error, reason}` |
+  | `find_and_upsert/4` | Updating if exists, creating if not | `{:ok, struct} \| {:error, reason}` |
+  | `update_all/4` | Bulk updating many records without changesets | `{count, nil}` |
+  | `update_many/3` | Updating many records with changesets in a transaction | `{:ok, [struct]} \| {:error, reason}` |
+
+  Examples:
+
+      # Update by struct
+      {:ok, post} = Actions.update(Post, post, %{title: "New Title"})
+
+      # Update by id
+      {:ok, post} = Actions.update(Post, 1, %{title: "New Title"})
+
+      # Find then update
+      {:ok, post} = Actions.find_and_update(Post, %{slug: "hello"}, %{views: 100})
+
+      # Upsert pattern
+      {:ok, post} = Actions.find_and_upsert(Post, %{slug: "hello"}, %{views: 100})
+
+      # Bulk update (no changesets)
+      {10, nil} = Actions.update_all(Post, %{published: false}, %{set: %{published: true}})
+
+  ### Deleting records
+
+  | Function | Use when | Returns |
+  |----------|----------|---------|
+  | `delete/1-3` | Deleting a single record or list | `{:ok, struct} \| {:error, reason}` |
+  | `find_and_delete/3` | Finding then deleting in one call | `{:ok, struct} \| {:error, reason}` |
+  | `delete_all/3` | Bulk deleting many records | `{count, nil}` |
+  | `delete_many/3` | Deleting many records in a transaction | `{:ok, [struct]} \| {:error, reason}` |
+
+  Examples:
+
+      # Delete by struct
+      {:ok, deleted} = Actions.delete(post)
+
+      # Delete by id
+      {:ok, deleted} = Actions.delete(Post, 1)
+
+      # Delete a list
+      {:ok, deleted_list} = Actions.delete([post1, post2])
+
+      # Find then delete
+      {:ok, deleted} = Actions.find_and_delete(Post, %{slug: "hello"})
+
+      # Bulk delete
+      {10, nil} = Actions.delete_all(Post, %{published: false})
+
+  ### Multi vs Bulk
+
+  **Bulk** functions (`insert_all/3`, `update_all/4`, `delete_all/3`):
+
+  * Execute a single SQL statement
+  * Do not run changesets or validations
+  * Do not wrap in a transaction
+  * Return `{count, nil | [struct]}`
+  * Best for: high-volume operations where speed matters
+
+  **Multi** functions (`create_many/3`, `update_many/3`, `delete_many/3`, etc.):
+
+  * Execute multiple SQL statements inside an `Ecto.Multi`
+  * Run changesets and validations for each record
+  * Wrap everything in a transaction - any failure rolls back all changes
+  * Return `{:ok, [struct]}` or `{:error, reason}`
+  * Best for: operations that must succeed or fail together
+
+  ## Return values and error handling
+
+  Functions return different shapes based on their category.
+
+  ### Single-record functions
+
+  Functions like `create/3`, `find/3`, `update/4`, and `delete/1-3` return:
+
+  * `{:ok, struct}` - operation succeeded
+  * `{:error, %Ecto.Changeset{}}` - validation or constraint failed
+  * `{:error, %ErrorMessage{}}` - record not found or other error
+
+  Pattern-match on the error shape:
+
+      case Actions.create(Post, params) do
+        {:ok, post} ->
+          # Success
+          post
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          # Validation failed - inspect changeset.errors
+          {:error, changeset}
+
+        {:error, %ErrorMessage{code: code}} ->
+          # Other error - code is :not_found, :conflict, etc.
+          {:error, code}
+      end
+
+  ### List functions
+
+  Functions like `all/3` return a list directly (not wrapped in a tuple):
+
+      posts = Actions.all(Post, %{published: true})
+      # => [%Post{}, %Post{}, ...]
+
+  ### Bulk functions
+
+  Functions like `insert_all/3`, `update_all/4`, and `delete_all/3` return:
+
+  * `{count, nil}` - count of affected rows, no structs returned
+  * `{count, [struct]}` - when `:returning` option is set
+
+  For `insert_all/3`, the return is wrapped:
+
+      {:ok, {100, nil}} = Actions.insert_all(Post, list_of_maps)
+      {:error, [%Ecto.Changeset{}]} = Actions.insert_all(Post, invalid_list)
+
+  ### Multi functions
+
+  Functions like `create_many/3`, `update_many/3`, etc. return:
+
+  * `{:ok, [struct]}` - all operations succeeded
+  * `{:error, reason}` - one operation failed, all rolled back
+
+  ### ErrorMessage codes
+
+  When a function returns `{:error, %ErrorMessage{}}`, the `:code` field
+  indicates what went wrong:
+
+  * `:not_found` - no record matched the query
+  * `:conflict` - delete failed due to constraints
+
+  See `EctoShorts.Actions.Error` for customizing error shapes.
+
+  ## CRUD operations
+
+  ### Creating records
+
+  Use `create/3` to insert a new record:
+
+      {:ok, post} = Actions.create(Post, %{title: "Hello", body: "World"})
+
+  The function builds a changeset using the schema's `changeset/2` function,
+  then calls `c:Ecto.Repo.insert/2`. Validation errors return an error tuple:
+
+      {:error, %Ecto.Changeset{errors: [title: {"can't be blank", _}]}} =
+        Actions.create(Post, %{title: nil})
+
+  Override the changeset function with the `:changeset` option:
+
+      {:ok, post} = Actions.create(Post, params, changeset: &Post.admin_changeset/2)
+
+  ### Reading records
+
+  **Single record by filter** - use `find/3`:
+
+      {:ok, post} = Actions.find(Post, %{slug: "hello-world"})
+
+  Returns `{:error, %ErrorMessage{code: :not_found}}` when no match exists.
+  Passing an empty map to `find/3` returns a `:not_found` error immediately
+  without querying the database.
+
+  **Single record by primary key** - use `get/3`:
+
+      post = Actions.get(Post, 1)
+      # => %Post{id: 1, ...} or nil
+
+  **List of records** - use `all/3`:
+
+      posts = Actions.all(Post, %{published: true, limit: 10, order_by: :title})
+
+  The params map supports all `EctoShorts.CommonFilters` keys:
+
+      posts = Actions.all(Post, %{
+        published: true,
+        inserted_at: %{>=: ~U[2024-01-01 00:00:00Z]},
+        order_by: [desc: :inserted_at],
+        limit: 10,
+        preload: :author
+      })
+
+  **Existence check** - use `exists?/3`:
+
+      true = Actions.exists?(Post, %{published: true})
+
+  **Aggregates** - use `aggregate/5`:
+
+      count = Actions.aggregate(Post, %{published: true}, :count, :id)
+      total_views = Actions.aggregate(Post, %{}, :sum, :views)
+
+  **Streaming** - use `stream/3` inside a transaction:
+
+      Actions.transact(fn ->
+        Post
+        |> Actions.stream(%{published: true})
+        |> Stream.each(&process_post/1)
+        |> Stream.run()
+      end)
+
+  ### Updating records
+
+  Update by struct:
+
+      {:ok, updated} = Actions.update(Post, post, %{title: "New Title"})
+
+  Update by id (fetches the record first):
+
+      {:ok, updated} = Actions.update(Post, 1, %{title: "New Title"})
+
+  Find then update in one call:
+
+      {:ok, updated} = Actions.find_and_update(Post, %{slug: "hello"}, %{views: 100})
+
+  Upsert pattern (update if exists, create if not):
+
+      {:ok, post} = Actions.find_and_upsert(
+        Post,
+        %{slug: "hello"},           # find params
+        %{title: "Hello", views: 0} # upsert params
+      )
+
+  ### Deleting records
+
+  Delete by struct:
+
+      {:ok, deleted} = Actions.delete(post)
+
+  Delete by id:
+
+      {:ok, deleted} = Actions.delete(Post, 1)
+
+  Delete a list (stops on first failure):
+
+      {:ok, deleted_list} = Actions.delete([post1, post2])
+
+  Find then delete:
+
+      {:ok, deleted} = Actions.find_and_delete(Post, %{slug: "hello"})
+
+  ## Bulk operations
+
+  Bulk functions execute a single SQL statement without changesets or
+  transactions. Use them for high-volume operations.
+
+  ### insert_all/3
+
+  Insert many records at once:
+
+      entries = [
+        %{title: "Post 1", body: "Body 1"},
+        %{title: "Post 2", body: "Body 2"}
+      ]
+
+      {:ok, {2, nil}} = Actions.insert_all(Post, entries)
+
+  By default, entries are validated through the schema's `changeset/2`.
+  Skip validation with `validate: false`:
+
+      {:ok, {2, nil}} = Actions.insert_all(Post, entries, validate: false)
+
+  Handle conflicts with `:on_conflict` options:
+
+      {:ok, {2, nil}} = Actions.insert_all(Post, entries,
+        on_conflict: :nothing,
+        conflict_target: :slug
+      )
+
+  ### update_all/4
+
+  Update many records matching a filter:
+
+      {10, nil} = Actions.update_all(Post, %{published: false}, %{set: %{published: true}})
+
+  Supported update operations:
+
+  * `:set` - set field values
+  * `:inc` - increment numeric fields
+  * `:push` - append to array fields
+  * `:pull` - remove from array fields
+
+  Examples:
+
+      # Set multiple fields
+      Actions.update_all(Post, %{draft: true}, %{set: %{published: true, draft: false}})
+
+      # Increment a counter
+      Actions.update_all(Post, %{id: 1}, %{inc: %{views: 1}})
+
+  ### delete_all/3
+
+  Delete many records matching a filter:
+
+      {10, nil} = Actions.delete_all(Post, %{published: false})
+
+  Delete all records (use with caution):
+
+      {count, nil} = Actions.delete_all(Post)
+
+  ## Multi (transactional) operations
+
+  Multi functions wrap multiple operations in an `Ecto.Multi` transaction.
+  If any operation fails, all changes are rolled back.
+
+  ### create_many/3
+
+  Create multiple records atomically:
+
+      {:ok, posts} = Actions.create_many(Post, [
+        %{title: "Post 1", body: "Body 1"},
+        %{title: "Post 2", body: "Body 2"}
+      ])
+
+  If any record fails validation, the entire transaction rolls back:
+
+      {:error, reason} = Actions.create_many(Post, [
+        %{title: "Valid"},
+        %{title: nil}  # Invalid - rolls back the first insert too
+      ])
+
+  ### find_many/3
+
+  Find multiple records atomically:
+
+      {:ok, posts} = Actions.find_many(Post, [%{id: 1}, %{id: 2}])
+
+  If any record is not found, the transaction fails:
+
+      {:error, reason} = Actions.find_many(Post, [%{id: 1}, %{id: 999}])
+
+  ### update_many/3
+
+  Update multiple records atomically. Entries can be tuples or maps:
+
+      # Tuple format: {find_params, update_params}
+      {:ok, posts} = Actions.update_many(Post, [
+        {%{id: 1}, %{title: "Updated 1"}},
+        {%{id: 2}, %{title: "Updated 2"}}
+      ])
+
+      # Map format with :id key
+      {:ok, posts} = Actions.update_many(Post, [
+        %{id: 1, title: "Updated 1"},
+        %{id: 2, title: "Updated 2"}
+      ])
+
+  ### delete_many/3
+
+  Delete multiple records atomically:
+
+      {:ok, deleted} = Actions.delete_many(Post, [post1, post2])
+
+  Entries can be structs, param maps, or raw id values.
+
+  ### find_or_create_many/3
+
+  Find or create multiple records atomically:
+
+      {:ok, posts} = Actions.find_or_create_many(Post, [
+        %{slug: "existing", title: "Existing"},
+        %{slug: "new", title: "New Post"}
+      ])
+
+  ### find_and_upsert_many/3
+
+  Upsert multiple records atomically:
+
+      {:ok, posts} = Actions.find_and_upsert_many(Post, [
+        {%{slug: "hello"}, %{views: 100}},
+        {%{slug: "world"}, %{views: 200}}
+      ])
+
+  ## Batch operations
+
+  Batch functions efficiently fetch records by key.
+
+  ### batch/5
+
+  Fetch records grouped by a batch key:
+
+      # Single key
+      results = Actions.batch(Post, [%{author_id: 1}, %{author_id: 2}], :author_id)
+      # => %{1 => [%Post{}, ...], 2 => [%Post{}, ...]}
+
+      # With :one cardinality (raises if multiple found)
+      results = Actions.batch(User, [%{id: 1}, %{id: 2}], :id, :one)
+      # => %{1 => %User{}, 2 => %User{}}
+
+      # Composite keys
+      results = Actions.batch(Post, params, [:author_id, :category_id])
+      # => %{%{author_id: 1, category_id: 2} => [...], ...}
+
+  ### batch_preload/4
+
+  Fetch records and zip them into the original entries:
+
+      entries = [%{user_id: 1, data: "a"}, %{user_id: 2, data: "b"}]
+      enriched = Actions.batch_preload(User, entries, :user_id)
+      # Each entry now has the User fields merged in
+
+  ## Transactions
+
+  ### transaction/2
+
+  Wrap a function or `Ecto.Multi` in a transaction:
+
+      {:ok, result} = Actions.transaction(fn ->
+        {:ok, post} = Actions.create(Post, %{title: "Hello"})
+        {:ok, comment} = Actions.create(Comment, %{post_id: post.id, body: "Hi"})
+        {post, comment}
+      end)
+
+  ### transact/2
+
+  Like `transaction/2` but normalizes the return value:
+
+      # With :strict (default), {:error, reason} triggers rollback
+      {:ok, post} = Actions.transact(fn ->
+        Actions.create(Post, %{title: "Hello"})
+      end)
+
+      # Errors are unwrapped
+      {:error, changeset} = Actions.transact(fn ->
+        Actions.create(Post, %{title: nil})
+      end)
+
+  Use `transact/2` with `Ecto.Multi`:
+
+      multi =
+        Ecto.Multi.new()
+        |> Ecto.Multi.insert(:post, Post.changeset(%Post{}, %{title: "Hello"}))
+
+      {:ok, [post]} = Actions.transact(multi)
 
   ## Shared options
 
-  Every public function accepts an `opts` keyword list. The following
-  keys are recognized across the module:
+  Every public function accepts an `opts` keyword list. These keys are
+  recognized across the module:
 
-    * `:repo` - the `Ecto.Repo` for write operations. Defaults to
-      `EctoShorts.Config.repo/0`.
+  * `:repo` - the `Ecto.Repo` for write operations. Defaults to
+    `EctoShorts.Config.repo/0`.
 
-    * `:replica` - the `Ecto.Repo` for read operations. Falls back
-      to `:repo` when not set.
+  * `:replica` - the `Ecto.Repo` for read operations. Falls back to
+    `:repo` when not set. Defaults to `EctoShorts.Config.replica/0`.
 
-    * `:changeset` - a 1-, 2-, or 3-arity function that replaces
-      the schema's default `changeset/2`.
+  * `:changeset` - a function that replaces the schema's default
+    `changeset/2`. Can be 1-arity (receives params), 2-arity (receives
+    struct and params), or 3-arity (receives struct, params, and opts).
 
-    * `:dynamic_adapter` - a module implementing
-      `EctoShorts.Dynamics.Adapter`.
+  * `:dynamic_adapter` - a module implementing `EctoShorts.Dynamics.Adapter`.
+    Defaults to `EctoShorts.Config.dynamic_adapter/0`.
+
+  * `:error_module` - a module implementing `EctoShorts.Actions.Error`.
+    Defaults to `EctoShorts.Config.error_module/0`.
+
+  ## Configuration
+
+  Configure EctoShorts in your application config:
+
+      # config/config.exs
+      config :ecto_shorts,
+        repo: MyApp.Repo,
+        replica: MyApp.Repo.Replica,
+        error_module: MyApp.Error
+
+  Override at runtime by passing options:
+
+      Actions.all(Post, %{published: true}, repo: MyApp.OtherRepo)
+
+  See `EctoShorts.Config` for all configuration options.
+
+  ## Filtering with CommonFilters
+
+  The `params` argument in read functions supports the full
+  `EctoShorts.CommonFilters` language:
+
+      # Field equality
+      Actions.all(Post, %{published: true})
+
+      # Comparison operators
+      Actions.all(Post, %{views: %{>: 100}})
+
+      # Logical operators
+      Actions.all(Post, %{or: [[published: true], [draft: true]]})
+
+      # Query operations
+      Actions.all(Post, %{
+        order_by: [desc: :inserted_at],
+        limit: 10,
+        preload: [:author, :comments]
+      })
+
+  See `EctoShorts.CommonFilters` for the complete filtering language.
+
+  ## Custom changesets
+
+  Override the default `changeset/2` function with the `:changeset` option:
+
+      # 2-arity: receives struct and params
+      Actions.create(Post, params, changeset: &Post.admin_changeset/2)
+
+      # 1-arity: receives params only (for create)
+      Actions.create(Post, params, changeset: fn params ->
+        Post.changeset(%Post{}, Map.put(params, :source, "api"))
+      end)
+
+      # 3-arity: receives struct, params, and opts
+      Actions.update(Post, post, params, changeset: fn struct, params, opts ->
+        Post.changeset(struct, params, opts)
+      end)
+
+  See `EctoShorts.CommonChanges` for changeset helpers.
+
+  ## Edge cases and warnings
+
+  > #### Empty params in find/3 {: .warning}
+  >
+  > Calling `find/3` with an empty map returns `{:error, :not_found}`
+  > immediately without querying the database. This prevents accidental
+  > fetches of arbitrary records.
+
+  > #### Concurrent updates {: .info}
+  >
+  > `update/4` and `find_and_update/4` do not use optimistic locking by
+  > default. For concurrent updates, use `Ecto.Changeset.optimistic_lock/3`
+  > in your changeset function.
+
+  > #### Large batch sizes {: .info}
+  >
+  > `insert_all/3` and `update_all/4` execute a single SQL statement.
+  > Very large batches may exceed database limits. Consider chunking
+  > into smaller batches for thousands of records.
 
   See also `EctoShorts.CommonFilters`, `EctoShorts.CommonChanges`,
-  and `EctoShorts.Config`.
+  `EctoShorts.Config`, and `EctoShorts.Actions.Error`.
   """
 
   @moduledoc groups: [

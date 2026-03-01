@@ -137,7 +137,7 @@ defmodule EctoShorts.CommonQuery do
 
   Counts the root `from` binding as `1`, plus one for each join. Useful
   when building dynamic queries that need to stay within the binding limit
-  configured via `:max_binding_positings`.
+  configured via `:max_binding_positions`.
 
   ## Examples
 
@@ -149,7 +149,7 @@ defmodule EctoShorts.CommonQuery do
       ...> EctoShorts.CommonQuery.query_binding_count(q)
       2
 
-  See also `get_query_binding_source/2` and `EctoShorts.Config.max_binding_positings/0`.
+  See also `get_query_binding_source/2` and `EctoShorts.Config.max_binding_positions/0`.
   """
   def query_binding_count(queryable) do
     query = to_query!(queryable)

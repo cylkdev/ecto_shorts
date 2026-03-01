@@ -265,13 +265,13 @@ defmodule EctoShorts.CommonFilters.BindingParams do
         )
 
       {:at, bind_index} when is_integer(bind_index) ->
-        max = Config.max_binding_positings()
+        max = Config.max_binding_positions()
 
         if bind_index > max do
           Logger.warning(
             @logger_prefix,
-            "Binding position #{bind_index} exceeds the configured :max_binding_positings (#{max}). " <>
-              "Increase :max_binding_positings in your config to support more positional bindings."
+            "Binding position #{bind_index} exceeds the configured :max_binding_positions (#{max}). " <>
+              "Increase :max_binding_positions in your config to support more positional bindings."
           )
 
           query

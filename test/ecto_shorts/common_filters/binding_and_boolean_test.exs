@@ -325,7 +325,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert q2 === q
     end
 
-    test "positional binding exceeding max_binding_positings logs warning and leaves query unchanged" do
+    test "positional binding exceeding max_binding_positions logs warning and leaves query unchanged" do
       q = from(p in Post)
 
       log =
@@ -340,7 +340,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Binding position 4 exceeds the configured :max_binding_positings"
+      assert log =~ "Binding position 4 exceeds the configured :max_binding_positions"
       assert_received {:q2, q2}
       assert q2 === q
     end

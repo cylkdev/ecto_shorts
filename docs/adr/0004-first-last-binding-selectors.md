@@ -35,7 +35,7 @@ Good, because callers can write `%{bind: %{first: %{published: true}}}` instead 
 
 Good, because the implementation resolves `:first` to `{:at, 1}` and `:last` to `{:at, N}` before reaching compiled clauses, so no changes are needed to the Compiler, QueryBindingBuilder, or dynamic expression adapters.
 
-Bad, because `:last` resolution depends on `max_binding_positings`. If a query has more bindings than the compiled maximum, the resolved `{:at, N}` will not match any compiled clause. This is the same constraint that applies to using `{:at, N}` directly.
+Bad, because `:last` resolution depends on `max_binding_positions`. If a query has more bindings than the compiled maximum, the resolved `{:at, N}` will not match any compiled clause. This is the same constraint that applies to using `{:at, N}` directly.
 
 ## Validation
 

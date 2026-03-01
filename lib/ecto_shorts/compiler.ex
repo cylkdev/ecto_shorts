@@ -49,14 +49,14 @@ defmodule EctoShorts.Compiler do
   ## Recompilation
 
   `EctoShorts.Compiler` implements `__mix_recompile__?/0` so that `X` is
-  automatically recompiled whenever the configured `:max_binding_positings`
+  automatically recompiled whenever the configured `:max_binding_positions`
   changes (for example, when you update the config value between builds).
 
   ## Configuration
 
-  * `:max_binding_positings` - controls how many positional binding patterns are
+  * `:max_binding_positions` - controls how many positional binding patterns are
     generated. Increase this when your queries join more tables than the default
-    supports. Defaults to `EctoShorts.Config.max_binding_positings/0`.
+    supports. Defaults to `EctoShorts.Config.max_binding_positions/0`.
 
   See also `EctoShorts.Compiler.ClauseSpec` and `EctoShorts.Dynamics.Adapter`.
   """
@@ -71,15 +71,15 @@ defmodule EctoShorts.Compiler do
   Injects a `@before_compile` hook that generates the compiled clause module
   and the public delegator at the end of the caller's compilation. The caller
   module also receives a `__mix_recompile__?/0` implementation that returns
-  `true` whenever `:max_binding_positings` changes, triggering a full recompile.
+  `true` whenever `:max_binding_positions` changes, triggering a full recompile.
 
   ## Options
 
   * `:specs` (required) - a module, already compiled, that exports
     `clause_specs/4`. Called once per binding pattern to collect
     `%EctoShorts.Compiler.ClauseSpec{}` values.
-  * `:max_binding_positings` - the maximum number of positional query bindings
-    to generate clauses for. Defaults to `EctoShorts.Config.max_binding_positings/0`.
+  * `:max_binding_positions` - the maximum number of positional query bindings
+    to generate clauses for. Defaults to `EctoShorts.Config.max_binding_positions/0`.
 
   ## Errors
 
@@ -98,10 +98,10 @@ defmodule EctoShorts.Compiler do
       defmodule MyApp.Adapter do
         use EctoShorts.Compiler,
           specs: MyApp.Adapter.Specs,
-          max_binding_positings: 20
+          max_binding_positions: 20
       end
 
-  See also `EctoShorts.Compiler.ClauseSpec` and `EctoShorts.Config.max_binding_positings/0`.
+  See also `EctoShorts.Compiler.ClauseSpec` and `EctoShorts.Config.max_binding_positions/0`.
   """
   defmacro __using__(opts) do
     quote do
@@ -142,7 +142,7 @@ defmodule EctoShorts.Compiler do
     clause_asts = build_clauses(context, specs_module, opts)
 
     quote do
-      @compile_time_max_binding_positings unquote(__MODULE__).max_binding_positings(@compiler_options)
+      @compiled_max_binding_positions unquote(__MODULE__).max_binding_positions(@compiler_options)
 
       defmodule unquote(compiled_module) do
         @moduledoc false
@@ -159,13 +159,13 @@ defmodule EctoShorts.Compiler do
 
       @doc false
       def config_stale?(current_max) do
-        current_max !== @compile_time_max_binding_positings
+        current_max !== @compiled_max_binding_positions
       end
 
       @doc false
       def __mix_recompile__? do
         @compiler_options
-        |> unquote(__MODULE__).max_binding_positings()
+        |> unquote(__MODULE__).max_binding_positions()
         |> config_stale?()
       end
     end
@@ -235,13 +235,13 @@ defmodule EctoShorts.Compiler do
   def get_query_binding_contracts(context, opts \\ []) do
     QueryBindingBuilder.query_binding_contracts(
       context,
-      max_binding_positings(opts)
+      max_binding_positions(opts)
     )
   end
 
   @doc false
-  def max_binding_positings(opts \\ []) do
-    opts[:max_binding_positings] || Config.max_binding_positings()
+  def max_binding_positions(opts \\ []) do
+    opts[:max_binding_positions] || Config.max_binding_positions()
   end
 
   defp clause_ast!(spec) do

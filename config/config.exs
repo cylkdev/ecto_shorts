@@ -30,7 +30,7 @@ else
     replica: nil,
     error_module: EctoShorts.Actions.Error,
     dynamic_adapter: EctoShorts.Dynamics.Adapters.Postgres,
-    max_binding_positings: 10,
+    max_binding_positions: 10,
     fragment_provider: nil,
     hints: []
 

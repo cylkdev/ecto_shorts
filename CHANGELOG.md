@@ -38,7 +38,7 @@
   - `transact/2` for transactions that automatically roll back on `{:error, _}`.
   - `batch/5` for batch query operations by key.
   - `batch_preload/4` for batch preloading a list of entries.
-- New `Config` accessors: `error_module/0`, `dynamic_adapter/0`, `fragment_provider/0`, `max_binding_positings/0`.
+- New `Config` accessors: `error_module/0`, `dynamic_adapter/0`, `fragment_provider/0`, `max_binding_positions/0`.
 - New `SchemaHelpers` helpers:
   - `get_related_schema/2` to resolve related schemas, including `:through` associations.
   - `schema_field_type/2` to return a field’s Ecto type.

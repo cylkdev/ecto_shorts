@@ -22,7 +22,7 @@ defmodule EctoShorts.Config do
   * `:fragment_provider` - A module that resolves fragment-based join and lock
     expressions. Must export `build_fragment_expression/3`. Defaults to `nil`.
 
-  * `:max_binding_positings` - Controls how many positional query binding clauses
+  * `:max_binding_positions` - Controls how many positional query binding clauses
     `EctoShorts.Compiler` generates. Increase when your queries join more than
     three tables. Defaults to `3`.
 
@@ -36,7 +36,7 @@ defmodule EctoShorts.Config do
         replica: MyApp.Repo.Replica,
         error_module: MyApp.Error,
         dynamic_adapter: MyApp.DynamicAdapter,
-        max_binding_positings: 3
+        max_binding_positions: 3
 
   See also `EctoShorts.Actions.Error`, `EctoShorts.Dynamics.Adapter`, and
   `EctoShorts.FragmentProvider`.
@@ -245,7 +245,7 @@ defmodule EctoShorts.Config do
 
   @doc since: "3.0.0"
   @doc """
-  Returns the configured `:max_binding_positings` value from the `:ecto_shorts` application environment.
+  Returns the configured `:max_binding_positions` value from the `:ecto_shorts` application environment.
 
   Defaults to `3`. Used by `EctoShorts.Compiler` to determine how many
   positional binding clauses to generate. Increase when your queries join
@@ -253,8 +253,8 @@ defmodule EctoShorts.Config do
 
   See also `EctoShorts.Compiler` and `dynamic_adapter/0`.
   """
-  @spec max_binding_positings :: integer()
-  def max_binding_positings do
-    Application.get_env(@app, :max_binding_positings) || 3
+  @spec max_binding_positions :: integer()
+  def max_binding_positions do
+    Application.get_env(@app, :max_binding_positions) || 3
   end
 end

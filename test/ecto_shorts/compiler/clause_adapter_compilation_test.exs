@@ -7,7 +7,7 @@ defmodule EctoShorts.Compiler.UsingTest do
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
 
-  defp compile_compiled_module!(compiler_opts \\ [max_binding_positings: 1]) do
+  defp compile_compiled_module!(compiler_opts \\ [max_binding_positions: 1]) do
     unique = System.unique_integer([:positive])
 
     specs_module = Module.concat([__MODULE__, :"TmpSpecs#{unique}"])
@@ -66,7 +66,7 @@ defmodule EctoShorts.Compiler.UsingTest do
     assert_dynamic(expected, actual)
   end
 
-  test "max_binding_positings limits generated positional heads" do
+  test "max_binding_positions limits generated positional heads" do
     compiled_module = compile_compiled_module!()
 
     assert_raise FunctionClauseError, fn ->
@@ -76,7 +76,7 @@ defmodule EctoShorts.Compiler.UsingTest do
 
   test "config_stale?/1 returns true when current max differs from compile-time max" do
     compiled_module = compile_compiled_module!([])
-    compile_time_max = EctoShorts.Config.max_binding_positings()
+    compile_time_max = EctoShorts.Config.max_binding_positions()
 
     refute compiled_module.config_stale?(compile_time_max)
     assert compiled_module.config_stale?(compile_time_max + 1)
@@ -84,7 +84,7 @@ defmodule EctoShorts.Compiler.UsingTest do
 
   test "config_stale?/1 always matches compile-time max when module overrides max" do
     explicit_max = 1
-    compiled_module = compile_compiled_module!(max_binding_positings: explicit_max)
+    compiled_module = compile_compiled_module!(max_binding_positions: explicit_max)
 
     refute compiled_module.config_stale?(explicit_max)
     assert compiled_module.config_stale?(explicit_max + 1)

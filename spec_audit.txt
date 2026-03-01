@@ -252,7 +252,7 @@ ecto_shorts/compiler/clause_spec.ex
   L122: new/1 -> def new(attrs) when is_list(attrs) do
 
 ecto_shorts/compiler/query_binding_builder.ex
-  L13: query_binding_contracts/2 -> def query_binding_contracts(context, max_binding_positings) do
+  L13: query_binding_contracts/2 -> def query_binding_contracts(context, max_binding_positions) do
 
 ecto_shorts/compiler.ex
   L31: clause_specs/4 -> def clause_specs(_context, binding_head, _target_binding, binding_bodies) do
@@ -261,7 +261,7 @@ ecto_shorts/compiler.ex
   L166: __mix_recompile__?/0 -> def __mix_recompile__? do
   L223: build_clauses/3 -> def build_clauses(context, specs_module, opts) do
   L235: get_query_binding_contracts/2 -> def get_query_binding_contracts(context, opts \\ []) do
-  L243: max_binding_positings/1 -> def max_binding_positings(opts \\ []) do
+  L243: max_binding_positions/1 -> def max_binding_positions(opts \\ []) do
 
 ecto_shorts/dynamics/adapter.ex
   L26: build_dynamic/4 -> def build_dynamic(source, binding_selector, key, expr) do
