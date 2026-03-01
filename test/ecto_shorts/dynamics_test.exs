@@ -455,6 +455,22 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports scalar ne" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{ne: "a"}})
+    expected = dynamic([q], field(q, ^:title) != ^"a")
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports scalar ne nil" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{title: %{ne: nil}})
+    expected = dynamic([q], not is_nil(field(q, ^:title)))
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports scalar not gt" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{views: %{not: %{gt: 1}}})
@@ -864,6 +880,14 @@ defmodule EctoShorts.DynamicsTest do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{eq: nil}})
     expected = dynamic([q], is_nil(field(q, ^:tags)))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array ne nil" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{ne: nil}})
+    expected = dynamic([q], not is_nil(field(q, ^:tags)))
 
     assert_dynamic(expected, actual)
   end
@@ -1324,10 +1348,26 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports array ne list" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{ne: ["a", "b"]}})
+    expected = dynamic([q], field(q, ^:tags) != ^["a", "b"])
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports array eq value" do
     binding = {:as, nil}
     actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{eq: "a"}})
     expected = dynamic([q], ^"a" in field(q, ^:tags))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports array ne value" do
+    binding = {:as, nil}
+    actual = Dynamics.convert_to_dynamic(Post, binding, %{tags: %{ne: "a"}})
+    expected = dynamic([q], ^"a" not in field(q, ^:tags))
 
     assert_dynamic(expected, actual)
   end

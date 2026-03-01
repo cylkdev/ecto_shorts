@@ -62,7 +62,8 @@ defmodule EctoShorts.CommonFilters.GroupBy do
   end
 
   defp reduce_group_by_bind(query, _binding_selector, bind_params) do
-    Enum.reduce(BindingParams.normalize_bind_params(bind_params, query), query, fn {binding_selector, value}, q ->
+    Enum.reduce(BindingParams.normalize_bind_params(bind_params, query), query, fn {binding_selector, value},
+                                                                                   q ->
       reduce_group_by(q, binding_selector, value)
     end)
   end

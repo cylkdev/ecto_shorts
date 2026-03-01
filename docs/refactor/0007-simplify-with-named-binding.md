@@ -36,8 +36,8 @@ Pending test verification. The `apply_entry` keyword-list clause went from 22 li
 
 `lib/ecto_shorts/common_filters/with_named_binding.ex` defines `EctoShorts.CommonFilters.WithNamedBinding`, which builds `:with_named_binding` query expressions. It has two private function groups:
 
-- `reduce_entries/3` — normalises input (maps to keyword lists) and iterates over entries, calling `apply_entry` for each.
-- `apply_entry/4` — validates a single `{binding_key, binding_params}` entry, checks if the named binding already exists, applies filters, and verifies the binding was created.
+- `reduce_entries/3` - normalises input (maps to keyword lists) and iterates over entries, calling `apply_entry` for each.
+- `apply_entry/4` - validates a single `{binding_key, binding_params}` entry, checks if the named binding already exists, applies filters, and verifies the binding was created.
 
 ## Behaviour Boundary (Must Remain Unchanged)
 
@@ -51,9 +51,9 @@ The public `build/6` function must produce identical results for all existing te
 
 Two techniques were applied:
 
-1. Replace nested conditional with flat `cond` — a variant of "Replace Nested Conditional with Guard Clauses" where the flat `cond` serves the same purpose as guard-style early exits.
+1. Replace nested conditional with flat `cond` - a variant of "Replace Nested Conditional with Guard Clauses" where the flat `cond` serves the same purpose as guard-style early exits.
 
-2. `Inline Function` (from `.agent/refactor/techniques/composing_functions/INLINE_FUNCTION.md`) — the standalone tuple clause `reduce_entries(query, {binding_key, binding_params}, opts)` only forwarded to `apply_entry` and was called from exactly one site (the non-keyword list reduce). It was inlined into that reduce callback's pattern match.
+2. `Inline Function` (from `.agent/refactor/techniques/composing_functions/INLINE_FUNCTION.md`) - the standalone tuple clause `reduce_entries(query, {binding_key, binding_params}, opts)` only forwarded to `apply_entry` and was called from exactly one site (the non-keyword list reduce). It was inlined into that reduce callback's pattern match.
 
 ## Plan of Work
 
@@ -105,8 +105,8 @@ After `apply_entry` (1 nesting level):
 
 No public API changes. Only private functions were modified:
 
-- `defp reduce_entries/3` — removed standalone tuple clause, inlined into list clause
-- `defp apply_entry/4` — replaced nested `if` with `cond` in the keyword-list clause
+- `defp reduce_entries/3` - removed standalone tuple clause, inlined into list clause
+- `defp apply_entry/4` - replaced nested `if` with `cond` in the keyword-list clause
 
 ## Milestones
 

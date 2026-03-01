@@ -10,7 +10,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 association shorthand" do
-    test "association — %{author: [as: :author, first_name: \"John\"]}" do
+    test "association - %{author: [as: :author, first_name: \"John\"]}" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -28,7 +28,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "association — %{author: [first_name: \"John\"]} (no :as)" do
+    test "association - %{author: [first_name: \"John\"]} (no :as)" do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -39,7 +39,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert %Ecto.Query{} = q2
     end
 
-    test "association — %{author: [as: :author, on: true, first_name: \"John\"]}" do
+    test "association - %{author: [as: :author, on: true, first_name: \"John\"]}" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -57,7 +57,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "association — %{author: [as: :author, type: :left, first_name: \"John\"]}" do
+    test "association - %{author: [as: :author, type: :left, first_name: \"John\"]}" do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -84,7 +84,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
   end
 
   describe "convert_params_to_filter/3 dynamic" do
-    test "dynamic — %{dynamic: dynamic([p], p.views > ^10)}" do
+    test "dynamic - %{dynamic: dynamic([p], p.views > ^10)}" do
       dyn = dynamic([p], p.views > ^10)
       expected = from(p in Post, where: p.views > ^10)
 
@@ -93,7 +93,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "dynamic — %{where: %{dynamic: dynamic([p], p.published === ^true)}}" do
+    test "dynamic - %{where: %{dynamic: dynamic([p], p.published === ^true)}}" do
       dyn = dynamic([p], p.published == ^true)
       expected = from(p in Post, where: p.published == ^true)
 
@@ -102,7 +102,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "dynamic — %{or_where: %{dynamic: dynamic([p], p.views > ^100)}}" do
+    test "dynamic - %{or_where: %{dynamic: dynamic([p], p.views > ^100)}}" do
       dyn = dynamic([p], p.views > ^100)
       expected = from(p in Post, or_where: p.views > ^100)
 
@@ -113,7 +113,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
   end
 
   describe "convert_params_to_filter/3 exists" do
-    test "exists — %{where: %{exists: subquery_expr}}" do
+    test "exists - %{where: %{exists: subquery_expr}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
 
       expected = from(p in Post, where: exists(subquery_expr))
@@ -123,7 +123,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "exists — %{where: %{exists: %{not: subquery_expr}}}" do
+    test "exists - %{where: %{exists: %{not: subquery_expr}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
 
       expected = from(p in Post, where: not exists(subquery_expr))

@@ -2,13 +2,35 @@
 trigger: always_on
 ---
 
-<writing_conventions_start>
+<writing_conventions>
 
-NON-NEGOTIABLE REQUIREMENTS:
+# Writing Conventions
+
+Writing conventions are integral rules that must be integrated into your compilation process as you write. These writing conventions are strict rules that must be followed to the _letter_:
+
+- Do not use emdash (—), Instead use a hyphen (-).
+
+- Do not use special characters that a human cannot easily replicate on a standard keyboard.
+
+- Write one sentence at a time. Prefer accuracy over speed. After writing a paragraph, do a thorough review and verify when you have written is following the writing conventions.
 
 - Write from the reader’s point of view, using only things they can directly see or do. Start by stating the purpose, then state the intent (what they should do and why).
 
-- Treat the reader as a complete beginner to the technology stack and project.
+- Treat the reader as a complete beginner to both the technology stack and this project. Write as if they have no prior context, and include any definitions or pre-requisite information they need to succeed.
+
+- Treat the reader as a complete beginner and write in a way that can be understood at a glance:
+
+  - Prefer short paragraphs. Break up dense text with blank lines.
+
+  - Start with the simplest concepts first. Introduce more advanced details only after the basics are clear.
+
+  - Explain progressively: each step should build on the previous one.
+
+  - Use examples, small diagrams, and illustrations throughout.
+
+  - Describe things from the reader’s observable boundary (what they would see or do).
+
+  - Use analogies when they make an idea easier to grasp, but keep them grounded and consistent.
 
 - Use 4 spaces to indent code blocks.
 
@@ -88,25 +110,53 @@ Example of lists in function documentation:
         {:ok, %MyLib.Record{name: "New Name"}}
     """
 
-</writing_conventions_start>
+- Use descriptive names for variables and functions. Focus on purpose and then intent when naming.
 
-- Before proposing a solution, read the codebase and look for an existing pattern that supports it. Treat that pattern as evidence that the approach fits this project. If you cannot find a supporting pattern, assume the solution might not be the best fit and explore alternative solutions. Provide your reasoning for each solution you propose.
+If you follow the writing conventions a stateless coding agent or human novice that write
+and consistently produce the same text. These writing conventions makes writing clear, concise, and easy to understand.
 
-- If you have been asked to do the same task more than three times, treat that as evidence of a misunderstanding. It usually means you are interpreting the user’s intent incorrectly, or you are relying on an assumption that is wrong.
+</writing_conventions>
 
-One common cause is tests that are outdated or incorrect. Do not assume the test is always correct. If you keep changing code to satisfy a wrong test, you will keep reinforcing the wrong assumption and you may not be able to finish the task.
+<operating_guidelines>
+
+# Operating Guidelines
+
+- If the user asks you to repeat the same task more than three times, treat that as a sign you and the user are not aligned. It means one or more of these are true:
+
+  - You are solving a different problem than the user intended.
+
+  - You are relying on an assumption that is wrong.
+
+  - The user is not asking the right question.
+
+  - The user hasn't given you enough information to solve the problem.
+
+  - The user hasn't given you the correct information to solve the problem.
+
+  - There is a mismatch between the user's expectations and the actual state of the codebase.
+
+After the third time you are asked to repeat the same task, stop making changes. Instead, assume everything might be wrong and there needs to be a fundamentally different approach. Write a problem statement for each problem to decompose it to small steps. Reason through each step systematically, considering different angles and documenting your findings.
+
+  - Re-read the user’s request and restate it in your own words.
+
+  - Re-scan the codebase for an existing pattern or constraint you may have missed.
+
+  - Re-check any failing tests, because tests can be outdated or incorrect.
+
+  - Do not assume tests are correct. If you keep changing code to satisfy a wrong test, you will reinforce the wrong behavior and can get stuck without finishing the real task.
+
+Start your investigation at the user-facing boundary (for example: a test, a public function, or an HTTP endpoint). Then follow the execution path into the code only as far as you need to in order to find the real cause.
+
+A common failure mode is treating the current implementation as the “source of truth” when the intended behavior was never clearly defined. When that happens, the code may appear to work while still being wrong, because effort went into implementation details instead of explicitly stating the behavior first.
+
+If you suspect the behavior is unclear or disputed, use example mapping to restate the expected behavior as concrete examples, re-check your assumptions, and narrow down the root cause quickly.
 
 - Do not work in silence. Update any documents you are using as you make progress or decisions.
 
-- When you receive a user message, before you evaluate it, repeat your interpretation of the message to the user and ask them to confirm if that is what
-they meant. If the user agrees your interpretation of the message is correct then proceed with the task. If the user does not agree, ask for clarification and repeat the process.
+- Before you act on a user message, confirm that you understand what the user is asking for:
 
-## Writing Conventions
+  - If the message could reasonably be interpreted in more than one way, do not guess; you must ask at least two clarifying questions before proceeding.
 
-- Write code so a beginner can understand what it does by quickly scanning it.
+  - If the message seems clear, confirm you can support it with evidence a human novice can observe before you start. Do this by scanning the codebase for the feature, module, or pattern the request is talking about. Your goal is to find concrete evidence (existing functions, tests, docs, naming patterns, or similar code) that supports your interpretation. If you cannot find supporting evidence and you are not implementing a new feature, treat that as a warning sign: pause and either ask a clarifying question or propose the two most likely interpretations and explain what evidence would confirm each one.
 
-- Use descriptive names for variables and functions, and choose the simplest approach that solves the problem.
-
-- Add blank lines to separate steps, and add short comments where they help explain why something is happening.
-
-- Avoid clever tricks, dense one-liners, and unnecessary abstraction.
+</operating_guidelines>

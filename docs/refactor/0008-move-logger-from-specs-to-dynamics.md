@@ -6,7 +6,7 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 ## Purpose / Big Picture
 
-The `nil_specs` function in both `array_expr/specs.ex` and `scalar_expr/specs.ex` contained `EctoShorts.Logger.warning` calls inside compile-time-generated code. Specs are low-level expression builders that should be side-effect-free — they return `nil` when they cannot build an expression, and the caller decides what to do. The warning was moved to `dynamics.ex`, the module with semantic context (field name, source, expression), where it is consistent with how other warnings are logged (e.g., unknown field warnings).
+The `nil_specs` function in both `array_expr/specs.ex` and `scalar_expr/specs.ex` contained `EctoShorts.Logger.warning` calls inside compile-time-generated code. Specs are low-level expression builders that should be side-effect-free - they return `nil` when they cannot build an expression, and the caller decides what to do. The warning was moved to `dynamics.ex`, the module with semantic context (field name, source, expression), where it is consistent with how other warnings are logged (e.g., unknown field warnings).
 
 ## Progress
 
@@ -22,7 +22,7 @@ None so far.
 ## Decision Log
 
 - Decision: Remove Logger.warning from specs, add it in dynamics.ex for all nil returns from build_dynamic.
-  Rationale: Specs are compiled into function clauses at build time and should not have logging side effects. The dynamics module is the right abstraction level — it has the field name, source, and expression context needed for a meaningful warning message.
+  Rationale: Specs are compiled into function clauses at build time and should not have logging side effects. The dynamics module is the right abstraction level - it has the field name, source, and expression context needed for a meaningful warning message.
   Date/Author: 2026-02-28
 
 ## Outcomes & Retrospective
@@ -45,11 +45,11 @@ Specs return `nil` when they cannot build a dynamic expression. The caller in `d
 
 ## Behaviour Boundary (Must Remain Unchanged)
 
-The public `EctoShorts.Dynamics.convert_to_dynamic/4` function must return identical dynamic expressions for all valid inputs. For unsupported operator+nil combinations (e.g., `%{field: %{>: nil}}`), the behaviour changes from "log warning deep in specs + return nil + skip" to "return nil from specs + log warning in dynamics + skip" — same observable query result, different log message location.
+The public `EctoShorts.Dynamics.convert_to_dynamic/4` function must return identical dynamic expressions for all valid inputs. For unsupported operator+nil combinations (e.g., `%{field: %{>: nil}}`), the behaviour changes from "log warning deep in specs + return nil + skip" to "return nil from specs + log warning in dynamics + skip" - same observable query result, different log message location.
 
 ## Code Smell Identified
 
-The smell is a variant of `Feature Envy` — the specs module was performing a responsibility (logging) that belongs to its caller. Specs are data-driven expression builders; they should not have side effects. The logging belonged in `dynamics.ex`, which has the semantic context to produce a meaningful warning.
+The smell is a variant of `Feature Envy` - the specs module was performing a responsibility (logging) that belongs to its caller. Specs are data-driven expression builders; they should not have side effects. The logging belonged in `dynamics.ex`, which has the semantic context to produce a meaningful warning.
 
 ## Refactoring Technique Selected
 
@@ -103,7 +103,7 @@ After (in dynamics.ex, three sites):
 
 ## Interfaces and Dependencies
 
-No public API changes. The `build_dynamic/4` adapter callback contract is unchanged — it still returns `Ecto.Query.dynamic_expr() | nil`.
+No public API changes. The `build_dynamic/4` adapter callback contract is unchanged - it still returns `Ecto.Query.dynamic_expr() | nil`.
 
 ## Milestones
 

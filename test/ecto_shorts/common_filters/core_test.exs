@@ -9,28 +9,28 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 field equality" do
-    test "field equality — %{id: 1}" do
+    test "field equality - %{id: 1}" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality — %{published: true}" do
+    test "field equality - %{published: true}" do
       expected = from p in Post, where: p.published == ^true
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: true}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality — %{title: \"hello\"}" do
+    test "field equality - %{title: \"hello\"}" do
       expected = from p in Post, where: p.title == ^"hello"
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: "hello"}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality — %{published_at: ~U[2026-01-01 00:00:00Z]}" do
+    test "field equality - %{published_at: ~U[2026-01-01 00:00:00Z]}" do
       dt = ~U[2026-01-01 00:00:00Z]
       expected = from p in Post, where: p.published_at == ^dt
       q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: dt}, [])
@@ -38,42 +38,42 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "field equality — %{published_at: nil}" do
+    test "field equality - %{published_at: nil}" do
       expected = from p in Post, where: is_nil(p.published_at)
       q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: nil}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality — %{published: [true, false]} (non-keyword list defaults to IN)" do
+    test "field equality - %{published: [true, false]} (non-keyword list defaults to IN)" do
       expected = from p in Post, where: p.published in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: [true, false]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality — [id: 1] (keyword list)" do
+    test "field equality - [id: 1] (keyword list)" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [id: 1], [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality — [%{id: 1}] (list of maps)" do
+    test "field equality - [%{id: 1}] (list of maps)" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [%{id: 1}], [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality — [[id: 1]] (list of keyword lists)" do
+    test "field equality - [[id: 1]] (list of keyword lists)" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [[id: 1]], [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality — [%{id: 1}, %{published: true}] (list of maps, multiple entries)" do
+    test "field equality - [%{id: 1}, %{published: true}] (list of maps, multiple entries)" do
       expected =
         from(p in Post,
           where: p.id == ^1,
@@ -85,7 +85,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "field equality — [[id: 1], [published: true]] (list of keyword lists, multiple entries)" do
+    test "field equality - [[id: 1], [published: true]] (list of keyword lists, multiple entries)" do
       expected =
         from(p in Post,
           where: p.id == ^1,
@@ -144,7 +144,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   end
 
   describe "convert_params_to_filter/3 source and query params" do
-    test "source and query — [published: true, subquery: %{id: 2}]" do
+    test "source and query - [published: true, subquery: %{id: 2}]" do
       expected_inner =
         from(p in Post,
           where: p.published == ^true,
@@ -163,7 +163,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_query(expected, q2)
     end
 
-    test "source and query — [query: %{id: 1}, published: true]" do
+    test "source and query - [query: %{id: 1}, published: true]" do
       expected =
         from(p in Post,
           where: p.id == ^1,
@@ -180,28 +180,28 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "source and query — [source: Post, id: 1]" do
+    test "source and query - [source: Post, id: 1]" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, id: 1], [])
 
       assert_sql(expected, q2)
     end
 
-    test "source and query — [source: Post, query: %{id: 1}]" do
+    test "source and query - [source: Post, query: %{id: 1}]" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, query: %{id: 1}], [])
 
       assert_sql(expected, q2)
     end
 
-    test "source and query — [source: Post, query: [id: 1]]" do
+    test "source and query - [source: Post, query: [id: 1]]" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [source: Post, query: [id: 1]], [])
 
       assert_sql(expected, q2)
     end
 
-    test "source and query — [source: \"posts\", query: %{id: 1}]" do
+    test "source and query - [source: \"posts\", query: %{id: 1}]" do
       q2 = CommonFilters.convert_params_to_filter(Post, [source: "posts", query: %{id: 1}], [])
 
       {sql, params} = Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Repo, q2)
@@ -211,7 +211,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert params == [1]
     end
 
-    test "source and query — [source: \"posts\", query: %{select: [:id]}]" do
+    test "source and query - [source: \"posts\", query: %{select: [:id]}]" do
       expected = from p in "posts", select: ^[:id]
       q2 = CommonFilters.convert_params_to_filter(Post, [source: "posts", query: %{select: [:id]}], [])
 
@@ -220,28 +220,28 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   end
 
   describe "convert_params_to_filter/3 custom filters" do
-    test "custom filter — %{ids: [1, 2, 3]}" do
+    test "custom filter - %{ids: [1, 2, 3]}" do
       expected = from p in Post, where: p.id in ^[1, 2, 3]
       q2 = CommonFilters.convert_params_to_filter(Post, %{ids: [1, 2, 3]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "custom filter — %{after: 10}" do
+    test "custom filter - %{after: 10}" do
       expected = from p in Post, where: p.id > ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{after: 10}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "custom filter — %{before: 10}" do
+    test "custom filter - %{before: 10}" do
       expected = from p in Post, where: p.id < ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{before: 10}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "custom filter — %{start_date: ~U[2026-01-01 00:00:00Z]}" do
+    test "custom filter - %{start_date: ~U[2026-01-01 00:00:00Z]}" do
       dt = ~U[2026-01-01 00:00:00Z]
       expected = from p in Post, where: p.inserted_at >= ^dt
       q2 = CommonFilters.convert_params_to_filter(Post, %{start_date: dt}, [])
@@ -249,7 +249,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "custom filter — %{end_date: ~U[2026-12-31 23:59:59Z]}" do
+    test "custom filter - %{end_date: ~U[2026-12-31 23:59:59Z]}" do
       dt = ~U[2026-12-31 23:59:59Z]
       expected = from p in Post, where: p.inserted_at <= ^dt
       q2 = CommonFilters.convert_params_to_filter(Post, %{end_date: dt}, [])

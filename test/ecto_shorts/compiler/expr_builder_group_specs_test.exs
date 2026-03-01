@@ -88,6 +88,29 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
+  test "scalar alias_op_specs/2 composes with base_op_specs/4 for :ne" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ScalarExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
+        ScalarExprSpecs.base_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        )
+
+    module = compile_specs_module!(specs)
+
+    key = :age
+    expected = dynamic([q], field(q, ^key) != ^1)
+
+    assert_dynamic(
+      expected,
+      module.apply_dynamic_expr({:as, nil}, key, {:ne, 1})
+    )
+  end
+
   test "array lower_upper_specs/4 builds the unnest fragments" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
@@ -150,6 +173,29 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     assert_dynamic(
       expected,
       module.apply_dynamic_expr({:as, nil}, key, {:gt, 10})
+    )
+  end
+
+  test "array alias_op_specs/2 composes with base_op_specs/4 for :ne" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ArrayExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
+        ArrayExprSpecs.base_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        )
+
+    module = compile_specs_module!(specs)
+
+    key = :scores
+    expected = dynamic([q], ^10 not in field(q, ^key))
+
+    assert_dynamic(
+      expected,
+      module.apply_dynamic_expr({:as, nil}, key, {:ne, 10})
     )
   end
 end

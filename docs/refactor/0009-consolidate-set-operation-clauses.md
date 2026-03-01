@@ -16,7 +16,7 @@ To verify behaviour is preserved, run `mix test --seed 0 --trace` from the repos
 
 - [x] (2026-03-01 05:30Z) Identified the duplicate code smell in `lib/ecto_shorts/common_filters/filter.ex` lines 140–168. Six `apply_expr/6` clauses for set operations follow the identical pattern.
 - [x] (2026-03-01 05:31Z) Replaced six clauses with one guarded clause + compile-time generated `apply_set_operation/3` helper. Added `@set_operations` module attribute. `mix format` clean, 791 tests + 9 doctests pass.
-- [x] (2026-03-01 05:32Z) Full quality checks: `mix credo --strict` passes (pre-existing warnings only), `mix dialyzer` passes (1 pre-existing error), `mix test` — 0 failures.
+- [x] (2026-03-01 05:32Z) Full quality checks: `mix credo --strict` passes (pre-existing warnings only), `mix dialyzer` passes (1 pre-existing error), `mix test` - 0 failures.
 - [x] (2026-03-01 05:33Z) Wrote this RefactorPlan artifact to `docs/refactor/0009-consolidate-set-operation-clauses.md`.
 
 ## Surprises & Discoveries
@@ -144,7 +144,7 @@ No other modules are affected.
 
 ## Milestones
 
-### Milestone 1 — Replace duplicate clauses
+### Milestone 1 - Replace duplicate clauses
 
 Scope: Replace the six `apply_expr/6` set-operation clauses with the consolidated version. Add `@set_operations` module attribute. Run `mix format` and `mix test --seed 0 --trace`.
 
@@ -152,13 +152,13 @@ Files changed: `lib/ecto_shorts/common_filters/filter.ex`
 
 Acceptance: 791 tests + 9 doctests pass with 0 failures.
 
-### Milestone 2 — Full quality checks
+### Milestone 2 - Full quality checks
 
 Scope: Run `mix credo --strict`, `mix dialyzer`, and `mix test` to confirm no regressions.
 
 Acceptance: All three pass. No new warnings or errors.
 
-### Milestone 3 — Write RefactorPlan artifact
+### Milestone 3 - Write RefactorPlan artifact
 
 Scope: Write this document to `docs/refactor/0009-consolidate-set-operation-clauses.md`.
 

@@ -6,7 +6,7 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 ## Purpose / Big Picture
 
-The keyword-list handler in `reduce_params` (Distinct), `reduce_group_by` (GroupBy), and `reduce_order_by` (OrderBy) each contained a three-way `case` over `Enum.split_with` that separated bind entries from operation entries. All three branches did the same work — process operation entries then bind entries — but the `{[], ...}` and `{..., []}` branches were unnecessary special cases of the general branch, because `Enum.reduce` over an empty list is a no-op and passing an empty list to `apply_*_expr` is harmless. Additionally, in Distinct and GroupBy, operation keyword entries were reduced one-by-one through the reducer function back to `apply_*_expr`, when `apply_*_expr` already handles lists directly.
+The keyword-list handler in `reduce_params` (Distinct), `reduce_group_by` (GroupBy), and `reduce_order_by` (OrderBy) each contained a three-way `case` over `Enum.split_with` that separated bind entries from operation entries. All three branches did the same work - process operation entries then bind entries - but the `{[], ...}` and `{..., []}` branches were unnecessary special cases of the general branch, because `Enum.reduce` over an empty list is a no-op and passing an empty list to `apply_*_expr` is harmless. Additionally, in Distinct and GroupBy, operation keyword entries were reduced one-by-one through the reducer function back to `apply_*_expr`, when `apply_*_expr` already handles lists directly.
 
 After this refactor, all three modules use a single path: split, pass operation entries as a list if non-empty, then reduce bind entries. The behaviour is unchanged.
 
@@ -20,7 +20,7 @@ After this refactor, all three modules use a single path: split, pass operation 
 
 ## Surprises & Discoveries
 
-- Observation: The Distinct module's catch-all `apply_distinct_expr` was updated separately (outside this refactor) to log a warning and return the query unchanged, rather than passing the expression through to `Query.distinct/2`. This does not affect the refactoring since the keyword-list handler never reaches the catch-all — it passes lists to the list-specific clause.
+- Observation: The Distinct module's catch-all `apply_distinct_expr` was updated separately (outside this refactor) to log a warning and return the query unchanged, rather than passing the expression through to `Query.distinct/2`. This does not affect the refactoring since the keyword-list handler never reaches the catch-all - it passes lists to the list-specific clause.
 
 ## Decision Log
 
@@ -44,9 +44,9 @@ Pending test verification. The refactoring removed approximately 10 lines per mo
 
 Three sibling modules under `lib/ecto_shorts/common_filters/` build Ecto query expressions from data-driven params:
 
-- `distinct.ex` — `EctoShorts.CommonFilters.Distinct`, builds `:distinct` expressions
-- `group_by.ex` — `EctoShorts.CommonFilters.GroupBy`, builds `:group_by` expressions
-- `order_by.ex` — `EctoShorts.CommonFilters.OrderBy`, builds `:order_by` / `:prepend_order_by` expressions
+- `distinct.ex` - `EctoShorts.CommonFilters.Distinct`, builds `:distinct` expressions
+- `group_by.ex` - `EctoShorts.CommonFilters.GroupBy`, builds `:group_by` expressions
+- `order_by.ex` - `EctoShorts.CommonFilters.OrderBy`, builds `:order_by` / `:prepend_order_by` expressions
 
 Each module has a private reducer function that normalises input (maps to keyword lists, separates `:bind` entries from operation entries) and dispatches to an `apply_*_expr` function that builds the actual Ecto query clause. The `apply_*_expr` functions are generated at compile time by `EctoShorts.Compiler.define_clauses` to handle different binding selectors.
 
@@ -56,13 +56,13 @@ The "three-way case" refers to the pattern where `Enum.split_with` produces `{bi
 
 The public `build/6` function in each module must produce identical `Ecto.Query` structs for all existing test inputs. Specifically:
 
-- `EctoShorts.CommonFilters.Distinct.build/6` — boolean, atom, list, `{dir, field}`, map, and `:bind`-scoped payloads
-- `EctoShorts.CommonFilters.GroupBy.build/6` — atom, list, map, and `:bind`-scoped payloads
-- `EctoShorts.CommonFilters.OrderBy.build/6` — atom, `{dir, field}`, list, map, dynamic, and `:bind`-scoped payloads for both `:order_by` and `:prepend_order_by`
+- `EctoShorts.CommonFilters.Distinct.build/6` - boolean, atom, list, `{dir, field}`, map, and `:bind`-scoped payloads
+- `EctoShorts.CommonFilters.GroupBy.build/6` - atom, list, map, and `:bind`-scoped payloads
+- `EctoShorts.CommonFilters.OrderBy.build/6` - atom, `{dir, field}`, list, map, dynamic, and `:bind`-scoped payloads for both `:order_by` and `:prepend_order_by`
 
 ## Code Smell Identified
 
-`Duplicate Code` (from `.agent/refactor/code_smells/dispensables/DUPLICATE_CODE.md`). The three-way `case` pattern was structurally identical across all three modules and within each module the three branches performed the same work with only the empty-list edge cases differing. This is "structural duplication" — the same algorithm with slight variations that add no value.
+`Duplicate Code` (from `.agent/refactor/code_smells/dispensables/DUPLICATE_CODE.md`). The three-way `case` pattern was structurally identical across all three modules and within each module the three branches performed the same work with only the empty-list edge cases differing. This is "structural duplication" - the same algorithm with slight variations that add no value.
 
 ## Refactoring Technique Selected
 
@@ -123,9 +123,9 @@ After (all three modules, ~10 lines):
 
 No public API changes. Only private functions were modified:
 
-- `EctoShorts.CommonFilters.Distinct` — `defp reduce_params/3`
-- `EctoShorts.CommonFilters.GroupBy` — `defp reduce_group_by/3`
-- `EctoShorts.CommonFilters.OrderBy` — `defp reduce_order_by/4`
+- `EctoShorts.CommonFilters.Distinct` - `defp reduce_params/3`
+- `EctoShorts.CommonFilters.GroupBy` - `defp reduce_group_by/3`
+- `EctoShorts.CommonFilters.OrderBy` - `defp reduce_order_by/4`
 
 ## Milestones
 

@@ -30,16 +30,17 @@ Examples:
 
 ## Comparison Operator Rules
 
-**Rule 3:** Comparison operators (`:==`, `:!=`, `:>`, `:>=`, `:<`, `:<=`, `:eq`, `:gt`, `:gte`, `:lt`, `:lte`) must wrap their operand values.
+**Rule 3:** Comparison operators (`:==`, `:!=`, `:>`, `:>=`, `:<`, `:<=`, `:eq`, `:ne`, `:gt`, `:gte`, `:lt`, `:lte`) must wrap their operand values.
 
 Comparison operators are the keys that specify how to compare a field. They must wrap the value being compared.
 
-When the operand is `nil`, the comparison produces an IS NULL or IS NOT NULL check. Only `:==`, `:eq`, and `:!=` are valid operators for `nil` comparisons.
+When the operand is `nil`, the comparison produces an IS NULL or IS NOT NULL check. Only `:==`, `:eq`, `:!=`, and `:ne` are valid operators for `nil` comparisons.
 
 Examples:
 - `%{views: %{>: 10}}` - `>` wraps the value `10`
 - `%{id: %{==: 1}}` - `==` wraps the value `1`
 - `%{published_at: %{!=: nil}}` - `!=` wraps `nil` (IS NOT NULL)
+- `%{published_at: %{ne: nil}}` - `ne` wraps `nil` (IS NOT NULL)
 - `%{published_at: %{==: nil}}` - `==` wraps `nil` (IS NULL)
 
 **Rule 4:** When used on a scalar field, the `:in` operator tests membership and must wrap a list of values.
@@ -172,10 +173,10 @@ Examples:
 
 The binding mode selects how the target binding is identified:
 
-- `:as` for named bindings — wraps `{binding_alias, params}` pairs.
-- `:at` for positional bindings — wraps `{position, params}` pairs.
-- `:first` for the first binding — wraps params directly (always targets the root `from` binding at position 1).
-- `:last` for the last binding — wraps params directly (targets the highest positional binding in the query; the last join, or the `from` binding if there are no joins).
+- `:as` for named bindings - wraps `{binding_alias, params}` pairs.
+- `:at` for positional bindings - wraps `{position, params}` pairs.
+- `:first` for the first binding - wraps params directly (always targets the root `from` binding at position 1).
+- `:last` for the last binding - wraps params directly (targets the highest positional binding in the query; the last join, or the `from` binding if there are no joins).
 
 `:first` and `:last` are flat modes: their params are the filter parameters directly, without the extra `{target, params}` nesting that `:as` and `:at` use.
 

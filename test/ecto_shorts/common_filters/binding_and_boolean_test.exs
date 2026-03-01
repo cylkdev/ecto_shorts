@@ -11,20 +11,20 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 field-level logical operators" do
-    test "field-level — %{views: %{and: [>: 10, <: 20]}}" do
+    test "field-level - %{views: %{and: [>: 10, <: 20]}}" do
       expected = from(p in Post, where: p.views > ^10 and p.views < ^20)
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{and: [>: 10, <: 20]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field-level — %{views: %{and: []}} (no-op)" do
+    test "field-level - %{views: %{and: []}} (no-op)" do
       q = from(p in Post)
       q2 = CommonFilters.convert_params_to_filter(q, %{views: %{and: []}}, [])
       assert q2 === q
     end
 
-    test "field-level — %{published: %{and: [==: true, !=: false]}}" do
+    test "field-level - %{published: %{and: [==: true, !=: false]}}" do
       expected =
         from(p in Post,
           where: p.published == ^true and p.published != ^false
@@ -35,7 +35,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "field-level — %{views: %{or: [>: 10, <: 5]}}" do
+    test "field-level - %{views: %{or: [>: 10, <: 5]}}" do
       expected =
         from(p in Post,
           where: p.views > ^10 or p.views < ^5
@@ -46,7 +46,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "field-level — %{published: %{or: [==: true, ==: false]}}" do
+    test "field-level - %{published: %{or: [==: true, ==: false]}}" do
       expected =
         from(p in Post,
           where: p.published == ^true or p.published == ^false
@@ -59,7 +59,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
   end
 
   describe "convert_params_to_filter/3 top-level logical operators" do
-    test "top-level — %{or: [[published: true, views: 20], [published: false, views: 10]]}" do
+    test "top-level - %{or: [[published: true, views: 20], [published: false, views: 10]]}" do
       expected =
         from(p in Post,
           where:
@@ -77,7 +77,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "top-level — %{and: [[published: true, views: 20], [title: \"hello\", views: 15]]}" do
+    test "top-level - %{and: [[published: true, views: 20], [title: \"hello\", views: 15]]}" do
       expected =
         from(p in Post,
           where: p.published == ^true and p.views == ^20 and (p.title == ^"hello" and p.views == ^15)
@@ -93,7 +93,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "top-level — %{or: [[published: %{or: [==: true, ==: false]}], ...]}" do
+    test "top-level - %{or: [[published: %{or: [==: true, ==: false]}], ...]}" do
       expected =
         from(p in Post,
           where:
@@ -111,7 +111,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "top-level — %{or: [[published: true, views: 20]]} (single entry)" do
+    test "top-level - %{or: [[published: true, views: 20]]} (single entry)" do
       expected = from(p in Post, where: p.published == ^true and p.views == ^20)
 
       q2 =
@@ -124,7 +124,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "top-level — %{or: [[views: %{>: 10}, published: true], [views: %{<: 5}, published: false]]}" do
+    test "top-level - %{or: [[views: %{>: 10}, published: true], [views: %{<: 5}, published: false]]}" do
       expected =
         from(p in Post,
           where:
@@ -142,19 +142,19 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "top-level — %{or: []} (no-op)" do
+    test "top-level - %{or: []} (no-op)" do
       q = from(p in Post)
       q2 = CommonFilters.convert_params_to_filter(q, %{or: []}, [])
       assert q2 === q
     end
 
-    test "top-level — %{and: []} (no-op)" do
+    test "top-level - %{and: []} (no-op)" do
       q = from(p in Post)
       q2 = CommonFilters.convert_params_to_filter(q, %{and: []}, [])
       assert q2 === q
     end
 
-    test "top-level — [title: \"test\", or: [[published: true, views: 20], [published: false, views: 10]]]" do
+    test "top-level - [title: \"test\", or: [[published: true, views: 20], [published: false, views: 10]]]" do
       expected =
         from(p in Post,
           where: p.title == ^"test",
@@ -196,7 +196,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
   end
 
   describe "convert_params_to_filter/3 binding selectors" do
-    test "binding — %{bind: %{as: %{post: %{published: true}}}}" do
+    test "binding - %{bind: %{as: %{post: %{published: true}}}}" do
       expected = from p in Post, as: :post, where: p.published == ^true
       q = from p in Post, as: :post
 
@@ -205,7 +205,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{as: [post: %{published: true}]}}" do
+    test "binding - %{bind: %{as: [post: %{published: true}]}}" do
       expected = from p in Post, as: :post, where: p.published == ^true
       q = from p in Post, as: :post
 
@@ -214,7 +214,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{as: [post: %{published: true}, author: %{first_name: \"John\"}]}}" do
+    test "binding - %{bind: %{as: [post: %{published: true}, author: %{first_name: \"John\"}]}}" do
       expected =
         from(p in Post,
           as: :post,
@@ -241,7 +241,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{at: %{1 => %{published: true}}}}" do
+    test "binding - %{bind: %{at: %{1 => %{published: true}}}}" do
       expected = from p in Post, where: p.published == ^true
 
       q2 = CommonFilters.convert_params_to_filter(Post, %{bind: %{at: %{1 => %{published: true}}}}, [])
@@ -249,7 +249,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{at: %{1 => [published: true]}}}" do
+    test "binding - %{bind: %{at: %{1 => [published: true]}}}" do
       expected = from p in Post, where: p.published == ^true
 
       q2 = CommonFilters.convert_params_to_filter(Post, %{bind: %{at: %{1 => [published: true]}}}, [])
@@ -257,7 +257,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: [as: [post: %{published: true}]]}" do
+    test "binding - %{bind: [as: [post: %{published: true}]]}" do
       expected = from p in Post, as: :post, where: p.published == ^true
       q = from p in Post, as: :post
 
@@ -266,7 +266,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: [at: %{1 => %{published: true}}]}" do
+    test "binding - %{bind: [at: %{1 => %{published: true}}]}" do
       expected = from p in Post, where: p.published == ^true
 
       q2 = CommonFilters.convert_params_to_filter(Post, %{bind: [at: %{1 => %{published: true}}]}, [])
@@ -347,21 +347,21 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
   end
 
   describe "convert_params_to_filter/3 schema filter precedence" do
-    test "precedence — %{where: %{published: true}}" do
+    test "precedence - %{where: %{published: true}}" do
       expected = from p in Post, where: p.published == ^true
       q2 = CommonFilters.convert_params_to_filter(Post, %{where: %{published: true}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "precedence — %{where: [published: true]}" do
+    test "precedence - %{where: [published: true]}" do
       expected = from p in Post, where: p.published == ^true
       q2 = CommonFilters.convert_params_to_filter(Post, %{where: [published: true]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "precedence — %{where: %{published: true, views: 10}}" do
+    test "precedence - %{where: %{published: true, views: 10}}" do
       expected =
         from(p in Post,
           where: p.published == ^true,
@@ -373,21 +373,21 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "precedence — %{or_where: %{published: false}}" do
+    test "precedence - %{or_where: %{published: false}}" do
       expected = from p in Post, or_where: p.published == ^false
       q2 = CommonFilters.convert_params_to_filter(Post, %{or_where: %{published: false}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "precedence — %{or_where: [published: false]}" do
+    test "precedence - %{or_where: [published: false]}" do
       expected = from p in Post, or_where: p.published == ^false
       q2 = CommonFilters.convert_params_to_filter(Post, %{or_where: [published: false]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "precedence — %{where: %{published: true}, or_where: %{published: false}}" do
+    test "precedence - %{where: %{published: true}, or_where: %{published: false}}" do
       expected =
         from(p in Post,
           where: p.published == ^true,
@@ -404,7 +404,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "precedence — %{where: [published: true, views: 10], or_where: %{views: %{<: 5}}} (Rule 17)" do
+    test "precedence - %{where: [published: true, views: 10], or_where: %{views: %{<: 5}}} (Rule 17)" do
       expected =
         from(p in Post,
           where: p.published == ^true,
@@ -422,7 +422,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "precedence — %{views: %{>: 10}, or_where: %{views: %{<: 5}}} (Rule 18)" do
+    test "precedence - %{views: %{>: 10}, or_where: %{views: %{<: 5}}} (Rule 18)" do
       expected =
         from(p in Post,
           where: p.views > ^10,
@@ -439,7 +439,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "precedence — [or_where: %{views: %{or: [>: 10, <: 5]}}, published: true] (Rule 18: field before or_where)" do
+    test "precedence - [or_where: %{views: %{or: [>: 10, <: 5]}}, published: true] (Rule 18: field before or_where)" do
       expected =
         from(p in Post,
           where: p.published == ^true,
@@ -967,7 +967,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
   end
 
   describe "convert_params_to_filter/3 :first binding selector" do
-    test "binding — %{bind: %{first: %{published: true}}} on bare schema" do
+    test "binding - %{bind: %{first: %{published: true}}} on bare schema" do
       expected = from(p in Post, where: p.published == ^true)
 
       q2 =
@@ -980,7 +980,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{first: %{published: true}}} on query with join targets from binding" do
+    test "binding - %{bind: %{first: %{published: true}}} on query with join targets from binding" do
       q = from(p in Post, join: a in assoc(p, :author), as: :author)
 
       expected =
@@ -1000,7 +1000,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{first: %{order_by: %{asc: :title}}}}" do
+    test "binding - %{bind: %{first: %{order_by: %{asc: :title}}}}" do
       expected = from(p in Post, order_by: [asc: p.title])
 
       q2 =
@@ -1013,7 +1013,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{first: %{group_by: :title}}}" do
+    test "binding - %{bind: %{first: %{group_by: :title}}}" do
       expected = from(p in Post, group_by: p.title)
 
       q2 =
@@ -1042,7 +1042,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
   end
 
   describe "convert_params_to_filter/3 :last binding selector" do
-    test "binding — %{bind: %{last: %{published: true}}} on bare schema targets from binding" do
+    test "binding - %{bind: %{last: %{published: true}}} on bare schema targets from binding" do
       expected = from(p in Post, where: p.published == ^true)
 
       q2 =
@@ -1055,7 +1055,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{last: %{first_name: \"John\"}}} on query with join targets last join" do
+    test "binding - %{bind: %{last: %{first_name: \"John\"}}} on query with join targets last join" do
       q = from(p in Post, join: a in assoc(p, :author), as: :author)
 
       expected =
@@ -1075,7 +1075,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{last: %{order_by: %{asc: :first_name}}}} on query with join" do
+    test "binding - %{bind: %{last: %{order_by: %{asc: :first_name}}}} on query with join" do
       q = from(p in Post, join: a in assoc(p, :author), as: :author)
 
       expected =
@@ -1095,7 +1095,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "binding — %{bind: %{last: %{group_by: :first_name}}} on query with join" do
+    test "binding - %{bind: %{last: %{group_by: :first_name}}} on query with join" do
       q = from(p in Post, join: a in assoc(p, :author), as: :author)
 
       expected =

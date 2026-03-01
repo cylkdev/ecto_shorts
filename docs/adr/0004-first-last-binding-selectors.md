@@ -21,9 +21,9 @@ The `%{bind: ...}` syntax in `EctoShorts.CommonFilters` lets callers target a sp
 
 ## Considered Options
 
-1. **New flat binding modes** — `:first` and `:last` become sibling modes alongside `:as` and `:at` inside `%{bind: ...}`. They are "flat" because their params are the filter parameters directly (no `{target, params}` nesting).
-2. **Special `:at` targets** — `:first` and `:last` are atom values inside the existing `:at` mode, e.g. `%{bind: %{at: %{:first => ...}}}`. Resolved at runtime to the actual position.
-3. **Both syntaxes** — Support both option 1 and option 2.
+1. **New flat binding modes** - `:first` and `:last` become sibling modes alongside `:as` and `:at` inside `%{bind: ...}`. They are "flat" because their params are the filter parameters directly (no `{target, params}` nesting).
+2. **Special `:at` targets** - `:first` and `:last` are atom values inside the existing `:at` mode, e.g. `%{bind: %{at: %{:first => ...}}}`. Resolved at runtime to the actual position.
+3. **Both syntaxes** - Support both option 1 and option 2.
 
 ## Decision Outcome
 
@@ -56,7 +56,7 @@ Verify no existing tests broke:
 `:first` and `:last` are new keys at the same level as `:as` and `:at` inside `%{bind: ...}`. They wrap filter params directly without a target key.
 
 Good, because the syntax is concise: `%{bind: %{first: %{...}}}`.
-Good, because implementation is localized to `BindingParams` — one new private function `reduce_flat_bind_params/6` and one resolver `resolve_flat_binding/2`.
+Good, because implementation is localized to `BindingParams` - one new private function `reduce_flat_bind_params/6` and one resolver `resolve_flat_binding/2`.
 Good, because no collision with existing `:first`/`:last` query operation filters since those are top-level keys.
 Bad, because it adds two new atoms to the binding mode vocabulary that callers must learn.
 
@@ -80,16 +80,16 @@ Bad, because two ways to do the same thing increases cognitive load and document
 The `:first` mode always resolves to `{:at, 1}` (pure alias). The `:last` mode resolves at runtime to `{:at, CommonQuery.query_binding_count(query)}`. For a bare schema with no joins, `:last` targets position 1 (the `from` binding).
 
 Files changed:
-* `lib/ecto_shorts/common_filters/binding_params.ex` — core resolution logic
-* `lib/ecto_shorts/common_filters/order_by.ex` — pass query to `normalize_bind_params`
-* `lib/ecto_shorts/common_filters/group_by.ex` — pass query to `normalize_bind_params`
-* `lib/ecto_shorts/common_filters/windows.ex` — pass query to `normalize_bind_params`
-* `lib/ecto_shorts/common_filters/select.ex` — pass query to `normalize_bind_params`
-* `lib/ecto_shorts/common_filters/distinct.ex` — pass query to `normalize_bind_params`
-* `lib/ecto_shorts/common_filters/update.ex` — pass query to `normalize_bind_params`
-* `lib/ecto_shorts/common_filters/preload.ex` — pass query to `normalize_bind_params`
-* `lib/ecto_shorts/common_filters.ex` — moduledoc binding selector section updated
-* `guides/RULES.md` — Rule 16 updated
-* `test/ecto_shorts/common_filters/binding_and_boolean_test.exs` — new tests
+* `lib/ecto_shorts/common_filters/binding_params.ex` - core resolution logic
+* `lib/ecto_shorts/common_filters/order_by.ex` - pass query to `normalize_bind_params`
+* `lib/ecto_shorts/common_filters/group_by.ex` - pass query to `normalize_bind_params`
+* `lib/ecto_shorts/common_filters/windows.ex` - pass query to `normalize_bind_params`
+* `lib/ecto_shorts/common_filters/select.ex` - pass query to `normalize_bind_params`
+* `lib/ecto_shorts/common_filters/distinct.ex` - pass query to `normalize_bind_params`
+* `lib/ecto_shorts/common_filters/update.ex` - pass query to `normalize_bind_params`
+* `lib/ecto_shorts/common_filters/preload.ex` - pass query to `normalize_bind_params`
+* `lib/ecto_shorts/common_filters.ex` - moduledoc binding selector section updated
+* `guides/RULES.md` - Rule 16 updated
+* `test/ecto_shorts/common_filters/binding_and_boolean_test.exs` - new tests
 
 Revisit this decision if the binding selector system is extended with additional resolution strategies (e.g. relative offsets like `{:at, -1}` for "second to last").

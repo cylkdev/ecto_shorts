@@ -10,7 +10,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
   @aggregate_operators [:avg, :count, :max, :min, :sum]
   @arithmetic_operators [:+, :-, :*, :/]
   @comparison_operators [:==, :!=, :>, :>=, :<, :<=]
-  @comparison_alias_operators [:eq, :gt, :gte, :lt, :lte]
+  @comparison_alias_operators [:eq, :ne, :gt, :gte, :lt, :lte]
   @date_time_helpers [
     {:datetime, :add},
     {:datetime, :ago},
@@ -167,7 +167,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
 
     op_guard =
       quote do
-        unquote(op_var) in [:gt, :gte, :lt, :lte, :eq]
+        unquote(op_var) in [:gt, :gte, :lt, :lte, :eq, :ne]
       end
 
     [
@@ -185,6 +185,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
                 :lt -> :<
                 :lte -> :<=
                 :eq -> :==
+                :ne -> :!=
               end
 
             apply_dynamic_expr(
@@ -208,6 +209,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
                 :lt -> :<
                 :lte -> :<=
                 :eq -> :==
+                :ne -> :!=
               end
 
             apply_dynamic_expr(
@@ -242,6 +244,9 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: is_nil(unquote(field_ast)))))
 
               :!= ->
+                unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
+
+              :ne ->
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
 
               _ ->
@@ -291,6 +296,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
               mapped_op =
                 case unquote(op_var) do
                   :eq -> :==
+                  :ne -> :!=
                   :gt -> :>
                   :gte -> :>=
                   :lt -> :<
@@ -314,6 +320,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
               mapped_op =
                 case unquote(op_var) do
                   :eq -> :==
+                  :ne -> :!=
                   :gt -> :>
                   :gte -> :>=
                   :lt -> :<
@@ -430,6 +437,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
                 :lt -> :<
                 :lte -> :<=
                 :eq -> :==
+                :ne -> :!=
               end
 
             apply_dynamic_expr(
@@ -453,6 +461,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
                 :lt -> :<
                 :lte -> :<=
                 :eq -> :==
+                :ne -> :!=
               end
 
             apply_dynamic_expr(
@@ -538,6 +547,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
                 :lt -> :<
                 :lte -> :<=
                 :eq -> :==
+                :ne -> :!=
               end
 
             apply_dynamic_expr(
@@ -561,6 +571,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs do
                 :lt -> :<
                 :lte -> :<=
                 :eq -> :==
+                :ne -> :!=
               end
 
             apply_dynamic_expr(

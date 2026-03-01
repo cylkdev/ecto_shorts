@@ -228,7 +228,7 @@
 
 %{inserted_at: %{not: %{==: %{datetime: %{add: %{field: :inserted_at, count: 1, interval: "day"}}}}}}
 
-## Logical Operators — Field Level Examples
+## Logical Operators - Field Level Examples
 
 %{views: %{and: [>: 10, <: 20]}}
 
@@ -238,7 +238,7 @@
 
 %{published: %{or: [==: true, ==: false]}}
 
-## Logical Operators — Top Level Examples
+## Logical Operators - Top Level Examples
 
 %{or: [[published: true, views: 20], [published: false, views: 10]]}
 

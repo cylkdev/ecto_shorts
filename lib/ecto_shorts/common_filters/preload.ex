@@ -57,7 +57,8 @@ defmodule EctoShorts.CommonFilters.Preload do
   end
 
   defp reduce_preload_bind(_schema_source, query, _binding_selector, bind_params, entries \\ nil) do
-    Enum.reduce(BindingParams.normalize_bind_params(bind_params, query), query, fn {binding_selector, value}, q ->
+    Enum.reduce(BindingParams.normalize_bind_params(bind_params, query), query, fn {binding_selector, value},
+                                                                                   q ->
       if valid_binding?(q, binding_selector) do
         apply_preload_expr(q, binding_selector, value, entries)
       else

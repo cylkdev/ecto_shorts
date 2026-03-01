@@ -9,7 +9,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
 
   @aggregate_helpers [:avg, :count, :max, :min, :sum]
   @comparison_ops [:==, :!=, :>, :>=, :<, :<=]
-  @alias_comparison_ops [:eq, :gt, :gte, :lt, :lte]
+  @alias_comparison_ops [:eq, :ne, :gt, :gte, :lt, :lte]
 
   @doc false
   @impl true
@@ -100,7 +100,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
 
     op_guard =
       quote do
-        unquote(op_var) in [:gt, :gte, :lt, :lte, :eq]
+        unquote(op_var) in [:gt, :gte, :lt, :lte, :eq, :ne]
       end
 
     [
@@ -118,6 +118,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
                 :lt -> :<
                 :lte -> :<=
                 :eq -> :==
+                :ne -> :!=
               end
 
             apply_dynamic_expr(
@@ -141,6 +142,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
                 :lt -> :<
                 :lte -> :<=
                 :eq -> :==
+                :ne -> :!=
               end
 
             apply_dynamic_expr(
@@ -174,6 +176,9 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: is_nil(unquote(field_ast)))))
 
               :!= ->
+                unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
+
+              :ne ->
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
 
               _ ->
@@ -223,6 +228,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
               mapped_op =
                 case unquote(op_var) do
                   :eq -> :==
+                  :ne -> :!=
                   :gt -> :>
                   :gte -> :>=
                   :lt -> :<
@@ -246,6 +252,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
               mapped_op =
                 case unquote(op_var) do
                   :eq -> :==
+                  :ne -> :!=
                   :gt -> :>
                   :gte -> :>=
                   :lt -> :<

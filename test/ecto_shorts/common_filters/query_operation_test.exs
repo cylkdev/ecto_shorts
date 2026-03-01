@@ -1491,21 +1491,21 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 order_by additional examples" do
-    test "order_by — %{order_by: [desc: :title]}" do
+    test "order_by - %{order_by: [desc: :title]}" do
       expected = from(p in Post, order_by: [desc: p.title])
       q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: [desc: :title]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "order_by — %{order_by: [asc: :title, desc: :id]}" do
+    test "order_by - %{order_by: [asc: :title, desc: :id]}" do
       expected = from(p in Post, order_by: [asc: p.title, desc: p.id])
       q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: [asc: :title, desc: :id]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "order_by — %{order_by: %{desc: :title}} (map payload)" do
+    test "order_by - %{order_by: %{desc: :title}} (map payload)" do
       expected = from(p in Post, order_by: [desc: p.title])
       q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: %{desc: :title}}, [])
 
@@ -1514,7 +1514,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 combined examples" do
-    test "combined — %{published: true, limit: 10, offset: 5}" do
+    test "combined - %{published: true, limit: 10, offset: 5}" do
       expected =
         from(p in Post,
           where: p.published == ^true,
@@ -1527,7 +1527,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "combined — %{group_by: :published, having: %{published: true}}" do
+    test "combined - %{group_by: :published, having: %{published: true}}" do
       expected =
         from(p in Post,
           group_by: p.published,
@@ -1544,7 +1544,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "combined — %{group_by: :views, having: %{views: %{>: 10}}, or_having: %{views: %{<: 5}}}" do
+    test "combined - %{group_by: :views, having: %{views: %{>: 10}}, or_having: %{views: %{<: 5}}}" do
       expected =
         from(p in Post,
           group_by: p.views,
@@ -1562,7 +1562,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "combined — %{group_by: :id, having: %{inserted_at: %{>: %{datetime: %{ago: ...}}}}}" do
+    test "combined - %{group_by: :id, having: %{inserted_at: %{>: %{datetime: %{ago: ...}}}}}" do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -1579,7 +1579,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert Enum.at(params, 1) === Decimal.new("-1")
     end
 
-    test "combined — %{where: %{title: \"test\"}, or_where: %{or: [[published: true, views: 20], [published: false, views: 10]]}}" do
+    test "combined - %{where: %{title: \"test\"}, or_where: %{or: [[published: true, views: 20], [published: false, views: 10]]}}" do
       expected =
         from(p in Post,
           where: p.title == ^"test",
@@ -1601,7 +1601,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "combined — %{where: [published: true, views: %{or: [>: 10, <: 5]}]}" do
+    test "combined - %{where: [published: true, views: %{or: [>: 10, <: 5]}]}" do
       expected =
         from(p in Post,
           where: p.published == ^true,
