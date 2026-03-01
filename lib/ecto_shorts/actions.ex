@@ -8,8 +8,15 @@ defmodule EctoShorts.Actions do
 
   ## Getting started
 
+  Before you can run the examples, you need the following:
+
+    * An `Ecto.Repo` module that is configured and started.
+    * An `Ecto.Schema` module.
+
+  Examples:
+
       # Create a record
-      {:ok, post} = EctoShorts.Actions.create(EctoShorts.Schema.Post, %{title: "Hello"}, repo: MyApp.Repo)
+      {:ok, post} = EctoShorts.Actions.create(EctoShorts.Schema.Post, %{title: "Hello"})
 
       # Find one record
       {:ok, post} = EctoShorts.Actions.find(EctoShorts.Schema.Post, %{id: 1})

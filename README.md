@@ -65,27 +65,93 @@ Add EctoShorts to your dependencies:
 
 Configure a repo:
 
-    # config/config.exs
-    config :ecto_shorts, repo: MyApp.Repo
+    	# config/config.exs
+	config :ecto_shorts, repo: MyApp.Repo
 
 ## Getting Started
 
-Once you have completed the installation steps, you can start using the API:
+Once you have completed the installation steps, you can start using the API.
 
-    # create a record
-    {:ok, post} = EctoShorts.Actions.create(MyApp.Post, %{title: "Hello"})
+### Prerequisites
 
-    # list records
-    posts = EctoShorts.Actions.all(MyApp.Post, %{published: true, limit: 10})
+Before the examples below will work, your application must have:
 
-    # retrieve a record
-    {:ok, post} = EctoShorts.Actions.find(MyApp.Post, %{id: 1})
+	* An `Ecto.Repo` module (for example `MyApp.Repo`) that is configured and started.
+	* An `Ecto.Schema` module (for example `MyApp.Post`).
+	* A changeset function for write operations.
+	  * By default, `EctoShorts.Actions` will call your schema's `changeset/2`.
+	  * You can override this by passing the `:changeset` option.
 
-    # update a record
-    {:ok, post} = EctoShorts.Actions.update(MyApp.Post, post, %{title: "Updated"})
+### Ecto in 60 seconds
 
-    # delete a record
-    {:ok, _} = EctoShorts.Actions.delete(post)
+If you are new to Ecto, these are the core building blocks used by EctoShorts:
+
+	* `Ecto.Repo` - where queries run (it talks to your database).
+	* `Ecto.Schema` - what you query (your table-backed structs).
+	* `Ecto.Query` - how you read data (a composable query value).
+	* `Ecto.Changeset` - how you write data (cast/validate before insert/update).
+
+EctoShorts must also know which repo to use:
+
+	* Either configure it once:
+
+		# config/config.exs
+		config :ecto_shorts, repo: MyApp.Repo
+
+	* Or pass `:repo` / `:replica` at runtime (shown below).
+
+### What is happening in these examples
+
+	* `EctoShorts.Actions` is the entry point that builds queries and executes them.
+	* Filter params are plain data:
+	  * Keys that match schema fields become `where` conditions.
+	  * Special keys like `limit` become query operations.
+	* Under the hood:
+	  * `EctoShorts.CommonFilters` turns params into an `Ecto.Query`.
+	  * Your `Ecto.Repo` runs that query against the database.
+
+### Examples
+
+	# Create a record (write operations use `:repo`)
+	{:ok, post} =
+	  EctoShorts.Actions.create(MyApp.Post, %{title: "Hello"}, repo: MyApp.Repo)
+
+	# List records (read operations use `:replica`, falling back to `:repo`)
+	# `published` becomes a WHERE condition, and `limit` becomes a query operation.
+	posts =
+	  EctoShorts.Actions.all(MyApp.Post, %{published: true, limit: 10}, replica: MyApp.Repo)
+
+	# Retrieve a record
+	# Returns `{:ok, struct}` or `{:error, reason}`.
+	{:ok, post} =
+	  EctoShorts.Actions.find(MyApp.Post, %{id: 1}, replica: MyApp.Repo)
+
+	# Update a record
+	{:ok, post} =
+	  EctoShorts.Actions.update(MyApp.Post, post, %{title: "Updated"}, repo: MyApp.Repo)
+
+	# Delete a record
+	{:ok, _} = EctoShorts.Actions.delete(post, repo: MyApp.Repo)
+
+### Troubleshooting
+
+If you hit an error while trying the examples above, these are the most common causes:
+
+	* Repo not configured.
+	  * Fix: set `config :ecto_shorts, repo: MyApp.Repo` or pass `repo:`/`replica:` at runtime.
+	* Repo not started.
+	  * Fix: start your repo under your application supervisor.
+	* Missing changeset.
+	  * Fix: add `changeset/2` to your schema module or pass `changeset:` in options.
+	* A filter key does not match a schema field (or is not a supported query operation).
+	  * Fix: double-check the field name, or move the key under an explicit query operation.
+
+### Next steps
+
+	* Read the API entry point docs: `EctoShorts.Actions`.
+	* Learn the filter language: `EctoShorts.CommonFilters`.
+	* See nesting and precedence rules: `guides/RULES.md`.
+	* Browse example filter shapes: `guides/WORKED_EXAMPLES.md`.
 
 ## Configuration
 

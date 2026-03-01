@@ -43,6 +43,7 @@ defmodule EctoShorts.CommonFilters.Filter do
   ]
 
   @custom_filters [:ids, :before, :after, :start_date, :end_date, :exists]
+  @set_operations [:except, :except_all, :intersect, :intersect_all, :union, :union_all]
 
   @doc "Applies the given filter to the query."
   def build(schema_source, filter, query, binding_selector, {boolean_operator, params}, opts)
@@ -137,34 +138,16 @@ defmodule EctoShorts.CommonFilters.Filter do
     |> Enum.reduce(query, fn filter, q2 -> Query.exclude(q2, filter) end)
   end
 
-  defp apply_expr(schema_source, :except, query, _binding_selector, value, opts) do
+  defp apply_expr(schema_source, op, query, _binding_selector, value, opts)
+       when op in @set_operations do
     expr = to_query(schema_source, value, opts)
-    Query.except(query, ^expr)
+    apply_set_operation(op, query, expr)
   end
 
-  defp apply_expr(schema_source, :except_all, query, _binding_selector, value, opts) do
-    expr = to_query(schema_source, value, opts)
-    Query.except_all(query, ^expr)
-  end
-
-  defp apply_expr(schema_source, :intersect, query, _binding_selector, value, opts) do
-    expr = to_query(schema_source, value, opts)
-    Query.intersect(query, ^expr)
-  end
-
-  defp apply_expr(schema_source, :intersect_all, query, _binding_selector, value, opts) do
-    expr = to_query(schema_source, value, opts)
-    Query.intersect_all(query, ^expr)
-  end
-
-  defp apply_expr(schema_source, :union, query, _binding_selector, value, opts) do
-    expr = to_query(schema_source, value, opts)
-    Query.union(query, ^expr)
-  end
-
-  defp apply_expr(schema_source, :union_all, query, _binding_selector, value, opts) do
-    expr = to_query(schema_source, value, opts)
-    Query.union_all(query, ^expr)
+  for op <- [:except, :except_all, :intersect, :intersect_all, :union, :union_all] do
+    defp apply_set_operation(unquote(op), query, expr) do
+      Query.unquote(op)(query, ^expr)
+    end
   end
 
   defp apply_expr(schema_source, :first, query, binding_selector, limit, opts) do

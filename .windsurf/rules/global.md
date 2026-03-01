@@ -2,15 +2,95 @@
 trigger: always_on
 ---
 
-## Operating Guidelines
+<writing_conventions_start>
 
-- Before you start a task, say the task you are going to start.
+NON-NEGOTIABLE REQUIREMENTS:
 
-- When you finish a task, say the task you finished.
+- Write from the reader’s point of view, using only things they can directly see or do. Start by stating the purpose, then state the intent (what they should do and why).
 
-- Before you make a final decision on a proposed solution, read the codebase and look for an existing pattern that supports it. Treat that pattern as evidence that the approach fits this project.
+- Treat the reader as a complete beginner to the technology stack and project.
 
-If you cannot find a supporting pattern, assume the solution might not be the best fit. In that case, explore and compare alternative solutions before you decide.
+- Use 4 spaces to indent code blocks.
+
+- Write in plain language. Use clear, concise language and avoid jargon.
+
+- Include examples where helpful.
+
+- Use links to external resources where helpful.
+
+- Use headings and subheadings to organize content.
+
+- Use bullet points when order does not matter (a set of options, facts, or requirements).
+
+- Use a list when you have 3 or more items. If you are naming three or more things (steps, rules, options, examples, requirements), format them as either bullet points or a numbered list.
+
+- Use numbered lists for sequences; bullets for collections.
+
+- Use numbered lists when order matters (steps someone must follow in a specific order).
+
+- Limit list item length.
+
+- Each list item must be 25 words or fewer.
+
+- If an item needs more than 25 words, split it into a short parent bullet and indented sub-bullets.
+
+- Keep lists scannable:
+  - No more than 7 items in a single list.
+  - Use consistent formatting and spacing.
+  - If you have 8+ items, split into multiple lists with headings, or group into categories (each category becomes its own short list).
+
+- Use a table when it helps the reader compare multiple items side-by-side using the same set of facts (the same “columns”). If a list is easy to scan, don’t use a table; instead use prose and code examples.
+
+A table is for “compare these things side-by-side using the same columns”.
+
+Example:
+
+    | Plan       | Monthly limit  | Support response |
+    |------------|----------------|------------------|
+    | Basic      | 100 requests   | 24 hours         |
+    | Pro        | 1,000 requests | 4 hours          |
+    | Enterprise | Unlimited      | 1 hour           |
+
+The benefit of this approach is that each row shares the same attributes, and the reader can scan across the columns to find the information they need.
+
+A list is for “here are the things you can pass in” or “here are the rules”. Each item stands on its own.
+
+Example of a list in prose:
+
+    ## Short description
+
+    - Install the tool.
+    - Create a new project.
+    - Add your configuration file.
+    - Run the command.
+    - Check the output and fix any errors.
+    - Repeat until the task is complete.
+
+Example of lists in function documentation:
+
+    @doc """
+    Short action-oriented description of what this function does.
+
+    ## Parameters
+
+      * `id` (`binary() | integer()`) - the ID of the record to update
+      * `attrs` (`map()`) - the attributes to update
+
+    ## Options
+
+      * `:timeout` (`integer()`) - how long to wait, in milliseconds
+      * `:retries` (`integer()`) - how many times to retry on failure
+      * `:log`     (`boolean()`) - true to log the operation
+
+    ## Examples
+
+        iex> MyLib.update(id, %{name: "New Name"})
+        {:ok, %MyLib.Record{name: "New Name"}}
+    """
+
+</writing_conventions_start>
+
+- Before proposing a solution, read the codebase and look for an existing pattern that supports it. Treat that pattern as evidence that the approach fits this project. If you cannot find a supporting pattern, assume the solution might not be the best fit and explore alternative solutions. Provide your reasoning for each solution you propose.
 
 - If you have been asked to do the same task more than three times, treat that as evidence of a misunderstanding. It usually means you are interpreting the user’s intent incorrectly, or you are relying on an assumption that is wrong.
 

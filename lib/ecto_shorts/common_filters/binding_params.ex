@@ -20,6 +20,7 @@ defmodule EctoShorts.CommonFilters.BindingParams do
 
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonQuery
+  alias EctoShorts.Config
   alias EctoShorts.Logger
 
   @logger_prefix "EctoShorts.CommonFilters.BindingParams"
@@ -264,14 +265,26 @@ defmodule EctoShorts.CommonFilters.BindingParams do
         )
 
       {:at, bind_index} when is_integer(bind_index) ->
-        CommonFilters.create_schema_filter(
-          schema_source,
-          query,
-          {:at, bind_index},
-          filter,
-          params,
-          opts
-        )
+        max = Config.max_binding_positings()
+
+        if bind_index > max do
+          Logger.warning(
+            @logger_prefix,
+            "Binding position #{bind_index} exceeds the configured :max_binding_positings (#{max}). " <>
+              "Increase :max_binding_positings in your config to support more positional bindings."
+          )
+
+          query
+        else
+          CommonFilters.create_schema_filter(
+            schema_source,
+            query,
+            {:at, bind_index},
+            filter,
+            params,
+            opts
+          )
+        end
 
       binding_selector ->
         Logger.warning(
