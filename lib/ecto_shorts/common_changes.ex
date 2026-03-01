@@ -73,6 +73,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `has_empty_change?/2` and `changeset_field_nil?/2`.
   """
+  @spec has_nil_change?(Ecto.Changeset.t(), atom() | [atom()]) :: boolean()
   def has_nil_change?(changeset, fields) when is_list(fields) do
     Enum.all?(fields, &has_nil_change?(changeset, &1))
   end
@@ -104,6 +105,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `has_nil_change?/2` and `changeset_field_empty?/2`.
   """
+  @spec has_empty_change?(Ecto.Changeset.t(), atom() | [atom()]) :: boolean()
   def has_empty_change?(changeset, fields) when is_list(fields) do
     Enum.all?(fields, &has_empty_change?(changeset, &1))
   end
@@ -135,6 +137,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `put_new_change/3` and `changeset_field_nil?/2`.
   """
+  @spec validate_not_unset(Ecto.Changeset.t(), atom() | [atom()]) :: Ecto.Changeset.t()
   def validate_not_unset(changeset, fields) when is_list(fields) do
     Enum.reduce(fields, changeset, fn field, acc_changeset ->
       validate_not_unset(acc_changeset, field)
@@ -178,6 +181,8 @@ defmodule EctoShorts.CommonChanges do
 
   See also `trim_string_change/2`.
   """
+  @spec truncate_datetime_change(Ecto.Changeset.t(), atom() | [atom()], :second | :millisecond | :microsecond) ::
+          Ecto.Changeset.t()
   def truncate_datetime_change(changeset, fields, precision \\ :second)
 
   def truncate_datetime_change(changeset, fields, precision) when is_list(fields) do
@@ -215,6 +220,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `truncate_datetime_change/3` and `put_new_change/3`.
   """
+  @spec trim_string_change(Ecto.Changeset.t(), atom() | [atom()]) :: Ecto.Changeset.t()
   def trim_string_change(changeset, fields) do
     fields
     |> List.wrap()
@@ -248,6 +254,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `put_new_value/3` and `apply_when/3`.
   """
+  @spec put_new_change(Ecto.Changeset.t(), atom(), term()) :: Ecto.Changeset.t()
   def put_new_change(changeset, field, value) do
     if Changeset.get_change(changeset, field) === nil do
       Changeset.put_change(
@@ -279,6 +286,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `put_new_change/3` and `apply_when/3`.
   """
+  @spec put_new_value(Ecto.Changeset.t(), atom(), term()) :: Ecto.Changeset.t()
   def put_new_value(changeset, field, value) do
     if Changeset.get_field(changeset, field) === nil do
       Changeset.put_change(
@@ -317,8 +325,13 @@ defmodule EctoShorts.CommonChanges do
       ...> |> Ecto.Changeset.get_change(:title)
       "Fallback"
 
-  See also `put_new_change/3` and `put_new_value/3`.
+  See also `put_new_change/3`, `put_new_value/3`, and `has_nil_change?/2`.
   """
+  @spec apply_when(
+          Ecto.Changeset.t(),
+          (Ecto.Changeset.t() -> boolean()),
+          (Ecto.Changeset.t() -> Ecto.Changeset.t())
+        ) :: Ecto.Changeset.t()
   def apply_when(changeset, when_func, change_func) do
     if when_func.(changeset) do
       case change_func.(changeset) do

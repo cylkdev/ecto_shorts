@@ -744,7 +744,7 @@ defmodule EctoShorts.Actions do
 
   See also `all/3` and `EctoShorts.CommonChanges.preload_change_assoc/3`.
   """
-  @spec preload(struct() | [struct()], term(), opts) :: struct() | [struct()]
+  @spec preload(struct() | list(term()), term(), opts) :: struct() | list(term())
   def preload(data, preloads, opts \\ []) do
     Config.replica!(opts).preload(data, preloads, opts)
   end
@@ -789,7 +789,7 @@ defmodule EctoShorts.Actions do
 
   See also `all/2`, `all/3`, and `find/3`.
   """
-  @spec all(queryable) :: [struct()]
+  @spec all(queryable) :: list(term())
   def all(queryable) do
     all(queryable, %{}, [])
   end
@@ -816,7 +816,7 @@ defmodule EctoShorts.Actions do
 
   See also `all/1`, `all/3`, and `find/3`.
   """
-  @spec all(queryable, params | opts) :: [struct()]
+  @spec all(queryable, params | opts) :: list(term())
   def all(queryable, params) when is_map(params) do
     all(queryable, params, [])
   end
@@ -856,7 +856,7 @@ defmodule EctoShorts.Actions do
 
   See also `find/3`, `stream/3`, and `EctoShorts.CommonFilters`.
   """
-  @spec all(queryable, params, opts) :: [struct()]
+  @spec all(queryable, params, opts) :: list(term())
   def all(queryable, params, opts) do
     params =
       params
@@ -951,6 +951,7 @@ defmodule EctoShorts.Actions do
 
   See also `all/3`, `create/3`, and `find_or_create/3`.
   """
+  @spec find(queryable, params, opts) :: {:ok, struct()} | {:error, term()}
   def find(queryable, params, opts \\ [])
 
   def find(query, params, opts)
@@ -1098,6 +1099,8 @@ defmodule EctoShorts.Actions do
 
   See also `delete/2`, `delete/3`, and `find_and_delete/3`.
   """
+  @spec delete(struct() | Ecto.Changeset.t() | [struct() | Ecto.Changeset.t()]) ::
+          {:ok, struct() | list(term())} | {:error, term()}
   def delete(data) do
     delete(data, [])
   end
@@ -1114,6 +1117,8 @@ defmodule EctoShorts.Actions do
   See `delete/1` for return values. See also `delete/3` and
   `find_and_delete/3`.
   """
+  @spec delete(queryable | struct() | Ecto.Changeset.t() | [struct() | Ecto.Changeset.t()], id | opts) ::
+          {:ok, struct() | list(term())} | {:error, term()}
   def delete(data, opts)
 
   def delete(queryable, id) when is_binary(id) or is_integer(id) do
@@ -1160,6 +1165,7 @@ defmodule EctoShorts.Actions do
 
   See also `delete/1`, `delete_all/3`, and `find_and_delete/3`.
   """
+  @spec delete(queryable, id, opts) :: {:ok, struct()} | {:error, term()}
   def delete(queryable, id, opts) when is_integer(id) or is_binary(id) do
     with {:ok, record} <- find(queryable, %{id: id}, opts) do
       delete(record, opts)
@@ -1209,6 +1215,7 @@ defmodule EctoShorts.Actions do
 
   See also `all/3`, `transact/2`, and `EctoShorts.CommonFilters`.
   """
+  @spec stream(queryable, params, opts) :: Enumerable.t()
   def stream(queryable, params \\ %{}, opts \\ []) do
     queryable
     |> CommonFilters.convert_params_to_filter(params, opts)
@@ -1237,6 +1244,7 @@ defmodule EctoShorts.Actions do
 
   See also `all/3` and `exists?/3`.
   """
+  @spec aggregate(queryable, params, atom(), atom(), opts) :: term()
   def aggregate(queryable, params \\ %{}, aggregate \\ :count, key \\ :id, opts \\ []) do
     queryable
     |> CommonFilters.convert_params_to_filter(params, opts)
@@ -1268,6 +1276,7 @@ defmodule EctoShorts.Actions do
 
   See also `find_or_create/3`, `find_and_update/4`, and `create/3`.
   """
+  @spec find_and_create(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
   def find_and_create(queryable, find_params, create_params, opts \\ []) do
     with {:error, _} <- find(queryable, find_params, opts) do
       create(queryable, create_params, opts)
@@ -1298,6 +1307,7 @@ defmodule EctoShorts.Actions do
 
   See also `update/4`, `find_and_upsert/4`, and `find/3`.
   """
+  @spec find_and_update(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
   def find_and_update(source, find_params, update_params, opts \\ []) do
     with {:ok, record} <- find(source, find_params, opts) do
       update(source, record, update_params, opts)
@@ -1330,6 +1340,7 @@ defmodule EctoShorts.Actions do
 
   See also `find_and_update/4`, `find_or_create/3`, and `create/3`.
   """
+  @spec find_and_upsert(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
   def find_and_upsert(source, find_params, upsert_params, opts \\ []) do
     case find(source, find_params, opts) do
       {:ok, record} -> update(source, record, upsert_params, opts)
@@ -1356,6 +1367,7 @@ defmodule EctoShorts.Actions do
 
   See also `delete/1`, `delete_all/3`, and `find/3`.
   """
+  @spec find_and_delete(module(), params, opts) :: {:ok, struct()} | {:error, term()}
   def find_and_delete(source, find_params, opts \\ []) do
     with {:ok, record} <- find(source, find_params, opts) do
       delete(record, opts)
@@ -1386,6 +1398,7 @@ defmodule EctoShorts.Actions do
 
   See also `find_and_create/4`, `find_or_create_many/3`, and `create/3`.
   """
+  @spec find_or_create(module(), params, opts) :: {:ok, struct()} | {:error, term()}
   def find_or_create(source, params, opts \\ []) do
     with {:error, _} <-
            find(
@@ -1419,6 +1432,7 @@ defmodule EctoShorts.Actions do
 
   See also `transact/2` and `create_many/3`.
   """
+  @spec transaction((... -> term()) | Ecto.Multi.t(), opts) :: {:ok, term()} | {:error, term()}
   def transaction(fun_or_multi, opts \\ []) do
     Config.repo!(opts).transaction(fun_or_multi, opts)
   end
@@ -1446,6 +1460,7 @@ defmodule EctoShorts.Actions do
 
   See also `transaction/2` and `create_many/3`.
   """
+  @spec transact((... -> term()) | Ecto.Multi.t(), opts) :: {:ok, term()} | {:error, term()}
   def transact(fun_or_multi, opts \\ [])
 
   def transact(%Ecto.Multi{} = multi, opts) do
@@ -1480,6 +1495,7 @@ defmodule EctoShorts.Actions do
     * `cardinality` - `:one` or `:many`. Defaults to `:many`.
     * `opts` - shared options.
   """
+  @spec batch(module(), [params], atom() | [atom()], cardinality, opts) :: map()
   def batch(schema, params, batch_keys \\ :id, cardinality \\ :many, opts \\ [])
 
   def batch(_schema, [], _batch_keys, _cardinality, _opts) do
@@ -1537,6 +1553,7 @@ defmodule EctoShorts.Actions do
     * `keys` - an atom or list of atoms identifying the lookup fields.
     * `opts` - shared options.
   """
+  @spec batch_preload(module(), [map()], atom() | [atom()], opts) :: [map()]
   def batch_preload(schema, entries, keys, opts \\ []) do
     {params_list, index_to_key} = Batch.extract_lookup_params(entries, keys)
 
@@ -1589,6 +1606,8 @@ defmodule EctoShorts.Actions do
   See `EctoShorts.CommonParams.convert_to_insert_params/3` for
   timestamp options.
   """
+  @spec insert_all(module() | {binary(), module()}, [term()], opts) ::
+          {:ok, {non_neg_integer(), nil | list(term())}} | {:error, term()}
   def insert_all(source, params_list, opts \\ []) do
     params_list =
       if Keyword.has_key?(opts, :preload) do
@@ -1627,6 +1646,7 @@ defmodule EctoShorts.Actions do
   See also `EctoShorts.CommonParams.convert_to_update_params/3`
   and `update_many/3`.
   """
+  @spec update_all(module() | {binary(), module()}, params, params, opts) :: {non_neg_integer(), nil}
   def update_all(source, find_params, update_params, opts \\ []) do
     updates =
       source
@@ -1654,6 +1674,7 @@ defmodule EctoShorts.Actions do
 
   See also `delete_many/3` and `EctoShorts.CommonFilters`.
   """
+  @spec delete_all(queryable, params, opts) :: {non_neg_integer(), nil}
   def delete_all(queryable, params \\ %{}, opts \\ []) do
     queryable
     |> CommonFilters.convert_params_to_filter(params, opts)
@@ -1685,6 +1706,7 @@ defmodule EctoShorts.Actions do
 
   See also `create/3`, `insert_all/3`, and `transact/2`.
   """
+  @spec create_many(module(), [params], opts) :: {:ok, list(term())} | {:error, term()}
   def create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     schema
     |> Multi.build_create_many_multi(params_list, opts)
@@ -1714,6 +1736,7 @@ defmodule EctoShorts.Actions do
 
   See also `find/3`, `find_or_create_many/3`, and `transact/2`.
   """
+  @spec find_many(module(), [params], opts) :: {:ok, list(term())} | {:error, term()}
   def find_many(schema, params_list, opts \\ []) when is_list(params_list) do
     schema
     |> Multi.build_find_many_multi(params_list, opts)
@@ -1747,6 +1770,7 @@ defmodule EctoShorts.Actions do
 
   See also `update/4`, `find_and_update/4`, and `update_all/4`.
   """
+  @spec update_many(module(), [term()], opts) :: {:ok, list(term())} | {:error, term()}
   def update_many(schema, entries, opts \\ []) when is_list(entries) do
     schema
     |> Multi.build_update_many_multi(entries, opts)
@@ -1775,6 +1799,7 @@ defmodule EctoShorts.Actions do
 
   See also `delete/1`, `delete_all/3`, and `transact/2`.
   """
+  @spec delete_many(module(), [term()], opts) :: {:ok, list(term())} | {:error, term()}
   def delete_many(schema, records, opts \\ []) when is_list(records) do
     schema
     |> Multi.build_delete_many_multi(records, opts)
@@ -1807,6 +1832,7 @@ defmodule EctoShorts.Actions do
 
   See also `find_or_create/3`, `create_many/3`, and `find_many/3`.
   """
+  @spec find_or_create_many(module(), [params], opts) :: {:ok, list(term())} | {:error, term()}
   def find_or_create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     schema
     |> Multi.build_find_or_create_multi(params_list, opts)
@@ -1840,6 +1866,7 @@ defmodule EctoShorts.Actions do
 
   See also `find_and_upsert/4`, `update_many/3`, and `find_or_create_many/3`.
   """
+  @spec find_and_upsert_many(module(), [term()], opts) :: {:ok, list(term())} | {:error, term()}
   def find_and_upsert_many(schema, entries, opts \\ []) when is_list(entries) do
     schema
     |> Multi.build_upsert_multi(entries, opts)
