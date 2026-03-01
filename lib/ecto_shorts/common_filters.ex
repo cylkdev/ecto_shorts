@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  EctoShorts.CommonFilters provides a data-driven api for building queries.
+  EctoShorts.CommonFilters provides a data-driven API for building queries.
 
   ## Getting started
 
@@ -10,11 +10,12 @@ defmodule EctoShorts.CommonFilters do
   into an `Ecto.Query`.
 
   - The first argument is the `source` which is just a fancy term for the table we
-  want to operate on. It can be a schema module, a `{source, schema}` tuple, or an
-  existing `Ecto.Query`.
+  want to operate on. It can be `nil`, a schema module, a `{source, schema}` tuple,
+  or an existing `Ecto.Query`. When `nil`, the params must contain a `:source` key
+  (see [Schemaless Queries](#module-schemaless-queries)).
 
-  - The second argument can be a one or many map or keyword-lists of params that
-  describe the actions we want to take.
+  - The second argument is a map, a keyword list, or a list of maps that
+  describe the filters and operations to apply.
 
   - The third argument is a keyword list of options that allow you to change the
   behaviour at runtime.
@@ -24,7 +25,7 @@ defmodule EctoShorts.CommonFilters do
       EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{published: true, limit: 10})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.published == ^true, limit: ^10>
 
-  The parameters are an intuitive filtering language which you can write as sentences.
+  The params form an intuitive filtering language which you can write as sentences.
 
   For example:
 
@@ -52,7 +53,7 @@ defmodule EctoShorts.CommonFilters do
   Maps and keyword-lists can be used interchangeably. Keyword-lists gives us
   control over the order of operations and is more flexible for complex queries.
 
-  ## Schema Filters
+  ## Schema filters
 
   Pass a map or keyword list where each key is a schema field, and the API will
   filter records that match those values:
@@ -61,9 +62,9 @@ defmodule EctoShorts.CommonFilters do
       EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{published: true})
       EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{id: 1})
 
-  Each key-value pair is treated as a field filter. The key is the field on the
-  schema to check, and the value is what it must match. When the query is built,
-  each filter becomes a `WHERE` condition in the resulting `Ecto.Query`.
+  Each key-value pair is a field filter. The key is the field on the schema to
+  check, and the value is what it must match. When the query is built, each
+  field filter becomes a `WHERE` condition in the resulting `Ecto.Query`.
 
   Schema filters can be type-aware depending on the dynamic expression adapter used.
   If the adapter does not support type-aware filtering or if you are performing a
@@ -142,7 +143,7 @@ defmodule EctoShorts.CommonFilters do
 
   ## Negation
 
-  Use the `:not` key to flip the condition of an expressions
+  Use the `:not` key to flip the condition of an expression.
 
       %{views: %{not: %{>: 10}}}                 # WHERE NOT (views > 10)
       %{views: %{not: %{>=: 10}}}                # WHERE NOT (views >= 10)
@@ -184,7 +185,7 @@ defmodule EctoShorts.CommonFilters do
   Logical operators `:and` and `:or` allow you to combine multiple conditions in
   powerful ways. They work at two levels: field-level and top-level.
 
-  ## Field-level `:and` and `:or`
+  ### Field-level `:and` and `:or`
 
   Using `:and` or `:or` at the field level combines multiple conditions on the
   same field. Let's take a look at some examples.
@@ -205,7 +206,7 @@ defmodule EctoShorts.CommonFilters do
 
       # WHERE views >= 100 AND views <= 500
 
-  And for the `:or` version, Imagine we want to find posts where status is
+  And for the `:or` version, imagine we want to find posts where status is
   either "draft" or "scheduled" (either can match).
 
       %{
@@ -221,7 +222,7 @@ defmodule EctoShorts.CommonFilters do
 
       # WHERE status = 'draft' OR status = 'scheduled'
 
-  ## Top-level `:and` and `:or`
+  ### Top-level `:and` and `:or`
 
   Use `:and` or `:or` at the outermost level of the params to combine a group of filters.
   This is useful when you want to group multiple field-level conditions together.
@@ -253,7 +254,7 @@ defmodule EctoShorts.CommonFilters do
           [published: false, views: 10]
         ]
       ]
-      # WHERE title = 'test' AND ((published AND views = 20) OR (NOT published AND views = 10))
+      # WHERE title = 'test' AND ((published = true AND views = 20) OR (published = false AND views = 10))
 
   ## The `:where` and `:or_where` keys
 
@@ -313,7 +314,7 @@ defmodule EctoShorts.CommonFilters do
       relying on the application’s clock/timezone and you get one consistent “now”
       for the whole query.
 
-  Use the key `:datetime` or `:date`  to compare a field to a date/time value.
+  Use the key `:datetime` or `:date` to compare a field to a date/time value.
 
   A datetime expression must come after a comparison operator for a field.
 
@@ -438,7 +439,7 @@ defmodule EctoShorts.CommonFilters do
 
       %{id: %{all: subquery_expr}}    # WHERE id = ALL(subquery)
 
-  You can pass a query-builder payload instead of a pre-built subquery:
+  You can pass a source/query payload instead of a pre-built subquery:
 
       %{id: %{>: %{all: [source: Post, query: %{id: 1}]}}}
 
@@ -472,8 +473,28 @@ defmodule EctoShorts.CommonFilters do
 
   ## Query operations
 
-  Query operation keys are reserved. They map directly to Ecto query
-  operations. Avoid using schema field names that match these keys.
+  Query operation keys map directly to Ecto query operations. Avoid
+  using schema field names that collide with these keys.
+
+  | Key | Purpose | Section |
+  |-----|---------|--------|
+  | `:select`, `:select_merge` | Choose which columns to return | [Select](#module-select) |
+  | `:order_by`, `:prepend_order_by`, `:reverse_order` | Sort results | [Ordering](#module-ordering) |
+  | `:group_by`, `:having`, `:or_having` | Group and filter aggregates | [Grouping and having](#module-grouping-and-having) |
+  | `:limit`, `:offset`, `:first`, `:last` | Paginate results | [Pagination](#module-pagination) |
+  | `:distinct` | Remove duplicate rows | [Distinct](#module-distinct) |
+  | `:join` | Join other tables | [Joins](#module-joins) |
+  | `:preload` | Preload associations | [Preload](#module-preload) |
+  | `:union`, `:union_all`, `:except`, `:except_all`, `:intersect`, `:intersect_all` | Combine queries | [Set operations](#module-set-operations) |
+  | `:subquery` | Wrap query as subquery | [Subquery](#module-subquery) |
+  | `:lock` | Row-level locking | [Lock](#module-lock) |
+  | `:recursive_ctes`, `:with_cte` | Common table expressions | [Common table expressions](#module-common-table-expressions) |
+  | `:with_named_binding` | Add named bindings | [Named bindings](#module-named-bindings) |
+  | `:windows` | Window functions | [Windows](#module-windows) |
+  | `:with_ties` | Include tied rows | [With ties](#module-with-ties) |
+  | `:update` | Bulk update expressions | [Update](#module-update) |
+  | `:exclude` | Remove a clause from the query | [Exclude](#module-exclude) |
+  | `:put_query_prefix` | Set the query prefix | [Query prefix](#module-query-prefix) |
 
   ### Select
 
@@ -491,6 +512,11 @@ defmodule EctoShorts.CommonFilters do
       [select: %{map: [:id]}, select_merge: %{map: %{post_title: :title}}]
 
   ### Ordering
+
+  > #### Default direction {: .info}
+  >
+  > When you pass a bare field atom (e.g. `:title`), the default sort direction
+  > is **descending** (`:desc`). To sort ascending, use `[asc: :title]`.
 
       %{order_by: :title}                           # ORDER BY title DESC
       %{order_by: [desc: :title]}                   # ORDER BY title DESC
@@ -550,7 +576,13 @@ defmodule EctoShorts.CommonFilters do
       %{author: [as: :author, type: :left, first_name: "John"]}
 
   The optional keys `:as`, `:on`, and `:type` configure the join.
-  All remaining keys are treated as filters on the associated schema.
+  All remaining keys are treated as field filters on the associated schema.
+
+  > #### Keyword list required {: .warning}
+  >
+  > Association shorthand only accepts a keyword list. Passing a map
+  > will log a warning and skip the filter. This is the one place in
+  > the API where maps and keyword lists are **not** interchangeable.
 
   ### Preload
 
@@ -666,8 +698,8 @@ defmodule EctoShorts.CommonFilters do
 
   Use the `:dynamic` key if you need to build dynamic expressions
   that can't be expressed with simple field-value pairs. This should be used
-  sparingly as It's better to drive the query composition through data so that
-  it can be re-used and the behaviour is predictable making your code easy
+  sparingly as it is better to drive the query composition through data so that
+  it can be re-used and the behaviour is predictable, making your code easy
   to maintain.
 
   For example:
@@ -680,14 +712,16 @@ defmodule EctoShorts.CommonFilters do
 
   Use the `:exists` key to check for the existence of rows in a subquery.
 
-  You can pass either a pre-built subquery expression, or a query-builder
-  payload as a map or keyword list:
+  You can pass either a pre-built subquery expression, or a source/query
+  payload (a map or keyword list with `:source` and `:query` keys):
 
       %{where: %{exists: subquery_expr}}
-      %{where: %{exists: %{not: subquery_expr}}}
+      %{where: %{exists: %{not: subquery_expr}}}              # NOT EXISTS(...)
       %{where: %{exists: %{source: Post, query: %{id: 1}}}}
       %{where: %{exists: [source: Post, query: %{id: 1}]}}
-      %{where: %{exists: %{not: %{source: Post, query: %{id: 1}}}}}
+      %{where: %{exists: %{not: %{source: Post, query: %{id: 1}}}}}  # NOT EXISTS(...)
+
+  Wrapping the value with `:not` produces a `NOT EXISTS(...)` condition.
 
   When an `:exists` payload uses `:source` and `:query` without an explicit
   `:select`, `select: true` is applied automatically.
@@ -695,22 +729,35 @@ defmodule EctoShorts.CommonFilters do
 
   ## Source and query params
 
-  There are two main ways to use `convert_params_to_filter/3`. We have shown
-  one way throughout the documentation, but you can also pass the source and
-  query params directly as meta-keys:
+  The `:source` and `:query` keys let you specify the table and additional
+  filters inside the params instead of passing them as separate arguments.
+  This is useful when the entire query description comes from data (for
+  example an HTTP request body) and is not known at compile time.
 
-      EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{source: Post, query: %{id: 1}})
+  When `:source` is present it overrides the first argument for field
+  resolution. When `:query` is present its entries are merged into the
+  params before the query is built.
 
-  This solves two problems:
+  For example, these two calls produce the same query:
 
-  - Makes it possible to easily interface with http requests as there is a
-    standardized data structure that makes it possible to compose and drive
-    with data.
+      # Passing source as the first argument and filters in the params:
+      EctoShorts.CommonFilters.convert_params_to_filter(
+        EctoShorts.Schema.Post,
+        %{id: 1}
+      )
 
-  - Makes it possible to compose queries with expressions that would typically
-    require a pre-built expression or multiple calls. For example for subqueries
-    you may want to build the subquery using a different table than the one you
-    started with. This allows you to explicitly provide those parameters.
+      # Passing source and filters entirely inside the params:
+      EctoShorts.CommonFilters.convert_params_to_filter(
+        nil,
+        %{source: EctoShorts.Schema.Post, query: %{id: 1}}
+      )
+
+  When both a first argument and a `:source` key are present, the `:source`
+  key wins for field resolution. The first argument still determines the
+  base `Ecto.Query` (the `FROM` clause) when it is not `nil`.
+
+  These keys also appear inside nested payloads (`:all`, `:any`, `:exists`,
+  `:with_cte`) where they describe a subquery to build inline.
 
   ## Schemaless Queries
 
@@ -809,47 +856,51 @@ defmodule EctoShorts.CommonFilters do
 
   ## Expression nesting
 
-  Every field expression is a chain of nested maps or keyword-lists.
+  Every field filter is a chain of nested maps or keyword-lists.
   Each "kind" of key occupies one slot in the chain, processed from outermost
   to innermost:
 
       field -> negation -> aggregate -> operator -> value expression
 
-  Here is an example that fills every slot:
+  You do not have to fill every slot. The API sets sane defaults that work
+  out of the box for most cases. Here is how the chain builds up one slot
+  at a time:
+
+  **Field only** - checks for equality:
+
+      %{title: "hello"}                  # WHERE title = 'hello'
+
+  **Field + operator** - controls the comparison:
+
+      %{views: %{>: 10}}                 # WHERE views > 10
+
+  **Field + negation + operator** - flips the condition:
+
+      %{views: %{not: %{>: 10}}}         # WHERE NOT (views > 10)
+
+  **Field + aggregate + operator** - wraps in an aggregate:
+
+      %{views: %{avg: %{>: 10}}}         # HAVING avg(views) > 10
+
+  **All five slots** - the full chain:
 
       %{views: %{not: %{avg: %{>: %{+: [:views, 10]}}}}}
 
   1. The `field` is the key `:views`
-  2. The `negation` is they key `:not`
-  3. The aggregate is the key `:avg`
-  4. The operator is the key `:>`
-  5. The value expression is the map `%{+: [:views, 10]}`
+  2. The `negation` is the key `:not`
+  3. The `aggregate` is the key `:avg`
+  4. The `operator` is the key `:>`
+  5. The `value expression` is the map `%{+: [:views, 10]}`
 
-  Not every slot needs to be populated to properly compose a query.
-  This API sets sane defaults so things work out of the box for most cases.
-
-  A simple map or keyword-list checks for equality. In other words you give
-  a field and the value it must equal:
-
-      %{title: "hello"}   # title must equal "hello"
-
-  A comparison filter adds an operator so you can express things like
-  “greater than” or “less than”:
-
-      %{views: %{>: 10}}  # views must be greater than 10
-
-  You not have to explicitly specifiy every part of the expression. We set
-  sane defaults that works out of the box for most cases and allow you to
-  explicitly specify each part when you need to be explicit.
-
-  ## Processing Order
+  ## Processing order
 
   Due to internal specifics of how Ecto.Query resolves operations, certain keys
   must be processed in a specific order to ensure queries are composed correctly.
   Keys are sorted into a fixed order:
 
     1. Explicit `:where` keys.
-    2. Query operations like `:limit`, `:order_by`, `:join`, `:preload`.
+    2. Implicit field filters (e.g. `published: true`) and query operations
+       like `:limit`, `:order_by`, `:join`, `:preload`.
     3. Explicit `:or_where` keys.
     4. Terminal filters like `:last` and `:subquery`.
 
@@ -874,6 +925,23 @@ defmodule EctoShorts.CommonFilters do
 
   This makes the module safe to use with user-provided data where
   some keys may be unexpected.
+
+  ## Inspecting queries
+
+  To see the `Ecto.Query` struct that `convert_params_to_filter/3` builds,
+  print it with `IO.inspect/2`:
+
+      EctoShorts.Schema.Post
+      |> EctoShorts.CommonFilters.convert_params_to_filter(%{published: true, limit: 10})
+      |> IO.inspect(label: "query")
+
+  To see the actual SQL that Ecto will send to the database, use
+  `Ecto.Adapters.SQL.to_sql/3`:
+
+      EctoShorts.Schema.Post
+      |> EctoShorts.CommonFilters.convert_params_to_filter(%{published: true, limit: 10})
+      |> then(&Ecto.Adapters.SQL.to_sql(:all, MyApp.Repo, &1))
+      |> IO.inspect(label: "sql")
 
   See also `EctoShorts.Actions`, `EctoShorts.Dynamics`, and `EctoShorts.CommonFilters.Having`.
   """
@@ -975,8 +1043,6 @@ defmodule EctoShorts.CommonFilters do
   * `:dynamic_adapter` - a module implementing
     `EctoShorts.Dynamics.Adapter` for this call. Defaults to the
     adapter resolved from `:repo`.
-  * `:query_fields` - list of field atoms to limit which fields are
-    accepted as schema filters.
 
   ## Examples
 

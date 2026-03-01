@@ -158,9 +158,15 @@ defmodule EctoShorts.Compiler do
       end
 
       @doc false
+      def config_stale?(current_max) do
+        current_max !== @compile_time_max_binding_positings
+      end
+
+      @doc false
       def __mix_recompile__? do
-        unquote(__MODULE__).max_binding_positings(@compiler_options) !==
-          @compile_time_max_binding_positings
+        @compiler_options
+        |> unquote(__MODULE__).max_binding_positings()
+        |> config_stale?()
       end
     end
   end
