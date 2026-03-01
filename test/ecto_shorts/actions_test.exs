@@ -2650,10 +2650,9 @@ defmodule EctoShorts.ActionsTest do
         |> Repo.insert!()
 
       # Simulate a concurrent update by bumping the version in the DB
-      Repo.update_all(
-        from(p in PostWithLock, where: p.id == ^post.id),
-        set: [lock_version: 99]
-      )
+      PostWithLock
+      |> where([p], p.id == ^post.id)
+      |> Repo.update_all(set: [lock_version: 99])
 
       # post still has lock_version: 1 which is now stale
       assert {:error, %{code: :stale, message: "record has been modified by another process."}} =
@@ -2682,9 +2681,7 @@ defmodule EctoShorts.ActionsTest do
         |> Repo.insert!()
 
       assert {:ok, %PostWithLock{title: "Updated", lock_version: 2}} =
-               Actions.update(PostWithLock, post, %{title: "Updated"},
-                 optimistic_lock: :lock_version
-               )
+               Actions.update(PostWithLock, post, %{title: "Updated"}, optimistic_lock: :lock_version)
     end
 
     test "explicit optimistic_lock option detects stale record" do
@@ -2693,15 +2690,12 @@ defmodule EctoShorts.ActionsTest do
         |> PostWithLock.changeset(%{title: "Original"})
         |> Repo.insert!()
 
-      Repo.update_all(
-        from(p in PostWithLock, where: p.id == ^post.id),
-        set: [lock_version: 99]
-      )
+      PostWithLock
+      |> where([p], p.id == ^post.id)
+      |> Repo.update_all(set: [lock_version: 99])
 
       assert {:error, %{code: :stale}} =
-               Actions.update(PostWithLock, post, %{title: "Too Late"},
-                 optimistic_lock: :lock_version
-               )
+               Actions.update(PostWithLock, post, %{title: "Too Late"}, optimistic_lock: :lock_version)
     end
 
     test "optimistic_lock: false disables auto-detection from schema callback" do
@@ -2711,16 +2705,13 @@ defmodule EctoShorts.ActionsTest do
         |> Repo.insert!()
 
       # Bump version in DB to make the struct stale
-      Repo.update_all(
-        from(p in PostWithLock, where: p.id == ^post.id),
-        set: [lock_version: 99]
-      )
+      PostWithLock
+      |> where([p], p.id == ^post.id)
+      |> Repo.update_all(set: [lock_version: 99])
 
       # With locking disabled, update succeeds despite stale version
       assert {:ok, %PostWithLock{title: "Updated"}} =
-               Actions.update(PostWithLock, post, %{title: "Updated"},
-                 optimistic_lock: false
-               )
+               Actions.update(PostWithLock, post, %{title: "Updated"}, optimistic_lock: false)
     end
 
     test "option overrides schema callback" do
@@ -2733,15 +2724,12 @@ defmodule EctoShorts.ActionsTest do
         |> Repo.insert!()
 
       # optimistic_lock: false overrides the schema callback
-      Repo.update_all(
-        from(p in PostWithLock, where: p.id == ^post.id),
-        set: [lock_version: 99]
-      )
+      PostWithLock
+      |> where([p], p.id == ^post.id)
+      |> Repo.update_all(set: [lock_version: 99])
 
       assert {:ok, %PostWithLock{title: "Overridden"}} =
-               Actions.update(PostWithLock, post, %{title: "Overridden"},
-                 optimistic_lock: false
-               )
+               Actions.update(PostWithLock, post, %{title: "Overridden"}, optimistic_lock: false)
     end
 
     test "supports {field, incrementer} tuple option" do
@@ -2778,15 +2766,12 @@ defmodule EctoShorts.ActionsTest do
         |> PostWithLock.changeset(%{title: "Original"})
         |> Repo.insert!()
 
-      Repo.update_all(
-        from(p in PostWithLock, where: p.id == ^post.id),
-        set: [lock_version: 99]
-      )
+      PostWithLock
+      |> where([p], p.id == ^post.id)
+      |> Repo.update_all(set: [lock_version: 99])
 
       assert {:error, %{code: :stale}} =
-               Actions.update(PostWithLock, post, %{title: "Too Late"},
-                 optimistic_lock: :lock_version
-               )
+               Actions.update(PostWithLock, post, %{title: "Too Late"}, optimistic_lock: :lock_version)
     end
   end
 
@@ -2797,10 +2782,9 @@ defmodule EctoShorts.ActionsTest do
         |> PostWithLock.changeset(%{title: "Original"})
         |> Repo.insert!()
 
-      Repo.update_all(
-        from(p in PostWithLock, where: p.id == ^post.id),
-        set: [lock_version: 99]
-      )
+      PostWithLock
+      |> where([p], p.id == ^post.id)
+      |> Repo.update_all(set: [lock_version: 99])
 
       # find_and_update finds the record fresh (lock_version: 99),
       # so it should succeed since the found record has the current version

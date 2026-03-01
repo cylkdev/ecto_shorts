@@ -703,6 +703,8 @@ defmodule EctoShorts.Actions do
                %{title: "Transaction", description: "Transaction wrappers."}
              ]
 
+  alias Ecto.Changeset
+
   alias EctoShorts.Actions.Batch
   alias EctoShorts.Actions.Error
   alias EctoShorts.Actions.Multi
@@ -713,6 +715,12 @@ defmodule EctoShorts.Actions do
     CommonParams,
     CommonSchema
   }
+
+  @type queryable :: module() | {binary(), module()} | Ecto.Query.t()
+  @type params :: map() | keyword()
+  @type opts :: keyword()
+  @type id :: integer() | binary()
+  @type cardinality :: :one | :many
 
   @cardinalities [:one, :many]
 
@@ -736,6 +744,7 @@ defmodule EctoShorts.Actions do
 
   See also `all/3` and `EctoShorts.CommonChanges.preload_change_assoc/3`.
   """
+  @spec preload(struct() | [struct()], term(), opts) :: struct() | [struct()]
   def preload(data, preloads, opts \\ []) do
     Config.replica!(opts).preload(data, preloads, opts)
   end
@@ -760,6 +769,7 @@ defmodule EctoShorts.Actions do
 
   See also `find/3` and `all/3`.
   """
+  @spec exists?(queryable, params, opts) :: boolean()
   def exists?(source, params, opts \\ []) do
     source
     |> CommonFilters.convert_params_to_filter(params, opts)
@@ -779,6 +789,7 @@ defmodule EctoShorts.Actions do
 
   See also `all/2`, `all/3`, and `find/3`.
   """
+  @spec all(queryable) :: [struct()]
   def all(queryable) do
     all(queryable, %{}, [])
   end
@@ -805,6 +816,7 @@ defmodule EctoShorts.Actions do
 
   See also `all/1`, `all/3`, and `find/3`.
   """
+  @spec all(queryable, params | opts) :: [struct()]
   def all(queryable, params) when is_map(params) do
     all(queryable, params, [])
   end
@@ -844,6 +856,7 @@ defmodule EctoShorts.Actions do
 
   See also `find/3`, `stream/3`, and `EctoShorts.CommonFilters`.
   """
+  @spec all(queryable, params, opts) :: [struct()]
   def all(queryable, params, opts) do
     params =
       params
@@ -877,6 +890,7 @@ defmodule EctoShorts.Actions do
 
   See also `find/3`, `update/4`, and `EctoShorts.CommonChanges`.
   """
+  @spec create(module(), params, opts) :: {:ok, struct()} | {:error, term()}
   def create(schema, params, opts \\ []) do
     schema
     |> CommonSchema.create_changeset(params, opts)
@@ -902,6 +916,7 @@ defmodule EctoShorts.Actions do
 
   See also `find/3` and `all/3`.
   """
+  @spec get(queryable, id, opts) :: struct() | nil
   def get(queryable, id, opts \\ []) do
     Config.replica!(opts).get(queryable, id, opts)
   end
@@ -1909,10 +1924,10 @@ defmodule EctoShorts.Actions do
         changeset
 
       {field, incrementer} when is_atom(field) and is_function(incrementer, 1) ->
-        Ecto.Changeset.optimistic_lock(changeset, field, incrementer)
+        Changeset.optimistic_lock(changeset, field, incrementer)
 
       field when is_atom(field) ->
-        Ecto.Changeset.optimistic_lock(changeset, field)
+        Changeset.optimistic_lock(changeset, field)
     end
   end
 
