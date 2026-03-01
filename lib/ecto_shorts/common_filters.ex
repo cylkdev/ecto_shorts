@@ -678,10 +678,20 @@ defmodule EctoShorts.CommonFilters do
 
   ## Exists
 
-  Use the `:exists` key to check for the existence of rows in a subquery:
+  Use the `:exists` key to check for the existence of rows in a subquery.
+
+  You can pass either a pre-built subquery expression, or a query-builder
+  payload as a map or keyword list:
 
       %{where: %{exists: subquery_expr}}
       %{where: %{exists: %{not: subquery_expr}}}
+      %{where: %{exists: %{source: Post, query: %{id: 1}}}}
+      %{where: %{exists: [source: Post, query: %{id: 1}]}}
+      %{where: %{exists: %{not: %{source: Post, query: %{id: 1}}}}}
+
+  When an `:exists` payload uses `:source` and `:query` without an explicit
+  `:select`, `select: true` is applied automatically.
+  This keeps `EXISTS` subqueries valid without requiring a separate pre-build step.
 
   ## Source and query params
 
@@ -707,17 +717,18 @@ defmodule EctoShorts.CommonFilters do
   A schemaless query is a query against a bare table name string with no
   Ecto schema module. This is useful when you want to query a table that
   has no corresponding schema, or when you want to work with raw table
-  names directly.
-
-  See the Ecto guide on [schemaless queries](https://hexdocs.pm/ecto/schemaless-queries.html) for background.
+  names directly. See the Ecto guide on
+  [schemaless queries](https://hexdocs.pm/ecto/schemaless-queries.html)
+  for background.
 
   ### Passing a schemaless source
 
-  There are two ways to perform a schemaless query.
+  There are three ways to perform a schemaless query.
 
-  **1. Direct source**
+  **1. Direct table name**
 
-  Pass the table name string or a `{table_name, nil}` tuple as the first argument:
+  Pass the table name string or a `{table_name, nil}` tuple as the first
+  argument:
 
       EctoShorts.CommonFilters.convert_params_to_filter(
         "posts",
@@ -733,40 +744,52 @@ defmodule EctoShorts.CommonFilters do
 
   **2. Via the `:source` meta-key**
 
-  Pass a schema module as the first argument and override the source inside the params.
-  This is handy when you already have a schema-backed entrypoint but need to target a different table:
+  Set the `:source` key inside the params. The first argument can be any
+  valid source (a schema module, table string, or query) or `nil`. When
+  `:source` is present it overrides the first argument for field resolution:
 
       EctoShorts.CommonFilters.convert_params_to_filter(
         EctoShorts.Schema.Post,
         [source: "posts", query: %{id: 1}]
       )
-      # from p0 in "posts", where: p0.id == ^1, select: [...]
 
-  ### `:select` is required
+  **3. `nil` as the source**
 
-  Ecto requires an explicit `:select` clause for queries on bare table
-  strings because there is no schema to infer which columns to return.
-  If you forget to include `:select`, Ecto will raise an error.
+  Pass `nil` as the first argument and provide the `:source` key in the
+  params. This is useful when the source is determined entirely by data
+  (for example from an HTTP request) and is not known at compile time:
 
-  When you use the direct source approach, you must provide `:select`
-  yourself:
-
-      # This works:
       EctoShorts.CommonFilters.convert_params_to_filter(
-        "posts",
-        %{select: [:id, :title]}
+        nil,
+        %{source: "posts", select: [:id, :title], id: 1}
       )
+      # from p0 in "posts", where: p0.id == ^1, select: [:id, :title]
 
-      # This raises because :select is missing:
+  When `nil` is the first argument and `:source` is missing from the
+  params, an `ArgumentError` is raised.
+
+  ### `:select` and schemaless queries
+
+  Ecto requires an explicit `:select` clause to execute a query on a bare
+  table string because there is no schema to infer which columns to return.
+
+  When you use the direct table name approach (option 1), you must include
+  `:select` yourself. The query builds successfully without `:select`, but
+  Ecto will raise when you try to execute it (for example with `Repo.all/1`):
+
+      # Builds the query - works fine:
       EctoShorts.CommonFilters.convert_params_to_filter(
         "posts",
         %{published: true}
       )
 
-  When you use the `:source` or `:query` meta-keys and the resolved source
-  is schemaless, the system adds `select: true` automatically if you did
-  not provide a `:select`. The `select: true` expression selects the entire
-  binding (equivalent to `SELECT *`).
+      # Executing that query without :select will raise at the repo level.
+
+  When the `:source` or `:query` meta-keys are present and the resolved
+  source is schemaless, the system adds `select: true` automatically if
+  you did not include a `:select`. This convenience exists so data-driven
+  payloads that set `:source` dynamically do not need to always remember
+  to also set `:select`.
 
   ### No field validation
 
@@ -882,11 +905,13 @@ defmodule EctoShorts.CommonFilters do
   @logger_prefix "EctoShorts.CommonFilters"
 
   @binding_selector_key :bind
+  @binding_modes [:as, :at]
   @default_binding_selector {:as, nil}
 
   @where :where
   @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
   @schema_filters [:where, :or_where]
+
   @query_filters [
     :distinct,
     :except,
@@ -924,9 +949,10 @@ defmodule EctoShorts.CommonFilters do
   @doc """
   Converts filter params into an `Ecto.Query`.
 
-  `source` is a schema module, `{source, schema}` tuple, or an existing
-  `Ecto.Query`. `params` is a map or keyword list of filter params.
-  `opts` are forwarded to all sub-query builders.
+  `source` is `nil`, a schema module, `{source, schema}` tuple, or an
+  existing `Ecto.Query`. When `nil`, the params must contain a `:source`
+  key with the table name or schema to query. `params` is a map or keyword
+  list of filter params. `opts` are forwarded to all sub-query builders.
 
   Schema field keys become `WHERE` conditions. Reserved query operation
   keys (`:limit`, `:order_by`, `:join`, etc.) become the corresponding
@@ -978,7 +1004,7 @@ defmodule EctoShorts.CommonFilters do
   `EctoShorts.CommonFilters.Having`.
   """
   @spec convert_params_to_filter(
-          source :: module() | {binary(), module()} | Ecto.Query.t(),
+          source :: nil | module() | {binary(), module()} | Ecto.Query.t(),
           params :: map() | keyword(),
           opts :: keyword()
         ) :: Ecto.Query.t()
@@ -989,13 +1015,19 @@ defmodule EctoShorts.CommonFilters do
   end
 
   def convert_params_to_filter(source, entries, opts) when is_list(entries) do
-    query = CommonSchema.to_query(source)
-
     has_source_or_query? =
       Keyword.has_key?(entries, :source) or Keyword.has_key?(entries, :query)
 
     if Keyword.keyword?(entries) do
       {schema_source, params} = Keyword.pop(entries, :source, source)
+
+      if is_nil(schema_source) do
+        raise ArgumentError,
+              "Expected a source as the first argument or a :source key " <>
+                "in the params, got: nil"
+      end
+
+      query = CommonSchema.to_query(source || schema_source)
 
       {other_params, params} = Keyword.pop(params, :query, [])
 
@@ -1021,6 +1053,15 @@ defmodule EctoShorts.CommonFilters do
 
       do_convert(normalized_source, query, merged_params, opts)
     else
+      if is_nil(source) do
+        raise ArgumentError,
+              "Expected a source as the first argument when params is a " <>
+                "non-keyword list, got: nil. Use a map or keyword list with " <>
+                "a :source key instead."
+      end
+
+      query = CommonSchema.to_query(source)
+
       Enum.reduce(entries, query, fn entry, query_acc ->
         do_convert(source, query_acc, entry, opts)
       end)
@@ -1287,6 +1328,45 @@ defmodule EctoShorts.CommonFilters do
          query,
          binding_selector,
          filter_op,
+         {:exists, value},
+         opts
+       )
+       when is_map(value) and not is_struct(value) and
+              (is_map_key(value, :source) or is_map_key(value, :query)) do
+    build_query(
+      schema_source,
+      query,
+      binding_selector,
+      filter_op,
+      {:exists, value},
+      opts
+    )
+  end
+
+  defp build_schema_filters(
+         schema_source,
+         query,
+         binding_selector,
+         filter_op,
+         {:exists, value},
+         opts
+       )
+       when is_list(value) do
+    build_query(
+      schema_source,
+      query,
+      binding_selector,
+      filter_op,
+      {:exists, value},
+      opts
+    )
+  end
+
+  defp build_schema_filters(
+         schema_source,
+         query,
+         binding_selector,
+         filter_op,
          {key, value},
          opts
        )
@@ -1351,24 +1431,6 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  @query_builder_modules %{
-    distinct: Distinct,
-    group_by: GroupBy,
-    having: Having,
-    or_having: Having,
-    join: Join,
-    order_by: OrderBy,
-    prepend_order_by: OrderBy,
-    preload: Preload,
-    select: Select,
-    select_merge: Select,
-    update: Update,
-    windows: Windows,
-    with_cte: WithCte,
-    with_named_binding: WithNamedBinding,
-    with_ties: WithTies
-  }
-
   defp build_query(schema_source, query, binding_selector, :subquery, params, opts)
        when is_map(params) or is_list(params) do
     binding_source = to_binding_source(schema_source, query, binding_selector)
@@ -1404,15 +1466,63 @@ defmodule EctoShorts.CommonFilters do
 
   defp build_query(schema_source, query, binding_selector, filter_op, params, opts) do
     binding_source = to_binding_source(schema_source, query, binding_selector)
-    module = Map.get(@query_builder_modules, filter_op, Filter)
-    module.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+    case filter_op do
+      :distinct ->
+        Distinct.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :group_by ->
+        GroupBy.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :having ->
+        Having.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :join ->
+        Join.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :or_having ->
+        Having.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :order_by ->
+        OrderBy.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :preload ->
+        Preload.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :prepend_order_by ->
+        OrderBy.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :select ->
+        Select.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :select_merge ->
+        Select.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :update ->
+        Update.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :windows ->
+        Windows.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :with_cte ->
+        WithCte.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :with_named_binding ->
+        WithNamedBinding.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      :with_ties ->
+        WithTies.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      _ ->
+        Filter.build(binding_source, filter_op, query, binding_selector, params, opts)
+    end
   end
 
   defp to_binding_source(schema_source, _query, {:as, nil}) do
     schema_source
   end
 
-  defp to_binding_source(_schema_source, query, {_binding_mode, binding_target}) do
+  defp to_binding_source(_schema_source, query, {mode, binding_target}) when mode in @binding_modes do
     CommonQuery.get_query_binding_source(query, binding_target)
   end
 

@@ -340,4 +340,44 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert q2 === q
     end
   end
+
+  describe "convert_params_to_filter/3 with nil source" do
+    test "nil source with :source in map params" do
+      expected = from p in "posts", where: p.id == ^1, select: ^[:id]
+      q2 = CommonFilters.convert_params_to_filter(nil, %{source: "posts", select: [:id], id: 1}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "nil source with :source in keyword list params" do
+      expected = from p in "posts", where: p.id == ^1, select: ^[:id]
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          nil,
+          [source: "posts", query: %{id: 1}, select: [:id]],
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "nil source auto-adds select: true when :select is omitted" do
+      q2 = CommonFilters.convert_params_to_filter(nil, [source: "posts", query: %{id: 1}], [])
+
+      assert %Ecto.Query{select: %Ecto.Query.SelectExpr{}} = q2
+    end
+
+    test "nil source raises when :source is missing from params" do
+      assert_raise ArgumentError, ~r/source/, fn ->
+        CommonFilters.convert_params_to_filter(nil, %{id: 1}, [])
+      end
+    end
+
+    test "nil source raises for non-keyword list params" do
+      assert_raise ArgumentError, ~r/source/, fn ->
+        CommonFilters.convert_params_to_filter(nil, [%{source: "posts", id: 1}], [])
+      end
+    end
+  end
 end

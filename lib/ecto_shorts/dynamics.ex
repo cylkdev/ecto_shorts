@@ -145,7 +145,7 @@ defmodule EctoShorts.Dynamics do
 
     cond do
       key in adapter_operators ->
-        build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter)
+        build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts)
 
       source_has_schema?(source) ->
         schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
@@ -216,7 +216,9 @@ defmodule EctoShorts.Dynamics do
     end)
   end
 
-  defp build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter) do
+  defp build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts) do
+    value = apply_helper_expressions(source, key, value, opts)
+
     value
     |> normalize_expression_params()
     |> Enum.reduce(dyn_a, fn item, dyn_acc ->
@@ -335,17 +337,34 @@ defmodule EctoShorts.Dynamics do
   defp build_helper_expr_subquery(source, field_name, params, opts) do
     schema_source = params[:source] || source
     filter_params = params[:query] || []
+    default_select = if field_name == :exists, do: true, else: field_name
+    select_value = helper_expr_select(filter_params, default_select)
 
     CommonFilters.convert_params_to_filter(
       source,
       [
         source: schema_source,
         query: filter_params,
-        select: filter_params[:select] || field_name
+        select: select_value
       ],
       opts
     )
   end
+
+  defp helper_expr_select(params, default_select)
+       when is_map(params) and not is_struct(params) do
+    Map.get(params, :select, default_select)
+  end
+
+  defp helper_expr_select(params, default_select) when is_list(params) do
+    if Keyword.keyword?(params) do
+      Keyword.get(params, :select, default_select)
+    else
+      default_select
+    end
+  end
+
+  defp helper_expr_select(_params, default_select), do: default_select
 
   defp normalize_expression_params(term) do
     term

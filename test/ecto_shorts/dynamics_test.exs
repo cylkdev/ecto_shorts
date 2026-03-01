@@ -723,6 +723,86 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
+  test "convert_to_dynamic supports top-level exists helper expression query-builder map payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        exists: %{source: Post, query: %{id: 1}}
+      })
+
+    subquery_expr =
+      CommonFilters.convert_params_to_filter(
+        Post,
+        [source: Post, query: %{id: 1}, select: true],
+        []
+      )
+
+    expected = dynamic([q], exists(subquery_expr))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports top-level exists helper expression query-builder keyword payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        exists: [source: Post, query: %{id: 1}]
+      })
+
+    subquery_expr =
+      CommonFilters.convert_params_to_filter(
+        Post,
+        [source: Post, query: %{id: 1}, select: true],
+        []
+      )
+
+    expected = dynamic([q], exists(subquery_expr))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports negated top-level exists helper expression query-builder map payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        exists: %{not: %{source: Post, query: %{id: 1}}}
+      })
+
+    subquery_expr =
+      CommonFilters.convert_params_to_filter(
+        Post,
+        [source: Post, query: %{id: 1}, select: true],
+        []
+      )
+
+    expected = dynamic([q], not exists(subquery_expr))
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "convert_to_dynamic supports negated top-level exists helper expression query-builder keyword payload" do
+    binding = {:as, nil}
+
+    actual =
+      Dynamics.convert_to_dynamic(Post, binding, %{
+        exists: %{not: [source: Post, query: %{id: 1}]}
+      })
+
+    subquery_expr =
+      CommonFilters.convert_params_to_filter(
+        Post,
+        [source: Post, query: %{id: 1}, select: true],
+        []
+      )
+
+    expected = dynamic([q], not exists(subquery_expr))
+
+    assert_dynamic(expected, actual)
+  end
+
   test "convert_to_dynamic supports arithmetic helper expression +" do
     binding = {:as, nil}
 

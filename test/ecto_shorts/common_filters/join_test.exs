@@ -132,6 +132,106 @@ defmodule EctoShorts.CommonFilters.JoinTest do
 
       assert_sql(expected, q2)
     end
+
+    test "exists - uses source argument when :source is omitted" do
+      subquery_expr =
+        CommonFilters.convert_params_to_filter(
+          User,
+          [source: User, query: %{first_name: "John"}, select: true],
+          []
+        )
+
+      expected = from(u in User, where: exists(subquery_expr))
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          User,
+          %{where: %{exists: %{query: %{first_name: "John"}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "exists - %{where: %{exists: %{source: Post, query: %{id: 1}}}}" do
+      subquery_expr =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [source: Post, query: %{id: 1}, select: true],
+          []
+        )
+
+      expected = from(p in Post, where: exists(subquery_expr))
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{where: %{exists: %{source: Post, query: %{id: 1}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "exists - %{where: %{exists: [source: Post, query: %{id: 1}]}}" do
+      subquery_expr =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [source: Post, query: %{id: 1}, select: true],
+          []
+        )
+
+      expected = from(p in Post, where: exists(subquery_expr))
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{where: %{exists: [source: Post, query: %{id: 1}]}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "exists - %{where: %{exists: %{not: %{source: Post, query: %{id: 1}}}}}" do
+      subquery_expr =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [source: Post, query: %{id: 1}, select: true],
+          []
+        )
+
+      expected = from(p in Post, where: not exists(subquery_expr))
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{where: %{exists: %{not: %{source: Post, query: %{id: 1}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "exists - %{where: %{exists: %{not: [source: Post, query: %{id: 1}]}}}" do
+      subquery_expr =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [source: Post, query: %{id: 1}, select: true],
+          []
+        )
+
+      expected = from(p in Post, where: not exists(subquery_expr))
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{where: %{exists: %{not: [source: Post, query: %{id: 1}]}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
   end
 
   describe "convert_params_to_filter/3 canonical :join" do
