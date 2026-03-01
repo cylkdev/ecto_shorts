@@ -469,18 +469,6 @@ defmodule EctoShorts.CommonFilters.JoinTest do
 
   describe "convert_params_to_filter/3 fragment joins" do
     test "supports join source key dispatch through canonical :join source entry" do
-      previous = Application.get_env(:ecto_shorts, :fragment_provider)
-
-      on_exit(fn ->
-        Application.put_env(:ecto_shorts, :fragment_provider, previous)
-      end)
-
-      Application.put_env(
-        :ecto_shorts,
-        :fragment_provider,
-        EctoShorts.TestFragmentProvider
-      )
-
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -503,7 +491,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
               ]
             ]
           },
-          []
+          fragment_provider: EctoShorts.TestFragmentProvider
         )
 
       assert_sql(expected, q2)

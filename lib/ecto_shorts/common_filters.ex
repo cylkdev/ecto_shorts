@@ -1,57 +1,20 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  EctoShorts.CommonFilters provides a data-driven API for building queries.
+  Builds `Ecto.Query` structs from maps and keyword lists.
 
   ## Getting started
 
-  The main entrypoint is `convert_params_to_filter/3`. This function takes a map or
-  keyword list of params that describe the actions we want to take and converts them
-  into an `Ecto.Query`.
-
-  - The first argument is the `source` which is just a fancy term for the table we
-  want to operate on. It can be `nil`, a schema module, a `{source, schema}` tuple,
-  or an existing `Ecto.Query`. When `nil`, the params must contain a `:source` key
-  (see [Schemaless Queries](#module-schemaless-queries)).
-
-  - The second argument is a map, a keyword list, or a list of maps that
-  describe the filters and operations to apply.
-
-  - The third argument is a keyword list of options that allow you to change the
-  behaviour at runtime.
+  To build a query call `convert_params_to_filter/3` with parameters you wish to filter by.
 
   For example:
 
       EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{published: true, limit: 10})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.published == ^true, limit: ^10>
 
-  The params form an intuitive filtering language which you can write as sentences.
-
-  For example:
-
-  As a list:
-
-      I want only records where `:published` is true.
-      I want at most 10 results.
-
-  As a single sentence:
-
-      "I want only records where `:published` is `true` and I want at most 10 results."
-
-  As actions we would take if we wanted to build by hand:
-
-      Add a `where` condition so only records with `published == true` match.
-      Use `Ecto.Query.limit/2` so the query returns at most 10 records.
-
-  All of these encode the same intent which is to produce the SQL:
-
-      SELECT *
-      FROM posts AS p0
-      WHERE p0.published = TRUE
-      LIMIT 10;
-
-  Maps and keyword-lists can be used interchangeably. Keyword-lists gives us
-  control over the order of operations and is more flexible for complex queries.
+  The paramters can be a map or keyword list and in some cases a list of either.
+  Maps and keyword lists are interchangeable. Keyword lists give control over
+  the order of operations and are more flexible for complex queries.
 
   ## Schema filters
 
@@ -66,10 +29,9 @@ defmodule EctoShorts.CommonFilters do
   check, and the value is what it must match. When the query is built, each
   field filter becomes a `WHERE` condition in the resulting `Ecto.Query`.
 
-  Schema filters can be type-aware depending on the dynamic expression adapter used.
-  If the adapter does not support type-aware filtering or if you are performing a
-  schema-less operation, the behaviour will fall back to a default comparison.
-  In other words, the behaviour changes based on the type of the field.
+  Schema filters are type-aware when a dynamic expression adapter is available.
+  Without an adapter or when performing a schemaless query, all comparisons
+  use a default scalar comparison.
 
   For example, if the field is an array type:
 
@@ -86,17 +48,8 @@ defmodule EctoShorts.CommonFilters do
 
   ## Comparison operators
 
-  Use a comparison operator when you want to control how a field is compared
-  instead of relying on the default "field equals value" behaviour.
-
-  This is useful when your feature needs things like:
-
-    - "views is greater than 10"
-    - "id is not 1"
-    - "published_at is missing"
-    - "status is one of these values"
-
-  An `operator` must be included as a key before the `value` in the params:
+  Comparison operators control how a field is compared instead of the
+  default equality check. Nest the operator as a key inside the field map:
 
       %{field_name: %{operator: value}}
 
@@ -107,9 +60,9 @@ defmodule EctoShorts.CommonFilters do
       %{id: %{eq: 1}}         # WHERE id = 1
       %{views: %{ne: 10}}     # WHERE views != 10
 
-  **Supported Operators:**
+  **Supported operators**
 
-  You can write operators using either symbol form (`:>`) or by using the word form (`:gt`):
+  Each operator has a symbol form and a word form:
 
     * `:==` / `:eq` - equal
     * `:!=` / `:ne` - not equal
@@ -123,8 +76,8 @@ defmodule EctoShorts.CommonFilters do
 
   When a `list` value is used with an equality operator:
 
-    - If the field is a type of `scalar`, it is treated as a membership check.
-    - If the field is type of `array`, it is treated as an equality check.
+  * If the field is a scalar type, the list is treated as a membership check.
+  * If the field is an array type, the list is treated as an equality check.
 
   Example:
 
@@ -182,16 +135,15 @@ defmodule EctoShorts.CommonFilters do
 
   ## Logical operators
 
-  Logical operators `:and` and `:or` allow you to combine multiple conditions in
-  powerful ways. They work at two levels: field-level and top-level.
+  The `:and` and `:or` operators combine multiple conditions. They work
+  at two levels: field-level and top-level.
 
   ### Field-level `:and` and `:or`
 
-  Using `:and` or `:or` at the field level combines multiple conditions on the
-  same field. Let's take a look at some examples.
+  At the field level, `:and` and `:or` combine multiple conditions on the
+  same field.
 
-  Imagine we wanted to find posts where views are between `100` and `500`
-  (both rules must match).
+  Find posts where views are between `100` and `500` (both must match):
 
       %{
         views: %{
@@ -202,12 +154,9 @@ defmodule EctoShorts.CommonFilters do
         }
       }
 
-  You can think of this as:
-
       # WHERE views >= 100 AND views <= 500
 
-  And for the `:or` version, imagine we want to find posts where status is
-  either "draft" or "scheduled" (either can match).
+  Find posts where status is either "draft" or "scheduled" (either can match):
 
       %{
         status: %{
@@ -218,16 +167,12 @@ defmodule EctoShorts.CommonFilters do
         }
       }
 
-  You can think of this as:
-
       # WHERE status = 'draft' OR status = 'scheduled'
 
   ### Top-level `:and` and `:or`
 
-  Use `:and` or `:or` at the outermost level of the params to combine a group of filters.
-  This is useful when you want to group multiple field-level conditions together.
-
-  To combine multiple conditions, wrap them in a list:
+  At the top level, `:and` and `:or` combine groups of field filters.
+  Wrap each group in a list:
 
       %{
         or: [
@@ -299,26 +244,12 @@ defmodule EctoShorts.CommonFilters do
 
   ## Datetime expressions
 
-  Datetime expressions let the database compute time-based values at query time
-  (for example “now minus 1 day” or “this field plus 1 day”). This keeps the
-  comparison anchored to the database’s notion of time and avoids differences
-  between application and database clocks.
+  Datetime expressions let the database compute time-based values at query
+  time (for example "now minus 1 day" or "this field plus 1 day"). The
+  comparison is anchored to the database clock, avoiding drift between
+  application and database time.
 
-  This solves two common problems:
-
-    - Filters that should be relative to the database’s current time (for example
-      “last 24 hours” or “next 7 days”)
-
-    - Filters where the comparison value depends on a column value (for example
-      `inserted_at + 1 day`). By doing the computation inside the query, you avoid
-      relying on the application’s clock/timezone and you get one consistent “now”
-      for the whole query.
-
-  Use the key `:datetime` or `:date` to compare a field to a date/time value.
-
-  A datetime expression must come after a comparison operator for a field.
-
-  For example:
+  Use the key `:datetime` or `:date` inside a comparison operator:
 
       %{
         inserted_at: %{
@@ -379,13 +310,13 @@ defmodule EctoShorts.CommonFilters do
       }
       # WHERE inserted_at >= datetime_add(inserted_at, 1, 'day')
 
-  - `field` is the date/time field used as the base value.
-  - `count` is how many units to add (use a negative value to subtract).
-  - `interval` is the unit as a string (for example "day", "hour", "minute").
+  * `field` - the date/time field used as the base value.
+  * `count` - how many units to add (use a negative value to subtract).
+  * `interval` - the unit as a string (for example "day", "hour", "minute").
 
   ### :ago
 
-  Use `:ago` when you want "current time minus X".
+  `:ago` computes "current time minus X".
 
       %{
         inserted_at: %{
@@ -398,11 +329,9 @@ defmodule EctoShorts.CommonFilters do
       }
       # WHERE inserted_at > (now - 1 day)
 
-  This reads as: "inserted_at is later than 1 day ago".
-
   ### :from_now
 
-  Use `:from_now` when you want "current time plus X".
+  `:from_now` computes "current time plus X".
 
       %{
         inserted_at: %{
@@ -415,12 +344,10 @@ defmodule EctoShorts.CommonFilters do
       }
       # WHERE inserted_at > (now + 1 day)
 
-  This reads as: "inserted_at is later than 1 day from now".
-
   ### Picking `:datetime` vs `:date`
 
-  - Use `:datetime` when you care about the time-of-day (timestamps).
-  - Use `:date` when you want a date-only comparison (calendar dates).
+  * `:datetime` - timestamp comparison (includes time-of-day).
+  * `:date` - date-only comparison (calendar dates).
 
   In both cases the value is treated as a date/time expression so the query can
   compute it instead of treating it like a literal.
@@ -476,25 +403,25 @@ defmodule EctoShorts.CommonFilters do
   Query operation keys map directly to Ecto query operations. Avoid
   using schema field names that collide with these keys.
 
-  | Key | Purpose | Section |
-  |-----|---------|--------|
-  | `:select`, `:select_merge` | Choose which columns to return | [Select](#module-select) |
-  | `:order_by`, `:prepend_order_by`, `:reverse_order` | Sort results | [Ordering](#module-ordering) |
-  | `:group_by`, `:having`, `:or_having` | Group and filter aggregates | [Grouping and having](#module-grouping-and-having) |
-  | `:limit`, `:offset`, `:first`, `:last` | Paginate results | [Pagination](#module-pagination) |
-  | `:distinct` | Remove duplicate rows | [Distinct](#module-distinct) |
-  | `:join` | Join other tables | [Joins](#module-joins) |
-  | `:preload` | Preload associations | [Preload](#module-preload) |
-  | `:union`, `:union_all`, `:except`, `:except_all`, `:intersect`, `:intersect_all` | Combine queries | [Set operations](#module-set-operations) |
-  | `:subquery` | Wrap query as subquery | [Subquery](#module-subquery) |
-  | `:lock` | Row-level locking | [Lock](#module-lock) |
-  | `:recursive_ctes`, `:with_cte` | Common table expressions | [Common table expressions](#module-common-table-expressions) |
-  | `:with_named_binding` | Add named bindings | [Named bindings](#module-named-bindings) |
-  | `:windows` | Window functions | [Windows](#module-windows) |
-  | `:with_ties` | Include tied rows | [With ties](#module-with-ties) |
-  | `:update` | Bulk update expressions | [Update](#module-update) |
-  | `:exclude` | Remove a clause from the query | [Exclude](#module-exclude) |
-  | `:put_query_prefix` | Set the query prefix | [Query prefix](#module-query-prefix) |
+  | Key(s)                                                                           | Purpose                        | Section                                                      |
+  |----------------------------------------------------------------------------------|--------------------------------|--------------------------------------------------------------|
+  | `:select`, `:select_merge`                                                       | Choose which columns to return | [Select](#module-select)                                     |
+  | `:order_by`, `:prepend_order_by`, `:reverse_order`                               | Sort results                   | [Ordering](#module-ordering)                                 |
+  | `:group_by`, `:having`, `:or_having`                                             | Group and filter aggregates    | [Grouping and having](#module-grouping-and-having)           |
+  | `:limit`, `:offset`, `:first`, `:last`                                           | Paginate results               | [Pagination](#module-pagination)                             |
+  | `:distinct`                                                                      | Remove duplicate rows          | [Distinct](#module-distinct)                                 |
+  | `:join`                                                                          | Join other tables              | [Joins](#module-joins)                                       |
+  | `:preload`                                                                       | Preload associations           | [Preload](#module-preload)                                   |
+  | `:union`, `:union_all`, `:except`, `:except_all`, `:intersect`, `:intersect_all` | Combine queries                | [Set operations](#module-set-operations)                     |
+  | `:subquery`                                                                      | Wrap query as a subquery       | [Subquery](#module-subquery)                                 |
+  | `:lock`                                                                          | Row-level locking              | [Lock](#module-lock)                                         |
+  | `:recursive_ctes`, `:with_cte`                                                   | Common table expressions       | [Common table expressions](#module-common-table-expressions) |
+  | `:with_named_binding`                                                            | Add named bindings             | [Named bindings](#module-named-bindings)                     |
+  | `:windows`                                                                       | Window functions               | [Windows](#module-windows)                                   |
+  | `:with_ties`                                                                     | Include tied rows              | [With ties](#module-with-ties)                               |
+  | `:update`                                                                        | Bulk update expressions        | [Update](#module-update)                                     |
+  | `:exclude`                                                                       | Remove a clause from the query | [Exclude](#module-exclude)                                   |
+  | `:put_query_prefix`                                                              | Set the query prefix           | [Query prefix](#module-query-prefix)                         |
 
   ### Select
 
@@ -696,13 +623,10 @@ defmodule EctoShorts.CommonFilters do
 
   ## Dynamic expressions
 
-  Use the `:dynamic` key if you need to build dynamic expressions
-  that can't be expressed with simple field-value pairs. This should be used
-  sparingly as it is better to drive the query composition through data so that
-  it can be re-used and the behaviour is predictable, making your code easy
-  to maintain.
-
-  For example:
+  The `:dynamic` key accepts a raw `Ecto.Query.DynamicExpr` for
+  expressions that cannot be represented with the data-driven filter
+  keys above. Prefer filter keys when possible - they are composable
+  and produce predictable behaviour.
 
       %{dynamic: dynamic([p], p.views > ^10)}
       %{where: %{dynamic: dynamic([p], p.published == ^true)}}
@@ -710,10 +634,9 @@ defmodule EctoShorts.CommonFilters do
 
   ## Exists
 
-  Use the `:exists` key to check for the existence of rows in a subquery.
-
-  You can pass either a pre-built subquery expression, or a source/query
-  payload (a map or keyword list with `:source` and `:query` keys):
+  The `:exists` key checks for the existence of rows in a subquery.
+  It accepts a pre-built subquery expression or a source/query payload
+  (a map or keyword list with `:source` and `:query` keys):
 
       %{where: %{exists: subquery_expr}}
       %{where: %{exists: %{not: subquery_expr}}}              # NOT EXISTS(...)
@@ -759,7 +682,7 @@ defmodule EctoShorts.CommonFilters do
   These keys also appear inside nested payloads (`:all`, `:any`, `:exists`,
   `:with_cte`) where they describe a subquery to build inline.
 
-  ## Schemaless Queries
+  ## Schemaless queries
 
   A schemaless query is a query against a bare table name string with no
   Ecto schema module. This is useful when you want to query a table that
@@ -856,15 +779,12 @@ defmodule EctoShorts.CommonFilters do
 
   ## Expression nesting
 
-  Every field filter is a chain of nested maps or keyword-lists.
-  Each "kind" of key occupies one slot in the chain, processed from outermost
-  to innermost:
+  Every field filter is a chain of nested maps or keyword lists. Each
+  kind of key occupies one slot, processed from outermost to innermost:
 
       field -> negation -> aggregate -> operator -> value expression
 
-  You do not have to fill every slot. The API sets sane defaults that work
-  out of the box for most cases. Here is how the chain builds up one slot
-  at a time:
+  Not every slot is required. Defaults fill in the gaps:
 
   **Field only** - checks for equality:
 
@@ -912,38 +832,21 @@ defmodule EctoShorts.CommonFilters do
 
   ## Error handling
 
-  This API follows a warn-and-skip model. Invalid filter data never raises an exception:
+  This API follows a warn-and-skip model.
 
-  * Unknown keys that are not schema fields or reserved keys are
-    logged as warnings and skipped
+  Invalid filter data never raises an exception:
 
-  * Invalid payloads (wrong types, malformed maps) are logged as
-    warnings and the failing operation is skipped
+    * Unknown keys that are not schema fields or reserved keys are
+      logged as warnings and skipped
 
-  * The rest of the query continues building normally - only the
-    invalid entry is dropped
+    * Invalid payloads (wrong types, malformed maps) are logged as
+      warnings and the failing operation is skipped
+
+    * The rest of the query continues building normally - only the
+      invalid entry is dropped
 
   This makes the module safe to use with user-provided data where
   some keys may be unexpected.
-
-  ## Inspecting queries
-
-  To see the `Ecto.Query` struct that `convert_params_to_filter/3` builds,
-  print it with `IO.inspect/2`:
-
-      EctoShorts.Schema.Post
-      |> EctoShorts.CommonFilters.convert_params_to_filter(%{published: true, limit: 10})
-      |> IO.inspect(label: "query")
-
-  To see the actual SQL that Ecto will send to the database, use
-  `Ecto.Adapters.SQL.to_sql/3`:
-
-      EctoShorts.Schema.Post
-      |> EctoShorts.CommonFilters.convert_params_to_filter(%{published: true, limit: 10})
-      |> then(&Ecto.Adapters.SQL.to_sql(:all, MyApp.Repo, &1))
-      |> IO.inspect(label: "sql")
-
-  See also `EctoShorts.Actions`, `EctoShorts.Dynamics`, and `EctoShorts.CommonFilters.Having`.
   """
 
   alias EctoShorts.CommonSchema
@@ -1017,32 +920,30 @@ defmodule EctoShorts.CommonFilters do
   @doc """
   Converts filter params into an `Ecto.Query`.
 
-  `source` is `nil`, a schema module, `{source, schema}` tuple, or an
-  existing `Ecto.Query`. When `nil`, the params must contain a `:source`
-  key with the table name or schema to query. `params` is a map or keyword
-  list of filter params. `opts` are forwarded to all sub-query builders.
+  ## Arguments
 
-  Schema field keys become `WHERE` conditions. Reserved query operation
-  keys (`:limit`, `:order_by`, `:join`, etc.) become the corresponding
-  Ecto query operations. Unknown keys log a warning and are skipped.
-  Invalid payloads also log a warning and are skipped - the rest of the
-  query continues building.
+    * `source` - `nil`, a schema module, a `{source, schema}` tuple, or
+      an existing `Ecto.Query`. When `nil`, `params` must contain a
+      `:source` key.
+    * `params` - a map or keyword list of filters and query operations.
+    * `opts` - optional keyword list forwarded to all sub-query builders.
 
-  Returns an `Ecto.Query` struct with all params applied.
+  Schema field keys become `WHERE` conditions. Query operation keys
+  (`:limit`, `:order_by`, `:join`, etc.) become the corresponding Ecto
+  operations. Unknown keys log a warning and are skipped. Invalid
+  payloads log a warning and are skipped - the rest of the query
+  continues building.
 
-  See the [moduledoc](`m:EctoShorts.CommonFilters`) for the complete
-  filtering language reference, including
-  [expression nesting](#module-expression-nesting),
-  [processing order](#module-processing-order),
-  and all supported [query operations](#module-query-operations).
+  See the [moduledoc](`m:EctoShorts.CommonFilters`) for the full
+  filter language reference.
 
   ## Options
 
-  * `:repo` (default: `EctoShorts.Config.repo/0`) - the `Ecto.Repo`
-    module used to resolve the dynamic expression adapter.
-  * `:dynamic_adapter` - a module implementing
-    `EctoShorts.Dynamics.Adapter` for this call. Defaults to the
-    adapter resolved from `:repo`.
+    * `:repo` (default: `EctoShorts.Config.repo/0`) - the `Ecto.Repo`
+      module used to resolve the dynamic expression adapter.
+    * `:dynamic_adapter` - a module implementing
+      `EctoShorts.Dynamics.Adapter`. Defaults to the adapter resolved
+      from `:repo`.
 
   ## Examples
 

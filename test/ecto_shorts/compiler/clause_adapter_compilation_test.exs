@@ -74,29 +74,19 @@ defmodule EctoShorts.Compiler.UsingTest do
     end
   end
 
-  test "__mix_recompile__?/0 marks stale when config max changes for config-driven modules" do
-    previous_compiler_config = Application.get_env(:ecto_shorts, :compiler)
-    on_exit(fn -> Application.put_env(:ecto_shorts, :compiler, previous_compiler_config) end)
-
-    Application.put_env(:ecto_shorts, :max_binding_positings, 10)
+  test "config_stale?/1 returns true when current max differs from compile-time max" do
     compiled_module = compile_compiled_module!([])
+    compile_time_max = EctoShorts.Config.max_binding_positings()
 
-    refute compiled_module.__mix_recompile__?()
-
-    Application.put_env(:ecto_shorts, :max_binding_positings, 11)
-
-    assert compiled_module.__mix_recompile__?()
+    refute compiled_module.config_stale?(compile_time_max)
+    assert compiled_module.config_stale?(compile_time_max + 1)
   end
 
-  test "__mix_recompile__?/0 ignores config max changes when module overrides max" do
-    previous_compiler_config = Application.get_env(:ecto_shorts, :compiler)
-    on_exit(fn -> Application.put_env(:ecto_shorts, :compiler, previous_compiler_config) end)
+  test "config_stale?/1 always matches compile-time max when module overrides max" do
+    explicit_max = 1
+    compiled_module = compile_compiled_module!(max_binding_positings: explicit_max)
 
-    Application.put_env(:ecto_shorts, :max_binding_positings, 10)
-    compiled_module = compile_compiled_module!(max_binding_positings: 1)
-
-    Application.put_env(:ecto_shorts, :max_binding_positings, 11)
-
-    refute compiled_module.__mix_recompile__?()
+    refute compiled_module.config_stale?(explicit_max)
+    assert compiled_module.config_stale?(explicit_max + 1)
   end
 end
