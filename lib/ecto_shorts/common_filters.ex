@@ -5,14 +5,15 @@ defmodule EctoShorts.CommonFilters do
 
   ## Getting started
 
-  To build a query call `convert_params_to_filter/3` with parameters you wish to filter by.
+  The simplest way to build a query is to call `convert_params_to_filter/3` with
+  parameters you want to filter by.
 
   For example:
 
       EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{published: true, limit: 10})
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.published == ^true, limit: ^10>
 
-  The paramters can be a map or keyword list and in some cases a list of either.
+  Parameters can be a map or keyword list and in some cases a list of either.
   Maps and keyword lists are interchangeable. Keyword lists give control over
   the order of operations and are more flexible for complex queries.
 
@@ -505,11 +506,10 @@ defmodule EctoShorts.CommonFilters do
   The optional keys `:as`, `:on`, and `:type` configure the join.
   All remaining keys are treated as field filters on the associated schema.
 
-  > #### Keyword list required {: .warning}
-  >
-  > Association shorthand only accepts a keyword list. Passing a map
-  > will log a warning and skip the filter. This is the one place in
-  > the API where maps and keyword lists are **not** interchangeable.
+  Both maps and keyword lists are accepted:
+
+      %{author: [as: :author, first_name: "John"]}
+      %{author: %{as: :author, first_name: "John"}}
 
   ### Preload
 
@@ -623,10 +623,10 @@ defmodule EctoShorts.CommonFilters do
 
   ## Dynamic expressions
 
-  The `:dynamic` key accepts a raw `Ecto.Query.DynamicExpr` for
-  expressions that cannot be represented with the data-driven filter
-  keys above. Prefer filter keys when possible - they are composable
-  and produce predictable behaviour.
+  The `:dynamic` key accepts a raw dynamic struct for expressions
+  that cannot be represented with the data-driven filter keys above.
+  Prefer filter keys when possible - they are composable and produce
+  predictable behaviour.
 
       %{dynamic: dynamic([p], p.views > ^10)}
       %{where: %{dynamic: dynamic([p], p.published == ^true)}}
@@ -647,8 +647,8 @@ defmodule EctoShorts.CommonFilters do
   Wrapping the value with `:not` produces a `NOT EXISTS(...)` condition.
 
   When an `:exists` payload uses `:source` and `:query` without an explicit
-  `:select`, `select: true` is applied automatically.
-  This keeps `EXISTS` subqueries valid without requiring a separate pre-build step.
+  `:select`, `select: true` is applied automatically. This keeps `EXISTS`
+  subqueries valid without requiring a separate pre-build step.
 
   ## Source and query params
 
@@ -777,7 +777,12 @@ defmodule EctoShorts.CommonFilters do
   `tags IN ('a', 'b')` instead of the array-equality check you would get
   with a schema that declares `tags` as `{:array, :string}`.
 
-  ## Expression nesting
+  ## Nested Expressions
+
+  CommonFilters is a data mapper. Instead of composing Ecto queries by
+  hand, you pass in plain data and CommonFilters translates each slot
+  into the correct Ecto call. The slot chain is the core of this
+  filtering language.
 
   Every field filter is a chain of nested maps or keyword lists. Each
   kind of key occupies one slot, processed from outermost to innermost:
@@ -1228,6 +1233,8 @@ defmodule EctoShorts.CommonFilters do
          params,
          opts
        ) do
+    params = if is_map(params) and not is_struct(params), do: Map.to_list(params), else: params
+
     if Keyword.keyword?(params) do
       assoc_schema =
         case schema_source do
@@ -1263,7 +1270,7 @@ defmodule EctoShorts.CommonFilters do
     else
       Logger.warning(
         @logger_prefix,
-        "Expected association params for #{inspect(assoc_key)} to be a keyword list, got: #{inspect(params)}"
+        "Expected association params for #{inspect(assoc_key)} to be a map or keyword list, got: #{inspect(params)}"
       )
 
       query

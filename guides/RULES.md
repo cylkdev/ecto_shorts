@@ -215,12 +215,13 @@ Examples:
 
 ## Association Join Rules
 
-**Rule 20:** Association shorthand filters must be keyword lists with optional `:as`, `:on`, and `:type` keys.
+**Rule 20:** Association shorthand filters accept a map or keyword list with optional `:as`, `:on`, and `:type` keys.
 
-When filtering on an association using shorthand notation, the filter parameters can include binding and join configuration keys.
+When filtering on an association using shorthand notation, the filter parameters can include binding and join configuration keys. Both maps and keyword lists are accepted.
 
 Examples:
-- `%{author: [as: :author, first_name: "example"]}` - `:as` is a configuration key
+- `%{author: [as: :author, first_name: "example"]}` - keyword list with `:as`
+- `%{author: %{as: :author, first_name: "example"}}` - map with `:as`
 - `%{author: [as: :author, type: :left, first_name: "example"]}` - `:type` is a configuration key
 - `%{author: [first_name: "example"]}` - Configuration keys are optional
 

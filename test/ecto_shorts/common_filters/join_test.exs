@@ -68,6 +68,46 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert %Ecto.Query{} = q2
     end
 
+    test "association map - %{author: %{as: :author, first_name: \"John\"}}" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          where: a.first_name == ^"John"
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{author: %{as: :author, first_name: "John"}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "association map - %{author: %{first_name: \"John\"}} (no :as)" do
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{author: %{first_name: "John"}},
+          []
+        )
+
+      assert %Ecto.Query{} = q2
+    end
+
+    test "association map - %{author: %{as: :author, type: :left, first_name: \"John\"}}" do
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{author: %{as: :author, type: :left, first_name: "John"}},
+          []
+        )
+
+      assert %Ecto.Query{} = q2
+    end
+
     test "invalid association filter payload logs warning and skips entry" do
       q = from(p in Post)
 
@@ -77,7 +117,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Expected association params for :author to be a keyword list, got: 123"
+      assert log =~ "Expected association params for :author to be a map or keyword list, got: 123"
       assert_received {:q2, q2}
       assert_sql(q, q2)
     end
