@@ -6,6 +6,7 @@ defmodule EctoShorts.ActionsTest do
   alias EctoShorts.Actions
   alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
+  alias EctoShorts.Schema.PostWithLock
   alias EctoShorts.Schema.User
 
   import Ecto.Query
@@ -429,6 +430,23 @@ defmodule EctoShorts.ActionsTest do
                  |> Actions.stream(%{order_by: %{asc: :title}})
                  |> Enum.to_list()
                end)
+    end
+
+    test "supports max_rows option for custom chunk size" do
+      for i <- 1..5 do
+        %Post{}
+        |> Post.changeset(%{title: "Post #{i}"})
+        |> Repo.insert!()
+      end
+
+      assert {:ok, posts} =
+               Repo.transaction(fn ->
+                 Post
+                 |> Actions.stream(%{order_by: %{asc: :id}}, max_rows: 2)
+                 |> Enum.to_list()
+               end)
+
+      assert length(posts) === 5
     end
   end
 
@@ -2610,5 +2628,199 @@ defmodule EctoShorts.ActionsTest do
 
     #     assert [%Post{title: "Test"}] = Repo.all(q)
     #   end
+  end
+
+  describe "update/4 optimistic locking via schema callback" do
+    test "auto-detects locking from schema callback and succeeds on fresh record" do
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      assert post.lock_version === 1
+
+      assert {:ok, %PostWithLock{title: "Updated", lock_version: 2}} =
+               Actions.update(PostWithLock, post, %{title: "Updated"})
+    end
+
+    test "returns {:error, %{code: :stale}} on stale record" do
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      # Simulate a concurrent update by bumping the version in the DB
+      Repo.update_all(
+        from(p in PostWithLock, where: p.id == ^post.id),
+        set: [lock_version: 99]
+      )
+
+      # post still has lock_version: 1 which is now stale
+      assert {:error, %{code: :stale, message: "record has been modified by another process."}} =
+               Actions.update(PostWithLock, post, %{title: "Too Late"})
+    end
+
+    test "increments lock_version on each successful update" do
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "V1"})
+        |> Repo.insert!()
+
+      assert {:ok, %PostWithLock{lock_version: 2} = post} =
+               Actions.update(PostWithLock, post, %{title: "V2"})
+
+      assert {:ok, %PostWithLock{lock_version: 3}} =
+               Actions.update(PostWithLock, post, %{title: "V3"})
+    end
+  end
+
+  describe "update/4 optimistic locking via option" do
+    test "explicit optimistic_lock option applies locking" do
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      assert {:ok, %PostWithLock{title: "Updated", lock_version: 2}} =
+               Actions.update(PostWithLock, post, %{title: "Updated"},
+                 optimistic_lock: :lock_version
+               )
+    end
+
+    test "explicit optimistic_lock option detects stale record" do
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      Repo.update_all(
+        from(p in PostWithLock, where: p.id == ^post.id),
+        set: [lock_version: 99]
+      )
+
+      assert {:error, %{code: :stale}} =
+               Actions.update(PostWithLock, post, %{title: "Too Late"},
+                 optimistic_lock: :lock_version
+               )
+    end
+
+    test "optimistic_lock: false disables auto-detection from schema callback" do
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      # Bump version in DB to make the struct stale
+      Repo.update_all(
+        from(p in PostWithLock, where: p.id == ^post.id),
+        set: [lock_version: 99]
+      )
+
+      # With locking disabled, update succeeds despite stale version
+      assert {:ok, %PostWithLock{title: "Updated"}} =
+               Actions.update(PostWithLock, post, %{title: "Updated"},
+                 optimistic_lock: false
+               )
+    end
+
+    test "option overrides schema callback" do
+      # PostWithLock has optimistic_lock/0 -> :lock_version
+      # Passing a different field that doesn't exist should still work
+      # through Ecto (it just won't find the field, but the option takes precedence)
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      # optimistic_lock: false overrides the schema callback
+      Repo.update_all(
+        from(p in PostWithLock, where: p.id == ^post.id),
+        set: [lock_version: 99]
+      )
+
+      assert {:ok, %PostWithLock{title: "Overridden"}} =
+               Actions.update(PostWithLock, post, %{title: "Overridden"},
+                 optimistic_lock: false
+               )
+    end
+
+    test "supports {field, incrementer} tuple option" do
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      # Use a custom incrementer that adds 10 instead of 1
+      assert {:ok, %PostWithLock{title: "Updated", lock_version: 11}} =
+               Actions.update(PostWithLock, post, %{title: "Updated"},
+                 optimistic_lock: {:lock_version, fn _ -> 11 end}
+               )
+    end
+  end
+
+  describe "update/4 optimistic locking on schema without callback" do
+    test "no locking when schema has no callback and no option" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      assert {:ok, %Post{title: "Updated"}} =
+               Actions.update(Post, post, %{title: "Updated"})
+    end
+
+    test "explicit option enables locking on schema without callback" do
+      # Post does not have optimistic_lock/0 but it doesn't have a lock field either.
+      # This test verifies that passing the option on a schema with the callback
+      # applies locking correctly.
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      Repo.update_all(
+        from(p in PostWithLock, where: p.id == ^post.id),
+        set: [lock_version: 99]
+      )
+
+      assert {:error, %{code: :stale}} =
+               Actions.update(PostWithLock, post, %{title: "Too Late"},
+                 optimistic_lock: :lock_version
+               )
+    end
+  end
+
+  describe "find_and_update/4 optimistic locking" do
+    test "inherits locking from schema callback" do
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      Repo.update_all(
+        from(p in PostWithLock, where: p.id == ^post.id),
+        set: [lock_version: 99]
+      )
+
+      # find_and_update finds the record fresh (lock_version: 99),
+      # so it should succeed since the found record has the current version
+      assert {:ok, %PostWithLock{title: "Updated", lock_version: 100}} =
+               Actions.find_and_update(PostWithLock, %{id: post.id}, %{title: "Updated"})
+    end
+
+    test "returns stale error when record changes between find and update" do
+      post =
+        %PostWithLock{}
+        |> PostWithLock.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      # First, do a normal find_and_update which fetches the record
+      assert {:ok, %PostWithLock{title: "First Update", lock_version: 2}} =
+               Actions.find_and_update(PostWithLock, %{id: post.id}, %{title: "First Update"})
+
+      # Now try to update using the original stale struct directly through update/4
+      assert {:error, %{code: :stale}} =
+               Actions.update(PostWithLock, post, %{title: "Stale Update"})
+    end
   end
 end

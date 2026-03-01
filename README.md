@@ -17,22 +17,21 @@ Use EctoShorts when you want to:
 * Batch-fetch records by key for efficient lookups
 * Keep your context modules focused on business logic
 
-## Module overview
+## Introduction
 
-The library is organized into modules by responsibility. Start with
-`EctoShorts.Actions` for most use cases.
+EctoShorts is split into the following main components:
 
-| Module | Use when |
-|--------|----------|
-| `EctoShorts.Actions` | You need CRUD, batch, bulk, or transactional operations. **Start here.** |
-| `EctoShorts.CommonFilters` | You need to build an `Ecto.Query` from a map or keyword list without executing it. |
-| `EctoShorts.CommonChanges` | You need changeset helpers for associations, conditional changes, or field validation. |
-| `EctoShorts.CommonSchema` | You need schema introspection or polymorphic source handling. |
-| `EctoShorts.CommonParams` | You need to prepare parameters for `insert_all`, `update_all`, or `delete_all`. |
-| `EctoShorts.CommonQuery` | You need to inspect query bindings, sources, or prefixes. |
-| `EctoShorts.Dynamics` | You need to build `Ecto.Query.dynamic/2` expressions from data. |
-| `EctoShorts.Compiler` | Internal: generates function clauses at compile time. |
-| `EctoShorts.Testing` | You need test helpers for asserting on SQL, queries, or dynamic expressions. |
+| Module                     | Use when                                                                                  |
+|----------------------------|-------------------------------------------------------------------------------------------|
+| `EctoShorts.Actions`       | You need CRUD, batch, bulk, or transactional operations. **Start here.**                  |
+| `EctoShorts.CommonFilters` | You need to build an `Ecto.Query` from a map or keyword list without executing it.        |
+| `EctoShorts.CommonChanges` | You need changeset helpers for associations, conditional changes, or field validation.    |
+| `EctoShorts.CommonSchema`  | You need schema introspection or polymorphic source handling.                             |
+| `EctoShorts.CommonParams`  | You need to prepare parameters for `insert_all`, `update_all`, or `delete_all`.           |
+| `EctoShorts.CommonQuery`   | You need to inspect query bindings, sources, or prefixes.                                 |
+| `EctoShorts.Dynamics`      | You need to build `Ecto.Query.dynamic/2` expressions from data.                           |
+| `EctoShorts.Compiler`      | Internal: generates function clauses at compile time.                                     |
+| `EctoShorts.Testing`       | You need test helpers for asserting on SQL, queries, or dynamic expressions.              |
 
 ## Installation
 
@@ -49,7 +48,7 @@ Configure a repo:
 
 ### Prerequisites
 
-The examples below require:
+Before getting started, to run these examples you need the following:
 
 * An `Ecto.Repo` module (for example `MyApp.Repo`) that is configured
   and started.
@@ -76,16 +75,17 @@ Or pass `:repo` / `:replica` at call time (shown below).
 
 ### How it works
 
-* `EctoShorts.Actions` is the entry point - it builds queries and
-  executes them.
+* `EctoShorts.Actions` is the entry point - it builds queries and executes them.
+
 * Filter params are plain data:
   * Keys that match schema fields become `WHERE` conditions.
   * Reserved keys like `:limit` become query operations.
+
 * Under the hood:
   * `EctoShorts.CommonFilters` turns params into an `Ecto.Query`.
   * The configured `Ecto.Repo` runs that query against the database.
 
-### Quick examples
+### Examples
 
     alias EctoShorts.Actions
 
@@ -106,13 +106,13 @@ Or pass `:repo` / `:replica` at call time (shown below).
 
 Common errors when running the examples above:
 
-* **Repo not configured** - set `config :ecto_shorts, repo: MyApp.Repo`
-  or pass `repo:` / `replica:` at call time.
+* **Repo not configured** - set `config :ecto_shorts, repo: MyApp.Repo` or pass `repo:` / `replica:` at call time.
+
 * **Repo not started** - add the repo to your application supervisor.
-* **Missing changeset** - add `changeset/2` to the schema module or
-  pass `changeset:` in options.
-* **Unknown filter key** - verify the key matches a schema field or a
-  supported query operation.
+
+* **Missing changeset** - add `changeset/2` to the schema module or use the `:changeset` option.
+
+* **Unknown filter key** - verify the key matches a schema field or a supported query operation.
 
 ## Common workflows
 
@@ -221,7 +221,7 @@ Override the default `changeset/2` function:
       |> Ecto.Changeset.put_change(:source, "api")
     end)
 
-## Module responsibilities
+## API Overview
 
 ### EctoShorts.Actions
 
@@ -374,7 +374,7 @@ EctoShorts modules collaborate in a layered architecture:
 4. Actions executes the query through the configured `Ecto.Repo`.
 5. Results are returned to your context module.
 
-**Extension points:**
+**Extensions:**
 
 * `:changeset` option - override the default changeset function
 * `:error_module` option - customize error formatting

@@ -14,10 +14,6 @@ defmodule EctoShorts.Actions do
   * Run transactional multi-record operations with automatic rollback
   * Batch-fetch records by key for efficient lookups
 
-  Do not use this module when you need:
-
-  * Streaming with custom chunk sizes - use `c:Ecto.Repo.stream/2` directly
-
   ## Getting started
 
   Configure your `Ecto.Repo` in your application config:
@@ -44,27 +40,57 @@ defmodule EctoShorts.Actions do
       # Delete a record
       {:ok, _} = Actions.delete(post)
 
-  ## Function groups
+  ## Public API
 
-  Functions are organized into five groups based on their behavior:
+  The functions in this API are organized as follows:
 
-  * **CRUD** - Single-record operations: `all/1-3`, `create/3`, `find/3`,
-    `update/4`, `delete/1-3`, `get/3`, `exists?/3`, `stream/3`,
-    `aggregate/5`, `preload/3`, and the `find_and_*` variants.
+  ### CRUD
 
-  * **Bulk** - Multi-row operations without transactions: `insert_all/3`,
-    `update_all/4`, `delete_all/3`. These map directly to Ecto.Repo
-    callbacks and do not run changesets.
+  Work with one record at a time.
 
-  * **Multi** - Transactional multi-record operations using `Ecto.Multi`:
-    `create_many/3`, `update_many/3`, `delete_many/3`, `find_many/3`,
-    `find_or_create_many/3`, `find_and_upsert_many/3`. Any failure rolls
-    back the entire transaction.
+    - `all/1-3`
+    - `create/3`
+    - `find/3`
+    - `update/4`
+    - `delete/1-3`
+    - `get/3`
+    - `exists?/3`
+    - `stream/3`
+    - `aggregate/5`
+    - `preload/3`
+    - `find_and_*` variants.
 
-  * **Batch** - Keyed lookups for efficient fetching: `batch/5` and
-    `batch_preload/4`.
+  ### Bulk
 
-  * **Transaction** - Transaction wrappers: `transaction/2` and `transact/2`.
+  Multi-row operations without transactions.
+
+    - `insert_all/3`
+    - `update_all/4`
+    - `delete_all/3`
+
+  These map directly to `Ecto.Repo` callbacks and do not run changesets.
+
+  ### Multi
+
+  Run multiple operations in one transaction (everything succeeds or everything
+  is rolled back).
+
+    - `create_many/3`
+    - `update_many/3`
+    - `delete_many/3`
+    - `find_many/3`
+    - `find_or_create_many/3`
+    - `find_and_upsert_many/3`
+
+  Any failure rolls back the entire transaction.
+
+  ### Batch
+
+  Keyed lookups for efficient fetching: `batch/5` and `batch_preload/4`.
+
+  ### Transaction
+
+  Transaction wrappers: `transaction/2` and `transact/2`.
 
   ## Choosing the right function
 
@@ -72,14 +98,14 @@ defmodule EctoShorts.Actions do
 
   ### Reading records
 
-  | Function | Use when | Returns |
-  |----------|----------|---------|
-  | `get/3` | You have a primary key and want the struct or `nil` | `struct \| nil` |
-  | `find/3` | You have filter params and want `{:ok, struct}` or an error | `{:ok, struct} \| {:error, reason}` |
-  | `all/3` | You want a list of matching records | `[struct]` |
-  | `exists?/3` | You only need to know if a match exists | `boolean` |
-  | `aggregate/5` | You need a count, sum, avg, min, or max | `term` |
-  | `stream/3` | You need to process large datasets without loading all into memory | `Enumerable.t()` |
+  | Function       | Use when                                                           | Returns                           |
+  |----------------|--------------------------------------------------------------------|-----------------------------------|
+  | `get/3`        | You have a primary key and want the struct or `nil`                | `struct,  nil`                    |
+  | `find/3`       | You have filter params and want `{:ok, struct}` or an error        | `{:ok, struct},  {:error, reason}`|
+  | `all/3`        | You want a list of matching records                                | `[struct]`                        |
+  | `exists?/3`    | You only need to know if a match exists                            | `boolean`                         |
+  | `aggregate/5`  | You need a count, sum, avg, min, or max                            | `term`                            |
+  | `stream/3`     | You need to process large datasets without loading all into memory | `Enumerable.t()`                  |
 
   Examples:
 
@@ -101,11 +127,11 @@ defmodule EctoShorts.Actions do
 
   ### Creating records
 
-  | Function | Use when | Returns |
-  |----------|----------|---------|
-  | `create/3` | Creating a single record with changeset validation | `{:ok, struct} \| {:error, changeset}` |
-  | `insert_all/3` | Bulk inserting many records without changesets | `{:ok, {count, nil \| [struct]}}` |
-  | `create_many/3` | Creating many records with changesets in a transaction | `{:ok, [struct]} \| {:error, reason}` |
+  | Function         | Use when                                               | Returns                               |
+  |------------------|--------------------------------------------------------|---------------------------------------|
+  | `create/3`       | Creating a single record with changeset validation     | `{:ok, struct},  {:error, changeset}` |
+  | `insert_all/3`   | Bulk inserting many records without changesets         | `{:ok, {count, nil,  [struct]}}`      |
+  | `create_many/3`  | Creating many records with changesets in a transaction | `{:ok, [struct]},  {:error, reason}`  |
 
   Use `create/3` for single records when you need validation:
 
@@ -123,13 +149,13 @@ defmodule EctoShorts.Actions do
 
   ### Updating records
 
-  | Function | Use when | Returns |
-  |----------|----------|---------|
-  | `update/4` | Updating a single record by struct or id | `{:ok, struct} \| {:error, reason}` |
-  | `find_and_update/4` | Finding then updating in one call | `{:ok, struct} \| {:error, reason}` |
-  | `find_and_upsert/4` | Updating if exists, creating if not | `{:ok, struct} \| {:error, reason}` |
-  | `update_all/4` | Bulk updating many records without changesets | `{count, nil}` |
-  | `update_many/3` | Updating many records with changesets in a transaction | `{:ok, [struct]} \| {:error, reason}` |
+  | Function            | Use when                                               | Returns                              |
+  |---------------------|--------------------------------------------------------|--------------------------------------|
+  | `update/4`          | Updating a single record by struct or id               | `{:ok, struct},  {:error, reason}`   |
+  | `find_and_update/4` | Finding then updating in one call                      | `{:ok, struct},  {:error, reason}`   |
+  | `find_and_upsert/4` | Updating if exists, creating if not                    | `{:ok, struct},  {:error, reason}`   |
+  | `update_all/4`      | Bulk updating many records without changesets          | `{count, nil}`                       |
+  | `update_many/3`     | Updating many records with changesets in a transaction | `{:ok, [struct]},  {:error, reason}` |
 
   Examples:
 
@@ -150,12 +176,12 @@ defmodule EctoShorts.Actions do
 
   ### Deleting records
 
-  | Function | Use when | Returns |
-  |----------|----------|---------|
-  | `delete/1-3` | Deleting a single record or list | `{:ok, struct} \| {:error, reason}` |
-  | `find_and_delete/3` | Finding then deleting in one call | `{:ok, struct} \| {:error, reason}` |
-  | `delete_all/3` | Bulk deleting many records | `{count, nil}` |
-  | `delete_many/3` | Deleting many records in a transaction | `{:ok, [struct]} \| {:error, reason}` |
+  | Function            | Use when                                | Returns.                             |
+  |---------------------|-----------------------------------------|--------------------------------------|
+  | `delete/1-3`        | Deleting a single record or list        | `{:ok, struct},  {:error, reason}`   |
+  | `find_and_delete/3` | Finding then deleting in one call       | `{:ok, struct},  {:error, reason}`   |
+  | `delete_all/3`      | Bulk deleting many records              | `{count, nil}`                       |
+  | `delete_many/3`     | Deleting many records in a transaction  | `{:ok, [struct]},  {:error, reason}` |
 
   Examples:
 
@@ -580,6 +606,12 @@ defmodule EctoShorts.Actions do
   * `:error_module` - a module implementing `EctoShorts.Actions.Error`.
     Defaults to `EctoShorts.Config.error_module/0`.
 
+  * `:optimistic_lock` - enables optimistic locking for `update/4` and
+    `find_and_update/4`. Accepts an atom (the lock field name), a
+    `{field, incrementer}` tuple for custom lock types, or `false` to
+    explicitly disable. When not set, auto-detects by checking if the
+    schema exports `optimistic_lock/0`.
+
   ## Configuration
 
   Configure EctoShorts in your application config:
@@ -638,7 +670,7 @@ defmodule EctoShorts.Actions do
 
   See `EctoShorts.CommonChanges` for changeset helpers.
 
-  ## Edge cases and warnings
+  ## Gotchas and Limitations
 
   > #### Empty params in find/3 {: .warning}
   >
@@ -648,9 +680,10 @@ defmodule EctoShorts.Actions do
 
   > #### Concurrent updates {: .info}
   >
-  > `update/4` and `find_and_update/4` do not use optimistic locking by
-  > default. For concurrent updates, use `Ecto.Changeset.optimistic_lock/3`
-  > in your changeset function.
+  > `update/4` and `find_and_update/4` support automatic optimistic locking.
+  > Define `optimistic_lock/0` on your schema to return the lock field name,
+  > or pass `optimistic_lock: :lock_version` in opts. On a stale entry,
+  > the function returns `{:error, %ErrorMessage{code: :stale}}`.
 
   > #### Large batch sizes {: .info}
   >
@@ -955,8 +988,10 @@ defmodule EctoShorts.Actions do
   fetched with `find/3` first. When it is a struct, the changeset is
   built and updated directly.
 
-  Returns `{:ok, struct}`, `{:error, changeset}`, or
-  `{:error, %ErrorMessage{code: :not_found}}`.
+  Returns `{:ok, struct}`, `{:error, changeset}`,
+  `{:error, %ErrorMessage{code: :not_found}}`, or
+  `{:error, %ErrorMessage{code: :stale}}` when optimistic locking
+  detects a concurrent modification.
 
   ## Arguments
 
@@ -964,6 +999,32 @@ defmodule EctoShorts.Actions do
     * `id_or_schema_struct` - a primary key value or an existing struct.
     * `params` - a map of attributes to update.
     * `opts` - forwarded to `c:Ecto.Repo.update/2`.
+
+  ## Options
+
+    * `:optimistic_lock` - an atom (lock field name), a
+      `{field, incrementer}` tuple, or `false`. When not set,
+      auto-detects by checking if the schema exports
+      `optimistic_lock/0`. See the "Shared options" section for
+      details.
+
+  ## Optimistic locking
+
+  When optimistic locking is active, the changeset is piped through
+  `Ecto.Changeset.optimistic_lock/3` before calling `c:Ecto.Repo.update/2`.
+  If the record has been modified by another process since it was fetched,
+  `Ecto.StaleEntryError` is rescued and converted to
+  `{:error, %ErrorMessage{code: :stale}}`.
+
+  To enable locking, either define `optimistic_lock/0` on your schema:
+
+      defmodule MyApp.Post do
+        def optimistic_lock, do: :lock_version
+      end
+
+  Or pass the option explicitly:
+
+      Actions.update(Post, post, params, optimistic_lock: :lock_version)
 
   ## Examples
 
@@ -981,9 +1042,24 @@ defmodule EctoShorts.Actions do
   end
 
   def update(queryable, schema_struct, params, opts) do
-    queryable
-    |> CommonSchema.create_changeset(schema_struct, params, opts)
-    |> Config.repo!(opts).update(opts)
+    changeset =
+      queryable
+      |> CommonSchema.create_changeset(schema_struct, params, opts)
+      |> maybe_apply_optimistic_lock(queryable, opts)
+
+    Config.repo!(opts).update(changeset, opts)
+  rescue
+    Ecto.StaleEntryError ->
+      {:error,
+       Error.call(
+         :stale,
+         "record has been modified by another process.",
+         %{
+           schema: CommonSchema.get_schema(queryable),
+           struct: schema_struct
+         },
+         opts
+       )}
   end
 
   @doc group: "CRUD"
@@ -1083,19 +1159,35 @@ defmodule EctoShorts.Actions do
   @doc """
   Returns a stream of records matching `params`.
 
-  The stream must be consumed inside a transaction (see `transact/2`).
+  Wraps `c:Ecto.Repo.stream/2` with filter support. The stream must be
+  consumed inside a transaction (see `transact/2`).
 
   ## Arguments
 
-    * `queryable` - a schema module or queryable.
-    * `params` - filter params (see `EctoShorts.CommonFilters`).
-    * `opts` - forwarded to `c:Ecto.Repo.stream/2`.
+  * `queryable` - a schema module or queryable.
+  * `params` - filter params (see `EctoShorts.CommonFilters`).
+  * `opts` - forwarded to `c:Ecto.Repo.stream/2`.
+
+  ## Options
+
+  * `:max_rows` (default: `500`) - the number of rows to fetch from the
+    database per batch. Increase for throughput, decrease for memory.
+  * `:repo` - the `Ecto.Repo` to use. Defaults to `EctoShorts.Config.repo/0`.
 
   ## Examples
 
+      # Basic streaming inside a transaction
       EctoShorts.Actions.transact(fn ->
         EctoShorts.Schema.Post
         |> EctoShorts.Actions.stream(%{published: true})
+        |> Stream.each(&process_post/1)
+        |> Stream.run()
+      end)
+
+      # Custom chunk size for large datasets
+      EctoShorts.Actions.transact(fn ->
+        EctoShorts.Schema.Post
+        |> EctoShorts.Actions.stream(%{}, max_rows: 1000)
         |> Stream.each(&process_post/1)
         |> Stream.run()
       end)
@@ -1810,4 +1902,33 @@ defmodule EctoShorts.Actions do
   defp maybe_rollback({:error, reason}, repo), do: repo.rollback(reason)
   defp maybe_rollback({:ok, value}, _repo), do: value
   defp maybe_rollback(term, _repo), do: term
+
+  defp maybe_apply_optimistic_lock(changeset, queryable, opts) do
+    case resolve_optimistic_lock(queryable, opts) do
+      false ->
+        changeset
+
+      {field, incrementer} when is_atom(field) and is_function(incrementer, 1) ->
+        Ecto.Changeset.optimistic_lock(changeset, field, incrementer)
+
+      field when is_atom(field) ->
+        Ecto.Changeset.optimistic_lock(changeset, field)
+    end
+  end
+
+  defp resolve_optimistic_lock(queryable, opts) do
+    case Keyword.fetch(opts, :optimistic_lock) do
+      {:ok, value} ->
+        value
+
+      :error ->
+        schema = CommonSchema.get_schema(queryable)
+
+        if schema !== nil and function_exported?(schema, :optimistic_lock, 0) do
+          schema.optimistic_lock()
+        else
+          false
+        end
+    end
+  end
 end
