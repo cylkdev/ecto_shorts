@@ -156,31 +156,31 @@
 
 ## Subquery and Set Comparison Examples
 
-%{id: %{all: %{>: subquery_expr}}}
+%{id: %{>: %{all: subquery_expr}}}
 
-%{id: %{all: %{>=: subquery_expr}}}
+%{id: %{>=: %{all: subquery_expr}}}
 
-%{id: %{all: %{<: subquery_expr}}}
+%{id: %{<: %{all: subquery_expr}}}
 
-%{id: %{all: %{<=: subquery_expr}}}
+%{id: %{<=: %{all: subquery_expr}}}
 
-%{id: %{all: %{==: subquery_expr}}}
+%{id: %{==: %{all: subquery_expr}}}
 
-%{id: %{all: %{!=: subquery_expr}}}
+%{id: %{!=: %{all: subquery_expr}}}
 
 %{id: %{all: subquery_expr}}
 
-%{id: %{all: %{>: [source: Post, query: %{id: 1}]}}}
+%{id: %{>: %{all: [source: Post, query: %{id: 1}]}}}
 
-%{id: %{not: %{all: %{>: subquery_expr}}}}
+%{id: %{not: %{>: %{all: subquery_expr}}}}
 
 %{id: %{not: %{all: subquery_expr}}}
 
-%{id: %{any: %{>: subquery_expr}}}
+%{id: %{>: %{any: subquery_expr}}}
 
 %{id: %{any: subquery_expr}}
 
-%{id: %{not: %{any: %{>: subquery_expr}}}}
+%{id: %{not: %{>: %{any: subquery_expr}}}}
 
 %{id: %{not: %{any: subquery_expr}}}
 

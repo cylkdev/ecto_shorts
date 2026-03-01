@@ -21,10 +21,6 @@ One common cause is tests that are outdated or incorrect. Do not assume the test
 - When you receive a user message, before you evaluate it, repeat your interpretation of the message to the user and ask them to confirm if that is what
 they meant. If the user agrees your interpretation of the message is correct then proceed with the task. If the user does not agree, ask for clarification and repeat the process.
 
-## ADRs
-
-After a change is made to the public interface in the application, write an Architecture Decision Record (as described in `.agent/ADRS.md`). Write the document to the path specified by the `document-artifacts` rule.
-
 ## Writing Conventions
 
 - Write code so a beginner can understand what it does by quickly scanning it.

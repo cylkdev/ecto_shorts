@@ -245,50 +245,50 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
   end
 
   describe "convert_params_to_filter/3 subquery and set comparison" do
-    test "subquery/set — %{id: %{all: %{>: subquery_expr}}}" do
+    test "subquery/set — %{id: %{>: %{all: subquery_expr}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
       expected = from(p in Post, where: p.id > all(subquery_expr))
-      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{all: %{>: subquery_expr}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{>: %{all: subquery_expr}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "subquery/set — %{id: %{all: %{>=: subquery_expr}}}" do
+    test "subquery/set — %{id: %{>=: %{all: subquery_expr}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
       expected = from(p in Post, where: p.id >= all(subquery_expr))
-      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{all: %{>=: subquery_expr}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{>=: %{all: subquery_expr}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "subquery/set — %{id: %{all: %{<: subquery_expr}}}" do
+    test "subquery/set — %{id: %{<: %{all: subquery_expr}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
       expected = from(p in Post, where: p.id < all(subquery_expr))
-      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{all: %{<: subquery_expr}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{<: %{all: subquery_expr}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "subquery/set — %{id: %{all: %{<=: subquery_expr}}}" do
+    test "subquery/set — %{id: %{<=: %{all: subquery_expr}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
       expected = from(p in Post, where: p.id <= all(subquery_expr))
-      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{all: %{<=: subquery_expr}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{<=: %{all: subquery_expr}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "subquery/set — %{id: %{all: %{==: subquery_expr}}}" do
+    test "subquery/set — %{id: %{==: %{all: subquery_expr}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
       expected = from(p in Post, where: p.id == all(subquery_expr))
-      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{all: %{==: subquery_expr}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{==: %{all: subquery_expr}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "subquery/set — %{id: %{all: %{!=: subquery_expr}}}" do
+    test "subquery/set — %{id: %{!=: %{all: subquery_expr}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
       expected = from(p in Post, where: p.id != all(subquery_expr))
-      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{all: %{!=: subquery_expr}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{!=: %{all: subquery_expr}}}, [])
 
       assert_sql(expected, q2)
     end
@@ -301,7 +301,7 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
       assert_sql(expected, q2)
     end
 
-    test "subquery/set — %{id: %{all: %{>: [source: Post, query: %{id: 1}]}}} (query-builder payload)" do
+    test "subquery/set — %{id: %{>: %{all: [source: Post, query: %{id: 1}]}}} (query-builder payload)" do
       subquery_expr =
         Post
         |> CommonFilters.convert_params_to_filter(%{id: 1}, [])
@@ -310,15 +310,19 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
       expected = from(p in Post, where: p.id > all(subquery_expr))
 
       q2 =
-        CommonFilters.convert_params_to_filter(Post, %{id: %{all: %{>: [source: Post, query: %{id: 1}]}}}, [])
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{>: %{all: [source: Post, query: %{id: 1}]}}},
+          []
+        )
 
       assert_sql(expected, q2)
     end
 
-    test "subquery/set — %{id: %{not: %{all: %{>: subquery_expr}}}}" do
+    test "subquery/set — %{id: %{not: %{>: %{all: subquery_expr}}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
       expected = from(p in Post, where: not (p.id > all(subquery_expr)))
-      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{not: %{all: %{>: subquery_expr}}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{not: %{>: %{all: subquery_expr}}}}, [])
 
       assert_sql(expected, q2)
     end
@@ -331,10 +335,10 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
       assert_sql(expected, q2)
     end
 
-    test "subquery/set — %{id: %{any: %{>: subquery_expr}}}" do
+    test "subquery/set — %{id: %{>: %{any: subquery_expr}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
       expected = from(p in Post, where: p.id > any(subquery_expr))
-      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{any: %{>: subquery_expr}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{>: %{any: subquery_expr}}}, [])
 
       assert_sql(expected, q2)
     end
@@ -347,10 +351,10 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
       assert_sql(expected, q2)
     end
 
-    test "subquery/set — %{id: %{not: %{any: %{>: subquery_expr}}}}" do
+    test "subquery/set — %{id: %{not: %{>: %{any: subquery_expr}}}}" do
       subquery_expr = from(c in "comments", select: c.post_id)
       expected = from(p in Post, where: not (p.id > any(subquery_expr)))
-      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{not: %{any: %{>: subquery_expr}}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{not: %{>: %{any: subquery_expr}}}}, [])
 
       assert_sql(expected, q2)
     end

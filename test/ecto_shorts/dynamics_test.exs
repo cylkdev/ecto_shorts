@@ -572,7 +572,7 @@ defmodule EctoShorts.DynamicsTest do
     subquery_expr = from(c in "comments", select: c.post_id)
 
     actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{id: %{all: %{>: subquery_expr}}})
+      Dynamics.convert_to_dynamic(Post, binding, %{id: %{>: %{all: subquery_expr}}})
 
     expected = dynamic([q], field(q, ^:id) > all(subquery_expr))
 
@@ -584,7 +584,7 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{all: %{>: [source: Post, query: %{id: 1}]}}
+        id: %{>: %{all: [source: Post, query: %{id: 1}]}}
       })
 
     subquery_expr =
@@ -602,7 +602,7 @@ defmodule EctoShorts.DynamicsTest do
     subquery_expr = from(c in "comments", select: c.post_id)
 
     actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{id: %{not: %{all: %{>: subquery_expr}}}})
+      Dynamics.convert_to_dynamic(Post, binding, %{id: %{not: %{>: %{all: subquery_expr}}}})
 
     expected = dynamic([q], not (field(q, ^:id) > all(subquery_expr)))
 
@@ -614,7 +614,7 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{not: %{all: %{>: [source: Post, query: %{id: 1}]}}}
+        id: %{not: %{>: %{all: [source: Post, query: %{id: 1}]}}}
       })
 
     subquery_expr =
@@ -632,7 +632,7 @@ defmodule EctoShorts.DynamicsTest do
     subquery_expr = from(c in "comments", select: c.post_id)
 
     actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{id: %{any: %{>: subquery_expr}}})
+      Dynamics.convert_to_dynamic(Post, binding, %{id: %{>: %{any: subquery_expr}}})
 
     expected = dynamic([q], field(q, ^:id) > any(subquery_expr))
 
@@ -644,7 +644,7 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{any: %{>: [source: Post, query: %{id: 1}]}}
+        id: %{>: %{any: [source: Post, query: %{id: 1}]}}
       })
 
     subquery_expr =
@@ -662,7 +662,7 @@ defmodule EctoShorts.DynamicsTest do
     subquery_expr = from(c in "comments", select: c.post_id)
 
     actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{id: %{not: %{any: %{>: subquery_expr}}}})
+      Dynamics.convert_to_dynamic(Post, binding, %{id: %{not: %{>: %{any: subquery_expr}}}})
 
     expected = dynamic([q], not (field(q, ^:id) > any(subquery_expr)))
 
@@ -674,7 +674,7 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{not: %{any: %{>: [source: Post, query: %{id: 1}]}}}
+        id: %{not: %{>: %{any: [source: Post, query: %{id: 1}]}}}
       })
 
     subquery_expr =

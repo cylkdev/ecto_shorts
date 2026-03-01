@@ -90,23 +90,23 @@ Examples:
 
 ## Subquery and Set Comparison Rules
 
-**Rule 8:** When used with subqueries, the `:all` operator must wrap a comparison operator or a subquery expression.
+**Rule 8:** When used with subqueries, the `:all` operator must appear inside the value of a comparison operator, wrapping the subquery expression.
 
-The `:all` operator can be used to compare a field against all values returned by a subquery.
-
-Examples:
-- `%{id: %{all: %{>: subquery_expr}}}` - `:all` wraps the `>` operator
-- `%{id: %{all: subquery_expr}}` - `:all` wraps a subquery directly
-- `%{id: %{not: %{all: %{>: subquery_expr}}}}` - `:all` is wrapped by `:not`
-
-**Rule 9:** The `:any` operator must wrap comparison operators when comparing against any subquery result.
-
-The `:any` operator is used with subqueries and must contain a comparison operator or a subquery expression.
+The comparison operator is the outer key and `:all` wraps the subquery value, following the same pattern as arithmetic and date/time expressions. When no comparison operator is provided, `:all` defaults to `:==`.
 
 Examples:
-- `%{id: %{any: %{>: subquery_expr}}}` - `:any` wraps the `>` operator
-- `%{id: %{any: subquery_expr}}` - `:any` wraps a subquery directly
-- `%{id: %{not: %{any: %{>: subquery_expr}}}}` - `:any` is wrapped by `:not`
+- `%{id: %{>: %{all: subquery_expr}}}` - `>` wraps `:all` which wraps the subquery
+- `%{id: %{all: subquery_expr}}` - `:all` wraps a subquery directly (implicit `==`)
+- `%{id: %{not: %{>: %{all: subquery_expr}}}}` - `:not` wraps `>` which wraps `:all`
+
+**Rule 9:** The `:any` operator must appear inside the value of a comparison operator, wrapping the subquery expression.
+
+The comparison operator is the outer key and `:any` wraps the subquery value. When no comparison operator is provided, `:any` defaults to `:==`.
+
+Examples:
+- `%{id: %{>: %{any: subquery_expr}}}` - `>` wraps `:any` which wraps the subquery
+- `%{id: %{any: subquery_expr}}` - `:any` wraps a subquery directly (implicit `==`)
+- `%{id: %{not: %{>: %{any: subquery_expr}}}}` - `:not` wraps `>` which wraps `:any`
 
 ## Arithmetic Expression Rules
 
@@ -243,17 +243,17 @@ Examples:
 
 ## Notes on `:all`
 
-The `:all` operator is overloaded. Its meaning is determined by what it wraps.
+The `:all` operator is overloaded. Its meaning is determined by context.
 
-- If `:all` wraps a comparison operator or a subquery expression, it uses the subquery set-comparison meaning described in Rule 8.
-- If `:all` wraps `:in`, it uses the array “contains all values” meaning described in Rule 23.
+- When `:all` appears inside a comparison operator's value (e.g. `%{>: %{all: subquery}}`), it uses the subquery set-comparison meaning described in Rule 8.
+- When `:all` is used with `:in` (e.g. `%{tags: %{all: %{in: [...]}}}`), it uses the array "contains all values" meaning described in Rule 23.
 
 ## Summary
 
 Nesting order controls meaning.
 
-- Wrappers like `:not`, aggregate functions, `:all`, `:any`, and `:bind` wrap the operator or filter they apply to.
+- Wrappers like `:not`, aggregate functions, and `:bind` wrap the operator or filter they apply to.
 - Comparison and matching operators like `:in`, `:==`, `:>`, `:like`, and `:ilike` wrap values.
-- Value expressions like `:lower`, `:upper`, arithmetic operators, and date/time helpers appear inside comparison operator values.
+- Value expressions like `:lower`, `:upper`, arithmetic operators, `:all`, `:any`, and date/time helpers appear inside comparison operator values.
 - Logical operators like `:and` and `:or` wrap lists of conditions.
 - At the same level, special keys are applied in a fixed precedence order (for example `:where` before `:or_where`, and terminal filters last).

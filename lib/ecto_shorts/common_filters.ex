@@ -1,16 +1,22 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Converts maps and keyword lists of filter params into `Ecto.Query` structs.
+  Converts maps and keyword lists of filter params into `Ecto.Query` structs
+  using a data-driven filtering language.
 
-  Let's explore how you can build queries from data structures instead of
-  writing Ecto query macros by hand. We'll pass a schema module (or
-  `{source, schema}` tuple) together with a map or keyword list of params
-  to `convert_params_to_filter/3` and receive an `Ecto.Query` back.
+  Use this module when you want to build Ecto queries from plain data
+  structures instead of writing Ecto query macros by hand. Pass a schema
+  module (or `{source, schema}` tuple, or an existing `Ecto.Query`) together
+  with a map or keyword list of params to `convert_params_to_filter/3` and
+  receive an `Ecto.Query` back. Do not use this module to execute queries —
+  see `EctoShorts.Actions` for that. `EctoShorts.Dynamics` handles expression
+  compilation under the hood.
+
+  The single entry point is `convert_params_to_filter/3`.
 
   ## Getting started
 
-  Let's see how this works with a simple example:
+  Here is a simple example:
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(
       ...>   EctoShorts.Schema.Post,
@@ -20,112 +26,709 @@ defmodule EctoShorts.CommonFilters do
         where: p0.title == ^"Hello" and p0.published == ^true,
         limit: ^10>
 
-  You can see how the map parameters are automatically converted into
-  appropriate Ecto query clauses. The `title` and `published` fields become
-  `WHERE` conditions, while `limit` becomes a query operation.
+  The map parameters are automatically converted into Ecto query clauses.
+  The `title` and `published` fields become `WHERE` conditions, while
+  `limit` becomes a query operation.
 
-  ## Filtering
+  ## How the filtering language works
 
-  This api splits the action of filtering into two groups:
+  The filtering language is **data-driven** and follows a fixed
+  **order of precedence**. Think of every filter map as filling a row
+  of **slots** — certain keys may only appear in specific slots, and
+  the system always processes them in the same order regardless of
+  the order they appear in your map.
 
-  * Schema filters - Keys that match schema field names or associations.
+  There are two levels of precedence:
 
-  * Query filters - Reserved keys that map to Ecto query operations:
+  * **Top-level processing order** — controls which params are applied
+    to the query first when multiple keys appear in the same map.
 
-    - `:distinct`
-    - `:group_by`
-    - `:having`
-    - `:or_having`
-    - `:join`
-    - `:order_by`
-    - `:prepend_order_by`
-    - `:preload`
-    - `:select`
-    - `:select_merge`
-    - `:limit`
-    - `:offset`
-    - `:lock`
-    - `:union`
-    - `:union_all`
-    - `:except`
-    - `:except_all`
-    - `:intersect`
-    - `:intersect_all`
-    - `:exclude`
-    - `:first`
-    - `:last`
-    - `:put_query_prefix`
-    - `:recursive_ctes`
-    - `:reverse_order`
-    - `:subquery`
-    - `:with_cte`
-    - `:with_named_binding`
-    - `:with_ties`
-    - `:windows`
-    - `:update`
+  * **Field-level expression slots** — controls how keys nest inside
+    a single field expression.
 
-  > [!IMPORTANT]
-  > These keys are reserved. Reserved means those keys have a special meaning
-  > in this library and are handled internally. This will short-circuit the
-  > normal filter conversion process and instead be passed to the corresponding
-  > Ecto query operation. Avoid using schema field names or association names
-  > that match any of these keys to prevent unexpected behavior.
+  ### Top-level processing order
 
-  ## Binding Selector
+  When you pass a map with multiple keys, the system sorts them into
+  a fixed processing order before building the query:
 
-  One of the strengths of `Ecto.Query` is bindings which allows queries to be
-  composable. A binding is a variable that represents an entity in the query
-  (e.g. a schema, table or subquery). `Ecto.Query` provides [positional bindings](https://hexdocs.pm/ecto/Ecto.Query.html#module-positional-bindings)
-  and [named bindings](https://hexdocs.pm/ecto/Ecto.Query.html#module-named-bindings) as two
-  different ways to target a binding. This api supports both in what we
-  refer to as a "binding selector" in this library.
+      ┌───────────────────┐   ┌────────────┐   ┌──────────────────┐   ┌──────────────────┐
+      │ where / fields    │ → │ or_where   │ → │ query operations │ → │ terminal filters │
+      └───────────────────┘   └────────────┘   └──────────────────┘   └──────────────────┘
 
-  A binding selector is just a fancy way of saying "which binding are we
-  referring to?". It can be either a named binding or a positional binding.
+  * **where / fields** — Explicit `:where` keys and bare field keys
+    (like `published: true`) are processed first. They produce
+    `WHERE ... AND ...` conditions.
 
-  We use a map or keyword to represent this intent:
+  * **or_where** — Explicit `:or_where` keys are processed second.
+    They produce `OR` conditions.
 
-  ```elixir
-  %{bind: %{as: %{post: %{title: "Hello"}}}}  # named binding
-  %{bind: %{at: %{2 => %{title: "Hello"}}}}   # positional binding
-  ```
+  * **query operations** — Reserved keys like `:limit`, `:order_by`,
+    `:join`, `:preload`, etc. are processed next.
 
-  The `:bind` key is used as an explicit way to specify which binding you're
-  referring to in a query. This allows binding selectors to work nicely
-  with other data mappers. It also has an additional benefit of following
-  the filtering language used in EctoShorts which reads like a sentence.
+  * **terminal filters** — `:last` and `:subquery` are always
+    processed last because they wrap the entire query built so far.
 
-  For example, given this map:
+  For example, given this input:
+
+      %{published: true, or_where: %{published: false}, limit: 10, last: 2}
+
+  The processing order is:
+
+  1. `published: true` → adds `WHERE published = true`
+  2. `or_where: %{published: false}` → adds `OR published = false`
+  3. `limit: 10` → adds `LIMIT 10`
+  4. `last: 2` → wraps the query in a subquery that takes the last 2 rows
+
+  Input order does not matter — `%{last: 2, published: true, limit: 10,
+  or_where: %{published: false}}` produces the same query.
+
+  ### Field-level expression slots
+
+  Each field expression is a chain of nested maps. Every key type
+  occupies exactly one **slot** in the chain. The slots are processed
+  from outermost to innermost:
+
+      ┌───────┐   ┌─────┐   ┌───────────┐   ┌──────────┐   ┌──────────────────┐
+      │ field │ → │ not │ → │ aggregate │ → │ operator │ → │ value expression │
+      └───────┘   └─────┘   └───────────┘   └──────────┘   └──────────────────┘
+
+  * **Field** — the outermost key. A schema field name like `:views`
+    or `:title`.
+
+  * **Negation** (`:not`) — optional wrapper that negates everything
+    inside it.
+
+  * **Aggregate** (`:avg`, `:count`, `:sum`, `:max`, `:min`) —
+    optional wrapper that applies an aggregate function. Typically
+    used inside `:having`.
+
+  * **Operator** — the comparison or matching key. Symbol operators:
+    `:==`, `:!=`, `:>`, `:>=`, `:<`, `:<=`. Word aliases: `:eq`,
+    `:gt`, `:gte`, `:lt`, `:lte`. Membership: `:in`. String matching:
+    `:like`, `:ilike`.
+
+  * **Value expression** — the innermost value. Can be a literal, or
+    a special expression key: `:lower` / `:upper` (string transforms),
+    `:+` / `:-` / `:*` / `:/` (arithmetic), `:all` / `:any` (subquery
+    set comparison), `:datetime` / `:date` (date/time helpers).
+
+  Here is an example that fills every slot:
+
+      # field   not    aggregate  operator  value expression
+      %{views: %{not: %{avg:     %{>:      %{+: [:views, 10]}}}}}
+
+  Not every slot needs to be filled. A simple equality filter only
+  uses the field slot and a literal value:
+
+      %{title: "hello"}
+
+  A comparison adds the operator slot:
+
+      %{views: %{>: 10}}
+
+  A negated comparison adds the not slot:
+
+      %{views: %{not: %{>: 10}}}
+
+  ## Field equality
+
+  The simplest filter. When a field key maps directly to a value, it
+  produces a `WHERE field = value` condition:
+
+      %{title: "hello"}
+      %{published: true}
+      %{id: 1}
+
+  When the value is `nil`, it produces `IS NULL`:
+
+      %{published_at: nil}
+
+  When the value is a non-keyword list, it produces `IN`:
+
+      %{published: [true, false]}
+
+  You can pass params as maps, keyword lists, or lists of either:
+
+      # keyword list
+      [id: 1]
+
+      # list of maps (each entry becomes a separate WHERE clause)
+      [%{id: 1}, %{published: true}]
+
+      # list of keyword lists
+      [[id: 1], [published: true]]
+
+  ## Comparison operators
+
+  Wrap a field value in a map with an operator key to use a specific
+  comparison. **Symbol operators:**
+
+      %{id: %{==: 1}}          # WHERE id = 1
+      %{views: %{!=: 10}}      # WHERE views != 10
+      %{views: %{>: 10}}       # WHERE views > 10
+      %{views: %{>=: 10}}      # WHERE views >= 10
+      %{views: %{<: 10}}       # WHERE views < 10
+      %{views: %{<=: 10}}      # WHERE views <= 10
+
+  **Word aliases** produce the same SQL:
+
+      %{id: %{eq: 1}}          # same as %{id: %{==: 1}}
+      %{views: %{gt: 10}}      # same as %{views: %{>: 10}}
+      %{views: %{gte: 10}}     # same as %{views: %{>=: 10}}
+      %{views: %{lt: 10}}      # same as %{views: %{<: 10}}
+      %{views: %{lte: 10}}     # same as %{views: %{<=: 10}}
+
+  **Membership** with `:in`:
+
+      %{published: %{in: [true, false]}}   # WHERE published IN (true, false)
+      %{id: %{in: [1, 2, 3]}}             # WHERE id IN (1, 2, 3)
+
+  **List coercion** — `:==` with a list coerces to `IN`, `:!=` with a
+  list coerces to `NOT IN`:
+
+      %{published: %{==: [true, false]}}   # WHERE published IN (true, false)
+      %{published: %{!=: [true, false]}}   # WHERE published NOT IN (true, false)
+
+  **Nil comparisons** — `:==` with `nil` produces `IS NULL`, `:!=`
+  with `nil` produces `IS NOT NULL`. Only `:==`, `:eq`, and `:!=` are
+  valid operators for `nil`:
+
+      %{published_at: %{==: nil}}   # WHERE published_at IS NULL
+      %{published_at: %{!=: nil}}   # WHERE published_at IS NOT NULL
+
+  ## Negation
+
+  The `:not` key wraps and negates any expression inside it. It
+  occupies the **negation slot** in the field-level chain:
+
+      %{views: %{not: %{>: 10}}}              # WHERE NOT (views > 10)
+      %{views: %{not: %{>=: 10}}}             # WHERE NOT (views >= 10)
+      %{views: %{not: %{==: 10}}}             # WHERE views != 10
+      %{views: %{not: %{!=: 10}}}             # WHERE views == 10
+
+  Negating `:in`:
+
+      %{published: %{not: %{in: [true, false]}}}   # WHERE published NOT IN (...)
+
+  Negating `:==` / `:!=` with lists:
+
+      %{published: %{not: %{==: [true, false]}}}    # WHERE published NOT IN (...)
+      %{published: %{not: %{!=: [true, false]}}}    # WHERE published IN (...)
+
+  Negating aggregates:
+
+      %{views: %{not: %{avg: %{>: 10}}}}   # HAVING NOT (avg(views) > 10)
+
+  ## String matching
+
+  The `:like` and `:ilike` operators perform pattern matching. The
+  system automatically wraps patterns with `%` wildcards:
+
+      %{title: %{like: "hello"}}       # WHERE title LIKE '%hello%'
+      %{title: %{ilike: "hello"}}      # WHERE title ILIKE '%hello%'
+
+  Pass a list of patterns to match any of them:
+
+      %{title: %{like: ["hello", "world"]}}    # WHERE title LIKE ANY(...)
+      %{title: %{ilike: ["hello", "world"]}}   # WHERE title ILIKE ANY(...)
+
+  Negate with `:not`:
+
+      %{title: %{not: %{like: "hello"}}}                # WHERE NOT (title LIKE '%hello%')
+      %{title: %{not: %{ilike: ["hello", "world"]}}}    # WHERE NOT (title ILIKE ANY(...))
+
+  ## String transformations
+
+  The `:lower` and `:upper` keys appear inside the **value expression
+  slot** of a comparison operator. They transform the field before
+  comparing:
+
+      %{title: %{==: %{lower: "hello"}}}    # WHERE lower(title) = 'hello'
+      %{title: %{!=: %{upper: "HELLO"}}}    # WHERE upper(title) != 'HELLO'
+
+  Combine with negation:
+
+      %{title: %{not: %{==: %{lower: "hello"}}}}   # WHERE lower(title) != 'hello'
+
+  ## Aggregate functions
+
+  Aggregate keys (`:avg`, `:count`, `:sum`, `:max`, `:min`) occupy the
+  **aggregate slot** and wrap a comparison operator. They are typically
+  used inside a `:having` clause:
+
+      %{group_by: :author_id, having: %{views: %{avg: %{>: 10}}}}
+      %{group_by: :author_id, having: %{views: %{count: %{>: 10}}}}
+      %{group_by: :author_id, having: %{views: %{sum: %{>: 10}}}}
+
+  When an aggregate receives a non-operator value directly, it defaults
+  to `:==`:
+
+      %{views: %{avg: 10}}   # equivalent to %{views: %{avg: %{==: 10}}}
+
+  Negate an aggregate by wrapping it with `:not`:
+
+      %{views: %{not: %{avg: %{>: 10}}}}   # HAVING NOT (avg(views) > 10)
+
+  ## Arithmetic expressions
+
+  Arithmetic operators (`:+`, `:-`, `:*`, `:/`) appear inside the
+  **value expression slot** of a comparison. They take a two-element
+  list `[field_or_value, field_or_value]`:
+
+      %{views: %{>: %{+: [:views, 10]}}}    # WHERE views > views + 10
+      %{views: %{>: %{-: [:views, 10]}}}    # WHERE views > views - 10
+      %{views: %{>: %{*: [:views, 2]}}}     # WHERE views > views * 2
+      %{views: %{>: %{/: [:views, 2]}}}     # WHERE views > views / 2
+
+  Combine with negation:
+
+      %{views: %{not: %{>: %{+: [:views, 10]}}}}   # WHERE NOT (views > views + 10)
+
+  ## Date and time expressions
+
+  Date/time type wrappers (`:datetime`, `:date`) occupy the **value
+  expression slot** and wrap an operation (`:add`, `:ago`, `:from_now`):
+
+  **`:add`** — adds an interval to a field value:
+
+      %{inserted_at: %{>=: %{datetime: %{add: %{field: :inserted_at, count: 1, interval: "day"}}}}}
+      # WHERE inserted_at >= datetime_add(inserted_at, 1, 'day')
+
+      %{inserted_at: %{>=: %{date: %{add: %{field: :inserted_at, count: 1, interval: "day"}}}}}
+      # WHERE inserted_at >= date_add(inserted_at, 1, 'day')
+
+  **`:ago`** — compares against a point in the past:
+
+      %{inserted_at: %{>: %{datetime: %{ago: %{count: 1, interval: "day"}}}}}
+      # WHERE inserted_at > (now - 1 day)
+
+  **`:from_now`** — compares against a point in the future:
+
+      %{inserted_at: %{>: %{datetime: %{from_now: %{count: 1, interval: "day"}}}}}
+      # WHERE inserted_at > (now + 1 day)
+
+  Combine with negation:
+
+      %{inserted_at: %{not: %{>=: %{datetime: %{add: %{field: :inserted_at, count: 1, interval: "day"}}}}}}
+
+  ## Subquery and set comparisons
+
+  The `:all` and `:any` keys appear inside the **value expression slot**
+  of a comparison operator. They wrap a subquery expression:
+
+      subquery_expr = from(c in "comments", select: c.post_id)
+
+      %{id: %{>: %{all: subquery_expr}}}    # WHERE id > ALL(subquery)
+      %{id: %{>: %{any: subquery_expr}}}    # WHERE id > ANY(subquery)
+
+  When no comparison operator is provided, they default to `:==`:
+
+      %{id: %{all: subquery_expr}}    # WHERE id = ALL(subquery)
+      %{id: %{any: subquery_expr}}    # WHERE id = ANY(subquery)
+
+  You can pass a query-builder payload instead of a pre-built subquery:
+
+      %{id: %{>: %{all: [source: Post, query: %{id: 1}]}}}
+
+  Combine with negation:
+
+      %{id: %{not: %{>: %{all: subquery_expr}}}}   # WHERE NOT (id > ALL(subquery))
+      %{id: %{not: %{all: subquery_expr}}}          # WHERE id != ALL(subquery)
+
+  ## Logical operators
+
+  ### Field-level `:and` and `:or`
+
+  At the field level, `:and` and `:or` combine multiple conditions on
+  the same field. They wrap a keyword list of operator expressions:
+
+      %{views: %{and: [>: 10, <: 20]}}             # WHERE views > 10 AND views < 20
+      %{views: %{or: [>: 10, <: 5]}}               # WHERE views > 10 OR views < 5
+      %{published: %{or: [==: true, ==: false]}}    # WHERE published = true OR published = false
+
+  An empty list is a no-op — the query is returned unchanged:
+
+      %{views: %{and: []}}
+
+  ### Top-level `:and` and `:or`
+
+  At the top level, `:and` and `:or` combine multiple complete filter
+  conditions. They wrap a list of keyword lists (or maps):
+
+      %{or: [[published: true, views: 20], [published: false, views: 10]]}
+      # WHERE (published = true AND views = 20) OR (published = false AND views = 10)
+
+      %{and: [[published: true, views: 20], [title: "hello", views: 15]]}
+      # WHERE (published = true AND views = 20) AND (title = 'hello' AND views = 15)
+
+  You can mix top-level `:or` with regular field filters:
+
+      [title: "test", or: [[published: true, views: 20], [published: false, views: 10]]]
+      # WHERE title = 'test' AND ((published AND views = 20) OR (NOT published AND views = 10))
+
+  Nested field-level operators work inside top-level logical operators:
+
+      %{or: [[views: %{>: 10}, published: true], [views: %{<: 5}, published: false]]}
+
+  ## Schema filter precedence
+
+  The `:where` and `:or_where` keys give explicit control over how
+  conditions are grouped. The system processes them in a fixed order:
+
+  1. Explicit `:where` and bare field filters are processed **first**.
+  2. Explicit `:or_where` is processed **second**.
+
+  Bare field filters behave as implicit `:where` filters:
+
+      # These two are equivalent:
+      %{published: true, or_where: %{published: false}}
+      %{where: %{published: true}, or_where: %{published: false}}
+      # Both produce: WHERE published = true OR published = false
+
+  This ordering is deterministic regardless of map key order:
+
+      # Even though or_where appears first in the keyword list,
+      # the field filter published: true is processed first:
+      [or_where: %{views: %{or: [>: 10, <: 5]}}, published: true]
+      # Produces: WHERE published = true OR (views > 10 OR views < 5)
+
+  Explicit `:where` accepts a map or keyword list of filters:
+
+      %{where: %{published: true, views: 10}}
+      %{where: [published: true, views: 10]}
+
+  ## Array fields
+
+  Array fields (like `{:array, :string}`) support special operators
+  that check array membership or equality:
+
+      %{tags: "elixir"}                    # WHERE 'elixir' = ANY(tags)
+      %{tags: %{in: ["elixir"]}}           # WHERE tags @> ARRAY['elixir']
+      %{tags: %{==: ["elixir", "erlang"]}} # WHERE tags = ARRAY['elixir', 'erlang']
+      %{tags: %{!=: ["elixir"]}}           # WHERE tags != ARRAY['elixir']
+
+  Use `:all` with `:in` to require all values:
+
+      %{tags: %{all: %{in: ["elixir", "erlang"]}}}   # WHERE tags @> ARRAY['elixir', 'erlang']
+
+  Negate with `:not`:
+
+      %{tags: %{not: %{in: ["elixir"]}}}                  # negated containment
+      %{tags: %{not: %{all: %{in: ["elixir", "erlang"]}}}} # negated "contains all"
+
+  Array fields also support comparison, string matching, string
+  transforms, and aggregate operators — all following the same
+  slot-based nesting rules:
+
+      %{tags: %{count: %{>: 0}}}           # HAVING count(tags) > 0
+      %{tags: %{like: "elixir"}}           # WHERE tags LIKE '%elixir%'
+      %{tags: %{==: %{lower: "elixir"}}}   # WHERE lower(tags) = 'elixir'
+
+  > #### Overloaded `:all` {: .warning}
+  >
+  > The `:all` operator is overloaded. Its meaning depends on context:
+  >
+  > * Inside a comparison value (e.g. `%{>: %{all: subquery}}`) — subquery
+  >   set comparison (see ["Subquery and set comparisons"](#module-subquery-and-set-comparisons)).
+  > * With `:in` on an array field (e.g. `%{tags: %{all: %{in: [...]}}}`) —
+  >   array "contains all values" check.
+
+  ## Binding selectors
+
+  The `:bind` key targets a specific binding in a query. This is
+  useful for queries with joins where you need to filter or apply
+  operations on a specific binding.
+
+  **Named bindings** use `:as`:
+
+      # Given a query: from(p in Post, as: :post)
+      %{bind: %{as: %{post: %{published: true}}}}
+      # Produces: WHERE p.published = true (on the :post binding)
+
+  **Positional bindings** use `:at`:
+
+      %{bind: %{at: %{1 => %{published: true}}}}
+      # Targets binding at position 1
+
+  **Multiple bindings** in a single call:
+
+      # Given a query with :post and :author named bindings:
+      %{bind: %{as: [post: %{published: true}, author: %{first_name: "John"}]}}
+
+  Binding selectors also work with **query operations** — not just
+  field filters. You can target `:order_by`, `:group_by`, `:having`,
+  `:distinct`, `:windows`, `:update`, and other operations at a
+  specific binding:
+
+      %{bind: %{as: %{author: %{order_by: %{asc: :first_name}}}}}
+      %{bind: %{at: %{2 => %{group_by: :first_name}}}}
+
+  You can read a binding selector as a sentence. For example:
 
       %{bind: %{as: %{post: %{title: "Hello"}}}}
 
-  We would read it as:
+  reads as: "Bind the query to the named binding `:post`, and return
+  the records where the title equals `\"Hello\"`."
 
-      "Bind the query to the named binding :post, and return the records where the title equals \"Hello\"."
+  ## Query operations
 
-  This is useful when you have complex queries or queries that are pre-composed
-  with multiple joins and need to specify which binding you're referring to.
-  This works for existing queries as well as new queries which allows you to
-  easily build data-driven workflows on top of EctoShorts.
+  Query operation keys are **reserved**. They short-circuit normal
+  filter conversion and map directly to Ecto query operations. Avoid
+  using schema field names or association names that match any of
+  these keys.
 
-  Unknown keys that are not schema fields are logged as warnings and
-  skipped for that filter entry.
+  ### Select
 
-  Invalid query-building payloads are also logged as warnings and skipped for
-  the failing operation, so the rest of the query can continue building.
+      %{select: true}                          # SELECT p.*
+      %{select: :id}                           # SELECT p.id
+      %{select: [:id, :title]}                 # SELECT p.id, p.title
+      %{select: %{map: [:id, :title]}}         # SELECT map(p, [:id, :title])
+      %{select: %{map: %{custom_id: :id}}}     # SELECT p.id AS custom_id
+      %{select: %{struct: [:id]}}              # SELECT struct(p, [:id])
 
-  ## Boolean operators
+      %{select_merge: %{map: %{custom_id: :id}}}
+      %{select_merge: %{map: [:id, :title]}}
 
-  Let's see how you can combine conditions using `:and` and `:or` operators:
+  Combine both:
 
-      %{or: [%{published: true}, %{published: false}]}
-      %{and: [%{title: "Hi"}, %{published: true}]}
+      [select: %{map: [:id]}, select_merge: %{map: %{post_title: :title}}]
 
-  These operators give you fine-grained control over your query logic,
-  allowing you to build complex conditions while keeping your code readable.
+  ### Ordering
 
-  See also `EctoShorts.Dynamics`, `EctoShorts.CommonFilters.Having`, and
-  `EctoShorts.Actions` for more advanced query building capabilities.
+      %{order_by: :title}                           # ORDER BY title DESC
+      %{order_by: [desc: :title]}                   # ORDER BY title DESC
+      %{order_by: [asc: :title, desc: :id]}         # ORDER BY title ASC, id DESC
+      %{order_by: %{desc: :title}}                  # ORDER BY title DESC
+      %{prepend_order_by: :title}                   # prepends to existing order_by
+      %{prepend_order_by: [asc: :published_at, desc: :title]}
+      %{reverse_order: true}                        # reverses existing order_by
+
+  ### Grouping
+
+      %{group_by: :author_id}
+      %{group_by: [:author_id, :published]}
+
+  ### Having
+
+  The `:having` and `:or_having` keys accept the same filter language
+  used for `:where` — including comparison operators, aggregates,
+  logical operators, and dynamic expressions:
+
+      %{having: %{published: true}}
+      %{having: %{views: %{>: 10}}}
+      %{having: %{views: %{avg: %{>: 10}}}}
+      %{having: dynamic([p], p.views > ^10)}
+      %{having: [and: [published: true, views: %{>: 10}]]}
+      %{having: [or: [views: %{>: 10}, views: %{<: 5}]]}
+      %{or_having: %{views: %{<: 5}}}
+
+  ### Pagination
+
+      %{limit: 10}
+      %{offset: 5}
+      %{first: 10}            # delegates to :limit
+
+  The `:last` key is a **terminal filter** — it wraps the entire query
+  in a subquery that reverses the order and takes the last N rows:
+
+      %{last: 2}                 # last 2 rows by primary key
+      %{last: %{title: 2}}      # last 2 rows ordered by :title
+      %{last: [title: 2]}       # same as above
+      %{last: {nil, 2}}         # explicit nil uses primary key
+
+  ### Distinct
+
+      %{distinct: true}
+      %{distinct: false}
+      %{distinct: :title}
+      %{distinct: [desc: :title]}
+      %{distinct: %{desc: :title}}
+
+  ### Joins
+
+  The `:join` key supports multiple join sources:
+
+      # Association join
+      %{join: [author: [as: :author]]}
+
+      # Schema join
+      %{join: [schema: [source: User, as: :user_join, on: true]]}
+
+      # Table join
+      %{join: [table: [source: "users", as: :users_table, on: true]]}
+
+      # Query join
+      %{join: [query: [source: user_query, as: :adult_users, on: true]]}
+
+      # Subquery join
+      %{join: [subquery: [source: user_query, as: :name, on: true]]}
+      %{join: [subquery: [source: [source: User, query: [age: [>=: 18]]], as: :name, on: true]]}
+
+      # Fragment join
+      %{join: [fragment: [source: %{name: :active_users, values: [min_age: 21]}, as: :active_users, on: true]]}
+
+      # Multiple joins in one call
+      %{join: [author: [as: :author], table: [source: "users", as: :users_table, on: true]]}
+
+  ### Association shorthand
+
+  When a key matches an association name, you can filter on the
+  associated schema using a keyword list. This automatically creates
+  a join and applies the filters to the joined binding:
+
+      %{author: [as: :author, first_name: "John"]}
+      %{author: [first_name: "John"]}
+      %{author: [as: :author, type: :left, first_name: "John"]}
+      %{author: [as: :author, on: true, first_name: "John"]}
+
+  The optional keys `:as`, `:on`, and `:type` configure the join.
+  All remaining keys are treated as filters on the associated schema.
+
+  ### Preload
+
+      %{preload: :author}
+      %{preload: [:author]}
+      %{preload: [author: [:posts]]}
+
+  Preloads also support binding selectors:
+
+      %{preload: [bind: [as: [example: :author]]]}
+      %{preload: [bind: [at: %{2 => :author}]]}
+      %{preload: [bind: [as: [author: :author]], posts: [:comments]]}
+
+  ### Set operations
+
+      %{union: %{published: false}}
+      %{union_all: %{published: false}}
+      %{except: %{published: false}}
+      %{except_all: %{published: false}}
+      %{intersect: %{published: false}}
+      %{intersect_all: %{published: false}}
+
+  You can also pass a pre-built query:
+
+      %{except: from(p in Post, where: p.published == ^false)}
+
+  ### Subquery
+
+  The `:subquery` key is a **terminal filter** — it wraps the entire
+  query (with all filters applied) as a subquery:
+
+      %{subquery: %{id: 2}}
+      %{subquery: [id: 2]}
+
+  ### Lock
+
+      %{lock: fn query -> from(p in query, lock: "FOR UPDATE") end}
+      %{lock: %{name: :for_share, values: []}}
+      %{lock: [name: :for_share, values: []]}
+
+  ### Common Table Expressions (CTEs)
+
+      %{recursive_ctes: true}
+      %{with_cte: [published_posts: [as: cte_query]]}
+      %{with_cte: %{published_posts: %{as: cte_query}}}
+      %{with_cte: [published_posts: [as: cte_query, materialized: false, operation: :all]]}
+      %{with_cte: [published_posts: [as: %{source: Post, query: %{published: true}}]]}
+
+  ### Named bindings
+
+      %{with_named_binding: [author: %{join: [association: [source: :author, as: :author]]}]}
+      %{with_named_binding: %{author: %{join: [association: [source: :author, as: :author]]}}}
+
+  ### Windows
+
+      %{windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]}
+      %{windows: %{post_window: %{partition_by: :author_id, order_by: [desc: :inserted_at]}}}
+
+  ### With ties
+
+      %{with_ties: true}
+      %{with_ties: false}
+      %{with_ties: %{bind: %{as: %{post: true}}}}
+      %{with_ties: %{bind: %{at: %{1 => true}}}}
+
+  ### Update
+
+      %{update: [set: [title: "After"], inc: [views: 1]]}
+      %{update: %{set: %{title: "After"}}}
+
+  ### Exclude
+
+  Removes existing query expressions:
+
+      %{exclude: :order_by}
+      %{exclude: [:order_by, :limit]}
+
+  ### Query prefix
+
+      %{put_query_prefix: "tenant_a"}
+
+  ## Custom convenience filters
+
+  These built-in keys are not standard Ecto operations but provide
+  common shortcuts:
+
+      %{ids: [1, 2, 3]}                          # WHERE id IN (1, 2, 3)
+      %{after: 10}                               # WHERE id > 10
+      %{before: 10}                              # WHERE id < 10
+      %{start_date: ~U[2026-01-01 00:00:00Z]}    # WHERE inserted_at >= value
+      %{end_date: ~U[2026-12-31 23:59:59Z]}      # WHERE inserted_at <= value
+
+  ## Dynamic expressions
+
+  The `:dynamic` key accepts an `Ecto.Query.DynamicExpr` and applies
+  it directly:
+
+      %{dynamic: dynamic([p], p.views > ^10)}
+
+  Inside `:where` or `:or_where`:
+
+      %{where: %{dynamic: dynamic([p], p.published == ^true)}}
+      %{or_where: %{dynamic: dynamic([p], p.views > ^100)}}
+
+  ## Exists
+
+  The `:exists` key checks for the existence of rows in a subquery.
+  Use it inside `:where`:
+
+      %{where: %{exists: subquery_expr}}
+      %{where: %{exists: %{not: subquery_expr}}}
+
+  ## Source and query params
+
+  The `:source` and `:query` meta-keys allow overriding the schema
+  source and merging additional query params:
+
+      [source: Post, id: 1]
+      [source: Post, query: %{id: 1}]
+      [source: "posts", query: %{select: [:id]}]
+      [query: %{id: 1}, published: true]
+
+  When the source is a bare table name string (no schema module), and
+  no `:select` is provided, the system automatically adds
+  `select: true` to ensure the query has a select clause.
+
+  ## Error handling
+
+  This module follows a **warn-and-skip** model. Invalid filter data
+  never raises an exception:
+
+  * **Unknown keys** that are not schema fields or reserved keys are
+    logged as warnings and skipped.
+
+  * **Invalid payloads** (wrong types, malformed maps) are logged as
+    warnings and the failing operation is skipped.
+
+  * The rest of the query continues building normally. Only the
+    invalid entry is dropped.
+
+  This makes the module safe to use with user-provided data where
+  some keys may be unexpected.
+
+  See also `EctoShorts.Actions` for executing queries,
+  `EctoShorts.Dynamics` for expression compilation, and
+  `EctoShorts.CommonFilters.Having` for advanced having clauses.
   """
 
   alias EctoShorts.CommonSchema
@@ -197,33 +800,35 @@ defmodule EctoShorts.CommonFilters do
   @doc """
   Converts filter params into an `Ecto.Query`.
 
-  Let's see how we can transform your filter parameters into a fully-formed
-  Ecto query. You'll provide a `source` (schema module, `{source, schema}` tuple,
-  or `Ecto.Query`), `params` (map or keyword list of filter params), and optional
-  `opts` that get forwarded to all sub-query builders.
+  `source` is a schema module, `{source, schema}` tuple, or an existing
+  `Ecto.Query`. `params` is a map or keyword list of filter params.
+  `opts` are forwarded to all sub-query builders.
 
-  We automatically convert schema field keys into `WHERE` conditions for you.
-  Query filter keys like `:limit`, `:order_by`, `:preload`, etc. are applied as
-  the corresponding Ecto query operations. If we encounter unknown keys that aren't
-  in the schema's `:query_fields`, we'll log warnings and skip only the failing
-  filter operation. Invalid query-building operations also log warnings and are
-  skipped instead of raising.
+  Schema field keys become `WHERE` conditions. Reserved query operation
+  keys (`:limit`, `:order_by`, `:join`, etc.) become the corresponding
+  Ecto query operations. Unknown keys log a warning and are skipped.
+  Invalid payloads also log a warning and are skipped — the rest of the
+  query continues building.
 
-  You'll receive back an `Ecto.Query` struct with all your parameters applied,
-  ready to use with your repository.
+  Returns an `Ecto.Query` struct with all params applied.
+
+  See the [moduledoc](`m:EctoShorts.CommonFilters`) for the complete
+  filtering language reference, including the
+  [slot-based expression model](#module-field-level-expression-slots),
+  [top-level processing order](#module-top-level-processing-order),
+  and all supported [query operations](#module-query-operations).
 
   ## Options
 
-  * `:repo` - the `Ecto.Repo` module used to resolve the dynamic expression
-    adapter. Defaults to `EctoShorts.Config.repo/0`.
-  * `:dynamic_adapter` - a module implementing `EctoShorts.Dynamics.Adapter`
-    for this call. Defaults to resolved from repo.
-  * `:query_fields` - list of field atoms to limit which fields are accepted
-    as schema filters.
+  * `:repo` (default: `EctoShorts.Config.repo/0`) - the `Ecto.Repo`
+    module used to resolve the dynamic expression adapter.
+  * `:dynamic_adapter` - a module implementing
+    `EctoShorts.Dynamics.Adapter` for this call. Defaults to the
+    adapter resolved from `:repo`.
+  * `:query_fields` - list of field atoms to limit which fields are
+    accepted as schema filters.
 
   ## Examples
-
-  Let's start with a simple field filter:
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(
       ...>   EctoShorts.Schema.Post,
@@ -231,16 +836,12 @@ defmodule EctoShorts.CommonFilters do
       ...> )
       #Ecto.Query<from p0 in EctoShorts.Schema.Post, where: p0.title == ^"Hello">
 
-  Now let's see how we can combine conditions with OR logic:
-
       iex> EctoShorts.CommonFilters.convert_params_to_filter(
       ...>   EctoShorts.Schema.Post,
       ...>   %{published: true, or_where: %{published: false}}
       ...> )
       #Ecto.Query<from p0 in EctoShorts.Schema.Post,
         where: p0.published == ^true or p0.published == ^false>
-
-  Finally, let's add some query operations like ordering and limiting:
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(
       ...>   EctoShorts.Schema.Post,
@@ -250,7 +851,7 @@ defmodule EctoShorts.CommonFilters do
         order_by: [desc: p0.inserted_at], limit: ^5>
 
   See also `EctoShorts.Actions.all/3`, `EctoShorts.Dynamics`, and
-  `EctoShorts.CommonFilters.Having` for more ways to work with queries.
+  `EctoShorts.CommonFilters.Having`.
   """
   @spec convert_params_to_filter(
           source :: module() | {binary(), module()} | Ecto.Query.t(),
