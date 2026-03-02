@@ -1,12 +1,12 @@
 defmodule EctoShorts.CommonFilters.BindingParams do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Routes `:bind` params to the correct binding selector.
+  Normalizes `:bind` params into `{binding_selector, value}` tuples.
 
   When a filter params map contains a `:bind` key, this module unpacks
-  flat bind entries and dispatches each one back to
-  `CommonFilters.create_schema_filter/6` with the appropriate binding
-  selector.
+  flat bind entries and normalizes each one into a
+  `{binding_selector, value}` tuple that callers reduce over to apply
+  filters or query operations to the correct binding.
 
   Each bind entry is a flat map (or keyword list) containing an `:as`
   or `:at` key that identifies the binding target. All other keys in
@@ -32,160 +32,10 @@ defmodule EctoShorts.CommonFilters.BindingParams do
       %{bind: [%{as: :post, published: true}, %{as: :author, first_name: "John"}]}
   """
 
-  alias EctoShorts.CommonFilters
   alias EctoShorts.CommonQuery
-  alias EctoShorts.Config
   alias EctoShorts.Logger
 
   @logger_prefix "EctoShorts.CommonFilters.BindingParams"
-
-  def build_binding_params(
-        schema_source,
-        query,
-        _binding_selector,
-        filter_op,
-        bind_params,
-        opts
-      )
-      when is_map(bind_params) and not is_struct(bind_params) do
-    apply_flat_bind_entry(schema_source, query, bind_params, filter_op, opts)
-  end
-
-  def build_binding_params(
-        schema_source,
-        query,
-        _binding_selector,
-        filter_op,
-        bind_params,
-        opts
-      )
-      when is_list(bind_params) do
-    if Keyword.keyword?(bind_params) and
-         (Keyword.has_key?(bind_params, :as) or Keyword.has_key?(bind_params, :at)) do
-      apply_flat_bind_entry(schema_source, query, Map.new(bind_params), filter_op, opts)
-    else
-      Enum.reduce(bind_params, query, fn
-        entry, query_acc when is_map(entry) and not is_struct(entry) ->
-          apply_flat_bind_entry(schema_source, query_acc, entry, filter_op, opts)
-
-        entry, query_acc when is_list(entry) ->
-          if Keyword.keyword?(entry) do
-            apply_flat_bind_entry(schema_source, query_acc, Map.new(entry), filter_op, opts)
-          else
-            Logger.warning(
-              @logger_prefix,
-              "Expected :bind entry to be a map or keyword list, got: #{inspect(entry)}"
-            )
-
-            query_acc
-          end
-
-        entry, query_acc ->
-          Logger.warning(
-            @logger_prefix,
-            "Expected :bind entry to be a map, got: #{inspect(entry)}"
-          )
-
-          query_acc
-      end)
-    end
-  end
-
-  def build_binding_params(
-        _schema_source,
-        query,
-        _binding_selector,
-        _filter_op,
-        bind_params,
-        _opts
-      ) do
-    Logger.warning(
-      @logger_prefix,
-      "Expected :bind payload to be a map or list of maps, got: #{inspect(bind_params)}"
-    )
-
-    query
-  end
-
-  defp apply_flat_bind_entry(schema_source, query, entry, filter_op, opts) do
-    entry_kw = if is_map(entry), do: Map.to_list(entry), else: entry
-
-    cond do
-      Keyword.has_key?(entry_kw, :as) ->
-        {bind_alias, filters} = Keyword.pop(entry_kw, :as)
-        apply_as_binding(schema_source, query, bind_alias, filters, filter_op, opts)
-
-      Keyword.has_key?(entry_kw, :at) ->
-        {bind_target, filters} = Keyword.pop(entry_kw, :at)
-
-        case resolve_at_target(bind_target, query) do
-          :error -> query
-          binding_selector -> apply_at_binding(schema_source, query, binding_selector, filters, filter_op, opts)
-        end
-
-      true ->
-        Logger.warning(
-          @logger_prefix,
-          "Expected :bind entry to have an :as or :at key, got: #{inspect(entry)}"
-        )
-
-        query
-    end
-  end
-
-  defp apply_as_binding(schema_source, query, bind_alias, filters, filter_op, opts)
-       when is_atom(bind_alias) and not is_nil(bind_alias) do
-    CommonFilters.create_schema_filter(
-      schema_source,
-      query,
-      {:as, bind_alias},
-      filter_op,
-      filters,
-      opts
-    )
-  end
-
-  defp apply_as_binding(_schema_source, query, bind_alias, _filters, _filter_op, _opts) do
-    Logger.warning(
-      @logger_prefix,
-      "Expected :as value to be a non-nil atom, got: #{inspect(bind_alias)}"
-    )
-
-    query
-  end
-
-  defp apply_at_binding(schema_source, query, {:at, bind_index} = binding_selector, filters, filter_op, opts)
-       when is_integer(bind_index) do
-    max = Config.max_binding_positions()
-
-    if bind_index > max do
-      Logger.warning(
-        @logger_prefix,
-        "Binding position #{bind_index} exceeds the configured :max_binding_positions (#{max}). " <>
-          "Increase :max_binding_positions in your config to support more positional bindings."
-      )
-
-      query
-    else
-      CommonFilters.create_schema_filter(
-        schema_source,
-        query,
-        binding_selector,
-        filter_op,
-        filters,
-        opts
-      )
-    end
-  end
-
-  defp apply_at_binding(_schema_source, query, binding_selector, _filters, _filter_op, _opts) do
-    Logger.warning(
-      @logger_prefix,
-      "Expected :at value to be an integer, :first, or :last, got: #{inspect(elem(binding_selector, 1))}"
-    )
-
-    query
-  end
 
   defp resolve_at_target(:first, _query), do: {:at, 1}
   defp resolve_at_target(:last, query), do: {:at, CommonQuery.query_binding_count(query)}

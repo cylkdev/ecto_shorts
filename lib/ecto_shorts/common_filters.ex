@@ -854,10 +854,12 @@ defmodule EctoShorts.CommonFilters do
     Update
   }
 
+  alias EctoShorts.Config
   alias EctoShorts.Logger
   alias EctoShorts.SchemaHelpers
 
   @logger_prefix "EctoShorts.CommonFilters"
+  @binding_params_prefix "EctoShorts.CommonFilters.BindingParams"
 
   @binding_selector_key :bind
   @binding_modes [:as, :at]
@@ -1107,19 +1109,58 @@ defmodule EctoShorts.CommonFilters do
   def create_schema_filter(
         schema_source,
         query,
-        binding_selector,
+        _binding_selector,
         filter_op,
         {@binding_selector_key, bind_params},
         opts
       ) do
-    BindingParams.build_binding_params(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      bind_params,
-      opts
-    )
+    bind_params
+    |> BindingParams.normalize_bind_params(query)
+    |> Enum.reduce(query, fn
+      {{:as, nil}, []}, q ->
+        q
+
+      {{:as, nil}, _value}, q ->
+        Logger.warning(
+          @binding_params_prefix,
+          "Expected :as value to be a non-nil atom, got: nil"
+        )
+
+        q
+
+      {{:as, bind_alias}, filters}, q when is_atom(bind_alias) ->
+        create_schema_filter(schema_source, q, {:as, bind_alias}, filter_op, filters, opts)
+
+      {{:as, bind_alias}, _filters}, q ->
+        Logger.warning(
+          @binding_params_prefix,
+          "Expected :as value to be a non-nil atom, got: #{inspect(bind_alias)}"
+        )
+
+        q
+
+      {{:at, bind_index}, filters}, q when is_integer(bind_index) ->
+        max = Config.max_binding_positions()
+
+        if bind_index > max do
+          Logger.warning(
+            @binding_params_prefix,
+            "Binding position #{bind_index} exceeds the configured :max_binding_positions (#{max}). " <>
+              "Increase :max_binding_positions in your config to support more positional bindings."
+          )
+
+          q
+        else
+          create_schema_filter(
+            schema_source,
+            q,
+            {:at, bind_index},
+            filter_op,
+            filters,
+            opts
+          )
+        end
+    end)
   end
 
   def create_schema_filter(
