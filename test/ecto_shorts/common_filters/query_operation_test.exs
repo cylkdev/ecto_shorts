@@ -1113,6 +1113,151 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
 
       assert_sql(expected, q2)
     end
+
+    test "supports :windows with frame" do
+      frame = dynamic(fragment("ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"))
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            windows: [
+              post_window: [
+                partition_by: :author_id,
+                order_by: :inserted_at,
+                frame: frame
+              ]
+            ]
+          },
+          []
+        )
+
+      assert q2.windows !== []
+    end
+
+    test "supports :windows with partition_by as list of atoms" do
+      expected =
+        from(p in Post,
+          windows: [post_window: [partition_by: [p.author_id, p.published], order_by: []]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [partition_by: [:author_id, :published], order_by: []]]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :windows with order_by as single atom" do
+      expected =
+        from(p in Post,
+          windows: [post_window: [partition_by: [], order_by: p.inserted_at]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [order_by: :inserted_at]]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "supports :windows with order_by as {direction, atom} tuple" do
+      expected =
+        from(p in Post,
+          windows: [post_window: [partition_by: [], order_by: [desc: p.inserted_at]]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [order_by: {:desc, :inserted_at}]]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "warns and returns query unchanged for non-keyword list params" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{windows: [1, 2, 3]}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :windows params to be a keyword list"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
+    end
+
+    test "warns and returns query unchanged for invalid value" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{windows: "invalid"}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected :windows params to be a keyword list/map"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
+    end
+
+    test "supports :windows with partition_by as single atom" do
+      expected =
+        from(p in Post,
+          windows: [post_window: [partition_by: p.author_id, order_by: []]]
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [partition_by: :author_id]]},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "warns and returns query unchanged for invalid window definition" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 = CommonFilters.convert_params_to_filter(q, %{windows: [my_window: "not_valid"]}, [])
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Expected window definition for :my_window to be a map or keyword list"
+      assert_received {:q2, q2}
+      assert_sql(q, q2)
+    end
+
+    test "warns about unsupported window keys and ignores them" do
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{windows: [my_window: [partition_by: :id, bogus: true]]},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Ignoring unsupported window keys"
+      assert_received {:q2, q2}
+      assert q2.windows !== []
+    end
   end
 
   describe "convert_params_to_filter/3 subquery" do

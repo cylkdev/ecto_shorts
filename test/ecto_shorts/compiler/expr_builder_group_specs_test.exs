@@ -111,6 +111,248 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
+  test "scalar list_semantic_specs/2 coerces == with list to :in" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ScalarExprSpecs.list_semantic_specs(__MODULE__, binding_head_ast) ++
+        ScalarExprSpecs.base_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        )
+
+    module = compile_specs_module!(specs)
+
+    key = :status
+
+    expected_in = dynamic([q], field(q, ^key) in ^[1, 2])
+    expected_not_in = dynamic([q], field(q, ^key) not in ^[1, 2])
+
+    assert_dynamic(
+      expected_in,
+      module.apply_dynamic_expr({:as, nil}, key, {:==, [1, 2]})
+    )
+
+    assert_dynamic(
+      expected_not_in,
+      module.apply_dynamic_expr({:as, nil}, key, {:!=, [1, 2]})
+    )
+  end
+
+  test "scalar like_ilike_specs/4 builds like/ilike clauses" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ScalarExprSpecs.like_ilike_specs(
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      )
+
+    module = compile_specs_module!(specs)
+
+    key = :title
+
+    expected_like = dynamic([q], like(field(q, ^key), ^"%foo%"))
+
+    assert_dynamic(
+      expected_like,
+      module.apply_dynamic_expr({:as, nil}, key, {:like, "foo"})
+    )
+
+    patterns = ["%foo%", "%bar%"]
+    expected_like_list = dynamic([q], fragment("? LIKE ANY(?)", field(q, ^key), ^patterns))
+
+    assert_dynamic(
+      expected_like_list,
+      module.apply_dynamic_expr({:as, nil}, key, {:like, ["foo", "bar"]})
+    )
+  end
+
+  test "scalar lower_upper_specs/4 builds lower/upper comparison clauses" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ScalarExprSpecs.lower_upper_specs(
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) ++
+        ScalarExprSpecs.base_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        )
+
+    module = compile_specs_module!(specs)
+
+    key = :title
+
+    expected_lower = dynamic([q], fragment("lower(?)", field(q, ^key)) == ^"foo")
+    expected_upper = dynamic([q], fragment("upper(?)", field(q, ^key)) == ^"FOO")
+
+    assert_dynamic(
+      expected_lower,
+      module.apply_dynamic_expr({:as, nil}, key, {:lower, "foo"})
+    )
+
+    assert_dynamic(
+      expected_upper,
+      module.apply_dynamic_expr({:as, nil}, key, {:upper, "FOO"})
+    )
+  end
+
+  test "scalar date_time_specs/4 builds datetime comparison clauses" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ScalarExprSpecs.date_time_specs(
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) ++
+        ScalarExprSpecs.base_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        )
+
+    module = compile_specs_module!(specs)
+
+    key = :inserted_at
+    payload = %{field: :inserted_at, count: 1, interval: "day"}
+
+    expected =
+      dynamic(
+        [q],
+        field(q, ^key) >= datetime_add(field(q, ^key), ^1, ^"day")
+      )
+
+    assert_dynamic(
+      expected,
+      module.apply_dynamic_expr({:as, nil}, key, {:>=, {:datetime, [{:add, payload}]}})
+    )
+  end
+
+  test "scalar arithmetic_specs/4 builds arithmetic comparison clauses" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ScalarExprSpecs.arithmetic_specs(
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      )
+
+    module = compile_specs_module!(specs)
+
+    key = :views
+
+    expected = dynamic([q], field(q, ^key) > field(q, ^key) + ^10)
+
+    assert_dynamic(
+      expected,
+      module.apply_dynamic_expr({:as, nil}, key, {:>, {:+, [:views, 10]}})
+    )
+  end
+
+  test "scalar any_specs/4 builds any-subquery comparison clauses" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ScalarExprSpecs.any_specs(
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) ++
+        ScalarExprSpecs.base_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        )
+
+    module = compile_specs_module!(specs)
+
+    key = :id
+    subquery_expr = from(c in "comments", select: c.post_id)
+
+    expected = dynamic([q], field(q, ^key) > any(subquery_expr))
+
+    assert_dynamic(
+      expected,
+      module.apply_dynamic_expr({:as, nil}, key, {:>, {:any, subquery_expr}})
+    )
+  end
+
+  test "scalar all_specs/4 builds all-subquery comparison clauses" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ScalarExprSpecs.all_specs(
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) ++
+        ScalarExprSpecs.base_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        )
+
+    module = compile_specs_module!(specs)
+
+    key = :id
+    subquery_expr = from(c in "comments", select: c.post_id)
+
+    expected = dynamic([q], field(q, ^key) > all(subquery_expr))
+
+    assert_dynamic(
+      expected,
+      module.apply_dynamic_expr({:as, nil}, key, {:>, {:all, subquery_expr}})
+    )
+  end
+
+  test "scalar aggregate_specs/4 builds aggregate comparison clauses" do
+    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
+
+    specs =
+      ScalarExprSpecs.aggregate_specs(
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) ++
+        ScalarExprSpecs.base_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        )
+
+    module = compile_specs_module!(specs)
+
+    key = :views
+
+    expected = dynamic([q], avg(field(q, ^key)) > ^10)
+
+    assert_dynamic(
+      expected,
+      module.apply_dynamic_expr({:as, nil}, key, {:avg, {:>, 10}})
+    )
+  end
+
   test "array lower_upper_specs/4 builds the unnest fragments" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 

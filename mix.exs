@@ -53,14 +53,18 @@ defmodule EctoShorts.MixProject do
       {:blitz_credo_checks, "~> 0.1.10", runtime: false},
       {:dialyxir, "~> 1.4", runtime: false},
       {:excoveralls, "~> 0.13", only: :test},
+      # ---
       {:rexbug, "~> 1.0"},
       {:observer_cli, "~> 1.8"},
       {:etop, "~> 0.7"},
+      # ---
+      {:factory_ex, "~> 0.3.4", only: :test},
+      # ---
       {:ecto, "~> 3.0"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0", optional: true},
-      {:error_message, "~> 0.1"},
-      {:factory_ex, "~> 0.3.4", only: :test}
+      # ---
+      {:error_message, "~> 0.1"}
     ]
   end
 
@@ -69,7 +73,7 @@ defmodule EctoShorts.MixProject do
 
   defp package do
     [
-      maintainers: ["Mika Kalathil", "cylkdev"],
+      maintainers: ["Mika Kalathil", "Kurt Hogarth"],
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/MikaAK/ecto_shorts"},
       files: ~w(mix.exs README.md CHANGELOG.md lib config)
