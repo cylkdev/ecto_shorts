@@ -275,12 +275,16 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   `EctoShorts.CommonFilters`, and `EctoShorts.CommonSchema`.
   """
 
+  alias Ecto.Query
   alias EctoShorts.CommonSchema
   alias EctoShorts.Dynamics.Adapters.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
+
+  require Ecto.Query
 
   @behaviour EctoShorts.Dynamics.Adapter
 
   @operators [:ids, :before, :after, :start_date, :end_date, :exists]
+  @helper_operators [:datetime, :date]
 
   @impl true
   def operators, do: @operators
@@ -292,13 +296,93 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   def build_dynamic(source, binding_selector, key, expr) do
     cond do
       key in @operators ->
-        CommonExpr.apply_dynamic_expr(binding_selector, key, expr)
+        CommonExpr.apply_dynamic_expr(binding_selector, key, normalize_operator_expr(expr))
 
       match?({:array, _}, CommonSchema.get_schema_reflection(source, :type, key)) ->
-        ArrayExpr.apply_dynamic_expr(binding_selector, key, expr)
+        build_field_dynamic(ArrayExpr, binding_selector, key, expr)
 
       true ->
-        ScalarExpr.apply_dynamic_expr(binding_selector, key, expr)
+        build_field_dynamic(ScalarExpr, binding_selector, key, expr)
     end
   end
+
+  defp build_field_dynamic(mod, binding_selector, key, expr) do
+    expr
+    |> normalize_field_expr()
+    |> Enum.reduce(nil, fn item, acc ->
+      case mod.apply_dynamic_expr(binding_selector, key, item) do
+        nil -> acc
+        dyn -> if acc, do: Query.dynamic([], ^acc and ^dyn), else: dyn
+      end
+    end)
+  end
+
+  defp normalize_field_expr(map) when is_map(map) and not is_struct(map) do
+    Enum.flat_map(map, &normalize_entry/1)
+  end
+
+  defp normalize_field_expr(list) when is_list(list) do
+    if Keyword.keyword?(list) do
+      Enum.flat_map(list, &normalize_entry/1)
+    else
+      [{:==, list}]
+    end
+  end
+
+  defp normalize_field_expr({op, value}) when is_atom(op) do
+    normalize_entry({op, value})
+  end
+
+  defp normalize_field_expr(value), do: [{:==, value}]
+
+  defp normalize_entry({op, value}) when op in @helper_operators do
+    [{op, to_keyword_payload(value)}]
+  end
+
+  defp normalize_entry({op, value}) do
+    case normalize_inner(value) do
+      nil ->
+        [{op, value}]
+
+      inner_list ->
+        Enum.map(inner_list, fn inner -> {op, inner} end)
+    end
+  end
+
+  defp normalize_inner(map) when is_map(map) and not is_struct(map) do
+    Enum.flat_map(map, &normalize_entry/1)
+  end
+
+  defp normalize_inner(list) when is_list(list) do
+    if Keyword.keyword?(list), do: Enum.flat_map(list, &normalize_entry/1), else: nil
+  end
+
+  defp normalize_inner(_), do: nil
+
+  defp to_keyword_payload(map) when is_map(map) and not is_struct(map) do
+    Enum.map(map, fn {k, v} -> {k, v} end)
+  end
+
+  defp to_keyword_payload(list) when is_list(list), do: list
+  defp to_keyword_payload(value), do: value
+
+  defp normalize_operator_expr(map) when is_map(map) and not is_struct(map) do
+    case Map.to_list(map) do
+      [{k, v}] -> {k, normalize_operator_expr(v)}
+      _other -> map
+    end
+  end
+
+  defp normalize_operator_expr(list) when is_list(list) do
+    if Keyword.keyword?(list) do
+      case list do
+        [{k, v}] -> {k, normalize_operator_expr(v)}
+        _other -> list
+      end
+    else
+      list
+    end
+  end
+
+  defp normalize_operator_expr(value), do: value
 end

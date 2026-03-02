@@ -109,66 +109,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.DateTime do
                 {:!=, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
               )
             end
-        },
-        %ClauseSpec{
-          binding_head: binding_head_ast,
-          key: key_var,
-          head:
-            quote(do: {unquote(op_var), %{unquote(wrapper) => %{unquote(operation) => unquote(payload_var)}}}),
-          guard: op_guard,
-          body:
-            quote do
-              apply_dynamic_expr(
-                unquote(binding_head_ast),
-                unquote(key_var),
-                {unquote(op_var), {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
-              )
-            end
-        },
-        %ClauseSpec{
-          binding_head: binding_head_ast,
-          key: key_var,
-          head:
-            quote(
-              do:
-                {:not,
-                 {unquote(op_var), %{unquote(wrapper) => %{unquote(operation) => unquote(payload_var)}}}}
-            ),
-          guard: op_guard,
-          body:
-            quote do
-              apply_dynamic_expr(
-                unquote(binding_head_ast),
-                unquote(key_var),
-                {:not, {unquote(op_var), {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}}
-              )
-            end
-        },
-        %ClauseSpec{
-          binding_head: binding_head_ast,
-          key: key_var,
-          head: quote(do: %{unquote(wrapper) => %{unquote(operation) => unquote(payload_var)}}),
-          body:
-            quote do
-              apply_dynamic_expr(
-                unquote(binding_head_ast),
-                unquote(key_var),
-                {:==, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
-              )
-            end
-        },
-        %ClauseSpec{
-          binding_head: binding_head_ast,
-          key: key_var,
-          head: quote(do: {:not, %{unquote(wrapper) => %{unquote(operation) => unquote(payload_var)}}}),
-          body:
-            quote do
-              apply_dynamic_expr(
-                unquote(binding_head_ast),
-                unquote(key_var),
-                {:!=, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
-              )
-            end
         }
       ]
     end)

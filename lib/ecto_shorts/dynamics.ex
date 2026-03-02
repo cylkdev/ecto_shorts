@@ -70,9 +70,7 @@ defmodule EctoShorts.Dynamics do
 
   @logger_prefix "EctoShorts.Dynamics"
 
-  @equal :==
   @boolean_operators [:and, :or]
-  @map_payload_helper_operators [:datetime, :date]
 
   @doc """
   Converts filter params into a single composable dynamic expression.
@@ -140,12 +138,12 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp append_predicates(source, dyn_a, binding_selector, {key, value}, opts) do
-    dynamic_adapter = dynamic_adapter!(opts)
-    adapter_operators = dynamic_adapter.operators()
+    adapter = dynamic_adapter!(opts)
+    value = resolve_subqueries(source, key, value, opts)
 
     cond do
-      key in adapter_operators ->
-        build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts)
+      key in adapter.operators() ->
+        build_and_merge(adapter, source, binding_selector, key, value, dyn_a)
 
       source_has_schema?(source) ->
         schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
@@ -158,68 +156,87 @@ defmodule EctoShorts.Dynamics do
 
           dyn_a
         else
-          build_field_predicates(
-            source,
-            dyn_a,
-            binding_selector,
-            key,
-            value,
-            dynamic_adapter,
-            opts
-          )
+          build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, opts)
         end
 
       true ->
-        build_field_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts)
+        build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, opts)
     end
   end
 
-  defp build_field_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts) do
-    reduce_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts, :field)
+  defp build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, _opts)
+       when is_map(value) and not is_struct(value) do
+    reduce_field_value(source, dyn_a, binding_selector, key, value, adapter)
   end
 
-  defp build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts) do
-    reduce_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts, :operator)
+  defp build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, _opts)
+       when is_list(value) do
+    if Keyword.keyword?(value) do
+      reduce_field_value(source, dyn_a, binding_selector, key, value, adapter)
+    else
+      build_and_merge(adapter, source, binding_selector, key, value, dyn_a)
+    end
   end
 
-  defp reduce_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts, mode) do
-    value = apply_helper_expressions(source, key, value, opts)
-    label = if mode === :field, do: "field", else: "operator"
+  defp build_field_predicate(source, dyn_a, binding_selector, key, {op, entries}, adapter, opts)
+       when op in @boolean_operators and is_list(entries) do
+    if Keyword.keyword?(entries) do
+      Enum.reduce(entries, dyn_a, fn entry, inner_acc ->
+        case adapter.build_dynamic(source, binding_selector, key, entry) do
+          nil -> inner_acc
+          dyn -> merge_dynamic(inner_acc, op, dyn)
+        end
+      end)
+    else
+      merge_boolean_predicates(source, dyn_a, binding_selector, op, entries, opts)
+    end
+  end
 
-    value
-    |> normalize_expression_params()
-    |> Enum.reduce(dyn_a, fn
-      {boolean_op, inner}, acc when boolean_op in @boolean_operators and mode === :field ->
-        if is_list(inner) do
-          merge_boolean_predicates(source, acc, binding_selector, boolean_op, inner, opts)
-        else
-          build_and_merge(dynamic_adapter, source, binding_selector, key, inner, acc, boolean_op, label)
+  defp build_field_predicate(source, dyn_a, binding_selector, key, {op, inner}, adapter, _opts)
+       when op in @boolean_operators do
+    case adapter.build_dynamic(source, binding_selector, key, inner) do
+      nil -> dyn_a
+      dyn -> merge_dynamic(dyn_a, op, dyn)
+    end
+  end
+
+  defp build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, _opts) do
+    build_and_merge(adapter, source, binding_selector, key, value, dyn_a)
+  end
+
+  defp reduce_field_value(source, dyn_a, binding_selector, key, entries, adapter) do
+    Enum.reduce(entries, dyn_a, fn
+      {op, list}, acc when op in @boolean_operators and is_list(list) ->
+        Enum.reduce(list, acc, fn entry, inner_acc ->
+          case adapter.build_dynamic(source, binding_selector, key, entry) do
+            nil -> inner_acc
+            dyn -> merge_dynamic(inner_acc, op, dyn)
+          end
+        end)
+
+      {op, inner}, acc when op in @boolean_operators ->
+        case adapter.build_dynamic(source, binding_selector, key, inner) do
+          nil -> acc
+          dyn -> merge_dynamic(acc, op, dyn)
         end
 
-      item, acc ->
-        expr =
-          if mode === :field and not is_tuple(item) do
-            {@equal, item}
-          else
-            item
-          end
-
-        build_and_merge(dynamic_adapter, source, binding_selector, key, expr, acc, :and, label)
+      {op, inner}, acc ->
+        build_and_merge(adapter, source, binding_selector, key, {op, inner}, acc)
     end)
   end
 
-  defp build_and_merge(dynamic_adapter, source, binding_selector, key, expr, dyn_a, merge_op, label) do
-    case dynamic_adapter.build_dynamic(source, binding_selector, key, expr) do
+  defp build_and_merge(adapter, source, binding_selector, key, expr, dyn_a) do
+    case adapter.build_dynamic(source, binding_selector, key, expr) do
       nil ->
         Logger.warning(
           @logger_prefix,
-          "No dynamic expression generated for #{label} #{inspect(key)} with expression: #{inspect(expr)}"
+          "No dynamic expression generated for field #{inspect(key)} with expression: #{inspect(expr)}"
         )
 
         dyn_a
 
       dyn_b ->
-        merge_dynamic(dyn_a, merge_op, dyn_b)
+        merge_dynamic(dyn_a, :and, dyn_b)
     end
   end
 
@@ -261,129 +278,47 @@ defmodule EctoShorts.Dynamics do
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
   defp source_has_schema?(_), do: false
 
-  @doc false
-  def apply_helper_expressions(source, field_name, expr, opts) do
-    case expr do
-      map when is_map(map) and not is_struct(map) ->
-        apply_helper_expressions(source, field_name, Map.to_list(map), opts)
-
-      list when is_list(list) ->
-        cond do
-          Keyword.keyword?(list) and Keyword.has_key?(list, :from) ->
-            build_helper_expr_subquery(source, field_name, list, opts)
-
-          Keyword.keyword?(list) ->
-            Enum.map(list, fn {key, value} ->
-              {key, apply_helper_expressions(source, field_name, value, opts)}
-            end)
-
-          true ->
-            expr
-        end
-
-      {key, value} ->
-        {key, apply_helper_expressions(source, field_name, value, opts)}
-
-      _ ->
-        expr
+  defp resolve_subqueries(source, field_name, map, opts)
+       when is_map(map) and not is_struct(map) do
+    if Map.has_key?(map, :from) do
+      build_subquery(source, field_name, Map.to_list(map), opts)
+    else
+      Map.new(map, fn {k, v} ->
+        {k, resolve_subqueries(source, field_name, v, opts)}
+      end)
     end
   end
 
-  defp build_helper_expr_subquery(source, field_name, params, opts) do
+  defp resolve_subqueries(source, field_name, list, opts) when is_list(list) do
+    cond do
+      Keyword.keyword?(list) and Keyword.has_key?(list, :from) ->
+        build_subquery(source, field_name, list, opts)
+
+      Keyword.keyword?(list) ->
+        Enum.map(list, fn {k, v} ->
+          {k, resolve_subqueries(source, field_name, v, opts)}
+        end)
+
+      true ->
+        list
+    end
+  end
+
+  defp resolve_subqueries(source, field_name, {k, v}, opts) do
+    {k, resolve_subqueries(source, field_name, v, opts)}
+  end
+
+  defp resolve_subqueries(_source, _field_name, value, _opts), do: value
+
+  defp build_subquery(source, field_name, params, opts) do
     {schema_source, rest_params} = Keyword.pop(params, :from, source)
 
     default_select = if field_name === :exists, do: true, else: field_name
-    select_value = helper_expr_select(rest_params, default_select)
+    select_value = Keyword.get(rest_params, :select, default_select)
 
     final_params = Keyword.put(rest_params, :select, select_value)
 
     CommonFilters.convert_params_to_filter(schema_source, final_params, opts)
-  end
-
-  defp helper_expr_select(params, default_select)
-       when is_map(params) and not is_struct(params) do
-    Map.get(params, :select, default_select)
-  end
-
-  defp helper_expr_select(params, default_select) when is_list(params) do
-    if Keyword.keyword?(params) do
-      Keyword.get(params, :select, default_select)
-    else
-      default_select
-    end
-  end
-
-  defp helper_expr_select(_params, default_select), do: default_select
-
-  defp normalize_expression_params(term) do
-    term
-    |> flatten_expression_params([])
-    |> Enum.reverse()
-  end
-
-  defp flatten_expression_params(term, acc) when is_map(term) and not is_struct(term) do
-    term
-    |> Map.to_list()
-    |> flatten_expression_params(acc)
-  end
-
-  defp flatten_expression_params([], acc), do: acc
-
-  defp flatten_expression_params(list, acc) when is_list(list) do
-    case list do
-      [head | _] when is_map(head) ->
-        flatten_expression_entries(list, acc)
-
-      _ ->
-        if Keyword.keyword?(list) do
-          flatten_expression_entries(list, acc)
-        else
-          [list | acc]
-        end
-    end
-  end
-
-  defp flatten_expression_params({k, v}, acc) when is_map(v) and not is_struct(v) do
-    if k in @map_payload_helper_operators do
-      [{k, v} | acc]
-    else
-      flatten_expression_params({k, Map.to_list(v)}, acc)
-    end
-  end
-
-  defp flatten_expression_params({k, v}, acc)
-       when k in @map_payload_helper_operators and is_list(v),
-       do: [{k, v} | acc]
-
-  defp flatten_expression_params({k, v}, acc) when is_list(v) do
-    case v do
-      [head | _] when is_map(head) ->
-        flatten_keyed_expression_entries(k, v, acc)
-
-      _ ->
-        if Keyword.keyword?(v) do
-          flatten_keyed_expression_entries(k, v, acc)
-        else
-          [{k, v} | acc]
-        end
-    end
-  end
-
-  defp flatten_expression_params(v, acc) do
-    [v | acc]
-  end
-
-  defp flatten_expression_entries(list, acc) do
-    Enum.reduce(list, acc, fn entry, acc_inner ->
-      flatten_expression_params(entry, acc_inner)
-    end)
-  end
-
-  defp flatten_keyed_expression_entries(key, list, acc) do
-    list
-    |> normalize_expression_params()
-    |> Enum.map(&{key, &1})
-    |> flatten_expression_params(acc)
   end
 
   defp dynamic_adapter!(opts) do

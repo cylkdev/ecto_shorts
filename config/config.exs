@@ -3,12 +3,12 @@
 import Config
 
 config :ecto_shorts, repo: EctoShorts.Repo
-config :ecto_shorts, ecto_repos: [EctoShorts.Repo]
 
 if Mix.env() === :test do
   config :logger, level: :warning
 
   config :ecto_shorts, :sql_sandbox, true
+  config :ecto_shorts, ecto_repos: [EctoShorts.Repo]
 
   config :ecto_shorts,
     hints: [test_index: ["USE INDEX(test_index)"]]
