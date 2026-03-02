@@ -184,12 +184,12 @@ defmodule EctoShorts.Dynamics do
 
   defp reduce_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts, mode) do
     value = apply_helper_expressions(source, key, value, opts)
-    label = if mode == :field, do: "field", else: "operator"
+    label = if mode === :field, do: "field", else: "operator"
 
     value
     |> normalize_expression_params()
     |> Enum.reduce(dyn_a, fn
-      {boolean_op, inner}, acc when boolean_op in @boolean_operators and mode == :field ->
+      {boolean_op, inner}, acc when boolean_op in @boolean_operators and mode === :field ->
         if is_list(inner) do
           merge_boolean_predicates(source, acc, binding_selector, boolean_op, inner, opts)
         else
@@ -198,7 +198,7 @@ defmodule EctoShorts.Dynamics do
 
       item, acc ->
         expr =
-          if mode == :field and not is_tuple(item) do
+          if mode === :field and not is_tuple(item) do
             {@equal, item}
           else
             item
@@ -325,7 +325,7 @@ defmodule EctoShorts.Dynamics do
     {schema_source, filter_params} =
       extract_from_params(from_value, source)
 
-    default_select = if field_name == :exists, do: true, else: field_name
+    default_select = if field_name === :exists, do: true, else: field_name
     select_value = helper_expr_select(filter_params, default_select)
 
     filter_params =

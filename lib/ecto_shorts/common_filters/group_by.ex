@@ -45,7 +45,7 @@ defmodule EctoShorts.CommonFilters.GroupBy do
         Enum.split_with(entries, fn {k, _} -> k === @binding_selector_key end)
 
       query =
-        if group_entries != [],
+        if group_entries !== [],
           do: apply_group_by_expr(query, binding_selector, group_entries),
           else: query
 
@@ -62,8 +62,9 @@ defmodule EctoShorts.CommonFilters.GroupBy do
   end
 
   defp reduce_group_by_bind(query, _binding_selector, bind_params) do
-    Enum.reduce(BindingParams.normalize_bind_params(bind_params, query), query, fn {binding_selector, value},
-                                                                                   q ->
+    bind_params
+    |> BindingParams.normalize_bind_params(query)
+    |> Enum.reduce(query, fn {binding_selector, value}, q ->
       reduce_group_by(q, binding_selector, value)
     end)
   end
