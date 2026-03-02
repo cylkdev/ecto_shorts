@@ -902,8 +902,11 @@ defmodule EctoShorts.CommonFilters do
   @default_binding_selector {:as, nil}
 
   @where :where
-  @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
   @schema_filters [:where, :or_where]
+
+  @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
+
+  @subquery_operators [:exists, :all, :any]
 
   @query_builder_modules %{
     distinct: Distinct,
@@ -1019,14 +1022,8 @@ defmodule EctoShorts.CommonFilters do
         ) :: Ecto.Query.t()
   def convert_params_to_filter(source, params, opts \\ [])
 
-  def convert_params_to_filter(nil, _params, _opts) do
-    raise ArgumentError,
-          "Expected a source as the first argument (schema module, table string, " <>
-            "{source, schema} tuple, Ecto.Query, or %EctoShorts.SchemalessQuery{}), got: nil"
-  end
-
-  def convert_params_to_filter(%SchemalessQuery{} = sq, params, opts) when is_map(params) do
-    convert_params_to_filter(sq, Map.to_list(params), opts)
+  def convert_params_to_filter(source, params, opts) when is_map(params) do
+    convert_params_to_filter(source, Map.to_list(params), opts)
   end
 
   def convert_params_to_filter(%SchemalessQuery{tables: tables, source_key: source_key}, entries, opts)
@@ -1044,10 +1041,6 @@ defmodule EctoShorts.CommonFilters do
     rebuilt_params = Keyword.put(rest_params, :from, rebuilt_from)
 
     convert_params_to_filter(source, rebuilt_params, opts)
-  end
-
-  def convert_params_to_filter(source, params, opts) when is_map(params) do
-    convert_params_to_filter(source, Map.to_list(params), opts)
   end
 
   def convert_params_to_filter(source, params, opts) when is_list(params) do
@@ -1218,6 +1211,14 @@ defmodule EctoShorts.CommonFilters do
       {{:at, bind_index}, filters}, q when is_integer(bind_index) ->
         max = Config.max_binding_positions()
 
+        # We check this up front so we fail with a nice error message instead of
+        # a function clause error when the binding position is out of range for
+        # the bindings we know exist.
+        #
+        # Note that this cannot catch invalid queries. For example, if the caller
+        # applies an operation to binding 3 but the query only has 1 binding,
+        # Ecto will still build the query struct, but it will raise later when
+        # the query is executed.
         if bind_index > max do
           Logger.warning(
             @binding_params_prefix,
@@ -1252,7 +1253,7 @@ defmodule EctoShorts.CommonFilters do
     if key in query_filters do
       build_query(schema_source, query, binding_selector, key, value, opts)
     else
-      reduce_default_filter_params(
+      reduce_schema_filters(
         schema_source,
         query,
         binding_selector,
@@ -1314,7 +1315,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_default_filter_params(
+  defp reduce_schema_filters(
          schema_source,
          query,
          binding_selector,
@@ -1367,7 +1368,12 @@ defmodule EctoShorts.CommonFilters do
          params,
          opts
        ) do
-    params = if is_map(params) and not is_struct(params), do: Map.to_list(params), else: params
+    params =
+      if is_map(params) do
+        Map.to_list(params)
+      else
+        params
+      end
 
     if Keyword.keyword?(params) do
       assoc_schema =
@@ -1430,14 +1436,24 @@ defmodule EctoShorts.CommonFilters do
           opts
         )
 
+      key in @subquery_operators ->
+        build_query(
+          schema_source,
+          query,
+          binding_selector,
+          filter_op,
+          {key, value},
+          opts
+        )
+
       Keyword.keyword?(value) ->
-        Enum.reduce(value, query, fn {key2, value2}, query_acc ->
+        Enum.reduce(value, query, fn entry, query_acc ->
           create_schema_filter(
             schema_source,
             query_acc,
             binding_selector,
             filter_op,
-            {key, {key2, value2}},
+            {key, entry},
             opts
           )
         end)
@@ -1454,29 +1470,11 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp build_schema_filters(
-         schema_source,
-         query,
-         binding_selector,
-         filter_op,
-         {key, value},
-         opts
-       ) do
-    build_query(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      {key, value},
-      opts
-    )
-  end
-
   defp build_query(schema_source, query, binding_selector, :subquery, params, opts)
        when is_map(params) or is_list(params) do
     binding_source = to_binding_source(schema_source, query, binding_selector)
 
-    filtered_query =
+    inner_query =
       create_schema_filter(
         schema_source,
         query,
@@ -1489,7 +1487,7 @@ defmodule EctoShorts.CommonFilters do
     SubQuery.build(
       binding_source,
       :subquery,
-      filtered_query,
+      inner_query,
       binding_selector,
       params,
       opts
