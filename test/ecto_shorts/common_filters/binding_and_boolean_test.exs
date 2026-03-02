@@ -284,14 +284,14 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           q2 =
             CommonFilters.convert_params_to_filter(
               q,
-              %{bind: %{at: 11, published: true}},
+              %{bind: %{at: 1_000, published: true}},
               []
             )
 
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Binding position 11 exceeds the configured :max_binding_positions"
+      assert log =~ "Binding position 1000 exceeds the configured :max_binding_positions"
       assert_received {:q2, q2}
       assert q2 === q
     end

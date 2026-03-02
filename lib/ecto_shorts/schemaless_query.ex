@@ -19,28 +19,18 @@ defmodule EctoShorts.SchemalessQuery do
 
   ## Example
 
-      schemaless_query = %EctoShorts.SchemalessQuery{
-          tables: %{
-              "posts" => MyApp.Schema.Post,
-              "comments" => MyApp.Schema.Comment
-          }
-      }
-
-      EctoShorts.CommonFilters.convert_params_to_filter(
-          schemaless_query,
+      %{tables: %{"posts" => MyApp.Schema.Post, "comments" => MyApp.Schema.Comment}}
+      |> EctoShorts.SchemalessQuery.new()
+      |> EctoShorts.CommonFilters.convert_params_to_filter(
           %{from: %{table: "posts", published: true}},
           []
       )
 
   With a custom `:source_key`:
 
-      schemaless_query = %EctoShorts.SchemalessQuery{
-          tables: %{"posts" => MyApp.Schema.Post},
-          source_key: :source
-      }
-
-      EctoShorts.CommonFilters.convert_params_to_filter(
-          schemaless_query,
+      %{tables: %{"posts" => MyApp.Schema.Post}, source_key: :source}
+      |> EctoShorts.SchemalessQuery.new()
+      |> EctoShorts.CommonFilters.convert_params_to_filter(
           %{from: %{source: "posts"}},
           []
       )
@@ -64,4 +54,19 @@ defmodule EctoShorts.SchemalessQuery do
           tables: %{optional(String.t()) => term()},
           source_key: atom()
         }
+
+  @doc """
+  Creates a new `SchemalessQuery` struct from the given attributes.
+
+  ## Examples
+
+      iex> EctoShorts.SchemalessQuery.new(%{tables: %{"posts" => "posts"}})
+      %EctoShorts.SchemalessQuery{tables: %{"posts" => "posts"}, source_key: :table}
+
+  See also `EctoShorts.CommonFilters.convert_params_to_filter/3`.
+  """
+  @spec new(Enumerable.t()) :: t()
+  def new(attrs) do
+    struct!(__MODULE__, attrs)
+  end
 end
