@@ -141,6 +141,25 @@ defmodule EctoShorts.CommonFilters.CoreTest do
 
       assert_sql(expected, q2)
     end
+
+    test "adds default select when the source is a bare table string and select is not given" do
+      q2 = CommonFilters.convert_params_to_filter("posts", %{id: 1}, [])
+
+      assert %Ecto.Query{select: %Ecto.Query.SelectExpr{}} = q2
+    end
+
+    test "adds default select when the source is a {table, nil} tuple and select is not given" do
+      q2 = CommonFilters.convert_params_to_filter({"posts", nil}, %{id: 1}, [])
+
+      assert %Ecto.Query{select: %Ecto.Query.SelectExpr{}} = q2
+    end
+
+    test "preserves explicit select when the source is a bare table string" do
+      expected = from p in "posts", where: p.id == ^1, select: [:id]
+      q2 = CommonFilters.convert_params_to_filter("posts", %{id: 1, select: [:id]}, [])
+
+      assert_sql(expected, q2)
+    end
   end
 
   describe "convert_params_to_filter/3 :from params" do

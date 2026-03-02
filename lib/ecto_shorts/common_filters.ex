@@ -754,19 +754,21 @@ defmodule EctoShorts.CommonFilters do
   Ecto requires an explicit `:select` clause to execute a query on a bare
   table string because there is no schema to infer which columns to return.
 
-  When you use the direct table name approach (option 1), you must include
-  `:select` yourself. The query builds successfully without `:select`, but
-  Ecto will raise when you try to execute it (for example with `Repo.all/1`):
+  When the resolved source is schemaless (a bare table string or a
+  `{table, nil}` tuple), the system adds `select: true` automatically if
+  you did not include a `:select`. This applies to all schemaless sources
+  regardless of whether the source was passed directly or resolved through
+  the `:from` key:
 
-      # Builds the query - works fine:
+      # Direct table name - select: true is added automatically:
       EctoShorts.CommonFilters.convert_params_to_filter("posts", %{published: true})
 
-      # Executing that query without :select will raise at the repo level.
+      # Via :from - select: true is also added automatically:
+      EctoShorts.CommonFilters.convert_params_to_filter(Post, %{from: %{query: "posts"}})
 
-  When the `:from` key is present and the resolved source is schemaless,
-  the system adds `select: true` automatically if you did not include a
-  `:select`. This convenience exists so data-driven payloads that use
-  `:from` dynamically do not need to always remember to also set `:select`.
+  You can override the default by passing your own `:select`:
+
+      EctoShorts.CommonFilters.convert_params_to_filter("posts", %{select: [:id, :title]})
 
   ### No field validation
 
@@ -1031,11 +1033,11 @@ defmodule EctoShorts.CommonFilters do
       when is_list(entries) do
     entries = if Keyword.keyword?(entries), do: entries, else: raise_missing_from!(source_key)
 
-    {from_value, rest_params} = Keyword.pop(entries, :from)
+    {from_params, rest_params} = Keyword.pop(entries, :from)
 
-    if is_nil(from_value), do: raise_missing_from!(source_key)
+    if is_nil(from_params), do: raise_missing_from!(source_key)
 
-    {table_name, from_rest} = pop_required_source_key(from_value, source_key)
+    {table_name, from_rest} = pop_required_source_key(from_params, source_key)
     source = resolve_table!(tables, table_name)
 
     rebuilt_from = Map.put(from_rest, :query, source)
@@ -1048,99 +1050,56 @@ defmodule EctoShorts.CommonFilters do
     convert_params_to_filter(source, Map.to_list(params), opts)
   end
 
-  def convert_params_to_filter(source, entries, opts) when is_list(entries) do
-    has_from? = Keyword.has_key?(entries, :from)
+  def convert_params_to_filter(source, params, opts) when is_list(params) do
+    if Keyword.keyword?(params) do
+      {from_params, base_params} = Keyword.pop(params, :from)
 
-    if Keyword.keyword?(entries) do
-      {from_value, params} = Keyword.pop(entries, :from)
-
-      {schema_source, from_filters} =
-        if from_value do
-          extract_from_params(from_value)
-        else
-          {nil, []}
-        end
+      {schema_source, from_params} = split_query_source(from_params)
 
       schema_source = schema_source || source
-
       query = CommonSchema.to_query(source || schema_source)
-
       normalized_source = CommonSchema.normalize_source(schema_source)
 
-      merged_params =
-        from_filters
-        |> ensure_kw()
-        |> Keyword.merge(params)
+      merged_params = Keyword.merge(from_params, base_params)
 
       merged_params =
-        case {has_from?, normalized_source} do
-          {true, {_table, nil}} ->
-            if Keyword.has_key?(merged_params, :select) do
-              merged_params
-            else
-              Keyword.put(merged_params, :select, true)
-            end
-
-          _ ->
-            merged_params
+        if not source_has_schema?(normalized_source) and
+             not Keyword.has_key?(merged_params, :select) do
+          Keyword.put(merged_params, :select, true)
+        else
+          merged_params
         end
 
       do_convert(normalized_source, query, merged_params, opts)
     else
       query = CommonSchema.to_query(source)
 
-      Enum.reduce(entries, query, fn entry, query_acc ->
+      Enum.reduce(params, query, fn entry, query_acc ->
         do_convert(source, query_acc, entry, opts)
       end)
     end
   end
 
-  defp ensure_kw(map) when is_map(map), do: Map.to_list(map)
+  defp split_query_source(nil), do: {nil, []}
 
-  defp ensure_kw(list) when is_list(list) do
-    if Keyword.keyword?(list) do
-      list
-    else
-      Logger.warning(@logger_prefix, "Expected params to be a keyword list, got: #{inspect(list)}")
-      []
-    end
+  defp split_query_source(map) when is_map(map) and not is_struct(map) do
+    map |> Map.to_list() |> split_query_source()
   end
 
-  defp ensure_kw(term) do
-    Logger.warning(@logger_prefix, "Expected params to be a keyword list, got: #{inspect(term)}")
-    []
-  end
-
-  defp extract_from_params(from_map) when is_map(from_map) and not is_struct(from_map) do
-    {query_source, filter_params} = Map.pop(from_map, :query)
-
-    if is_nil(query_source) do
-      raise ArgumentError,
-            "Expected :from to contain a :query key, got: #{inspect(from_map)}"
-    end
-
-    {query_source, Map.to_list(filter_params)}
-  end
-
-  defp extract_from_params(from_list) when is_list(from_list) do
-    if Keyword.keyword?(from_list) do
-      {query_source, filter_params} = Keyword.pop(from_list, :query)
+  defp split_query_source(from_params) do
+    if Keyword.keyword?(from_params) do
+      {query_source, filter_params} = Keyword.pop(from_params, :query)
 
       if is_nil(query_source) do
         raise ArgumentError,
-              "Expected :from to contain a :query key, got: #{inspect(from_list)}"
+              "Expected :from to contain a :query key, got: #{inspect(from_params)}"
       end
 
       {query_source, filter_params}
     else
       raise ArgumentError,
-            "Expected :from to be a map or keyword list, got: #{inspect(from_list)}"
+            "Expected :from to be a map or keyword list, got: #{inspect(from_params)}"
     end
-  end
-
-  defp extract_from_params(term) do
-    raise ArgumentError,
-          "Expected :from to be a map or keyword list, got: #{inspect(term)}"
   end
 
   defp raise_missing_from!(source_key) do
@@ -1149,31 +1108,31 @@ defmodule EctoShorts.CommonFilters do
             "when the source is a %EctoShorts.SchemalessQuery{}"
   end
 
-  defp pop_required_source_key(from_value, source_key)
-       when is_map(from_value) and not is_struct(from_value) do
-    {table_name, rest} = Map.pop(from_value, source_key)
+  defp pop_required_source_key(from_params, source_key)
+       when is_map(from_params) and not is_struct(from_params) do
+    {table_name, rest} = Map.pop(from_params, source_key)
 
     if is_nil(table_name) do
       raise ArgumentError,
-            "Expected :from to contain a #{inspect(source_key)} key, got: #{inspect(from_value)}"
+            "Expected :from to contain a #{inspect(source_key)} key, got: #{inspect(from_params)}"
     end
 
     {table_name, rest}
   end
 
-  defp pop_required_source_key(from_value, source_key) when is_list(from_value) do
-    if Keyword.keyword?(from_value) do
-      {table_name, rest} = Keyword.pop(from_value, source_key)
+  defp pop_required_source_key(from_params, source_key) when is_list(from_params) do
+    if Keyword.keyword?(from_params) do
+      {table_name, rest} = Keyword.pop(from_params, source_key)
 
       if is_nil(table_name) do
         raise ArgumentError,
-              "Expected :from to contain a #{inspect(source_key)} key, got: #{inspect(from_value)}"
+              "Expected :from to contain a #{inspect(source_key)} key, got: #{inspect(from_params)}"
       end
 
       {table_name, Map.new(rest)}
     else
       raise ArgumentError,
-            "Expected :from to be a map or keyword list, got: #{inspect(from_value)}"
+            "Expected :from to be a map or keyword list, got: #{inspect(from_params)}"
     end
   end
 
@@ -1624,6 +1583,12 @@ defmodule EctoShorts.CommonFilters do
         module.build(binding_source, filter_op, query, binding_selector, params, opts)
     end
   end
+
+  defp source_has_schema?({_, nil}), do: false
+  defp source_has_schema?({_, mod}) when is_atom(mod), do: true
+  defp source_has_schema?(nil), do: false
+  defp source_has_schema?(mod) when is_atom(mod), do: true
+  defp source_has_schema?(_), do: false
 
   defp to_binding_source(schema_source, _query, {:as, nil}) do
     schema_source

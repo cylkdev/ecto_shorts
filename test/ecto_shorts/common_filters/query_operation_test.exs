@@ -629,7 +629,11 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
     end
 
     test "sets the query prefix on a table source" do
-      expected = Query.put_query_prefix("posts", "tenant_a")
+      expected =
+        "posts"
+        |> Query.put_query_prefix("tenant_a")
+        |> select([p], p)
+
       q2 = CommonFilters.convert_params_to_filter("posts", %{put_query_prefix: "tenant_a"}, [])
 
       assert_query(expected, q2)

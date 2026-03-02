@@ -541,22 +541,11 @@ See `EctoShorts.Config` for all configuration options.
 > immediately without querying the database. This prevents accidental
 > fetches of arbitrary records.
 
-> **Schemaless queries**
->
-> When querying a bare table string (no schema module), you must include
-> an explicit `:select` clause. See `EctoShorts.CommonFilters` for details.
-
 > **Large batch sizes**
 >
 > `insert_all/3` and `update_all/4` execute a single SQL statement.
 > Very large batches may exceed database limits. Consider chunking
 > into smaller batches for thousands of records.
-
-> **Concurrent updates**
->
-> `update/4` and `find_and_update/4` do not use optimistic locking by
-> default. For concurrent updates, use `Ecto.Changeset.optimistic_lock/3`
-> in your changeset function.
 
 ## Next steps
 
