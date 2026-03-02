@@ -5,6 +5,8 @@ defmodule EctoShorts.Testing do
 
   Use this module in your test files to make assertions about query
   structure and SQL output without relying on brittle string matching.
+  The assertions compare queries at different levels (AST, inspect output,
+  SQL) to give you flexibility in how you verify query construction.
 
   ## Getting started
 
@@ -34,6 +36,203 @@ defmodule EctoShorts.Testing do
   When using `use EctoShorts.Testing`, the `:repo` option is bound at
   compile time, so `assert_sql/2-3` and `refute_sql/2-3` do not require
   an explicit repo argument.
+
+  ## Testing strategies
+
+  ### Strategy 1: Test query structure
+
+  Use `assert_query/2` to verify that two queries have the same structure
+  without executing them:
+
+      test "builds correct query structure" do
+        expected = from p in Post, where: p.published == ^true, limit: ^10
+        actual = EctoShorts.CommonFilters.convert_params_to_filter(Post, %{published: true, limit: 10})
+        assert_query(expected, actual)
+      end
+
+  This is fast and does not require a database connection.
+
+  ### Strategy 2: Test SQL output
+
+  Use `assert_sql/3` to verify that two queries generate the same SQL:
+
+      test "generates correct SQL" do
+        q1 = from p in Post, where: p.published == ^true
+        q2 = EctoShorts.CommonFilters.convert_params_to_filter(Post, %{published: true})
+        assert_sql(q1, q2)
+      end
+
+  This catches differences in how the query is compiled to SQL, but does
+  not execute the query.
+
+  ### Strategy 3: Test dynamic expressions
+
+  Use `assert_dynamic/2` to verify that two dynamic expressions are identical:
+
+      test "builds correct dynamic expression" do
+        expected = dynamic([p], p.published == ^true)
+        actual = EctoShorts.Dynamics.convert_to_dynamic({:as, :post}, :published, {:==, true})
+        assert_dynamic(expected, actual)
+      end
+
+  This is useful when testing expression builders directly.
+
+  ## Choosing the right assertion
+
+  Use this guide to pick the right assertion for your test:
+
+  | Assertion         | When to use                                      |
+  |-------------------|--------------------------------------------------|
+  | `assert_query/2`  | Fast structure check without database            |
+  | `assert_sql/3`    | Verify SQL output without executing              |
+  | `assert_dynamic/2`| Test dynamic expression builders                 |
+  | `refute_query/2`  | Verify two queries are different                 |
+  | `refute_sql/3`    | Verify SQL output differs                        |
+  | `refute_dynamic/2`| Verify dynamic expressions differ                |
+
+  ### When to use `assert_query/2`
+
+  * You want a fast test that does not require a database connection.
+  * You are testing query construction logic, not SQL generation.
+  * You want to verify the query structure matches exactly.
+
+  ### When to use `assert_sql/3`
+
+  * You want to verify the SQL output is correct.
+  * You are testing database-specific features (for example, PostgreSQL
+    array operators).
+  * You want to catch differences in how Ecto compiles the query.
+
+  ### When to use `assert_dynamic/2`
+
+  * You are testing a custom dynamic expression builder.
+  * You want to verify the AST structure of a dynamic expression.
+  * You are testing `EctoShorts.Dynamics` or a custom adapter.
+
+  ## Testing complex queries
+
+  ### Testing joins
+
+  Verify that joins are added correctly:
+
+      test "adds join correctly" do
+        expected = from p in Post,
+          join: c in assoc(p, :comments), as: :comment,
+          where: c.approved == ^true
+
+        actual = EctoShorts.CommonFilters.convert_params_to_filter(
+          Post,
+          %{comment: [as: :comment, approved: true]}
+        )
+
+        assert_query(expected, actual)
+      end
+
+  ### Testing subqueries
+
+  Verify that subqueries are constructed correctly:
+
+      test "builds subquery correctly" do
+        expected = from p in Post,
+          where: p.id in subquery(from c in Comment, select: c.post_id)
+
+        actual = EctoShorts.CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{in: %{all: from(c in Comment, select: c.post_id)}}}
+        )
+
+        assert_sql(expected, actual)
+      end
+
+  ### Testing aggregates
+
+  Verify that aggregate expressions are correct:
+
+      test "builds aggregate correctly" do
+        expected = from p in Post,
+          group_by: p.author_id,
+          having: avg(p.views) > ^100
+
+        actual = EctoShorts.CommonFilters.convert_params_to_filter(
+          Post,
+          %{group_by: :author_id, having: %{views: %{avg: %{>: 100}}}}
+        )
+
+        assert_query(expected, actual)
+      end
+
+  ## Common patterns
+
+  **Pattern 1: Test multiple filter combinations**
+
+  Use a table-driven approach to test many filter combinations:
+
+      test "filters work correctly" do
+        test_cases = [
+          {%{published: true}, "WHERE published = TRUE"},
+          {%{views: %{>: 10}}, "WHERE views > 10"},
+          {%{title: %{like: "hello"}}, "WHERE title LIKE '%hello%'"}
+        ]
+
+        for {params, expected_sql} <- test_cases do
+          query = EctoShorts.CommonFilters.convert_params_to_filter(Post, params)
+          {sql, _} = Ecto.Adapters.SQL.to_sql(:all, Repo, query)
+          assert sql =~ expected_sql
+        end
+      end
+
+  **Pattern 2: Test error handling**
+
+  Verify that invalid params are handled gracefully:
+
+      test "handles invalid params gracefully" do
+        query = EctoShorts.CommonFilters.convert_params_to_filter(
+          Post,
+          %{nonexistent_field: "value"}
+        )
+
+        # Should return unchanged query
+        expected = from p in Post
+        assert_query(expected, query)
+      end
+
+  **Pattern 3: Test SQL parameter binding**
+
+  Verify that parameters are bound correctly:
+
+      test "binds parameters correctly" do
+        query = EctoShorts.CommonFilters.convert_params_to_filter(
+          Post,
+          %{title: "Hello", published: true}
+        )
+
+        {_sql, params} = Ecto.Adapters.SQL.to_sql(:all, Repo, query)
+        assert params == ["Hello", true]
+      end
+
+  ## Troubleshooting
+
+  **Problem:** `assert_query/2` fails but the queries look the same.
+
+  **Solution:** The inspect output may differ due to variable names or
+  internal query structure. Use `assert_sql/3` instead to compare the
+  generated SQL.
+
+  **Problem:** `assert_sql/3` fails with "no repo configured".
+
+  **Solution:** Pass the repo explicitly as the first argument, or add
+  `use EctoShorts.Testing, repo: MyApp.Repo` to bind the repo at compile time.
+
+  **Problem:** `assert_dynamic/2` fails but the expressions look the same.
+
+  **Solution:** The AST may differ due to variable names or internal
+  structure. Use `IO.inspect/2` to see the actual AST of both expressions.
+
+  **Problem:** SQL comparison fails due to whitespace differences.
+
+  **Solution:** This should not happen as `assert_sql/3` compares the
+  compiled SQL tuples directly. If it does, there may be a real difference
+  in the SQL structure.
 
   See also `EctoShorts.CommonFilters`, `EctoShorts.Dynamics`, and
   `EctoShorts.Actions`.

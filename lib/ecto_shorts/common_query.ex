@@ -1,44 +1,218 @@
 defmodule EctoShorts.CommonQuery do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Provides functions for introspecting `Ecto.Query` structures at runtime.
+  Introspects `Ecto.Query` structures at runtime.
 
-  Use this module to resolve the source, prefix, binding count, or
-  per-binding source of an `Ecto.Query`. Useful when composing queries
-  dynamically or when debugging generated queries.
+  Use this module when you need to inspect a query to find out what table
+  it queries, what bindings it has, or what schema a specific binding uses.
+  This is useful when building dynamic query composers, debugging query
+  construction, or implementing query middleware.
 
-  ## Bindings
+  ## Getting started
 
-  Bindings can be resolved in two ways:
+  Extract the source from a query:
 
-  * By **name** (the `:as` binding) - pass an atom matching the `as:` key
-    used in `from` or `join`.
-  * By **position** - pass an integer where `1` is the root `from` binding
-    and each subsequent join increments the position.
+      iex> import Ecto.Query
+      ...> q = from p in EctoShorts.Schema.Post
+      ...> EctoShorts.CommonQuery.get_query_source(q)
+      {"posts", EctoShorts.Schema.Post}
+
+  Count the bindings in a query:
+
+      iex> import Ecto.Query
+      ...> q = from p in EctoShorts.Schema.Post, join: c in assoc(p, :comments)
+      ...> EctoShorts.CommonQuery.query_binding_count(q)
+      2
+
+  Get the source for a specific binding:
+
+      iex> import Ecto.Query
+      ...> q = from p in EctoShorts.Schema.Post, as: :post, join: c in assoc(p, :comments), as: :comment
+      ...> EctoShorts.CommonQuery.get_query_binding_source(q, :comment)
+      {nil, EctoShorts.Schema.Comment}
+
+  ## When to use query introspection
+
+  Use this module when you need to:
+
+  * **Build dynamic filters** - determine which schema a binding uses so you
+    can validate field names or resolve field types.
+  * **Implement query middleware** - inspect the query structure before or
+    after applying transformations.
+  * **Debug query construction** - verify that joins were added correctly
+    and bindings point to the expected schemas.
+  * **Validate binding limits** - check that the query does not exceed the
+    configured maximum binding count.
+  * **Resolve association schemas** - find out which schema an `assoc/2`
+    join points to without manually traversing the association tree.
+
+  ## Bindings deep dive
+
+  Ecto queries use bindings to reference tables in the query. The root
+  `from` clause creates binding `1`, and each `join` adds a new binding
+  (`2`, `3`, etc.).
+
+  ### Named bindings
+
+  Named bindings use the `:as` option to assign an atom identifier:
+
+      import Ecto.Query
+
+      q = from p in Post, as: :post,
+            join: c in assoc(p, :comments), as: :comment
+
+  You can reference these bindings by name:
+
+      EctoShorts.CommonQuery.get_query_binding_source(q, :post)
+      # {"posts", Post}
+
+      EctoShorts.CommonQuery.get_query_binding_source(q, :comment)
+      # {nil, Comment}
+
+  ### Positional bindings
+
+  Positional bindings use integers where `1` is the root `from` and each
+  join increments the position:
+
+      import Ecto.Query
+
+      q = from p in Post,
+            join: c in assoc(p, :comments),
+            join: a in assoc(p, :author)
+
+      EctoShorts.CommonQuery.get_query_binding_source(q, 1)
+      # {"posts", Post}
+
+      EctoShorts.CommonQuery.get_query_binding_source(q, 2)
+      # {nil, Comment}
+
+      EctoShorts.CommonQuery.get_query_binding_source(q, 3)
+      # {nil, Author}
+
+  ### Negative positions
+
+  Negative positions count backwards from the end, where `-1` is the last
+  binding:
+
+      EctoShorts.CommonQuery.get_query_binding_source(q, -1)
+      # {nil, Author}
 
   ## Source tuples
 
   Ecto represents sources as `{source, schema}` tuples:
 
-      {"posts", MyApp.Post}    # schema module present
-      {"posts", nil}            # bare table name, no schema
+  | Tuple                  | Meaning                                      |
+  |------------------------|----------------------------------------------|
+  | `{"posts", Post}`      | Table name `"posts"` with schema `Post`      |
+  | `{"posts", nil}`       | Table name `"posts"` without a schema        |
+  | `{nil, Post}`          | Schema `Post` (table name from schema)       |
 
   Functions in this module return `nil` when a source or binding cannot be
   resolved.
 
-  ## Getting started
+  ## Association joins
 
-      iex> import Ecto.Query
-      ...> q = from p in EctoShorts.Schema.Post, as: :post
-      ...> EctoShorts.CommonQuery.get_query_source(q)
-      {"posts", EctoShorts.Schema.Post}
+  When a binding points to an association join (`assoc/2`), this module
+  resolves the related schema from the parent binding:
 
-      iex> import Ecto.Query
-      ...> q = from p in EctoShorts.Schema.Post, join: c in assoc(p, :comments), as: :comment
-      ...> EctoShorts.CommonQuery.query_binding_count(q)
-      2
+      import Ecto.Query
 
-  See also `EctoShorts.CommonSchema` and `EctoShorts.CommonFilters`.
+      q = from p in Post, as: :post,
+            join: c in assoc(p, :comments), as: :comment
+
+      EctoShorts.CommonQuery.get_query_binding_source(q, :comment)
+      # {nil, Comment}
+
+  The table name is `nil` because association joins do not specify an
+  explicit table name - Ecto infers it from the schema.
+
+  ## Subquery handling
+
+  When a query contains a subquery in the `from` clause, this module
+  traverses into the subquery to find the root source:
+
+      import Ecto.Query
+
+      inner = from p in Post, where: p.published == true
+      outer = from p in subquery(inner), select: p.id
+
+      EctoShorts.CommonQuery.get_query_source(outer)
+      # {"posts", Post}
+
+  ## Common patterns
+
+  **Pattern 1: Validate binding exists**
+
+  Check that a binding exists before using it:
+
+      def apply_filter(query, binding_name, field, value) do
+        source = EctoShorts.CommonQuery.get_query_binding_source(query, binding_name)
+
+        if source do
+          # Binding exists, apply filter
+        else
+          # Binding does not exist, skip or raise
+        end
+      end
+
+  **Pattern 2: Get schema for field validation**
+
+  Extract the schema to validate that a field exists:
+
+      def validate_field(query, binding_name, field) do
+        case EctoShorts.CommonQuery.get_query_binding_source(query, binding_name) do
+          {_, schema} when schema !== nil ->
+            field in schema.__schema__(:fields)
+
+          _ ->
+            false
+        end
+      end
+
+  **Pattern 3: Check binding limit**
+
+  Ensure the query does not exceed the maximum binding count:
+
+      def check_binding_limit(query) do
+        count = EctoShorts.CommonQuery.query_binding_count(query)
+        max = EctoShorts.Config.max_binding_positions()
+
+        if count > max do
+          raise "Query has \#{count} bindings but max is \#{max}"
+        end
+      end
+
+  **Pattern 4: Resolve association schema**
+
+  Find the schema for an association without manually traversing:
+
+      import Ecto.Query
+
+      q = from p in Post, join: c in assoc(p, :comments), as: :comment
+
+      {_, schema} = EctoShorts.CommonQuery.get_query_binding_source(q, :comment)
+      # schema = Comment
+
+  ## Troubleshooting
+
+  **Problem:** `get_query_binding_source/2` returns `nil` for a named binding.
+
+  **Solution:** Verify the binding name matches exactly. Binding names are
+  atoms, so `:post` and `"post"` are different.
+
+  **Problem:** Positional binding returns `nil`.
+
+  **Solution:** Check that the position is within range. Use
+  `query_binding_count/1` to see how many bindings exist.
+
+  **Problem:** Association join returns `{nil, nil}` instead of a schema.
+
+  **Solution:** The parent binding may not have a schema. Association joins
+  require the parent binding to have a schema module so the association can
+  be resolved.
+
+  See also `EctoShorts.CommonSchema`, `EctoShorts.CommonFilters`, and
+  `EctoShorts.Config.max_binding_positions/0`.
   """
 
   alias Ecto.Queryable
@@ -149,6 +323,13 @@ defmodule EctoShorts.CommonQuery do
       ...> EctoShorts.CommonQuery.query_binding_count(q)
       2
 
+      iex> import Ecto.Query
+      ...> q = from p in EctoShorts.Schema.Post,
+      ...>       join: c in assoc(p, :comments),
+      ...>       join: a in assoc(p, :author)
+      ...> EctoShorts.CommonQuery.query_binding_count(q)
+      3
+
   See also `get_query_binding_source/2` and `EctoShorts.Config.max_binding_positions/0`.
   """
   def query_binding_count(queryable) do
@@ -193,6 +374,16 @@ defmodule EctoShorts.CommonQuery do
       ...> q = from u in EctoShorts.Schema.User, as: :user, join: p in assoc(u, :posts), as: :post
       ...> EctoShorts.CommonQuery.get_query_binding_source(q, 2)
       {nil, EctoShorts.Schema.Post}
+
+      iex> import Ecto.Query
+      ...> q = from u in EctoShorts.Schema.User, join: p in assoc(u, :posts)
+      ...> EctoShorts.CommonQuery.get_query_binding_source(q, -1)
+      {nil, EctoShorts.Schema.Post}
+
+      iex> import Ecto.Query
+      ...> q = from u in EctoShorts.Schema.User
+      ...> EctoShorts.CommonQuery.get_query_binding_source(q, :nonexistent)
+      nil
 
   See also `query_binding_count/1` and `get_query_source/1`.
   """

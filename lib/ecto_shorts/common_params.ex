@@ -3,33 +3,14 @@ defmodule EctoShorts.CommonParams do
   @moduledoc """
   Prepares data for `c:Ecto.Repo.insert_all/3` and `c:Ecto.Repo.update_all/3`.
 
-  Takes application-level data (plain maps, keyword lists, schema structs,
-  or changesets) and transforms it into the keyword-list structures Ecto
-  expects for bulk operations. Handles schema validation, automatic
-  timestamp generation, placeholder substitution, and conflict resolution.
-
-  ## Key concepts
-
-  ### Insert params
-
-  `convert_to_insert_params/3` produces a list of maps ready for
-  `c:Ecto.Repo.insert_all/3`. Each entry is validated (optionally via the
-  schema's `changeset/2`), filtered to schema query fields, and enriched
-  with `:inserted_at` and `:updated_at` timestamps.
-
-  ### Update params
-
-  `convert_to_update_params/3` produces a keyword list of Ecto update
-  operations (`:set`, `:inc`, `:push`, `:pull`) ready for
-  `c:Ecto.Repo.update_all/3`. Automatically appends `:updated_at`.
-
-  ### Conflict resolution
-
-  `build_on_conflict_options/3` derives the `:conflict_target` and
-  `:on_conflict` options from the schema's primary key and the prepared
-  insert data, for use with `c:Ecto.Repo.insert_all/3`.
+  Use this module when you need to perform bulk inserts or updates with Ecto.
+  It transforms application-level data (maps, structs, changesets) into the
+  format Ecto expects, handles validation, generates timestamps, manages
+  placeholders, and builds conflict resolution options.
 
   ## Getting started
+
+  Convert params to insert format:
 
       params = [
         %{title: "First post", published: true},
@@ -42,6 +23,10 @@ defmodule EctoShorts.CommonParams do
           params
         )
 
+      Repo.insert_all(EctoShorts.Schema.Post, inserts)
+
+  Build conflict resolution options:
+
       conflict_opts =
         EctoShorts.CommonParams.build_on_conflict_options(
           EctoShorts.Schema.Post,
@@ -51,7 +36,272 @@ defmodule EctoShorts.CommonParams do
 
       Repo.insert_all(EctoShorts.Schema.Post, inserts, conflict_opts)
 
-  See also `EctoShorts.Actions` and `EctoShorts.CommonSchema`.
+  Convert params to update format:
+
+      updates =
+        EctoShorts.CommonParams.convert_to_update_params(
+          EctoShorts.Schema.Post,
+          %{title: "Updated", views: {:inc, 1}}
+        )
+
+      Repo.update_all(query, updates)
+
+  ## Insert params workflow
+
+  The insert params workflow follows these steps:
+
+  1. **Normalize** - convert each entry to a map or struct.
+  2. **Validate** - run through the schema's `changeset/2` (optional).
+  3. **Filter** - keep only fields in the schema's query fields.
+  4. **Enrich** - add `:inserted_at` and `:updated_at` timestamps.
+  5. **Substitute** - replace placeholder values with `{:placeholder, field}`.
+
+  ### Step 1: Normalize
+
+  Each entry can be a map, keyword list, struct, changeset, or
+  `{struct, params}` tuple:
+
+      # Map:
+      %{title: "Hello", published: true}
+
+      # Keyword list:
+      [title: "Hello", published: true]
+
+      # Struct:
+      %Post{title: "Hello", published: true}
+
+      # Changeset:
+      Ecto.Changeset.change(%Post{}, %{title: "Hello"})
+
+      # Tuple:
+      {%Post{id: 1}, %{title: "Updated"}}
+
+  All forms are normalized to a struct, then converted to a map.
+
+  ### Step 2: Validate
+
+  By default, each entry runs through the schema's `changeset/2` function
+  for validation. If validation fails, the entry is added to the error list
+  and the function returns `{:error, [changeset, ...]}`.
+
+  Skip validation by passing `validate: false`:
+
+      EctoShorts.CommonParams.convert_to_insert_params(
+        Post,
+        params,
+        validate: false
+      )
+
+  When validation is skipped, structs are built directly without calling
+  `changeset/2`.
+
+  ### Step 3: Filter
+
+  Only fields in the schema's query fields are kept. Query fields are
+  determined by `schema.__schema__(:query_fields)` or the `:query_fields`
+  option.
+
+  ### Step 4: Enrich
+
+  Timestamps are added automatically:
+
+  * `:inserted_at` - set to the current UTC time.
+  * `:updated_at` - set to the current UTC time.
+
+  Override the timestamp values or field names with options:
+
+      EctoShorts.CommonParams.convert_to_insert_params(
+        Post,
+        params,
+        inserted_at: ~U[2026-01-01 00:00:00Z],
+        inserted_at_source: :created_on
+      )
+
+  ### Step 5: Substitute
+
+  Placeholder values are replaced with `{:placeholder, field}` tuples for
+  use with `c:Ecto.Repo.insert_all/3`'s `:placeholders` option.
+
+  See the "Placeholder options" section for details.
+
+  ## Update params workflow
+
+  The update params workflow follows these steps:
+
+  1. **Parse** - convert each `{field, value}` pair to an operation.
+  2. **Group** - group operations by type (`:set`, `:inc`, `:push`, `:pull`).
+  3. **Enrich** - add `:updated_at` to the `:set` group.
+
+  ### Step 1: Parse
+
+  Each value can be a plain value (`:set` is implied) or a tagged tuple:
+
+      %{title: "New title"}                # {:set, :title, "New title"}
+      %{views: {:inc, 1}}                  # {:inc, :views, 1}
+      %{tags: {:push, "elixir"}}           # {:push, :tags, "elixir"}
+      %{tags: {:pull, "deprecated"}}       # {:pull, :tags, "deprecated"}
+
+  ### Step 2: Group
+
+  Operations are grouped by type:
+
+      [
+        inc: [views: 1],
+        set: [title: "New title", updated_at: ...]
+      ]
+
+  ### Step 3: Enrich
+
+  The `:updated_at` field is added to the `:set` group automatically.
+
+  ## Conflict resolution strategies
+
+  Use `build_on_conflict_options/3` to generate `:conflict_target` and
+  `:on_conflict` options for `c:Ecto.Repo.insert_all/3`.
+
+  | Strategy         | Behavior                                     |
+  |------------------|----------------------------------------------|
+  | `:insert_keys`   | Replace all non-primary-key fields (default) |
+  | `:none`          | Insert or do nothing (no update on conflict) |
+  | `[field, ...]`   | Replace only the listed fields               |
+
+  Set the strategy with the `:on_conflict_replace` option:
+
+      # Replace all non-primary-key fields:
+      EctoShorts.CommonParams.build_on_conflict_options(
+        Post,
+        inserts,
+        on_conflict_replace: :insert_keys
+      )
+
+      # Insert or do nothing:
+      EctoShorts.CommonParams.build_on_conflict_options(
+        Post,
+        inserts,
+        on_conflict_replace: :none
+      )
+
+      # Replace only specific fields:
+      EctoShorts.CommonParams.build_on_conflict_options(
+        Post,
+        inserts,
+        on_conflict_replace: [:title, :body]
+      )
+
+  ## Placeholder options
+
+  Placeholders let you reference values from the `:placeholders` option in
+  `c:Ecto.Repo.insert_all/3`. This is useful when you want to insert the
+  same value across multiple rows without repeating it.
+
+  | Option                      | Purpose                                      |
+  |-----------------------------|----------------------------------------------|
+  | `:placeholders`             | Map of `{field, value}` pairs to substitute  |
+  | `:on_placeholder_conflict`  | What to do when a value conflicts            |
+
+  ### Basic placeholder usage
+
+  Pass a map of placeholder values:
+
+      EctoShorts.CommonParams.convert_to_insert_params(
+        Post,
+        [%{author_id: 1}, %{author_id: 1}],
+        placeholders: %{author_id: 1}
+      )
+
+  Fields matching the placeholder value are replaced with
+  `{:placeholder, field}`:
+
+      [
+        %{author_id: {:placeholder, :author_id}},
+        %{author_id: {:placeholder, :author_id}}
+      ]
+
+  Then pass the placeholders to `insert_all/3`:
+
+      Repo.insert_all(Post, inserts, placeholders: %{author_id: 1})
+
+  ### Placeholder conflict handling
+
+  When a field value does not match the placeholder value, the
+  `:on_placeholder_conflict` option controls what happens:
+
+  * `:nothing` (default) - keep the existing value unchanged.
+  * `:replace_all` - always use the placeholder regardless of conflict.
+  * `{:replace, [field, ...]}` - only replace the listed fields.
+
+  Example:
+
+      EctoShorts.CommonParams.convert_to_insert_params(
+        Post,
+        [%{author_id: 1}, %{author_id: 2}],
+        placeholders: %{author_id: 1},
+        on_placeholder_conflict: :replace_all
+      )
+
+  Both rows will use the placeholder even though the second row has a
+  different value.
+
+  ## Validation
+
+  By default, `convert_to_insert_params/3` validates each entry through the
+  schema's `changeset/2` function. This catches validation errors before
+  the insert.
+
+  ### When to validate
+
+  * **Validate** when the data comes from user input and needs validation.
+  * **Skip validation** when the data is already validated or comes from a
+    trusted source (for example, seeding data or internal migrations).
+
+  ### Validation failures
+
+  When validation fails, the function returns `{:error, [changeset, ...]}`:
+
+      {:error, [changeset]} =
+        EctoShorts.CommonParams.convert_to_insert_params(
+          Post,
+          [%{title: nil}]  # title is required
+        )
+
+      changeset.errors
+      # [title: {"can't be blank", [validation: :required]}]
+
+  ### Skipping validation
+
+  Pass `validate: false` to skip validation:
+
+      {:ok, inserts} =
+        EctoShorts.CommonParams.convert_to_insert_params(
+          Post,
+          [%{title: "Hello"}],
+          validate: false
+        )
+
+  ## Troubleshooting
+
+  **Problem:** `convert_to_insert_params/3` returns `{:error, [changeset]}`.
+
+  **Solution:** Check the changeset errors to see which validations failed.
+  Fix the input data or adjust the schema's `changeset/2` function.
+
+  **Problem:** Timestamps are not being added.
+
+  **Solution:** Verify the schema has `:inserted_at` and `:updated_at`
+  fields defined with `timestamps()` in the schema.
+
+  **Problem:** Fields are missing from the insert data.
+
+  **Solution:** Check that the fields are in the schema's query fields.
+  Use `:query_fields` option to override.
+
+  **Problem:** Placeholder substitution is not working.
+
+  **Solution:** Verify the field value matches the placeholder value
+  exactly. Use `:on_placeholder_conflict` to force replacement.
+
+  See also `EctoShorts.Actions`, `EctoShorts.CommonSchema`, and
+  `c:Ecto.Repo.insert_all/3`.
   """
 
   alias Ecto.Changeset

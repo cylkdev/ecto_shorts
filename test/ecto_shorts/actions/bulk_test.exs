@@ -1,0 +1,166 @@
+defmodule EctoShorts.Actions.BulkTest do
+  use EctoShorts.DataCase
+
+  alias EctoShorts.Actions
+  alias EctoShorts.Schema.Comment
+  alias EctoShorts.Schema.Post
+
+  describe "insert_all/3" do
+    test "inserts multiple records successfully" do
+      assert {:ok, {2, nil}} =
+               Actions.insert_all(
+                 Post,
+                 [%{title: "First"}, %{title: "Second"}],
+                 []
+               )
+
+      assert [%Post{title: "First"}, %Post{title: "Second"}] = Repo.all(Post)
+    end
+
+    test "inserts multiple records successfully and returns records when option :returning is true" do
+      assert {:ok, {2, [%Post{title: "First"}, %Post{title: "Second"}]}} =
+               Actions.insert_all(
+                 Post,
+                 [%{title: "First"}, %{title: "Second"}],
+                 returning: true
+               )
+    end
+
+    test "returns {:error, [changeset]} when validation fails on any record" do
+      assert {:error, [changeset]} = Actions.insert_all(Post, [%{views: "oops"}])
+
+      assert %Ecto.Changeset{valid?: false} = changeset
+      assert Keyword.has_key?(changeset.errors, :views)
+    end
+
+    test "performs upsert when records include complete primary keys" do
+      existing_post =
+        %Post{}
+        |> Post.changeset(%{title: "Original Title"})
+        |> Repo.insert!()
+
+      assert {:ok, {1, nil}} =
+               Actions.insert_all(
+                 Post,
+                 [%{id: existing_post.id, title: "Updated Title"}],
+                 on_conflict_replace: [:title]
+               )
+
+      assert %Post{title: "Updated Title"} = Repo.get!(Post, existing_post.id)
+    end
+
+    test "generates conflict options by default so duplicate primary keys do not raise" do
+      existing_post =
+        %Post{}
+        |> Post.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      exception =
+        try do
+          Repo.insert_all(Post, [%{id: existing_post.id, title: "Will Raise"}], [])
+          nil
+        rescue
+          e in Postgrex.Error ->
+            e
+        end
+
+      assert %Postgrex.Error{} = exception
+
+      assert {:ok, {1, nil}} =
+               Actions.insert_all(
+                 Post,
+                 [%{id: existing_post.id, title: "Updated"}],
+                 []
+               )
+
+      assert %Post{title: "Updated"} = Repo.get!(Post, existing_post.id)
+    end
+
+    test "allows caller-provided on_conflict option to override computed defaults" do
+      existing_post =
+        %Post{}
+        |> Post.changeset(%{title: "Original"})
+        |> Repo.insert!()
+
+      assert {:ok, {0, nil}} =
+               Actions.insert_all(
+                 Post,
+                 [%{id: existing_post.id, title: "Attempted Update"}],
+                 on_conflict_replace: [:title],
+                 on_conflict: :nothing
+               )
+
+      assert %Post{title: "Original"} = Repo.get!(Post, existing_post.id)
+    end
+
+    test "with validate: false, inserts records that would fail validation" do
+      assert {:ok, {2, nil}} =
+               Actions.insert_all(
+                 Comment,
+                 [
+                   %{body: "x"},
+                   %{body: "y"}
+                 ],
+                 validate: false
+               )
+
+      assert [%Comment{body: "x"}, %Comment{body: "y"}] = Repo.all(Comment)
+    end
+  end
+
+  describe "update_all/4" do
+    test "updates matching records with field params" do
+      %Post{}
+      |> Post.changeset(%{title: "Draft", published: false})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Already", published: true})
+      |> Repo.insert!()
+
+      assert {1, nil} =
+               Actions.update_all(Post, %{published: false}, %{published: true})
+
+      assert [_, _] = Actions.all(Post, %{published: true})
+    end
+
+    test "supports :inc tuple operation" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "Counter", views: 5})
+        |> Repo.insert!()
+
+      assert {1, nil} =
+               Actions.update_all(Post, %{id: post.id}, %{views: {:inc, 3}})
+
+      assert %Post{views: 8} = Repo.get!(Post, post.id)
+    end
+  end
+
+  describe "delete_all/3" do
+    test "deletes matching records and returns {count, nil}" do
+      %Post{}
+      |> Post.changeset(%{title: "A"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "A"})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "B"})
+      |> Repo.insert!()
+
+      assert {2, nil} = Actions.delete_all(Post, %{title: "A"})
+      assert [%Post{title: "B"}] = Repo.all(Post)
+    end
+
+    test "returns {0, nil} when nothing matches" do
+      %Post{}
+      |> Post.changeset(%{title: "Only"})
+      |> Repo.insert!()
+
+      assert {0, nil} = Actions.delete_all(Post, %{title: "Missing"})
+    end
+  end
+end

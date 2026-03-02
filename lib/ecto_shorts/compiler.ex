@@ -1,29 +1,31 @@
 defmodule EctoShorts.Compiler do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Provides a spec-driven, macro-based compiler for `apply_dynamic_expr/3` clauses.
+  Compiles `apply_dynamic_expr/3` clauses from specs at compile time.
 
   Use this module when building a custom dynamic expression adapter that needs
-  to dispatch expression construction to different function clauses depending on
-  the binding pattern and expression type. `EctoShorts.Compiler` generates the
-  dispatch module at compile time from a specs module you supply.
+  to dispatch expression construction to different function clauses based on
+  binding patterns and expression types. The compiler generates all dispatch
+  clauses at compile time from a specs module you provide.
 
-  ## How it works
+  ## When to use the compiler
 
-  When a module `X` calls `use EctoShorts.Compiler, specs: MySpecs`:
+  Use `EctoShorts.Compiler` when you need to:
 
-  1. `EctoShorts.Compiler` calls `MySpecs.clause_specs/4` with each
-     query binding pattern (named and positional) to collect
-     `%EctoShorts.Compiler.ClauseSpec{}` structs.
-  2. It compiles those specs into `apply_dynamic_expr/3` function clauses and
-     injects them into a generated submodule `X.Compiled`.
-  3. It defines `X.apply_dynamic_expr/3` as a public delegator to
-     `X.Compiled.apply_dynamic_expr/3`.
-
-  The specs module (`MySpecs`) must be already compiled before `X` is compiled,
-  and must export `clause_specs/4`.
+  * **Build a custom dynamic expression adapter** - implement database-specific
+    expression builders (for example, PostgreSQL array operators, MySQL JSON
+    functions).
+  * **Support multiple binding patterns** - generate clauses for named bindings
+    (`:as`), positional bindings (`:at`), and shortcut bindings (`:first`,
+    `:last`).
+  * **Avoid runtime dispatch overhead** - compile all dispatch logic at compile
+    time instead of using runtime pattern matching or case statements.
+  * **Integrate with EctoShorts.CommonFilters** - provide a custom adapter that
+    works seamlessly with the filter language.
 
   ## Getting started
+
+  Define a specs module that exports `clause_specs/4`:
 
       defmodule MyApp.Adapter.Specs do
         alias EctoShorts.Compiler.ClauseSpec
@@ -40,25 +42,176 @@ defmodule EctoShorts.Compiler do
         end
       end
 
+  Use the compiler in your adapter module:
+
       defmodule MyApp.Adapter do
         use EctoShorts.Compiler, specs: MyApp.Adapter.Specs
       end
 
-  After compilation, `MyApp.Adapter.apply_dynamic_expr/3` is available.
+  After compilation, `MyApp.Adapter.apply_dynamic_expr/3` is available:
+
+      MyApp.Adapter.apply_dynamic_expr({:as, :post}, :title, {:==, "Hello"})
+      # Returns: dynamic([{:as, :post}, r], field(r, :title) == ^"Hello")
+
+  ## How it works
+
+  When a module `X` calls `use EctoShorts.Compiler, specs: MySpecs`:
+
+  1. **Collect specs** - `EctoShorts.Compiler` calls `MySpecs.clause_specs/4`
+     with each query binding pattern (named and positional) to collect
+     `%EctoShorts.Compiler.ClauseSpec{}` structs.
+  2. **Generate clauses** - it compiles those specs into `apply_dynamic_expr/3`
+     function clauses and injects them into a generated submodule `X.Compiled`.
+  3. **Define delegator** - it defines `X.apply_dynamic_expr/3` as a public
+     delegator to `X.Compiled.apply_dynamic_expr/3`.
+
+  The specs module (`MySpecs`) must be already compiled before `X` is compiled,
+  and must export `clause_specs/4`.
+
+  ## Clause spec structure
+
+  A `ClauseSpec` defines one function clause for `apply_dynamic_expr/3`:
+
+      ClauseSpec.new(%{
+        binding_head: binding_head,      # Binding pattern (e.g. {:as, :post})
+        key: Macro.var(:key, nil),       # Field name variable
+        head: quote(do: {:==, val}),     # Expression pattern to match
+        body: quote(do: ...)             # Quoted code to execute
+      })
+
+  ### Fields
+
+  * `:binding_head` - the binding pattern this clause matches (for example,
+    `{:as, :post}`, `{:at, 1}`, `:first`, `:last`).
+  * `:key` - a quoted variable that captures the field name (usually
+    `Macro.var(:key, nil)`).
+  * `:head` - a quoted pattern that matches the expression structure (for
+    example, `quote(do: {:==, val})` matches `{:==, "value"}`).
+  * `:body` - quoted code that builds the dynamic expression (for example,
+    `quote(do: Ecto.Query.dynamic([...], ...))`).
+
+  ### Example clause spec
+
+  This spec generates a clause that matches equality comparisons:
+
+      ClauseSpec.new(%{
+        binding_head: {:as, :post},
+        key: Macro.var(:key, nil),
+        head: quote(do: {:==, val}),
+        body: quote(do: Ecto.Query.dynamic([{:as, :post}, r], field(r, ^key) == ^val))
+      })
+
+  The generated clause looks like:
+
+      def apply_dynamic_expr({:as, :post}, key, {:==, val}) do
+        Ecto.Query.dynamic([{:as, :post}, r], field(r, ^key) == ^val)
+      end
+
+  ## Custom specs module
+
+  A complete specs module implements `clause_specs/4` and returns a list of
+  `ClauseSpec` structs:
+
+      defmodule MyApp.Adapter.Specs do
+        alias EctoShorts.Compiler.ClauseSpec
+
+        def clause_specs(_context, binding_head, _target_binding, binding_bodies) do
+          Enum.flat_map(binding_bodies, fn binding_body ->
+            [
+              # Equality clause
+              ClauseSpec.new(%{
+                binding_head: binding_head,
+                key: Macro.var(:key, nil),
+                head: quote(do: {:==, val}),
+                body: quote(do: Ecto.Query.dynamic([{^binding_head, r}], field(r, ^key) == ^val))
+              }),
+
+              # Greater than clause
+              ClauseSpec.new(%{
+                binding_head: binding_head,
+                key: Macro.var(:key, nil),
+                head: quote(do: {:>, val}),
+                body: quote(do: Ecto.Query.dynamic([{^binding_head, r}], field(r, ^key) > ^val))
+              }),
+
+              # Less than clause
+              ClauseSpec.new(%{
+                binding_head: binding_head,
+                key: Macro.var(:key, nil),
+                head: quote(do: {:<, val}),
+                body: quote(do: Ecto.Query.dynamic([{^binding_head, r}], field(r, ^key) < ^val))
+              })
+            ]
+          end)
+        end
+      end
+
+  ### Parameters
+
+  * `context` - the module being compiled (for example, `MyApp.Adapter.Compiled`).
+  * `binding_head` - the binding pattern for this set of clauses (for example,
+    `{:as, :post}`).
+  * `target_binding` - the target binding variable (usually not needed).
+  * `binding_bodies` - a list of binding body patterns (usually one element).
+
+  ## Binding patterns
+
+  The compiler generates clauses for these binding patterns:
+
+  * **Named bindings** - `{:as, :post}`, `{:as, :comment}`, etc.
+  * **Positional bindings** - `{:at, 1}`, `{:at, 2}`, etc.
+  * **Shortcut bindings** - `:first`, `:last`.
+
+  The number of positional bindings is controlled by `:max_binding_positions`.
 
   ## Recompilation
 
-  `EctoShorts.Compiler` implements `__mix_recompile__?/0` so that `X` is
-  automatically recompiled whenever the configured `:max_binding_positions`
-  changes (for example, when you update the config value between builds).
+  `EctoShorts.Compiler` implements `__mix_recompile__?/0` so that your adapter
+  module is automatically recompiled whenever the configured
+  `:max_binding_positions` changes (for example, when you update the config
+  value between builds).
+
+  This ensures the generated clauses always match the current configuration.
 
   ## Configuration
 
-  * `:max_binding_positions` - controls how many positional binding patterns are
-    generated. Increase this when your queries join more tables than the default
-    supports. Defaults to `EctoShorts.Config.max_binding_positions/0`.
+  * `:max_binding_positions` - controls how many positional binding patterns
+    are generated. Increase this when your queries join more tables than the
+    default supports. Defaults to `EctoShorts.Config.max_binding_positions/0`.
 
-  See also `EctoShorts.Compiler.ClauseSpec` and `EctoShorts.Dynamics.Adapter`.
+  Example:
+
+      defmodule MyApp.Adapter do
+        use EctoShorts.Compiler,
+          specs: MyApp.Adapter.Specs,
+          max_binding_positions: 20
+      end
+
+  ## Troubleshooting
+
+  **Problem:** Compilation fails with "Expected :specs to be a module".
+
+  **Solution:** Verify the `:specs` option points to a compiled module. The
+  specs module must be compiled before the adapter module.
+
+  **Problem:** Compilation fails with "Expected ... to export clause_specs/4".
+
+  **Solution:** Add a `clause_specs/4` function to your specs module. The
+  function must accept four arguments and return a list of `ClauseSpec` structs.
+
+  **Problem:** Generated clauses do not match at runtime.
+
+  **Solution:** Check that the `:head` pattern in your `ClauseSpec` matches
+  the expression structure you are passing to `apply_dynamic_expr/3`. Use
+  `IO.inspect/2` to see the actual expression structure.
+
+  **Problem:** Recompilation is not triggered when config changes.
+
+  **Solution:** Verify the `:max_binding_positions` config is set correctly.
+  Run `mix clean` and `mix compile` to force a full recompile.
+
+  See also `EctoShorts.Compiler.ClauseSpec`, `EctoShorts.Dynamics.Adapter`,
+  and `EctoShorts.Config.max_binding_positions/0`.
   """
 
   alias EctoShorts.Config
