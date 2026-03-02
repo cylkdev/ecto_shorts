@@ -175,66 +175,52 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp build_field_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts) do
+    reduce_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts, :field)
+  end
+
+  defp build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts) do
+    reduce_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts, :operator)
+  end
+
+  defp reduce_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts, mode) do
     value = apply_helper_expressions(source, key, value, opts)
+    label = if mode == :field, do: "field", else: "operator"
 
     value
     |> normalize_expression_params()
     |> Enum.reduce(dyn_a, fn
-      {boolean_op, inner}, acc when boolean_op in @boolean_operators ->
+      {boolean_op, inner}, acc when boolean_op in @boolean_operators and mode == :field ->
         if is_list(inner) do
           merge_boolean_predicates(source, acc, binding_selector, boolean_op, inner, opts)
         else
-          case dynamic_adapter.build_dynamic(source, binding_selector, key, inner) do
-            nil ->
-              Logger.warning(
-                @logger_prefix,
-                "No dynamic expression generated for field #{inspect(key)} with expression: #{inspect(inner)}"
-              )
-
-              acc
-
-            dyn_b ->
-              merge_dynamic(acc, boolean_op, dyn_b)
-          end
+          build_and_merge(dynamic_adapter, source, binding_selector, key, inner, acc, boolean_op, label)
         end
 
       item, acc ->
-        expr = if is_tuple(item), do: item, else: {@equal, item}
+        expr =
+          if mode == :field and not is_tuple(item) do
+            {@equal, item}
+          else
+            item
+          end
 
-        case dynamic_adapter.build_dynamic(source, binding_selector, key, expr) do
-          nil ->
-            Logger.warning(
-              @logger_prefix,
-              "No dynamic expression generated for field #{inspect(key)} with expression: #{inspect(expr)}"
-            )
-
-            acc
-
-          dyn_b ->
-            merge_dynamic(acc, :and, dyn_b)
-        end
+        build_and_merge(dynamic_adapter, source, binding_selector, key, expr, acc, :and, label)
     end)
   end
 
-  defp build_operator_predicates(source, dyn_a, binding_selector, key, value, dynamic_adapter, opts) do
-    value = apply_helper_expressions(source, key, value, opts)
+  defp build_and_merge(dynamic_adapter, source, binding_selector, key, expr, dyn_a, merge_op, label) do
+    case dynamic_adapter.build_dynamic(source, binding_selector, key, expr) do
+      nil ->
+        Logger.warning(
+          @logger_prefix,
+          "No dynamic expression generated for #{label} #{inspect(key)} with expression: #{inspect(expr)}"
+        )
 
-    value
-    |> normalize_expression_params()
-    |> Enum.reduce(dyn_a, fn item, dyn_acc ->
-      case dynamic_adapter.build_dynamic(source, binding_selector, key, item) do
-        nil ->
-          Logger.warning(
-            @logger_prefix,
-            "No dynamic expression generated for operator #{inspect(key)} with expression: #{inspect(item)}"
-          )
+        dyn_a
 
-          dyn_acc
-
-        dyn_b ->
-          merge_dynamic(dyn_acc, :and, dyn_b)
-      end
-    end)
+      dyn_b ->
+        merge_dynamic(dyn_a, merge_op, dyn_b)
+    end
   end
 
   defp merge_boolean_predicates(

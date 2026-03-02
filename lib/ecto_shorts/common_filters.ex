@@ -869,6 +869,24 @@ defmodule EctoShorts.CommonFilters do
   @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
   @schema_filters [:where, :or_where]
 
+  @query_builder_modules %{
+    distinct: Distinct,
+    group_by: GroupBy,
+    having: Having,
+    or_having: Having,
+    join: Join,
+    order_by: OrderBy,
+    prepend_order_by: OrderBy,
+    preload: Preload,
+    select: Select,
+    select_merge: Select,
+    update: Update,
+    windows: Windows,
+    with_cte: WithCte,
+    with_named_binding: WithNamedBinding,
+    with_ties: WithTies
+  }
+
   @query_filters [
     :distinct,
     :except,
@@ -1499,54 +1517,12 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(schema_source, query, binding_selector, filter_op, params, opts) do
     binding_source = to_binding_source(schema_source, query, binding_selector)
 
-    case filter_op do
-      :distinct ->
-        Distinct.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :group_by ->
-        GroupBy.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :having ->
-        Having.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :join ->
-        Join.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :or_having ->
-        Having.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :order_by ->
-        OrderBy.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :preload ->
-        Preload.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :prepend_order_by ->
-        OrderBy.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :select ->
-        Select.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :select_merge ->
-        Select.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :update ->
-        Update.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :windows ->
-        Windows.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :with_cte ->
-        WithCte.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :with_named_binding ->
-        WithNamedBinding.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      :with_ties ->
-        WithTies.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      _ ->
+    case Map.get(@query_builder_modules, filter_op) do
+      nil ->
         Filter.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      module ->
+        module.build(binding_source, filter_op, query, binding_selector, params, opts)
     end
   end
 

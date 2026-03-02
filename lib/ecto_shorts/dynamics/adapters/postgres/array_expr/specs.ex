@@ -6,6 +6,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
+  alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
 
   @aggregate_helpers [:avg, :count, :max, :min, :sum]
   @comparison_ops [:==, :!=, :>, :>=, :<, :<=]
@@ -111,15 +112,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
         guard: op_guard,
         body:
           quote do
-            mapped_op =
-              case unquote(op_var) do
-                :gt -> :>
-                :gte -> :>=
-                :lt -> :<
-                :lte -> :<=
-                :eq -> :==
-                :ne -> :!=
-              end
+            mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
 
             apply_dynamic_expr(
               unquote(binding_head_ast),
@@ -135,15 +128,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
         guard: op_guard,
         body:
           quote do
-            mapped_op =
-              case unquote(op_var) do
-                :gt -> :>
-                :gte -> :>=
-                :lt -> :<
-                :lte -> :<=
-                :eq -> :==
-                :ne -> :!=
-              end
+            mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
 
             apply_dynamic_expr(
               unquote(binding_head_ast),
@@ -225,15 +210,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
           guard: alias_guard,
           body:
             quote do
-              mapped_op =
-                case unquote(op_var) do
-                  :eq -> :==
-                  :ne -> :!=
-                  :gt -> :>
-                  :gte -> :>=
-                  :lt -> :<
-                  :lte -> :<=
-                end
+              mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
 
               apply_dynamic_expr(
                 unquote(binding_head_ast),
@@ -249,15 +226,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
           guard: alias_guard,
           body:
             quote do
-              mapped_op =
-                case unquote(op_var) do
-                  :eq -> :==
-                  :ne -> :!=
-                  :gt -> :>
-                  :gte -> :>=
-                  :lt -> :<
-                  :lte -> :<=
-                end
+              mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
 
               apply_dynamic_expr(
                 unquote(binding_head_ast),
@@ -272,7 +241,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
           head: quote(do: {unquote(helper), {unquote(op_var), unquote(value_var)}}),
           guard: op_guard,
           body:
-            aggregate_dynamic_case_ast(
+            ExprHelpers.aggregate_dynamic_case_ast(
               binding_body_asts,
               aggregate_expr_ast,
               op_var,
@@ -285,7 +254,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
           head: quote(do: {:not, {unquote(helper), {unquote(op_var), unquote(value_var)}}}),
           guard: op_guard,
           body:
-            not_aggregate_dynamic_case_ast(
+            ExprHelpers.not_aggregate_dynamic_case_ast(
               binding_body_asts,
               aggregate_expr_ast,
               op_var,
@@ -822,113 +791,5 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
         body: AST.dynamic_ast(binding_body_asts, quote(do: ^unquote(value_var) in unquote(field_ast)))
       }
     ]
-  end
-
-  defp aggregate_dynamic_case_ast(binding_body_asts, aggregate_expr_ast, op_var, value_var) do
-    quote do
-      case unquote(op_var) do
-        :== ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: unquote(aggregate_expr_ast) == ^unquote(value_var))
-            )
-          )
-
-        :!= ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: unquote(aggregate_expr_ast) != ^unquote(value_var))
-            )
-          )
-
-        :> ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: unquote(aggregate_expr_ast) > ^unquote(value_var))
-            )
-          )
-
-        :>= ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: unquote(aggregate_expr_ast) >= ^unquote(value_var))
-            )
-          )
-
-        :< ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: unquote(aggregate_expr_ast) < ^unquote(value_var))
-            )
-          )
-
-        :<= ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: unquote(aggregate_expr_ast) <= ^unquote(value_var))
-            )
-          )
-      end
-    end
-  end
-
-  defp not_aggregate_dynamic_case_ast(binding_body_asts, aggregate_expr_ast, op_var, value_var) do
-    quote do
-      case unquote(op_var) do
-        :== ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: not (unquote(aggregate_expr_ast) == ^unquote(value_var)))
-            )
-          )
-
-        :!= ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: not (unquote(aggregate_expr_ast) != ^unquote(value_var)))
-            )
-          )
-
-        :> ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: not (unquote(aggregate_expr_ast) > ^unquote(value_var)))
-            )
-          )
-
-        :>= ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: not (unquote(aggregate_expr_ast) >= ^unquote(value_var)))
-            )
-          )
-
-        :< ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: not (unquote(aggregate_expr_ast) < ^unquote(value_var)))
-            )
-          )
-
-        :<= ->
-          unquote(
-            AST.dynamic_ast(
-              binding_body_asts,
-              quote(do: not (unquote(aggregate_expr_ast) <= ^unquote(value_var)))
-            )
-          )
-      end
-    end
   end
 end

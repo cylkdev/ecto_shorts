@@ -706,13 +706,13 @@ defmodule EctoShorts.Actions do
   alias Ecto.Changeset
 
   alias EctoShorts.Actions.Batch
+  alias EctoShorts.Actions.Bulk
   alias EctoShorts.Actions.Error
   alias EctoShorts.Actions.Multi
 
   alias EctoShorts.{
     Config,
     CommonFilters,
-    CommonParams,
     CommonSchema
   }
 
@@ -1613,16 +1613,7 @@ defmodule EctoShorts.Actions do
         params_list
       end
 
-    with {:ok, inserts} <- CommonParams.convert_to_insert_params(source, params_list, opts) do
-      on_conflict_options = CommonParams.build_on_conflict_options(source, inserts, opts)
-
-      {:ok,
-       Config.repo!(opts).insert_all(
-         source,
-         inserts,
-         Keyword.merge(on_conflict_options, opts)
-       )}
-    end
+    Bulk.insert_all(source, params_list, opts)
   end
 
   @doc group: "Bulk"
@@ -1645,14 +1636,7 @@ defmodule EctoShorts.Actions do
   """
   @spec update_all(module() | {binary(), module()}, params(), params(), opts()) :: {non_neg_integer(), nil}
   def update_all(source, find_params, update_params, opts \\ []) do
-    updates =
-      source
-      |> CommonSchema.get_schema_source()
-      |> CommonParams.convert_to_update_params(update_params, opts)
-
-    source
-    |> CommonFilters.convert_params_to_filter(find_params, opts)
-    |> Config.repo!(opts).update_all(updates, opts)
+    Bulk.update_all(source, find_params, update_params, opts)
   end
 
   @doc group: "Bulk"
@@ -1673,9 +1657,7 @@ defmodule EctoShorts.Actions do
   """
   @spec delete_all(queryable(), params(), opts()) :: {non_neg_integer(), nil}
   def delete_all(queryable, params \\ %{}, opts \\ []) do
-    queryable
-    |> CommonFilters.convert_params_to_filter(params, opts)
-    |> Config.repo!(opts).delete_all(opts)
+    Bulk.delete_all(queryable, params, opts)
   end
 
   @doc group: "Multi"

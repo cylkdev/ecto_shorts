@@ -1,12 +1,12 @@
 defmodule EctoShorts.Actions.Batch do
   @moduledoc since: "3.0.0"
-  @moduledoc """
-  Normalizes batch lookup params and groups fetched records by batch key.
+  @moduledoc false
 
-  Used internally by `EctoShorts.Actions.batch/5` and
-  `EctoShorts.Actions.batch_preload/4` to build the lookup queries and
-  shape the results into a key-to-record(s) map.
-  """
+  # Normalizes batch lookup params and groups fetched records by batch key.
+  #
+  # Used internally by `EctoShorts.Actions.batch/5` and
+  # `EctoShorts.Actions.batch_preload/4` to build the lookup queries and
+  # shape the results into a key-to-record(s) map.
 
   alias EctoShorts.CommonSchema
 

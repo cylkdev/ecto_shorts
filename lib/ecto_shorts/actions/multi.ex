@@ -1,15 +1,15 @@
 defmodule EctoShorts.Actions.Multi do
   @moduledoc since: "3.0.0"
-  @moduledoc """
-  Builds `Ecto.Multi` structs for transactional batch operations.
+  @moduledoc false
 
-  Each `build_*_multi/3` function constructs an `Ecto.Multi` where every
-  entry in the params list becomes an individual multi step. If any step
-  fails, the entire multi is rolled back when run inside a transaction.
-
-  `handle_multi_response/2` normalizes the multi transaction result into
-  `{:ok, [values]}` or `{:error, reason}`.
-  """
+  # Builds `Ecto.Multi` structs for transactional batch operations.
+  #
+  # Each `build_*_multi/3` function constructs an `Ecto.Multi` where every
+  # entry in the params list becomes an individual multi step. If any step
+  # fails, the entire multi is rolled back when run inside a transaction.
+  #
+  # `handle_multi_response/2` normalizes the multi transaction result into
+  # `{:ok, [values]}` or `{:error, reason}`.
 
   alias Ecto.Multi
   alias EctoShorts.Actions.Error
