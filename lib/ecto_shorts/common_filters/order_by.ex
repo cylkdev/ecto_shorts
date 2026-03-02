@@ -33,7 +33,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   defp reduce_order_by(filter_op, query, binding_selector, {key, params})
        when is_map(params) and not is_struct(params) do
-    reduce_order_by(filter_op, query, binding_selector, {key, Map.to_list(params)})
+    reduce_order_by(filter_op, query, binding_selector, {key, Map.to_list(params())})
   end
 
   defp reduce_order_by(filter_op, query, binding_selector, {@binding_selector_key, bind_params}) do
@@ -46,7 +46,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   defp reduce_order_by(filter_op, query, binding_selector, params)
        when is_map(params) and not is_struct(params) do
-    reduce_order_by(filter_op, query, binding_selector, Map.to_list(params))
+    reduce_order_by(filter_op, query, binding_selector, Map.to_list(params()))
   end
 
   defp reduce_order_by(filter_op, query, binding_selector, entries) when is_list(entries) do

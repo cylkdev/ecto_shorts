@@ -664,16 +664,10 @@ defmodule EctoShorts.CommonFilters do
   For example, these two calls produce the same query:
 
       # Passing source as the first argument and filters in the params:
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        EctoShorts.Schema.Post,
-        %{id: 1}
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{id: 1})
 
       # Passing source and filters entirely inside the params:
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        nil,
-        %{source: EctoShorts.Schema.Post, query: %{id: 1}}
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter(nil, %{source: EctoShorts.Schema.Post, query: %{id: 1}})
 
   When both a first argument and a `:source` key are present, the `:source`
   key wins for field resolution. The first argument still determines the
@@ -700,16 +694,10 @@ defmodule EctoShorts.CommonFilters do
   Pass the table name string or a `{table_name, nil}` tuple as the first
   argument:
 
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        "posts",
-        %{select: [:id, :title], published: true}
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter("posts", %{select: [:id, :title], published: true})
       # from p0 in "posts", where: p0.published == ^true, select: [:id, :title]
 
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        {"posts", nil},
-        %{select: [:id, :title], published: true}
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter({"posts", nil}, %{select: [:id, :title], published: true})
       # same result
 
   **2. Via the `:source` meta-key**
@@ -718,10 +706,7 @@ defmodule EctoShorts.CommonFilters do
   valid source (a schema module, table string, or query) or `nil`. When
   `:source` is present it overrides the first argument for field resolution:
 
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        EctoShorts.Schema.Post,
-        [source: "posts", query: %{id: 1}]
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, [source: "posts", query: %{id: 1}])
 
   **3. `nil` as the source**
 
@@ -729,10 +714,7 @@ defmodule EctoShorts.CommonFilters do
   params. This is useful when the source is determined entirely by data
   (for example from an HTTP request) and is not known at compile time:
 
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        nil,
-        %{source: "posts", select: [:id, :title], id: 1}
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter(nil, %{source: "posts", select: [:id, :title], id: 1})
       # from p0 in "posts", where: p0.id == ^1, select: [:id, :title]
 
   When `nil` is the first argument and `:source` is missing from the
@@ -748,10 +730,7 @@ defmodule EctoShorts.CommonFilters do
   Ecto will raise when you try to execute it (for example with `Repo.all/1`):
 
       # Builds the query - works fine:
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        "posts",
-        %{published: true}
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter("posts", %{published: true})
 
       # Executing that query without :select will raise at the repo level.
 
@@ -988,7 +967,7 @@ defmodule EctoShorts.CommonFilters do
   def convert_params_to_filter(source, params, opts \\ [])
 
   def convert_params_to_filter(source, params, opts) when is_map(params) do
-    convert_params_to_filter(source, Map.to_list(params), opts)
+    convert_params_to_filter(source, Map.to_list(params()), opts)
   end
 
   def convert_params_to_filter(source, entries, opts) when is_list(entries) do
@@ -1142,13 +1121,13 @@ defmodule EctoShorts.CommonFilters do
       query,
       binding_selector,
       filter_op,
-      Map.to_list(params),
+      Map.to_list(params()),
       opts
     )
   end
 
   def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts)
-      when is_list(params) do
+      when is_list(params()) do
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn {key, value}, query_acc ->
         create_schema_filter(
@@ -1238,7 +1217,7 @@ defmodule EctoShorts.CommonFilters do
          params,
          opts
        ) do
-    params = if is_map(params) and not is_struct(params), do: Map.to_list(params), else: params
+    params = if is_map(params) and not is_struct(params), do: Map.to_list(params()), else: params
 
     if Keyword.keyword?(params) do
       assoc_schema =
@@ -1411,7 +1390,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp build_query(schema_source, query, binding_selector, :subquery, params, opts)
-       when is_map(params) or is_list(params) do
+       when is_map(params) or is_list(params()) do
     binding_source = to_binding_source(schema_source, query, binding_selector)
 
     filtered_query =

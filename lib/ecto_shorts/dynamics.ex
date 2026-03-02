@@ -114,7 +114,7 @@ defmodule EctoShorts.Dynamics do
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
     source = CommonSchema.normalize_source(source)
 
-    if is_map(params) or is_list(params) do
+    if is_map(params) or is_list(params()) do
       Enum.reduce(params, nil, fn entry, dyn_acc ->
         append_predicates(source, dyn_acc, binding_selector, entry, opts)
       end)
@@ -130,7 +130,7 @@ defmodule EctoShorts.Dynamics do
 
   defp append_predicates(source, dyn_a, binding_selector, params, opts)
        when is_map(params) and not is_struct(params) do
-    append_predicates(source, dyn_a, binding_selector, Map.to_list(params), opts)
+    append_predicates(source, dyn_a, binding_selector, Map.to_list(params()), opts)
   end
 
   defp append_predicates(source, dyn_a, binding_selector, list, opts) when is_list(list) do
@@ -356,7 +356,7 @@ defmodule EctoShorts.Dynamics do
     Map.get(params, :select, default_select)
   end
 
-  defp helper_expr_select(params, default_select) when is_list(params) do
+  defp helper_expr_select(params, default_select) when is_list(params()) do
     if Keyword.keyword?(params) do
       Keyword.get(params, :select, default_select)
     else

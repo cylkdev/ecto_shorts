@@ -22,7 +22,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
     apply_with_ties(query, binding_selector, params)
   end
 
-  defp apply_with_ties(query, binding_selector, params) when is_list(params) do
+  defp apply_with_ties(query, binding_selector, params) when is_list(params()) do
     apply_with_ties(query, binding_selector, Map.new(params))
   end
 

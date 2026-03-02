@@ -737,7 +737,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp build_update_operations(source, %{} = params, acc, opts) do
-    build_update_operations(source, Map.to_list(params), acc, opts)
+    build_update_operations(source, Map.to_list(params()), acc, opts)
   end
 
   defp build_update_operations(_source, [], acc, _opts) do

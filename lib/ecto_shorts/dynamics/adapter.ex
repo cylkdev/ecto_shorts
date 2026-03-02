@@ -300,7 +300,7 @@ defmodule EctoShorts.Dynamics.Adapter do
 
   See also `build_dynamic/4` and `operator?/1`.
   """
-  @callback operators() :: [atom()]
+  @callback operators() :: list(atom())
 
   @doc """
   Checks if the given key is a special operator handled by this adapter.

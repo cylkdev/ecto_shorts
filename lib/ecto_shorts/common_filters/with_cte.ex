@@ -23,10 +23,10 @@ defmodule EctoShorts.CommonFilters.WithCte do
 
   defp reduce_cte(schema_source, query, params, opts)
        when is_map(params) and not is_struct(params) do
-    reduce_cte(schema_source, query, Map.to_list(params), opts)
+    reduce_cte(schema_source, query, Map.to_list(params()), opts)
   end
 
-  defp reduce_cte(schema_source, query, params, opts) when is_list(params) do
+  defp reduce_cte(schema_source, query, params, opts) when is_list(params()) do
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn {cte_name, cte_definition}, query_acc ->
         apply_cte(schema_source, query_acc, cte_name, cte_definition, opts)

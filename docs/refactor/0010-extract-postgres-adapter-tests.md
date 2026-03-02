@@ -107,7 +107,7 @@ All steps are safe to repeat. The new test file is additive. Removing tests from
 
 In `lib/ecto_shorts/dynamics/adapters/postgres.ex`, the public API under test:
 
-    @callback operators() :: [atom()]
+    @callback operators() :: list(atom())
     @callback operator?(key :: atom()) :: boolean()
     @callback build_dynamic(source, binding_selector, key, expr) :: Ecto.Query.dynamic_expr()
 

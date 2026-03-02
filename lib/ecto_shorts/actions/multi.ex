@@ -154,7 +154,7 @@ defmodule EctoShorts.Actions.Multi do
   end
 
   defp run_multi_delete(repo, schema, params, index, opts)
-       when is_map(params) or is_list(params) do
+       when is_map(params) or is_list(params()) do
     with {:ok, record} <- repo_find(repo, schema, params, index, opts) do
       repo_delete(repo, schema, record, index, opts)
     end

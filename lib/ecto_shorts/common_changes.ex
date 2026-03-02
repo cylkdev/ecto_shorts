@@ -351,7 +351,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `has_empty_change?/2` and `changeset_field_nil?/2`.
   """
-  @spec has_nil_change?(Ecto.Changeset.t(), atom() | [atom()]) :: boolean()
+  @spec has_nil_change?(Ecto.Changeset.t(), atom() | list(atom())) :: boolean()
   def has_nil_change?(changeset, fields) when is_list(fields) do
     Enum.all?(fields, &has_nil_change?(changeset, &1))
   end
@@ -383,7 +383,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `has_nil_change?/2` and `changeset_field_empty?/2`.
   """
-  @spec has_empty_change?(Ecto.Changeset.t(), atom() | [atom()]) :: boolean()
+  @spec has_empty_change?(Ecto.Changeset.t(), atom() | list(atom())) :: boolean()
   def has_empty_change?(changeset, fields) when is_list(fields) do
     Enum.all?(fields, &has_empty_change?(changeset, &1))
   end
@@ -415,7 +415,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `put_new_change/3` and `changeset_field_nil?/2`.
   """
-  @spec validate_not_unset(Ecto.Changeset.t(), atom() | [atom()]) :: Ecto.Changeset.t()
+  @spec validate_not_unset(Ecto.Changeset.t(), atom() | list(atom())) :: Ecto.Changeset.t()
   def validate_not_unset(changeset, fields) when is_list(fields) do
     Enum.reduce(fields, changeset, fn field, acc_changeset ->
       validate_not_unset(acc_changeset, field)
@@ -459,7 +459,11 @@ defmodule EctoShorts.CommonChanges do
 
   See also `trim_string_change/2`.
   """
-  @spec truncate_datetime_change(Ecto.Changeset.t(), atom() | [atom()], :second | :millisecond | :microsecond) ::
+  @spec truncate_datetime_change(
+          Ecto.Changeset.t(),
+          atom() | list(atom()),
+          :second | :millisecond | :microsecond
+        ) ::
           Ecto.Changeset.t()
   def truncate_datetime_change(changeset, fields, precision \\ :second)
 
@@ -498,7 +502,7 @@ defmodule EctoShorts.CommonChanges do
 
   See also `truncate_datetime_change/3` and `put_new_change/3`.
   """
-  @spec trim_string_change(Ecto.Changeset.t(), atom() | [atom()]) :: Ecto.Changeset.t()
+  @spec trim_string_change(Ecto.Changeset.t(), atom() | list(atom())) :: Ecto.Changeset.t()
   def trim_string_change(changeset, fields) do
     fields
     |> List.wrap()

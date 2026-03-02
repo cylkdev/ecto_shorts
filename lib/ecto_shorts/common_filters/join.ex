@@ -47,7 +47,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @doc false
   def build(schema_source, :join, query, binding_selector, params, opts) when is_map(params) do
-    build(schema_source, :join, query, binding_selector, Map.to_list(params), opts)
+    build(schema_source, :join, query, binding_selector, Map.to_list(params()), opts)
   end
 
   def build(schema_source, :join, query, binding_selector, list, opts) do

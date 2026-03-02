@@ -599,7 +599,7 @@ defmodule EctoShorts.CommonSchema do
 
   See also `get_schema_reflection/2`.
   """
-  @spec get_query_fields(keyword(), source) :: [atom()]
+  @spec get_query_fields(keyword(), source) :: list(atom())
   def get_query_fields(opts, source) do
     Keyword.get(opts, :query_fields, get_schema_reflection(source, :query_fields))
   end
