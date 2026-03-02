@@ -793,13 +793,13 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
         from(p in Post,
           join: a in assoc(p, :author),
           as: :author,
-          update: [set: [first_name: a.first_name]]
+          update: [set: [title: a.first_name]]
         )
 
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{author: %{update: [set: [first_name: dynamic_title]]}}}},
+          %{bind: %{as: %{author: %{update: [set: [title: dynamic_title]]}}}},
           []
         )
 
@@ -813,13 +813,13 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
-          update: [set: [first_name: a.first_name]]
+          update: [set: [title: a.first_name]]
         )
 
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{at: %{2 => %{update: [set: [first_name: dynamic_title]]}}}},
+          %{bind: %{at: %{2 => %{update: [set: [title: dynamic_title]]}}}},
           []
         )
 
