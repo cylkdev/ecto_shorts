@@ -49,7 +49,7 @@ Chosen option: **Extract focused submodules**, because it directly reduces modul
 
 **Bad:**
 
-- More files to navigate when tracing the full call path of a multi-transaction operation (now spans `actions.ex` → `actions/multi.ex`).
+- More files to navigate when tracing the full call path of a multi-transaction operation (now spans `actions.ex` -> `actions/multi.ex`).
 - `actions.ex` at 614 lines is still above the 400-line ideal. Further extraction is possible but was out of scope.
 
 ## Validation

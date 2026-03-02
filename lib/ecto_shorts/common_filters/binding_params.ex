@@ -11,11 +11,14 @@ defmodule EctoShorts.CommonFilters.BindingParams do
   ## Binding modes
 
   * `:as` - named binding. Wraps `{alias, params}` pairs.
+
   * `:at` - positional binding. Wraps `{position, params}` pairs.
+
   * `:first` - flat mode. Targets the root `from` binding (position 1).
     Wraps filter params directly.
-  * `:last` - flat mode. Targets the highest positional binding in the
-    query (last join, or `from` if no joins). Wraps filter params directly.
+
+  * `:last` - flat mode. Targets the highest positional binding in the query
+    (last join, or `from` if no joins). Wraps filter params directly.
   """
 
   alias EctoShorts.CommonFilters

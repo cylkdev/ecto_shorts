@@ -367,9 +367,9 @@ This section restates the three loops above as a single numbered procedure. Foll
   2. Identify the public function you are testing
   3. Is the expected behaviour clear?
      │
-     ├── No  → write an ExampleMapDoc first
+     ├── No  -> write an ExampleMapDoc first
      │
-     └── Yes → continue
+     └── Yes -> continue
   4. Write one boundary test
   5. Run `mix test` - confirm it fails
      │
@@ -381,26 +381,26 @@ This section restates the three loops above as a single numbered procedure. Foll
      │
      ├── Module or function missing?
      │     (UndefinedFunctionError)
-     │     → Create the module or define the function
-     │     → Run the test again
-     │     → Go back to step 6
+     │     -> Create the module or define the function
+     │     -> Run the test again
+     │     -> Go back to step 6
      │
      └── Wrong return value?
            (Assertion with == failed)
-           → Write a focused test for the missing logic
+           -> Write a focused test for the missing logic
   8. Make the focused test pass (red-green-refactor)
   9. Run the boundary test again
      │
-     ├── Still failing? → Go back to step 6
+     ├── Still failing? -> Go back to step 6
      │
-     └── Passes? → Continue below
+     └── Passes? -> Continue below
          │
          ▼
   WRAP UP
   ───────
   10. Clean up the code while the boundary test stays green
   11. Run `mix test` - make sure nothing else broke
-  12. More slices left? → Go back to step 1 for the next slice
+  12. More slices left? -> Go back to step 1 for the next slice
 ```
 
 ## Worked Example

@@ -116,11 +116,11 @@ end
 
 Ask these questions:
 
-1. Does this module have a single, clear responsibility? → Keep if yes
-2. Will this module grow with planned features? → Keep if yes
-3. Does it implement a behaviour or protocol? → Keep if yes
-4. Is it just wrapping another module? → Consider inlining
-5. Could its functions live naturally in a related module? → Consider merging
+1. Does this module have a single, clear responsibility? -> Keep if yes
+2. Will this module grow with planned features? -> Keep if yes
+3. Does it implement a behaviour or protocol? -> Keep if yes
+4. Is it just wrapping another module? -> Consider inlining
+5. Could its functions live naturally in a related module? -> Consider merging
 
 ## Related Smells
 

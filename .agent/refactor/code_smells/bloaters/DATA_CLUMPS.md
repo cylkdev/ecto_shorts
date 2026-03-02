@@ -148,7 +148,7 @@ end
 Look for these patterns:
 
 1. **Parameter pairs/triples**: `(x, y)`, `(lat, lng)`, `(start_date, end_date)`
-2. **Prefixed field names**: `user_name, user_email, user_id` → `User.t()`
+2. **Prefixed field names**: `user_name, user_email, user_id` -> `User.t()`
 3. **Repeated extractions**: `%{lat: lat, lng: lng} = location` appearing multiple times
 
 ## Related Smells
