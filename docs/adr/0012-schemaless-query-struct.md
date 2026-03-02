@@ -99,8 +99,10 @@ This decision supersedes ADR 0007 ("Allow nil source in convert_params_to_filter
 
 Files changed:
 
-* `lib/ecto_shorts/schemaless_query.ex` - new struct module
-* `lib/ecto_shorts/common_filters.ex` - new `SchemalessQuery` clauses, `nil` rejection, helper functions, updated `@spec`, `@doc`, and moduledoc
-* `test/ecto_shorts/common_filters/core_test.exs` - replaced nil-source tests with SchemalessQuery tests
+* `lib/ecto_shorts/schemaless_query.ex` - new struct module with `tables` and `source_key` fields
+* `lib/ecto_shorts/common_filters.ex` - new `SchemalessQuery` clauses, `nil` rejection, helper functions (`pop_required_source_key/2`, `raise_missing_from!/1`, `resolve_table!/2`), updated `@spec`, `@doc`, and moduledoc
+* `test/ecto_shorts/common_filters/core_test.exs` - replaced nil-source tests with SchemalessQuery tests, including custom `source_key` coverage
 
-Revisit this decision if the `SchemalessQuery` struct needs additional fields beyond `tables` (for example, default options or access control), or if `EctoShorts.Actions` functions need to accept `SchemalessQuery` as a source directly.
+The `source_key` field (default `:table`) controls which atom key inside the `:from` map identifies the table name. This lets callers choose a domain-appropriate key without being locked into `:table`.
+
+Revisit this decision if `EctoShorts.Actions` functions need to accept `SchemalessQuery` as a source directly.

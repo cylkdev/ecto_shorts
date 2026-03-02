@@ -420,6 +420,23 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       end
     end
 
+    test "resolves the table using a custom source_key" do
+      sq = %SchemalessQuery{tables: %{"posts" => Post}, source_key: :source}
+      expected = from p in Post, where: p.id == ^1
+
+      q2 = CommonFilters.convert_params_to_filter(sq, %{from: %{source: "posts", id: 1}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "raises when :from is missing the custom source_key" do
+      sq = %SchemalessQuery{tables: %{"posts" => Post}, source_key: :source}
+
+      assert_raise ArgumentError, ~r/:source/, fn ->
+        CommonFilters.convert_params_to_filter(sq, %{from: %{table: "posts"}}, [])
+      end
+    end
+
     test "raises when nil is passed as source" do
       assert_raise ArgumentError, fn ->
         CommonFilters.convert_params_to_filter(nil, %{id: 1}, [])

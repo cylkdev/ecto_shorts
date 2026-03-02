@@ -9,7 +9,9 @@ defmodule EctoShorts.SchemalessQuery do
   terms (schema modules, table strings, `{table, schema}` tuples, or
   queries). The caller builds the struct once and passes it as the first
   argument to `convert_params_to_filter/3`. The params use
-  `%{from: %{table: "name"}}` to reference a table by name.
+  `%{from: %{table: "name"}}` to reference a table by name. The key
+  used inside `:from` is controlled by the `:source_key` field
+  (default `:table`).
 
   This keeps the internal source details hidden from the client. The
   client only knows the name, and the struct controls which sources are
@@ -30,6 +32,19 @@ defmodule EctoShorts.SchemalessQuery do
           []
       )
 
+  With a custom `:source_key`:
+
+      schemaless_query = %EctoShorts.SchemalessQuery{
+          tables: %{"posts" => MyApp.Schema.Post},
+          source_key: :source
+      }
+
+      EctoShorts.CommonFilters.convert_params_to_filter(
+          schemaless_query,
+          %{from: %{source: "posts"}},
+          []
+      )
+
   ## Fields
 
   * `tables` (default: `%{}`) - a map where each key is a string name
@@ -37,12 +52,16 @@ defmodule EctoShorts.SchemalessQuery do
     `convert_params_to_filter/3` (schema module, table string,
     `{table, schema}` tuple, or `Ecto.Query`).
 
+  * `source_key` (default: `:table`) - the atom key inside the `:from`
+    map that identifies which entry in `tables` to use.
+
   See also `EctoShorts.CommonFilters`.
   """
 
-  defstruct tables: %{}
+  defstruct tables: %{}, source_key: :table
 
   @type t :: %__MODULE__{
-          tables: %{optional(String.t()) => term()}
+          tables: %{optional(String.t()) => term()},
+          source_key: atom()
         }
 end

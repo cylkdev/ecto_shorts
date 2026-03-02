@@ -708,8 +708,9 @@ defmodule EctoShorts.CommonFilters do
 
   Pass a `%EctoShorts.SchemalessQuery{}` struct as the first argument.
   The struct maps client-facing string names to internal source terms.
-  The params must contain a `:from` key with a `:table` entry that
-  references a key in the struct's `tables` map:
+  The params must contain a `:from` key with an entry whose key matches
+  the struct's `:source_key` (default `:table`) that references a key
+  in the `tables` map:
 
       schemaless_query = %EctoShorts.SchemalessQuery{
           tables: %{"posts" => EctoShorts.Schema.Post}
@@ -721,17 +722,30 @@ defmodule EctoShorts.CommonFilters do
           []
       )
 
+  To use a different key in `:from`, set `:source_key`:
+
+      sq = %EctoShorts.SchemalessQuery{
+          tables: %{"posts" => EctoShorts.Schema.Post},
+          source_key: :source
+      }
+
+      EctoShorts.CommonFilters.convert_params_to_filter(
+          sq,
+          %{from: %{source: "posts", id: 1}},
+          []
+      )
+
   This approach keeps the internal source details hidden from the client.
   The client only knows the table name, and the struct controls which
   sources are available. The resolved source is used as a passthrough -
   if it is a schema module, full schema-aware filtering applies; if it is
   a bare table string, schemaless filtering applies.
 
-  If the `:table` value is not found in the `tables` map, an
+  If the resolved name is not found in the `tables` map, an
   `ArgumentError` is raised with the message "table not found".
 
-  If `:from` is missing or does not contain a `:table` key, an
-  `ArgumentError` is raised.
+  If `:from` is missing or does not contain the configured source key,
+  an `ArgumentError` is raised.
 
   See `EctoShorts.SchemalessQuery` for more details.
 
@@ -1013,15 +1027,15 @@ defmodule EctoShorts.CommonFilters do
     convert_params_to_filter(sq, Map.to_list(params), opts)
   end
 
-  def convert_params_to_filter(%SchemalessQuery{tables: tables}, entries, opts)
+  def convert_params_to_filter(%SchemalessQuery{tables: tables, source_key: source_key}, entries, opts)
       when is_list(entries) do
-    entries = if Keyword.keyword?(entries), do: entries, else: raise_missing_from!()
+    entries = if Keyword.keyword?(entries), do: entries, else: raise_missing_from!(source_key)
 
     {from_value, rest_params} = Keyword.pop(entries, :from)
 
-    if is_nil(from_value), do: raise_missing_from!()
+    if is_nil(from_value), do: raise_missing_from!(source_key)
 
-    {table_name, from_rest} = pop_required_table(from_value)
+    {table_name, from_rest} = pop_required_source_key(from_value, source_key)
     source = resolve_table!(tables, table_name)
 
     rebuilt_from = Map.put(from_rest, :query, source)
@@ -1129,30 +1143,31 @@ defmodule EctoShorts.CommonFilters do
           "Expected :from to be a map or keyword list, got: #{inspect(term)}"
   end
 
-  defp raise_missing_from! do
+  defp raise_missing_from!(source_key) do
     raise ArgumentError,
-          "Expected params to contain a :from key with a :table entry " <>
+          "Expected params to contain a :from key with a #{inspect(source_key)} entry " <>
             "when the source is a %EctoShorts.SchemalessQuery{}"
   end
 
-  defp pop_required_table(from_value) when is_map(from_value) and not is_struct(from_value) do
-    {table_name, rest} = Map.pop(from_value, :table)
+  defp pop_required_source_key(from_value, source_key)
+       when is_map(from_value) and not is_struct(from_value) do
+    {table_name, rest} = Map.pop(from_value, source_key)
 
     if is_nil(table_name) do
       raise ArgumentError,
-            "Expected :from to contain a :table key, got: #{inspect(from_value)}"
+            "Expected :from to contain a #{inspect(source_key)} key, got: #{inspect(from_value)}"
     end
 
     {table_name, rest}
   end
 
-  defp pop_required_table(from_value) when is_list(from_value) do
+  defp pop_required_source_key(from_value, source_key) when is_list(from_value) do
     if Keyword.keyword?(from_value) do
-      {table_name, rest} = Keyword.pop(from_value, :table)
+      {table_name, rest} = Keyword.pop(from_value, source_key)
 
       if is_nil(table_name) do
         raise ArgumentError,
-              "Expected :from to contain a :table key, got: #{inspect(from_value)}"
+              "Expected :from to contain a #{inspect(source_key)} key, got: #{inspect(from_value)}"
       end
 
       {table_name, Map.new(rest)}
@@ -1162,7 +1177,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp pop_required_table(term) do
+  defp pop_required_source_key(term, _source_key) do
     raise ArgumentError,
           "Expected :from to be a map or keyword list, got: #{inspect(term)}"
   end
