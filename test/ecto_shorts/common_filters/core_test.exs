@@ -297,7 +297,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
         end)
 
       assert log =~
-               "Expected params to be a map or keyword list, got: \"bad\""
+               "Expected :as value to be a non-nil atom"
 
       assert_received {:q2, q2}
       assert q2 === q

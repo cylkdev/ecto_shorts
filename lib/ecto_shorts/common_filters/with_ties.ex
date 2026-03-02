@@ -8,6 +8,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
   """
 
   alias Ecto.Query
+  alias EctoShorts.CommonQuery
   alias EctoShorts.Compiler
   alias EctoShorts.Logger
 
@@ -35,14 +36,46 @@ defmodule EctoShorts.CommonFilters.WithTies do
   end
 
   defp apply_with_ties(query, _binding_selector, %{bind: bind_params}) do
-    bind_entries = if is_map(bind_params), do: Map.to_list(bind_params), else: bind_params
+    entries =
+      case bind_params do
+        map when is_map(map) and not is_struct(map) ->
+          [map]
 
-    Enum.reduce(bind_entries, query, fn {mode, scoped}, q ->
-      scoped_entries = if is_map(scoped), do: Map.to_list(scoped), else: scoped
+        list when is_list(list) ->
+          if Keyword.keyword?(list) and
+               (Keyword.has_key?(list, :as) or Keyword.has_key?(list, :at)) do
+            [Map.new(list)]
+          else
+            list
+          end
 
-      Enum.reduce(scoped_entries, q, fn {target, value}, q2 ->
-        apply_with_ties(q2, {mode, target}, value)
-      end)
+        _ ->
+          []
+      end
+
+    Enum.reduce(entries, query, fn entry, q ->
+      entry_kw = if is_map(entry), do: Map.to_list(entry), else: entry
+
+      cond do
+        Keyword.has_key?(entry_kw, :as) ->
+          {bind_alias, rest} = Keyword.pop(entry_kw, :as)
+          value = Keyword.get(rest, :value, true)
+          apply_with_ties(q, {:as, bind_alias}, value)
+
+        Keyword.has_key?(entry_kw, :at) ->
+          {bind_target, rest} = Keyword.pop(entry_kw, :at)
+          value = Keyword.get(rest, :value, true)
+          binding_selector = resolve_at_target(bind_target, q)
+          apply_with_ties(q, binding_selector, value)
+
+        true ->
+          Logger.warning(
+            @logger_prefix,
+            "Expected :bind entry to have :as or :at key, got: #{inspect(entry)}"
+          )
+
+          q
+      end
     end)
   end
 
@@ -83,5 +116,18 @@ defmodule EctoShorts.CommonFilters.WithTies do
     )
 
     query
+  end
+
+  defp resolve_at_target(:first, _query), do: {:at, 1}
+  defp resolve_at_target(:last, query), do: {:at, CommonQuery.query_binding_count(query)}
+  defp resolve_at_target(index, _query) when is_integer(index), do: {:at, index}
+
+  defp resolve_at_target(other, _query) do
+    Logger.warning(
+      @logger_prefix,
+      "Expected :at value to be an integer, :first, or :last, got: #{inspect(other)}"
+    )
+
+    {:at, other}
   end
 end

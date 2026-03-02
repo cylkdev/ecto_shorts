@@ -165,27 +165,27 @@ Examples:
 The `:bind` key is used to specify which binding (named or positional) a filter applies to and must be a top-level key.
 
 Examples:
-- `%{bind: %{as: %{post: %{published: true}}}}` - `:bind` is at top level
-- `%{bind: %{at: %{1 => %{published: true}}}}` - `:bind` is at top level
-- `%{bind: [as: [post: %{published: true}]]}` - `:bind` is at top level
+- `%{bind: %{as: :post, published: true}}` - `:bind` is at top level
+- `%{bind: %{at: 1, published: true}}` - `:bind` is at top level
+- `%{bind: [%{as: :post, published: true}]}` - `:bind` is at top level
 
-**Rule 16:** Within a `:bind` key, the binding mode (`:as`, `:at`, `:first`, or `:last`) must wrap the filter parameters.
+**Rule 16:** Each `:bind` entry is a flat map with an `:as` or `:at` key identifying the binding target. All other keys are filters or query operations.
 
-The binding mode selects how the target binding is identified:
+The binding key selects how the target binding is identified:
 
-- `:as` for named bindings - wraps `{binding_alias, params}` pairs.
-- `:at` for positional bindings - wraps `{position, params}` pairs.
-- `:first` for the first binding - wraps params directly (always targets the root `from` binding at position 1).
-- `:last` for the last binding - wraps params directly (targets the highest positional binding in the query; the last join, or the `from` binding if there are no joins).
+- `:as` for named bindings - the value is an atom alias (e.g. `%{as: :post, published: true}`).
+- `:at` for positional bindings - the value is an integer position, or `:first` / `:last`.
+- `:at` with `:first` targets the root `from` binding (position 1).
+- `:at` with `:last` targets the highest positional binding in the query (last join, or `from` if no joins).
 
-`:first` and `:last` are flat modes: their params are the filter parameters directly, without the extra `{target, params}` nesting that `:as` and `:at` use.
+Multiple bindings use a list of flat maps.
 
 Examples:
-- `%{bind: %{as: %{post: %{published: true}}}}` - `:as` wraps the binding target and filters
-- `%{bind: %{at: %{1 => %{published: true}}}}` - `:at` wraps the positional index and filters
-- `%{bind: [as: [post: %{published: true}, author: %{first_name: "example"}]]}` - `:as` wraps multiple bindings
-- `%{bind: %{first: %{published: true}}}` - `:first` wraps filters directly (targets root binding)
-- `%{bind: %{last: %{first_name: "John"}}}` - `:last` wraps filters directly (targets last binding)
+- `%{bind: %{as: :post, published: true}}` - named binding with filter
+- `%{bind: %{at: 1, published: true}}` - positional binding with filter
+- `%{bind: [%{as: :post, published: true}, %{as: :author, first_name: "example"}]}` - multiple bindings
+- `%{bind: %{at: :first, published: true}}` - targets root binding
+- `%{bind: %{at: :last, first_name: "John"}}` - targets last binding
 
 ## Schema Filter Precedence Rules
 

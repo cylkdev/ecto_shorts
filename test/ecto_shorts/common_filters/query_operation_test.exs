@@ -1490,7 +1490,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [bind: [as: [example: :author]]]},
+          %{preload: [bind: %{as: :example, value: :author}]},
           []
         )
 
@@ -1512,7 +1512,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [bind: [at: %{2 => :author}]]},
+          %{preload: [bind: %{at: 2, value: :author}]},
           []
         )
 
@@ -1534,7 +1534,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [bind: [at: %{2 => :author}], posts: [:comments]]},
+          %{preload: [bind: %{at: 2, value: :author}, posts: [:comments]]},
           []
         )
 
@@ -1559,7 +1559,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [bind: [as: [author: :author], at: %{2 => :author}], posts: [:comments]]},
+          %{preload: [bind: [%{as: :author, value: :author}, %{at: 2, value: :author}], posts: [:comments]]},
           []
         )
 
@@ -1583,7 +1583,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{preload: [bind: [as: [author: :author]], posts: [:comments]]},
+          %{preload: [bind: %{as: :author, value: :author}, posts: [:comments]]},
           []
         )
 
@@ -1602,14 +1602,14 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
           q2 =
             CommonFilters.convert_params_to_filter(
               q,
-              %{preload: [bind: [at: [2]]]},
+              %{preload: [bind: %{at: "2", value: :author}]},
               []
             )
 
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Expected :bind -> :at entries to be {target, params} tuples, got: 2"
+      assert log =~ "Expected :at value to be an integer, :first, or :last"
       assert_received {:q2, q2}
       assert q2 === q
     end
@@ -1622,7 +1622,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
           q2 =
             CommonFilters.convert_params_to_filter(
               q,
-              %{preload: [bind: [as: [missing: :author]]]},
+              %{preload: [bind: %{as: :missing, value: :author}]},
               []
             )
 

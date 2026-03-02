@@ -3,22 +3,33 @@ defmodule EctoShorts.CommonFilters.BindingParams do
   @moduledoc """
   Routes `:bind` params to the correct binding selector.
 
-  When a filter params map contains a `:bind` key, this module unpacks the
-  nested `{:as, target}` or `{:at, target}` selectors and dispatches each
-  scoped param set back to `CommonFilters.create_schema_filter/6` with the
-  appropriate binding selector.
+  When a filter params map contains a `:bind` key, this module unpacks
+  flat bind entries and dispatches each one back to
+  `CommonFilters.create_schema_filter/6` with the appropriate binding
+  selector.
 
-  ## Binding modes
+  Each bind entry is a flat map (or keyword list) containing an `:as`
+  or `:at` key that identifies the binding target. All other keys in
+  the entry are treated as filters or query operations.
 
-  * `:as` - named binding. Wraps `{alias, params}` pairs.
+  ## Binding keys
 
-  * `:at` - positional binding. Wraps `{position, params}` pairs.
+  * `:as` - named binding. The value is an atom alias
+    (e.g. `%{as: :post, published: true}`).
 
-  * `:first` - flat mode. Targets the root `from` binding (position 1).
-    Wraps filter params directly.
+  * `:at` - positional binding. The value is an integer position, or
+    one of the atoms `:first` / `:last`.
+    * An integer targets the binding at that position
+      (e.g. `%{at: 2, published: true}`).
+    * `:first` targets the root `from` binding (position 1).
+    * `:last` targets the highest positional binding in the query
+      (last join, or `from` if no joins).
 
-  * `:last` - flat mode. Targets the highest positional binding in the query
-    (last join, or `from` if no joins). Wraps filter params directly.
+  ## Multiple bindings
+
+  Pass a list of flat maps to target multiple bindings:
+
+      %{bind: [%{as: :post, published: true}, %{as: :author, first_name: "John"}]}
   """
 
   alias EctoShorts.CommonFilters
@@ -27,26 +38,17 @@ defmodule EctoShorts.CommonFilters.BindingParams do
   alias EctoShorts.Logger
 
   @logger_prefix "EctoShorts.CommonFilters.BindingParams"
-  @binding_selector_modes [:as, :at, :first, :last]
-  @flat_binding_modes [:first, :last]
 
   def build_binding_params(
         schema_source,
         query,
-        binding_selector,
+        _binding_selector,
         filter_op,
         bind_params,
         opts
       )
       when is_map(bind_params) and not is_struct(bind_params) do
-    build_binding_params(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      Map.to_list(bind_params),
-      opts
-    )
+    apply_flat_bind_entry(schema_source, query, bind_params, filter_op, opts)
   end
 
   def build_binding_params(
@@ -58,33 +60,34 @@ defmodule EctoShorts.CommonFilters.BindingParams do
         opts
       )
       when is_list(bind_params) do
-    if Keyword.keyword?(bind_params) do
+    if Keyword.keyword?(bind_params) and
+         (Keyword.has_key?(bind_params, :as) or Keyword.has_key?(bind_params, :at)) do
+      apply_flat_bind_entry(schema_source, query, Map.new(bind_params), filter_op, opts)
+    else
       Enum.reduce(bind_params, query, fn
-        {binding_mode, scoped_params}, query_acc ->
-          reduce_scoped_bind_params(
-            schema_source,
-            query_acc,
-            binding_mode,
-            scoped_params,
-            filter_op,
-            opts
-          )
+        entry, query_acc when is_map(entry) and not is_struct(entry) ->
+          apply_flat_bind_entry(schema_source, query_acc, entry, filter_op, opts)
+
+        entry, query_acc when is_list(entry) ->
+          if Keyword.keyword?(entry) do
+            apply_flat_bind_entry(schema_source, query_acc, Map.new(entry), filter_op, opts)
+          else
+            Logger.warning(
+              @logger_prefix,
+              "Expected :bind entry to be a map or keyword list, got: #{inspect(entry)}"
+            )
+
+            query_acc
+          end
 
         entry, query_acc ->
           Logger.warning(
             @logger_prefix,
-            "Expected :bind entries to be {mode, params} tuples, got: #{inspect(entry)}"
+            "Expected :bind entry to be a map, got: #{inspect(entry)}"
           )
 
           query_acc
       end)
-    else
-      Logger.warning(
-        @logger_prefix,
-        "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
-      )
-
-      query
     end
   end
 
@@ -98,110 +101,103 @@ defmodule EctoShorts.CommonFilters.BindingParams do
       ) do
     Logger.warning(
       @logger_prefix,
-      "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+      "Expected :bind payload to be a map or list of maps, got: #{inspect(bind_params)}"
     )
 
     query
   end
 
-  defp reduce_scoped_bind_params(
-         schema_source,
-         query,
-         binding_mode,
-         scoped_params,
-         filter_op,
-         opts
-       ) do
+  defp apply_flat_bind_entry(schema_source, query, entry, filter_op, opts) do
+    entry_kw = if is_map(entry), do: Map.to_list(entry), else: entry
+
     cond do
-      binding_mode in @flat_binding_modes ->
-        reduce_flat_bind_params(schema_source, query, binding_mode, scoped_params, filter_op, opts)
+      Keyword.has_key?(entry_kw, :as) ->
+        {bind_alias, filters} = Keyword.pop(entry_kw, :as)
+        apply_as_binding(schema_source, query, bind_alias, filters, filter_op, opts)
 
-      binding_mode in @binding_selector_modes ->
-        case scoped_params do
-          params when is_map(params) and not is_struct(params) ->
-            reduce_scoped_entries(schema_source, query, binding_mode, Map.to_list(params), filter_op, opts)
+      Keyword.has_key?(entry_kw, :at) ->
+        {bind_target, filters} = Keyword.pop(entry_kw, :at)
 
-          params when is_list(params) ->
-            reduce_scoped_entries(schema_source, query, binding_mode, params, filter_op, opts)
-
-          params ->
-            Logger.warning(
-              @logger_prefix,
-              "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(params)}"
-            )
-
-            query
+        case resolve_at_target(bind_target, query) do
+          :error -> query
+          binding_selector -> apply_at_binding(schema_source, query, binding_selector, filters, filter_op, opts)
         end
 
       true ->
         Logger.warning(
           @logger_prefix,
-          "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+          "Expected :bind entry to have an :as or :at key, got: #{inspect(entry)}"
         )
 
         query
     end
   end
 
-  defp reduce_flat_bind_params(schema_source, query, binding_mode, scoped_params, filter_op, opts) do
-    case scoped_params do
-      params when is_map(params) and not is_struct(params) ->
-        binding_selector = resolve_flat_binding(binding_mode, query)
+  defp apply_as_binding(schema_source, query, bind_alias, filters, filter_op, opts)
+       when is_atom(bind_alias) and not is_nil(bind_alias) do
+    CommonFilters.create_schema_filter(
+      schema_source,
+      query,
+      {:as, bind_alias},
+      filter_op,
+      filters,
+      opts
+    )
+  end
 
-        CommonFilters.create_schema_filter(
-          schema_source,
-          query,
-          binding_selector,
-          filter_op,
-          Map.to_list(params),
-          opts
-        )
+  defp apply_as_binding(_schema_source, query, bind_alias, _filters, _filter_op, _opts) do
+    Logger.warning(
+      @logger_prefix,
+      "Expected :as value to be a non-nil atom, got: #{inspect(bind_alias)}"
+    )
 
-      params when is_list(params) ->
-        binding_selector = resolve_flat_binding(binding_mode, query)
+    query
+  end
 
-        CommonFilters.create_schema_filter(
-          schema_source,
-          query,
-          binding_selector,
-          filter_op,
-          params,
-          opts
-        )
+  defp apply_at_binding(schema_source, query, {:at, bind_index} = binding_selector, filters, filter_op, opts)
+       when is_integer(bind_index) do
+    max = Config.max_binding_positions()
 
-      params ->
-        Logger.warning(
-          @logger_prefix,
-          "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(params)}"
-        )
+    if bind_index > max do
+      Logger.warning(
+        @logger_prefix,
+        "Binding position #{bind_index} exceeds the configured :max_binding_positions (#{max}). " <>
+          "Increase :max_binding_positions in your config to support more positional bindings."
+      )
 
-        query
+      query
+    else
+      CommonFilters.create_schema_filter(
+        schema_source,
+        query,
+        binding_selector,
+        filter_op,
+        filters,
+        opts
+      )
     end
   end
 
-  defp resolve_flat_binding(:first, _query), do: {:at, 1}
-  defp resolve_flat_binding(:last, query), do: {:at, CommonQuery.query_binding_count(query)}
+  defp apply_at_binding(_schema_source, query, binding_selector, _filters, _filter_op, _opts) do
+    Logger.warning(
+      @logger_prefix,
+      "Expected :at value to be an integer, :first, or :last, got: #{inspect(elem(binding_selector, 1))}"
+    )
 
-  defp reduce_scoped_entries(schema_source, query, binding_mode, entries, filter_op, opts) do
-    Enum.reduce(entries, query, fn
-      {binding_target, params}, query_acc ->
-        reduce_binding_params(
-          schema_source,
-          query_acc,
-          {binding_mode, binding_target},
-          filter_op,
-          params,
-          opts
-        )
+    query
+  end
 
-      entry, query_acc ->
-        Logger.warning(
-          @logger_prefix,
-          "Expected :bind -> #{inspect(binding_mode)} entries to be {target, params} tuples, got: #{inspect(entry)}"
-        )
+  defp resolve_at_target(:first, _query), do: {:at, 1}
+  defp resolve_at_target(:last, query), do: {:at, CommonQuery.query_binding_count(query)}
+  defp resolve_at_target(index, _query) when is_integer(index), do: {:at, index}
 
-        query_acc
-    end)
+  defp resolve_at_target(other, _query) do
+    Logger.warning(
+      @logger_prefix,
+      "Expected :at value to be an integer, :first, or :last, got: #{inspect(other)}"
+    )
+
+    :error
   end
 
   @doc false
@@ -209,146 +205,83 @@ defmodule EctoShorts.CommonFilters.BindingParams do
 
   def normalize_bind_params(bind_params, query)
       when is_map(bind_params) and not is_struct(bind_params) do
-    normalize_bind_params(Map.to_list(bind_params), query)
+    [normalize_flat_entry(bind_params, query)]
   end
 
   def normalize_bind_params(bind_params, query) when is_list(bind_params) do
-    if Keyword.keyword?(bind_params) do
+    if Keyword.keyword?(bind_params) and
+         (Keyword.has_key?(bind_params, :as) or Keyword.has_key?(bind_params, :at)) do
+      [normalize_flat_entry(Map.new(bind_params), query)]
+    else
       Enum.flat_map(bind_params, fn
-        {binding_mode, scoped_params} when binding_mode in @flat_binding_modes ->
-          normalize_flat_entries(binding_mode, scoped_params, query)
+        entry when is_map(entry) and not is_struct(entry) ->
+          [normalize_flat_entry(entry, query)]
 
-        {binding_mode, scoped_params} when binding_mode in @binding_selector_modes ->
-          normalize_scoped_entries(binding_mode, scoped_params)
+        entry when is_list(entry) ->
+          if Keyword.keyword?(entry) do
+            [normalize_flat_entry(Map.new(entry), query)]
+          else
+            Logger.warning(
+              @logger_prefix,
+              "Expected :bind entry to be a map or keyword list, got: #{inspect(entry)}"
+            )
 
-        {binding_mode, _scoped_params} ->
+            []
+          end
+
+        entry ->
           Logger.warning(
             @logger_prefix,
-            "Expected :bind keys to be one of #{inspect(@binding_selector_modes)}, got: #{inspect(binding_mode)}"
+            "Expected :bind entry to be a map, got: #{inspect(entry)}"
           )
 
           []
       end)
-    else
-      Logger.warning(
-        @logger_prefix,
-        "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
-      )
-
-      []
     end
   end
 
   def normalize_bind_params(bind_params, _query) do
     Logger.warning(
       @logger_prefix,
-      "Expected :bind payload to be a keyword list or map, got: #{inspect(bind_params)}"
+      "Expected :bind payload to be a map or list of maps, got: #{inspect(bind_params)}"
     )
 
     []
   end
 
-  defp reduce_binding_params(
-         schema_source,
-         query,
-         {binding_mode, binding_target},
-         filter,
-         params,
-         opts
-       ) do
-    case {binding_mode, binding_target} do
-      {:as, bind_alias} when is_atom(bind_alias) ->
-        CommonFilters.create_schema_filter(
-          schema_source,
-          query,
-          {:as, bind_alias},
-          filter,
-          params,
-          opts
-        )
+  defp normalize_flat_entry(entry, query) do
+    cond do
+      Map.has_key?(entry, :as) ->
+        {bind_alias, rest} = Map.pop(entry, :as)
+        value = extract_bind_value(rest)
+        {{:as, bind_alias}, value}
 
-      {:at, bind_index} when is_integer(bind_index) ->
-        max = Config.max_binding_positions()
+      Map.has_key?(entry, :at) ->
+        {bind_target, rest} = Map.pop(entry, :at)
+        value = extract_bind_value(rest)
 
-        if bind_index > max do
-          Logger.warning(
-            @logger_prefix,
-            "Binding position #{bind_index} exceeds the configured :max_binding_positions (#{max}). " <>
-              "Increase :max_binding_positions in your config to support more positional bindings."
-          )
-
-          query
-        else
-          CommonFilters.create_schema_filter(
-            schema_source,
-            query,
-            {:at, bind_index},
-            filter,
-            params,
-            opts
-          )
+        case resolve_at_target(bind_target, query) do
+          :error -> {{:as, nil}, []}
+          binding_selector -> {binding_selector, value}
         end
 
-      binding_selector ->
+      true ->
         Logger.warning(
           @logger_prefix,
-          "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: #{inspect(binding_selector)}"
+          "Expected :bind entry to have an :as or :at key, got: #{inspect(entry)}"
         )
 
-        query
+        {{:as, nil}, []}
     end
   end
 
-  defp normalize_scoped_entries(binding_mode, scoped_params) do
-    case scoped_params do
-      value when is_map(value) and not is_struct(value) ->
-        normalize_entries(binding_mode, Map.to_list(value))
-
-      value when is_list(value) ->
-        normalize_entries(binding_mode, value)
-
-      value ->
-        Logger.warning(
-          @logger_prefix,
-          "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(value)}"
-        )
-
-        []
+  defp extract_bind_value(rest) when is_map(rest) do
+    if Map.has_key?(rest, :value) do
+      Map.get(rest, :value)
+    else
+      Map.to_list(rest)
     end
   end
 
-  defp normalize_entries(binding_mode, entries) do
-    Enum.flat_map(entries, fn
-      {binding_target, next_value} ->
-        [{{binding_mode, binding_target}, next_value}]
-
-      entry ->
-        Logger.warning(
-          @logger_prefix,
-          "Expected :bind -> #{inspect(binding_mode)} entries to be {target, params} tuples, got: #{inspect(entry)}"
-        )
-
-        []
-    end)
-  end
-
-  defp normalize_flat_entries(binding_mode, scoped_params, query) do
-    case scoped_params do
-      params when is_map(params) and not is_struct(params) ->
-        binding_selector = resolve_flat_binding(binding_mode, query)
-        [{binding_selector, Map.to_list(params)}]
-
-      params when is_list(params) ->
-        binding_selector = resolve_flat_binding(binding_mode, query)
-        [{binding_selector, params}]
-
-      params ->
-        Logger.warning(
-          @logger_prefix,
-          "Expected :bind -> #{inspect(binding_mode)} payload to be a map or keyword list, got: #{inspect(params)}"
-        )
-
-        []
-    end
-  end
+  defp extract_bind_value(rest), do: rest
 end

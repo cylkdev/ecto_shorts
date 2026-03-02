@@ -72,7 +72,7 @@ defmodule EctoShorts.CommonFilters.Preload do
     end)
   end
 
-  defp valid_binding?(_query, {:as, nil}), do: true
+  defp valid_binding?(_query, {:as, nil}), do: false
 
   defp valid_binding?(query, {:as, alias}) when is_atom(alias) do
     Query.has_named_binding?(query, alias)

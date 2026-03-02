@@ -258,19 +258,17 @@
 
 ## Binding Selectors Examples
 
-%{bind: %{as: %{post: %{published: true}}}}
+%{bind: %{as: :post, published: true}}
 
-%{bind: %{as: [post: %{published: true}]}}
+%{bind: [%{as: :post, published: true}, %{as: :author, first_name: "John"}]}
 
-%{bind: %{as: [post: %{published: true}, author: %{first_name: "John"}]}}
+%{bind: %{at: 1, published: true}}
 
-%{bind: %{at: %{1 => %{published: true}}}}
+%{bind: [%{at: 1, published: true}]}
 
-%{bind: %{at: %{1 => [published: true]}}}
+%{bind: %{at: :first, published: true}}
 
-%{bind: [as: [post: %{published: true}]]}
-
-%{bind: [at: %{1 => %{published: true}}]}
+%{bind: %{at: :last, first_name: "John"}}
 
 ## Schema Filter Precedence Examples
 
@@ -608,9 +606,9 @@
 
 %{with_ties: false}
 
-%{with_ties: %{bind: %{as: %{post: true}}}}
+%{with_ties: %{bind: %{as: :post, value: true}}}
 
-%{with_ties: %{bind: %{at: %{1 => true}}}}
+%{with_ties: %{bind: %{at: 1, value: true}}}
 
 ### Update Examples
 
@@ -632,15 +630,15 @@
 
 %{preload: [author: [:posts]]}
 
-%{preload: [bind: [as: [example: :author]]]}
+%{preload: [bind: %{as: :example, value: :author}]}
 
-%{preload: [bind: [at: %{2 => :author}]]}
+%{preload: [bind: %{at: 2, value: :author}]}
 
-%{preload: [bind: [at: %{2 => :author}], posts: [:comments]]}
+%{preload: [bind: %{at: 2, value: :author}, posts: [:comments]]}
 
-%{preload: [bind: [as: [author: :author]], posts: [:comments]]}
+%{preload: [bind: %{as: :author, value: :author}, posts: [:comments]]}
 
-%{preload: [bind: [as: [author: :author], at: %{2 => :author}], posts: [:comments]]}
+%{preload: [bind: [%{as: :author, value: :author}, %{at: 2, value: :author}], posts: [:comments]]}
 
 ### Join Examples
 

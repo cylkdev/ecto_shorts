@@ -196,25 +196,16 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
   end
 
   describe "convert_params_to_filter/3 binding selectors" do
-    test "binding - %{bind: %{as: %{post: %{published: true}}}}" do
+    test "binding - %{bind: %{as: :post, published: true}}" do
       expected = from p in Post, as: :post, where: p.published == ^true
       q = from p in Post, as: :post
 
-      q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{as: %{post: %{published: true}}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{as: :post, published: true}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "binding - %{bind: %{as: [post: %{published: true}]}}" do
-      expected = from p in Post, as: :post, where: p.published == ^true
-      q = from p in Post, as: :post
-
-      q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{as: [post: %{published: true}]}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "binding - %{bind: %{as: [post: %{published: true}, author: %{first_name: \"John\"}]}}" do
+    test "binding - multiple named bindings as list" do
       expected =
         from(p in Post,
           as: :post,
@@ -234,42 +225,25 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: [post: %{published: true}, author: %{first_name: "John"}]}},
+          %{bind: [%{as: :post, published: true}, %{as: :author, first_name: "John"}]},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "binding - %{bind: %{at: %{1 => %{published: true}}}}" do
+    test "binding - %{bind: %{at: 1, published: true}}" do
       expected = from p in Post, where: p.published == ^true
 
-      q2 = CommonFilters.convert_params_to_filter(Post, %{bind: %{at: %{1 => %{published: true}}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{bind: %{at: 1, published: true}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "binding - %{bind: %{at: %{1 => [published: true]}}}" do
+    test "binding - %{bind: [%{at: 1, published: true}]}" do
       expected = from p in Post, where: p.published == ^true
 
-      q2 = CommonFilters.convert_params_to_filter(Post, %{bind: %{at: %{1 => [published: true]}}}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "binding - %{bind: [as: [post: %{published: true}]]}" do
-      expected = from p in Post, as: :post, where: p.published == ^true
-      q = from p in Post, as: :post
-
-      q2 = CommonFilters.convert_params_to_filter(q, %{bind: [as: [post: %{published: true}]]}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "binding - %{bind: [at: %{1 => %{published: true}}]}" do
-      expected = from p in Post, where: p.published == ^true
-
-      q2 = CommonFilters.convert_params_to_filter(Post, %{bind: [at: %{1 => %{published: true}}]}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{bind: [%{at: 1, published: true}]}, [])
 
       assert_sql(expected, q2)
     end
@@ -283,44 +257,21 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Expected :bind payload to be a keyword list or map, got: 123"
+      assert log =~ "Expected :bind payload to be a map or list of maps, got: 123"
       assert_received {:q2, q2}
       assert q2 === q
     end
 
-    test "invalid :at binding selector key logs warning and skips invalid entry" do
-      q = Post
-
-      log =
-        capture_log(fn ->
-          q2 =
-            CommonFilters.convert_params_to_filter(
-              q,
-              %{bind: %{at: %{"1" => %{published: false}, 1 => %{published: true}}}},
-              []
-            )
-
-          send(self(), {:q2, q2})
-        end)
-
-      assert log =~
-               "Expected binding selector to be one of {:as, atom()} or {:at, integer()}, got: {:at, \"1\"}"
-
-      assert_received {:q2, q2}
-      expected = from p in Post, where: p.published == ^true
-      assert_sql(expected, q2)
-    end
-
-    test "binding selector with non-map params logs error and returns query unchanged" do
+    test "binding entry missing :as and :at logs warning and leaves query unchanged" do
       q = from(p in Post)
 
       log =
         capture_log(fn ->
-          q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{as: %{post: 123}}}, [])
+          q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{published: true}}, [])
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Expected params to be a map or keyword list, got: 123"
+      assert log =~ "Expected :bind entry to be a map"
       assert_received {:q2, q2}
       assert q2 === q
     end
@@ -333,7 +284,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           q2 =
             CommonFilters.convert_params_to_filter(
               q,
-              %{bind: %{at: %{4 => %{published: true}}}},
+              %{bind: %{at: 4, published: true}},
               []
             )
 
@@ -462,7 +413,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q = from p in Post, as: :post
       expected = from p in Post, as: :post, select: p.id
 
-      q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{as: %{post: %{select: :id}}}}, [])
+      q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{as: :post, select: :id}}, [])
 
       assert_sql(expected, q2)
     end
@@ -474,7 +425,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{post: %{select_merge: %{map: %{custom_id: :id}}}}}},
+          %{bind: %{as: :post, select_merge: %{map: %{custom_id: :id}}}},
           []
         )
 
@@ -494,7 +445,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{author: %{order_by: %{asc: :first_name}}}}},
+          %{bind: %{as: :author, order_by: %{asc: :first_name}}},
           []
         )
 
@@ -513,7 +464,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{at: %{2 => %{order_by: %{asc: :first_name}}}}},
+          %{bind: %{at: 2, order_by: %{asc: :first_name}}},
           []
         )
 
@@ -538,7 +489,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{author: %{prepend_order_by: %{asc: :first_name}}}}},
+          %{bind: %{as: :author, prepend_order_by: %{asc: :first_name}}},
           []
         )
 
@@ -557,7 +508,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{at: %{2 => %{prepend_order_by: %{asc: :first_name}}}}},
+          %{bind: %{at: 2, prepend_order_by: %{asc: :first_name}}},
           []
         )
 
@@ -577,7 +528,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{author: %{group_by: :first_name}}}},
+          %{bind: %{as: :author, group_by: :first_name}},
           []
         )
 
@@ -598,7 +549,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{author: %{group_by: :first_name, having: %{first_name: "John"}}}}},
+          %{bind: %{as: :author, group_by: :first_name, having: %{first_name: "John"}}},
           []
         )
 
@@ -622,13 +573,10 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           q,
           %{
             bind: %{
-              as: %{
-                author: %{
-                  group_by: [:first_name, :age],
-                  having: %{first_name: "John"},
-                  or_having: %{age: %{>: 30}}
-                }
-              }
+              as: :author,
+              group_by: [:first_name, :age],
+              having: %{first_name: "John"},
+              or_having: %{age: %{>: 30}}
             }
           },
           []
@@ -653,12 +601,9 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           q,
           %{
             bind: %{
-              as: %{
-                author: %{
-                  group_by: [:first_name, :age],
-                  having: [and: [first_name: "John", age: %{>: 30}]]
-                }
-              }
+              as: :author,
+              group_by: [:first_name, :age],
+              having: [and: [first_name: "John", age: %{>: 30}]]
             }
           },
           []
@@ -682,7 +627,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{author: %{group_by: :first_name, having: dyn}}}},
+          %{bind: %{as: :author, group_by: :first_name, having: dyn}},
           []
         )
 
@@ -703,7 +648,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{at: %{2 => %{group_by: :first_name, having: dyn}}}},
+          %{bind: %{at: 2, group_by: :first_name, having: dyn}},
           []
         )
 
@@ -723,7 +668,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{author: %{distinct: :first_name}}}},
+          %{bind: %{as: :author, distinct: :first_name}},
           []
         )
 
@@ -745,11 +690,8 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           q,
           %{
             bind: %{
-              as: %{
-                author: %{
-                  windows: [author_window: [partition_by: :first_name, order_by: [asc: :age]]]
-                }
-              }
+              as: :author,
+              windows: [author_window: [partition_by: :first_name, order_by: [asc: :age]]]
             }
           },
           []
@@ -772,11 +714,8 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           q,
           %{
             bind: %{
-              at: %{
-                2 => %{
-                  windows: [author_window: [partition_by: :first_name, order_by: [asc: :age]]]
-                }
-              }
+              at: 2,
+              windows: [author_window: [partition_by: :first_name, order_by: [asc: :age]]]
             }
           },
           []
@@ -799,7 +738,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{author: %{update: [set: [title: dynamic_title]]}}}},
+          %{bind: %{as: :author, update: [set: [title: dynamic_title]]}},
           []
         )
 
@@ -819,7 +758,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{at: %{2 => %{update: [set: [title: dynamic_title]]}}}},
+          %{bind: %{at: 2, update: [set: [title: dynamic_title]]}},
           []
         )
 
@@ -833,7 +772,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{with_ties: %{bind: %{as: %{post: true}}}},
+          %{with_ties: %{bind: %{as: :post, value: true}}},
           []
         )
 
@@ -847,7 +786,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{with_ties: %{bind: %{at: %{1 => true}}}},
+          %{with_ties: %{bind: %{at: 1, value: true}}},
           []
         )
 
@@ -868,7 +807,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          [bind: [as: [post: [author: [as: :author, first_name: "John"]]]]],
+          %{bind: %{as: :post, author: [as: :author, first_name: "John"]}},
           []
         )
 
@@ -888,7 +827,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{post: %{join: [author: [as: :author]]}}}},
+          %{bind: %{as: :post, join: [author: [as: :author]]}},
           []
         )
 
@@ -913,7 +852,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{at: %{2 => %{join: [author: [as: :author]]}}}},
+          %{bind: %{at: 2, join: [author: [as: :author]]}},
           []
         )
 
@@ -935,14 +874,8 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
         CommonFilters.convert_params_to_filter(
           q,
           [
-            bind: [
-              as: [
-                post: [
-                  join: [author: [as: :author]],
-                  bind: [as: [author: [first_name: "John"]]]
-                ]
-              ]
-            ]
+            bind: %{as: :post, join: [author: [as: :author]]},
+            bind: %{as: :author, first_name: "John"}
           ],
           []
         )
@@ -958,7 +891,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{as: %{post: %{subquery: %{id: 2}}}}},
+          %{bind: %{as: :post, subquery: %{id: 2}}},
           []
         )
 
@@ -967,20 +900,20 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
   end
 
   describe "convert_params_to_filter/3 :first binding selector" do
-    test "binding - %{bind: %{first: %{published: true}}} on bare schema" do
+    test "binding - %{bind: %{at: :first, published: true}} on bare schema" do
       expected = from(p in Post, where: p.published == ^true)
 
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{bind: %{first: %{published: true}}},
+          %{bind: %{at: :first, published: true}},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "binding - %{bind: %{first: %{published: true}}} on query with join targets from binding" do
+    test "binding - %{bind: %{at: :first, published: true}} on query with join targets from binding" do
       q = from(p in Post, join: a in assoc(p, :author), as: :author)
 
       expected =
@@ -993,69 +926,55 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{first: %{published: true}}},
+          %{bind: %{at: :first, published: true}},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "binding - %{bind: %{first: %{order_by: %{asc: :title}}}}" do
+    test "binding - %{bind: %{at: :first, order_by: %{asc: :title}}}" do
       expected = from(p in Post, order_by: [asc: p.title])
 
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{bind: %{first: %{order_by: %{asc: :title}}}},
+          %{bind: %{at: :first, order_by: %{asc: :title}}},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "binding - %{bind: %{first: %{group_by: :title}}}" do
+    test "binding - %{bind: %{at: :first, group_by: :title}}" do
       expected = from(p in Post, group_by: p.title)
 
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{bind: %{first: %{group_by: :title}}},
+          %{bind: %{at: :first, group_by: :title}},
           []
         )
 
       assert_sql(expected, q2)
     end
-
-    test "invalid :first params logs warning and leaves query unchanged" do
-      q = from(p in Post)
-
-      log =
-        capture_log(fn ->
-          q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{first: 123}}, [])
-          send(self(), {:q2, q2})
-        end)
-
-      assert log =~ "Expected :bind -> :first"
-      assert_received {:q2, q2}
-      assert q2 === q
-    end
   end
 
   describe "convert_params_to_filter/3 :last binding selector" do
-    test "binding - %{bind: %{last: %{published: true}}} on bare schema targets from binding" do
+    test "binding - %{bind: %{at: :last, published: true}} on bare schema targets from binding" do
       expected = from(p in Post, where: p.published == ^true)
 
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{bind: %{last: %{published: true}}},
+          %{bind: %{at: :last, published: true}},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "binding - %{bind: %{last: %{first_name: \"John\"}}} on query with join targets last join" do
+    test "binding - %{bind: %{at: :last, first_name: \"John\"}} on query with join targets last join" do
       q = from(p in Post, join: a in assoc(p, :author), as: :author)
 
       expected =
@@ -1068,14 +987,14 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{last: %{first_name: "John"}}},
+          %{bind: %{at: :last, first_name: "John"}},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "binding - %{bind: %{last: %{order_by: %{asc: :first_name}}}} on query with join" do
+    test "binding - %{bind: %{at: :last, order_by: %{asc: :first_name}}} on query with join" do
       q = from(p in Post, join: a in assoc(p, :author), as: :author)
 
       expected =
@@ -1088,14 +1007,14 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{last: %{order_by: %{asc: :first_name}}}},
+          %{bind: %{at: :last, order_by: %{asc: :first_name}}},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "binding - %{bind: %{last: %{group_by: :first_name}}} on query with join" do
+    test "binding - %{bind: %{at: :last, group_by: :first_name}} on query with join" do
       q = from(p in Post, join: a in assoc(p, :author), as: :author)
 
       expected =
@@ -1108,25 +1027,11 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{bind: %{last: %{group_by: :first_name}}},
+          %{bind: %{at: :last, group_by: :first_name}},
           []
         )
 
       assert_sql(expected, q2)
-    end
-
-    test "invalid :last params logs warning and leaves query unchanged" do
-      q = from(p in Post)
-
-      log =
-        capture_log(fn ->
-          q2 = CommonFilters.convert_params_to_filter(q, %{bind: %{last: 123}}, [])
-          send(self(), {:q2, q2})
-        end)
-
-      assert log =~ "Expected :bind -> :last"
-      assert_received {:q2, q2}
-      assert q2 === q
     end
   end
 end

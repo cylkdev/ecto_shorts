@@ -577,39 +577,33 @@ defmodule EctoShorts.CommonFilters do
 
   ## Binding selectors
 
-  The `:bind` key targets a specific binding in a query. This is useful for queries with
-  joins where you need to filter or apply operations on a joined table.
+  The `:bind` key targets a specific binding in a query. Each bind entry
+  is a flat map with an `:as` or `:at` key identifying the target and
+  all other keys treated as filters or query operations.
 
   Named bindings use `:as`:
 
       # Given a query: from(p in Post, as: :post)
-      %{bind: %{as: %{post: %{published: true}}}}
+      %{bind: %{as: :post, published: true}}
 
   Positional bindings use `:at`:
 
-      %{bind: %{at: %{1 => %{published: true}}}}
+      %{bind: %{at: 1, published: true}}
 
-  Shortcut bindings use `:first` or `:last`:
+  The `:at` key also accepts `:first` and `:last`:
 
-      %{bind: %{first: %{published: true}}}      # targets the root from binding
-      %{bind: %{last: %{first_name: "John"}}}     # targets the last join, or from if no joins
+      %{bind: %{at: :first, published: true}}      # targets the root from binding
+      %{bind: %{at: :last, first_name: "John"}}     # targets the last join, or from if no joins
 
-  You can target multiple bindings in a single call:
+  Target multiple bindings with a list:
 
-      %{
-        bind: %{
-          as: [
-            post: %{published: true},
-            author: %{first_name: "John"}
-          ]
-        }
-      }
+      %{bind: [%{as: :post, published: true}, %{as: :author, first_name: "John"}]}
 
   Binding selectors work with query operations too:
 
-      %{bind: %{as: %{author: %{order_by: %{asc: :first_name}}}}}
-      %{bind: %{at: %{2 => %{group_by: :first_name}}}}
-      %{bind: %{last: %{order_by: %{asc: :first_name}}}}
+      %{bind: %{as: :author, order_by: %{asc: :first_name}}}
+      %{bind: %{at: 2, group_by: :first_name}}
+      %{bind: %{at: :last, order_by: %{asc: :first_name}}}
 
   ## Convenience filters
 
