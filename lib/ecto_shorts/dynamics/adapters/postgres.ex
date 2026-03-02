@@ -10,16 +10,16 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
 
   ## Architecture overview
 
-  The adapter is split into three specialized components:
+  The adapter is split into three components:
 
-  * **CommonExpr** - handles special operators (`:ids`, `:before`, `:after`,
-    `:start_date`, `:end_date`, `:exists`).
+  * **EctoShorts.Dynamics.Adapters.Postgres.CommonExpr** - Handles special operators
+    (`:ids`, `:before`, `:after`,  `:start_date`, `:end_date`, `:exists`).
 
-  * **ArrayExpr** - handles array field operations (membership, overlap,
-    contains, pattern matching).
+  * **EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr** - Handles array field
+    operations (membership, overlap, contains, pattern matching).
 
-  * **ScalarExpr** - handles scalar field operations (equality, comparison,
-    pattern matching, ranges).
+  * **EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr** - Handles scalar field
+    operations (equality, comparison, pattern matching, ranges).
 
   ## How operators are resolved
 
@@ -61,26 +61,17 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
 
   **Filter by IDs:**
 
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        Post,
-        %{ids: [1, 2, 3]}
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter(Post, %{ids: [1, 2, 3]})
       # WHERE id IN (1, 2, 3)
 
   **Filter by date range:**
 
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        Post,
-        %{before: ~U[2024-01-01 00:00:00Z]}
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter(Post, %{before: ~U[2024-01-01 00:00:00Z]})
       # WHERE inserted_at < '2024-01-01 00:00:00Z'
 
   **Filter by existence:**
 
-      EctoShorts.CommonFilters.convert_params_to_filter(
-        Post,
-        %{exists: %{source: Comment, where: %{approved: true}}}
-      )
+      EctoShorts.CommonFilters.convert_params_to_filter(Post, %{exists: %{source: Comment, where: %{approved: true}}})
       # WHERE EXISTS (SELECT 1 FROM comments WHERE approved = TRUE)
 
   ## Array vs scalar expressions
@@ -272,8 +263,8 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
 
   **Problem:** Special operator not recognized.
 
-  **Solution:** Check that the operator is in the `@operators` list. Only
-  operators in this list are routed to `CommonExpr`.
+  **Solution:** Check that the operator is recogized by this adapter using the
+  `operator?/1` function. Only operators in this list are routed to `CommonExpr`.
 
   **Problem:** Generated SQL is incorrect.
 
@@ -293,6 +284,9 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
 
   @impl true
   def operators, do: @operators
+
+  @impl true
+  def operator?(key), do: key in @operators
 
   @impl true
   def build_dynamic(source, binding_selector, key, expr) do

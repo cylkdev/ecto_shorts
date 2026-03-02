@@ -298,9 +298,36 @@ defmodule EctoShorts.Dynamics.Adapter do
       @impl true
       def operators, do: @operators
 
-  See also `build_dynamic/4`.
+  See also `build_dynamic/4` and `operator?/1`.
   """
   @callback operators() :: [atom()]
+
+  @doc """
+  Checks if the given key is a special operator handled by this adapter.
+
+  Called to determine whether a filter key should be routed to the adapter's
+  special operator handling logic or to the default field expression logic.
+
+  ## Arguments
+
+  * `key` - the filter field atom to check (for example `:ids`, `:before`,
+    or `:title`).
+
+  ## Return value
+
+  Returns `true` if the key is in the adapter's operator list, `false`
+  otherwise.
+
+  ## Example implementation
+
+      @operators [:ids, :before, :after]
+
+      @impl true
+      def operator?(key), do: key in @operators
+
+  See also `operators/0`.
+  """
+  @callback operator?(key :: atom()) :: boolean()
 
   @doc """
   Builds a dynamic expression for the given filter key and value.
