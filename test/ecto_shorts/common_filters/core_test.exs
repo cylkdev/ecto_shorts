@@ -334,48 +334,95 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
   end
 
-  describe "convert_params_to_filter/3 with nil source" do
-    test "builds a query when the source is nil and :from is a map" do
-      expected = from p in "posts", where: p.id == ^1, select: ^[:id]
-      q2 = CommonFilters.convert_params_to_filter(nil, %{from: %{query: "posts", id: 1}, select: [:id]}, [])
+  describe "convert_params_to_filter/3 with SchemalessQuery" do
+    alias EctoShorts.SchemalessQuery
+
+    test "builds a query when the table resolves to a schema module" do
+      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+      expected = from p in Post, where: p.id == ^1
+
+      q2 = CommonFilters.convert_params_to_filter(sq, %{from: %{table: "posts", id: 1}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "builds a query when the source is nil and :from is a keyword list" do
-      expected = from p in "posts", where: p.id == ^1, select: ^[:id]
+    test "builds a query when the table resolves to a table string" do
+      sq = %SchemalessQuery{tables: %{"posts" => "posts"}}
+      expected = from p in "posts", select: ^[:id]
+
+      q2 = CommonFilters.convert_params_to_filter(sq, %{from: %{table: "posts"}, select: [:id]}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "merges from-filters with top-level params" do
+      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+
+      expected =
+        from(p in Post,
+          where: p.id == ^1,
+          where: p.published == ^true
+        )
 
       q2 =
         CommonFilters.convert_params_to_filter(
-          nil,
-          [from: %{query: "posts", id: 1}, select: [:id]],
+          sq,
+          %{from: %{table: "posts", id: 1}, published: true},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "adds a default select when the source is nil and :select is not given" do
-      q2 = CommonFilters.convert_params_to_filter(nil, %{from: %{query: "posts", id: 1}}, [])
+    test "adds default select when resolved source is schemaless and select is not given" do
+      sq = %SchemalessQuery{tables: %{"posts" => "posts"}}
+
+      q2 = CommonFilters.convert_params_to_filter(sq, %{from: %{table: "posts", id: 1}}, [])
 
       assert %Ecto.Query{select: %Ecto.Query.SelectExpr{}} = q2
     end
 
-    test "raises when the source is nil and params have no :from key" do
-      assert_raise ArgumentError, ~r/from/, fn ->
+    test "accepts :from as a keyword list" do
+      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+      expected = from p in Post, where: p.id == ^1
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          sq,
+          [from: [table: "posts", id: 1]],
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "raises when :from is missing from params" do
+      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+
+      assert_raise ArgumentError, ~r/:from/, fn ->
+        CommonFilters.convert_params_to_filter(sq, %{id: 1}, [])
+      end
+    end
+
+    test "raises when :from has no :table key" do
+      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+
+      assert_raise ArgumentError, ~r/:table/, fn ->
+        CommonFilters.convert_params_to_filter(sq, %{from: %{query: Post}}, [])
+      end
+    end
+
+    test "raises when the table name is not found in the tables map" do
+      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+
+      assert_raise ArgumentError, ~r/table not found/, fn ->
+        CommonFilters.convert_params_to_filter(sq, %{from: %{table: "missing"}}, [])
+      end
+    end
+
+    test "raises when nil is passed as source" do
+      assert_raise ArgumentError, fn ->
         CommonFilters.convert_params_to_filter(nil, %{id: 1}, [])
-      end
-    end
-
-    test "raises when the source is nil and params is a non-keyword list" do
-      assert_raise ArgumentError, ~r/from/, fn ->
-        CommonFilters.convert_params_to_filter(nil, [%{from: %{query: "posts"}, id: 1}], [])
-      end
-    end
-
-    test "raises when the :from map is missing the :query key" do
-      assert_raise ArgumentError, ~r/:query/, fn ->
-        CommonFilters.convert_params_to_filter(nil, %{from: %{id: 1}}, [])
       end
     end
   end

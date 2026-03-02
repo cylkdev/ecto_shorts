@@ -1,7 +1,7 @@
 # Allow nil source in convert_params_to_filter/3
 
 ---
-Status: accepted
+Status: superseded by 0012
 Date: 2026-03-01
 Deciders: []
 Consulted: []
