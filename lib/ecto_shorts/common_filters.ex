@@ -966,7 +966,7 @@ defmodule EctoShorts.CommonFilters do
 
       iex> EctoShorts.CommonFilters.convert_params_to_filter(
       ...>   EctoShorts.Schema.Post,
-      ...>   %{limit: 5, order_by: {:desc, :inserted_at}}
+      ...>   %{limit: 5, order_by: %{desc: :inserted_at}}
       ...> )
       #Ecto.Query<from p0 in EctoShorts.Schema.Post,
         order_by: [desc: p0.inserted_at], limit: ^5>
