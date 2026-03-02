@@ -377,11 +377,17 @@ defmodule EctoShorts.Compiler do
     {target_binding_var, binding_patterns} =
       get_query_binding_contracts(context, opts)
 
-    Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
-      context
-      |> specs_module.clause_specs(binding_head_ast, target_binding_var, binding_body_asts)
-      |> Enum.map(&clause_ast!/1)
-    end)
+    binding_patterns
+    |> Task.async_stream(
+      fn {binding_head_ast, binding_body_asts} ->
+        context
+        |> specs_module.clause_specs(binding_head_ast, target_binding_var, binding_body_asts)
+        |> Enum.map(&clause_ast!/1)
+      end,
+      ordered: true,
+      timeout: :infinity
+    )
+    |> Enum.flat_map(fn {:ok, clauses} -> clauses end)
   end
 
   @doc false
