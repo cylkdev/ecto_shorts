@@ -709,6 +709,7 @@ defmodule EctoShorts.Actions do
   alias EctoShorts.Actions.Bulk
   alias EctoShorts.Actions.Error
   alias EctoShorts.Actions.Multi
+  alias EctoShorts.Actions.Transaction
 
   alias EctoShorts.{
     Config,
@@ -1434,7 +1435,7 @@ defmodule EctoShorts.Actions do
   """
   @spec transaction((... -> term()) | Ecto.Multi.t(), opts) :: {:ok, term()} | {:error, term()}
   def transaction(fun_or_multi, opts \\ []) do
-    Config.repo!(opts).transaction(fun_or_multi, opts)
+    Transaction.run_transaction(fun_or_multi, opts)
   end
 
   @doc group: "Transaction"
@@ -1470,9 +1471,9 @@ defmodule EctoShorts.Actions do
   end
 
   def transact(fun, opts) when is_function(fun) do
-    fn repo -> eval_transaction_fun(fun, repo, opts) end
+    fn repo -> Transaction.eval_transaction_fun(fun, repo, opts) end
     |> transaction(opts)
-    |> normalize_transaction_response(opts)
+    |> Transaction.normalize_transaction_response(opts)
   end
 
   @doc group: "Batch"
@@ -1687,10 +1688,7 @@ defmodule EctoShorts.Actions do
   """
   @spec create_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def create_many(schema, params_list, opts \\ []) when is_list(params_list) do
-    schema
-    |> Multi.build_create_many_multi(params_list, opts)
-    |> transaction(opts)
-    |> Multi.handle_multi_response(opts)
+    run_multi(Multi.build_create_many_multi(schema, params_list, opts), opts)
   end
 
   @doc group: "Multi"
@@ -1717,10 +1715,7 @@ defmodule EctoShorts.Actions do
   """
   @spec find_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_many(schema, params_list, opts \\ []) when is_list(params_list) do
-    schema
-    |> Multi.build_find_many_multi(params_list, opts)
-    |> transaction(opts)
-    |> Multi.handle_multi_response(opts)
+    run_multi(Multi.build_find_many_multi(schema, params_list, opts), opts)
   end
 
   @doc group: "Multi"
@@ -1751,10 +1746,7 @@ defmodule EctoShorts.Actions do
   """
   @spec update_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def update_many(schema, entries, opts \\ []) when is_list(entries) do
-    schema
-    |> Multi.build_update_many_multi(entries, opts)
-    |> transaction(opts)
-    |> Multi.handle_multi_response(opts)
+    run_multi(Multi.build_update_many_multi(schema, entries, opts), opts)
   end
 
   @doc group: "Multi"
@@ -1780,10 +1772,7 @@ defmodule EctoShorts.Actions do
   """
   @spec delete_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def delete_many(schema, records, opts \\ []) when is_list(records) do
-    schema
-    |> Multi.build_delete_many_multi(records, opts)
-    |> transaction(opts)
-    |> Multi.handle_multi_response(opts)
+    run_multi(Multi.build_delete_many_multi(schema, records, opts), opts)
   end
 
   @doc group: "Multi"
@@ -1813,10 +1802,7 @@ defmodule EctoShorts.Actions do
   """
   @spec find_or_create_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_or_create_many(schema, params_list, opts \\ []) when is_list(params_list) do
-    schema
-    |> Multi.build_find_or_create_multi(params_list, opts)
-    |> transaction(opts)
-    |> Multi.handle_multi_response(opts)
+    run_multi(Multi.build_find_or_create_multi(schema, params_list, opts), opts)
   end
 
   @doc group: "Multi"
@@ -1847,8 +1833,11 @@ defmodule EctoShorts.Actions do
   """
   @spec find_and_upsert_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_and_upsert_many(schema, entries, opts \\ []) when is_list(entries) do
-    schema
-    |> Multi.build_upsert_multi(entries, opts)
+    run_multi(Multi.build_upsert_multi(schema, entries, opts), opts)
+  end
+
+  defp run_multi(multi, opts) do
+    multi
     |> transaction(opts)
     |> Multi.handle_multi_response(opts)
   end
@@ -1884,45 +1873,6 @@ defmodule EctoShorts.Actions do
         end
     end
   end
-
-  defp normalize_transaction_response(result, opts) do
-    unwrap? = Keyword.get(opts, :strict, true)
-
-    case {unwrap?, result} do
-      {_, {:error, :error}} ->
-        :error
-
-      {_, {:ok, :ok}} ->
-        :ok
-
-      {true, {:ok, {:error, _} = error}} ->
-        error
-
-      {true, {:ok, {:ok, _} = response}} ->
-        response
-
-      {_, other} ->
-        other
-    end
-  end
-
-  defp eval_transaction_fun(fun, repo, opts) do
-    response = call_transaction_fun(fun, repo)
-
-    if Keyword.get(opts, :strict, true) do
-      maybe_rollback(response, repo)
-    else
-      response
-    end
-  end
-
-  defp call_transaction_fun(fun, repo) when is_function(fun, 1), do: fun.(repo)
-  defp call_transaction_fun(fun, _repo) when is_function(fun, 0), do: fun.()
-
-  defp maybe_rollback(:error, repo), do: repo.rollback(:error)
-  defp maybe_rollback({:error, reason}, repo), do: repo.rollback(reason)
-  defp maybe_rollback({:ok, value}, _repo), do: value
-  defp maybe_rollback(term, _repo), do: term
 
   defp maybe_apply_optimistic_lock(changeset, queryable, opts) do
     case resolve_optimistic_lock(queryable, opts) do
