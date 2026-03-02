@@ -322,7 +322,7 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
       assert_sql(expected, q2)
     end
 
-    test "subquery/set - %{id: %{>: %{all: [source: Post, query: %{id: 1}]}}} (query-builder payload)" do
+    test "subquery/set - %{id: %{>: %{all: %{from: %{query: Post, id: 1}}}}} (query-builder payload)" do
       subquery_expr =
         Post
         |> CommonFilters.convert_params_to_filter(%{id: 1}, [])
@@ -333,7 +333,7 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{id: %{>: %{all: [source: Post, query: %{id: 1}]}}},
+          %{id: %{>: %{all: %{from: %{query: Post, id: 1}}}}},
           []
         )
 

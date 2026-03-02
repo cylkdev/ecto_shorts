@@ -23,7 +23,7 @@ defmodule EctoShorts.CommonFilters.GroupBy do
 
   defp reduce_group_by(query, binding_selector, {key, params})
        when is_map(params) and not is_struct(params) do
-    reduce_group_by(query, binding_selector, {key, Map.to_list(params())})
+    reduce_group_by(query, binding_selector, {key, Map.to_list(params)})
   end
 
   defp reduce_group_by(query, binding_selector, {@binding_selector_key, bind_params}) do
@@ -36,7 +36,7 @@ defmodule EctoShorts.CommonFilters.GroupBy do
 
   defp reduce_group_by(query, binding_selector, params)
        when is_map(params) and not is_struct(params) do
-    reduce_group_by(query, binding_selector, Map.to_list(params()))
+    reduce_group_by(query, binding_selector, Map.to_list(params))
   end
 
   defp reduce_group_by(query, binding_selector, entries) when is_list(entries) do

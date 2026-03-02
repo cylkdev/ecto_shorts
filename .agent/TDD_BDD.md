@@ -491,7 +491,7 @@ Since this is a library and the boundary is already a single function, the bound
 
       def list_products(params) do
         Product
-        |> where(^Enum.to_list(params()))
+        |> where(^Enum.to_list(params))
         |> Repo.all()
       end
     end

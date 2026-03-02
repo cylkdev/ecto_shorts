@@ -367,9 +367,9 @@ defmodule EctoShorts.CommonFilters do
 
       %{id: %{all: subquery_expr}}    # WHERE id = ALL(subquery)
 
-  You can pass a source/query payload instead of a pre-built subquery:
+  You can pass a `:from` payload instead of a pre-built subquery:
 
-      %{id: %{>: %{all: [source: Post, query: %{id: 1}]}}}
+      %{id: %{>: %{all: %{from: %{query: Post, id: 1}}}}}
 
   ## Array fields
 
@@ -545,7 +545,7 @@ defmodule EctoShorts.CommonFilters do
 
       %{recursive_ctes: true}
       %{with_cte: [published_posts: [as: cte_query]]}
-      %{with_cte: [published_posts: [as: %{source: Post, query: %{published: true}}]]}
+      %{with_cte: [published_posts: [as: %{from: %{query: Post, published: true}}]]}
 
   ### Named bindings
 
@@ -635,31 +635,32 @@ defmodule EctoShorts.CommonFilters do
   ## Exists
 
   The `:exists` key checks for the existence of rows in a subquery.
-  It accepts a pre-built subquery expression or a source/query payload
-  (a map or keyword list with `:source` and `:query` keys):
+  It accepts a pre-built subquery expression or a `:from` payload:
 
       %{where: %{exists: subquery_expr}}
       %{where: %{exists: %{not: subquery_expr}}}              # NOT EXISTS(...)
-      %{where: %{exists: %{source: Post, query: %{id: 1}}}}
-      %{where: %{exists: [source: Post, query: %{id: 1}]}}
-      %{where: %{exists: %{not: %{source: Post, query: %{id: 1}}}}}  # NOT EXISTS(...)
+      %{where: %{exists: %{from: %{query: Post, id: 1}}}}
+      %{where: %{exists: %{not: %{from: %{query: Post, id: 1}}}}}  # NOT EXISTS(...)
 
   Wrapping the value with `:not` produces a `NOT EXISTS(...)` condition.
 
-  When an `:exists` payload uses `:source` and `:query` without an explicit
+  When an `:exists` payload uses a `:from` map without an explicit
   `:select`, `select: true` is applied automatically. This keeps `EXISTS`
   subqueries valid without requiring a separate pre-build step.
 
-  ## Source and query params
+  ## The :from key
 
-  The `:source` and `:query` keys let you specify the table and additional
+  The `:from` key lets you specify the queryable source and additional
   filters inside the params instead of passing them as separate arguments.
   This is useful when the entire query description comes from data (for
   example an HTTP request body) and is not known at compile time.
 
-  When `:source` is present it overrides the first argument for field
-  resolution. When `:query` is present its entries are merged into the
-  params before the query is built.
+  The `:from` value is a map or keyword list. It must contain a `:query`
+  key that identifies the source (a schema module, table string, or
+  `{table, schema}` tuple). All other keys are treated as filters:
+
+      %{from: %{query: Post, id: 1}}
+      %{from: %{query: "posts", id: 1, select: [:id]}}
 
   For example, these two calls produce the same query:
 
@@ -667,14 +668,14 @@ defmodule EctoShorts.CommonFilters do
       EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{id: 1})
 
       # Passing source and filters entirely inside the params:
-      EctoShorts.CommonFilters.convert_params_to_filter(nil, %{source: EctoShorts.Schema.Post, query: %{id: 1}})
+      EctoShorts.CommonFilters.convert_params_to_filter(nil, %{from: %{query: EctoShorts.Schema.Post, id: 1}})
 
-  When both a first argument and a `:source` key are present, the `:source`
-  key wins for field resolution. The first argument still determines the
-  base `Ecto.Query` (the `FROM` clause) when it is not `nil`.
+  When both a first argument and a `:from` key are present, the `:query`
+  value inside `:from` wins for field resolution. The first argument still
+  determines the base `Ecto.Query` (the `FROM` clause) when it is not `nil`.
 
-  These keys also appear inside nested payloads (`:all`, `:any`, `:exists`,
-  `:with_cte`) where they describe a subquery to build inline.
+  The `:from` key also appears inside nested payloads (`:all`, `:any`,
+  `:exists`, `:with_cte`) where it describes a subquery to build inline.
 
   ## Schemaless queries
 
@@ -700,24 +701,25 @@ defmodule EctoShorts.CommonFilters do
       EctoShorts.CommonFilters.convert_params_to_filter({"posts", nil}, %{select: [:id, :title], published: true})
       # same result
 
-  **2. Via the `:source` meta-key**
+  **2. Via the `:from` key**
 
-  Set the `:source` key inside the params. The first argument can be any
+  Set the `:from` key inside the params. The first argument can be any
   valid source (a schema module, table string, or query) or `nil`. When
-  `:source` is present it overrides the first argument for field resolution:
+  `:from` is present its `:query` value overrides the first argument for
+  field resolution:
 
-      EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, [source: "posts", query: %{id: 1}])
+      EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{from: %{query: "posts", id: 1}})
 
   **3. `nil` as the source**
 
-  Pass `nil` as the first argument and provide the `:source` key in the
+  Pass `nil` as the first argument and provide the `:from` key in the
   params. This is useful when the source is determined entirely by data
   (for example from an HTTP request) and is not known at compile time:
 
-      EctoShorts.CommonFilters.convert_params_to_filter(nil, %{source: "posts", select: [:id, :title], id: 1})
+      EctoShorts.CommonFilters.convert_params_to_filter(nil, %{from: %{query: "posts", id: 1}, select: [:id, :title]})
       # from p0 in "posts", where: p0.id == ^1, select: [:id, :title]
 
-  When `nil` is the first argument and `:source` is missing from the
+  When `nil` is the first argument and `:from` is missing from the
   params, an `ArgumentError` is raised.
 
   ### `:select` and schemaless queries
@@ -734,11 +736,10 @@ defmodule EctoShorts.CommonFilters do
 
       # Executing that query without :select will raise at the repo level.
 
-  When the `:source` or `:query` meta-keys are present and the resolved
-  source is schemaless, the system adds `select: true` automatically if
-  you did not include a `:select`. This convenience exists so data-driven
-  payloads that set `:source` dynamically do not need to always remember
-  to also set `:select`.
+  When the `:from` key is present and the resolved source is schemaless,
+  the system adds `select: true` automatically if you did not include a
+  `:select`. This convenience exists so data-driven payloads that use
+  `:from` dynamically do not need to always remember to also set `:select`.
 
   ### No field validation
 
@@ -967,35 +968,41 @@ defmodule EctoShorts.CommonFilters do
   def convert_params_to_filter(source, params, opts \\ [])
 
   def convert_params_to_filter(source, params, opts) when is_map(params) do
-    convert_params_to_filter(source, Map.to_list(params()), opts)
+    convert_params_to_filter(source, Map.to_list(params), opts)
   end
 
   def convert_params_to_filter(source, entries, opts) when is_list(entries) do
-    has_source_or_query? =
-      Keyword.has_key?(entries, :source) or Keyword.has_key?(entries, :query)
+    has_from? = Keyword.has_key?(entries, :from)
 
     if Keyword.keyword?(entries) do
-      {schema_source, params} = Keyword.pop(entries, :source, source)
+      {from_value, params} = Keyword.pop(entries, :from)
+
+      {schema_source, from_filters} =
+        if from_value do
+          extract_from_params(from_value)
+        else
+          {nil, []}
+        end
+
+      schema_source = schema_source || source
 
       if is_nil(schema_source) do
         raise ArgumentError,
-              "Expected a source as the first argument or a :source key " <>
+              "Expected a source as the first argument or a :from key " <>
                 "in the params, got: nil"
       end
 
       query = CommonSchema.to_query(source || schema_source)
 
-      {other_params, params} = Keyword.pop(params, :query, [])
-
       normalized_source = CommonSchema.normalize_source(schema_source)
 
       merged_params =
-        other_params
+        from_filters
         |> ensure_kw()
         |> Keyword.merge(params)
 
       merged_params =
-        case {has_source_or_query?, normalized_source} do
+        case {has_from?, normalized_source} do
           {true, {_table, nil}} ->
             if Keyword.has_key?(merged_params, :select) do
               merged_params
@@ -1013,7 +1020,7 @@ defmodule EctoShorts.CommonFilters do
         raise ArgumentError,
               "Expected a source as the first argument when params is a " <>
                 "non-keyword list, got: nil. Use a map or keyword list with " <>
-                "a :source key instead."
+                "a :from key instead."
       end
 
       query = CommonSchema.to_query(source)
@@ -1038,6 +1045,38 @@ defmodule EctoShorts.CommonFilters do
   defp ensure_kw(term) do
     Logger.warning(@logger_prefix, "Expected params to be a keyword list, got: #{inspect(term)}")
     []
+  end
+
+  defp extract_from_params(from_map) when is_map(from_map) and not is_struct(from_map) do
+    {query_source, filter_params} = Map.pop(from_map, :query)
+
+    if is_nil(query_source) do
+      raise ArgumentError,
+            "Expected :from to contain a :query key, got: #{inspect(from_map)}"
+    end
+
+    {query_source, Map.to_list(filter_params)}
+  end
+
+  defp extract_from_params(from_list) when is_list(from_list) do
+    if Keyword.keyword?(from_list) do
+      {query_source, filter_params} = Keyword.pop(from_list, :query)
+
+      if is_nil(query_source) do
+        raise ArgumentError,
+              "Expected :from to contain a :query key, got: #{inspect(from_list)}"
+      end
+
+      {query_source, filter_params}
+    else
+      raise ArgumentError,
+            "Expected :from to be a map or keyword list, got: #{inspect(from_list)}"
+    end
+  end
+
+  defp extract_from_params(term) do
+    raise ArgumentError,
+          "Expected :from to be a map or keyword list, got: #{inspect(term)}"
   end
 
   defp do_convert(schema_source, query, params, opts) do
@@ -1121,13 +1160,13 @@ defmodule EctoShorts.CommonFilters do
       query,
       binding_selector,
       filter_op,
-      Map.to_list(params()),
+      Map.to_list(params),
       opts
     )
   end
 
   def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts)
-      when is_list(params()) do
+      when is_list(params) do
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn {key, value}, query_acc ->
         create_schema_filter(
@@ -1217,7 +1256,7 @@ defmodule EctoShorts.CommonFilters do
          params,
          opts
        ) do
-    params = if is_map(params) and not is_struct(params), do: Map.to_list(params()), else: params
+    params = if is_map(params) and not is_struct(params), do: Map.to_list(params), else: params
 
     if Keyword.keyword?(params) do
       assoc_schema =
@@ -1290,7 +1329,7 @@ defmodule EctoShorts.CommonFilters do
          opts
        )
        when is_map(value) and not is_struct(value) and
-              (is_map_key(value, :source) or is_map_key(value, :query)) do
+              is_map_key(value, :from) do
     build_query(
       schema_source,
       query,
@@ -1390,7 +1429,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp build_query(schema_source, query, binding_selector, :subquery, params, opts)
-       when is_map(params) or is_list(params()) do
+       when is_map(params) or is_list(params) do
     binding_source = to_binding_source(schema_source, query, binding_selector)
 
     filtered_query =

@@ -28,7 +28,7 @@ defmodule EctoShorts.Actions.Batch do
     end
   end
 
-  def normalize_batch_key(params, keys) when is_list(params()) and is_list(keys) do
+  def normalize_batch_key(params, keys) when is_list(params) and is_list(keys) do
     params |> Map.new() |> normalize_batch_key(keys)
   end
 
@@ -100,7 +100,7 @@ defmodule EctoShorts.Actions.Batch do
     normalize_preload_params(params)
   end
 
-  defp normalize_preload_params(params) when is_list(params()) do
+  defp normalize_preload_params(params) when is_list(params) do
     Map.new(params)
   end
 

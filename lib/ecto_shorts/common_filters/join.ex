@@ -47,7 +47,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @doc false
   def build(schema_source, :join, query, binding_selector, params, opts) when is_map(params) do
-    build(schema_source, :join, query, binding_selector, Map.to_list(params()), opts)
+    build(schema_source, :join, query, binding_selector, Map.to_list(params), opts)
   end
 
   def build(schema_source, :join, query, binding_selector, list, opts) do
@@ -280,8 +280,22 @@ defmodule EctoShorts.CommonFilters.Join do
                   subquery
 
                 subquery_params ->
-                  subquery_source = subquery_params[:source] || schema_source
-                  filter_params = subquery_params[:query] || %{}
+                  from_value = subquery_params[:from]
+
+                  {subquery_source, filter_params} =
+                    case from_value do
+                      map when is_map(map) and not is_struct(map) ->
+                        {query_source, rest} = Map.pop(map, :query)
+                        {query_source || schema_source, Map.to_list(rest)}
+
+                      list when is_list(list) ->
+                        {query_source, rest} = Keyword.pop(list, :query)
+                        {query_source || schema_source, rest}
+
+                      nil ->
+                        {schema_source, []}
+                    end
+
                   CommonFilters.convert_params_to_filter(subquery_source, filter_params, opts)
               end
 

@@ -31,7 +31,7 @@ defmodule EctoShorts.TestFragmentProvider do
     {:error, :unsupported_fragment_key}
   end
 
-  defp normalize_params(params) when is_map(params), do: Map.to_list(params())
+  defp normalize_params(params) when is_map(params), do: Map.to_list(params)
   defp normalize_params(params), do: params
 
   defp fetch_integer(params, key) do

@@ -119,9 +119,9 @@ defmodule EctoShorts.CommonFilters.BindingParams do
       binding_mode in @binding_selector_modes ->
         case scoped_params do
           params when is_map(params) and not is_struct(params) ->
-            reduce_scoped_entries(schema_source, query, binding_mode, Map.to_list(params()), filter_op, opts)
+            reduce_scoped_entries(schema_source, query, binding_mode, Map.to_list(params), filter_op, opts)
 
-          params when is_list(params()) ->
+          params when is_list(params) ->
             reduce_scoped_entries(schema_source, query, binding_mode, params, filter_op, opts)
 
           params ->
@@ -153,11 +153,11 @@ defmodule EctoShorts.CommonFilters.BindingParams do
           query,
           binding_selector,
           filter_op,
-          Map.to_list(params()),
+          Map.to_list(params),
           opts
         )
 
-      params when is_list(params()) ->
+      params when is_list(params) ->
         binding_selector = resolve_flat_binding(binding_mode, query)
 
         CommonFilters.create_schema_filter(
@@ -336,9 +336,9 @@ defmodule EctoShorts.CommonFilters.BindingParams do
     case scoped_params do
       params when is_map(params) and not is_struct(params) ->
         binding_selector = resolve_flat_binding(binding_mode, query)
-        [{binding_selector, Map.to_list(params())}]
+        [{binding_selector, Map.to_list(params)}]
 
-      params when is_list(params()) ->
+      params when is_list(params) ->
         binding_selector = resolve_flat_binding(binding_mode, query)
         [{binding_selector, params}]
 

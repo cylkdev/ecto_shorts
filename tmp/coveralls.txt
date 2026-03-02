@@ -455,7 +455,7 @@ defmodule EctoShorts.Actions.Multi do
   end
 
   defp run_multi_delete(repo, schema, params, index, opts)
-       when is_map(params) or is_list(params()) do
+       when is_map(params) or is_list(params) do
 [31m    with {:ok, record} <- repo_find(repo, schema, params, index, opts) do[m
 [31m      repo_delete(repo, schema, record, index, opts)[m
     end
@@ -1190,14 +1190,14 @@ defmodule EctoShorts.CommonFilters.Windows do
 
   defp reduce_windows(query, binding_selector, params)
        when is_map(params) and not is_struct(params) do
-[31m    reduce_windows(query, binding_selector, Map.to_list(params()))[m
+[31m    reduce_windows(query, binding_selector, Map.to_list(params))[m
   end
 
   defp reduce_windows(query, binding_selector, {@binding_selector_key, bind_params}) do
 [31m    reduce_windows_bind(query, binding_selector, bind_params)[m
   end
 
-  defp reduce_windows(query, binding_selector, params) when is_list(params()) do
+  defp reduce_windows(query, binding_selector, params) when is_list(params) do
 [32m    cond do[m
       Keyword.keyword?(params) ->
 [32m        case Enum.split_with(params, fn {k, _} -> k === @binding_selector_key end) do[m
@@ -2196,10 +2196,10 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
   end
 
   defp reduce_entries(query, params, opts) when is_map(params) and not is_struct(params) do
-[31m    reduce_entries(query, Map.to_list(params()), opts)[m
+[31m    reduce_entries(query, Map.to_list(params), opts)[m
   end
 
-  defp reduce_entries(query, params, opts) when is_list(params()) do
+  defp reduce_entries(query, params, opts) when is_list(params) do
 [32m    if Keyword.keyword?(params) do[m
 [32m      Enum.reduce(params, query, fn {binding_key, binding_params}, query_acc ->[m
 [32m        apply_entry(query_acc, binding_key, binding_params, opts)[m
@@ -2333,7 +2333,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @doc false
   def build(schema_source, :join, query, binding_selector, params, opts) when is_map(params) do
-[31m    build(schema_source, :join, query, binding_selector, Map.to_list(params()), opts)[m
+[31m    build(schema_source, :join, query, binding_selector, Map.to_list(params), opts)[m
   end
 
   def build(schema_source, :join, query, binding_selector, list, opts) do
@@ -3174,7 +3174,7 @@ defmodule EctoShorts.Actions.Batch do
     end
   end
 
-  def normalize_batch_key(params, keys) when is_list(params()) and is_list(keys) do
+  def normalize_batch_key(params, keys) when is_list(params) and is_list(keys) do
 [31m    params |> Map.new() |> normalize_batch_key(keys)[m
   end
 
@@ -3246,7 +3246,7 @@ defmodule EctoShorts.Actions.Batch do
 [32m    normalize_preload_params(params)[m
   end
 
-  defp normalize_preload_params(params) when is_list(params()) do
+  defp normalize_preload_params(params) when is_list(params) do
 [32m    Map.new(params)[m
   end
 
@@ -4016,7 +4016,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp build_update_operations(source, %{} = params, acc, opts) do
-[32m    build_update_operations(source, Map.to_list(params()), acc, opts)[m
+[32m    build_update_operations(source, Map.to_list(params), acc, opts)[m
   end
 
   defp build_update_operations(_source, [], acc, _opts) do
@@ -4190,7 +4190,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   @doc "Applies the given filter to the query."
   def build(schema_source, filter, query, binding_selector, {boolean_operator, params}, opts)
-      when boolean_operator in @boolean_operators and is_list(params()) do
+      when boolean_operator in @boolean_operators and is_list(params) do
 [32m    dyn =[m
       Dynamics.convert_to_dynamic(
         schema_source,
@@ -4351,11 +4351,11 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   defp apply_expr(schema_source, :lock, query, binding_selector, params, opts)
        when is_map(params) and not is_struct(params) do
-[31m    apply_expr(schema_source, :lock, query, binding_selector, Map.to_list(params()), opts)[m
+[31m    apply_expr(schema_source, :lock, query, binding_selector, Map.to_list(params), opts)[m
   end
 
   defp apply_expr(_schema_source, :lock, query, binding_selector, params, opts)
-       when is_list(params()) do
+       when is_list(params) do
 [32m    if Keyword.keyword?(params) do[m
 [32m      apply_lock_from_resolver(query, binding_selector, params, opts)[m
     else
@@ -4453,7 +4453,7 @@ defmodule EctoShorts.CommonFilters.Filter do
   defp apply_lock_from_resolver(query, binding_selector, params, opts) do
 [32m    params =[m
 [32m      if is_map(params) and not is_struct(params) do[m
-[31m        Map.to_list(params())[m
+[31m        Map.to_list(params)[m
       else
 [32m        params[m
       end
@@ -7231,7 +7231,7 @@ defmodule EctoShorts.Dynamics do
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
 [32m    source = CommonSchema.normalize_source(source)[m
 
-[32m    if is_map(params) or is_list(params()) do[m
+[32m    if is_map(params) or is_list(params) do[m
 [32m      Enum.reduce(params, nil, fn entry, dyn_acc ->[m
 [32m        append_predicates(source, dyn_acc, binding_selector, entry, opts)[m
       end)
@@ -7247,7 +7247,7 @@ defmodule EctoShorts.Dynamics do
 
   defp append_predicates(source, dyn_a, binding_selector, params, opts)
        when is_map(params) and not is_struct(params) do
-[31m    append_predicates(source, dyn_a, binding_selector, Map.to_list(params()), opts)[m
+[31m    append_predicates(source, dyn_a, binding_selector, Map.to_list(params), opts)[m
   end
 
   defp append_predicates(source, dyn_a, binding_selector, list, opts) when is_list(list) do
@@ -7473,7 +7473,7 @@ defmodule EctoShorts.Dynamics do
 [32m    Map.get(params, :select, default_select)[m
   end
 
-  defp helper_expr_select(params, default_select) when is_list(params()) do
+  defp helper_expr_select(params, default_select) when is_list(params) do
 [32m    if Keyword.keyword?(params) do[m
 [32m      Keyword.get(params, :select, default_select)[m
     else
@@ -7745,10 +7745,10 @@ defmodule EctoShorts.CommonFilters.WithCte do
 
   defp reduce_cte(schema_source, query, params, opts)
        when is_map(params) and not is_struct(params) do
-[31m    reduce_cte(schema_source, query, Map.to_list(params()), opts)[m
+[31m    reduce_cte(schema_source, query, Map.to_list(params), opts)[m
   end
 
-  defp reduce_cte(schema_source, query, params, opts) when is_list(params()) do
+  defp reduce_cte(schema_source, query, params, opts) when is_list(params) do
 [32m    if Keyword.keyword?(params) do[m
 [32m      Enum.reduce(params, query, fn {cte_name, cte_definition}, query_acc ->[m
 [32m        apply_cte(schema_source, query_acc, cte_name, cte_definition, opts)[m
@@ -8688,7 +8688,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   defp reduce_order_by(filter_op, query, binding_selector, {key, params})
        when is_map(params) and not is_struct(params) do
-[31m    reduce_order_by(filter_op, query, binding_selector, {key, Map.to_list(params())})[m
+[31m    reduce_order_by(filter_op, query, binding_selector, {key, Map.to_list(params)})[m
   end
 
   defp reduce_order_by(filter_op, query, binding_selector, {@binding_selector_key, bind_params}) do
@@ -8701,7 +8701,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   defp reduce_order_by(filter_op, query, binding_selector, params)
        when is_map(params) and not is_struct(params) do
-[32m    reduce_order_by(filter_op, query, binding_selector, Map.to_list(params()))[m
+[32m    reduce_order_by(filter_op, query, binding_selector, Map.to_list(params))[m
   end
 
   defp reduce_order_by(filter_op, query, binding_selector, entries) when is_list(entries) do
@@ -10772,7 +10772,7 @@ defmodule EctoShorts.CommonFilters do
 [31m  def convert_params_to_filter(source, params, opts \\ [])[m
 
   def convert_params_to_filter(source, params, opts) when is_map(params) do
-[32m    convert_params_to_filter(source, Map.to_list(params()), opts)[m
+[32m    convert_params_to_filter(source, Map.to_list(params), opts)[m
   end
 
   def convert_params_to_filter(source, entries, opts) when is_list(entries) do
@@ -10926,13 +10926,13 @@ defmodule EctoShorts.CommonFilters do
       query,
       binding_selector,
       filter_op,
-      Map.to_list(params()),
+      Map.to_list(params),
       opts
     )
   end
 
   def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts)
-      when is_list(params()) do
+      when is_list(params) do
 [32m    if Keyword.keyword?(params) do[m
 [32m      Enum.reduce(params, query, fn {key, value}, query_acc ->[m
 [32m        create_schema_filter([m
@@ -11022,7 +11022,7 @@ defmodule EctoShorts.CommonFilters do
          params,
          opts
        ) do
-[32m    params = if is_map(params) and not is_struct(params), do: Map.to_list(params()), else: params[m
+[32m    params = if is_map(params) and not is_struct(params), do: Map.to_list(params), else: params[m
 
 [32m    if Keyword.keyword?(params) do[m
 [32m      assoc_schema =[m
@@ -11195,7 +11195,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp build_query(schema_source, query, binding_selector, :subquery, params, opts)
-       when is_map(params) or is_list(params()) do
+       when is_map(params) or is_list(params) do
 [32m    binding_source = to_binding_source(schema_source, query, binding_selector)[m
 
 [32m    filtered_query =[m
@@ -12049,7 +12049,7 @@ defmodule EctoShorts.CommonFilters.Distinct do
 
   defp reduce_params(query, binding_selector, {key, params})
        when is_map(params) and not is_struct(params) do
-[31m    reduce_params(query, binding_selector, {key, Map.to_list(params())})[m
+[31m    reduce_params(query, binding_selector, {key, Map.to_list(params)})[m
   end
 
   defp reduce_params(query, binding_selector, {@binding_selector_key, bind_params}) do
@@ -12062,7 +12062,7 @@ defmodule EctoShorts.CommonFilters.Distinct do
 
   defp reduce_params(query, binding_selector, params)
        when is_map(params) and not is_struct(params) do
-[31m    reduce_params(query, binding_selector, Map.to_list(params()))[m
+[31m    reduce_params(query, binding_selector, Map.to_list(params))[m
   end
 
   defp reduce_params(query, binding_selector, entries) when is_list(entries) do
@@ -14962,7 +14962,7 @@ defmodule EctoShorts.CommonFilters.GroupBy do
 
   defp reduce_group_by(query, binding_selector, {key, params})
        when is_map(params) and not is_struct(params) do
-[31m    reduce_group_by(query, binding_selector, {key, Map.to_list(params())})[m
+[31m    reduce_group_by(query, binding_selector, {key, Map.to_list(params)})[m
   end
 
   defp reduce_group_by(query, binding_selector, {@binding_selector_key, bind_params}) do
@@ -14975,7 +14975,7 @@ defmodule EctoShorts.CommonFilters.GroupBy do
 
   defp reduce_group_by(query, binding_selector, params)
        when is_map(params) and not is_struct(params) do
-[31m    reduce_group_by(query, binding_selector, Map.to_list(params()))[m
+[31m    reduce_group_by(query, binding_selector, Map.to_list(params))[m
   end
 
   defp reduce_group_by(query, binding_selector, entries) when is_list(entries) do
@@ -15900,7 +15900,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
 [32m    apply_with_ties(query, binding_selector, params)[m
   end
 
-  defp apply_with_ties(query, binding_selector, params) when is_list(params()) do
+  defp apply_with_ties(query, binding_selector, params) when is_list(params) do
 [32m    apply_with_ties(query, binding_selector, Map.new(params))[m
   end
 
@@ -16595,11 +16595,11 @@ defmodule EctoShorts.CommonFilters.Having do
 
   defp reduce_having(filter_op, schema_source, query, binding_selector, params, opts)
        when is_map(params) and not is_struct(params) do
-[31m    reduce_having(filter_op, schema_source, query, binding_selector, Map.to_list(params()), opts)[m
+[31m    reduce_having(filter_op, schema_source, query, binding_selector, Map.to_list(params), opts)[m
   end
 
   defp reduce_having(filter_op, schema_source, query, binding_selector, params, opts)
-       when is_list(params()) do
+       when is_list(params) do
 [32m    if Keyword.keyword?(params) do[m
 [32m      Enum.reduce(params, query, fn entry, query_acc ->[m
 [32m        reduce_having(filter_op, schema_source, query_acc, binding_selector, entry, opts)[m
@@ -16624,7 +16624,7 @@ defmodule EctoShorts.CommonFilters.Having do
         schema_source,
         query,
         binding_selector,
-        {boolean_operator, Map.to_list(params())},
+        {boolean_operator, Map.to_list(params)},
         opts
       )
     else
@@ -16837,9 +16837,9 @@ defmodule EctoShorts.CommonFilters.BindingParams do
 [32m      binding_mode in @binding_selector_modes ->[m
 [32m        case scoped_params do[m
           params when is_map(params) and not is_struct(params) ->
-[31m            reduce_scoped_entries(schema_source, query, binding_mode, Map.to_list(params()), filter_op, opts)[m
+[31m            reduce_scoped_entries(schema_source, query, binding_mode, Map.to_list(params), filter_op, opts)[m
 
-          params when is_list(params()) ->
+          params when is_list(params) ->
 [32m            reduce_scoped_entries(schema_source, query, binding_mode, params, filter_op, opts)[m
 
           params ->
@@ -16871,11 +16871,11 @@ defmodule EctoShorts.CommonFilters.BindingParams do
           query,
           binding_selector,
           filter_op,
-          Map.to_list(params()),
+          Map.to_list(params),
           opts
         )
 
-      params when is_list(params()) ->
+      params when is_list(params) ->
 [32m        binding_selector = resolve_flat_binding(binding_mode, query)[m
 
 [32m        CommonFilters.create_schema_filter([m
@@ -17054,9 +17054,9 @@ defmodule EctoShorts.CommonFilters.BindingParams do
 [31m    case scoped_params do[m
       params when is_map(params) and not is_struct(params) ->
 [31m        binding_selector = resolve_flat_binding(binding_mode, query)[m
-        [{binding_selector, Map.to_list(params())}]
+        [{binding_selector, Map.to_list(params)}]
 
-      params when is_list(params()) ->
+      params when is_list(params) ->
 [31m        binding_selector = resolve_flat_binding(binding_mode, query)[m
         [{binding_selector, params}]
 

@@ -90,11 +90,11 @@ defmodule EctoShorts.CommonFilters.Having do
 
   defp reduce_having(filter_op, schema_source, query, binding_selector, params, opts)
        when is_map(params) and not is_struct(params) do
-    reduce_having(filter_op, schema_source, query, binding_selector, Map.to_list(params()), opts)
+    reduce_having(filter_op, schema_source, query, binding_selector, Map.to_list(params), opts)
   end
 
   defp reduce_having(filter_op, schema_source, query, binding_selector, params, opts)
-       when is_list(params()) do
+       when is_list(params) do
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn entry, query_acc ->
         reduce_having(filter_op, schema_source, query_acc, binding_selector, entry, opts)
@@ -119,7 +119,7 @@ defmodule EctoShorts.CommonFilters.Having do
         schema_source,
         query,
         binding_selector,
-        {boolean_operator, Map.to_list(params())},
+        {boolean_operator, Map.to_list(params)},
         opts
       )
     else

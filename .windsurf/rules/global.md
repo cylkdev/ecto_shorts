@@ -160,3 +160,6 @@ If you suspect the behavior is unclear or disputed, use example mapping to resta
   - If the message seems clear, confirm you can support it with evidence a human novice can observe before you start. Do this by scanning the codebase for the feature, module, or pattern the request is talking about. Your goal is to find concrete evidence (existing functions, tests, docs, naming patterns, or similar code) that supports your interpretation. If you cannot find supporting evidence and you are not implementing a new feature, treat that as a warning sign: pause and either ask a clarifying question or propose the two most likely interpretations and explain what evidence would confirm each one.
 
 </operating_guidelines>
+
+- Avoid surprises, show the exact changes you intend to make in your plan
+and follow them.

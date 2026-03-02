@@ -27,14 +27,14 @@ defmodule EctoShorts.CommonFilters.Windows do
 
   defp reduce_windows(query, binding_selector, params)
        when is_map(params) and not is_struct(params) do
-    reduce_windows(query, binding_selector, Map.to_list(params()))
+    reduce_windows(query, binding_selector, Map.to_list(params))
   end
 
   defp reduce_windows(query, binding_selector, {@binding_selector_key, bind_params}) do
     reduce_windows_bind(query, binding_selector, bind_params)
   end
 
-  defp reduce_windows(query, binding_selector, params) when is_list(params()) do
+  defp reduce_windows(query, binding_selector, params) when is_list(params) do
     cond do
       Keyword.keyword?(params) ->
         case Enum.split_with(params, fn {k, _} -> k === @binding_selector_key end) do

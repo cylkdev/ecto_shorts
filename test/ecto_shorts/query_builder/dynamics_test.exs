@@ -111,7 +111,7 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{>: %{all: [source: Post, query: %{id: 1}]}}
+        id: %{>: %{all: %{from: %{query: Post, id: 1}}}}
       })
 
     subquery_expr =
@@ -129,7 +129,7 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{not: %{>: %{all: [source: Post, query: %{id: 1}]}}}
+        id: %{not: %{>: %{all: %{from: %{query: Post, id: 1}}}}}
       })
 
     subquery_expr =
@@ -147,7 +147,7 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{>: %{any: [source: Post, query: %{id: 1}]}}
+        id: %{>: %{any: %{from: %{query: Post, id: 1}}}}
       })
 
     subquery_expr =
@@ -165,7 +165,7 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{not: %{>: %{any: [source: Post, query: %{id: 1}]}}}
+        id: %{not: %{>: %{any: %{from: %{query: Post, id: 1}}}}}
       })
 
     subquery_expr =
@@ -183,13 +183,13 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        exists: %{source: Post, query: %{id: 1}}
+        exists: %{from: %{query: Post, id: 1}}
       })
 
     subquery_expr =
       CommonFilters.convert_params_to_filter(
         Post,
-        [source: Post, query: %{id: 1}, select: true],
+        [from: %{query: Post, id: 1}, select: true],
         []
       )
 
@@ -203,13 +203,13 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        exists: [source: Post, query: %{id: 1}]
+        exists: [from: %{query: Post, id: 1}]
       })
 
     subquery_expr =
       CommonFilters.convert_params_to_filter(
         Post,
-        [source: Post, query: %{id: 1}, select: true],
+        [from: %{query: Post, id: 1}, select: true],
         []
       )
 
@@ -223,13 +223,13 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        exists: %{not: %{source: Post, query: %{id: 1}}}
+        exists: %{not: %{from: %{query: Post, id: 1}}}
       })
 
     subquery_expr =
       CommonFilters.convert_params_to_filter(
         Post,
-        [source: Post, query: %{id: 1}, select: true],
+        [from: %{query: Post, id: 1}, select: true],
         []
       )
 
@@ -243,13 +243,13 @@ defmodule EctoShorts.DynamicsTest do
 
     actual =
       Dynamics.convert_to_dynamic(Post, binding, %{
-        exists: %{not: [source: Post, query: %{id: 1}]}
+        exists: %{not: [from: %{query: Post, id: 1}]}
       })
 
     subquery_expr =
       CommonFilters.convert_params_to_filter(
         Post,
-        [source: Post, query: %{id: 1}, select: true],
+        [from: %{query: Post, id: 1}, select: true],
         []
       )
 

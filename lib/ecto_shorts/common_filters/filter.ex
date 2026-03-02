@@ -47,7 +47,7 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   @doc "Applies the given filter to the query."
   def build(schema_source, filter, query, binding_selector, {boolean_operator, params}, opts)
-      when boolean_operator in @boolean_operators and is_list(params()) do
+      when boolean_operator in @boolean_operators and is_list(params) do
     dyn =
       Dynamics.convert_to_dynamic(
         schema_source,
@@ -208,11 +208,11 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   defp apply_expr(schema_source, :lock, query, binding_selector, params, opts)
        when is_map(params) and not is_struct(params) do
-    apply_expr(schema_source, :lock, query, binding_selector, Map.to_list(params()), opts)
+    apply_expr(schema_source, :lock, query, binding_selector, Map.to_list(params), opts)
   end
 
   defp apply_expr(_schema_source, :lock, query, binding_selector, params, opts)
-       when is_list(params()) do
+       when is_list(params) do
     if Keyword.keyword?(params) do
       apply_lock_from_resolver(query, binding_selector, params, opts)
     else
@@ -310,7 +310,7 @@ defmodule EctoShorts.CommonFilters.Filter do
   defp apply_lock_from_resolver(query, binding_selector, params, opts) do
     params =
       if is_map(params) and not is_struct(params) do
-        Map.to_list(params())
+        Map.to_list(params)
       else
         params
       end

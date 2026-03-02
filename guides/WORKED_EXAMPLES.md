@@ -170,7 +170,7 @@
 
 %{id: %{all: subquery_expr}}
 
-%{id: %{>: %{all: [source: Post, query: %{id: 1}]}}}
+%{id: %{>: %{all: %{from: %{query: Post, id: 1}}}}}
 
 %{id: %{not: %{>: %{all: subquery_expr}}}}
 
@@ -424,21 +424,19 @@
 
 ## Schema-Level Config
 
-### Source and Query Params
+### The :from Key
 
 [published: true, subquery: %{id: 2}]
 
-[query: %{id: 1}, published: true]
+%{from: %{query: Post, id: 1}, published: true}
 
-[source: Post, id: 1]
+%{from: %{query: Post, id: 1}}
 
-[source: Post, query: %{id: 1}]
+[from: [query: Post, id: 1]]
 
-[source: Post, query: [id: 1]]
+%{from: %{query: "posts", id: 1}}
 
-[source: "posts", query: %{id: 1}]
-
-[source: "posts", query: %{select: [:id]}]
+%{from: %{query: "posts", select: [:id]}}
 
 ### Select Examples
 
@@ -590,9 +588,9 @@
 
 %{with_cte: [published_posts: [as: cte_query, materialized: false, operation: :all]]}
 
-%{with_cte: [published_posts: [as: %{source: Post, query: %{published: true}}]]}
+%{with_cte: [published_posts: [as: %{from: %{query: Post, published: true}}]]}
 
-%{with_cte: [published_posts: [as: [source: Post, query: [id: 1]]]]}
+%{with_cte: [published_posts: [as: [from: [query: Post, id: 1]]]]}
 
 [recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]]
 
@@ -656,9 +654,9 @@
 
 %{join: [subquery: [source: user_query, as: :name, on: true]]}
 
-%{join: [subquery: [source: [source: User, query: [age: [>=: 18]]], as: :name, on: true]]}
+%{join: [subquery: [source: %{from: %{query: User, age: %{>=: 18}}}, as: :name, on: true]]}
 
-%{join: [subquery: [source: [query: [published: true]], as: :name, on: true]]}
+%{join: [subquery: [source: %{from: %{published: true}}, as: :name, on: true]]}
 
 %{join: [fragment: [source: %{name: :active_users, values: [min_age: 21]}, as: :active_users, on: true]]}
 

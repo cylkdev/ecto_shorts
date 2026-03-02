@@ -23,10 +23,10 @@ defmodule EctoShorts.CommonFilters.WithCte do
 
   defp reduce_cte(schema_source, query, params, opts)
        when is_map(params) and not is_struct(params) do
-    reduce_cte(schema_source, query, Map.to_list(params()), opts)
+    reduce_cte(schema_source, query, Map.to_list(params), opts)
   end
 
-  defp reduce_cte(schema_source, query, params, opts) when is_list(params()) do
+  defp reduce_cte(schema_source, query, params, opts) when is_list(params) do
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn {cte_name, cte_definition}, query_acc ->
         apply_cte(schema_source, query_acc, cte_name, cte_definition, opts)
@@ -95,8 +95,22 @@ defmodule EctoShorts.CommonFilters.WithCte do
   end
 
   defp params_to_query(schema_source, query_params, opts) do
-    from_source = Keyword.get(query_params, :source, schema_source)
-    filter_params = Keyword.get(query_params, :query, %{})
+    from_value = Keyword.get(query_params, :from)
+
+    {from_source, filter_params} =
+      case from_value do
+        map when is_map(map) and not is_struct(map) ->
+          {query_source, rest} = Map.pop(map, :query)
+          {query_source || schema_source, Map.to_list(rest)}
+
+        list when is_list(list) ->
+          {query_source, rest} = Keyword.pop(list, :query)
+          {query_source || schema_source, rest}
+
+        nil ->
+          {schema_source, []}
+      end
+
     CommonFilters.convert_params_to_filter(from_source, filter_params, opts)
   end
 end

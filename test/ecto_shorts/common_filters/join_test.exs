@@ -173,11 +173,11 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "exists - uses source argument when :source is omitted" do
+    test "exists - uses source argument when :query is omitted from :from" do
       subquery_expr =
         CommonFilters.convert_params_to_filter(
           User,
-          [source: User, query: %{first_name: "John"}, select: true],
+          [from: %{query: User, first_name: "John"}, select: true],
           []
         )
 
@@ -186,18 +186,18 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           User,
-          %{where: %{exists: %{query: %{first_name: "John"}}}},
+          %{where: %{exists: %{from: %{first_name: "John"}}}},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "exists - %{where: %{exists: %{source: Post, query: %{id: 1}}}}" do
+    test "exists - %{where: %{exists: %{from: %{query: Post, id: 1}}}}" do
       subquery_expr =
         CommonFilters.convert_params_to_filter(
           Post,
-          [source: Post, query: %{id: 1}, select: true],
+          [from: %{query: Post, id: 1}, select: true],
           []
         )
 
@@ -206,38 +206,18 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{where: %{exists: %{source: Post, query: %{id: 1}}}},
+          %{where: %{exists: %{from: %{query: Post, id: 1}}}},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "exists - %{where: %{exists: [source: Post, query: %{id: 1}]}}" do
+    test "exists - %{where: %{exists: %{not: %{from: %{query: Post, id: 1}}}}}" do
       subquery_expr =
         CommonFilters.convert_params_to_filter(
           Post,
-          [source: Post, query: %{id: 1}, select: true],
-          []
-        )
-
-      expected = from(p in Post, where: exists(subquery_expr))
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          Post,
-          %{where: %{exists: [source: Post, query: %{id: 1}]}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "exists - %{where: %{exists: %{not: %{source: Post, query: %{id: 1}}}}}" do
-      subquery_expr =
-        CommonFilters.convert_params_to_filter(
-          Post,
-          [source: Post, query: %{id: 1}, select: true],
+          [from: %{query: Post, id: 1}, select: true],
           []
         )
 
@@ -246,27 +226,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{where: %{exists: %{not: %{source: Post, query: %{id: 1}}}}},
-          []
-        )
-
-      assert_sql(expected, q2)
-    end
-
-    test "exists - %{where: %{exists: %{not: [source: Post, query: %{id: 1}]}}}" do
-      subquery_expr =
-        CommonFilters.convert_params_to_filter(
-          Post,
-          [source: Post, query: %{id: 1}, select: true],
-          []
-        )
-
-      expected = from(p in Post, where: not exists(subquery_expr))
-
-      q2 =
-        CommonFilters.convert_params_to_filter(
-          Post,
-          %{where: %{exists: %{not: [source: Post, query: %{id: 1}]}}},
+          %{where: %{exists: %{not: %{from: %{query: Post, id: 1}}}}},
           []
         )
 
@@ -394,10 +354,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
           %{
             join: [
               subquery: [
-                source: [
-                  source: User,
-                  query: [age: [>=: 18]]
-                ],
+                source: %{from: %{query: User, age: %{>=: 18}}},
                 as: :adult_users_subquery,
                 on: true
               ]
@@ -409,7 +366,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports canonical :join subquery source params without :from using existing source" do
+    test "supports canonical :join subquery source params without :query using existing source" do
       expected_subquery = from(p in Post, where: p.published == ^true)
 
       expected =
@@ -425,7 +382,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
           %{
             join: [
               subquery: [
-                source: [query: [published: true]],
+                source: %{from: %{published: true}},
                 as: :published_posts_subquery,
                 on: true
               ]

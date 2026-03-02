@@ -114,7 +114,7 @@ defmodule EctoShorts.Dynamics do
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
     source = CommonSchema.normalize_source(source)
 
-    if is_map(params) or is_list(params()) do
+    if is_map(params) or is_list(params) do
       Enum.reduce(params, nil, fn entry, dyn_acc ->
         append_predicates(source, dyn_acc, binding_selector, entry, opts)
       end)
@@ -130,7 +130,7 @@ defmodule EctoShorts.Dynamics do
 
   defp append_predicates(source, dyn_a, binding_selector, params, opts)
        when is_map(params) and not is_struct(params) do
-    append_predicates(source, dyn_a, binding_selector, Map.to_list(params()), opts)
+    append_predicates(source, dyn_a, binding_selector, Map.to_list(params), opts)
   end
 
   defp append_predicates(source, dyn_a, binding_selector, list, opts) when is_list(list) do
@@ -285,8 +285,8 @@ defmodule EctoShorts.Dynamics do
   `{:datetime_add, [...]}`, `{:date_add, [...]}`, `{:from_now, [...]}`,
   `{:ago, [...]}`) with their corresponding Ecto sub-expressions.
 
-  When the expression is a keyword list containing a `:source` or `:query`
-  key, the function builds a subquery via
+  When the expression is a keyword list containing a `:from` key, the
+  function builds a subquery via
   `EctoShorts.CommonFilters.convert_params_to_filter/3` and returns the
   result as the expression value.
 
@@ -313,8 +313,7 @@ defmodule EctoShorts.Dynamics do
 
       list when is_list(list) ->
         cond do
-          Keyword.keyword?(list) and
-              (Keyword.has_key?(list, :source) or Keyword.has_key?(list, :query)) ->
+          Keyword.keyword?(list) and Keyword.has_key?(list, :from) ->
             build_helper_expr_subquery(source, field_name, list, opts)
 
           Keyword.keyword?(list) ->
@@ -335,20 +334,46 @@ defmodule EctoShorts.Dynamics do
   end
 
   defp build_helper_expr_subquery(source, field_name, params, opts) do
-    schema_source = params[:source] || source
-    filter_params = params[:query] || []
+    from_value = params[:from]
+
+    {schema_source, filter_params} =
+      extract_from_params(from_value, source)
+
     default_select = if field_name == :exists, do: true, else: field_name
     select_value = helper_expr_select(filter_params, default_select)
 
+    filter_params =
+      if is_map(filter_params) and not is_struct(filter_params) do
+        Map.to_list(filter_params)
+      else
+        filter_params
+      end
+
+    from_map =
+      filter_params
+      |> Map.new()
+      |> Map.put(:query, schema_source)
+
     CommonFilters.convert_params_to_filter(
       source,
-      [
-        source: schema_source,
-        query: filter_params,
-        select: select_value
-      ],
+      [from: from_map, select: select_value],
       opts
     )
+  end
+
+  defp extract_from_params(from_map, fallback_source)
+       when is_map(from_map) and not is_struct(from_map) do
+    {query_source, filter_params} = Map.pop(from_map, :query)
+    {query_source || fallback_source, filter_params}
+  end
+
+  defp extract_from_params(from_list, fallback_source) when is_list(from_list) do
+    {query_source, filter_params} = Keyword.pop(from_list, :query)
+    {query_source || fallback_source, filter_params}
+  end
+
+  defp extract_from_params(nil, fallback_source) do
+    {fallback_source, []}
   end
 
   defp helper_expr_select(params, default_select)
@@ -356,7 +381,7 @@ defmodule EctoShorts.Dynamics do
     Map.get(params, :select, default_select)
   end
 
-  defp helper_expr_select(params, default_select) when is_list(params()) do
+  defp helper_expr_select(params, default_select) when is_list(params) do
     if Keyword.keyword?(params) do
       Keyword.get(params, :select, default_select)
     else
