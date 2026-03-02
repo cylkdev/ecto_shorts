@@ -256,43 +256,34 @@ defmodule EctoShorts.Compiler do
 
   See also `EctoShorts.Compiler.ClauseSpec` and `EctoShorts.Config.max_binding_positions/0`.
   """
+  @compile_tasks_table :ecto_shorts_compiler_tasks
+
   defmacro __using__(opts) do
+    caller_module = __CALLER__.module
+    expanded_opts = Macro.prewalk(opts, &Macro.expand(&1, __CALLER__))
+    specs_module = Keyword.fetch!(expanded_opts, :specs)
+
+    validate_specs_module!(specs_module)
+
+    compiled_module = Module.concat(caller_module, Compiled)
+    context = compiled_module
+
+    ensure_tasks_table()
+    task = Task.async(fn -> build_clauses(context, specs_module, expanded_opts) end)
+    :ets.insert(@compile_tasks_table, {caller_module, task})
+
     quote do
-      opts = unquote(opts)
-      @compiler_options opts
+      @compiler_options unquote(opts)
       @before_compile unquote(__MODULE__)
     end
   end
 
   @doc false
   defmacro __before_compile__(env) do
-    opts = Module.get_attribute(env.module, :compiler_options)
-    specs_opt = Keyword.fetch!(opts, :specs)
-    specs_module = Macro.expand(specs_opt, env)
-
-    unless is_atom(specs_module) do
-      raise ArgumentError,
-            "Expected :specs to be a module, got: #{Macro.to_string(specs_opt)}"
-    end
-
-    case Code.ensure_compiled(specs_module) do
-      {:module, _} ->
-        :ok
-
-      {:error, reason} ->
-        raise ArgumentError,
-              "Expected :specs to be a compiled module, got: #{inspect(specs_module)} (#{inspect(reason)})"
-    end
-
-    unless function_exported?(specs_module, :clause_specs, 4) do
-      raise ArgumentError,
-            "Expected #{inspect(specs_module)} to export clause_specs/4"
-    end
+    [{_, task}] = :ets.take(@compile_tasks_table, env.module)
+    clause_asts = Task.await(task, :infinity)
 
     compiled_module = Module.concat(env.module, Compiled)
-    context = compiled_module
-
-    clause_asts = build_clauses(context, specs_module, opts)
 
     quote do
       @compiled_max_binding_positions unquote(__MODULE__).max_binding_positions(@compiler_options)
@@ -322,6 +313,37 @@ defmodule EctoShorts.Compiler do
         |> config_stale?()
       end
     end
+  end
+
+  defp ensure_tasks_table do
+    if :ets.whereis(@compile_tasks_table) === :undefined do
+      :ets.new(@compile_tasks_table, [:named_table, :public, :set])
+    end
+
+    :ok
+  end
+
+  defp validate_specs_module!(specs_module) do
+    unless is_atom(specs_module) do
+      raise ArgumentError,
+            "Expected :specs to be a module, got: #{inspect(specs_module)}"
+    end
+
+    case Code.ensure_compiled(specs_module) do
+      {:module, _} ->
+        :ok
+
+      {:error, reason} ->
+        raise ArgumentError,
+              "Expected :specs to be a compiled module, got: #{inspect(specs_module)} (#{inspect(reason)})"
+    end
+
+    unless function_exported?(specs_module, :clause_specs, 4) do
+      raise ArgumentError,
+            "Expected #{inspect(specs_module)} to export clause_specs/4"
+    end
+
+    :ok
   end
 
   @doc false
