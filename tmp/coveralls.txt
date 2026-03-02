@@ -1,13 +1,13 @@
-................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
-Finished in 3.3 seconds (3.3s async, 0.00s sync)
-9 doctests, 1031 tests, 0 failures
+...........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+Finished in 2.3 seconds (2.3s async, 0.00s sync)
+9 doctests, 1074 tests, 0 failures
 
-Randomized with seed 463173
+Randomized with seed 379761
 ----------------
 COV    FILE                                                                           LINES RELEVANT   MISSED
  88.4% lib/ecto_shorts/actions.ex                                                      1976      121       14
  63.8% lib/ecto_shorts/actions/batch.ex                                                 131       36       13
- 75.0% lib/ecto_shorts/actions/error.ex                                                 130        4        1
+100.0% lib/ecto_shorts/actions/error.ex                                                 130        4        0
  81.8% lib/ecto_shorts/actions/multi.ex                                                 255       55       10
  83.7% lib/ecto_shorts/common_changes.ex                                                843       86       14
  89.3% lib/ecto_shorts/common_filters.ex                                               1552      113       12
@@ -27,9 +27,9 @@ COV    FILE                                                                     
  66.6% lib/ecto_shorts/common_filters/with_cte.ex                                       102       24        8
  71.4% lib/ecto_shorts/common_filters/with_named_binding.ex                             110       28        8
  90.0% lib/ecto_shorts/common_filters/with_ties.ex                                       87       20        2
- 72.2% lib/ecto_shorts/common_params.ex                                                 862      126       35
+ 94.4% lib/ecto_shorts/common_params.ex                                                 862      126        7
  35.7% lib/ecto_shorts/common_params/placeholders.ex                                     50       14        9
- 83.6% lib/ecto_shorts/common_params/timestamps.ex                                      140       49        8
+ 87.7% lib/ecto_shorts/common_params/timestamps.ex                                      140       49        6
  71.4% lib/ecto_shorts/common_query.ex                                                  536       63       18
  78.3% lib/ecto_shorts/common_schema.ex                                                 819       74       16
  61.5% lib/ecto_shorts/compiler.ex                                                      403       26       10
@@ -43,17 +43,17 @@ COV    FILE                                                                     
 100.0% lib/ecto_shorts/dynamics/adapter.ex                                              377        0        0
 100.0% lib/ecto_shorts/dynamics/adapters/postgres.ex                                    304        8        0
 100.0% lib/ecto_shorts/dynamics/adapters/postgres/array_expr.ex                           6        0        0
- 38.7% lib/ecto_shorts/dynamics/adapters/postgres/array_expr/specs.ex                   934       31       19
+ 96.7% lib/ecto_shorts/dynamics/adapters/postgres/array_expr/specs.ex                   934       31        1
 100.0% lib/ecto_shorts/dynamics/adapters/postgres/common_expr.ex                          7        0        0
-  0.0% lib/ecto_shorts/dynamics/adapters/postgres/common_expr/specs.ex                  106        5        5
+100.0% lib/ecto_shorts/dynamics/adapters/postgres/common_expr/specs.ex                  106        5        0
 100.0% lib/ecto_shorts/dynamics/adapters/postgres/scalar_expr.ex                          7        0        0
  98.5% lib/ecto_shorts/dynamics/adapters/postgres/scalar_expr/specs.ex                 1758       69        1
- 40.0% lib/ecto_shorts/logger.ex                                                         70        5        3
+100.0% lib/ecto_shorts/logger.ex                                                         70        5        0
  83.3% lib/ecto_shorts/query_provider.ex                                                240        6        1
- 38.0% lib/ecto_shorts/schema_helpers.ex                                                442       21       13
- 37.5% lib/ecto_shorts/testing.ex                                                       450       24       15
+100.0% lib/ecto_shorts/schema_helpers.ex                                                442       21        0
+ 75.0% lib/ecto_shorts/testing.ex                                                       450       24        6
  66.6% lib/ecto_shorts/utils.ex                                                          46        9        3
-[TOTAL]  74.1%
+[TOTAL]  78.9%
 ----------------
 
 [33m--------lib/ecto_shorts/common_filters/select.ex--------[m
@@ -1013,10 +1013,10 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExpr.Specs do
   @doc false
   @impl true
   def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
-[31m    id_values_var = Macro.var(:id_values, context)[m
-[31m    cursor_value_var = Macro.var(:cursor_value, context)[m
-[31m    date_value_var = Macro.var(:date_value, context)[m
-[31m    exists_value_var = Macro.var(:exists_value, context)[m
+[32m    id_values_var = Macro.var(:id_values, context)[m
+[32m    cursor_value_var = Macro.var(:cursor_value, context)[m
+[32m    date_value_var = Macro.var(:date_value, context)[m
+[32m    exists_value_var = Macro.var(:exists_value, context)[m
 
     [
       %{
@@ -1104,7 +1104,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExpr.Specs do
           )
       }
     ]
-[31m    |> Enum.map(&ClauseSpec.new/1)[m
+[32m    |> Enum.map(&ClauseSpec.new/1)[m
   end
 end
 
@@ -1993,21 +1993,21 @@ defmodule EctoShorts.SchemaHelpers do
   """
 [32m  def get_related_schema(schema, key), do: do_get_related_schema(schema, key)[m
 
-[31m  defp do_get_related_schema(nil, _), do: nil[m
+[32m  defp do_get_related_schema(nil, _), do: nil[m
 
-[31m  defp do_get_related_schema(schema, []), do: schema[m
+[32m  defp do_get_related_schema(schema, []), do: schema[m
 
   defp do_get_related_schema(schema, [key | path]) do
     schema
     |> do_get_related_schema(key)
-[31m    |> do_get_related_schema(path)[m
+[32m    |> do_get_related_schema(path)[m
   end
 
   defp do_get_related_schema(schema, key) do
 [32m    case schema.__schema__(:association, key) do[m
 [32m      %{related: schema} -> schema[m
-[31m      %{through: path} -> do_get_related_schema(schema, path)[m
-[31m      _ -> nil[m
+[32m      %{through: path} -> do_get_related_schema(schema, path)[m
+[32m      _ -> nil[m
     end
   end
 
@@ -2029,7 +2029,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   See also `get_related_schema/2` and `EctoShorts.CommonSchema.get_schema_reflection/3`.
   """
-[31m  def schema_field_type(schema, key), do: schema.__schema__(:type, key)[m
+[32m  def schema_field_type(schema, key), do: schema.__schema__(:type, key)[m
 
   @doc since: "3.0.0"
   @doc """
@@ -2054,7 +2054,7 @@ defmodule EctoShorts.SchemaHelpers do
   def association_not_loaded?(schema_struct, key) do
     schema_struct
     |> Map.get(key)
-[31m    |> is_struct(Ecto.Association.NotLoaded)[m
+[32m    |> is_struct(Ecto.Association.NotLoaded)[m
   end
 
   @doc since: "3.0.0"
@@ -2076,8 +2076,8 @@ defmodule EctoShorts.SchemaHelpers do
 
   See also `any_schema_struct?/1` and `schema_struct?/1`.
   """
-[31m  def all_schema_struct?([]), do: false[m
-[31m  def all_schema_struct?(map) when map === %{}, do: false[m
+[32m  def all_schema_struct?([]), do: false[m
+[32m  def all_schema_struct?(map) when map === %{}, do: false[m
 [32m  def all_schema_struct?(enum), do: Enum.all?(enum, &schema_struct?/1)[m
 
   @doc since: "3.0.0"
@@ -2097,7 +2097,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   See also `all_schema_struct?/1` and `schema_struct?/1`.
   """
-[31m  def any_schema_struct?(values), do: Enum.any?(values, &schema_struct?/1)[m
+[32m  def any_schema_struct?(values), do: Enum.any?(values, &schema_struct?/1)[m
 
   @doc since: "3.0.0"
   @doc """
@@ -2144,7 +2144,7 @@ defmodule EctoShorts.SchemaHelpers do
 [32m    function_exported?(module, :__schema__, 2)[m
   end
 
-[31m  def schema_module?(_), do: false[m
+[32m  def schema_module?(_), do: false[m
 
   @doc """
   Returns `true` if the given map or struct has a non-nil `:id` (or `"id"`) key,
@@ -2166,8 +2166,8 @@ defmodule EctoShorts.SchemaHelpers do
 
   See also `schema_struct?/1`.
   """
-[31m  def any_created?(%{id: id}), do: id !== nil[m
-[31m  def any_created?(%{"id" => id}), do: id !== nil[m
+[32m  def any_created?(%{id: id}), do: id !== nil[m
+[32m  def any_created?(%{"id" => id}), do: id !== nil[m
 [32m  def any_created?(_), do: false[m
 end
 
@@ -3654,7 +3654,7 @@ defmodule EctoShorts.CommonParams do
 
   defp get_replace_fields(inserts, conflict_target, opts) do
 [32m    case Keyword.get(opts, :on_conflict_replace, :insert_keys) do[m
-[31m      :none ->[m
+[32m      :none ->[m
         []
 
       :insert_keys ->
@@ -3671,7 +3671,7 @@ defmodule EctoShorts.CommonParams do
 [32m        |> Enum.sort()[m
 
       invalid_term ->
-[31m        raise ArgumentError,[m
+[32m        raise ArgumentError,[m
               "Expected :on_conflict_replace to be :none, :insert_keys, or a list of fields, " <>
                 "got: #{inspect(invalid_term)}"
     end
@@ -3790,8 +3790,8 @@ defmodule EctoShorts.CommonParams do
       is_map(params) ->
 [32m        Utils.atomize_keys(params)[m
 
-[31m      Keyword.keyword?(params) ->[m
-[31m        Map.new(params)[m
+[32m      Keyword.keyword?(params) ->[m
+[32m        Map.new(params)[m
 
 [31m      true ->[m
 [31m        raise ArgumentError,[m
@@ -3800,7 +3800,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp build_struct(schema, schema_struct, params, opts) do
-[31m    if opts[:validate] === false do[m
+[32m    if opts[:validate] === false do[m
       {:ok, struct(schema_struct, params)}
     else
       schema_struct
@@ -3810,10 +3810,10 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp build_changeset(schema, %{data: schema_struct} = changeset, opts) do
-[31m    if opts[:validate] === false do[m
+[32m    if opts[:validate] === false do[m
       {:ok, Changeset.apply_changes(changeset)}
     else
-[31m      Changeset.apply_action(changeset, changeset_action(schema, schema_struct))[m
+[32m      Changeset.apply_action(changeset, changeset_action(schema, schema_struct))[m
     end
   end
 
@@ -3852,28 +3852,28 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp normalize_insert_entry(schema, {%_{} = schema_struct, params}, opts) do
-[31m    params = normalize_insert_params(schema, params, opts)[m
-[31m    changed_keys = keys_changed_in_schema_data(schema_struct, params)[m
+[32m    params = normalize_insert_params(schema, params, opts)[m
+[32m    changed_keys = keys_changed_in_schema_data(schema_struct, params)[m
 
-[31m    with {:ok, insert_data} <- build_struct(schema, schema_struct, params, opts) do[m
-[31m      {:ok, insert_data, changed_keys}[m
+[32m    with {:ok, insert_data} <- build_struct(schema, schema_struct, params, opts) do[m
+[32m      {:ok, insert_data, changed_keys}[m
     end
   end
 
   defp normalize_insert_entry(schema, %{data: schema_struct} = changeset, opts) do
-[31m    params = normalize_insert_params(schema, changeset.params, opts)[m
-[31m    changed_keys = keys_changed_in_schema_data(schema_struct, params)[m
+[32m    params = normalize_insert_params(schema, changeset.params, opts)[m
+[32m    changed_keys = keys_changed_in_schema_data(schema_struct, params)[m
 
-[31m    with {:ok, insert_data} <- build_changeset(schema, changeset, opts) do[m
-[31m      {:ok, insert_data, changed_keys}[m
+[32m    with {:ok, insert_data} <- build_changeset(schema, changeset, opts) do[m
+[32m      {:ok, insert_data, changed_keys}[m
     end
   end
 
   defp normalize_insert_entry(schema, %_{} = schema_struct, opts) do
-[31m    changed_keys = CommonSchema.get_query_fields(opts, schema)[m
+[32m    changed_keys = CommonSchema.get_query_fields(opts, schema)[m
 
-[31m    with {:ok, insert_data} <- build_struct(schema, schema_struct, %{}, opts) do[m
-[31m      {:ok, insert_data, changed_keys}[m
+[32m    with {:ok, insert_data} <- build_struct(schema, schema_struct, %{}, opts) do[m
+[32m      {:ok, insert_data, changed_keys}[m
     end
   end
 
@@ -3888,8 +3888,8 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp keys_changed_in_schema_data(schema_struct, map_b) do
-[31m    Enum.reduce(map_b, [], fn {key, val}, acc ->[m
-[31m      if Map.get(schema_struct, key) !== val do[m
+[32m    Enum.reduce(map_b, [], fn {key, val}, acc ->[m
+[32m      if Map.get(schema_struct, key) !== val do[m
         [key | acc]
       else
 [31m        acc[m
@@ -3908,7 +3908,7 @@ defmodule EctoShorts.CommonParams do
   end
 
   defp changeset_action(schema, schema_struct) do
-[31m    if has_all_non_nil_primary_keys?(schema, schema_struct) do[m
+[32m    if has_all_non_nil_primary_keys?(schema, schema_struct) do[m
       :update
     else
       :insert
@@ -4044,9 +4044,9 @@ defmodule EctoShorts.CommonParams do
 
   defp normalize_update_value(source, key, value, acc) do
 [32m    if is_list(value) and[m
-[31m         Enum.all?(value, &match?({op, _val} when op in [:set, :inc, :push, :pull], &1)) do[m
-[31m      Enum.reduce(value, acc, fn v, acc ->[m
-[31m        reduce_updates(source, key, v, acc)[m
+[32m         Enum.all?(value, &match?({op, _val} when op in [:set, :inc, :push, :pull], &1)) do[m
+[32m      Enum.reduce(value, acc, fn v, acc ->[m
+[32m        reduce_updates(source, key, v, acc)[m
       end)
     else
 [32m      reduce_updates(source, key, value, acc)[m
@@ -4081,12 +4081,12 @@ defmodule EctoShorts.CommonParams do
 [32m        if is_integer(value) do[m
           [{:inc, key, value} | acc]
         else
-[31m          raise ArgumentError,[m
+[32m          raise ArgumentError,[m
                 "Expected value for key `#{inspect(key)}` to be an integer, got: #{inspect(value)}"
         end
 
       {:error, actual_type} ->
-[31m        raise ArgumentError,[m
+[32m        raise ArgumentError,[m
               """
               The field `#{inspect(key)}` on schema `#{inspect(source)}` is not a type of `:integer`
               and cannot be used with the `Ecto.Query` update operator `:inc`.
@@ -4097,7 +4097,7 @@ defmodule EctoShorts.CommonParams do
     end
   end
 
-[31m  defp reduce_updates(_source, key, {:set, value}, acc) do[m
+[32m  defp reduce_updates(_source, key, {:set, value}, acc) do[m
     [{:set, key, value} | acc]
   end
 
@@ -4113,7 +4113,7 @@ defmodule EctoShorts.CommonParams do
       schema ->
 [32m        case schema.__schema__(:type, key) do[m
 [32m          :integer -> :ok[m
-[31m          val -> {:error, val}[m
+[32m          val -> {:error, val}[m
         end
     end
   end
@@ -7694,7 +7694,7 @@ defmodule EctoShorts.Actions.Error do
   end
 
   defp error_module(opts) do
-[31m    opts[:error_module] ||[m
+[32m    opts[:error_module] ||[m
 [32m      Config.error_module() ||[m
       @default_error_module
   end
@@ -8873,11 +8873,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
 
   @doc false
   def list_semantic_specs(context, binding_head_ast) do
-[31m    key_var = Macro.var(:key, context)[m
-[31m    value_var = Macro.var(:value, context)[m
-[31m    values_var = Macro.var(:values, context)[m
+[32m    key_var = Macro.var(:key, context)[m
+[32m    value_var = Macro.var(:value, context)[m
+[32m    values_var = Macro.var(:values, context)[m
 
-[31m    list_guard =[m
+[32m    list_guard =[m
       quote do
         is_list(unquote(values_var))
       end
@@ -9005,9 +9005,9 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
 
   @doc false
   def nil_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
-[31m    key_var = Macro.var(:key, context)[m
-[31m    op_var = Macro.var(:op, context)[m
-[31m    field_ast = AST.field_ast(target_binding_var, key_var)[m
+[32m    key_var = Macro.var(:key, context)[m
+[32m    op_var = Macro.var(:op, context)[m
+[32m    field_ast = AST.field_ast(target_binding_var, key_var)[m
 
     [
       %ClauseSpec{
@@ -9039,24 +9039,24 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
 
   @doc false
   def aggregate_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
-[31m    key_var = Macro.var(:key, context)[m
-[31m    op_var = Macro.var(:op, context)[m
-[31m    value_var = Macro.var(:value, context)[m
+[32m    key_var = Macro.var(:key, context)[m
+[32m    op_var = Macro.var(:op, context)[m
+[32m    value_var = Macro.var(:value, context)[m
 
-[31m    field_ast = AST.field_ast(target_binding_var, key_var)[m
+[32m    field_ast = AST.field_ast(target_binding_var, key_var)[m
 
-[31m    op_guard =[m
+[32m    op_guard =[m
       quote do
         unquote(op_var) in unquote(@comparison_ops)
       end
 
-[31m    alias_guard =[m
+[32m    alias_guard =[m
       quote do
         unquote(op_var) in unquote(@alias_comparison_ops)
       end
 
-[31m    Enum.flat_map(@aggregate_helpers, fn helper ->[m
-[31m      aggregate_expr_ast =[m
+[32m    Enum.flat_map(@aggregate_helpers, fn helper ->[m
+[32m      aggregate_expr_ast =[m
         case helper do
           :avg -> quote(do: avg(unquote(field_ast)))
           :count -> quote(do: count(unquote(field_ast)))
@@ -9322,9 +9322,9 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs do
 
   @doc false
   def like_ilike_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
-[31m    key_var = Macro.var(:key, context)[m
-[31m    value_var = Macro.var(:value, context)[m
-[31m    field_ast = AST.field_ast(target_binding_var, key_var)[m
+[32m    key_var = Macro.var(:key, context)[m
+[32m    value_var = Macro.var(:value, context)[m
+[32m    field_ast = AST.field_ast(target_binding_var, key_var)[m
 
     [
       %ClauseSpec{
@@ -15714,10 +15714,10 @@ defmodule EctoShorts.Testing do
   See also `assert_dynamic/2`.
   """
   def refute_dynamic(dyn_a, dyn_b) do
-[31m    left = Macro.to_string(dyn_a)[m
-[31m    right = Macro.to_string(dyn_b)[m
+[32m    left = Macro.to_string(dyn_a)[m
+[32m    right = Macro.to_string(dyn_b)[m
 
-[31m    if left === right do[m
+[32m    if left === right do[m
 [31m      Assertions.flunk("Expected dynamic expressions to be different, but both were:\n\n#{left}")[m
     end
 
@@ -15773,10 +15773,10 @@ defmodule EctoShorts.Testing do
   See also `assert_sql/4`.
   """
   def refute_sql(repo, query_a, query_b, kind \\ :all) do
-[31m    left = Ecto.Adapters.SQL.to_sql(kind, repo, query_a)[m
-[31m    right = Ecto.Adapters.SQL.to_sql(kind, repo, query_b)[m
+[32m    left = Ecto.Adapters.SQL.to_sql(kind, repo, query_a)[m
+[32m    right = Ecto.Adapters.SQL.to_sql(kind, repo, query_b)[m
 
-[31m    if left === right do[m
+[32m    if left === right do[m
 [31m      Assertions.flunk("Expected queries to produce different SQL, but both were:\n\n#{inspect(left)}")[m
     end
 
@@ -15829,10 +15829,10 @@ defmodule EctoShorts.Testing do
   See also `assert_query/2`.
   """
   def refute_query(query_a, query_b) do
-[31m    left = inspect(query_a)[m
-[31m    right = inspect(query_b)[m
+[32m    left = inspect(query_a)[m
+[32m    right = inspect(query_b)[m
 
-[31m    if left === right do[m
+[32m    if left === right do[m
 [31m      Assertions.flunk("Expected queries to be different, but both were:\n\n#{left}")[m
     end
 
@@ -17433,9 +17433,9 @@ defmodule EctoShorts.CommonParams.Timestamps do
     else
 [32m      result =[m
         if Map.has_key?(input, source_key) do
-[31m          case Map.get(input, source_key) do[m
+[32m          case Map.get(input, source_key) do[m
             nil ->
-[31m              normalize_timestamp_inserted_at(datetime, source_key, schema, opts)[m
+[32m              normalize_timestamp_inserted_at(datetime, source_key, schema, opts)[m
 
             existing_timestamp ->
 [31m              normalize_timestamp_inserted_at(existing_timestamp, source_key, schema, opts)[m
@@ -17542,7 +17542,7 @@ defmodule EctoShorts.Logger do
   def debug(prefix, message) do
     message
     |> format_message(prefix)
-[31m    |> Logger.debug()[m
+[32m    |> Logger.debug()[m
   end
 
   @doc """
@@ -17556,7 +17556,7 @@ defmodule EctoShorts.Logger do
   def info(prefix, message) do
     message
     |> format_message(prefix)
-[31m    |> Logger.info()[m
+[32m    |> Logger.info()[m
   end
 
   @doc """
@@ -17570,7 +17570,7 @@ defmodule EctoShorts.Logger do
   def error(prefix, message) do
     message
     |> format_message(prefix)
-[31m    |> Logger.error()[m
+[32m    |> Logger.error()[m
   end
 
   @doc """

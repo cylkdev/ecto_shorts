@@ -1,8 +1,7 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
+defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
   use ExUnit.Case, async: true
 
   alias EctoShorts.Compiler.ClauseBuilder
-  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs, as: ArrayExprSpecs
   alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs, as: ScalarExprSpecs
 
   import Ecto.Query
@@ -36,7 +35,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts}
   end
 
-  test "scalar nil_specs/4 builds clauses without needing other groups" do
+  test "nil_specs/4 builds clauses without needing other groups" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -65,7 +64,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar alias_op_specs/2 composes with base_op_specs/4" do
+  test "alias_op_specs/2 composes with base_op_specs/4" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -88,7 +87,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar alias_op_specs/2 composes with base_op_specs/4 for :ne" do
+  test "alias_op_specs/2 composes with base_op_specs/4 for :ne" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -111,7 +110,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar list_semantic_specs/2 coerces == with list to :in" do
+  test "list_semantic_specs/2 coerces == with list to :in" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -141,7 +140,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar like_ilike_specs/4 builds like/ilike clauses" do
+  test "like_ilike_specs/4 builds like/ilike clauses" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -172,7 +171,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar lower_upper_specs/4 builds lower/upper comparison clauses" do
+  test "lower_upper_specs/4 builds lower/upper comparison clauses" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -207,7 +206,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar date_time_specs/4 builds datetime comparison clauses" do
+  test "date_time_specs/4 builds datetime comparison clauses" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -241,7 +240,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar arithmetic_specs/4 builds arithmetic comparison clauses" do
+  test "arithmetic_specs/4 builds arithmetic comparison clauses" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -264,7 +263,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar any_specs/4 builds any-subquery comparison clauses" do
+  test "any_specs/4 builds any-subquery comparison clauses" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -294,7 +293,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar all_specs/4 builds all-subquery comparison clauses" do
+  test "all_specs/4 builds all-subquery comparison clauses" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -324,7 +323,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     )
   end
 
-  test "scalar aggregate_specs/4 builds aggregate comparison clauses" do
+  test "aggregate_specs/4 builds aggregate comparison clauses" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
@@ -350,94 +349,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprGroupSpecsTest do
     assert_dynamic(
       expected,
       module.apply_dynamic_expr({:as, nil}, key, {:avg, {:>, 10}})
-    )
-  end
-
-  test "array lower_upper_specs/4 builds the unnest fragments" do
-    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
-
-    specs =
-      ArrayExprSpecs.lower_upper_specs(
-        __MODULE__,
-        binding_head_ast,
-        target_binding_var,
-        binding_body_asts
-      )
-
-    module = compile_specs_module!(specs)
-
-    key = :tags
-
-    expected =
-      dynamic(
-        [q],
-        fragment(
-          """
-          EXISTS (
-            SELECT 1
-            FROM unnest(?) AS t
-            WHERE lower(t) = ?
-          )
-          """,
-          field(q, ^key),
-          ^"elixir"
-        )
-      )
-
-    assert_dynamic(
-      expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:lower, "elixir"})
-    )
-  end
-
-  test "array alias_op_specs/2 composes with base_op_specs/4" do
-    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
-
-    specs =
-      ArrayExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
-        ArrayExprSpecs.base_op_specs(
-          __MODULE__,
-          binding_head_ast,
-          target_binding_var,
-          binding_body_asts
-        )
-
-    module = compile_specs_module!(specs)
-
-    key = :scores
-
-    expected =
-      dynamic(
-        [q],
-        fragment("? < ANY(?)", ^10, field(q, ^key))
-      )
-
-    assert_dynamic(
-      expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:gt, 10})
-    )
-  end
-
-  test "array alias_op_specs/2 composes with base_op_specs/4 for :ne" do
-    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
-
-    specs =
-      ArrayExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
-        ArrayExprSpecs.base_op_specs(
-          __MODULE__,
-          binding_head_ast,
-          target_binding_var,
-          binding_body_asts
-        )
-
-    module = compile_specs_module!(specs)
-
-    key = :scores
-    expected = dynamic([q], ^10 not in field(q, ^key))
-
-    assert_dynamic(
-      expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:ne, 10})
     )
   end
 end
