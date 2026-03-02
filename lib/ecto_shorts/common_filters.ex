@@ -1070,12 +1070,12 @@ defmodule EctoShorts.CommonFilters do
           merged_params
         end
 
-      do_convert(normalized_source, query, merged_params, opts)
+      build_filters(normalized_source, query, merged_params, opts)
     else
       query = CommonSchema.to_query(source)
 
       Enum.reduce(params, query, fn entry, query_acc ->
-        do_convert(source, query_acc, entry, opts)
+        build_filters(source, query_acc, entry, opts)
       end)
     end
   end
@@ -1151,7 +1151,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp do_convert(schema_source, query, params, opts) do
+  defp build_filters(schema_source, query, params, opts) do
     normalized_params = normalize_filter_params(params)
 
     if is_map(normalized_params) or Keyword.keyword?(normalized_params) do
@@ -1388,7 +1388,7 @@ defmodule EctoShorts.CommonFilters do
 
       {join_binding_mode, join_binding_target} =
         if Keyword.has_key?(params, :as) do
-          {:as, Keyword.get(params, :as, nil)}
+          {:as, Keyword.fetch!(params, :as)}
         else
           {:at, CommonQuery.query_binding_count(joined_query)}
         end
@@ -1418,106 +1418,39 @@ defmodule EctoShorts.CommonFilters do
          filter_op,
          {key, value},
          opts
-       )
-       when is_map(value) and not is_struct(value) and
-              (is_map_key(value, :datetime) or is_map_key(value, :date)) do
-    build_query(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      {key, value},
-      opts
-    )
-  end
-
-  defp build_schema_filters(
-         schema_source,
-         query,
-         binding_selector,
-         filter_op,
-         {:exists, value},
-         opts
-       )
-       when is_map(value) and not is_struct(value) and
-              is_map_key(value, :from) do
-    build_query(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      {:exists, value},
-      opts
-    )
-  end
-
-  defp build_schema_filters(
-         schema_source,
-         query,
-         binding_selector,
-         filter_op,
-         {:exists, value},
-         opts
-       )
-       when is_list(value) do
-    build_query(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      {:exists, value},
-      opts
-    )
-  end
-
-  defp build_schema_filters(
-         schema_source,
-         query,
-         binding_selector,
-         filter_op,
-         {key, value},
-         opts
-       )
-       when is_map(value) and not is_struct(value) do
-    create_schema_filter(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      {key, Map.to_list(value)},
-      opts
-    )
-  end
-
-  defp build_schema_filters(
-         schema_source,
-         query,
-         binding_selector,
-         filter_op,
-         {key, value},
-         opts
-       )
-       when is_list(value) do
-    if Keyword.keyword?(value) do
-      Enum.reduce(value, query, fn {key2, value2}, query_acc ->
+       ) do
+    cond do
+      is_map(value) and not is_struct(value) ->
         create_schema_filter(
           schema_source,
-          query_acc,
+          query,
           binding_selector,
           filter_op,
-          {key, {key2, value2}},
+          {key, Map.to_list(value)},
           opts
         )
-      end)
-    else
-      build_query(
-        schema_source,
-        query,
-        binding_selector,
-        filter_op,
-        {key, value},
-        opts
-      )
+
+      Keyword.keyword?(value) ->
+        Enum.reduce(value, query, fn {key2, value2}, query_acc ->
+          create_schema_filter(
+            schema_source,
+            query_acc,
+            binding_selector,
+            filter_op,
+            {key, {key2, value2}},
+            opts
+          )
+        end)
+
+      true ->
+        build_query(
+          schema_source,
+          query,
+          binding_selector,
+          filter_op,
+          {key, value},
+          opts
+        )
     end
   end
 
