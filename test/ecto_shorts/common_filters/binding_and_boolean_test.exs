@@ -295,6 +295,66 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_received {:q2, q2}
       assert q2 === q
     end
+
+    test "logs a warning and returns the query unchanged when the position exceeds the actual binding count" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{bind: %{at: 3, published: true}},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Binding position 3 exceeds the number of bindings in the query (1)"
+      assert_received {:q2, q2}
+      assert q2 === q
+    end
+
+    test "logs a warning and returns the query unchanged when the position is less than 1" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{bind: %{at: 0, published: true}},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Binding position must be >= 1, got: 0"
+      assert_received {:q2, q2}
+      assert q2 === q
+    end
+
+    test "logs a warning and returns the query unchanged when the named binding does not exist" do
+      q = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          q2 =
+            CommonFilters.convert_params_to_filter(
+              q,
+              %{bind: %{as: :nonexistent, published: true}},
+              []
+            )
+
+          send(self(), {:q2, q2})
+        end)
+
+      assert log =~ "Named binding :nonexistent does not exist in the query"
+      assert_received {:q2, q2}
+      assert q2 === q
+    end
   end
 
   describe "convert_params_to_filter/3 schema filter precedence" do

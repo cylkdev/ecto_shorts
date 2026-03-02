@@ -902,9 +902,7 @@ defmodule EctoShorts.CommonFilters do
   @default_binding_selector {:as, nil}
 
   @where :where
-  @schema_filters [:where, :or_where]
-
-  @map_payload_helper_operators [:datetime_add, :date_add, :from_now, :ago]
+  @where_filters [:where, :or_where]
 
   @subquery_operators [:exists, :all, :any]
 
@@ -1056,7 +1054,7 @@ defmodule EctoShorts.CommonFilters do
       merged_params = Keyword.merge(from_params, base_params)
 
       merged_params =
-        if not source_has_schema?(normalized_source) and
+        if not normalized_source_has_schema?(normalized_source) and
              not Keyword.has_key?(merged_params, :select) do
           Keyword.put(merged_params, :select, true)
         else
@@ -1171,8 +1169,15 @@ defmodule EctoShorts.CommonFilters do
         {key, value},
         opts
       )
-      when key in @schema_filters do
-    reduce_schema_filter_params(schema_source, query, binding_selector, key, value, opts)
+      when key in @where_filters do
+    reduce_schema_filter_params(
+      schema_source,
+      query,
+      binding_selector,
+      key,
+      value,
+      opts
+    )
   end
 
   def create_schema_filter(
@@ -1198,7 +1203,16 @@ defmodule EctoShorts.CommonFilters do
         q
 
       {{:as, bind_alias}, filters}, q when is_atom(bind_alias) ->
-        create_schema_filter(schema_source, q, {:as, bind_alias}, filter_op, filters, opts)
+        if CommonQuery.get_query_binding_source(q, bind_alias) do
+          create_schema_filter(schema_source, q, {:as, bind_alias}, filter_op, filters, opts)
+        else
+          Logger.warning(
+            @binding_params_prefix,
+            "Named binding #{inspect(bind_alias)} does not exist in the query"
+          )
+
+          q
+        end
 
       {{:as, bind_alias}, _filters}, q ->
         Logger.warning(
@@ -1210,32 +1224,44 @@ defmodule EctoShorts.CommonFilters do
 
       {{:at, bind_index}, filters}, q when is_integer(bind_index) ->
         max = Config.max_binding_positions()
+        actual_count = CommonQuery.query_binding_count(q)
 
-        # We check this up front so we fail with a nice error message instead of
-        # a function clause error when the binding position is out of range for
-        # the bindings we know exist.
-        #
-        # Note that this cannot catch invalid queries. For example, if the caller
-        # applies an operation to binding 3 but the query only has 1 binding,
-        # Ecto will still build the query struct, but it will raise later when
-        # the query is executed.
-        if bind_index > max do
-          Logger.warning(
-            @binding_params_prefix,
-            "Binding position #{bind_index} exceeds the configured :max_binding_positions (#{max}). " <>
-              "Increase :max_binding_positions in your config to support more positional bindings."
-          )
+        cond do
+          bind_index > max ->
+            Logger.warning(
+              @binding_params_prefix,
+              "Binding position #{bind_index} exceeds the configured :max_binding_positions (#{max}). " <>
+                "Increase :max_binding_positions in your config to support more positional bindings."
+            )
 
-          q
-        else
-          create_schema_filter(
-            schema_source,
-            q,
-            {:at, bind_index},
-            filter_op,
-            filters,
-            opts
-          )
+            q
+
+          bind_index < 1 ->
+            Logger.warning(
+              @binding_params_prefix,
+              "Binding position must be >= 1, got: #{bind_index}"
+            )
+
+            q
+
+          bind_index > actual_count ->
+            Logger.warning(
+              @binding_params_prefix,
+              "Binding position #{bind_index} exceeds the number of bindings in the query (#{actual_count}). " <>
+                "The query has #{actual_count} binding(s). Add a join to create more bindings."
+            )
+
+            q
+
+          true ->
+            create_schema_filter(
+              schema_source,
+              q,
+              {:at, bind_index},
+              filter_op,
+              filters,
+              opts
+            )
         end
     end)
   end
@@ -1515,11 +1541,8 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp source_has_schema?({_, nil}), do: false
-  defp source_has_schema?({_, mod}) when is_atom(mod), do: true
-  defp source_has_schema?(nil), do: false
-  defp source_has_schema?(mod) when is_atom(mod), do: true
-  defp source_has_schema?(_), do: false
+  defp normalized_source_has_schema?({_, nil}), do: false
+  defp normalized_source_has_schema?({_, mod}) when is_atom(mod), do: true
 
   defp to_binding_source(schema_source, _query, {:as, nil}) do
     schema_source
@@ -1527,11 +1550,6 @@ defmodule EctoShorts.CommonFilters do
 
   defp to_binding_source(_schema_source, query, {mode, binding_target}) when mode in @binding_modes do
     CommonQuery.get_query_binding_source(query, binding_target)
-  end
-
-  defp normalize_filter_params({k, v})
-       when k in @map_payload_helper_operators and is_map(v) and not is_struct(v) do
-    {k, v}
   end
 
   defp normalize_filter_params({k, v}) when is_map(v) or is_list(v) do
