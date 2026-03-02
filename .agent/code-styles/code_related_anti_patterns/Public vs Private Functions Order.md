@@ -22,7 +22,7 @@ When someone opens a module, they usually want to know:
 - A beginner can scan the public functions first without getting lost in helpers.
 - Helpers are easy to find because they are all in one place (the bottom), unless they are clearly attached to one group in a large module.
 
-## Examples
+### Examples
 
 Do NOT place private helpers at the top of the module:
 

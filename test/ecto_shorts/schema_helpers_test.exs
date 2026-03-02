@@ -7,25 +7,25 @@ defmodule EctoShorts.SchemaHelpersTest do
   alias EctoShorts.Schema.User
 
   describe "get_related_schema/2" do
-    test "returns nil for nil schema" do
+    test "returns nil when the schema is nil" do
       assert SchemaHelpers.get_related_schema(nil, :comments) === nil
     end
 
-    test "returns related schema for through association" do
+    test "follows a through association to find the final schema" do
       assert SchemaHelpers.get_related_schema(Post, :comments_authors) === User
     end
 
-    test "returns nil for non-existent association" do
+    test "returns nil when the association does not exist" do
       assert SchemaHelpers.get_related_schema(Post, :does_not_exist) === nil
     end
   end
 
   describe "schema_field_type/2" do
-    test "returns the Ecto type for a field" do
+    test "returns the type of a field" do
       assert SchemaHelpers.schema_field_type(Post, :title) === :string
     end
 
-    test "returns array type for array fields" do
+    test "returns the array type for an array field" do
       assert SchemaHelpers.schema_field_type(Post, :tags) === {:array, :string}
     end
   end
@@ -73,26 +73,26 @@ defmodule EctoShorts.SchemaHelpersTest do
   end
 
   describe "schema_module?/1" do
-    test "returns false for non-atom values" do
+    test "returns false when the value is not an atom" do
       assert SchemaHelpers.schema_module?("not_a_module") === false
       assert SchemaHelpers.schema_module?(123) === false
     end
   end
 
   describe "any_created?/1" do
-    test "returns true for map with non-nil atom :id key" do
+    test "returns true when the map has a non-nil :id" do
       assert SchemaHelpers.any_created?(%{id: 42}) === true
     end
 
-    test "returns false for map with nil atom :id key" do
+    test "returns false when the map has a nil :id" do
       assert SchemaHelpers.any_created?(%{id: nil}) === false
     end
 
-    test "returns true for map with non-nil string id key" do
+    test "returns true when the map has a non-nil string id" do
       assert SchemaHelpers.any_created?(%{"id" => 99}) === true
     end
 
-    test "returns false for map with nil string id key" do
+    test "returns false when the map has a nil string id" do
       assert SchemaHelpers.any_created?(%{"id" => nil}) === false
     end
   end

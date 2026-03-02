@@ -4,7 +4,7 @@
 
 When you overuse comments or comment self-explanatory code, it can have the effect of making code less readable.
 
-## Example
+### Example
 
 ```elixir
 # Returns the Unix timestamp of 5 minutes from the current time
@@ -20,7 +20,7 @@ defp unix_five_min_from_now do
 end
 ```
 
-## Refactoring
+### Refactoring
 
 Prefer clear and self-explanatory function names, module names, and variable names when possible. In the example above, the function name explains well what the function does, so you likely won't need the comment before it. The code also explains the operations well through variable names and clear function calls.
 

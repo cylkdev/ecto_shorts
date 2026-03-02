@@ -9,28 +9,28 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 field equality" do
-    test "field equality - %{id: 1}" do
+    test "filters by integer field value" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, %{id: 1}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality - %{published: true}" do
+    test "filters by boolean field value" do
       expected = from p in Post, where: p.published == ^true
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: true}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality - %{title: \"hello\"}" do
+    test "filters by string field value" do
       expected = from p in Post, where: p.title == ^"hello"
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: "hello"}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality - %{published_at: ~U[2026-01-01 00:00:00Z]}" do
+    test "filters by datetime field value" do
       dt = ~U[2026-01-01 00:00:00Z]
       expected = from p in Post, where: p.published_at == ^dt
       q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: dt}, [])
@@ -38,42 +38,42 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "field equality - %{published_at: nil}" do
+    test "filters for nil field value using IS NULL" do
       expected = from p in Post, where: is_nil(p.published_at)
       q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: nil}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality - %{published: [true, false]} (non-keyword list defaults to IN)" do
+    test "treats a plain list value as an IN check" do
       expected = from p in Post, where: p.published in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: [true, false]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality - [id: 1] (keyword list)" do
+    test "accepts a keyword list as params" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [id: 1], [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality - [%{id: 1}] (list of maps)" do
+    test "accepts a list of maps as params" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [%{id: 1}], [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality - [[id: 1]] (list of keyword lists)" do
+    test "accepts a list of keyword lists as params" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [[id: 1]], [])
 
       assert_sql(expected, q2)
     end
 
-    test "field equality - [%{id: 1}, %{published: true}] (list of maps, multiple entries)" do
+    test "applies each map in a list as a separate WHERE condition" do
       expected =
         from(p in Post,
           where: p.id == ^1,
@@ -85,7 +85,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "field equality - [[id: 1], [published: true]] (list of keyword lists, multiple entries)" do
+    test "applies each keyword list in a list as a separate WHERE condition" do
       expected =
         from(p in Post,
           where: p.id == ^1,
@@ -99,7 +99,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   end
 
   describe "convert_params_to_filter/3 source types" do
-    test "supports Ecto.Query.t() source" do
+    test "accepts an Ecto.Query as the source" do
       expected = from p in Post, where: p.published == ^true
       q = from(p in Post)
       q2 = CommonFilters.convert_params_to_filter(q, %{published: true}, [])
@@ -107,35 +107,35 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "supports Ecto.Schema.t() schema module source" do
+    test "accepts a schema module as the source" do
       expected = from p in Post, select: p
       q2 = CommonFilters.convert_params_to_filter(Post, %{select: true}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports binary() table name source" do
+    test "accepts a table name string as the source" do
       expected = from p in "posts", select: [:id]
       q2 = CommonFilters.convert_params_to_filter("posts", %{select: [:id]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports {binary(), Ecto.Schema.t()} source" do
+    test "accepts a table-and-schema tuple as the source" do
       expected = from p in {"custom_posts", Post}, select: p
       q2 = CommonFilters.convert_params_to_filter({"custom_posts", Post}, %{select: true}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports {nil, Ecto.Schema.t()} source" do
+    test "accepts a nil-and-schema tuple as the source" do
       expected = from p in Post, select: p
       q2 = CommonFilters.convert_params_to_filter({nil, Post}, %{select: true}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports {binary(), nil} source" do
+    test "accepts a table-and-nil tuple as the source" do
       expected = from p in "posts", select: [:id]
       q2 = CommonFilters.convert_params_to_filter({"posts", nil}, %{select: [:id]}, [])
 
@@ -144,7 +144,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   end
 
   describe "convert_params_to_filter/3 :from params" do
-    test ":from - [published: true, subquery: %{id: 2}]" do
+    test "wraps the query in a subquery when the subquery key is present" do
       expected_inner =
         from(p in Post,
           where: p.published == ^true,
@@ -163,7 +163,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_query(expected, q2)
     end
 
-    test ":from - %{from: %{query: Post, id: 1}, published: true}" do
+    test "merges :from filters with top-level filters using a map" do
       expected =
         from(p in Post,
           where: p.id == ^1,
@@ -180,21 +180,21 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test ":from - %{from: %{query: Post, id: 1}}" do
+    test "builds a query from the :from map alone" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, %{from: %{query: Post, id: 1}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test ":from - [from: [query: Post, id: 1]]" do
+    test "builds a query from the :from keyword list" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, [from: [query: Post, id: 1]], [])
 
       assert_sql(expected, q2)
     end
 
-    test ":from - %{from: %{query: \"posts\", id: 1}}" do
+    test "builds a query from a table name string inside :from" do
       q2 = CommonFilters.convert_params_to_filter(Post, %{from: %{query: "posts", id: 1}}, [])
 
       {sql, params} = Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Repo, q2)
@@ -204,7 +204,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert params == [1]
     end
 
-    test ":from - %{from: %{query: \"posts\", select: [:id]}}" do
+    test "adds a select when the :from source is a table name string" do
       expected = from p in "posts", select: ^[:id]
       q2 = CommonFilters.convert_params_to_filter(Post, %{from: %{query: "posts", select: [:id]}}, [])
 
@@ -213,28 +213,28 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   end
 
   describe "convert_params_to_filter/3 custom filters" do
-    test "custom filter - %{ids: [1, 2, 3]}" do
+    test "filters by a list of ids using the :ids shortcut" do
       expected = from p in Post, where: p.id in ^[1, 2, 3]
       q2 = CommonFilters.convert_params_to_filter(Post, %{ids: [1, 2, 3]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "custom filter - %{after: 10}" do
+    test "filters for records after the given id" do
       expected = from p in Post, where: p.id > ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{after: 10}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "custom filter - %{before: 10}" do
+    test "filters for records before the given id" do
       expected = from p in Post, where: p.id < ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{before: 10}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "custom filter - %{start_date: ~U[2026-01-01 00:00:00Z]}" do
+    test "filters for records on or after the start date" do
       dt = ~U[2026-01-01 00:00:00Z]
       expected = from p in Post, where: p.inserted_at >= ^dt
       q2 = CommonFilters.convert_params_to_filter(Post, %{start_date: dt}, [])
@@ -242,7 +242,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "custom filter - %{end_date: ~U[2026-12-31 23:59:59Z]}" do
+    test "filters for records on or before the end date" do
       dt = ~U[2026-12-31 23:59:59Z]
       expected = from p in Post, where: p.inserted_at <= ^dt
       q2 = CommonFilters.convert_params_to_filter(Post, %{end_date: dt}, [])
@@ -252,7 +252,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   end
 
   describe "convert_params_to_filter/3 error handling" do
-    test "invalid top-level params logs warning and leaves query unchanged" do
+    test "logs a warning and returns the query unchanged for invalid params" do
       q = from(p in Post)
 
       log =
@@ -266,7 +266,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert q2 === q
     end
 
-    test "invalid filter params container logs error and returns query unchanged" do
+    test "logs a warning and returns the query unchanged for an invalid where value" do
       q = from(p in Post)
 
       log =
@@ -281,7 +281,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert q2 === q
     end
 
-    test "invalid filter format logs error and returns query unchanged" do
+    test "logs a warning and returns the query unchanged for an invalid bind value" do
       q = from(p in Post)
 
       log =
@@ -303,7 +303,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert q2 === q
     end
 
-    test "invalid key logs warning and returns query unchanged" do
+    test "logs a warning and returns the query unchanged for an unknown field" do
       q = from(p in Post)
 
       log =
@@ -319,7 +319,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert q2 === q
     end
 
-    test "invalid :dynamic payload logs warning and leaves query unchanged" do
+    test "logs a warning and returns the query unchanged for a non-dynamic value" do
       q = from(p in Post, where: p.published == ^true)
 
       log =
@@ -335,14 +335,14 @@ defmodule EctoShorts.CommonFilters.CoreTest do
   end
 
   describe "convert_params_to_filter/3 with nil source" do
-    test "nil source with :from in map params" do
+    test "builds a query when the source is nil and :from is a map" do
       expected = from p in "posts", where: p.id == ^1, select: ^[:id]
       q2 = CommonFilters.convert_params_to_filter(nil, %{from: %{query: "posts", id: 1}, select: [:id]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "nil source with :from in keyword list params" do
+    test "builds a query when the source is nil and :from is a keyword list" do
       expected = from p in "posts", where: p.id == ^1, select: ^[:id]
 
       q2 =
@@ -355,25 +355,25 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_sql(expected, q2)
     end
 
-    test "nil source auto-adds select: true when :select is omitted" do
+    test "adds a default select when the source is nil and :select is not given" do
       q2 = CommonFilters.convert_params_to_filter(nil, %{from: %{query: "posts", id: 1}}, [])
 
       assert %Ecto.Query{select: %Ecto.Query.SelectExpr{}} = q2
     end
 
-    test "nil source raises when :from is missing from params" do
+    test "raises when the source is nil and params have no :from key" do
       assert_raise ArgumentError, ~r/from/, fn ->
         CommonFilters.convert_params_to_filter(nil, %{id: 1}, [])
       end
     end
 
-    test "nil source raises for non-keyword list params" do
+    test "raises when the source is nil and params is a non-keyword list" do
       assert_raise ArgumentError, ~r/from/, fn ->
         CommonFilters.convert_params_to_filter(nil, [%{from: %{query: "posts"}, id: 1}], [])
       end
     end
 
-    test "nil source raises when :from is missing :query key" do
+    test "raises when the :from map is missing the :query key" do
       assert_raise ArgumentError, ~r/:query/, fn ->
         CommonFilters.convert_params_to_filter(nil, %{from: %{id: 1}}, [])
       end

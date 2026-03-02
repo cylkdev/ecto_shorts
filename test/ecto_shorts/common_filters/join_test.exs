@@ -10,7 +10,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 association shorthand" do
-    test "association - %{author: [as: :author, first_name: \"John\"]}" do
+    test "joins on an association with a named binding and filters" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -28,7 +28,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "association - %{author: [first_name: \"John\"]} (no :as)" do
+    test "joins on an association without a named binding" do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -39,7 +39,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert %Ecto.Query{} = q2
     end
 
-    test "association - %{author: [as: :author, on: true, first_name: \"John\"]}" do
+    test "joins on an association with an explicit on condition" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -57,7 +57,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "association - %{author: [as: :author, type: :left, first_name: \"John\"]}" do
+    test "joins on an association with a left join qualifier" do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -68,7 +68,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert %Ecto.Query{} = q2
     end
 
-    test "association map - %{author: %{as: :author, first_name: \"John\"}}" do
+    test "joins on an association using a map with a named binding" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -86,7 +86,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "association map - %{author: %{first_name: \"John\"}} (no :as)" do
+    test "joins on an association using a map without a named binding" do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -97,7 +97,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert %Ecto.Query{} = q2
     end
 
-    test "association map - %{author: %{as: :author, type: :left, first_name: \"John\"}}" do
+    test "joins on an association using a map with a left join qualifier" do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -108,7 +108,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert %Ecto.Query{} = q2
     end
 
-    test "invalid association filter payload logs warning and skips entry" do
+    test "logs a warning and skips the join when the association payload is invalid" do
       q = from(p in Post)
 
       log =
@@ -124,7 +124,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
   end
 
   describe "convert_params_to_filter/3 dynamic" do
-    test "dynamic - %{dynamic: dynamic([p], p.views > ^10)}" do
+    test "applies a dynamic expression as a where condition" do
       dyn = dynamic([p], p.views > ^10)
       expected = from(p in Post, where: p.views > ^10)
 
@@ -133,7 +133,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "dynamic - %{where: %{dynamic: dynamic([p], p.published === ^true)}}" do
+    test "applies a dynamic expression inside an explicit where" do
       dyn = dynamic([p], p.published == ^true)
       expected = from(p in Post, where: p.published == ^true)
 
@@ -142,7 +142,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "dynamic - %{or_where: %{dynamic: dynamic([p], p.views > ^100)}}" do
+    test "applies a dynamic expression inside an or_where" do
       dyn = dynamic([p], p.views > ^100)
       expected = from(p in Post, or_where: p.views > ^100)
 
@@ -153,7 +153,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
   end
 
   describe "convert_params_to_filter/3 exists" do
-    test "exists - %{where: %{exists: subquery_expr}}" do
+    test "filters by subquery existence" do
       subquery_expr = from(c in "comments", select: c.post_id)
 
       expected = from(p in Post, where: exists(subquery_expr))
@@ -163,7 +163,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "exists - %{where: %{exists: %{not: subquery_expr}}}" do
+    test "filters by negated subquery existence" do
       subquery_expr = from(c in "comments", select: c.post_id)
 
       expected = from(p in Post, where: not exists(subquery_expr))
@@ -173,7 +173,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "exists - uses source argument when :query is omitted from :from" do
+    test "uses the parent source when the exists payload omits :query" do
       subquery_expr =
         CommonFilters.convert_params_to_filter(
           User,
@@ -193,7 +193,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "exists - %{where: %{exists: %{from: %{query: Post, id: 1}}}}" do
+    test "builds an exists subquery from a query-builder payload" do
       subquery_expr =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -213,7 +213,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "exists - %{where: %{exists: %{not: %{from: %{query: Post, id: 1}}}}}" do
+    test "builds a negated exists subquery from a query-builder payload" do
       subquery_expr =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -235,7 +235,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
   end
 
   describe "convert_params_to_filter/3 canonical :join" do
-    test "supports canonical :join association entry" do
+    test "adds an association join using the canonical :join key" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -247,7 +247,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "canonical :join defaults to root from binding when selector is omitted" do
+    test "targets the root binding when no selector is given for a canonical join" do
       q = from(p in Post, as: :post)
 
       expected =
@@ -262,7 +262,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports canonical :join schema source entry" do
+    test "joins on a schema module using the canonical :join key" do
       expected =
         from(p in Post,
           join: u in User,
@@ -280,7 +280,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports canonical :join table source entry" do
+    test "joins on a table name using the canonical :join key" do
       expected =
         from(p in Post,
           join: u in "users",
@@ -298,7 +298,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports canonical :join query source entry" do
+    test "joins on an Ecto.Query using the canonical :join key" do
       user_query = from(u in User, where: u.age >= ^18)
 
       expected =
@@ -318,7 +318,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports canonical :join subquery source entry" do
+    test "joins on a subquery using the canonical :join key" do
       user_query = from(u in User, where: u.age >= ^18)
 
       expected =
@@ -338,7 +338,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports canonical :join subquery source params composed into a query" do
+    test "builds a subquery join from filter params with a :from key" do
       expected_subquery = from(u in User, where: u.age >= ^18)
 
       expected =
@@ -366,7 +366,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports canonical :join subquery source params without :query using existing source" do
+    test "builds a subquery join using the parent source when :query is omitted" do
       expected_subquery = from(p in Post, where: p.published == ^true)
 
       expected =
@@ -394,7 +394,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports canonical :join list of entries and preserves order" do
+    test "adds multiple joins from a list and preserves their order" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -419,7 +419,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :join :on payload logs warning and skips join entry" do
+    test "logs a warning and skips the join when the :on payload is invalid" do
       q = from(p in Post)
 
       log =
@@ -439,7 +439,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(q, q2)
     end
 
-    test "mixed valid and invalid canonical :join entries applies valid entries" do
+    test "applies valid join entries and skips invalid ones" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -465,7 +465,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
   end
 
   describe "convert_params_to_filter/3 fragment joins" do
-    test "supports join source key dispatch through canonical :join source entry" do
+    test "resolves a fragment source through the configured fragment provider" do
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -494,7 +494,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports join source key dispatch through runtime :fragment_provider option" do
+    test "resolves a fragment source through a runtime fragment provider option" do
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -523,7 +523,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "supports join hint key resolution through runtime :fragment_provider option" do
+    test "resolves join hints through a runtime fragment provider option" do
       expected_source_query =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^21), select: u)
 
@@ -557,7 +557,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(expected, q2)
     end
 
-    test "unknown join source key logs warning and skips entry" do
+    test "logs a warning and skips the join when the source key is unknown" do
       q = from(p in Post)
 
       log =
@@ -587,7 +587,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_sql(q, q2)
     end
 
-    test "malformed join source payload logs warning and skips entry" do
+    test "logs a warning and skips the join when the source payload is malformed" do
       q = from(p in Post)
 
       log =

@@ -8,98 +8,98 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
   import Ecto.Query
 
   describe "convert_params_to_filter/3 array field equality and membership" do
-    test "array - %{tags: \"elixir\"} (scalar defaults to membership)" do
+    test "checks if the array contains the value when given a plain string" do
       expected = from(p in Post, where: ^"elixir" in p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: "elixir"}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{==: \"elixir\"}} (explicit == scalar is membership)" do
+    test "checks if the array contains the value using explicit ==" do
       expected = from(p in Post, where: ^"elixir" in p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{!=: \"elixir\"}}" do
+    test "excludes records where the array contains the value using !=" do
       expected = from(p in Post, where: ^"elixir" not in p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{ne: \"elixir\"}}" do
+    test "excludes records where the array contains the value using the ne alias" do
       expected = from(p in Post, where: ^"elixir" not in p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{ne: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{in: \"elixir\"}} (scalar in array membership)" do
+    test "checks if the array contains the value using the in operator" do
       expected = from(p in Post, where: ^"elixir" in p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{in: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: [\"elixir\", \"erlang\"]} (list defaults to == equality)" do
+    test "checks if the array exactly equals the given list" do
       expected = from(p in Post, where: p.tags == ^["elixir", "erlang"])
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: ["elixir", "erlang"]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{==: [\"elixir\", \"erlang\"]}} (explicit == list equality)" do
+    test "checks if the array exactly equals the given list using explicit ==" do
       expected = from(p in Post, where: p.tags == ^["elixir", "erlang"])
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: ["elixir", "erlang"]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{!=: [\"elixir\"]}}" do
+    test "excludes records where the array exactly equals the given list using !=" do
       expected = from(p in Post, where: p.tags != ^["elixir"])
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: ["elixir"]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{ne: [\"elixir\"]}}" do
+    test "excludes records where the array exactly equals the given list using the ne alias" do
       expected = from(p in Post, where: p.tags != ^["elixir"])
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{ne: ["elixir"]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: nil} (IS NULL)" do
+    test "matches records where the array field is nil" do
       expected = from p in Post, where: is_nil(p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: nil}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{==: nil}} (IS NULL)" do
+    test "matches records where the array field is nil using explicit ==" do
       expected = from p in Post, where: is_nil(p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{==: nil}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{!=: nil}} (IS NOT NULL)" do
+    test "matches records where the array field is not nil using !=" do
       expected = from p in Post, where: not is_nil(p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{!=: nil}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{ne: nil}} (IS NOT NULL)" do
+    test "matches records where the array field is not nil using the ne alias" do
       expected = from p in Post, where: not is_nil(p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{ne: nil}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{eq: \"elixir\"}} (alias membership)" do
+    test "checks if the array contains the value using the eq alias" do
       expected = from(p in Post, where: ^"elixir" in p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{eq: "elixir"}}, [])
 
@@ -108,49 +108,49 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
   end
 
   describe "convert_params_to_filter/3 array field overlaps and contains-all" do
-    test "array - %{tags: %{in: [\"elixir\"]}} (overlaps-any)" do
+    test "checks if the array overlaps with a single-element list" do
       expected = from(p in Post, where: fragment("? && ?", p.tags, ^["elixir"]))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{in: ["elixir"]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{in: [\"elixir\", \"erlang\"]}} (overlaps-any)" do
+    test "checks if the array overlaps with a multi-element list" do
       expected = from(p in Post, where: fragment("? && ?", p.tags, ^["elixir", "erlang"]))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{in: ["elixir", "erlang"]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{all: %{in: [\"elixir\", \"erlang\"]}}} (contains-all)" do
+    test "checks if the array contains all elements in the list" do
       expected = from(p in Post, where: fragment("? @> ?", p.tags, ^["elixir", "erlang"]))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{all: %{in: ["elixir", "erlang"]}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{==: [\"elixir\"]}}} (negated list equality)" do
+    test "excludes records where the array exactly equals the list using negated ==" do
       expected = from(p in Post, where: p.tags != ^["elixir"])
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{==: ["elixir"]}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{in: [\"elixir\"]}}} (NOT overlap)" do
+    test "excludes records where the array overlaps with the list" do
       expected = from(p in Post, where: not fragment("? && ?", p.tags, ^["elixir"]))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{in: ["elixir"]}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{in: \"elixir\"}}} (negated scalar membership)" do
+    test "excludes records where the array contains the value using negated in" do
       expected = from(p in Post, where: ^"elixir" not in p.tags)
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{in: "elixir"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{all: %{in: [\"elixir\", \"erlang\"]}}}}" do
+    test "excludes records where the array contains all elements in the list" do
       expected = from(p in Post, where: not fragment("? @> ?", p.tags, ^["elixir", "erlang"]))
 
       q2 =
@@ -161,84 +161,84 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
   end
 
   describe "convert_params_to_filter/3 array field comparisons" do
-    test "array - %{tags: %{>: \"elixir\"}}" do
+    test "matches records where any array element is greater than the value" do
       expected = from(p in Post, where: fragment("? < ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{>: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{>=: \"elixir\"}}" do
+    test "matches records where any array element is greater than or equal to the value" do
       expected = from(p in Post, where: fragment("? <= ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{>=: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{<: \"elixir\"}}" do
+    test "matches records where any array element is less than the value" do
       expected = from(p in Post, where: fragment("? > ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{<: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{<=: \"elixir\"}}" do
+    test "matches records where any array element is less than or equal to the value" do
       expected = from(p in Post, where: fragment("? >= ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{<=: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{gt: \"elixir\"}}" do
+    test "matches records using the gt alias on an array field" do
       expected = from(p in Post, where: fragment("? < ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{gt: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{gte: \"elixir\"}}" do
+    test "matches records using the gte alias on an array field" do
       expected = from(p in Post, where: fragment("? <= ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{gte: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{lt: \"elixir\"}}" do
+    test "matches records using the lt alias on an array field" do
       expected = from(p in Post, where: fragment("? > ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{lt: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{lte: \"elixir\"}}" do
+    test "matches records using the lte alias on an array field" do
       expected = from(p in Post, where: fragment("? >= ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{lte: "elixir"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{>: \"elixir\"}}}" do
+    test "excludes records where any array element is greater than the value" do
       expected = from(p in Post, where: not fragment("? < ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{>: "elixir"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{>=: \"elixir\"}}}" do
+    test "excludes records where any array element is greater than or equal to the value" do
       expected = from(p in Post, where: not fragment("? <= ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{>=: "elixir"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{<: \"elixir\"}}}" do
+    test "excludes records where any array element is less than the value" do
       expected = from(p in Post, where: not fragment("? > ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{<: "elixir"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{<=: \"elixir\"}}}" do
+    test "excludes records where any array element is less than or equal to the value" do
       expected = from(p in Post, where: not fragment("? >= ANY(?)", ^"elixir", p.tags))
       q2 = CommonFilters.convert_params_to_filter(Post, %{tags: %{not: %{<=: "elixir"}}}, [])
 
@@ -247,7 +247,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
   end
 
   describe "convert_params_to_filter/3 array field string matching" do
-    test "array - %{tags: %{like: \"elixir\"}} (scalar, casts to list)" do
+    test "matches records where any array element matches the like pattern" do
       patterns = ["%elixir%"]
 
       expected =
@@ -265,7 +265,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{ilike: \"elixir\"}} (scalar, casts to list)" do
+    test "matches records where any array element matches the ilike pattern" do
       patterns = ["%elixir%"]
 
       expected =
@@ -283,7 +283,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{like: [\"elixir\", \"erlang\"]}}" do
+    test "matches records where any array element matches any like pattern in the list" do
       patterns = ["%elixir%", "%erlang%"]
 
       expected =
@@ -301,7 +301,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{ilike: [\"elixir\", \"erlang\"]}}" do
+    test "matches records where any array element matches any ilike pattern in the list" do
       patterns = ["%elixir%", "%erlang%"]
 
       expected =
@@ -319,7 +319,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{like: \"elixir\"}}}" do
+    test "excludes records where any array element matches the like pattern" do
       patterns = ["%elixir%"]
 
       expected =
@@ -337,7 +337,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{ilike: \"elixir\"}}}" do
+    test "excludes records where any array element matches the ilike pattern" do
       patterns = ["%elixir%"]
 
       expected =
@@ -355,7 +355,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{like: [\"elixir\", \"erlang\"]}}}" do
+    test "excludes records where any array element matches any like pattern in the list" do
       patterns = ["%elixir%", "%erlang%"]
 
       expected =
@@ -373,7 +373,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{ilike: [\"elixir\", \"erlang\"]}}}" do
+    test "excludes records where any array element matches any ilike pattern in the list" do
       patterns = ["%elixir%", "%erlang%"]
 
       expected =
@@ -393,7 +393,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
   end
 
   describe "convert_params_to_filter/3 array field string transformations" do
-    test "array - %{tags: %{==: %{lower: \"elixir\"}}}" do
+    test "matches records where any lowercased array element equals the value" do
       expected =
         from(p in Post,
           where:
@@ -409,7 +409,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{==: %{upper: \"ELIXIR\"}}}" do
+    test "matches records where any uppercased array element equals the value" do
       expected =
         from(p in Post,
           where:
@@ -425,7 +425,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{!=: %{lower: \"elixir\"}}}" do
+    test "excludes records where any lowercased array element equals the value" do
       expected =
         from(p in Post,
           where:
@@ -441,7 +441,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{!=: %{upper: \"ELIXIR\"}}}" do
+    test "excludes records where any uppercased array element equals the value" do
       expected =
         from(p in Post,
           where:
@@ -457,7 +457,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{==: %{lower: \"elixir\"}}}}" do
+    test "excludes records where any lowercased array element matches using negated ==" do
       expected =
         from(p in Post,
           where:
@@ -473,7 +473,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{==: %{upper: \"ELIXIR\"}}}}" do
+    test "excludes records where any uppercased array element matches using negated ==" do
       expected =
         from(p in Post,
           where:
@@ -491,7 +491,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
   end
 
   describe "convert_params_to_filter/3 array field aggregates" do
-    test "array - %{tags: %{count: %{>: 0}}} (in :having)" do
+    test "filters by array element count greater than zero in a having clause" do
       expected =
         from(p in Post,
           group_by: p.author_id,
@@ -508,7 +508,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{not: %{count: %{==: 0}}}} (negated count in :having)" do
+    test "excludes records where the array element count equals zero in a having clause" do
       expected =
         from(p in Post,
           group_by: p.author_id,
@@ -525,7 +525,7 @@ defmodule EctoShorts.CommonFilters.ArrayFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "array - %{tags: %{count: %{==: 0}}} (in :having)" do
+    test "filters by array element count equal to zero in a having clause" do
       expected =
         from(p in Post,
           group_by: p.author_id,

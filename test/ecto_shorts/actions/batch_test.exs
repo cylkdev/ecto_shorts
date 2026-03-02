@@ -5,11 +5,11 @@ defmodule EctoShorts.Actions.BatchTest do
   alias EctoShorts.Schema.Post
 
   describe "batch/4" do
-    test "returns empty map when params_list is empty" do
+    test "returns an empty map when no params are given" do
       assert %{} = Actions.batch(Post, [], [:title], :many, [])
     end
 
-    test "when cardinality is :one, returns a single record per key (not a list)" do
+    test "returns one record per key when cardinality is :one" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
@@ -26,7 +26,7 @@ defmodule EctoShorts.Actions.BatchTest do
              } = result
     end
 
-    test "accepts a single batch_key (non-list) and returns scalar-keyed results" do
+    test "groups records by a single key when the key is an atom" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
@@ -43,7 +43,7 @@ defmodule EctoShorts.Actions.BatchTest do
              } = result
     end
 
-    test "returns records grouped by batch keys" do
+    test "groups records by a list of keys" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
@@ -60,7 +60,7 @@ defmodule EctoShorts.Actions.BatchTest do
              } = result
     end
 
-    test "skips params missing required batch keys (does not fall back to returning all records)" do
+    test "returns an empty map when params are missing the batch key" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
@@ -79,21 +79,21 @@ defmodule EctoShorts.Actions.BatchTest do
       %{post: post}
     end
 
-    test "preload with {struct(), map()} leaves entry unchanged", %{post: post} do
+    test "keeps the entry unchanged when it is a struct-and-map tuple", %{post: post} do
       input = {post, %{title: "Ignored"}}
 
       assert [result] = Actions.batch_preload(Post, [input], :permalink, [])
       assert result === input
     end
 
-    test "preload with {struct(), keyword()} leaves entry unchanged", %{post: post} do
+    test "keeps the entry unchanged when it is a struct-and-keyword tuple", %{post: post} do
       input = {post, [title: "Ignored"]}
 
       assert [result] = Actions.batch_preload(Post, [input], :permalink, [])
       assert result === input
     end
 
-    test "preload with {map(), map()} replaces with {schema_struct, other_params}", %{post: post} do
+    test "replaces the map with the matching record when the entry is a map-and-map tuple", %{post: post} do
       input = {%{permalink: "existing"}, %{title: "New"}}
 
       assert [{%Post{id: id}, %{title: "New"}}] =
@@ -102,9 +102,10 @@ defmodule EctoShorts.Actions.BatchTest do
       assert id === post.id
     end
 
-    test "preload with {keyword(), keyword()} replaces with {schema_struct, other_params}", %{
-      post: post
-    } do
+    test "replaces the keyword list with the matching record when the entry is a keyword-and-keyword tuple",
+         %{
+           post: post
+         } do
       input = {[permalink: "existing"], [title: "New"]}
 
       assert [{%Post{id: id}, [title: "New"]}] =
@@ -113,7 +114,7 @@ defmodule EctoShorts.Actions.BatchTest do
       assert id === post.id
     end
 
-    test "preload with {keyword(), map()} replaces with {schema_struct, other_params}", %{
+    test "replaces the keyword list with the matching record when the entry is a keyword-and-map tuple", %{
       post: post
     } do
       input = {[permalink: "existing"], %{title: "New"}}
@@ -124,7 +125,7 @@ defmodule EctoShorts.Actions.BatchTest do
       assert id === post.id
     end
 
-    test "preload with {map(), keyword()} replaces with {schema_struct, other_params}", %{
+    test "replaces the map with the matching record when the entry is a map-and-keyword tuple", %{
       post: post
     } do
       input = {%{permalink: "existing"}, [title: "New"]}
@@ -135,7 +136,7 @@ defmodule EctoShorts.Actions.BatchTest do
       assert id === post.id
     end
 
-    test "preload with map() replaces with {schema_struct, params}", %{post: post} do
+    test "wraps the map entry into a tuple with the matching record", %{post: post} do
       input = %{permalink: "existing", title: "New"}
 
       assert [{%Post{id: id}, params}] = Actions.batch_preload(Post, [input], :permalink, [])
@@ -143,7 +144,7 @@ defmodule EctoShorts.Actions.BatchTest do
       assert params === input
     end
 
-    test "preload with keyword() replaces with {schema_struct, params}", %{post: post} do
+    test "wraps the keyword entry into a tuple with the matching record", %{post: post} do
       input = [permalink: "existing", title: "New"]
 
       assert [{%Post{id: id}, params}] = Actions.batch_preload(Post, [input], :permalink, [])
@@ -151,7 +152,7 @@ defmodule EctoShorts.Actions.BatchTest do
       assert params === input
     end
 
-    test "preload with nil leaves entry unchanged", %{post: _post} do
+    test "keeps a nil entry unchanged", %{post: _post} do
       assert [nil] = Actions.batch_preload(Post, [nil], :permalink, [])
     end
   end

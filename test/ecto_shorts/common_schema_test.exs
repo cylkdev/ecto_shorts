@@ -10,11 +10,11 @@ defmodule EctoShorts.CommonSchemaTest do
   alias EctoShorts.Schema.User
 
   describe "get_schema_reflection/2" do
-    test "delegates to schema module" do
+    test "returns schema information for a schema module" do
       assert CommonSchema.get_schema_reflection(Post, :primary_key) === [:id]
     end
 
-    test "delegates to tuple schema module" do
+    test "returns schema information for a source tuple" do
       assert CommonSchema.get_schema_reflection({"posts", PostAbstract}, :primary_key) === [
                :id
              ]
@@ -22,30 +22,30 @@ defmodule EctoShorts.CommonSchemaTest do
   end
 
   describe "get_schema_reflection/3" do
-    test "delegates to schema module" do
+    test "returns the field type for a schema module" do
       assert CommonSchema.get_schema_reflection(Post, :type, :id) === :id
     end
 
-    test "delegates to tuple schema module" do
+    test "returns the field type for a source tuple" do
       assert CommonSchema.get_schema_reflection({"posts", PostAbstract}, :type, :id) === :id
     end
   end
 
   describe "get_schema_prefix/1" do
-    test "returns nil for schemas without @schema_prefix" do
+    test "returns nil when the schema has no prefix" do
       assert CommonSchema.get_schema_prefix(Post) === nil
     end
 
-    test "returns prefix from schema module" do
+    test "returns the prefix defined on the schema module" do
       assert CommonSchema.get_schema_prefix(PostHasSchemaPrefix) === "custom_schema_prefix"
     end
 
-    test "returns prefix from source tuple" do
+    test "returns the prefix from a source tuple" do
       assert CommonSchema.get_schema_prefix({"posts", PostAbstractHasSchemaPrefix}) ===
                "custom_schema_prefix"
     end
 
-    test "returns prefix from schema struct" do
+    test "returns the prefix from a schema struct" do
       assert CommonSchema.get_schema_prefix(%PostHasSchemaPrefix{}) === "custom_schema_prefix"
     end
   end
@@ -147,21 +147,21 @@ defmodule EctoShorts.CommonSchemaTest do
   end
 
   describe "create_changeset/3" do
-    test "creates changeset from schema module + params" do
+    test "builds a changeset from a schema module and params" do
       changeset = CommonSchema.create_changeset(Post, %{title: "Hello"}, [])
 
       assert %Changeset{} = changeset
       assert changeset.changes.title === "Hello"
     end
 
-    test "creates changeset from schema struct + params" do
+    test "builds a changeset from a schema struct and params" do
       changeset = CommonSchema.create_changeset(%Post{}, %{title: "Hello"}, [])
 
       assert %Changeset{} = changeset
       assert changeset.changes.title === "Hello"
     end
 
-    test "creates changeset from changeset + params" do
+    test "builds a changeset from an existing changeset and new params" do
       base = Post.changeset(%Post{}, %{title: "Base"})
 
       changeset = CommonSchema.create_changeset(base, %{title: "Override"}, [])
@@ -170,7 +170,7 @@ defmodule EctoShorts.CommonSchemaTest do
       assert changeset.changes.title === "Override"
     end
 
-    test "creates changeset from {source, schema} + params and applies source" do
+    test "builds a changeset from a source tuple and params" do
       assert %Changeset{data: %{__meta__: %{source: "custom_posts"}}} =
                CommonSchema.create_changeset(
                  {"custom_posts", PostAbstract},
@@ -179,7 +179,7 @@ defmodule EctoShorts.CommonSchemaTest do
                )
     end
 
-    test "creates changeset from {source, schema} + schema struct and applies source" do
+    test "builds a changeset from a source tuple and a schema struct" do
       assert %Changeset{data: %{__meta__: %{source: "custom_posts"}}} =
                CommonSchema.create_changeset(
                  {"custom_posts", PostAbstract},
@@ -188,7 +188,7 @@ defmodule EctoShorts.CommonSchemaTest do
                )
     end
 
-    test "supports :changeset callback 3-arity" do
+    test "uses a 3-argument changeset callback from the options" do
       assert %Changeset{data: %Post{}, changes: %{title: "Custom"}} =
                CommonSchema.create_changeset(Post, %Post{}, %{title: "Hello"},
                  changeset: fn _schema, schema_data_or_changeset, params ->
@@ -199,7 +199,7 @@ defmodule EctoShorts.CommonSchemaTest do
                )
     end
 
-    test "supports :changeset callback 2-arity" do
+    test "uses a 2-argument changeset callback from the options" do
       assert %Changeset{data: %Post{}, changes: %{title: "Custom"}} =
                CommonSchema.create_changeset(Post, %Post{}, %{title: "Hello"},
                  changeset: fn schema_data_or_changeset, params ->
@@ -210,7 +210,7 @@ defmodule EctoShorts.CommonSchemaTest do
                )
     end
 
-    test "supports :changeset callback 1-arity (receives a changeset)" do
+    test "uses a 1-argument changeset callback from the options" do
       assert %Changeset{data: %Post{}, changes: %{title: "Custom"}} =
                CommonSchema.create_changeset(Post, %Post{}, %{title: "Hello"},
                  changeset: fn changeset ->
@@ -219,7 +219,7 @@ defmodule EctoShorts.CommonSchemaTest do
                )
     end
 
-    test "raises ArgumentError for invalid :changeset callback" do
+    test "raises when the changeset option is not a function" do
       assert_raise ArgumentError,
                    "Expected the value for option :changeset to be a 1-arity, 2-arity, or 3-arity function, got: :invalid",
                    fn ->
@@ -227,7 +227,7 @@ defmodule EctoShorts.CommonSchemaTest do
                    end
     end
 
-    test "raises if callback does not return an Ecto.Changeset" do
+    test "raises when the changeset callback does not return a changeset" do
       assert_raise RuntimeError,
                    "Expected an Ecto.Changeset, got: :not_a_changeset",
                    fn ->

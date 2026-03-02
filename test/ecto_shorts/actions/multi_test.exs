@@ -7,7 +7,7 @@ defmodule EctoShorts.Actions.MultiTest do
   alias EctoShorts.Schema.Post
 
   describe "create_many/3" do
-    test "inserts multiple records" do
+    test "inserts all records in a single transaction" do
       params = [
         %{title: "A"},
         %{title: "B"}
@@ -20,7 +20,7 @@ defmodule EctoShorts.Actions.MultiTest do
       assert %Post{title: "B"} = Repo.get!(Post, post_b.id)
     end
 
-    test "returns {:error, error} and rolls back when a record fails validation" do
+    test "rolls back all inserts when one record fails validation" do
       params = [
         %{permalink: "exising"},
         %{permalink: "exising"}
@@ -40,7 +40,7 @@ defmodule EctoShorts.Actions.MultiTest do
               }} = Actions.create_many(Post, params)
     end
 
-    test "returns {:error, error} and rolls back on constraint failure" do
+    test "rolls back all inserts when a database constraint is violated" do
       params = [
         %{title: "A", permalink: "create-many-dup"},
         %{title: "B", permalink: "create-many-dup"}
@@ -61,7 +61,7 @@ defmodule EctoShorts.Actions.MultiTest do
   end
 
   describe "find_many/3" do
-    test "returns {:ok, records} when all are found" do
+    test "returns all records when every lookup succeeds" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
@@ -79,7 +79,7 @@ defmodule EctoShorts.Actions.MultiTest do
                Actions.find_many(Post, params)
     end
 
-    test "returns {:error, error} when any record is not found (includes changes_so_far)" do
+    test "rolls back when any record is not found" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
@@ -106,7 +106,7 @@ defmodule EctoShorts.Actions.MultiTest do
   end
 
   describe "update_many/3" do
-    test "updates multiple records successfully" do
+    test "updates all records in a single transaction" do
       post_a =
         %Post{}
         |> Post.changeset(%{title: "Original A"})
@@ -129,7 +129,7 @@ defmodule EctoShorts.Actions.MultiTest do
       assert %Post{title: "Updated B"} = Repo.get!(Post, post_b.id)
     end
 
-    test "returns {:error, error} and rolls back when a record fails validation" do
+    test "rolls back all updates when one record fails validation" do
       post_a =
         %Post{}
         |> Post.changeset(%{title: "Valid"})
@@ -164,7 +164,7 @@ defmodule EctoShorts.Actions.MultiTest do
       assert %Post{title: "Also Valid"} = Repo.get!(Post, post_b.id)
     end
 
-    test "returns {:error, error} when a record is not found" do
+    test "rolls back all updates when a record is not found" do
       post =
         %Post{}
         |> Post.changeset(%{title: "Existing"})
@@ -186,7 +186,7 @@ defmodule EctoShorts.Actions.MultiTest do
   end
 
   describe "delete_many/2" do
-    test "deletes multiple records" do
+    test "deletes all records in a single transaction" do
       post_a =
         %Post{}
         |> Post.changeset(%{title: "A"})
@@ -204,7 +204,7 @@ defmodule EctoShorts.Actions.MultiTest do
       assert Repo.get(Post, post_b.id) === nil
     end
 
-    test "returns {:error, error} when a delete fails" do
+    test "rolls back when a delete fails due to a constraint" do
       blocked =
         %Post{}
         |> Post.changeset(%{title: "Blocked"})
@@ -220,7 +220,7 @@ defmodule EctoShorts.Actions.MultiTest do
   end
 
   describe "find_or_create_many/3" do
-    test "creates missing records" do
+    test "finds existing records and creates missing ones in a single transaction" do
       %Post{}
       |> Post.changeset(%{title: "Existing"})
       |> Repo.insert!()
@@ -236,7 +236,7 @@ defmodule EctoShorts.Actions.MultiTest do
   end
 
   describe "find_and_upsert_many/3" do
-    test "creates records when not found" do
+    test "creates all records when none are found" do
       params = [
         {%{title: "A"}, %{title: "A"}},
         {%{title: "B"}, %{title: "B"}}
@@ -246,7 +246,7 @@ defmodule EctoShorts.Actions.MultiTest do
                Actions.find_and_upsert_many(Post, params)
     end
 
-    test "updates a record when found" do
+    test "updates the record when a match is found" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()

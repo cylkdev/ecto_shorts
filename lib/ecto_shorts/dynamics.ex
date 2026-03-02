@@ -103,7 +103,7 @@ defmodule EctoShorts.Dynamics do
       iex> EctoShorts.Dynamics.convert_to_dynamic(EctoShorts.Schema.Post, nil, %{})
       nil
 
-  See also `apply_helper_expressions/4` and `EctoShorts.Dynamics.Adapter`.
+  See also `EctoShorts.Dynamics.Adapter`.
   """
   @spec convert_to_dynamic(
           source :: term(),
@@ -261,37 +261,7 @@ defmodule EctoShorts.Dynamics do
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
   defp source_has_schema?(_), do: false
 
-  @doc """
-  Applies helper expression transformations to a field value before
-  building a dynamic expression.
-
-  Accepts a `source` (used for subquery building), the `field_name` atom,
-  the raw `expression` value, and an `opts` keyword list. Recursively
-  walks the expression, replacing helper operator tuples (such as
-  `{:datetime_add, [...]}`, `{:date_add, [...]}`, `{:from_now, [...]}`,
-  `{:ago, [...]}`) with their corresponding Ecto sub-expressions.
-
-  When the expression is a keyword list containing a `:from` key, the
-  function builds a subquery via
-  `EctoShorts.CommonFilters.convert_params_to_filter/3` and returns the
-  result as the expression value.
-
-  Returns the transformed expression, or the original expression unchanged
-  when no helper operators are found.
-
-  ## Examples
-
-      iex> EctoShorts.Dynamics.apply_helper_expressions(EctoShorts.Schema.Post, :title, "hello", [])
-      "hello"
-
-  See also `convert_to_dynamic/4`.
-  """
-  @spec apply_helper_expressions(
-          source :: term(),
-          field_name :: atom(),
-          expression :: term(),
-          opts :: keyword()
-        ) :: term()
+  @doc false
   def apply_helper_expressions(source, field_name, expression, opts) do
     case expression do
       map when is_map(map) and not is_struct(map) ->

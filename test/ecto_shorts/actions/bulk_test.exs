@@ -6,7 +6,7 @@ defmodule EctoShorts.Actions.BulkTest do
   alias EctoShorts.Schema.Post
 
   describe "insert_all/3" do
-    test "inserts multiple records successfully" do
+    test "inserts all records and returns the count" do
       assert {:ok, {2, nil}} =
                Actions.insert_all(
                  Post,
@@ -17,7 +17,7 @@ defmodule EctoShorts.Actions.BulkTest do
       assert [%Post{title: "First"}, %Post{title: "Second"}] = Repo.all(Post)
     end
 
-    test "inserts multiple records successfully and returns records when option :returning is true" do
+    test "returns the inserted records when the :returning option is true" do
       assert {:ok, {2, [%Post{title: "First"}, %Post{title: "Second"}]}} =
                Actions.insert_all(
                  Post,
@@ -26,14 +26,14 @@ defmodule EctoShorts.Actions.BulkTest do
                )
     end
 
-    test "returns {:error, [changeset]} when validation fails on any record" do
+    test "returns a changeset error when any record fails validation" do
       assert {:error, [changeset]} = Actions.insert_all(Post, [%{views: "oops"}])
 
       assert %Ecto.Changeset{valid?: false} = changeset
       assert Keyword.has_key?(changeset.errors, :views)
     end
 
-    test "performs upsert when records include complete primary keys" do
+    test "updates existing records when the insert includes their primary key" do
       existing_post =
         %Post{}
         |> Post.changeset(%{title: "Original Title"})
@@ -49,7 +49,7 @@ defmodule EctoShorts.Actions.BulkTest do
       assert %Post{title: "Updated Title"} = Repo.get!(Post, existing_post.id)
     end
 
-    test "generates conflict options by default so duplicate primary keys do not raise" do
+    test "handles duplicate primary keys without raising by default" do
       existing_post =
         %Post{}
         |> Post.changeset(%{title: "Original"})
@@ -76,7 +76,7 @@ defmodule EctoShorts.Actions.BulkTest do
       assert %Post{title: "Updated"} = Repo.get!(Post, existing_post.id)
     end
 
-    test "allows caller-provided on_conflict option to override computed defaults" do
+    test "respects a caller-provided on_conflict option over the default" do
       existing_post =
         %Post{}
         |> Post.changeset(%{title: "Original"})
@@ -93,7 +93,7 @@ defmodule EctoShorts.Actions.BulkTest do
       assert %Post{title: "Original"} = Repo.get!(Post, existing_post.id)
     end
 
-    test "with validate: false, inserts records that would fail validation" do
+    test "skips validation when validate is false" do
       assert {:ok, {2, nil}} =
                Actions.insert_all(
                  Comment,
@@ -109,7 +109,7 @@ defmodule EctoShorts.Actions.BulkTest do
   end
 
   describe "update_all/4" do
-    test "updates matching records with field params" do
+    test "updates all records matching the filter" do
       %Post{}
       |> Post.changeset(%{title: "Draft", published: false})
       |> Repo.insert!()
@@ -124,7 +124,7 @@ defmodule EctoShorts.Actions.BulkTest do
       assert [_, _] = Actions.all(Post, %{published: true})
     end
 
-    test "supports :inc tuple operation" do
+    test "increments a numeric field using the :inc operation" do
       post =
         %Post{}
         |> Post.changeset(%{title: "Counter", views: 5})
@@ -138,7 +138,7 @@ defmodule EctoShorts.Actions.BulkTest do
   end
 
   describe "delete_all/3" do
-    test "deletes matching records and returns {count, nil}" do
+    test "deletes all records matching the filter and returns the count" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
@@ -155,7 +155,7 @@ defmodule EctoShorts.Actions.BulkTest do
       assert [%Post{title: "B"}] = Repo.all(Post)
     end
 
-    test "returns {0, nil} when nothing matches" do
+    test "returns zero when no records match the filter" do
       %Post{}
       |> Post.changeset(%{title: "Only"})
       |> Repo.insert!()

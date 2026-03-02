@@ -5,7 +5,7 @@ defmodule EctoShorts.CommonParamsTest do
   alias EctoShorts.Schema.Post
 
   describe "convert_to_update_params/3 with schema module source" do
-    test "happy path: groups update operators and adds updated_at by default" do
+    test "groups operations by type and adds an updated_at timestamp" do
       updates =
         CommonParams.convert_to_update_params(Post, %{
           title: "Hello",
@@ -22,13 +22,13 @@ defmodule EctoShorts.CommonParamsTest do
       assert %NaiveDateTime{} = Keyword.fetch!(set_ops, :updated_at)
     end
 
-    test "failure path: raises when using :push on a non-array field" do
+    test "raises when using :push on a field that is not an array" do
       assert_raise ArgumentError, fn ->
         CommonParams.convert_to_update_params(Post, %{views: {:push, "oops"}})
       end
     end
 
-    test "does not add updated_at when updated_at is false" do
+    test "skips the updated_at timestamp when the option is false" do
       updates =
         CommonParams.convert_to_update_params(
           Post,
@@ -40,7 +40,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert set_ops === [title: "Hello"]
     end
 
-    test "does not add updated_at when updated_at_source is false" do
+    test "skips the updated_at timestamp when the source option is false" do
       updates =
         CommonParams.convert_to_update_params(
           Post,
@@ -54,14 +54,14 @@ defmodule EctoShorts.CommonParamsTest do
   end
 
   describe "convert_to_update_params/3 update operation variants" do
-    test "explicit {:set, value} tuple" do
+    test "accepts an explicit set tuple for a field value" do
       updates = CommonParams.convert_to_update_params(Post, %{title: {:set, "Explicit"}})
 
       assert [{:set, set_ops}] = updates
       assert Keyword.fetch!(set_ops, :title) === "Explicit"
     end
 
-    test "list of update ops on a single field" do
+    test "accepts a list of operations on the same field" do
       updates =
         CommonParams.convert_to_update_params(Post, %{
           tags: [{:push, "new_tag"}, {:pull, "old_tag"}]
@@ -71,13 +71,13 @@ defmodule EctoShorts.CommonParamsTest do
       assert Keyword.has_key?(updates, :push)
     end
 
-    test ":inc with non-integer value raises ArgumentError" do
+    test "raises when incrementing with a non-integer value" do
       assert_raise ArgumentError, ~r/Expected value for key .* to be an integer/, fn ->
         CommonParams.convert_to_update_params(Post, %{views: {:inc, "bad"}})
       end
     end
 
-    test ":inc with non-integer field raises ArgumentError" do
+    test "raises when incrementing a non-integer field" do
       assert_raise ArgumentError, ~r/is not a type of `:integer`/, fn ->
         CommonParams.convert_to_update_params(Post, %{title: {:inc, 1}})
       end
@@ -85,7 +85,7 @@ defmodule EctoShorts.CommonParamsTest do
   end
 
   describe "build_on_conflict_options/3" do
-    test "on_conflict_replace: :none returns conflict_target without on_conflict" do
+    test "returns only the conflict target when on_conflict_replace is :none" do
       inserts = [%{id: 1, title: "Hello"}]
 
       opts =
@@ -95,7 +95,7 @@ defmodule EctoShorts.CommonParamsTest do
       refute Keyword.has_key?(opts, :on_conflict)
     end
 
-    test "on_conflict_replace: invalid raises ArgumentError" do
+    test "raises when on_conflict_replace has an invalid value" do
       inserts = [%{id: 1, title: "Hello"}]
 
       assert_raise ArgumentError, ~r/Expected :on_conflict_replace/, fn ->
@@ -105,7 +105,7 @@ defmodule EctoShorts.CommonParamsTest do
   end
 
   describe "convert_to_update_params/3 with schemaless sources" do
-    test "source nil: allows all keys and defaults updated_at to DateTime" do
+    test "allows any key when the source is nil" do
       updates =
         CommonParams.convert_to_update_params(nil, %{
           made_up_field: "value",
@@ -118,7 +118,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert %DateTime{} = Keyword.fetch!(set_ops, :updated_at)
     end
 
-    test "source binary: treated as schemaless" do
+    test "allows any key when the source is a table name string" do
       updates =
         CommonParams.convert_to_update_params("posts", %{
           made_up_field: "value",
@@ -131,7 +131,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert %DateTime{} = Keyword.fetch!(set_ops, :updated_at)
     end
 
-    test "{binary, nil}: treated as schemaless" do
+    test "allows any key when the source is a table-nil tuple" do
       updates =
         CommonParams.convert_to_update_params({"posts", nil}, %{
           made_up_field: "value",
@@ -144,7 +144,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert %DateTime{} = Keyword.fetch!(set_ops, :updated_at)
     end
 
-    test "{binary, module}: treated like schema module (filters unknown keys)" do
+    test "filters out unknown keys when the source includes a schema module" do
       updates =
         CommonParams.convert_to_update_params({"posts", Post}, %{
           title: "Hello",
@@ -159,7 +159,7 @@ defmodule EctoShorts.CommonParamsTest do
   end
 
   describe "convert_to_insert_params/3" do
-    test "happy path: builds insert maps and adds timestamps by default" do
+    test "builds insert maps and adds timestamps by default" do
       assert {:ok, insert_maps} =
                CommonParams.convert_to_insert_params(Post, [%{title: "Hello"}], validate: false)
 
@@ -170,7 +170,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert %NaiveDateTime{} = insert_map.updated_at
     end
 
-    test "happy path: replaces placeholder values with {:placeholder, field}" do
+    test "replaces matching values with placeholder references" do
       placeholders = %{permalink: "__PLACEHOLDER__"}
 
       assert {:ok, insert_maps} =
@@ -184,7 +184,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert [%{permalink: {:placeholder, :permalink}}] = insert_maps
     end
 
-    test "failure path: returns {:error, [changeset]} when validation fails" do
+    test "returns a changeset error when validation fails" do
       assert {:error, [changeset]} =
                CommonParams.convert_to_insert_params(Post, [%{views: "oops"}])
 
@@ -194,7 +194,7 @@ defmodule EctoShorts.CommonParamsTest do
   end
 
   describe "convert_to_insert_params/3 with struct entry" do
-    test "accepts a bare schema struct as insert entry" do
+    test "accepts a schema struct as an insert entry" do
       struct = %Post{title: "From Struct", published: true}
 
       assert {:ok, [insert_map]} =
@@ -204,7 +204,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert insert_map.published === true
     end
 
-    test "accepts a {struct, params} tuple as insert entry" do
+    test "accepts a struct-and-params tuple as an insert entry" do
       struct = %Post{title: "Original"}
       params = %{title: "Overridden"}
 
@@ -214,7 +214,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert insert_map.title === "Overridden"
     end
 
-    test "accepts a changeset as insert entry" do
+    test "accepts an Ecto changeset as an insert entry" do
       changeset = Post.changeset(%Post{}, %{title: "From Changeset"})
 
       assert {:ok, [insert_map]} =
@@ -223,7 +223,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert insert_map.title === "From Changeset"
     end
 
-    test "accepts keyword list params as insert entry" do
+    test "accepts a keyword list as an insert entry" do
       assert {:ok, [insert_map]} =
                CommonParams.convert_to_insert_params(Post, [[title: "KW"]], validate: false)
 
@@ -232,7 +232,7 @@ defmodule EctoShorts.CommonParamsTest do
   end
 
   describe "convert_to_insert_params/3 with schemaless sources" do
-    test "source nil: allows arbitrary keys (including string keys)" do
+    test "allows any key including string keys when the source is nil" do
       assert {:ok, [insert_map]} =
                CommonParams.convert_to_insert_params(nil, [%{"made_up_field" => "value"}])
 
@@ -240,7 +240,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert %DateTime{} = insert_map.updated_at
     end
 
-    test "source binary: treated as schemaless" do
+    test "allows any key when the source is a table name string" do
       assert {:ok, [insert_map]} =
                CommonParams.convert_to_insert_params("posts", [%{"made_up_field" => "value"}])
 
@@ -248,7 +248,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert %DateTime{} = insert_map.updated_at
     end
 
-    test "{binary, nil}: treated as schemaless" do
+    test "allows any key when the source is a table-nil tuple" do
       assert {:ok, [insert_map]} =
                CommonParams.convert_to_insert_params({"posts", nil}, [
                  %{"made_up_field" => "value"}
@@ -258,7 +258,7 @@ defmodule EctoShorts.CommonParamsTest do
       assert %DateTime{} = insert_map.updated_at
     end
 
-    test "{binary, module}: treated like schema module (filters unknown keys)" do
+    test "filters out unknown keys when the source includes a schema module" do
       assert {:ok, [insert_map]} =
                CommonParams.convert_to_insert_params(
                  {"posts", Post},

@@ -10,7 +10,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 select" do
-    test "supports :select true (selects the binding)" do
+    test "returns the full struct when select is true" do
       expected = from p in Post, select: p
       q = from(p in Post)
       q2 = CommonFilters.convert_params_to_filter(q, %{select: true}, [])
@@ -18,7 +18,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :select for a single field" do
+    test "returns only the selected field" do
       expected = from p in Post, select: p.id
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{select: :id}, [])
@@ -26,7 +26,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :select with a non-keyword list (selects the literal list)" do
+    test "returns only the listed fields when select is a list" do
       expected = from p in Post, select: ^[:id, :title]
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{select: [:id, :title]}, [])
@@ -34,7 +34,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :select {:map, map} for custom field aliases" do
+    test "returns a map with renamed fields when select uses a map alias" do
       expected = from p in Post, select: %{custom_id: p.id}
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{select: %{map: %{custom_id: :id}}}, [])
@@ -42,7 +42,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :select {:map, fields} (Ecto map/2)" do
+    test "returns a map with the listed fields when select uses a field list" do
       expected = from p in Post, select: map(p, [:id, :title])
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{select: %{map: [:id, :title]}}, [])
@@ -50,7 +50,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :select {:struct, fields} (Ecto struct/2)" do
+    test "returns a struct with only the listed fields when select uses struct" do
       expected = from p in Post, select: struct(p, [:id])
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{select: %{struct: [:id]}}, [])
@@ -58,7 +58,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :select_merge {:map, map} for custom field aliases" do
+    test "merges renamed fields into the selection" do
       expected = from p in Post, select_merge: %{custom_id: p.id}
       q = Post
 
@@ -68,7 +68,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :select_merge {:map, fields} (Ecto map/2)" do
+    test "merges a field list into the selection" do
       expected = from p in Post, select_merge: map(p, [:id, :title])
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{select_merge: %{map: [:id, :title]}}, [])
@@ -76,7 +76,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :select with :select_merge in one query" do
+    test "combines select and select_merge in the same query" do
       expected = from p in Post, select: map(p, [:id]), select_merge: %{post_title: p.title}
 
       q2 =
@@ -91,7 +91,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 distinct" do
-    test "supports :distinct true" do
+    test "adds distinct true to the query" do
       expected = from p in Post, distinct: true
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{distinct: true}, [])
@@ -99,7 +99,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :distinct false" do
+    test "adds distinct false to the query" do
       expected = from p in Post, distinct: false
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{distinct: false}, [])
@@ -107,7 +107,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :distinct for a single field" do
+    test "adds distinct on a single field" do
       expected = from p in Post, distinct: :title
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{distinct: :title}, [])
@@ -115,7 +115,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :distinct with ordered fields" do
+    test "adds distinct with direction-field tuples" do
       expected = from p in Post, distinct: [desc: :title]
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{distinct: [desc: :title]}, [])
@@ -123,7 +123,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :distinct with map payload" do
+    test "adds distinct from a map payload" do
       expected = from p in Post, distinct: [desc: :title]
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{distinct: %{desc: :title}}, [])
@@ -131,7 +131,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :distinct with :order_by in the same query" do
+    test "combines distinct and order_by in the same query" do
       expected = from p in Post, distinct: :title, order_by: [desc: :id]
 
       q2 =
@@ -144,7 +144,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :distinct payload logs warning and returns query unchanged" do
+    test "logs a warning and returns the query unchanged for an invalid distinct value" do
       q = from(p in Post)
 
       log =
@@ -158,7 +158,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "multiple :distinct entries raises" do
+    test "raises when distinct is applied more than once" do
       assert_raise Ecto.Query.CompileError, ~r/only one distinct expression is allowed in query/, fn ->
         CommonFilters.convert_params_to_filter(from(p in Post), [distinct: :title, distinct: :id], [])
       end
@@ -166,14 +166,14 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 order_by" do
-    test "supports :order_by for a single field" do
+    test "sorts by a single field in descending order by default" do
       expected = from(p in Post, order_by: [desc: p.title])
       q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: :title}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports :prepend_order_by for a single field" do
+    test "prepends a sort field before existing order_by" do
       q = from(p in Post, order_by: [desc: :id])
 
       expected =
@@ -186,7 +186,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :prepend_order_by with ordered fields" do
+    test "prepends multiple sort fields before existing order_by" do
       q = from(p in Post, order_by: [desc: :id])
 
       expected =
@@ -204,7 +204,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :reverse_order with existing order_by expressions" do
+    test "reverses the direction of existing order_by expressions" do
       q = from(p in Post, order_by: [asc: :id, desc: :title])
 
       expected =
@@ -217,7 +217,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :reverse_order with no existing order_by expressions" do
+    test "has no effect when there are no existing order_by expressions" do
       expected = reverse_order(Post)
       q2 = CommonFilters.convert_params_to_filter(Post, %{reverse_order: true}, [])
 
@@ -226,7 +226,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 group_by and having" do
-    test "supports :group_by for a single field" do
+    test "groups results by a single field" do
       expected = from p in Post, group_by: p.author_id
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{group_by: :author_id}, [])
@@ -234,7 +234,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :group_by with a list of fields" do
+    test "groups results by multiple fields" do
       expected = from p in Post, group_by: [p.author_id, p.published]
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{group_by: [:author_id, :published]}, [])
@@ -242,7 +242,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :having with grouped query field" do
+    test "filters grouped results with a having clause" do
       expected =
         from(p in Post,
           group_by: p.published,
@@ -259,7 +259,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :having boolean :and payload as a map" do
+    test "combines having conditions with and using a map" do
       expected =
         from(p in Post,
           group_by: [p.published, p.views],
@@ -279,7 +279,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :having boolean :or payload as a keyword list" do
+    test "combines having conditions with or using a keyword list" do
       expected =
         from(p in Post,
           group_by: p.views,
@@ -299,7 +299,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :having with operator payloads" do
+    test "applies comparison operators in a having clause" do
       expected =
         from(p in Post,
           group_by: p.views,
@@ -316,7 +316,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :having with aggregate helper expressions" do
+    test "applies aggregate functions in a having clause" do
       expected =
         from(p in Post,
           group_by: p.author_id,
@@ -333,7 +333,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :having with Ecto.Query.dynamic/2 payload" do
+    test "applies a dynamic expression in a having clause" do
       dyn = dynamic([p], p.views > ^10)
 
       expected =
@@ -352,7 +352,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :or_having with operator payloads" do
+    test "applies comparison operators in an or_having clause" do
       expected =
         from(p in Post,
           group_by: p.views,
@@ -370,7 +370,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :having params container logs warning and returns query unchanged" do
+    test "logs a warning and returns the query unchanged for invalid having params" do
       q = from(p in Post)
 
       log =
@@ -385,7 +385,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "invalid :or_having params container logs warning and returns query unchanged" do
+    test "logs a warning and returns the query unchanged for invalid or_having params" do
       q = from(p in Post)
 
       log =
@@ -402,7 +402,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 limit, offset, first, last" do
-    test "supports :limit" do
+    test "limits the number of returned records" do
       expected = from p in Post, limit: ^10
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{limit: 10}, [])
@@ -410,7 +410,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :offset" do
+    test "skips the first N records" do
       expected = from p in Post, offset: ^5
       q = Post
       q2 = CommonFilters.convert_params_to_filter(q, %{offset: 5}, [])
@@ -418,7 +418,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :limit and :offset combined with where" do
+    test "combines limit, offset, and where in the same query" do
       expected =
         from(p in Post,
           where: p.published == ^true,
@@ -442,14 +442,14 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :first filter (delegates to :limit)" do
+    test "limits the number of records using the :first shortcut" do
       expected = from p in Post, limit: ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{first: 10}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports :last" do
+    test "returns the last N records in ascending order" do
       expected =
         Post
         |> exclude(:order_by)
@@ -463,7 +463,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :last with other filters (Rule 19: terminal filter processed last)" do
+    test "processes :last after other filters" do
       expected =
         Post
         |> from(where: [published: ^true], limit: ^10)
@@ -477,7 +477,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :last with explicit sort key as a map" do
+    test "returns the last N records sorted by the given key as a map" do
       expected =
         Post
         |> exclude(:order_by)
@@ -490,7 +490,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :last with explicit sort key as a keyword list" do
+    test "returns the last N records sorted by the given key as a keyword list" do
       expected =
         Post
         |> exclude(:order_by)
@@ -503,7 +503,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :last with nil sort key (uses primary key)" do
+    test "returns the last N records sorted by the primary key when no key is given" do
       expected =
         Post
         |> exclude(:order_by)
@@ -516,7 +516,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :last with explicit id sort key as a map" do
+    test "returns the last N records sorted by id when given as a map" do
       expected =
         Post
         |> exclude(:order_by)
@@ -531,7 +531,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 exclude" do
-    test "supports :exclude for a single expression" do
+    test "removes a single query expression using :exclude" do
       expected =
         from(p in Post,
           limit: ^10
@@ -548,7 +548,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :exclude with a list of expressions" do
+    test "removes multiple query expressions using :exclude" do
       expected =
         from(p in Post,
           where: p.published == ^true
@@ -568,7 +568,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 lock" do
-    test "supports :lock with direct query-builder function" do
+    test "applies a lock using a query-builder function" do
       expected = from(p in Post, lock: "FOR UPDATE")
 
       q2 =
@@ -581,7 +581,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :lock with expression resolver payload" do
+    test "applies a lock using a resolver payload map" do
       q = from(p in Post, where: p.published == ^true)
 
       expected =
@@ -600,7 +600,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :lock with keyword list resolver payload" do
+    test "applies a lock using a resolver payload keyword list" do
       q = from(p in Post, where: p.published == ^true)
 
       expected =
@@ -621,21 +621,21 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 put_query_prefix" do
-    test "supports :put_query_prefix with schema source" do
+    test "sets the query prefix on a schema source" do
       expected = Query.put_query_prefix(Post, "tenant_a")
       q2 = CommonFilters.convert_params_to_filter(Post, %{put_query_prefix: "tenant_a"}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "supports :put_query_prefix with table source" do
+    test "sets the query prefix on a table source" do
       expected = Query.put_query_prefix("posts", "tenant_a")
       q2 = CommonFilters.convert_params_to_filter("posts", %{put_query_prefix: "tenant_a"}, [])
 
       assert_query(expected, q2)
     end
 
-    test "supports :put_query_prefix override order (last wins)" do
+    test "applies the last prefix when multiple are given" do
       expected =
         Post
         |> Query.put_query_prefix("tenant_a")
@@ -651,7 +651,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :put_query_prefix nil logs warning and leaves query unchanged" do
+    test "logs a warning and returns the query unchanged when the prefix is nil" do
       q = Query.put_query_prefix(Post, "tenant_a")
 
       log =
@@ -665,7 +665,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "invalid :put_query_prefix value logs warning and leaves query unchanged" do
+    test "logs a warning and returns the query unchanged when the prefix is not a string" do
       q = from(p in Post, where: p.published == ^true)
 
       log =
@@ -681,7 +681,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 with_ties" do
-    test "supports :with_ties true with :limit and :order_by" do
+    test "enables with_ties when set to true" do
       q =
         from(p in Post,
           order_by: [desc: :views],
@@ -695,7 +695,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :with_ties false with :limit and :order_by" do
+    test "disables with_ties when set to false" do
       q =
         from(p in Post,
           order_by: [desc: :views],
@@ -709,7 +709,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :with_ties value logs warning and leaves query unchanged" do
+    test "logs a warning and returns the query unchanged for an invalid with_ties value" do
       q =
         from(p in Post,
           order_by: [desc: :views],
@@ -727,7 +727,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "with_ties without limit defaults limit to 1000" do
+    test "defaults to a limit of 1000 when with_ties is given without a limit" do
       q = from(p in Post)
 
       q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: true, order_by: :title}, [])
@@ -736,7 +736,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "with_ties map params with explicit limit" do
+    test "uses the explicit limit from a with_ties map" do
       q = from(p in Post, order_by: [desc: :views])
 
       q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: %{limit: 500}}, [])
@@ -745,7 +745,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "with_ties keyword params with explicit limit" do
+    test "uses the explicit limit from a with_ties keyword list" do
       q = from(p in Post, order_by: [desc: :views])
 
       q2 = CommonFilters.convert_params_to_filter(q, %{with_ties: [limit: 500]}, [])
@@ -756,7 +756,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 CTE and recursive" do
-    test "supports :with_cte with keyword payload" do
+    test "adds a CTE from a keyword list payload" do
       cte_query = from(p in Post, where: p.published == ^true)
       expected = Query.with_cte(Post, "published_posts", as: ^cte_query)
 
@@ -770,7 +770,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :with_cte with map payload" do
+    test "adds a CTE from a map payload" do
       cte_query = from(p in Post, where: p.published == ^true)
       expected = Query.with_cte(Post, "published_posts", as: ^cte_query)
 
@@ -784,7 +784,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :with_cte with :materialized and :operation options" do
+    test "adds a materialized CTE with a custom operation" do
       cte_query = from(p in Post, select: p)
 
       expected =
@@ -810,7 +810,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :with_cte with nested :as payload" do
+    test "adds a CTE with a nested :as query" do
       cte_query = from(p in Post, where: p.published == ^true)
       expected = Query.with_cte(Post, "published_posts", as: ^cte_query)
 
@@ -824,7 +824,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :with_cte with nested :as payload using :from keyword" do
+    test "adds a CTE with a nested :as query built from :from params" do
       cte_query = from(p in Post, where: p.id == ^1)
       expected = Query.with_cte(Post, "published_posts", as: ^cte_query)
 
@@ -838,7 +838,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :with_cte entries warn and leave query unchanged" do
+    test "logs a warning and returns the query unchanged for invalid CTE entries" do
       q = from(p in Post, where: p.published == ^true)
 
       log =
@@ -858,7 +858,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "supports :recursive_ctes true with :with_cte" do
+    test "enables recursive CTEs when set to true" do
       cte_query = from(p in Post, where: p.published == ^true)
 
       expected =
@@ -876,7 +876,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :recursive_ctes false with :with_cte" do
+    test "disables recursive CTEs when set to false" do
       cte_query = from(p in Post, where: p.published == ^true)
 
       q =
@@ -894,7 +894,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :recursive_ctes value logs warning and leaves query unchanged" do
+    test "logs a warning and returns the query unchanged for an invalid recursive_ctes value" do
       q = from(p in Post, where: p.published == ^true)
 
       log =
@@ -910,7 +910,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 with_named_binding" do
-    test "supports :with_named_binding when binding is missing" do
+    test "adds a named binding when it does not exist on the query" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -927,7 +927,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :with_named_binding as no-op when binding already exists" do
+    test "does nothing when the named binding already exists" do
       q =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -944,7 +944,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(q, q2)
     end
 
-    test "supports :with_named_binding with multiple entries" do
+    test "adds multiple named bindings in one call" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -969,7 +969,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :with_named_binding with map payload" do
+    test "adds named bindings from a map payload" do
       expected =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -990,7 +990,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid :with_named_binding key type warns and leaves query unchanged" do
+    test "logs a warning and returns the query unchanged for an invalid named binding key" do
       q = from(p in Post)
 
       log =
@@ -1014,7 +1014,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "invalid :with_named_binding params type warns and leaves query unchanged" do
+    test "logs a warning and returns the query unchanged for an invalid named binding params type" do
       q = from(p in Post)
 
       log =
@@ -1030,7 +1030,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "missing named binding callback result logs warning and returns query unchanged" do
+    test "logs a warning and returns the query unchanged when the binding callback returns nil" do
       q = from(p in Post)
 
       log =
@@ -1052,7 +1052,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 update" do
-    test "supports :update with update operators" do
+    test "adds an update expression with set and inc operators" do
       updates = [set: [title: "After"], inc: [views: 1]]
       expected = Query.update(Post, ^updates)
 
@@ -1066,7 +1066,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2, :update_all)
     end
 
-    test "supports :update with operation payload maps" do
+    test "adds an update expression from a map payload" do
       updates = [set: [title: "After"]]
       expected = Query.update(Post, ^updates)
 
@@ -1082,7 +1082,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 windows" do
-    test "supports :windows with keyword payload" do
+    test "adds a window definition from a keyword list" do
       expected =
         from(p in Post,
           windows: [post_window: [partition_by: p.author_id, order_by: [desc: p.inserted_at]]]
@@ -1098,7 +1098,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :windows with map payload" do
+    test "adds a window definition from a map" do
       expected =
         from(p in Post,
           windows: [post_window: [partition_by: p.author_id, order_by: [desc: p.inserted_at]]]
@@ -1114,7 +1114,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :windows with frame" do
+    test "adds a window definition with a frame clause" do
       frame = dynamic(fragment("ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"))
 
       q2 =
@@ -1135,7 +1135,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2.windows !== []
     end
 
-    test "supports :windows with partition_by as list of atoms" do
+    test "adds a window with partition_by as a list of fields" do
       expected =
         from(p in Post,
           windows: [post_window: [partition_by: [p.author_id, p.published], order_by: []]]
@@ -1151,7 +1151,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :windows with order_by as single atom" do
+    test "adds a window with order_by as a single field" do
       expected =
         from(p in Post,
           windows: [post_window: [partition_by: [], order_by: p.inserted_at]]
@@ -1167,7 +1167,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :windows with order_by as {direction, atom} tuple" do
+    test "adds a window with order_by as a direction-field tuple" do
       expected =
         from(p in Post,
           windows: [post_window: [partition_by: [], order_by: [desc: p.inserted_at]]]
@@ -1183,7 +1183,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "warns and returns query unchanged for non-keyword list params" do
+    test "logs a warning and returns the query unchanged for non-keyword list window params" do
       q = from(p in Post)
 
       log =
@@ -1197,7 +1197,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(q, q2)
     end
 
-    test "warns and returns query unchanged for invalid value" do
+    test "logs a warning and returns the query unchanged for an invalid window value" do
       q = from(p in Post)
 
       log =
@@ -1211,7 +1211,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(q, q2)
     end
 
-    test "supports :windows with partition_by as single atom" do
+    test "adds a window with partition_by as a single field" do
       expected =
         from(p in Post,
           windows: [post_window: [partition_by: p.author_id, order_by: []]]
@@ -1227,7 +1227,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "warns and returns query unchanged for invalid window definition" do
+    test "logs a warning and returns the query unchanged for an invalid window definition" do
       q = from(p in Post)
 
       log =
@@ -1241,7 +1241,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(q, q2)
     end
 
-    test "warns about unsupported window keys and ignores them" do
+    test "logs a warning and ignores unsupported keys in the window definition" do
       log =
         capture_log(fn ->
           q2 =
@@ -1261,7 +1261,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 subquery" do
-    test "supports :subquery with nested filters" do
+    test "wraps the filtered query in a subquery" do
       expected_inner = from(p in Post, where: p.id == ^2)
       expected = subquery(expected_inner)
 
@@ -1275,7 +1275,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_query(expected, q2)
     end
 
-    test "supports :subquery with keyword list filters" do
+    test "wraps the query in a subquery using keyword list filters" do
       expected_inner = from(p in Post, where: p.id == ^2)
       expected = subquery(expected_inner)
 
@@ -1289,7 +1289,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_query(expected, q2)
     end
 
-    test "applies :subquery after top-level filters" do
+    test "applies filters before wrapping in a subquery" do
       expected_inner =
         from(p in Post,
           where: p.published == ^true,
@@ -1310,7 +1310,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 set operations" do
-    test "supports :except with nested filter params" do
+    test "removes rows from another query using except" do
       q = from(p in Post, where: p.published == ^true)
       other_query = from(p in Post, where: p.published == ^false)
 
@@ -1330,7 +1330,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :except with pre-built query" do
+    test "removes rows from a pre-built query using except" do
       q = from(p in Post, where: p.published == ^true)
       other_query = from(p in Post, where: p.published == ^false)
 
@@ -1350,7 +1350,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :except_all with nested filter params" do
+    test "removes rows using except_all" do
       q = from(p in Post, where: p.published == ^true)
       other_query = from(p in Post, where: p.published == ^false)
 
@@ -1370,7 +1370,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :intersect with nested filter params" do
+    test "keeps only common rows using intersect" do
       q = from(p in Post, where: p.published == ^true)
       other_query = from(p in Post, where: p.published == ^false)
 
@@ -1390,7 +1390,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :intersect_all with nested filter params" do
+    test "keeps only common rows using intersect_all" do
       q = from(p in Post, where: p.published == ^true)
       other_query = from(p in Post, where: p.published == ^false)
 
@@ -1410,7 +1410,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :union with nested filter params" do
+    test "combines rows from another query using union" do
       q = from(p in Post, where: p.published == ^true)
       other_query = from(p in Post, where: p.published == ^false)
 
@@ -1430,7 +1430,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "supports :union_all with nested filter params" do
+    test "combines rows using union_all" do
       q = from(p in Post, where: p.published == ^true)
       other_query = from(p in Post, where: p.published == ^false)
 
@@ -1452,28 +1452,28 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 preload" do
-    test "supports plain :preload list" do
+    test "preloads a list of associations" do
       expected = from p in Post, preload: [:author]
       q2 = CommonFilters.convert_params_to_filter(Post, %{preload: [:author]}, [])
 
       assert_query(expected, q2)
     end
 
-    test "supports plain :preload atom" do
+    test "preloads a single association by name" do
       expected = from p in Post, preload: [:author]
       q2 = CommonFilters.convert_params_to_filter(Post, %{preload: :author}, [])
 
       assert_query(expected, q2)
     end
 
-    test "supports plain nested :preload keyword list" do
+    test "preloads nested associations from a keyword list" do
       expected = from p in Post, preload: [author: [:posts]]
       q2 = CommonFilters.convert_params_to_filter(Post, %{preload: [author: [:posts]]}, [])
 
       assert_query(expected, q2)
     end
 
-    test "supports binding-aware :preload with named binding selector" do
+    test "preloads an association on a named binding" do
       q =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -1497,7 +1497,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_query(expected, q2)
     end
 
-    test "supports binding-aware :preload with positional binding selector" do
+    test "preloads an association on a positional binding" do
       q =
         from(p in Post,
           join: a in assoc(p, :author)
@@ -1519,7 +1519,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_query(expected, q2)
     end
 
-    test "supports binding-aware :preload with direct positional selector and shared nested payload" do
+    test "preloads an association on a positional binding with a shared nested payload" do
       q =
         from(p in Post,
           join: a in assoc(p, :author)
@@ -1541,7 +1541,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_query(expected, q2)
     end
 
-    test "supports mixed direct named and positional selectors in one assoc payload" do
+    test "preloads associations on mixed named and positional bindings" do
       q =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -1566,7 +1566,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_query(expected, q2)
     end
 
-    test "supports mixed selector+nested preload payload in one assoc entry" do
+    test "preloads nested associations alongside a binding selector" do
       q =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -1590,7 +1590,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_query(expected, q2)
     end
 
-    test "invalid positional preload binding operator target logs warning and skips entry" do
+    test "logs a warning and skips the preload when the positional binding is invalid" do
       q =
         from(p in Post,
           join: a in assoc(p, :author),
@@ -1614,7 +1614,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert q2 === q
     end
 
-    test "missing preload binding alias logs warning and returns query unchanged" do
+    test "logs a warning and skips the preload when the named binding does not exist" do
       q = from(p in Post)
 
       log =
@@ -1636,21 +1636,21 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 order_by additional examples" do
-    test "order_by - %{order_by: [desc: :title]}" do
+    test "sorts by a field in descending order" do
       expected = from(p in Post, order_by: [desc: p.title])
       q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: [desc: :title]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "order_by - %{order_by: [asc: :title, desc: :id]}" do
+    test "sorts by multiple fields with mixed directions" do
       expected = from(p in Post, order_by: [asc: p.title, desc: p.id])
       q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: [asc: :title, desc: :id]}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "order_by - %{order_by: %{desc: :title}} (map payload)" do
+    test "sorts by a field using a map payload" do
       expected = from(p in Post, order_by: [desc: p.title])
       q2 = CommonFilters.convert_params_to_filter(Post, %{order_by: %{desc: :title}}, [])
 
@@ -1659,7 +1659,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
   end
 
   describe "convert_params_to_filter/3 combined examples" do
-    test "combined - %{published: true, limit: 10, offset: 5}" do
+    test "combines a field filter with limit and offset" do
       expected =
         from(p in Post,
           where: p.published == ^true,
@@ -1672,7 +1672,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "combined - %{group_by: :published, having: %{published: true}}" do
+    test "combines group_by with a having clause" do
       expected =
         from(p in Post,
           group_by: p.published,
@@ -1689,7 +1689,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "combined - %{group_by: :views, having: %{views: %{>: 10}}, or_having: %{views: %{<: 5}}}" do
+    test "combines group_by with having and or_having" do
       expected =
         from(p in Post,
           group_by: p.views,
@@ -1707,7 +1707,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "combined - %{group_by: :id, having: %{inserted_at: %{>: %{datetime: %{ago: ...}}}}}" do
+    test "combines group_by with a having clause using a datetime ago expression" do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -1724,7 +1724,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert Enum.at(params, 1) === Decimal.new("-1")
     end
 
-    test "combined - %{where: %{title: \"test\"}, or_where: %{or: [[published: true, views: 20], [published: false, views: 10]]}}" do
+    test "combines a where filter with an or_where boolean group" do
       expected =
         from(p in Post,
           where: p.title == ^"test",
@@ -1746,7 +1746,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       assert_sql(expected, q2)
     end
 
-    test "combined - %{where: [published: true, views: %{or: [>: 10, <: 5]}]}" do
+    test "combines a field filter with an or operator on another field" do
       expected =
         from(p in Post,
           where: p.published == ^true,

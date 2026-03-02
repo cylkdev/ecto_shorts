@@ -9,147 +9,147 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 comparison operators" do
-    test "comparison - %{id: %{==: 1}}" do
+    test "matches records where the field equals the value using ==" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{==: 1}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{id: %{eq: 1}}" do
+    test "matches records where the field equals the value using the eq alias" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{eq: 1}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{published_at: %{==: nil}} (IS NULL)" do
+    test "matches records where the field is nil using == nil" do
       expected = from p in Post, where: is_nil(p.published_at)
       q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: %{==: nil}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{published_at: %{eq: nil}} (IS NULL)" do
+    test "matches records where the field is nil using the eq alias" do
       expected = from p in Post, where: is_nil(p.published_at)
       q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: %{eq: nil}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{published_at: %{!=: nil}} (IS NOT NULL)" do
+    test "matches records where the field is not nil using != nil" do
       expected = from p in Post, where: not is_nil(p.published_at)
       q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: %{!=: nil}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{published_at: %{ne: nil}} (IS NOT NULL)" do
+    test "matches records where the field is not nil using the ne alias" do
       expected = from p in Post, where: not is_nil(p.published_at)
       q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: %{ne: nil}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{>: 10}}" do
+    test "matches records where the field is greater than the value" do
       expected = from p in Post, where: p.views > ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{>: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{>=: 10}}" do
+    test "matches records where the field is greater than or equal to the value" do
       expected = from p in Post, where: p.views >= ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{>=: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{<: 10}}" do
+    test "matches records where the field is less than the value" do
       expected = from p in Post, where: p.views < ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{<: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{<=: 10}}" do
+    test "matches records where the field is less than or equal to the value" do
       expected = from p in Post, where: p.views <= ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{<=: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{!=: 10}}" do
+    test "matches records where the field does not equal the value using !=" do
       expected = from p in Post, where: p.views != ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{!=: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{ne: 10}}" do
+    test "matches records where the field does not equal the value using the ne alias" do
       expected = from p in Post, where: p.views != ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{ne: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{gt: 10}}" do
+    test "matches records using the gt alias for greater than" do
       expected = from p in Post, where: p.views > ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{gt: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{gte: 10}}" do
+    test "matches records using the gte alias for greater than or equal" do
       expected = from p in Post, where: p.views >= ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{gte: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{lt: 10}}" do
+    test "matches records using the lt alias for less than" do
       expected = from p in Post, where: p.views < ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{lt: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{views: %{lte: 10}}" do
+    test "matches records using the lte alias for less than or equal" do
       expected = from p in Post, where: p.views <= ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{lte: 10}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{published: %{in: [true, false]}}" do
+    test "matches records where the field is in the given list" do
       expected = from p in Post, where: p.published in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{in: [true, false]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{id: %{in: [1, 2, 3]}}" do
+    test "matches records where the id is in the given list" do
       expected = from p in Post, where: p.id in ^[1, 2, 3]
       q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{in: [1, 2, 3]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{published: %{==: [true, false]}} (coerces to IN)" do
+    test "treats a list value with == as an IN check" do
       expected = from p in Post, where: p.published in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{==: [true, false]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - %{published: %{!=: [true, false]}} (coerces to NOT IN)" do
+    test "treats a list value with != as a NOT IN check" do
       expected = from p in Post, where: p.published not in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{!=: [true, false]}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "comparison - preserves struct values (DateTime)" do
+    test "preserves struct values like DateTime in the comparison" do
       dt = ~U[2026-01-01 00:00:00Z]
       expected = from p in Post, where: p.published_at >= ^dt
       q2 = CommonFilters.convert_params_to_filter(Post, %{published_at: %{>=: dt}}, [])
@@ -157,7 +157,7 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "invalid nil operator logs warning and returns query unchanged" do
+    test "logs a warning and returns the query unchanged for an unsupported nil operator" do
       q = from(p in Post)
 
       log =
@@ -173,98 +173,98 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
   end
 
   describe "convert_params_to_filter/3 negation" do
-    test "negation - %{published: %{not: %{in: [true, false]}}}" do
+    test "excludes records where the field is in the given list" do
       expected = from p in Post, where: p.published not in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{not: %{in: [true, false]}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{published: %{not: %{==: [true, false]}}} (coerces to NOT IN)" do
+    test "excludes records when == with a list is wrapped in not" do
       expected = from p in Post, where: p.published not in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{not: %{==: [true, false]}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{published: %{not: %{!=: [true, false]}}} (double negation coerces to IN)" do
+    test "includes records when != with a list is wrapped in not" do
       expected = from p in Post, where: p.published in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{not: %{!=: [true, false]}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{>: 10}}}" do
+    test "excludes records where the field is greater than the value" do
       expected = from p in Post, where: not (p.views > ^10)
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{>: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{>=: 10}}}" do
+    test "excludes records where the field is greater than or equal to the value" do
       expected = from p in Post, where: not (p.views >= ^10)
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{>=: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{<: 10}}}" do
+    test "excludes records where the field is less than the value" do
       expected = from p in Post, where: not (p.views < ^10)
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{<: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{<=: 10}}}" do
+    test "excludes records where the field is less than or equal to the value" do
       expected = from p in Post, where: not (p.views <= ^10)
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{<=: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{==: 10}}}" do
+    test "excludes records where the field equals the value" do
       expected = from p in Post, where: p.views != ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{==: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{!=: 10}}}" do
+    test "includes records where the field equals the value using double negation" do
       expected = from p in Post, where: p.views == ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{!=: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{ne: 10}}}" do
+    test "includes records where the field equals the value using negated ne alias" do
       expected = from p in Post, where: p.views == ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{ne: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{gt: 10}}}" do
+    test "excludes records using negated gt alias" do
       expected = from p in Post, where: not (p.views > ^10)
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{gt: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{gte: 10}}}" do
+    test "excludes records using negated gte alias" do
       expected = from p in Post, where: not (p.views >= ^10)
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{gte: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{lt: 10}}}" do
+    test "excludes records using negated lt alias" do
       expected = from p in Post, where: not (p.views < ^10)
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{lt: 10}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "negation - %{views: %{not: %{lte: 10}}}" do
+    test "excludes records using negated lte alias" do
       expected = from p in Post, where: not (p.views <= ^10)
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{lte: 10}}}, [])
 
@@ -273,21 +273,21 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
   end
 
   describe "convert_params_to_filter/3 string matching" do
-    test "string matching - %{title: %{like: \"hello\"}}" do
+    test "matches records where the field contains the text using like" do
       expected = from p in Post, where: like(p.title, ^"%hello%")
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{like: "hello"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "string matching - %{title: %{ilike: \"hello\"}}" do
+    test "matches records where the field contains the text case-insensitively using ilike" do
       expected = from p in Post, where: ilike(p.title, ^"%hello%")
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{ilike: "hello"}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "string matching - %{title: %{like: [\"hello\", \"world\"]}}" do
+    test "matches records where the field matches any pattern in the like list" do
       patterns = ["%hello%", "%world%"]
 
       expected =
@@ -300,7 +300,7 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "string matching - %{title: %{ilike: [\"hello\", \"world\"]}}" do
+    test "matches records where the field matches any pattern in the ilike list" do
       patterns = ["%hello%", "%world%"]
 
       expected =
@@ -313,21 +313,21 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "string matching - %{title: %{not: %{like: \"hello\"}}}" do
+    test "excludes records where the field contains the text using negated like" do
       expected = from p in Post, where: not like(p.title, ^"%hello%")
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{not: %{like: "hello"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "string matching - %{title: %{not: %{ilike: \"hello\"}}}" do
+    test "excludes records where the field contains the text using negated ilike" do
       expected = from p in Post, where: not ilike(p.title, ^"%hello%")
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{not: %{ilike: "hello"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "string matching - %{title: %{not: %{like: [\"hello\", \"world\"]}}}" do
+    test "excludes records where the field matches any pattern in the negated like list" do
       patterns = ["%hello%", "%world%"]
 
       expected =
@@ -345,7 +345,7 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "string matching - %{title: %{not: %{ilike: [\"hello\", \"world\"]}}}" do
+    test "excludes records where the field matches any pattern in the negated ilike list" do
       patterns = ["%hello%", "%world%"]
 
       expected =
@@ -365,42 +365,42 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
   end
 
   describe "convert_params_to_filter/3 string transformations" do
-    test "string transformation - %{title: %{==: %{lower: \"hello\"}}}" do
+    test "matches records by comparing the lowercased field to the value" do
       expected = from p in Post, where: fragment("lower(?)", p.title) == ^"hello"
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{==: %{lower: "hello"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "string transformation - %{title: %{==: %{upper: \"HELLO\"}}}" do
+    test "matches records by comparing the uppercased field to the value" do
       expected = from p in Post, where: fragment("upper(?)", p.title) == ^"HELLO"
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{==: %{upper: "HELLO"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "string transformation - %{title: %{!=: %{lower: \"hello\"}}}" do
+    test "excludes records where the lowercased field equals the value" do
       expected = from p in Post, where: fragment("lower(?)", p.title) != ^"hello"
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{!=: %{lower: "hello"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "string transformation - %{title: %{!=: %{upper: \"HELLO\"}}}" do
+    test "excludes records where the uppercased field equals the value" do
       expected = from p in Post, where: fragment("upper(?)", p.title) != ^"HELLO"
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{!=: %{upper: "HELLO"}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "string transformation - %{title: %{not: %{==: %{lower: \"hello\"}}}}" do
+    test "excludes records where the lowercased field matches using negated ==" do
       expected = from p in Post, where: fragment("lower(?)", p.title) != ^"hello"
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{not: %{==: %{lower: "hello"}}}}, [])
 
       assert_sql(expected, q2)
     end
 
-    test "string transformation - %{title: %{not: %{==: %{upper: \"HELLO\"}}}}" do
+    test "excludes records where the uppercased field matches using negated ==" do
       expected = from p in Post, where: fragment("upper(?)", p.title) != ^"HELLO"
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{not: %{==: %{upper: "HELLO"}}}}, [])
 

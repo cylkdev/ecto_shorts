@@ -11,7 +11,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   import Ecto.Query
 
   describe "exists?/3" do
-    test "returns true when a matching record exists" do
+    test "returns true when a record matches the filter" do
       %Post{}
       |> Post.changeset(%{title: "Existing"})
       |> Repo.insert!()
@@ -19,13 +19,13 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Actions.exists?(Post, %{title: "Existing"}) === true
     end
 
-    test "returns false when no matching record exists" do
+    test "returns false when no record matches the filter" do
       assert Actions.exists?(Post, %{title: "NonExistent"}) === false
     end
   end
 
   describe "all/3" do
-    test "filters by id" do
+    test "returns only the post with the given id" do
       post_a =
         %Post{}
         |> Post.changeset(%{title: "A"})
@@ -39,7 +39,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert [%Post{title: "A"}] = Actions.all(Post, %{id: post_a.id})
     end
 
-    test "supports filter keys where and or_where" do
+    test "returns posts matching either the where condition or the or_where condition" do
       %Post{}
       |> Post.changeset(%{title: "WhereMatch", published: true})
       |> Repo.insert!()
@@ -58,7 +58,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Enum.map(results, & &1.title) === ["OrWhereMatch", "WhereMatch"]
     end
 
-    test "filters on a join association" do
+    test "returns posts whose associated author matches the given name" do
       author =
         %User{}
         |> User.changeset(%{first_name: "John"})
@@ -85,7 +85,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert [%Post{title: "Authored"}] = Actions.all(Post, %{author: %{first_name: "John"}})
     end
 
-    test "applies order_by from opts" do
+    test "sorts results by the order_by option" do
       %Post{}
       |> Post.changeset(%{title: "B"})
       |> Repo.insert!()
@@ -99,7 +99,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert [%Post{title: "A"}, %Post{title: "B"}] = results
     end
 
-    test "opts order_by overrides params order_by" do
+    test "the order_by option takes priority over order_by in the params" do
       %Post{}
       |> Post.changeset(%{title: "B"})
       |> Repo.insert!()
@@ -115,7 +115,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "all/3 filters" do
-    test "supports :select true (selects the binding)" do
+    test "returns the full struct when select is true" do
       %Post{}
       |> Post.changeset(%{title: "Selected", published: true})
       |> Repo.insert!()
@@ -123,7 +123,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert [%Post{title: "Selected"}] = Actions.all(Post, %{select: true, title: "Selected"})
     end
 
-    test "supports :select for a single field" do
+    test "returns only the selected field value" do
       post =
         %Post{}
         |> Post.changeset(%{title: "SelectId", published: true})
@@ -133,7 +133,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert id === post.id
     end
 
-    test "supports :select {:map, map} for custom field aliases" do
+    test "returns a map with renamed fields when select uses a map alias" do
       post =
         %Post{}
         |> Post.changeset(%{title: "SelectAlias", published: true})
@@ -148,7 +148,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert id === post.id
     end
 
-    test "supports :select {:map, fields} (Ecto map/2)" do
+    test "returns a map with the listed fields when select uses a field list" do
       post =
         %Post{}
         |> Post.changeset(%{title: "SelectMap", published: true})
@@ -164,7 +164,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert title === "SelectMap"
     end
 
-    test "supports :select {:struct, fields} (Ecto struct/2)" do
+    test "returns a struct with only the listed fields when select uses struct" do
       post =
         %Post{}
         |> Post.changeset(%{title: "SelectStruct", published: true})
@@ -179,7 +179,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert id === post.id
     end
 
-    test "supports :or_where filter key" do
+    test "includes records matching either the main filter or the or_where filter" do
       %Post{}
       |> Post.changeset(%{title: "Published", published: true})
       |> Repo.insert!()
@@ -195,7 +195,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                })
     end
 
-    test "supports :limit" do
+    test "returns at most the number of records specified by limit" do
       %Post{}
       |> Post.changeset(%{title: "One"})
       |> Repo.insert!()
@@ -211,7 +211,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                })
     end
 
-    test "supports :first (alias for limit)" do
+    test "returns at most the number of records specified by first" do
       %Post{}
       |> Post.changeset(%{title: "One"})
       |> Repo.insert!()
@@ -227,7 +227,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                })
     end
 
-    test "supports :offset" do
+    test "skips the first N records when offset is set" do
       %Post{}
       |> Post.changeset(%{title: "One"})
       |> Repo.insert!()
@@ -243,7 +243,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                })
     end
 
-    test "supports :preload" do
+    test "loads the specified association on each returned record" do
       author =
         %User{}
         |> User.changeset(%{first_name: "Preload"})
@@ -263,7 +263,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %User{first_name: "Preload"} = result.author
     end
 
-    test "supports nested :preload" do
+    test "loads nested associations on each returned record" do
       author =
         %User{}
         |> User.changeset(%{first_name: "Nested"})
@@ -288,7 +288,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %User{first_name: "Nested"} = comment.author
     end
 
-    test "supports :last" do
+    test "returns the last N records in ascending order" do
       %Post{}
       |> Post.changeset(%{title: "One"})
       |> Repo.insert!()
@@ -307,7 +307,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Enum.map(results, & &1.title) === ["Two", "Three"]
     end
 
-    test "supports :last with key" do
+    test "returns the last N records sorted by the given key" do
       %Post{}
       |> Post.changeset(%{title: "One"})
       |> Repo.insert!()
@@ -326,7 +326,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Enum.map(results, & &1.title) === ["Two", "Three"]
     end
 
-    test "supports positional binding selector via :bind/:at" do
+    test "filters on a specific join position when bind uses :at" do
       author =
         %User{}
         |> User.changeset(%{first_name: "author"})
@@ -358,7 +358,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Published", published: true} = result
     end
 
-    test "supports named binding selector via :bind/:as" do
+    test "filters on a named binding when bind uses :as" do
       %Post{}
       |> Post.changeset(%{title: "Published", published: true})
       |> Repo.insert!()
@@ -374,7 +374,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Published", published: true} = result
     end
 
-    test "supports explicit operator" do
+    test "filters using the explicit != operator" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -387,7 +387,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "False", published: false} = result
     end
 
-    test "supports negated explicit operator" do
+    test "excludes records when the == operator is wrapped in not" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -400,7 +400,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "False", published: false} = result
     end
 
-    test "supports negated explicit operator (not !=)" do
+    test "includes records when the != operator is wrapped in not" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -413,7 +413,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "True", published: true} = result
     end
 
-    test "supports explicit IN operator for scalar fields" do
+    test "returns records where the field value is in the given list" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -426,7 +426,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{published: %{in: [true]}})
     end
 
-    test "supports explicit NOT IN operator for scalar fields" do
+    test "excludes records where the field value is in the given list" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -439,7 +439,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{published: %{not: %{in: [true]}}})
     end
 
-    test "coerces not === with list RHS to NOT IN for scalar fields" do
+    test "excludes records when == with a list is wrapped in not" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -452,7 +452,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{published: %{not: %{==: [true]}}})
     end
 
-    test "coerces not !== with list RHS to IN for scalar fields" do
+    test "includes records when != with a list is wrapped in not" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -465,7 +465,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "True", published: true} = result
     end
 
-    test "supports >= comparison for scalar fields" do
+    test "returns records where the field is greater than or equal to the value" do
       %Post{}
       |> Post.changeset(%{title: "Low", views: 9})
       |> Repo.insert!()
@@ -478,7 +478,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "High", views: 10} = result
     end
 
-    test "supports < comparison for scalar fields" do
+    test "returns records where the field is less than the value" do
       %Post{}
       |> Post.changeset(%{title: "Low", views: 9})
       |> Repo.insert!()
@@ -491,7 +491,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Low", views: 9} = result
     end
 
-    test "supports <= comparison for scalar fields" do
+    test "returns records where the field is less than or equal to the value" do
       %Post{}
       |> Post.changeset(%{title: "Low", views: 10})
       |> Repo.insert!()
@@ -504,7 +504,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Low", views: 10} = result
     end
 
-    test "supports negated > comparison for scalar fields" do
+    test "excludes records where the field is greater than the value" do
       %Post{}
       |> Post.changeset(%{title: "Low", views: 5})
       |> Repo.insert!()
@@ -517,7 +517,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Low", views: 5} = result
     end
 
-    test "supports LOWER operator for scalar fields" do
+    test "matches records by comparing the lowercased field to the value" do
       %Post{}
       |> Post.changeset(%{title: "Hello"})
       |> Repo.insert!()
@@ -531,7 +531,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Hello"} = result
     end
 
-    test "supports UPPER operator for scalar fields" do
+    test "matches records by comparing the uppercased field to the value" do
       %Post{}
       |> Post.changeset(%{title: "Hello"})
       |> Repo.insert!()
@@ -545,7 +545,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Hello"} = result
     end
 
-    test "supports negated LOWER operator for scalar fields" do
+    test "excludes records where the lowercased field matches the value" do
       _excluded =
         %Post{}
         |> Post.changeset(%{title: "Hello"})
@@ -559,7 +559,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Other"} = result
     end
 
-    test "supports negated UPPER operator for scalar fields" do
+    test "excludes records where the uppercased field matches the value" do
       _excluded =
         %Post{}
         |> Post.changeset(%{title: "Hello"})
@@ -573,7 +573,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Other"} = result
     end
 
-    test "supports LIKE operator for scalar fields" do
+    test "returns records where the field contains the search text" do
       %Post{}
       |> Post.changeset(%{title: "Hello world"})
       |> Repo.insert!()
@@ -587,7 +587,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Hello world"} = result
     end
 
-    test "supports LIKE operator for scalar fields with list RHS (LIKE ANY)" do
+    test "returns records where the field matches any pattern in the list" do
       %Post{}
       |> Post.changeset(%{title: "Hello"})
       |> Repo.insert!()
@@ -608,7 +608,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Enum.any?(results, &match?(%Post{title: "World"}, &1))
     end
 
-    test "supports negated LIKE operator for scalar fields" do
+    test "excludes records where the field contains the search text" do
       _match =
         %Post{}
         |> Post.changeset(%{title: "Hello"})
@@ -622,7 +622,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Other"} = result
     end
 
-    test "supports LOWER operator for array fields" do
+    test "matches records where any array element lowercased equals the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["Elixir"]})
       |> Repo.insert!()
@@ -636,7 +636,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "supports UPPER operator for array fields" do
+    test "matches records where any array element uppercased equals the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["Elixir"]})
       |> Repo.insert!()
@@ -650,7 +650,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "supports negated LOWER operator for array fields" do
+    test "excludes records where any array element lowercased equals the value" do
       _excluded =
         %Post{}
         |> Post.changeset(%{title: "Excluded", tags: ["Elixir"]})
@@ -664,7 +664,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Kept"} = result
     end
 
-    test "supports negated UPPER operator for array fields" do
+    test "excludes records where any array element uppercased equals the value" do
       _excluded =
         %Post{}
         |> Post.changeset(%{title: "Excluded", tags: ["Elixir"]})
@@ -678,7 +678,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Kept"} = result
     end
 
-    test "supports negated ILIKE operator for scalar fields with list RHS (NOT ILIKE ANY)" do
+    test "excludes records where the field case-insensitively matches any pattern in the list" do
       _excluded =
         %Post{}
         |> Post.changeset(%{title: "HELLO"})
@@ -692,7 +692,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Other"} = result
     end
 
-    test "array field supports membership via :in with scalar RHS" do
+    test "returns records where the array field contains the given value" do
       %Post{}
       |> Post.changeset(%{
         title: "Match",
@@ -712,7 +712,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "supports LIKE operator for array fields" do
+    test "returns records where any array element matches the pattern" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["elixir"]})
       |> Repo.insert!()
@@ -726,7 +726,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "supports ILIKE operator for array fields" do
+    test "returns records where any array element case-insensitively matches the pattern" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["Elixir"]})
       |> Repo.insert!()
@@ -740,7 +740,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "supports LIKE operator for array fields with list RHS" do
+    test "returns records where any array element matches any of the patterns" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["erlang"]})
       |> Repo.insert!()
@@ -757,7 +757,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "supports negated LIKE operator for array fields" do
+    test "excludes records where any array element matches the pattern" do
       _excluded =
         %Post{}
         |> Post.changeset(%{
@@ -774,7 +774,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Kept"} = result
     end
 
-    test "supports negated ILIKE operator for array fields" do
+    test "excludes records where any array element case-insensitively matches the pattern" do
       _excluded =
         %Post{}
         |> Post.changeset(%{
@@ -791,7 +791,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Kept"} = result
     end
 
-    test "array field compares equality when RHS is a list and operator defaults to ==" do
+    test "returns records where the array field exactly equals the given list" do
       %Post{}
       |> Post.changeset(%{
         title: "Match",
@@ -811,7 +811,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match", tags: ["elixir", "erlang"]} = result
     end
 
-    test "array field supports negated equality when RHS is a list" do
+    test "excludes records where the array field exactly equals the given list" do
       %Post{}
       |> Post.changeset(%{
         title: "Match",
@@ -831,7 +831,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Enum.any?(results, &match?(%Post{title: "Match"}, &1))
     end
 
-    test "array field supports > comparison against scalar (any element matches)" do
+    test "returns records where any array element is greater than the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["b"]})
       |> Repo.insert!()
@@ -845,7 +845,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "array field supports >= comparison against scalar (any element matches)" do
+    test "returns records where any array element is greater than or equal to the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["b"]})
       |> Repo.insert!()
@@ -859,7 +859,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "array field supports < comparison against scalar (any element matches)" do
+    test "returns records where any array element is less than the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["a"]})
       |> Repo.insert!()
@@ -873,7 +873,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "array field supports <= comparison against scalar (any element matches)" do
+    test "returns records where any array element is less than or equal to the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["a"]})
       |> Repo.insert!()
@@ -887,7 +887,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "array field supports negated > comparison against scalar" do
+    test "excludes records where any array element is greater than the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["a"]})
       |> Repo.insert!()
@@ -903,7 +903,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
-    test "supports keyword-list params" do
+    test "accepts a keyword list as filter params" do
       %Post{}
       |> Post.changeset(%{title: "Published", published: true})
       |> Repo.insert!()
@@ -916,7 +916,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert [%Post{title: "Published", published: true}] = Actions.all(Post, published: true)
     end
 
-    test "treats non-keyword lists as values (defaults operator to ==)" do
+    test "treats a plain list value as an IN membership check" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -929,7 +929,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "True", published: true} = result
     end
 
-    test "supports multiple conditions under a single filter" do
+    test "applies multiple comparison operators to the same field" do
       %Post{}
       |> Post.changeset(%{title: "True", published: true})
       |> Repo.insert!()
@@ -942,7 +942,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "True", published: true} = result
     end
 
-    test "supports boolean :and operator for multiple comparisons on same field" do
+    test "returns records matching all conditions joined by and" do
       %Post{}
       |> Post.changeset(%{title: "Match", views: 15})
       |> Repo.insert!()
@@ -955,7 +955,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match", views: 15} = result
     end
 
-    test "supports boolean :or operator for multiple comparisons on same field" do
+    test "returns records matching any condition joined by or" do
       %Post{}
       |> Post.changeset(%{title: "Match", views: 3})
       |> Repo.insert!()
@@ -968,7 +968,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match", views: 3} = result
     end
 
-    test "boolean operator group under :or_where" do
+    test "combines a where filter with an or_where boolean group" do
       %Post{}
       |> Post.changeset(%{
         title: "Published",
@@ -996,7 +996,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Enum.any?(results, &match?(%Post{title: "Unpublished"}, &1))
     end
 
-    test "scalar field: == nil generates IS NULL" do
+    test "returns records where the field is nil" do
       %Post{}
       |> Post.changeset(%{title: "Nil", permalink: "scalar-nil", published_at: nil})
       |> Repo.insert!()
@@ -1014,7 +1014,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{published_at: nil})
     end
 
-    test "scalar field: != nil generates IS NOT NULL" do
+    test "returns records where the field is not nil" do
       %Post{}
       |> Post.changeset(%{title: "Nil", permalink: "scalar-ne-nil", published_at: nil})
       |> Repo.insert!()
@@ -1031,7 +1031,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{published_at: %{!=: nil}})
     end
 
-    test "scalar field: != with list RHS behaves like NOT IN" do
+    test "excludes records where the field matches any value in the list using !=" do
       %Post{}
       |> Post.changeset(%{title: "A", views: 10})
       |> Repo.insert!()
@@ -1048,7 +1048,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{views: %{!=: [10, 20]}})
     end
 
-    test "scalar field: == with list RHS behaves like IN" do
+    test "returns records where the field matches any value in the list using ==" do
       %Post{}
       |> Post.changeset(%{title: "A", views: 10})
       |> Repo.insert!()
@@ -1062,7 +1062,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{views: %{==: [10]}})
     end
 
-    test "supports > comparison for scalar fields" do
+    test "returns records where the field is greater than the value" do
       %Post{}
       |> Post.changeset(%{title: "Low", views: 5})
       |> Repo.insert!()
@@ -1075,7 +1075,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{views: %{>: 10}})
     end
 
-    test "supports negated < comparison for scalar fields" do
+    test "excludes records where the field is less than the value" do
       %Post{}
       |> Post.changeset(%{title: "Low", views: 5})
       |> Repo.insert!()
@@ -1088,7 +1088,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{views: %{not: %{<: 10}}})
     end
 
-    test "supports :before custom filter" do
+    test "returns records with an id before the given id" do
       post_a =
         %Post{}
         |> Post.changeset(%{title: "A"})
@@ -1103,7 +1103,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert post_a.id < post_b.id
     end
 
-    test "supports :after custom filter" do
+    test "returns records with an id after the given id" do
       post_a =
         %Post{}
         |> Post.changeset(%{title: "A"})
@@ -1118,7 +1118,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert post_b.id > post_a.id
     end
 
-    test "array field: negated != with list RHS behaves like ==" do
+    test "returns records where the array field exactly equals the list when != is wrapped in not" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["elixir"]})
       |> Repo.insert!()
@@ -1132,7 +1132,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{tags: %{not: %{!=: ["elixir"]}}})
     end
 
-    test "array field supports negated >= comparison against scalar" do
+    test "excludes records where any array element is greater than or equal to the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["a"]})
       |> Repo.insert!()
@@ -1146,7 +1146,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{tags: %{not: %{>=: "b"}}})
     end
 
-    test "array field supports negated < comparison against scalar" do
+    test "excludes records where any array element is less than the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["b"]})
       |> Repo.insert!()
@@ -1160,7 +1160,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.all(Post, %{tags: %{not: %{<: "b"}}})
     end
 
-    test "array field supports negated <= comparison against scalar" do
+    test "excludes records where any array element is less than or equal to the value" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["b"]})
       |> Repo.insert!()
@@ -1176,12 +1176,12 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "create/3" do
-    test "inserts a record" do
+    test "inserts the record and returns it" do
       assert {:ok, %Post{title: "A"} = post} = Actions.create(Post, %{title: "A"})
       assert %Post{title: "A"} = Repo.get!(Post, post.id)
     end
 
-    test "returns changeset error on insert constraint failure" do
+    test "returns a changeset error when a unique constraint is violated" do
       %Post{}
       |> Post.changeset(%{title: "A", permalink: "create-dup"})
       |> Repo.insert!()
@@ -1192,7 +1192,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert "has already been taken" in errors_on(changeset).permalink
     end
 
-    test "applies changeset callback from opts" do
+    test "uses the custom changeset function from the options" do
       assert {:ok, %Post{title: "Overridden"}} =
                Actions.create(
                  Post,
@@ -1208,7 +1208,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "get/3" do
-    test "returns the record when found" do
+    test "returns the record matching the given id" do
       post =
         %Post{}
         |> Post.changeset(%{title: "A"})
@@ -1217,13 +1217,13 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "A"} = Actions.get(Post, post.id, repo: Repo)
     end
 
-    test "returns nil when not found" do
+    test "returns nil when no record has the given id" do
       assert nil === Actions.get(Post, -1, repo: Repo)
     end
   end
 
   describe "find/3" do
-    test "returns {:ok, record} when found" do
+    test "returns the record wrapped in ok when a match exists" do
       post =
         %Post{}
         |> Post.changeset(%{title: "A"})
@@ -1232,19 +1232,19 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert {:ok, %Post{title: "A"}} = Actions.find(Post, %{id: post.id}, [])
     end
 
-    test "returns {:error, error} when not found" do
+    test "returns a not_found error when no match exists" do
       assert {:error, %{code: :not_found, message: "record not found.", details: details}} =
                Actions.find(Post, %{id: -1}, [])
 
       assert details.params === %{id: -1}
     end
 
-    test "returns {:error, error} when params is empty and queryable is a schema module" do
+    test "returns a not_found error immediately when the params map is empty" do
       assert {:error, %{code: :not_found, message: "record not found."}} =
                Actions.find(Post, %{}, [])
     end
 
-    test "allows empty params when queryable is an Ecto.Query" do
+    test "queries the database when params is empty but the source is a query" do
       %Post{}
       |> Post.changeset(%{title: "Only"})
       |> Repo.insert!()
@@ -1254,7 +1254,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert {:ok, %Post{title: "Only"}} = Actions.find(query, %{}, [])
     end
 
-    test "supports nested :preload" do
+    test "loads nested associations on the returned record" do
       author =
         %User{}
         |> User.changeset(%{first_name: "Nested"})
@@ -1278,7 +1278,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "update/4" do
-    test "updates a record by id" do
+    test "updates the record matching the given id" do
       post =
         %Post{}
         |> Post.changeset(%{title: "Before"})
@@ -1288,7 +1288,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "After"} = Repo.get!(Post, post.id)
     end
 
-    test "updates a record by schema struct" do
+    test "updates the record when given the struct directly" do
       post =
         %Post{}
         |> Post.changeset(%{title: "Before"})
@@ -1298,14 +1298,14 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "After"} = Repo.get!(Post, post.id)
     end
 
-    test "returns {:error, error} when updating a missing id" do
+    test "returns a not_found error when the id does not exist" do
       assert {:error, %{code: :not_found, message: "record not found.", details: details}} =
                Actions.update(Post, -1, %{title: "Ignored"})
 
       assert details.params === %{id: -1}
     end
 
-    test "applies changeset callback from opts" do
+    test "uses the custom changeset function from the options" do
       post =
         %Post{}
         |> Post.changeset(%{title: "Before"})
@@ -1327,7 +1327,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "delete" do
-    test "deletes a record by id" do
+    test "removes the record matching the given id" do
       post =
         %Post{}
         |> Post.changeset(%{title: "ToDelete"})
@@ -1337,14 +1337,14 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Repo.get(Post, post.id) === nil
     end
 
-    test "returns {:error, error} when deleting a missing id" do
+    test "returns a not_found error when the id does not exist for delete" do
       assert {:error, %{code: :not_found, message: "record not found.", details: details}} =
                Actions.delete(Post, -1)
 
       assert details.params === %{id: -1}
     end
 
-    test "deletes a record by schema struct" do
+    test "removes the record when given the struct directly" do
       post =
         %Post{}
         |> Post.changeset(%{title: "ToDelete"})
@@ -1354,7 +1354,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Repo.get(Post, post.id) === nil
     end
 
-    test "deletes a list of schema structs" do
+    test "removes all records in the given list" do
       post_a =
         %Post{}
         |> Post.changeset(%{title: "A"})
@@ -1372,7 +1372,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "stream/3" do
-    test "streams filtered results" do
+    test "returns only the records matching the filter" do
       post_a =
         %Post{}
         |> Post.changeset(%{title: "A"})
@@ -1391,7 +1391,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                end)
     end
 
-    test "supports order_by via params" do
+    test "returns records in the order specified by order_by" do
       %Post{}
       |> Post.changeset(%{title: "B"})
       |> Repo.insert!()
@@ -1408,7 +1408,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                end)
     end
 
-    test "supports max_rows option for custom chunk size" do
+    test "fetches all records even when max_rows is smaller than the total" do
       for i <- 1..5 do
         %Post{}
         |> Post.changeset(%{title: "Post #{i}"})
@@ -1427,7 +1427,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "aggregate/5" do
-    test "counts matching records (default options)" do
+    test "counts all records when no filter is given" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
@@ -1440,7 +1440,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert 1 === Actions.aggregate(Post, %{title: "A"})
     end
 
-    test "supports non-count aggregate functions" do
+    test "computes the aggregate using the specified function and field" do
       %Post{}
       |> Post.changeset(%{title: "Low", views: 1})
       |> Repo.insert!()
@@ -1455,7 +1455,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "preload/3" do
-    test "preloads an association on a struct" do
+    test "loads the named association onto the struct" do
       author =
         %User{}
         |> User.changeset(%{first_name: "Preloader"})
@@ -1478,7 +1478,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "all/1" do
-    test "returns all records for the given schema" do
+    test "returns every record when no filter is given" do
       %Post{}
       |> Post.changeset(%{title: "A"})
       |> Repo.insert!()
@@ -1494,7 +1494,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "all/2 with keyword opts" do
-    test "accepts keyword list with filter params" do
+    test "filters records when params are given as a keyword list" do
       %Post{}
       |> Post.changeset(%{title: "Published", published: true})
       |> Repo.insert!()
@@ -1509,12 +1509,12 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "find_and_create/3" do
-    test "creates a record when not found" do
+    test "creates the record when no match exists" do
       assert {:ok, %Post{title: "Created"}} =
                Actions.find_and_create(Post, %{title: "Missing"}, %{title: "Created"})
     end
 
-    test "returns {:ok, record} when found" do
+    test "returns the existing record when a match exists" do
       %Post{}
       |> Post.changeset(%{title: "Existing"})
       |> Repo.insert!()
@@ -1525,7 +1525,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "find_and_update/4" do
-    test "updates a record when found" do
+    test "updates the record when a match exists" do
       %Post{}
       |> Post.changeset(%{title: "Existing"})
       |> Repo.insert!()
@@ -1534,14 +1534,14 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.find_and_update(Post, %{title: "Existing"}, %{title: "Updated"})
     end
 
-    test "returns {:error, error} when not found" do
+    test "returns a not_found error when no match exists" do
       assert {:error, %{code: :not_found, message: "record not found."}} =
                Actions.find_and_update(Post, %{title: "Missing"}, %{title: "Updated"})
     end
   end
 
   describe "find_and_upsert/4" do
-    test "updates a record when found" do
+    test "updates the record when a match exists" do
       %Post{}
       |> Post.changeset(%{title: "Existing"})
       |> Repo.insert!()
@@ -1550,14 +1550,14 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.find_and_upsert(Post, %{title: "Existing"}, %{title: "Updated"})
     end
 
-    test "creates a record when not found" do
+    test "creates the record when no match exists" do
       assert {:ok, %Post{title: "Upserted"}} =
                Actions.find_and_upsert(Post, %{title: "Missing"}, %{title: "Upserted"})
     end
   end
 
   describe "find_and_delete/3" do
-    test "deletes a record when found" do
+    test "removes the record when a match exists" do
       %Post{}
       |> Post.changeset(%{title: "ToDelete"})
       |> Repo.insert!()
@@ -1565,14 +1565,14 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert {:ok, %Post{title: "ToDelete"}} = Actions.find_and_delete(Post, %{title: "ToDelete"})
     end
 
-    test "returns {:error, error} when not found" do
+    test "returns a not_found error when no match exists" do
       assert {:error, %{code: :not_found, message: "record not found."}} =
                Actions.find_and_delete(Post, %{title: "Missing"})
     end
   end
 
   describe "find_or_create/3" do
-    test "returns {:ok, record} when found" do
+    test "returns the existing record when a match exists" do
       %Post{}
       |> Post.changeset(%{title: "Existing"})
       |> Repo.insert!()
@@ -1580,7 +1580,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert {:ok, %Post{title: "Existing"}} = Actions.find_or_create(Post, %{title: "Existing"})
     end
 
-    test "supports query_fields option" do
+    test "uses the query_fields option to narrow the lookup" do
       %Post{}
       |> Post.changeset(%{title: "Existing"})
       |> Repo.insert!()
@@ -1593,7 +1593,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                )
     end
 
-    test "creates a record when not found" do
+    test "creates the record when no match exists" do
       assert {:ok, %Post{title: "Created"}} =
                Actions.find_or_create(
                  Post,
@@ -1603,7 +1603,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "update/4 optimistic locking via schema callback" do
-    test "auto-detects locking from schema callback and succeeds on fresh record" do
+    test "increments the lock version when the schema defines a lock callback" do
       post =
         %PostWithLock{}
         |> PostWithLock.changeset(%{title: "Original"})
@@ -1615,7 +1615,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.update(PostWithLock, post, %{title: "Updated"})
     end
 
-    test "returns {:error, %{code: :stale}} on stale record" do
+    test "returns a stale error when another process changed the record" do
       post =
         %PostWithLock{}
         |> PostWithLock.changeset(%{title: "Original"})
@@ -1629,7 +1629,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.update(PostWithLock, post, %{title: "Too Late"})
     end
 
-    test "increments lock_version on each successful update" do
+    test "increments the lock version on every successful update" do
       post =
         %PostWithLock{}
         |> PostWithLock.changeset(%{title: "V1"})
@@ -1644,7 +1644,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "update/4 optimistic locking via option" do
-    test "explicit optimistic_lock option applies locking" do
+    test "uses the lock field specified in the options" do
       post =
         %PostWithLock{}
         |> PostWithLock.changeset(%{title: "Original"})
@@ -1654,7 +1654,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.update(PostWithLock, post, %{title: "Updated"}, optimistic_lock: :lock_version)
     end
 
-    test "explicit optimistic_lock option detects stale record" do
+    test "returns a stale error when the lock field option detects a version mismatch" do
       post =
         %PostWithLock{}
         |> PostWithLock.changeset(%{title: "Original"})
@@ -1668,7 +1668,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.update(PostWithLock, post, %{title: "Too Late"}, optimistic_lock: :lock_version)
     end
 
-    test "optimistic_lock: false disables auto-detection from schema callback" do
+    test "skips locking when optimistic_lock is set to false" do
       post =
         %PostWithLock{}
         |> PostWithLock.changeset(%{title: "Original"})
@@ -1682,7 +1682,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.update(PostWithLock, post, %{title: "Updated"}, optimistic_lock: false)
     end
 
-    test "supports {field, incrementer} tuple option" do
+    test "uses the custom incrementer function for the lock field" do
       post =
         %PostWithLock{}
         |> PostWithLock.changeset(%{title: "Original"})
@@ -1696,7 +1696,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "update/4 optimistic locking on schema without callback" do
-    test "no locking when schema has no callback and no option" do
+    test "does not lock when the schema has no lock callback and no option is set" do
       post =
         %Post{}
         |> Post.changeset(%{title: "Original"})
@@ -1708,7 +1708,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   end
 
   describe "find_and_update/4 optimistic locking" do
-    test "inherits locking from schema callback" do
+    test "applies locking when find_and_update uses a schema with a lock callback" do
       post =
         %PostWithLock{}
         |> PostWithLock.changeset(%{title: "Original"})
@@ -1722,7 +1722,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                Actions.find_and_update(PostWithLock, %{id: post.id}, %{title: "Updated"})
     end
 
-    test "returns stale error when record changes between find and update" do
+    test "returns a stale error when the record was updated after it was found" do
       post =
         %PostWithLock{}
         |> PostWithLock.changeset(%{title: "Original"})
