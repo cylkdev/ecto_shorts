@@ -1,44 +1,322 @@
 defmodule EctoShorts.CommonChanges do
   @moduledoc """
-  Helper functions for building `changeset/2` functions in Ecto schemas.
+  Changeset helpers for building `changeset/2` functions in Ecto schemas.
 
-  Provides utilities for preloading and casting associations, applying
-  conditional changes, validating that fields are not unset, and coercing
-  field values. All functions accept an `Ecto.Changeset` and return an
-  `Ecto.Changeset`.
+  Use this module when building changeset pipelines that need to handle
+  associations, apply conditional logic, validate field state, or coerce
+  values. All functions accept an `Ecto.Changeset` and return an
+  `Ecto.Changeset`, making them composable in changeset pipelines.
 
-  ## Preloading associations on change
+  ## Getting started
 
-  Use `preload_change_assoc/3` when you need to change an association via
-  `cast_assoc/3` or `put_assoc/3` but the association is not yet preloaded:
+  Preload and cast an association:
 
-      defmodule MyApp.Accounts.User do
-        def changeset(changeset, params) do
-          changeset
-          |> cast([:name, :email])
-          |> validate_required([:name, :email])
-          |> EctoShorts.CommonChanges.preload_change_assoc(:address)
-        end
+      def changeset(user, params) do
+        user
+        |> cast(params, [:name, :email])
+        |> validate_required([:name, :email])
+        |> EctoShorts.CommonChanges.preload_change_assoc(:address)
       end
 
-  ## Validating a relation is present
+  Apply conditional changes:
 
-  Require that either an association or its foreign key is provided:
+      def changeset(post, params) do
+        post
+        |> cast(params, [:title, :slug])
+        |> EctoShorts.CommonChanges.apply_when(
+          &EctoShorts.CommonChanges.changeset_field_nil?(&1, :slug),
+          &put_change(&1, :slug, generate_slug(&1))
+        )
+      end
 
-      |> EctoShorts.CommonChanges.preload_change_assoc(:address,
-        required_when_missing: :address_id
-      )
+  Validate fields are not unset:
+
+      def changeset(user, params) do
+        user
+        |> cast(params, [:email, :name])
+        |> EctoShorts.CommonChanges.validate_not_unset(:email)
+      end
+
+  ## When to use changeset helpers
+
+  Use this module when you need to:
+
+  * **Manage associations** - preload and cast associations in one step,
+    handling both `put_assoc` and `cast_assoc` automatically.
+  * **Apply conditional logic** - run changeset functions only when certain
+    conditions are met.
+  * **Validate field state** - ensure fields are not being unset or check
+    for nil/empty values.
+  * **Coerce values** - trim strings, truncate datetimes, or apply other
+    transformations to field changes.
+  * **Set defaults** - put values only when fields are nil or unchanged.
+
+  ## Association management workflow
+
+  The association management functions follow this workflow:
+
+  1. **Check params** - determine if the association key is in params.
+  2. **Preload if needed** - load existing data if the association is not
+     already preloaded.
+  3. **Choose strategy** - select `put_assoc` or `cast_assoc` based on the
+     params value type.
+  4. **Apply changes** - call the chosen function with the changeset.
+
+  ### Basic association preloading
+
+  Use `preload_change_assoc/3` to handle the common case:
+
+      def changeset(user, params) do
+        user
+        |> cast(params, [:name])
+        |> preload_change_assoc(:posts)
+      end
+
+  This preloads `:posts` if needed, then calls `cast_assoc/3`.
+
+  ### Required associations
+
+  Require that an association is provided:
+
+      def changeset(user, params) do
+        user
+        |> cast(params, [:name])
+        |> preload_change_assoc(:address, required: true)
+      end
+
+  ### Conditional requirement
+
+  Require an association only when its foreign key is missing:
+
+      def changeset(order, params) do
+        order
+        |> cast(params, [:total, :user_id])
+        |> preload_change_assoc(:user, required_when_missing: :user_id)
+      end
+
+  This requires `:user` to be provided when `:user_id` is nil.
+
+  ### Member updates
+
+  Replace an association with specific records by ID:
+
+      params = %{
+        "fruits" => [%{"id" => 1}, %{"id" => 3}]
+      }
+
+      changeset(user, params)
+      # Replaces user.fruits with fruits 1 and 3
+
+  `put_or_cast_assoc/3` detects this pattern and uses `put_assoc/3`
+  automatically.
 
   ## Conditional changes
 
-  Run a change function only when a condition is met:
+  Use `apply_when/3` to run a changeset function only when a condition is met:
 
-      |> EctoShorts.CommonChanges.apply_when(
-        &EctoShorts.CommonChanges.changeset_field_nil?(&1, :email),
-        &Ecto.Changeset.put_change(&1, :email, "default@example.com")
+      def changeset(post, params) do
+        post
+        |> cast(params, [:title, :published_at])
+        |> apply_when(
+          &changeset_field_nil?(&1, :published_at),
+          &put_change(&1, :published_at, DateTime.utc_now())
+        )
+      end
+
+  The condition function receives the changeset and must return a boolean.
+  The change function receives the changeset and must return a changeset.
+
+  ### Common condition patterns
+
+  **Check if a field is nil:**
+
+      apply_when(
+        changeset,
+        &changeset_field_nil?(&1, :slug),
+        &put_change(&1, :slug, generate_slug(&1))
       )
 
-  See also `EctoShorts.CommonSchema` and `EctoShorts.Actions`.
+  **Check if a field has no change:**
+
+      apply_when(
+        changeset,
+        &has_nil_change?(&1, :status),
+        &put_change(&1, :status, :draft)
+      )
+
+  **Check if a field is empty:**
+
+      apply_when(
+        changeset,
+        &changeset_field_empty?(&1, :tags),
+        &put_change(&1, :tags, ["uncategorized"])
+      )
+
+  ## Field validation
+
+  Use `validate_not_unset/2` to prevent fields from being set to nil:
+
+      def changeset(user, params) do
+        user
+        |> cast(params, [:email, :name])
+        |> validate_not_unset(:email)
+      end
+
+  This adds a `"can't be blank"` error when `:email` is being changed from
+  a non-nil value to nil.
+
+  ### When to use validate_not_unset
+
+  * **Prevent accidental deletion** - ensure required fields cannot be
+    cleared once set.
+  * **Enforce business rules** - prevent users from removing critical data.
+  * **Protect audit trails** - ensure tracking fields cannot be unset.
+
+  ## Value coercion
+
+  ### Trim strings
+
+  Remove leading and trailing whitespace:
+
+      def changeset(post, params) do
+        post
+        |> cast(params, [:title, :slug])
+        |> trim_string_change([:title, :slug])
+      end
+
+  ### Truncate datetimes
+
+  Truncate datetime precision:
+
+      def changeset(event, params) do
+        event
+        |> cast(params, [:starts_at])
+        |> truncate_datetime_change(:starts_at, :second)
+      end
+
+  This is useful when your database stores datetimes at second precision
+  but Elixir defaults to microsecond precision.
+
+  ## Default values
+
+  ### Put change only if nil
+
+  Use `put_new_change/3` to set a default only when there is no pending change:
+
+      def changeset(post, params) do
+        post
+        |> cast(params, [:title, :status])
+        |> put_new_change(:status, :draft)
+      end
+
+  ### Put change only if field is nil
+
+  Use `put_new_value/3` to set a default only when the field is nil:
+
+      def changeset(user, params) do
+        user
+        |> cast(params, [:name, :role])
+        |> put_new_value(:role, :member)
+      end
+
+  This checks both the pending change and the persisted value.
+
+  ### Dynamic defaults
+
+  Pass a function to compute the default:
+
+      def changeset(post, params) do
+        post
+        |> cast(params, [:title, :slug])
+        |> put_new_change(:slug, fn _ -> generate_slug(post.title) end)
+      end
+
+  ## Changeset inspection
+
+  ### Check for nil changes
+
+  Use `has_nil_change?/2` to check if a field has no pending change:
+
+      if has_nil_change?(changeset, :title) do
+        # No title change pending
+      end
+
+  ### Check for empty changes
+
+  Use `has_empty_change?/2` to check if a field change is empty:
+
+      if has_empty_change?(changeset, :tags) do
+        # Tags change is [] or %{}
+      end
+
+  ### Check field values
+
+  Use `changeset_field_nil?/2` to check if a field is nil:
+
+      if changeset_field_nil?(changeset, :published_at) do
+        # Field is nil in data or changes
+      end
+
+  Use `changeset_field_empty?/2` to check if a field is an empty list:
+
+      if changeset_field_empty?(changeset, :comments) do
+        # Field is [] in data or changes
+      end
+
+  ## Common patterns
+
+  **Pattern 1: Auto-generate slug from title**
+
+      def changeset(post, params) do
+        post
+        |> cast(params, [:title, :slug])
+        |> apply_when(
+          &changeset_field_nil?(&1, :slug),
+          fn cs ->
+            title = get_field(cs, :title)
+            put_change(cs, :slug, slugify(title))
+          end
+        )
+      end
+
+  **Pattern 2: Set published_at on status change**
+
+      def changeset(post, params) do
+        post
+        |> cast(params, [:status, :published_at])
+        |> apply_when(
+          fn cs -> get_change(cs, :status) == :published end,
+          &put_new_change(&1, :published_at, DateTime.utc_now())
+        )
+      end
+
+  **Pattern 3: Require association or foreign key**
+
+      def changeset(order, params) do
+        order
+        |> cast(params, [:total, :user_id])
+        |> preload_change_assoc(:user, required_when_missing: :user_id)
+      end
+
+  **Pattern 4: Normalize string fields**
+
+      def changeset(user, params) do
+        user
+        |> cast(params, [:email, :name])
+        |> trim_string_change([:email, :name])
+        |> update_change(:email, &String.downcase/1)
+      end
+
+  **Pattern 5: Prevent field deletion**
+
+      def changeset(user, params) do
+        user
+        |> cast(params, [:email, :verified_at])
+        |> validate_not_unset(:verified_at)
+      end
+
+  See also `EctoShorts.CommonSchema`, `EctoShorts.Actions`, and
+  `EctoShorts.SchemaHelpers`.
   """
 
   @moduledoc groups: [

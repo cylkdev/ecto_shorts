@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonChangesTest do
-  use EctoShorts.DataCase
+  use EctoShorts.DataCase, async: true
 
   alias Ecto.Changeset
   alias EctoShorts.{Actions, CommonChanges, Repo}

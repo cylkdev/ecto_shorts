@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonQueryTest do
-  use EctoShorts.DataCase
+  use EctoShorts.DataCase, async: true
 
   import Ecto.Query
 

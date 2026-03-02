@@ -1,5 +1,5 @@
 defmodule EctoShorts.Actions.MultiTest do
-  use EctoShorts.DataCase
+  use EctoShorts.DataCase, async: true
 
   alias Ecto.Changeset
   alias EctoShorts.Actions

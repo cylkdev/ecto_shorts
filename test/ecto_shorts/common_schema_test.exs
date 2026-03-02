@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonSchemaTest do
-  use EctoShorts.DataCase
+  use EctoShorts.DataCase, async: true
 
   alias Ecto.Changeset
   alias EctoShorts.CommonSchema

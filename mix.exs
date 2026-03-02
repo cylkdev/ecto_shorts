@@ -59,7 +59,8 @@ defmodule EctoShorts.MixProject do
       {:ecto, "~> 3.0"},
       {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0", optional: true},
-      {:error_message, "~> 0.1"}
+      {:error_message, "~> 0.1"},
+      {:factory_ex, "~> 0.3.4", only: :test}
     ]
   end
 

@@ -1,5 +1,5 @@
 defmodule EctoShorts.Actions.CRUDTest do
-  use EctoShorts.DataCase
+  use EctoShorts.DataCase, async: true
 
   alias Ecto.Changeset
   alias EctoShorts.Actions

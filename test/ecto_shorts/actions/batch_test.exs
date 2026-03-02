@@ -1,5 +1,5 @@
 defmodule EctoShorts.Actions.BatchTest do
-  use EctoShorts.DataCase
+  use EctoShorts.DataCase, async: true
 
   alias EctoShorts.Actions
   alias EctoShorts.Schema.Post
