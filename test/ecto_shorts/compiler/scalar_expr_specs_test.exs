@@ -2,7 +2,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
   use ExUnit.Case, async: true
 
   alias EctoShorts.Compiler.ClauseBuilder
-  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs, as: ScalarExprSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core, as: ScalarExprSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Aggregate, as: AggregateSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Arithmetic, as: ArithmeticSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.DateTime, as: DateTimeSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier, as: QuantifierSpecs
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -68,7 +72,12 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
+      ScalarExprSpecs.alias_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        ) ++
         ScalarExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,
@@ -87,11 +96,16 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
     )
   end
 
-  test "alias_op_specs/2 composes with base_op_specs/4 for :ne" do
+  test "alias_op_specs/4 composes with base_op_specs/4 for :ne" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
+      ScalarExprSpecs.alias_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        ) ++
         ScalarExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,
@@ -114,7 +128,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprSpecs.list_semantic_specs(__MODULE__, binding_head_ast) ++
+      ScalarExprSpecs.list_semantic_specs(__MODULE__, binding_head_ast, target_binding_var, binding_body_asts) ++
         ScalarExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,
@@ -210,7 +224,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprSpecs.date_time_specs(
+      DateTimeSpecs.date_time_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
@@ -244,7 +258,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprSpecs.arithmetic_specs(
+      ArithmeticSpecs.arithmetic_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
@@ -267,7 +281,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprSpecs.any_specs(
+      QuantifierSpecs.any_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
@@ -297,7 +311,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprSpecs.all_specs(
+      QuantifierSpecs.all_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
@@ -327,7 +341,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ScalarExprSpecs.aggregate_specs(
+      AggregateSpecs.aggregate_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,

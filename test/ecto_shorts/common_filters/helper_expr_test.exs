@@ -617,7 +617,7 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
     test "negates an equality datetime_add comparison" do
       expected =
         from(p in Post,
-          where: p.inserted_at != datetime_add(p.inserted_at, ^1, ^"day")
+          where: not (p.inserted_at == datetime_add(p.inserted_at, ^1, ^"day"))
         )
 
       q2 =

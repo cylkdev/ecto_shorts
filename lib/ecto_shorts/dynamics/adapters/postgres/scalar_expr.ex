@@ -3,5 +3,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr do
   @moduledoc false
 
   use EctoShorts.Compiler,
-    specs: EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs
+    specs: [
+      EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Aggregate,
+      EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Arithmetic,
+      EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.DateTime,
+      EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier,
+      EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core
+    ]
 end

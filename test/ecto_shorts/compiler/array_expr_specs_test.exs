@@ -2,7 +2,8 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
   use ExUnit.Case, async: true
 
   alias EctoShorts.Compiler.ClauseBuilder
-  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs, as: ArrayExprSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core, as: ArrayExprSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Aggregate, as: AggregateSpecs
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -76,7 +77,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ArrayExprSpecs.list_semantic_specs(__MODULE__, binding_head_ast) ++
+      ArrayExprSpecs.list_semantic_specs(__MODULE__, binding_head_ast, target_binding_var, binding_body_asts) ++
         ArrayExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,
@@ -123,7 +124,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ArrayExprSpecs.aggregate_specs(
+      AggregateSpecs.aggregate_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
@@ -186,11 +187,16 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
     )
   end
 
-  test "alias_op_specs/2 composes with base_op_specs/4" do
+  test "alias_op_specs/4 composes with base_op_specs/4" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ArrayExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
+      ArrayExprSpecs.alias_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        ) ++
         ArrayExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,
@@ -214,11 +220,16 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
     )
   end
 
-  test "alias_op_specs/2 composes with base_op_specs/4 for :ne" do
+  test "alias_op_specs/4 composes with base_op_specs/4 for :ne" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ArrayExprSpecs.alias_op_specs(__MODULE__, binding_head_ast) ++
+      ArrayExprSpecs.alias_op_specs(
+          __MODULE__,
+          binding_head_ast,
+          target_binding_var,
+          binding_body_asts
+        ) ++
         ArrayExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,

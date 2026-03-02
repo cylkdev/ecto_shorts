@@ -12,7 +12,7 @@ defmodule EctoShorts.Compiler.UsingTest do
 
     specs_module = Module.concat([__MODULE__, :"TmpSpecs#{unique}"])
     compiled_module = Module.concat([__MODULE__, :"TmpCompiled#{unique}"])
-    opts = Keyword.put(compiler_opts, :specs, specs_module)
+    opts = Keyword.put(compiler_opts, :specs, [specs_module])
 
     quoted =
       quote do
@@ -69,9 +69,7 @@ defmodule EctoShorts.Compiler.UsingTest do
   test "max_binding_positions limits generated positional heads" do
     compiled_module = compile_compiled_module!()
 
-    assert_raise FunctionClauseError, fn ->
-      compiled_module.apply_dynamic_expr({:at, 2}, :id, {:==, 1})
-    end
+    assert is_nil(compiled_module.apply_dynamic_expr({:at, 2}, :id, {:==, 1}))
   end
 
   test "config_stale?/1 returns true when current max differs from compile-time max" do

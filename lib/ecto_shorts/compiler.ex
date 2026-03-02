@@ -256,49 +256,61 @@ defmodule EctoShorts.Compiler do
 
   See also `EctoShorts.Compiler.ClauseSpec` and `EctoShorts.Config.max_binding_positions/0`.
   """
-  @compile_tasks_table :ecto_shorts_compiler_tasks
-
   defmacro __using__(opts) do
-    caller_module = __CALLER__.module
     expanded_opts = Macro.prewalk(opts, &Macro.expand(&1, __CALLER__))
-    specs_module = Keyword.fetch!(expanded_opts, :specs)
+    specs_modules = Keyword.fetch!(expanded_opts, :specs)
 
-    validate_specs_module!(specs_module)
-
-    compiled_module = Module.concat(caller_module, Compiled)
-    context = compiled_module
-
-    ensure_tasks_table()
-    task = Task.async(fn -> build_clauses(context, specs_module, expanded_opts) end)
-    :ets.insert(@compile_tasks_table, {caller_module, task})
+    Enum.each(specs_modules, &validate_specs_module!/1)
 
     quote do
       @compiler_options unquote(opts)
+      @compiler_specs_modules unquote(specs_modules)
       @before_compile unquote(__MODULE__)
     end
   end
 
   @doc false
   defmacro __before_compile__(env) do
-    [{_, task}] = :ets.take(@compile_tasks_table, env.module)
-    clause_asts = Task.await(task, :infinity)
-
+    opts = Module.get_attribute(env.module, :compiler_options)
+    specs_modules = Module.get_attribute(env.module, :compiler_specs_modules)
     compiled_module = Module.concat(env.module, Compiled)
+    context = compiled_module
+
+    {sub_modules, sub_module_defs} =
+      specs_modules
+      |> Enum.map(fn specs_module ->
+        clause_asts = build_clauses(context, specs_module, opts)
+
+        sub_name = specs_module |> Module.split() |> List.last() |> String.to_atom()
+        sub_module = Module.concat(compiled_module, sub_name)
+
+        sub_def =
+          quote do
+            defmodule unquote(sub_module) do
+              @moduledoc false
+
+              require Ecto.Query
+
+              unquote_splicing(clause_asts)
+
+              def apply_dynamic_expr(_, _, _), do: nil
+            end
+          end
+
+        {sub_module, sub_def}
+      end)
+      |> Enum.unzip()
+
+    dispatch_ast = build_dispatch_chain(sub_modules)
 
     quote do
       @compiled_max_binding_positions unquote(__MODULE__).max_binding_positions(@compiler_options)
 
-      defmodule unquote(compiled_module) do
-        @moduledoc false
-
-        require Ecto.Query
-
-        unquote_splicing(clause_asts)
-      end
+      unquote_splicing(sub_module_defs)
 
       @doc false
       def apply_dynamic_expr(binding_selector, key, expr) do
-        unquote(compiled_module).apply_dynamic_expr(binding_selector, key, expr)
+        unquote(dispatch_ast)
       end
 
       @doc false
@@ -315,12 +327,17 @@ defmodule EctoShorts.Compiler do
     end
   end
 
-  defp ensure_tasks_table do
-    if :ets.whereis(@compile_tasks_table) === :undefined do
-      :ets.new(@compile_tasks_table, [:named_table, :public, :set])
+  defp build_dispatch_chain([single]) do
+    quote do
+      unquote(single).apply_dynamic_expr(binding_selector, key, expr)
     end
+  end
 
-    :ok
+  defp build_dispatch_chain([head | tail]) do
+    quote do
+      unquote(head).apply_dynamic_expr(binding_selector, key, expr) ||
+        unquote(build_dispatch_chain(tail))
+    end
   end
 
   defp validate_specs_module!(specs_module) do
