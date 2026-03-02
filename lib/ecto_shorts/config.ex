@@ -247,7 +247,7 @@ defmodule EctoShorts.Config do
   @doc """
   Returns the configured `:max_binding_positions` value from the `:ecto_shorts` application environment.
 
-  Defaults to `3`. Used by `EctoShorts.Compiler` to determine how many
+  Defaults to `10`. Used by `EctoShorts.Compiler` to determine how many
   positional binding clauses to generate. Increase when your queries join
   more than ten tables.
 
@@ -255,6 +255,6 @@ defmodule EctoShorts.Config do
   """
   @spec max_binding_positions :: integer()
   def max_binding_positions do
-    Application.get_env(@app, :max_binding_positions) || 3
+    Application.get_env(@app, :max_binding_positions) || 10
   end
 end

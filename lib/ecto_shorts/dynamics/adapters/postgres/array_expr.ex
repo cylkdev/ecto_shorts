@@ -3,6 +3,8 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr do
   @moduledoc false
   use EctoShorts.Compiler,
     specs: [
+      EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper,
+      EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LikeIlike,
       EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core,
       EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Aggregate
     ]

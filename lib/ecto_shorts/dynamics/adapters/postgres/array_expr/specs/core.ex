@@ -8,14 +8,13 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
   alias EctoShorts.Compiler.ClauseSpec
   alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
 
+
   @doc false
   @impl true
   def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
     list_semantic_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       alias_op_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       nil_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
-      lower_upper_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
-      like_ilike_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       base_op_specs(context, binding_head_ast, target_binding_var, binding_body_asts)
   end
 
@@ -152,150 +151,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
               _ ->
                 nil
             end
-          end
-      }
-    ]
-  end
-
-  @doc false
-  def lower_upper_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
-    key_var = Macro.var(:key, context)
-    value_var = Macro.var(:value, context)
-    field_ast = AST.field_ast(target_binding_var, key_var)
-
-    [
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:not, {:lower, unquote(value_var)}}),
-        body:
-          AST.dynamic_ast(binding_body_asts, quote do
-            fragment("NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n", unquote(field_ast), ^unquote(value_var))
-          end)
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:not, {:upper, unquote(value_var)}}),
-        body:
-          AST.dynamic_ast(binding_body_asts, quote do
-            fragment("NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n", unquote(field_ast), ^unquote(value_var))
-          end)
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:==, {:lower, unquote(value_var)}}),
-        body:
-          quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:lower, unquote(value_var)})
-          end
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:==, {:upper, unquote(value_var)}}),
-        body:
-          quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:upper, unquote(value_var)})
-          end
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:!=, {:lower, unquote(value_var)}}),
-        body:
-          quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:not, {:lower, unquote(value_var)}})
-          end
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:!=, {:upper, unquote(value_var)}}),
-        body:
-          quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:not, {:upper, unquote(value_var)}})
-          end
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:lower, unquote(value_var)}),
-        body:
-          AST.dynamic_ast(binding_body_asts, quote do
-            fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n", unquote(field_ast), ^unquote(value_var))
-          end)
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:upper, unquote(value_var)}),
-        body:
-          AST.dynamic_ast(binding_body_asts, quote do
-            fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n", unquote(field_ast), ^unquote(value_var))
-          end)
-      }
-    ]
-  end
-
-  @doc false
-  def like_ilike_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
-    key_var = Macro.var(:key, context)
-    value_var = Macro.var(:value, context)
-    field_ast = AST.field_ast(target_binding_var, key_var)
-
-    [
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:not, {:ilike, unquote(value_var)}}),
-        body:
-          quote do
-            patterns = unquote(AST.normalize_patterns_ast(value_var))
-
-            unquote(AST.dynamic_ast(binding_body_asts, quote do
-              fragment("NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n", unquote(field_ast), ^patterns)
-            end))
-          end
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:not, {:like, unquote(value_var)}}),
-        body:
-          quote do
-            patterns = unquote(AST.normalize_patterns_ast(value_var))
-
-            unquote(AST.dynamic_ast(binding_body_asts, quote do
-              fragment("NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n", unquote(field_ast), ^patterns)
-            end))
-          end
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:ilike, unquote(value_var)}),
-        body:
-          quote do
-            patterns = unquote(AST.normalize_patterns_ast(value_var))
-
-            unquote(AST.dynamic_ast(binding_body_asts, quote do
-              fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n", unquote(field_ast), ^patterns)
-            end))
-          end
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:like, unquote(value_var)}),
-        body:
-          quote do
-            patterns = unquote(AST.normalize_patterns_ast(value_var))
-
-            unquote(AST.dynamic_ast(binding_body_asts, quote do
-              fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n", unquote(field_ast), ^patterns)
-            end))
           end
       }
     ]

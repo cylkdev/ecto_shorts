@@ -2,8 +2,10 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
   use ExUnit.Case, async: true
 
   alias EctoShorts.Compiler.ClauseBuilder
-  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core, as: ArrayExprSpecs
   alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Aggregate, as: AggregateSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core, as: ArrayExprSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LikeIlike, as: LikeIlikeSpecs
+  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper, as: LowerUpperSpecs
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -40,7 +42,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ArrayExprSpecs.lower_upper_specs(
+      LowerUpperSpecs.lower_upper_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
@@ -153,7 +155,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      ArrayExprSpecs.like_ilike_specs(
+      LikeIlikeSpecs.like_ilike_specs(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
