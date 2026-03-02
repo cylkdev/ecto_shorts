@@ -1170,7 +1170,7 @@ defmodule EctoShorts.CommonFilters do
             Logger.warning(
               @binding_params_prefix,
               "Binding position #{bind_index} exceeds the configured :max_binding_positions (#{max}). " <>
-                "Increase :max_binding_positions in your config to support more positional bindings."
+                "Increase :max_binding_positions in your config and recompile to support more positional bindings."
             )
 
             q
