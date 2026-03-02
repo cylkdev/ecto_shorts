@@ -95,22 +95,16 @@ defmodule EctoShorts.CommonFilters.WithCte do
   end
 
   defp params_to_query(schema_source, query_params, opts) do
-    from_value = Keyword.get(query_params, :from)
-
-    {from_source, filter_params} =
-      case from_value do
-        map when is_map(map) and not is_struct(map) ->
-          {query_source, rest} = Map.pop(map, :query)
-          {query_source || schema_source, Map.to_list(rest)}
-
-        list when is_list(list) ->
-          {query_source, rest} = Keyword.pop(list, :query)
-          {query_source || schema_source, rest}
-
-        nil ->
-          {schema_source, []}
+    query_params =
+      if is_map(query_params) and not is_struct(query_params) do
+        Map.to_list(query_params)
+      else
+        query_params
       end
 
-    CommonFilters.convert_params_to_filter(from_source, filter_params, opts)
+    {from_source, filter_params} = Keyword.pop(query_params, :from)
+    source = from_source || schema_source
+
+    CommonFilters.convert_params_to_filter(source, filter_params, opts)
   end
 end

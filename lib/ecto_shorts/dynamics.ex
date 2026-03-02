@@ -114,7 +114,7 @@ defmodule EctoShorts.Dynamics do
   def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
     source = CommonSchema.normalize_source(source)
 
-    if is_map(params) or is_list(params) do
+    if (is_map(params) and not is_struct(params)) or is_list(params) do
       Enum.reduce(params, nil, fn entry, dyn_acc ->
         append_predicates(source, dyn_acc, binding_selector, entry, opts)
       end)
@@ -262,8 +262,8 @@ defmodule EctoShorts.Dynamics do
   defp source_has_schema?(_), do: false
 
   @doc false
-  def apply_helper_expressions(source, field_name, expression, opts) do
-    case expression do
+  def apply_helper_expressions(source, field_name, expr, opts) do
+    case expr do
       map when is_map(map) and not is_struct(map) ->
         apply_helper_expressions(source, field_name, Map.to_list(map), opts)
 
@@ -278,58 +278,26 @@ defmodule EctoShorts.Dynamics do
             end)
 
           true ->
-            expression
+            expr
         end
 
       {key, value} ->
         {key, apply_helper_expressions(source, field_name, value, opts)}
 
       _ ->
-        expression
+        expr
     end
   end
 
   defp build_helper_expr_subquery(source, field_name, params, opts) do
-    from_value = params[:from]
-
-    {schema_source, filter_params} =
-      extract_from_params(from_value, source)
+    {schema_source, rest_params} = Keyword.pop(params, :from, source)
 
     default_select = if field_name === :exists, do: true, else: field_name
-    select_value = helper_expr_select(filter_params, default_select)
+    select_value = helper_expr_select(rest_params, default_select)
 
-    filter_params =
-      if is_map(filter_params) and not is_struct(filter_params) do
-        Map.to_list(filter_params)
-      else
-        filter_params
-      end
+    final_params = Keyword.put(rest_params, :select, select_value)
 
-    from_map =
-      filter_params
-      |> Map.new()
-      |> Map.put(:query, schema_source)
-
-    CommonFilters.convert_params_to_filter(
-      source,
-      [from: from_map, select: select_value],
-      opts
-    )
-  end
-
-  defp extract_from_params(from_map, fallback_source)
-       when is_map(from_map) and not is_struct(from_map) do
-    {query_source, filter_params} = Map.pop(from_map, :query)
-    {query_source || fallback_source, filter_params}
-  end
-
-  defp extract_from_params(from_list, fallback_source) when is_list(from_list) do
-    {query_source, filter_params} = Keyword.pop(from_list, :query)
-    {query_source || fallback_source, filter_params}
-  end
-
-  defp extract_from_params(nil, fallback_source) do
-    {fallback_source, []}
+    CommonFilters.convert_params_to_filter(schema_source, final_params, opts)
   end
 
   defp helper_expr_select(params, default_select)

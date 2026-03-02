@@ -821,7 +821,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{with_cte: [published_posts: [as: %{from: %{query: Post, published: true}}]]},
+          %{with_cte: [published_posts: [as: %{from: Post, published: true}]]},
           []
         )
 
@@ -835,7 +835,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{with_cte: [published_posts: [as: [from: [query: Post, id: 1]]]]},
+          %{with_cte: [published_posts: [as: [from: Post, id: 1]]]},
           []
         )
 

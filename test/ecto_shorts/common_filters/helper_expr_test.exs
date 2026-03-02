@@ -333,7 +333,7 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{id: %{>: %{all: %{from: %{query: Post, id: 1}}}}},
+          %{id: %{>: %{all: %{from: Post, id: 1}}}},
           []
         )
 

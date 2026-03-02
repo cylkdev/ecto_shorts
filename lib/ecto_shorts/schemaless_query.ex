@@ -8,10 +8,9 @@ defmodule EctoShorts.SchemalessQuery do
   A `SchemalessQuery` maps client-facing table names to internal source
   terms (schema modules, table strings, `{table, schema}` tuples, or
   queries). The caller builds the struct once and passes it as the first
-  argument to `convert_params_to_filter/3`. The params use
-  `%{from: %{table: "name"}}` to reference a table by name. The key
-  used inside `:from` is controlled by the `:source_key` field
-  (default `:table`).
+  argument to `convert_params_to_filter/3`. The params use the
+  `source_key` (default `:table`) as a top-level key to reference a
+  table by name.
 
   This keeps the internal source details hidden from the client. The
   client only knows the name, and the struct controls which sources are
@@ -22,7 +21,7 @@ defmodule EctoShorts.SchemalessQuery do
       %{tables: %{"posts" => MyApp.Schema.Post, "comments" => MyApp.Schema.Comment}}
       |> EctoShorts.SchemalessQuery.new()
       |> EctoShorts.CommonFilters.convert_params_to_filter(
-          %{from: %{table: "posts", published: true}},
+          %{table: "posts", published: true},
           []
       )
 
@@ -31,7 +30,7 @@ defmodule EctoShorts.SchemalessQuery do
       %{tables: %{"posts" => MyApp.Schema.Post}, source_key: :source}
       |> EctoShorts.SchemalessQuery.new()
       |> EctoShorts.CommonFilters.convert_params_to_filter(
-          %{from: %{source: "posts"}},
+          %{source: "posts"},
           []
       )
 
@@ -42,8 +41,8 @@ defmodule EctoShorts.SchemalessQuery do
     `convert_params_to_filter/3` (schema module, table string,
     `{table, schema}` tuple, or `Ecto.Query`).
 
-  * `source_key` (default: `:table`) - the atom key inside the `:from`
-    map that identifies which entry in `tables` to use.
+  * `source_key` (default: `:table`) - the atom key in the params
+    that identifies which entry in `tables` to use.
 
   See also `EctoShorts.CommonFilters`.
   """

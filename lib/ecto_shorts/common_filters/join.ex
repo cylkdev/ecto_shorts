@@ -280,23 +280,17 @@ defmodule EctoShorts.CommonFilters.Join do
                   subquery
 
                 subquery_params ->
-                  from_value = subquery_params[:from]
-
-                  {subquery_source, filter_params} =
-                    case from_value do
-                      map when is_map(map) and not is_struct(map) ->
-                        {query_source, rest} = Map.pop(map, :query)
-                        {query_source || schema_source, Map.to_list(rest)}
-
-                      list when is_list(list) ->
-                        {query_source, rest} = Keyword.pop(list, :query)
-                        {query_source || schema_source, rest}
-
-                      nil ->
-                        {schema_source, []}
+                  subquery_params =
+                    if is_map(subquery_params) and not is_struct(subquery_params) do
+                      Map.to_list(subquery_params)
+                    else
+                      subquery_params
                     end
 
-                  CommonFilters.convert_params_to_filter(subquery_source, filter_params, opts)
+                  {from_source, filter_params} = Keyword.pop(subquery_params, :from)
+                  source = from_source || schema_source
+
+                  CommonFilters.convert_params_to_filter(source, filter_params, opts)
               end
 
             build_join(

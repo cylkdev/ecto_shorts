@@ -61,10 +61,12 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   def build(schema_source, filter, query, binding_selector, {key, params}, opts)
       when key in @custom_filters do
+    resolved_params = resolve_subquery_value(schema_source, key, params, opts)
+
     dyn =
       schema_source
       |> CommonSchema.get_schema_source()
-      |> Dynamics.convert_to_dynamic(binding_selector, {key, params}, opts)
+      |> Dynamics.convert_to_dynamic(binding_selector, {key, resolved_params}, opts)
 
     apply_where_expr(filter, query, dyn)
   end
@@ -120,6 +122,43 @@ defmodule EctoShorts.CommonFilters.Filter do
     )
 
     query
+  end
+
+  defp resolve_subquery_value(_schema_source, _key, value, _opts)
+       when is_struct(value, Ecto.Query) or is_struct(value, Ecto.SubQuery) do
+    value
+  end
+
+  defp resolve_subquery_value(schema_source, key, value, opts)
+       when is_map(value) and not is_struct(value) do
+    resolve_subquery_value(schema_source, key, Map.to_list(value), opts)
+  end
+
+  defp resolve_subquery_value(schema_source, key, value, opts) when is_list(value) do
+    if Keyword.keyword?(value) do
+      {not_value, _rest} = Keyword.pop(value, :not)
+
+      if not_value do
+        {:not, resolve_subquery_value(schema_source, key, not_value, opts)}
+      else
+        build_subquery_from_params(schema_source, key, value, opts)
+      end
+    else
+      value
+    end
+  end
+
+  defp resolve_subquery_value(_schema_source, _key, value, _opts), do: value
+
+  defp build_subquery_from_params(schema_source, key, params, opts) do
+    {from_source, filter_params} = Keyword.pop(params, :from)
+    source = from_source || schema_source
+
+    default_select = if key === :exists, do: true, else: key
+    select = Keyword.get(filter_params, :select, default_select)
+    final_params = Keyword.put(filter_params, :select, select)
+
+    CommonFilters.convert_params_to_filter(source, final_params, opts)
   end
 
   defp schemaless_source?(source), do: not source_has_schema?(source)

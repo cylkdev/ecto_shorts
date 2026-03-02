@@ -426,15 +426,15 @@
 
 [published: true, subquery: %{id: 2}]
 
-%{from: %{query: Post, id: 1}, published: true}
+%{from: Post, id: 1, published: true}
 
-%{from: %{query: Post, id: 1}}
+%{from: Post, id: 1}
 
-[from: [query: Post, id: 1]]
+[from: Post, id: 1]
 
-%{from: %{query: "posts", id: 1}}
+%{from: "posts", id: 1}
 
-%{from: %{query: "posts", select: [:id]}}
+%{from: "posts", select: [:id]}
 
 ### Select Examples
 
