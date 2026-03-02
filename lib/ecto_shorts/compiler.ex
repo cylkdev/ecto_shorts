@@ -382,12 +382,24 @@ defmodule EctoShorts.Compiler do
       fn {binding_head_ast, binding_body_asts} ->
         context
         |> specs_module.clause_specs(binding_head_ast, target_binding_var, binding_body_asts)
-        |> Enum.map(&clause_ast!/1)
+        |> parallel_map_clauses()
       end,
       ordered: true,
       timeout: :infinity
     )
     |> Enum.flat_map(fn {:ok, clauses} -> clauses end)
+  end
+
+  @parallel_clause_threshold 30
+
+  defp parallel_map_clauses(specs) when length(specs) > @parallel_clause_threshold do
+    specs
+    |> Task.async_stream(&clause_ast!/1, ordered: true, timeout: :infinity)
+    |> Enum.map(fn {:ok, ast} -> ast end)
+  end
+
+  defp parallel_map_clauses(specs) do
+    Enum.map(specs, &clause_ast!/1)
   end
 
   @doc false
