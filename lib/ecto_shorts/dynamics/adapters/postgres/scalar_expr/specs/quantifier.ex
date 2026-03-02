@@ -6,6 +6,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
+  require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
   alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
 
   @comparison_operators [:==, :!=, :>, :>=, :<, :<=]
@@ -209,12 +210,31 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
   defp all_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var) do
     quote do
       case unquote(op_var) do
-        :== -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) == all(unquote(value_var)))))
-        :!= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) != all(unquote(value_var)))))
-        :> -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) > all(unquote(value_var)))))
-        :>= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) >= all(unquote(value_var)))))
-        :< -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) < all(unquote(value_var)))))
-        :<= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) <= all(unquote(value_var)))))
+        :== ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) == all(unquote(value_var))))
+          )
+
+        :!= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) != all(unquote(value_var))))
+          )
+
+        :> ->
+          unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) > all(unquote(value_var)))))
+
+        :>= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) >= all(unquote(value_var))))
+          )
+
+        :< ->
+          unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) < all(unquote(value_var)))))
+
+        :<= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) <= all(unquote(value_var))))
+          )
       end
     end
   end
@@ -222,12 +242,35 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
   defp not_all_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var) do
     quote do
       case unquote(op_var) do
-        :== -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) == all(unquote(value_var))))))
-        :!= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) != all(unquote(value_var))))))
-        :> -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) > all(unquote(value_var))))))
-        :>= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) >= all(unquote(value_var))))))
-        :< -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) < all(unquote(value_var))))))
-        :<= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) <= all(unquote(value_var))))))
+        :== ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) == all(unquote(value_var)))))
+          )
+
+        :!= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) != all(unquote(value_var)))))
+          )
+
+        :> ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) > all(unquote(value_var)))))
+          )
+
+        :>= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) >= all(unquote(value_var)))))
+          )
+
+        :< ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) < all(unquote(value_var)))))
+          )
+
+        :<= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) <= all(unquote(value_var)))))
+          )
       end
     end
   end
@@ -235,12 +278,31 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
   defp any_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var) do
     quote do
       case unquote(op_var) do
-        :== -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) == any(unquote(value_var)))))
-        :!= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) != any(unquote(value_var)))))
-        :> -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) > any(unquote(value_var)))))
-        :>= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) >= any(unquote(value_var)))))
-        :< -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) < any(unquote(value_var)))))
-        :<= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) <= any(unquote(value_var)))))
+        :== ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) == any(unquote(value_var))))
+          )
+
+        :!= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) != any(unquote(value_var))))
+          )
+
+        :> ->
+          unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) > any(unquote(value_var)))))
+
+        :>= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) >= any(unquote(value_var))))
+          )
+
+        :< ->
+          unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) < any(unquote(value_var)))))
+
+        :<= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) <= any(unquote(value_var))))
+          )
       end
     end
   end
@@ -248,12 +310,35 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
   defp not_any_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var) do
     quote do
       case unquote(op_var) do
-        :== -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) == any(unquote(value_var))))))
-        :!= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) != any(unquote(value_var))))))
-        :> -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) > any(unquote(value_var))))))
-        :>= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) >= any(unquote(value_var))))))
-        :< -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) < any(unquote(value_var))))))
-        :<= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) <= any(unquote(value_var))))))
+        :== ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) == any(unquote(value_var)))))
+          )
+
+        :!= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) != any(unquote(value_var)))))
+          )
+
+        :> ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) > any(unquote(value_var)))))
+          )
+
+        :>= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) >= any(unquote(value_var)))))
+          )
+
+        :< ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) < any(unquote(value_var)))))
+          )
+
+        :<= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) <= any(unquote(value_var)))))
+          )
       end
     end
   end

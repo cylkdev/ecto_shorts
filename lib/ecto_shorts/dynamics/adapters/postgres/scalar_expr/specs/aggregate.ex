@@ -6,6 +6,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Aggregate do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
+  require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
   alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
 
   @aggregate_operators [:avg, :count, :max, :min, :sum]

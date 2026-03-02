@@ -6,6 +6,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
+  require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
   alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
 
   @doc false

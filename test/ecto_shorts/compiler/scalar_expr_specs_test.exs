@@ -73,11 +73,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     specs =
       ScalarExprSpecs.alias_op_specs(
-          __MODULE__,
-          binding_head_ast,
-          target_binding_var,
-          binding_body_asts
-        ) ++
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) ++
         ScalarExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,
@@ -101,11 +101,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     specs =
       ScalarExprSpecs.alias_op_specs(
-          __MODULE__,
-          binding_head_ast,
-          target_binding_var,
-          binding_body_asts
-        ) ++
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) ++
         ScalarExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,

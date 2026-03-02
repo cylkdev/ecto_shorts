@@ -28,9 +28,18 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LikeIlike do
           quote do
             patterns = unquote(AST.normalize_patterns_ast(value_var))
 
-            unquote(AST.dynamic_ast(binding_body_asts, quote do
-              fragment("NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n", unquote(field_ast), ^patterns)
-            end))
+            unquote(
+              AST.dynamic_ast(
+                binding_body_asts,
+                quote do
+                  fragment(
+                    "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n",
+                    unquote(field_ast),
+                    ^patterns
+                  )
+                end
+              )
+            )
           end
       },
       %ClauseSpec{
@@ -41,9 +50,18 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LikeIlike do
           quote do
             patterns = unquote(AST.normalize_patterns_ast(value_var))
 
-            unquote(AST.dynamic_ast(binding_body_asts, quote do
-              fragment("NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n", unquote(field_ast), ^patterns)
-            end))
+            unquote(
+              AST.dynamic_ast(
+                binding_body_asts,
+                quote do
+                  fragment(
+                    "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n",
+                    unquote(field_ast),
+                    ^patterns
+                  )
+                end
+              )
+            )
           end
       },
       %ClauseSpec{
@@ -54,9 +72,18 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LikeIlike do
           quote do
             patterns = unquote(AST.normalize_patterns_ast(value_var))
 
-            unquote(AST.dynamic_ast(binding_body_asts, quote do
-              fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n", unquote(field_ast), ^patterns)
-            end))
+            unquote(
+              AST.dynamic_ast(
+                binding_body_asts,
+                quote do
+                  fragment(
+                    "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n",
+                    unquote(field_ast),
+                    ^patterns
+                  )
+                end
+              )
+            )
           end
       },
       %ClauseSpec{
@@ -67,9 +94,18 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LikeIlike do
           quote do
             patterns = unquote(AST.normalize_patterns_ast(value_var))
 
-            unquote(AST.dynamic_ast(binding_body_asts, quote do
-              fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n", unquote(field_ast), ^patterns)
-            end))
+            unquote(
+              AST.dynamic_ast(
+                binding_body_asts,
+                quote do
+                  fragment(
+                    "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n",
+                    unquote(field_ast),
+                    ^patterns
+                  )
+                end
+              )
+            )
           end
       }
     ]

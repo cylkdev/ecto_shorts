@@ -177,12 +177,35 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.DateTime do
   defp date_time_comparison_case_ast(binding_body_asts, field_ast, op_var, rhs_dynamic_var) do
     quote do
       case unquote(op_var) do
-        :== -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) == ^unquote(rhs_dynamic_var))))
-        :!= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) != ^unquote(rhs_dynamic_var))))
-        :> -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) > ^unquote(rhs_dynamic_var))))
-        :>= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) >= ^unquote(rhs_dynamic_var))))
-        :< -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) < ^unquote(rhs_dynamic_var))))
-        :<= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) <= ^unquote(rhs_dynamic_var))))
+        :== ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) == ^unquote(rhs_dynamic_var)))
+          )
+
+        :!= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) != ^unquote(rhs_dynamic_var)))
+          )
+
+        :> ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) > ^unquote(rhs_dynamic_var)))
+          )
+
+        :>= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) >= ^unquote(rhs_dynamic_var)))
+          )
+
+        :< ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) < ^unquote(rhs_dynamic_var)))
+          )
+
+        :<= ->
+          unquote(
+            AST.dynamic_ast(binding_body_asts, quote(do: unquote(field_ast) <= ^unquote(rhs_dynamic_var)))
+          )
       end
     end
   end
@@ -190,12 +213,53 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.DateTime do
   defp not_date_time_comparison_case_ast(binding_body_asts, field_ast, op_var, rhs_dynamic_var) do
     quote do
       case unquote(op_var) do
-        :== -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) == ^unquote(rhs_dynamic_var)))))
-        :!= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) != ^unquote(rhs_dynamic_var)))))
-        :> -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) > ^unquote(rhs_dynamic_var)))))
-        :>= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) >= ^unquote(rhs_dynamic_var)))))
-        :< -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) < ^unquote(rhs_dynamic_var)))))
-        :<= -> unquote(AST.dynamic_ast(binding_body_asts, quote(do: not (unquote(field_ast) <= ^unquote(rhs_dynamic_var)))))
+        :== ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) == ^unquote(rhs_dynamic_var)))
+            )
+          )
+
+        :!= ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) != ^unquote(rhs_dynamic_var)))
+            )
+          )
+
+        :> ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) > ^unquote(rhs_dynamic_var)))
+            )
+          )
+
+        :>= ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) >= ^unquote(rhs_dynamic_var)))
+            )
+          )
+
+        :< ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) < ^unquote(rhs_dynamic_var)))
+            )
+          )
+
+        :<= ->
+          unquote(
+            AST.dynamic_ast(
+              binding_body_asts,
+              quote(do: not (unquote(field_ast) <= ^unquote(rhs_dynamic_var)))
+            )
+          )
       end
     end
   end

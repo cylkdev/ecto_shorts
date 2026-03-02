@@ -194,11 +194,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
 
     specs =
       ArrayExprSpecs.alias_op_specs(
-          __MODULE__,
-          binding_head_ast,
-          target_binding_var,
-          binding_body_asts
-        ) ++
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) ++
         ArrayExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,
@@ -227,11 +227,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
 
     specs =
       ArrayExprSpecs.alias_op_specs(
-          __MODULE__,
-          binding_head_ast,
-          target_binding_var,
-          binding_body_asts
-        ) ++
+        __MODULE__,
+        binding_head_ast,
+        target_binding_var,
+        binding_body_asts
+      ) ++
         ArrayExprSpecs.base_op_specs(
           __MODULE__,
           binding_head_ast,

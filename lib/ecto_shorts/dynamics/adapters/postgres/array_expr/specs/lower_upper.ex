@@ -26,7 +26,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:not, {:==, {:lower, unquote(value_var)}}}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:not, {:lower, unquote(value_var)}})
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {:not, {:lower, unquote(value_var)}}
+            )
           end
       },
       %ClauseSpec{
@@ -35,7 +39,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:not, {:==, {:upper, unquote(value_var)}}}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:not, {:upper, unquote(value_var)}})
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {:not, {:upper, unquote(value_var)}}
+            )
           end
       },
       %ClauseSpec{
@@ -61,18 +69,32 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         key: key_var,
         head: quote(do: {:not, {:lower, unquote(value_var)}}),
         body:
-          AST.dynamic_ast(binding_body_asts, quote do
-            fragment("NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n", unquote(field_ast), ^unquote(value_var))
-          end)
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote do
+              fragment(
+                "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n",
+                unquote(field_ast),
+                ^unquote(value_var)
+              )
+            end
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:upper, unquote(value_var)}}),
         body:
-          AST.dynamic_ast(binding_body_asts, quote do
-            fragment("NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n", unquote(field_ast), ^unquote(value_var))
-          end)
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote do
+              fragment(
+                "NOT EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n",
+                unquote(field_ast),
+                ^unquote(value_var)
+              )
+            end
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
@@ -98,7 +120,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:!=, {:lower, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:not, {:lower, unquote(value_var)}})
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {:not, {:lower, unquote(value_var)}}
+            )
           end
       },
       %ClauseSpec{
@@ -107,7 +133,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:!=, {:upper, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:not, {:upper, unquote(value_var)}})
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {:not, {:upper, unquote(value_var)}}
+            )
           end
       },
       %ClauseSpec{
@@ -115,18 +145,32 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         key: key_var,
         head: quote(do: {:lower, unquote(value_var)}),
         body:
-          AST.dynamic_ast(binding_body_asts, quote do
-            fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n", unquote(field_ast), ^unquote(value_var))
-          end)
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote do
+              fragment(
+                "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n",
+                unquote(field_ast),
+                ^unquote(value_var)
+              )
+            end
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:upper, unquote(value_var)}),
         body:
-          AST.dynamic_ast(binding_body_asts, quote do
-            fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n", unquote(field_ast), ^unquote(value_var))
-          end)
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote do
+              fragment(
+                "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n",
+                unquote(field_ast),
+                ^unquote(value_var)
+              )
+            end
+          )
       }
     ]
   end

@@ -6,8 +6,8 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
+  require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
   alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
-
 
   @doc false
   @impl true
@@ -174,14 +174,22 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
         key: key_var,
         head: quote(do: {:not, {:all, {:in, unquote(values_var)}}}),
         guard: list_guard,
-        body: AST.dynamic_ast(binding_body_asts, quote(do: not fragment("? @> ?", unquote(field_ast), ^unquote(values_var))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: not fragment("? @> ?", unquote(field_ast), ^unquote(values_var)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:in, unquote(values_var)}}),
         guard: list_guard,
-        body: AST.dynamic_ast(binding_body_asts, quote(do: not fragment("? && ?", unquote(field_ast), ^unquote(values_var))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: not fragment("? && ?", unquote(field_ast), ^unquote(values_var)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
@@ -193,25 +201,41 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:>, unquote(value_var)}}),
-        body: AST.dynamic_ast(binding_body_asts, quote(do: not fragment("? < ANY(?)", ^unquote(value_var), unquote(field_ast))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: not fragment("? < ANY(?)", ^unquote(value_var), unquote(field_ast)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:>=, unquote(value_var)}}),
-        body: AST.dynamic_ast(binding_body_asts, quote(do: not fragment("? <= ANY(?)", ^unquote(value_var), unquote(field_ast))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: not fragment("? <= ANY(?)", ^unquote(value_var), unquote(field_ast)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:<, unquote(value_var)}}),
-        body: AST.dynamic_ast(binding_body_asts, quote(do: not fragment("? > ANY(?)", ^unquote(value_var), unquote(field_ast))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: not fragment("? > ANY(?)", ^unquote(value_var), unquote(field_ast)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:not, {:<=, unquote(value_var)}}),
-        body: AST.dynamic_ast(binding_body_asts, quote(do: not fragment("? >= ANY(?)", ^unquote(value_var), unquote(field_ast))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: not fragment("? >= ANY(?)", ^unquote(value_var), unquote(field_ast)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
@@ -241,38 +265,62 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
         key: key_var,
         head: quote(do: {:in, unquote(values_var)}),
         guard: list_guard,
-        body: AST.dynamic_ast(binding_body_asts, quote(do: fragment("? && ?", unquote(field_ast), ^unquote(values_var))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: fragment("? && ?", unquote(field_ast), ^unquote(values_var)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:all, {:in, unquote(values_var)}}),
         guard: list_guard,
-        body: AST.dynamic_ast(binding_body_asts, quote(do: fragment("? @> ?", unquote(field_ast), ^unquote(values_var))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: fragment("? @> ?", unquote(field_ast), ^unquote(values_var)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:>, unquote(value_var)}),
-        body: AST.dynamic_ast(binding_body_asts, quote(do: fragment("? < ANY(?)", ^unquote(value_var), unquote(field_ast))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: fragment("? < ANY(?)", ^unquote(value_var), unquote(field_ast)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:>=, unquote(value_var)}),
-        body: AST.dynamic_ast(binding_body_asts, quote(do: fragment("? <= ANY(?)", ^unquote(value_var), unquote(field_ast))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: fragment("? <= ANY(?)", ^unquote(value_var), unquote(field_ast)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:<, unquote(value_var)}),
-        body: AST.dynamic_ast(binding_body_asts, quote(do: fragment("? > ANY(?)", ^unquote(value_var), unquote(field_ast))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: fragment("? > ANY(?)", ^unquote(value_var), unquote(field_ast)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
         head: quote(do: {:<=, unquote(value_var)}),
-        body: AST.dynamic_ast(binding_body_asts, quote(do: fragment("? >= ANY(?)", ^unquote(value_var), unquote(field_ast))))
+        body:
+          AST.dynamic_ast(
+            binding_body_asts,
+            quote(do: fragment("? >= ANY(?)", ^unquote(value_var), unquote(field_ast)))
+          )
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
