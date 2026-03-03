@@ -121,46 +121,50 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  defp append_predicates(source, dyn_a, binding_selector, {key, value}, opts)
-       when key in @boolean_operators do
-    merge_boolean_predicates(source, dyn_a, binding_selector, key, value, opts)
-  end
-
-  defp append_predicates(source, dyn_a, binding_selector, params, opts)
-       when is_map(params) and not is_struct(params) do
-    append_predicates(source, dyn_a, binding_selector, Map.to_list(params), opts)
-  end
-
-  defp append_predicates(source, dyn_a, binding_selector, list, opts) when is_list(list) do
-    Enum.reduce(list, dyn_a, fn entry, dyn_acc ->
-      append_predicates(source, dyn_acc, binding_selector, entry, opts)
-    end)
-  end
-
   defp append_predicates(source, dyn_a, binding_selector, {key, value}, opts) do
-    adapter = dynamic_adapter!(opts)
-    value = resolve_subqueries(source, key, value, opts)
+    if key in @boolean_operators do
+      merge_boolean_predicates(source, dyn_a, binding_selector, key, value, opts)
+    else
+      adapter = adapter_for_repo!(opts)
 
-    cond do
-      key in adapter.operators() ->
-        build_and_merge(adapter, source, binding_selector, key, value, dyn_a)
+      value = prewalk_subqueries(source, key, value, opts)
 
-      source_has_schema?(source) ->
-        schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
+      cond do
+        key in adapter.operators() ->
+          build_and_merge(adapter, source, binding_selector, key, value, dyn_a)
 
-        if is_list(schema_fields) and key not in schema_fields do
-          Logger.warning(
-            @logger_prefix,
-            "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
-          )
+        source_has_schema?(source) ->
+          schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
 
-          dyn_a
-        else
+          if key not in schema_fields do
+            Logger.warning(
+              @logger_prefix,
+              "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
+            )
+
+            dyn_a
+          else
+            build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, opts)
+          end
+
+        true ->
           build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, opts)
-        end
+      end
+    end
+  end
+
+  defp append_predicates(source, dyn_a, binding_selector, term, opts) do
+    cond do
+      is_map(term) and not is_struct(term) ->
+        append_predicates(source, dyn_a, binding_selector, Map.to_list(term), opts)
+
+      is_list(term) ->
+        Enum.reduce(term, dyn_a, fn entry, dyn_acc ->
+          append_predicates(source, dyn_acc, binding_selector, entry, opts)
+        end)
 
       true ->
-        build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, opts)
+        raise "Expected a map or list, got: #{inspect(term)}"
     end
   end
 
@@ -278,25 +282,24 @@ defmodule EctoShorts.Dynamics do
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
   defp source_has_schema?(_), do: false
 
-  defp resolve_subqueries(source, field_name, map, opts)
-       when is_map(map) and not is_struct(map) do
+  defp prewalk_subqueries(source, field_name, map, opts) when is_map(map) and not is_struct(map) do
     if Map.has_key?(map, :from) do
       build_subquery(source, field_name, Map.to_list(map), opts)
     else
       Map.new(map, fn {k, v} ->
-        {k, resolve_subqueries(source, field_name, v, opts)}
+        {k, prewalk_subqueries(source, field_name, v, opts)}
       end)
     end
   end
 
-  defp resolve_subqueries(source, field_name, list, opts) when is_list(list) do
+  defp prewalk_subqueries(source, field_name, list, opts) when is_list(list) do
     cond do
       Keyword.keyword?(list) and Keyword.has_key?(list, :from) ->
         build_subquery(source, field_name, list, opts)
 
       Keyword.keyword?(list) ->
         Enum.map(list, fn {k, v} ->
-          {k, resolve_subqueries(source, field_name, v, opts)}
+          {k, prewalk_subqueries(source, field_name, v, opts)}
         end)
 
       true ->
@@ -304,11 +307,11 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  defp resolve_subqueries(source, field_name, {k, v}, opts) do
-    {k, resolve_subqueries(source, field_name, v, opts)}
+  defp prewalk_subqueries(source, field_name, {k, v}, opts) do
+    {k, prewalk_subqueries(source, field_name, v, opts)}
   end
 
-  defp resolve_subqueries(_source, _field_name, value, _opts), do: value
+  defp prewalk_subqueries(_source, _field_name, value, _opts), do: value
 
   defp build_subquery(source, field_name, params, opts) do
     {schema_source, rest_params} = Keyword.pop(params, :from, source)
@@ -321,7 +324,7 @@ defmodule EctoShorts.Dynamics do
     CommonFilters.convert_params_to_filter(schema_source, final_params, opts)
   end
 
-  defp dynamic_adapter!(opts) do
+  defp adapter_for_repo!(opts) do
     adapter = opts[:dynamic_adapter] || Config.dynamic_adapter()
 
     if adapter !== nil do
