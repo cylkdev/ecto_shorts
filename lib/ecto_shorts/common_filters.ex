@@ -707,14 +707,14 @@ defmodule EctoShorts.CommonFilters do
 
       EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{from: "posts", id: 1})
 
-  **3. Using `%EctoShorts.SchemalessQuery{}`**
+  **3. Using `%EctoShorts.Source{}`**
 
-  Pass a `%EctoShorts.SchemalessQuery{}` struct as the first argument.
+  Pass a `%EctoShorts.Source{}` struct as the first argument.
   The struct maps client-facing string names to internal source terms.
   The params must contain the struct's `:source_key` (default `:table`)
   as a top-level key that references a key in the `tables` map:
 
-      schemaless_query = %EctoShorts.SchemalessQuery{
+      schemaless_query = %EctoShorts.Source{
           tables: %{"posts" => EctoShorts.Schema.Post}
       }
 
@@ -726,7 +726,7 @@ defmodule EctoShorts.CommonFilters do
 
   To use a different key, set `:source_key`:
 
-      sq = %EctoShorts.SchemalessQuery{
+      sq = %EctoShorts.Source{
           tables: %{"posts" => EctoShorts.Schema.Post},
           source_key: :source
       }
@@ -749,7 +749,7 @@ defmodule EctoShorts.CommonFilters do
   If the configured source key is missing from params, an
   `ArgumentError` is raised.
 
-  See `EctoShorts.SchemalessQuery` for more details.
+  See `EctoShorts.Source` for more details.
 
   ### `:select` and schemaless queries
 
@@ -872,7 +872,7 @@ defmodule EctoShorts.CommonFilters do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
-  alias EctoShorts.SchemalessQuery
+  alias EctoShorts.Source
 
   alias EctoShorts.CommonFilters.{
     BindingParams,
@@ -966,8 +966,8 @@ defmodule EctoShorts.CommonFilters do
   ## Arguments
 
     * `source` - a schema module, a `{source, schema}` tuple, an
-      existing `Ecto.Query`, or a `%EctoShorts.SchemalessQuery{}`.
-      When the source is a `SchemalessQuery`, `params` must contain
+      existing `Ecto.Query`, or a `%EctoShorts.Source{}`.
+      When the source is a `Source`, `params` must contain
       a `:from` key with a `:table` entry that names a key in the
       struct's `tables` map. Passing `nil` raises `ArgumentError`.
     * `params` - a map or keyword list of filters and query operations.
@@ -1013,10 +1013,10 @@ defmodule EctoShorts.CommonFilters do
         order_by: [desc: p0.inserted_at], limit: ^5>
 
   See also `EctoShorts.Actions.all/3`, `EctoShorts.Dynamics`,
-  `EctoShorts.SchemalessQuery`, and `EctoShorts.CommonFilters.Having`.
+  `EctoShorts.Source`, and `EctoShorts.CommonFilters.Having`.
   """
   @spec convert_params_to_filter(
-          source :: SchemalessQuery.t() | module() | {binary(), module()} | Ecto.Query.t(),
+          source :: Source.t() | module() | {binary(), module()} | Ecto.Query.t(),
           params :: map() | keyword(),
           opts :: keyword()
         ) :: Ecto.Query.t()
@@ -1026,7 +1026,7 @@ defmodule EctoShorts.CommonFilters do
     convert_params_to_filter(source, Map.to_list(params), opts)
   end
 
-  def convert_params_to_filter(%SchemalessQuery{tables: tables, source_key: source_key}, entries, opts)
+  def convert_params_to_filter(%Source{tables: tables, source_key: source_key}, entries, opts)
       when is_list(entries) do
     entries = if Keyword.keyword?(entries), do: entries, else: raise_missing_source_key!(source_key)
 
@@ -1068,7 +1068,7 @@ defmodule EctoShorts.CommonFilters do
   defp raise_missing_source_key!(source_key) do
     raise ArgumentError,
           "Expected params to contain a #{inspect(source_key)} entry " <>
-            "when the source is a %EctoShorts.SchemalessQuery{}"
+            "when the source is a %EctoShorts.Source{}"
   end
 
   defp resolve_table!(tables, table_name) do

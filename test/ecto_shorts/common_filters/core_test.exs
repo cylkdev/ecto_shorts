@@ -351,11 +351,11 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
   end
 
-  describe "convert_params_to_filter/3 with SchemalessQuery" do
-    alias EctoShorts.SchemalessQuery
+  describe "convert_params_to_filter/3 with Source" do
+    alias EctoShorts.Source
 
     test "builds a query when the table resolves to a schema module" do
-      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+      sq = %Source{tables: %{"posts" => Post}}
       expected = from p in Post, where: p.id == ^1
 
       q2 = CommonFilters.convert_params_to_filter(sq, %{table: "posts", id: 1}, [])
@@ -364,7 +364,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
 
     test "builds a query when the table resolves to a table string" do
-      sq = %SchemalessQuery{tables: %{"posts" => "posts"}}
+      sq = %Source{tables: %{"posts" => "posts"}}
       expected = from p in "posts", select: ^[:id]
 
       q2 = CommonFilters.convert_params_to_filter(sq, %{table: "posts", select: [:id]}, [])
@@ -373,7 +373,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
 
     test "merges source_key with top-level params" do
-      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+      sq = %Source{tables: %{"posts" => Post}}
 
       expected =
         from(p in Post,
@@ -392,7 +392,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
 
     test "adds default select when resolved source is schemaless and select is not given" do
-      sq = %SchemalessQuery{tables: %{"posts" => "posts"}}
+      sq = %Source{tables: %{"posts" => "posts"}}
 
       q2 = CommonFilters.convert_params_to_filter(sq, %{table: "posts", id: 1}, [])
 
@@ -400,7 +400,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
 
     test "accepts source_key as a keyword list" do
-      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+      sq = %Source{tables: %{"posts" => Post}}
       expected = from p in Post, where: p.id == ^1
 
       q2 =
@@ -414,7 +414,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
 
     test "raises when source_key is missing from params" do
-      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+      sq = %Source{tables: %{"posts" => Post}}
 
       assert_raise ArgumentError, ~r/:table/, fn ->
         CommonFilters.convert_params_to_filter(sq, %{id: 1}, [])
@@ -422,7 +422,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
 
     test "raises when the table name is not found in the tables map" do
-      sq = %SchemalessQuery{tables: %{"posts" => Post}}
+      sq = %Source{tables: %{"posts" => Post}}
 
       assert_raise ArgumentError, ~r/table not found/, fn ->
         CommonFilters.convert_params_to_filter(sq, %{table: "missing"}, [])
@@ -430,7 +430,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
 
     test "resolves the table using a custom source_key" do
-      sq = %SchemalessQuery{tables: %{"posts" => Post}, source_key: :source}
+      sq = %Source{tables: %{"posts" => Post}, source_key: :source}
       expected = from p in Post, where: p.id == ^1
 
       q2 = CommonFilters.convert_params_to_filter(sq, %{source: "posts", id: 1}, [])
@@ -439,7 +439,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
     end
 
     test "raises when the custom source_key is missing from params" do
-      sq = %SchemalessQuery{tables: %{"posts" => Post}, source_key: :source}
+      sq = %Source{tables: %{"posts" => Post}, source_key: :source}
 
       assert_raise ArgumentError, ~r/:source/, fn ->
         CommonFilters.convert_params_to_filter(sq, %{table: "posts"}, [])
