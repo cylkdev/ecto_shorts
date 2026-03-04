@@ -188,5 +188,4 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
       module.apply_dynamic_expr({:as, nil}, key, {:like, "foo"})
     )
   end
-
 end

@@ -707,50 +707,6 @@ defmodule EctoShorts.CommonFilters do
 
       EctoShorts.CommonFilters.convert_params_to_filter(EctoShorts.Schema.Post, %{from: "posts", id: 1})
 
-  **3. Using `%EctoShorts.Source{}`**
-
-  Pass a `%EctoShorts.Source{}` struct as the first argument.
-  The struct maps client-facing string names to internal source terms.
-  The params must contain the struct's `:source_key` (default `:table`)
-  as a top-level key that references a key in the `tables` map:
-
-      schemaless_query = %EctoShorts.Source{
-          tables: %{"posts" => EctoShorts.Schema.Post}
-      }
-
-      EctoShorts.CommonFilters.convert_params_to_filter(
-          schemaless_query,
-          %{table: "posts", id: 1},
-          []
-      )
-
-  To use a different key, set `:source_key`:
-
-      sq = %EctoShorts.Source{
-          tables: %{"posts" => EctoShorts.Schema.Post},
-          source_key: :source
-      }
-
-      EctoShorts.CommonFilters.convert_params_to_filter(
-          sq,
-          %{source: "posts", id: 1},
-          []
-      )
-
-  This approach keeps the internal source details hidden from the client.
-  The client only knows the table name, and the struct controls which
-  sources are available. The resolved source is used as a passthrough -
-  if it is a schema module, full schema-aware filtering applies; if it is
-  a bare table string, schemaless filtering applies.
-
-  If the resolved name is not found in the `tables` map, an
-  `ArgumentError` is raised with the message "table not found".
-
-  If the configured source key is missing from params, an
-  `ArgumentError` is raised.
-
-  See `EctoShorts.Source` for more details.
-
   ### `:select` and schemaless queries
 
   Ecto requires an explicit `:select` clause to execute a query on a bare
@@ -872,7 +828,6 @@ defmodule EctoShorts.CommonFilters do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.CommonQuery
-  alias EctoShorts.Source
 
   alias EctoShorts.CommonFilters.{
     BindingParams,
@@ -965,11 +920,6 @@ defmodule EctoShorts.CommonFilters do
 
   ## Arguments
 
-    * `source` - a schema module, a `{source, schema}` tuple, an
-      existing `Ecto.Query`, or a `%EctoShorts.Source{}`.
-      When the source is a `Source`, `params` must contain
-      a `:from` key with a `:table` entry that names a key in the
-      struct's `tables` map. Passing `nil` raises `ArgumentError`.
     * `params` - a map or keyword list of filters and query operations.
     * `opts` - optional keyword list forwarded to all sub-query builders.
 
@@ -1012,11 +962,10 @@ defmodule EctoShorts.CommonFilters do
       #Ecto.Query<from p0 in EctoShorts.Schema.Post,
         order_by: [desc: p0.inserted_at], limit: ^5>
 
-  See also `EctoShorts.Actions.all/3`, `EctoShorts.Dynamics`,
-  `EctoShorts.Source`, and `EctoShorts.CommonFilters.Having`.
+  See also `EctoShorts.Actions.all/3`, `EctoShorts.Dynamics`, and `EctoShorts.CommonFilters.Having`.
   """
   @spec convert_params_to_filter(
-          source :: Source.t() | module() | {binary(), module()} | Ecto.Query.t(),
+          source :: module() | {binary(), module()} | Ecto.Query.t(),
           params :: map() | keyword(),
           opts :: keyword()
         ) :: Ecto.Query.t()
@@ -1026,54 +975,22 @@ defmodule EctoShorts.CommonFilters do
     convert_params_to_filter(source, Map.to_list(params), opts)
   end
 
-  def convert_params_to_filter(%Source{tables: tables, source_key: source_key}, entries, opts) do
-    {table_name, rest_params} = Keyword.pop(entries, source_key)
-
-    if is_nil(table_name) do
-      raise ArgumentError,
-          "Expected params to contain a #{inspect(source_key)} entry " <>
-            "when the source is a %EctoShorts.Source{}"
-    end
-
-    source = resolve_table!(tables, table_name)
-    rebuilt_params = Keyword.put(rest_params, :from, source)
-
-    convert_params_to_filter(source, rebuilt_params, opts)
-  end
-
   def convert_params_to_filter(source, params, opts) do
     if Keyword.keyword?(params) do
-      {schema_source, base_params} = Keyword.pop(params, :from, source)
-
-      query = CommonSchema.to_query(schema_source)
-      normalized_source = CommonSchema.normalize_source(schema_source)
+      schema_source = CommonSchema.normalize_source(source)
 
       base_params =
-        if not normalized_source_has_schema?(normalized_source) and
-             not Keyword.has_key?(base_params, :select) do
-          Keyword.put(base_params, :select, true)
+        if not source_has_schema?(schema_source) and not Keyword.has_key?(params, :select) do
+          Keyword.put(params, :select, true)
         else
-          base_params
+          params
         end
 
-      build_filters(normalized_source, query, base_params, opts)
+      build_filters(schema_source, CommonSchema.to_query(source), base_params, opts)
     else
-      query = CommonSchema.to_query(source)
-
-      Enum.reduce(params, query, fn entry, query_acc ->
+      Enum.reduce(params, CommonSchema.to_query(source), fn entry, query_acc ->
         build_filters(source, query_acc, entry, opts)
       end)
-    end
-  end
-
-
-  defp resolve_table!(tables, table_name) do
-    case Map.fetch(tables, table_name) do
-      {:ok, source} ->
-        source
-
-      :error ->
-        raise ArgumentError, "table not found: #{inspect(table_name)}"
     end
   end
 
@@ -1095,16 +1012,15 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  @doc false
-  def create_schema_filter(
-        schema_source,
-        query,
-        binding_selector,
-        _filter_op,
-        {key, value},
-        opts
-      )
-      when key in @where_filters do
+  defp create_schema_filter(
+         schema_source,
+         query,
+         binding_selector,
+         _filter_op,
+         {key, value},
+         opts
+       )
+       when key in @where_filters do
     reduce_schema_filter_params(
       schema_source,
       query,
@@ -1115,14 +1031,14 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  def create_schema_filter(
-        schema_source,
-        query,
-        _binding_selector,
-        filter_op,
-        {@binding_selector_key, bind_params},
-        opts
-      ) do
+  defp create_schema_filter(
+         schema_source,
+         query,
+         _binding_selector,
+         filter_op,
+         {@binding_selector_key, bind_params},
+         opts
+       ) do
     bind_params
     |> BindingParams.normalize_bind_params(query)
     |> Enum.reduce(query, fn
@@ -1201,17 +1117,15 @@ defmodule EctoShorts.CommonFilters do
     end)
   end
 
-  def create_schema_filter(
-        schema_source,
-        query,
-        binding_selector,
-        filter_op,
-        {key, value},
-        opts
-      ) do
-    query_filters = Keyword.get(opts, :query_filters, @query_filters)
-
-    if key in query_filters do
+  defp create_schema_filter(
+         schema_source,
+         query,
+         binding_selector,
+         filter_op,
+         {key, value},
+         opts
+       ) do
+    if key in @query_filters do
       build_query(schema_source, query, binding_selector, key, value, opts)
     else
       reduce_schema_filters(
@@ -1226,7 +1140,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts) do
+  defp create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts) do
     cond do
       is_map(params) and not is_struct(params) ->
         create_schema_filter(
@@ -1238,21 +1152,20 @@ defmodule EctoShorts.CommonFilters do
           opts
         )
 
+      Keyword.keyword?(params) ->
+        Enum.reduce(params, query, fn {key, value}, query_acc ->
+          create_schema_filter(
+            schema_source,
+            query_acc,
+            binding_selector,
+            filter_op,
+            {key, value},
+            opts
+          )
+        end)
+
       is_list(params) ->
-        if Keyword.keyword?(params) do
-          Enum.reduce(params, query, fn {key, value}, query_acc ->
-            create_schema_filter(
-              schema_source,
-              query_acc,
-              binding_selector,
-              filter_op,
-              {key, value},
-              opts
-            )
-          end)
-        else
-          build_query(schema_source, query, binding_selector, filter_op, params, opts)
-        end
+        build_query(schema_source, query, binding_selector, filter_op, params, opts)
 
       true ->
         build_query(schema_source, query, binding_selector, filter_op, params, opts)
@@ -1474,8 +1387,8 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp normalized_source_has_schema?({_, nil}), do: false
-  defp normalized_source_has_schema?({_, mod}) when is_atom(mod), do: true
+  defp source_has_schema?({_, nil}), do: false
+  defp source_has_schema?({_, mod}) when is_atom(mod), do: true
 
   defp to_binding_source(schema_source, _query, {:as, nil}) do
     schema_source
