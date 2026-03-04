@@ -23,6 +23,10 @@ defmodule EctoShorts.Dynamics do
   Helper operators such as `:datetime_add` and `:date_add` can be embedded
   inside field values to produce relative date expressions at the database level.
 
+  Query-builder payload resolution (for example `%{from: ...}`) is handled
+  upstream by `EctoShorts.CommonFilters` helpers before values are passed
+  to this module.
+
   ### Adapter delegation
 
   `EctoShorts.Dynamics` does not build Ecto expressions itself. Instead it
@@ -60,7 +64,6 @@ defmodule EctoShorts.Dynamics do
   """
 
   alias Ecto.Query
-  alias EctoShorts.CommonFilters
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
   alias EctoShorts.Dynamics.Adapters.Postgres
@@ -126,8 +129,6 @@ defmodule EctoShorts.Dynamics do
       merge_boolean_predicates(source, dyn_a, binding_selector, key, value, opts)
     else
       adapter = adapter_for_repo!(opts)
-
-      value = prewalk_subqueries(source, key, value, opts)
 
       cond do
         key in adapter.operators() ->
@@ -281,48 +282,6 @@ defmodule EctoShorts.Dynamics do
 
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
   defp source_has_schema?(_), do: false
-
-  defp prewalk_subqueries(source, field_name, map, opts) when is_map(map) and not is_struct(map) do
-    if Map.has_key?(map, :from) do
-      build_subquery(source, field_name, Map.to_list(map), opts)
-    else
-      Map.new(map, fn {k, v} ->
-        {k, prewalk_subqueries(source, field_name, v, opts)}
-      end)
-    end
-  end
-
-  defp prewalk_subqueries(source, field_name, list, opts) when is_list(list) do
-    cond do
-      Keyword.keyword?(list) and Keyword.has_key?(list, :from) ->
-        build_subquery(source, field_name, list, opts)
-
-      Keyword.keyword?(list) ->
-        Enum.map(list, fn {k, v} ->
-          {k, prewalk_subqueries(source, field_name, v, opts)}
-        end)
-
-      true ->
-        list
-    end
-  end
-
-  defp prewalk_subqueries(source, field_name, {k, v}, opts) do
-    {k, prewalk_subqueries(source, field_name, v, opts)}
-  end
-
-  defp prewalk_subqueries(_source, _field_name, value, _opts), do: value
-
-  defp build_subquery(source, field_name, params, opts) do
-    {schema_source, rest_params} = Keyword.pop(params, :from, source)
-
-    default_select = if field_name === :exists, do: true, else: field_name
-    select_value = Keyword.get(rest_params, :select, default_select)
-
-    final_params = Keyword.put(rest_params, :select, select_value)
-
-    CommonFilters.convert_params_to_filter(schema_source, final_params, opts)
-  end
 
   defp adapter_for_repo!(opts) do
     adapter = opts[:dynamic_adapter] || Config.dynamic_adapter()

@@ -272,25 +272,10 @@ defmodule EctoShorts.CommonFilters.Join do
             hints = join_options[:hints]
 
             subquery_source =
-              case params do
-                %Ecto.Query{} = query ->
-                  query
-
-                %Ecto.SubQuery{} = subquery ->
-                  subquery
-
-                subquery_params ->
-                  subquery_params =
-                    if is_map(subquery_params) and not is_struct(subquery_params) do
-                      Map.to_list(subquery_params)
-                    else
-                      subquery_params
-                    end
-
-                  {from_source, filter_params} = Keyword.pop(subquery_params, :from)
-                  source = from_source || schema_source
-
-                  CommonFilters.convert_params_to_filter(source, filter_params, opts)
+              if is_struct(params, Ecto.Query) or is_struct(params, Ecto.SubQuery) do
+                params
+              else
+                CommonFilters.convert_params_to_filter(schema_source, params, opts)
               end
 
             build_join(

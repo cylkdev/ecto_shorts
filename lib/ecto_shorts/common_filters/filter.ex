@@ -61,7 +61,12 @@ defmodule EctoShorts.CommonFilters.Filter do
 
   def build(schema_source, filter, query, binding_selector, {key, params}, opts)
       when key in @custom_filters do
-    resolved_params = resolve_subquery_value(schema_source, key, params, opts)
+    resolved_params =
+      if key === :exists do
+        resolve_exists_payload(schema_source, params, opts)
+      else
+        params
+      end
 
     dyn =
       schema_source
@@ -124,51 +129,70 @@ defmodule EctoShorts.CommonFilters.Filter do
     query
   end
 
-  defp resolve_subquery_value(_schema_source, _key, value, _opts)
-       when is_struct(value, Ecto.Query) or is_struct(value, Ecto.SubQuery) do
-    value
-  end
-
-  defp resolve_subquery_value(schema_source, key, value, opts)
-       when is_map(value) and not is_struct(value) do
-    resolve_subquery_value(schema_source, key, Map.to_list(value), opts)
-  end
-
-  defp resolve_subquery_value(schema_source, key, value, opts) when is_list(value) do
-    if Keyword.keyword?(value) do
-      {not_value, _rest} = Keyword.pop(value, :not)
-
-      if not_value do
-        {:not, resolve_subquery_value(schema_source, key, not_value, opts)}
-      else
-        build_subquery_from_params(schema_source, key, value, opts)
-      end
-    else
-      value
-    end
-  end
-
-  defp resolve_subquery_value(_schema_source, _key, value, _opts), do: value
-
-  defp build_subquery_from_params(schema_source, key, params, opts) do
-    {from_source, filter_params} = Keyword.pop(params, :from)
-    source = from_source || schema_source
-
-    default_select = if key === :exists, do: true, else: key
-    select = Keyword.get(filter_params, :select, default_select)
-    final_params = Keyword.put(filter_params, :select, select)
-
-    CommonFilters.convert_params_to_filter(source, final_params, opts)
-  end
-
   defp schemaless_source?(source), do: not source_has_schema?(source)
 
   defp source_has_schema?({_, schema}), do: is_atom(schema) and schema !== nil
   defp source_has_schema?(_), do: false
 
   defp build_field(schema_source, filter, query, binding_selector, key, value, opts) do
-    dyn = Dynamics.convert_to_dynamic(schema_source, binding_selector, {key, value}, opts)
+    resolved_value = resolve_quantifier_payload(schema_source, key, value, opts)
+    dyn = Dynamics.convert_to_dynamic(schema_source, binding_selector, {key, resolved_value}, opts)
     apply_where_expr(filter, query, dyn)
+  end
+
+  @quantifier_operators [:all, :any]
+
+  defp resolve_exists_payload(_source, %Ecto.Query{} = query, _opts), do: query
+  defp resolve_exists_payload(_source, %Ecto.SubQuery{} = sq, _opts), do: sq
+
+  defp resolve_exists_payload(source, {:not, inner}, opts) do
+    {:not, resolve_exists_payload(source, inner, opts)}
+  end
+
+  defp resolve_exists_payload(source, params, opts)
+       when is_map(params) and not is_struct(params) do
+    resolve_exists_payload(source, Map.to_list(params), opts)
+  end
+
+  defp resolve_exists_payload(source, [not: inner], opts) do
+    {:not, resolve_exists_payload(source, inner, opts)}
+  end
+
+  defp resolve_exists_payload(source, params, opts) when is_list(params) do
+    CommonFilters.convert_params_to_filter(source, put_default_select(params, true), opts)
+  end
+
+  defp resolve_exists_payload(_source, value, _opts), do: value
+
+  defp resolve_quantifier_payload(source, field_key, {quantifier, inner}, opts)
+       when quantifier in @quantifier_operators do
+    {quantifier, resolve_quantifier_inner(source, field_key, inner, opts)}
+  end
+
+  defp resolve_quantifier_payload(_source, _field_key, value, _opts), do: value
+
+  defp resolve_quantifier_inner(_source, _field_key, %Ecto.Query{} = q, _opts), do: q
+  defp resolve_quantifier_inner(_source, _field_key, %Ecto.SubQuery{} = sq, _opts), do: sq
+
+  defp resolve_quantifier_inner(_source, _field_key, {_op, _value} = expr, _opts), do: expr
+
+  defp resolve_quantifier_inner(source, field_key, params, opts)
+       when is_map(params) and not is_struct(params) do
+    resolve_quantifier_inner(source, field_key, Map.to_list(params), opts)
+  end
+
+  defp resolve_quantifier_inner(source, field_key, [{_key, _val}] = params, opts) do
+    resolve_quantifier_inner(source, field_key, List.first(params), opts)
+  end
+
+  defp resolve_quantifier_inner(source, field_key, params, opts) when is_list(params) do
+    CommonFilters.convert_params_to_filter(source, put_default_select(params, field_key), opts)
+  end
+
+  defp resolve_quantifier_inner(_source, _field_key, value, _opts), do: value
+
+  defp put_default_select(params, default) when is_list(params) do
+    if Keyword.has_key?(params, :select), do: params, else: Keyword.put(params, :select, default)
   end
 
   defp apply_expr(_schema_source, :exclude, query, _binding_selector, entries, _opts) do

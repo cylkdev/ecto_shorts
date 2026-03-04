@@ -68,62 +68,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
     )
   end
 
-  test "alias_op_specs/2 composes with base_op_specs/4" do
-    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
-
-    specs =
-      ScalarExprSpecs.alias_op_specs(
-        __MODULE__,
-        binding_head_ast,
-        target_binding_var,
-        binding_body_asts
-      ) ++
-        ScalarExprSpecs.base_op_specs(
-          __MODULE__,
-          binding_head_ast,
-          target_binding_var,
-          binding_body_asts
-        )
-
-    module = compile_specs_module!(specs)
-
-    key = :age
-    expected = dynamic([q], field(q, ^key) > ^1)
-
-    assert_dynamic(
-      expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:gt, 1})
-    )
-  end
-
-  test "alias_op_specs/4 composes with base_op_specs/4 for :ne" do
-    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
-
-    specs =
-      ScalarExprSpecs.alias_op_specs(
-        __MODULE__,
-        binding_head_ast,
-        target_binding_var,
-        binding_body_asts
-      ) ++
-        ScalarExprSpecs.base_op_specs(
-          __MODULE__,
-          binding_head_ast,
-          target_binding_var,
-          binding_body_asts
-        )
-
-    module = compile_specs_module!(specs)
-
-    key = :age
-    expected = dynamic([q], field(q, ^key) != ^1)
-
-    assert_dynamic(
-      expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:ne, 1})
-    )
-  end
-
   test "list_semantic_specs/2 coerces == with list to :in" do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
@@ -303,7 +247,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:>, {:any, subquery_expr}})
+      module.apply_dynamic_expr({:as, nil}, key, {:any, {:>, subquery_expr}})
     )
   end
 
@@ -333,7 +277,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:>, {:all, subquery_expr}})
+      module.apply_dynamic_expr({:as, nil}, key, {:all, {:>, subquery_expr}})
     )
   end
 

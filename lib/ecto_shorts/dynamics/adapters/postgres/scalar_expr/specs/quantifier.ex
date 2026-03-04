@@ -6,11 +6,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
-  require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
-  alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
-
   @comparison_operators [:==, :!=, :>, :>=, :<, :<=]
-  @comparison_alias_operators [:eq, :ne, :gt, :gte, :lt, :lte]
 
   @doc false
   @impl true
@@ -32,57 +28,20 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
         unquote(op_var) in unquote(@comparison_operators)
       end
 
-    alias_guard =
-      quote do
-        unquote(op_var) in unquote(@comparison_alias_operators)
-      end
-
     [
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
-        head: quote(do: {unquote(op_var), {:all, unquote(value_var)}}),
+        head: quote(do: {:all, {unquote(op_var), unquote(value_var)}}),
         guard: op_guard,
         body: all_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var)
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
-        head: quote(do: {:not, {unquote(op_var), {:all, unquote(value_var)}}}),
+        head: quote(do: {:not, {:all, {unquote(op_var), unquote(value_var)}}}),
         guard: op_guard,
         body: not_all_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var)
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {unquote(op_var), {:all, unquote(value_var)}}),
-        guard: alias_guard,
-        body:
-          quote do
-            mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
-
-            apply_dynamic_expr(
-              unquote(binding_head_ast),
-              unquote(key_var),
-              {mapped_op, {:all, unquote(value_var)}}
-            )
-          end
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:not, {unquote(op_var), {:all, unquote(value_var)}}}),
-        guard: alias_guard,
-        body:
-          quote do
-            mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
-
-            apply_dynamic_expr(
-              unquote(binding_head_ast),
-              unquote(key_var),
-              {:not, {mapped_op, {:all, unquote(value_var)}}}
-            )
-          end
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
@@ -93,7 +52,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
             apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
-              {:==, {:all, unquote(value_var)}}
+              {:all, {:==, unquote(value_var)}}
             )
           end
       },
@@ -106,7 +65,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
             apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
-              {:!=, {:all, unquote(value_var)}}
+              {:all, {:!=, unquote(value_var)}}
             )
           end
       }
@@ -126,57 +85,20 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
         unquote(op_var) in unquote(@comparison_operators)
       end
 
-    alias_guard =
-      quote do
-        unquote(op_var) in unquote(@comparison_alias_operators)
-      end
-
     [
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
-        head: quote(do: {unquote(op_var), {:any, unquote(value_var)}}),
+        head: quote(do: {:any, {unquote(op_var), unquote(value_var)}}),
         guard: op_guard,
         body: any_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var)
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
         key: key_var,
-        head: quote(do: {:not, {unquote(op_var), {:any, unquote(value_var)}}}),
+        head: quote(do: {:not, {:any, {unquote(op_var), unquote(value_var)}}}),
         guard: op_guard,
         body: not_any_dynamic_case_ast(binding_body_asts, field_ast, op_var, value_var)
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {unquote(op_var), {:any, unquote(value_var)}}),
-        guard: alias_guard,
-        body:
-          quote do
-            mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
-
-            apply_dynamic_expr(
-              unquote(binding_head_ast),
-              unquote(key_var),
-              {mapped_op, {:any, unquote(value_var)}}
-            )
-          end
-      },
-      %ClauseSpec{
-        binding_head: binding_head_ast,
-        key: key_var,
-        head: quote(do: {:not, {unquote(op_var), {:any, unquote(value_var)}}}),
-        guard: alias_guard,
-        body:
-          quote do
-            mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
-
-            apply_dynamic_expr(
-              unquote(binding_head_ast),
-              unquote(key_var),
-              {:not, {mapped_op, {:any, unquote(value_var)}}}
-            )
-          end
       },
       %ClauseSpec{
         binding_head: binding_head_ast,
@@ -187,7 +109,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
             apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
-              {:==, {:any, unquote(value_var)}}
+              {:any, {:==, unquote(value_var)}}
             )
           end
       },
@@ -200,7 +122,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier do
             apply_dynamic_expr(
               unquote(binding_head_ast),
               unquote(key_var),
-              {:!=, {:any, unquote(value_var)}}
+              {:any, {:!=, unquote(value_var)}}
             )
           end
       }

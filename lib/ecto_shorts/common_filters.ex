@@ -906,7 +906,7 @@ defmodule EctoShorts.CommonFilters do
   @where :where
   @where_filters [:where, :or_where]
 
-  @subquery_operators [:exists, :all, :any]
+  @subquery_operators [:exists]
 
   @query_builder_modules %{
     distinct: Distinct,
@@ -1026,13 +1026,14 @@ defmodule EctoShorts.CommonFilters do
     convert_params_to_filter(source, Map.to_list(params), opts)
   end
 
-  def convert_params_to_filter(%Source{tables: tables, source_key: source_key}, entries, opts)
-      when is_list(entries) do
-    entries = if Keyword.keyword?(entries), do: entries, else: raise_missing_source_key!(source_key)
-
+  def convert_params_to_filter(%Source{tables: tables, source_key: source_key}, entries, opts) do
     {table_name, rest_params} = Keyword.pop(entries, source_key)
 
-    if is_nil(table_name), do: raise_missing_source_key!(source_key)
+    if is_nil(table_name) do
+      raise ArgumentError,
+          "Expected params to contain a #{inspect(source_key)} entry " <>
+            "when the source is a %EctoShorts.Source{}"
+    end
 
     source = resolve_table!(tables, table_name)
     rebuilt_params = Keyword.put(rest_params, :from, source)
@@ -1040,7 +1041,7 @@ defmodule EctoShorts.CommonFilters do
     convert_params_to_filter(source, rebuilt_params, opts)
   end
 
-  def convert_params_to_filter(source, params, opts) when is_list(params) do
+  def convert_params_to_filter(source, params, opts) do
     if Keyword.keyword?(params) do
       {schema_source, base_params} = Keyword.pop(params, :from, source)
 
@@ -1065,11 +1066,6 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp raise_missing_source_key!(source_key) do
-    raise ArgumentError,
-          "Expected params to contain a #{inspect(source_key)} entry " <>
-            "when the source is a %EctoShorts.Source{}"
-  end
 
   defp resolve_table!(tables, table_name) do
     case Map.fetch(tables, table_name) do
@@ -1230,39 +1226,37 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts)
-      when is_map(params) do
-    create_schema_filter(
-      schema_source,
-      query,
-      binding_selector,
-      filter_op,
-      Map.to_list(params),
-      opts
-    )
-  end
-
-  def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts)
-      when is_list(params) do
-    if Keyword.keyword?(params) do
-      Enum.reduce(params, query, fn {key, value}, query_acc ->
+  def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts) do
+    cond do
+      is_map(params) and not is_struct(params) ->
         create_schema_filter(
           schema_source,
-          query_acc,
+          query,
           binding_selector,
           filter_op,
-          {key, value},
+          Map.to_list(params),
           opts
         )
-      end)
-    else
-      build_query(schema_source, query, binding_selector, filter_op, params, opts)
-    end
-  end
 
-  @doc false
-  def create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts) do
-    build_query(schema_source, query, binding_selector, filter_op, params, opts)
+      is_list(params) ->
+        if Keyword.keyword?(params) do
+          Enum.reduce(params, query, fn {key, value}, query_acc ->
+            create_schema_filter(
+              schema_source,
+              query_acc,
+              binding_selector,
+              filter_op,
+              {key, value},
+              opts
+            )
+          end)
+        else
+          build_query(schema_source, query, binding_selector, filter_op, params, opts)
+        end
+
+      true ->
+        build_query(schema_source, query, binding_selector, filter_op, params, opts)
+    end
   end
 
   defp reduce_schema_filter_params(schema_source, query, binding_selector, filter_op, value, opts) do

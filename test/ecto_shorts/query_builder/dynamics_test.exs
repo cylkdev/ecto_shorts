@@ -4,7 +4,6 @@ defmodule EctoShorts.DynamicsTest do
 
   import Ecto.Query
 
-  alias EctoShorts.CommonFilters
   alias EctoShorts.Dynamics
   alias EctoShorts.Schema.Post
 
@@ -106,152 +105,34 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic supports scalar all helper expression query-builder payload" do
+  test "convert_to_dynamic passes exists payload through to adapter without subquery resolution" do
     binding = {:as, nil}
 
     actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{>: %{all: %{from: Post, id: 1}}}
-      })
-
-    subquery_expr =
-      Post
-      |> CommonFilters.convert_params_to_filter(%{id: 1, select: :id}, [])
-
-    expected = dynamic([q], field(q, ^:id) > all(subquery_expr))
-
-    assert_dynamic(expected, actual)
-  end
-
-  test "convert_to_dynamic supports negated scalar all helper expression query-builder payload" do
-    binding = {:as, nil}
-
-    actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{not: %{>: %{all: %{from: Post, id: 1}}}}
-      })
-
-    subquery_expr =
-      Post
-      |> CommonFilters.convert_params_to_filter(%{id: 1, select: :id}, [])
-
-    expected = dynamic([q], not (field(q, ^:id) > all(subquery_expr)))
-
-    assert_dynamic(expected, actual)
-  end
-
-  test "convert_to_dynamic supports scalar any helper expression query-builder payload" do
-    binding = {:as, nil}
-
-    actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{>: %{any: %{from: Post, id: 1}}}
-      })
-
-    subquery_expr =
-      Post
-      |> CommonFilters.convert_params_to_filter(%{id: 1, select: :id}, [])
-
-    expected = dynamic([q], field(q, ^:id) > any(subquery_expr))
-
-    assert_dynamic(expected, actual)
-  end
-
-  test "convert_to_dynamic supports negated scalar any helper expression query-builder payload" do
-    binding = {:as, nil}
-
-    actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{
-        id: %{not: %{>: %{any: %{from: Post, id: 1}}}}
-      })
-
-    subquery_expr =
-      Post
-      |> CommonFilters.convert_params_to_filter(%{id: 1, select: :id}, [])
-
-    expected = dynamic([q], not (field(q, ^:id) > any(subquery_expr)))
-
-    assert_dynamic(expected, actual)
-  end
-
-  test "convert_to_dynamic supports top-level exists helper expression query-builder map payload" do
-    binding = {:as, nil}
-
-    actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{
-        exists: %{from: Post, id: 1}
-      })
-
-    subquery_expr =
-      CommonFilters.convert_params_to_filter(
+      Dynamics.convert_to_dynamic(
         Post,
-        %{id: 1, select: true},
-        []
+        binding,
+        %{exists: %{from: Post, id: 1}},
+        dynamic_adapter: EctoShorts.TestPayloadProbeAdapter
       )
 
-    expected = dynamic([q], exists(subquery_expr))
-
-    assert_dynamic(expected, actual)
+    assert match?(%Ecto.Query.DynamicExpr{}, actual)
+    assert_received {:payload_probe_expr, :exists, %{from: Post, id: 1}}
   end
 
-  test "convert_to_dynamic supports top-level exists helper expression query-builder keyword payload" do
+  test "convert_to_dynamic passes all/any payload wrappers through to adapter without subquery resolution" do
     binding = {:as, nil}
 
     actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{
-        exists: [from: Post, id: 1]
-      })
-
-    subquery_expr =
-      CommonFilters.convert_params_to_filter(
+      Dynamics.convert_to_dynamic(
         Post,
-        %{id: 1, select: true},
-        []
+        binding,
+        %{id: %{all: %{>: %{from: Post, id: 1}}}},
+        dynamic_adapter: EctoShorts.TestPayloadProbeAdapter
       )
 
-    expected = dynamic([q], exists(subquery_expr))
-
-    assert_dynamic(expected, actual)
-  end
-
-  test "convert_to_dynamic supports negated top-level exists helper expression query-builder map payload" do
-    binding = {:as, nil}
-
-    actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{
-        exists: %{not: %{from: Post, id: 1}}
-      })
-
-    subquery_expr =
-      CommonFilters.convert_params_to_filter(
-        Post,
-        %{id: 1, select: true},
-        []
-      )
-
-    expected = dynamic([q], not exists(subquery_expr))
-
-    assert_dynamic(expected, actual)
-  end
-
-  test "convert_to_dynamic supports negated top-level exists helper expression query-builder keyword payload" do
-    binding = {:as, nil}
-
-    actual =
-      Dynamics.convert_to_dynamic(Post, binding, %{
-        exists: %{not: [from: Post, id: 1]}
-      })
-
-    subquery_expr =
-      CommonFilters.convert_params_to_filter(
-        Post,
-        %{id: 1, select: true},
-        []
-      )
-
-    expected = dynamic([q], not exists(subquery_expr))
-
-    assert_dynamic(expected, actual)
+    assert match?(%Ecto.Query.DynamicExpr{}, actual)
+    assert_received {:payload_probe_expr, :id, {:all, %{>: %{from: Post, id: 1}}}}
   end
 
   test "convert_to_dynamic supports datetime: add helper map payload" do

@@ -5,20 +5,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers do
   alias EctoShorts.Compiler.AST
 
   @doc false
-  def alias_to_canonical_map_ast(op_var) do
-    quote do
-      case unquote(op_var) do
-        :gt -> :>
-        :gte -> :>=
-        :lt -> :<
-        :lte -> :<=
-        :eq -> :==
-        :ne -> :!=
-      end
-    end
-  end
-
-  @doc false
   def aggregate_dynamic_case_ast(binding_body_asts, aggregate_expr_ast, op_var, value_var) do
     quote do
       case unquote(op_var) do

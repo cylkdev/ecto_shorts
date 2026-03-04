@@ -6,12 +6,10 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Aggregate do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
-  require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
   alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
 
   @aggregate_helpers [:avg, :count, :max, :min, :sum]
   @comparison_ops [:==, :!=, :>, :>=, :<, :<=]
-  @alias_comparison_ops [:eq, :ne, :gt, :gte, :lt, :lte]
 
   @doc false
   @impl true
@@ -32,11 +30,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Aggregate do
         unquote(op_var) in unquote(@comparison_ops)
       end
 
-    alias_guard =
-      quote do
-        unquote(op_var) in unquote(@alias_comparison_ops)
-      end
-
     Enum.flat_map(@aggregate_helpers, fn helper ->
       aggregate_expr_ast =
         case helper do
@@ -48,38 +41,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Aggregate do
         end
 
       [
-        %ClauseSpec{
-          binding_head: binding_head_ast,
-          key: key_var,
-          head: quote(do: {unquote(helper), {unquote(op_var), unquote(value_var)}}),
-          guard: alias_guard,
-          body:
-            quote do
-              mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
-
-              apply_dynamic_expr(
-                unquote(binding_head_ast),
-                unquote(key_var),
-                {unquote(helper), {mapped_op, unquote(value_var)}}
-              )
-            end
-        },
-        %ClauseSpec{
-          binding_head: binding_head_ast,
-          key: key_var,
-          head: quote(do: {:not, {unquote(helper), {unquote(op_var), unquote(value_var)}}}),
-          guard: alias_guard,
-          body:
-            quote do
-              mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
-
-              apply_dynamic_expr(
-                unquote(binding_head_ast),
-                unquote(key_var),
-                {:not, {unquote(helper), {mapped_op, unquote(value_var)}}}
-              )
-            end
-        },
         %ClauseSpec{
           binding_head: binding_head_ast,
           key: key_var,

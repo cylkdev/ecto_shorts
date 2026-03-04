@@ -285,6 +285,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
 
   @operators [:ids, :before, :after, :start_date, :end_date, :exists]
   @helper_operators [:datetime, :date]
+  @alias_operators %{eq: :==, ne: :!=, gt: :>, gte: :>=, lt: :<, lte: :<=}
 
   @impl true
   def operators, do: @operators
@@ -337,6 +338,10 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
 
   defp normalize_entry({op, value}) when op in @helper_operators do
     [{op, to_keyword_payload(value)}]
+  end
+
+  defp normalize_entry({op, value}) when is_map_key(@alias_operators, op) do
+    normalize_entry({Map.fetch!(@alias_operators, op), value})
   end
 
   defp normalize_entry({op, value}) do
