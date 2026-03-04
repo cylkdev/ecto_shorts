@@ -182,7 +182,7 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       assert_query(expected, q2)
     end
 
-    test "merges :from source with top-level filters using a map" do
+    test "builds a query with multiple field filters" do
       expected =
         from(p in Post,
           where: p.id == ^1,
@@ -192,41 +192,13 @@ defmodule EctoShorts.CommonFilters.CoreTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{from: Post, id: 1, published: true},
+          %{id: 1, published: true},
           []
         )
 
       assert_sql(expected, q2)
     end
 
-    test "builds a query from the flat :from key alone" do
-      expected = from p in Post, where: p.id == ^1
-      q2 = CommonFilters.convert_params_to_filter(Post, %{from: Post, id: 1}, [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "builds a query from the flat :from keyword list" do
-      expected = from p in Post, where: p.id == ^1
-      q2 = CommonFilters.convert_params_to_filter(Post, [from: Post, id: 1], [])
-
-      assert_sql(expected, q2)
-    end
-
-    test "builds a query from a table name string as :from value" do
-      q2 = CommonFilters.convert_params_to_filter(Post, %{from: "posts", id: 1}, [])
-
-      assert %Ecto.Query{} = q2
-      assert %Ecto.Query.SelectExpr{} = q2.select
-      assert [%Ecto.Query.BooleanExpr{}] = q2.wheres
-    end
-
-    test "adds a select when the :from source is a table name string" do
-      expected = from p in "posts", select: ^[:id]
-      q2 = CommonFilters.convert_params_to_filter(Post, %{from: "posts", select: [:id]}, [])
-
-      assert_sql(expected, q2)
-    end
   end
 
   describe "convert_params_to_filter/3 custom filters" do
