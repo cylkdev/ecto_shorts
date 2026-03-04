@@ -66,7 +66,6 @@ defmodule EctoShorts.Dynamics do
   alias Ecto.Query
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
-  alias EctoShorts.Dynamics.Postgres
   alias EctoShorts.Logger
 
   require Ecto.Query
@@ -299,7 +298,7 @@ defmodule EctoShorts.Dynamics do
 
       case repo.__adapter__() do
         Ecto.Adapters.Postgres ->
-          Postgres
+          EctoShorts.Dynamics.Postgres
 
         other ->
           raise ArgumentError, """
