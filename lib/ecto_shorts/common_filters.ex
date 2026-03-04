@@ -355,13 +355,13 @@ defmodule EctoShorts.CommonFilters do
 
   ## Subquery and set comparisons
 
-  The `:all` and `:any` keys appear inside a comparison operator and
-  wrap a subquery expression:
+  The `:all` and `:any` keys wrap a comparison operator and
+  a subquery expression:
 
       subquery_expr = from(c in "comments", select: c.post_id)
 
-      %{id: %{>: %{all: subquery_expr}}}    # WHERE id > ALL(subquery)
-      %{id: %{>: %{any: subquery_expr}}}    # WHERE id > ANY(subquery)
+      %{id: %{all: %{>: subquery_expr}}}    # WHERE id > ALL(subquery)
+      %{id: %{any: %{>: subquery_expr}}}    # WHERE id > ANY(subquery)
 
   When no comparison operator is provided, they default to equality:
 
@@ -369,7 +369,7 @@ defmodule EctoShorts.CommonFilters do
 
   You can pass a `:from` payload instead of a pre-built subquery:
 
-      %{id: %{>: %{all: %{from: Post, id: 1}}}}
+      %{id: %{all: %{from: Post, id: 1}}}
 
   ## Array fields
 
@@ -394,8 +394,8 @@ defmodule EctoShorts.CommonFilters do
   transforms, and aggregate operators - all following the same
   nesting rules as scalar fields.
 
-  > NOTE: the `:all` operator is overloaded. Inside a comparison value
-  > (e.g. `%{>: %{all: subquery}}`) it means subquery set comparison.
+  > NOTE: the `:all` operator is overloaded. Wrapping a comparison
+  > (e.g. `%{all: %{>: subquery}}`) it means subquery set comparison.
   > With `:in` on an array field (e.g. `%{tags: %{all: %{in: [...]}}}`)
   > it means "contains all values".
 
@@ -755,7 +755,7 @@ defmodule EctoShorts.CommonFilters do
   write is a chain of nested params, and each nesting level fills one
   slot. The slots are processed from outermost to innermost:
 
-      field -> negation -> aggregate -> operator -> value expression
+      field -> negation -> quantifier -> aggregate -> operator -> value expression
 
   Not every slot is required. When you leave a slot out, we fill in a
   sensible default. The examples below show how adding one slot at a
@@ -1110,7 +1110,7 @@ defmodule EctoShorts.CommonFilters do
       key in @where_filters ->
         if (is_map(value) and not is_struct(value)) or is_list(value) do
           Enum.reduce(value, query, fn entry, query_acc ->
-            build_schema_filters(schema_source, query_acc, binding_selector, filter_op, entry, opts)
+            build_schema_filters(schema_source, query_acc, binding_selector, key, entry, opts)
           end)
         else
           Logger.warning(

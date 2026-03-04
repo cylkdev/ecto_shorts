@@ -275,7 +275,8 @@ defmodule EctoShorts.CommonFilters.Join do
               if is_struct(params, Ecto.Query) or is_struct(params, Ecto.SubQuery) do
                 params
               else
-                CommonFilters.convert_params_to_filter(schema_source, params, opts)
+                {from_source, filter_params} = Keyword.pop(params, :from, schema_source)
+                CommonFilters.convert_params_to_filter(from_source, filter_params, opts)
               end
 
             build_join(

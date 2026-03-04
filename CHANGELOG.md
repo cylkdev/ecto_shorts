@@ -41,7 +41,7 @@
 - New `Config` accessors: `error_module/0`, `dynamic_adapter/0`, `fragment_provider/0`, `max_binding_positions/0`.
 - New `SchemaHelpers` helpers:
   - `get_related_schema/2` to resolve related schemas, including `:through` associations.
-  - `schema_field_type/2` to return a field’s Ecto type.
+  - `schema_field_type/2` to return a field's Ecto type.
   - `association_not_loaded?/2` to check if an association is `NotLoaded`.
   - `schema_module?/1` to check whether a module exports `__schema__/2`.
 - New `CommonChanges` helpers:
@@ -50,7 +50,7 @@
   - `validate_not_unset/2` to validate fields are not unset.
   - `truncate_datetime_change/3` to truncate datetime precision.
   - `trim_string_change/2` to trim whitespace from string changes.
-  - `put_new_change/3` to add a change only if it isn’t already present.
+  - `put_new_change/3` to add a change only if it isn't already present.
   - `put_new_value/3` to set a value only when the field is currently `nil`.
 
 **Changed**

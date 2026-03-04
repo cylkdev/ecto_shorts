@@ -70,7 +70,7 @@ Now enter the project folder:
 
     cd blog_app
 
-## Step 3: understand the important files (so you don’t feel lost)
+## Step 3: understand the important files (so you don't feel lost)
 
 You do not need to memorize this, but it helps to know what is what.
 
@@ -104,7 +104,7 @@ Run:
 
     mix format
 
-This formats your code to Elixir’s standard style.
+This formats your code to Elixir's standard style.
 
 If you are working with an agent, make it a habit to run `mix format` before you commit changes.
 
@@ -118,7 +118,7 @@ Now you can call functions from your project.
 
 To exit, press `Ctrl+C` twice.
 
-## Step 8: create your first module (a simple “it works” feature)
+## Step 8: create your first module (a simple "it works" feature)
 
 Create a new file at:
 
@@ -193,7 +193,7 @@ When you ask an agent for help, include:
 
 That information is usually enough to get a correct fix on the first try.
 
-## “Done” checklist
+## "Done" checklist
 
 You are done when all of these work from the project folder:
 

@@ -2,11 +2,11 @@
 trigger: always_on
 ---
 
-Write code as if the repo’s style rules are part of the compiler.
+Write code as if the repo's style rules are part of the compiler.
 
 Before you write or change any code, read every code style document that applies. Treat them as the source of truth, even if your default habits disagree.
 
-While you work, apply the rules as you make each change. Do not “fix style later”. If you are unsure how a rule applies, look for an existing example in the codebase and copy the pattern.
+While you work, apply the rules as you make each change. Do not "fix style later". If you are unsure how a rule applies, look for an existing example in the codebase and copy the pattern.
 
 ## Code Style Documents
 

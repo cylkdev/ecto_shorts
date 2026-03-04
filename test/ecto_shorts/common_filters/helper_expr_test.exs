@@ -328,12 +328,12 @@ defmodule EctoShorts.CommonFilters.HelperExprTest do
         |> CommonFilters.convert_params_to_filter(%{id: 1}, [])
         |> select([p], p.id)
 
-      expected = from(p in Post, where: p.id > all(subquery_expr))
+      expected = from(p in Post, where: p.id == all(subquery_expr))
 
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{id: %{all: %{from: Post, id: 1, >: true}}},
+          %{id: %{all: %{from: Post, id: 1}}},
           []
         )
 

@@ -477,7 +477,7 @@ defmodule EctoShorts.Dynamics.Adapters.PostgresTest do
   describe "build_dynamic/4 scalar all/any helpers" do
     test "all with subquery" do
       subquery_expr = from(c in "comments", select: c.post_id)
-      actual = Postgres.build_dynamic(Post, {:as, nil}, :id, {:>, {:all, subquery_expr}})
+      actual = Postgres.build_dynamic(Post, {:as, nil}, :id, {:all, {:>, subquery_expr}})
       expected = dynamic([q], field(q, ^:id) > all(subquery_expr))
 
       assert_dynamic(expected, actual)
@@ -485,7 +485,7 @@ defmodule EctoShorts.Dynamics.Adapters.PostgresTest do
 
     test "negated all with subquery" do
       subquery_expr = from(c in "comments", select: c.post_id)
-      actual = Postgres.build_dynamic(Post, {:as, nil}, :id, {:not, {:>, {:all, subquery_expr}}})
+      actual = Postgres.build_dynamic(Post, {:as, nil}, :id, {:not, {:all, {:>, subquery_expr}}})
       expected = dynamic([q], not (field(q, ^:id) > all(subquery_expr)))
 
       assert_dynamic(expected, actual)
@@ -493,7 +493,7 @@ defmodule EctoShorts.Dynamics.Adapters.PostgresTest do
 
     test "any with subquery" do
       subquery_expr = from(c in "comments", select: c.post_id)
-      actual = Postgres.build_dynamic(Post, {:as, nil}, :id, {:>, {:any, subquery_expr}})
+      actual = Postgres.build_dynamic(Post, {:as, nil}, :id, {:any, {:>, subquery_expr}})
       expected = dynamic([q], field(q, ^:id) > any(subquery_expr))
 
       assert_dynamic(expected, actual)
@@ -501,7 +501,7 @@ defmodule EctoShorts.Dynamics.Adapters.PostgresTest do
 
     test "negated any with subquery" do
       subquery_expr = from(c in "comments", select: c.post_id)
-      actual = Postgres.build_dynamic(Post, {:as, nil}, :id, {:not, {:>, {:any, subquery_expr}}})
+      actual = Postgres.build_dynamic(Post, {:as, nil}, :id, {:not, {:any, {:>, subquery_expr}}})
       expected = dynamic([q], not (field(q, ^:id) > any(subquery_expr)))
 
       assert_dynamic(expected, actual)

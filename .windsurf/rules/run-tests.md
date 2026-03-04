@@ -28,7 +28,7 @@ mix test --seed 0 --trace
 - Don't stop at the first solution that seems to work
 - Assume that any part of the current situation might be wrong.
 - Be skeptical of your starting point, including the test that failed, the error message, and any assumptions you are carrying forward.
-- Reason from the purpose of the change and the user’s real-world use case.
+- Reason from the purpose of the change and the user's real-world use case.
 
 6. After you have explored the plausible causes and approaches, propose two solutions that are most likely to be correct. Explain why you believe those two are the best options and ask the user to choose an option. Wait for the user to choose an option.
 

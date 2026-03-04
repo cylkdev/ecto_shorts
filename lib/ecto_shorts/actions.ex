@@ -278,7 +278,7 @@ defmodule EctoShorts.Actions do
 
       {:error, message()}
 
-  `message()` is the “error payload”. It can be any Elixir term
+  `message()` is the "error payload". It can be any Elixir term
   (for example: a string, a map, or a struct). The exact shape
   is decided by the error adapter.
 

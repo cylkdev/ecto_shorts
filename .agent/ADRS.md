@@ -8,11 +8,11 @@ Treat the reader as a complete beginner to this repository. They have only the c
 
 When authoring an ADR, follow this file to the letter. If it is not in your context, refresh your memory by reading the entire file.
 
-When drafting an ADR, do not ask the user for “next steps”. Proceed by writing the ADR, improving it until it is self-contained, and then treating it as ready for review.
+When drafting an ADR, do not ask the user for "next steps". Proceed by writing the ADR, improving it until it is self-contained, and then treating it as ready for review.
 
 When revising an ADR, do not silently change its meaning. If the decision changes, create a new ADR and mark the old one as superseded. Only do in-place edits for clarity, typos, formatting, or adding missing evidence that does not alter the decision.
 
-ADRs are meant to answer “why did we choose this?” for future maintainers. They must be understandable without meetings, chat logs, or tribal knowledge.
+ADRs are meant to answer "why did we choose this?" for future maintainers. They must be understandable without meetings, chat logs, or tribal knowledge.
 
 ## Non-negotiable requirements
 
@@ -58,7 +58,7 @@ Use one of:
   - deprecated
   - superseded by NNNN
 
-If the decision is replaced, create a new ADR and set the old ADR to “superseded by NNNN”. Link both directions in “More Information”.
+If the decision is replaced, create a new ADR and set the old ADR to "superseded by NNNN". Link both directions in "More Information".
 
 ## How to compare options
 
@@ -66,7 +66,7 @@ Do not compare options at different abstraction levels. Compare like with like.
 
 Do not list fake options. Only list options that a reasonable engineer could have chosen in this situation.
 
-Put the chosen option first in “Considered Options” to make the outcome obvious.
+Put the chosen option first in "Considered Options" to make the outcome obvious.
 
 Tie your justification to decision drivers. A decision driver is a constraint, quality goal, or risk that actually mattered here.
 
@@ -113,7 +113,7 @@ If you include code, logs, commands, or transcripts, include them as indented bl
     ## Decision Drivers
 
     Write the constraints and quality goals that actually matter for this decision.
-    Each driver must be something you can point to later and say “this influenced the choice”.
+    Each driver must be something you can point to later and say "this influenced the choice".
 
     ## Considered Options
 

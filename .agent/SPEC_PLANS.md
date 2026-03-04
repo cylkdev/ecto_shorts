@@ -1,6 +1,6 @@
 # Behaviour Specification Plans (SpecPlans)
 
-This document describes the requirements for a behaviour specification plan (“SpecPlan”). A SpecPlan is a design document that a coding agent or human can follow to produce high-quality behaviour specifications, and the supporting automation hooks (step definitions, fixtures, and test runners) needed to prove the behaviour works.
+This document describes the requirements for a behaviour specification plan ("SpecPlan"). A SpecPlan is a design document that a coding agent or human can follow to produce high-quality behaviour specifications, and the supporting automation hooks (step definitions, fixtures, and test runners) needed to prove the behaviour works.
 
 Treat the reader as a complete beginner to this repository. They have only the current working tree and the single SpecPlan file you provide. There is no memory of prior plans and no external context.
 
@@ -8,7 +8,7 @@ Treat the reader as a complete beginner to this repository. They have only the c
 
 When authoring a SpecPlan, follow this PLANS.md file to the letter. Read this entire file before writing or revising a SpecPlan. Start from the skeleton and flesh it out as you do your research.
 
-When implementing a SpecPlan, do not stop to ask for “next steps”. Move to the next milestone. Keep all living sections up to date. Resolve ambiguities in the plan itself and record the decision. Commit frequently.
+When implementing a SpecPlan, do not stop to ask for "next steps". Move to the next milestone. Keep all living sections up to date. Resolve ambiguities in the plan itself and record the decision. Commit frequently.
 
 When discussing or revising a SpecPlan, record decisions in the `Decision Log`. A SpecPlan must be restartable from only the SpecPlan and the working tree.
 
@@ -20,11 +20,11 @@ Every SpecPlan is a living document. Contributors must revise it as progress is 
 
 Every SpecPlan must enable a complete novice to produce the behaviour spec end-to-end without prior knowledge of this repo.
 
-Every SpecPlan must produce demonstrably working behaviour, not merely “nice looking feature files”. The spec must be backed by a runnable proof that fails before and passes after.
+Every SpecPlan must produce demonstrably working behaviour, not merely "nice looking feature files". The spec must be backed by a runnable proof that fails before and passes after.
 
 Every SpecPlan must define every term of art in plain language, or avoid using it.
 
-Purpose and intent come first. Start by explaining, in a few sentences, why the behaviour matters from a user’s perspective, what someone can do after this work, and how to observe it working. Then guide the reader through the exact steps to get that outcome, including what to edit, what to run, and what they should observe.
+Purpose and intent come first. Start by explaining, in a few sentences, why the behaviour matters from a user's perspective, what someone can do after this work, and how to observe it working. Then guide the reader through the exact steps to get that outcome, including what to edit, what to run, and what they should observe.
 
 The agent executing your plan can list files, read files, search, run the project, and run tests. It does not know any prior context. Repeat any assumption you rely on.
 
@@ -46,7 +46,7 @@ When writing a SpecPlan to a Markdown file where the file content is only the si
 
 Self-containment and plain language are paramount. If you introduce a phrase that is not ordinary English, define it immediately and explain where it appears in this repository by naming files, commands, or outputs.
 
-Anchor the plan with observable outcomes. Acceptance should be phrased as behaviour a human can verify using specific inputs and outputs. Do not phrase acceptance as internal attributes like “added a struct” or “created a module”.
+Anchor the plan with observable outcomes. Acceptance should be phrased as behaviour a human can verify using specific inputs and outputs. Do not phrase acceptance as internal attributes like "added a struct" or "created a module".
 
 Specify repository context explicitly. Name files with full repository-relative paths, name functions and modules precisely, and describe where new files should be created. When running commands, show the working directory and the exact command line.
 
@@ -54,7 +54,7 @@ Validation is not optional. Include instructions to run tests, to start the syst
 
 Capture evidence. When steps produce terminal output, short diffs, or logs, include them as indented examples. Keep them concise and focused on what proves success.
 
-## What “behaviour specification” means in this repo
+## What "behaviour specification" means in this repo
 
 A behaviour specification is a set of readable, example-driven scenarios that define what the system must do from a user-observable point of view.
 
@@ -64,7 +64,7 @@ A behaviour specification is not a UI script. Steps should describe intent and o
 
 A behaviour specification must have a proof. A proof is the smallest runnable thing in this repo that demonstrates the behaviour end-to-end.
 
-If the repo does not have BDD tooling, the plan must still use the behaviour-spec style, but it must map each scenario to the project’s existing test style in a way a novice can run and verify.
+If the repo does not have BDD tooling, the plan must still use the behaviour-spec style, but it must map each scenario to the project's existing test style in a way a novice can run and verify.
 
 ## Milestones
 
@@ -72,7 +72,7 @@ Milestones are narrative. Each milestone must describe what will exist at the en
 
 Each milestone must be independently verifiable and incrementally implement the overall goal.
 
-It is acceptable to include a prototyping milestone when there are unknowns. A prototype must be additive and testable, must say how to run it, and must state the criteria for promoting it to “real” or discarding it.
+It is acceptable to include a prototyping milestone when there are unknowns. A prototype must be additive and testable, must say how to run it, and must state the criteria for promoting it to "real" or discarding it.
 
 ## Living plans and design decisions
 
@@ -125,7 +125,7 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
 
     Describe the current state relevant to this behaviour in plain language as if the reader knows nothing. Name the key files and modules by full path. Define any non-obvious term you will use.
 
-    Include a short “map” of where behaviour specs live in this repo. If they do not exist yet, define the new folder and naming conventions you will introduce.
+    Include a short "map" of where behaviour specs live in this repo. If they do not exist yet, define the new folder and naming conventions you will introduce.
 
     ## Behaviour Vocabulary
 
@@ -168,7 +168,7 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
 
     Describe how to prove the behaviour end-to-end.
 
-    Acceptance must be phrased as behaviour with specific inputs and outputs. If tests are involved, state the exact test command and what “passing” looks like. Name the new test(s) or scenario(s) and state that they fail before and pass after.
+    Acceptance must be phrased as behaviour with specific inputs and outputs. If tests are involved, state the exact test command and what "passing" looks like. Name the new test(s) or scenario(s) and state that they fail before and pass after.
 
     ## Idempotence and Recovery
 
@@ -180,7 +180,7 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
 
     ## Traceability Map
 
-    Create a short mapping that lets a novice answer: “Where is this behaviour specified, and where is it proven?”
+    Create a short mapping that lets a novice answer: "Where is this behaviour specified, and where is it proven?"
 
     Include:
     - the spec file path(s)

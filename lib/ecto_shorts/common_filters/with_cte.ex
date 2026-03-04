@@ -95,6 +95,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
   end
 
   defp params_to_query(schema_source, query_params, opts) do
-    CommonFilters.convert_params_to_filter(schema_source, query_params, opts)
+    {from_source, filter_params} = Keyword.pop(query_params, :from, schema_source)
+    CommonFilters.convert_params_to_filter(from_source, filter_params, opts)
   end
 end

@@ -1,6 +1,6 @@
 # Example Mapping Execution Plans (ExampleMapPlans)
 
-This document defines the format and requirements for an execution plan (“ExampleMapPlan”). A coding agent can follow an ExampleMapPlan to produce a complete Example Mapping deliverable for one feature or story.
+This document defines the format and requirements for an execution plan ("ExampleMapPlan"). A coding agent can follow an ExampleMapPlan to produce a complete Example Mapping deliverable for one feature or story.
 
 Treat the reader as a complete beginner to this repository. They have only the current working tree and the single ExampleMapPlan file you provide. There is no memory of prior plans and no external context.
 
@@ -22,9 +22,9 @@ Every ExampleMapPlan must enable a complete novice to produce Example Mapping ou
 
 Every ExampleMapPlan must define every term of art in plain language or not use it.
 
-Every ExampleMapPlan must anchor itself to observable outcomes. It must state what will exist at the end, what a human can read or run to confirm it, and what “done” looks like.
+Every ExampleMapPlan must anchor itself to observable outcomes. It must state what will exist at the end, what a human can read or run to confirm it, and what "done" looks like.
 
-## What “Example Mapping” means in this repository
+## What "Example Mapping" means in this repository
 
 Example Mapping is a structured way to clarify a single feature or story by writing:
 
@@ -129,7 +129,7 @@ If you change course mid-way, document why in the Decision Log and reflect the i
 
     ## Story
 
-    Write the story in one or two sentences in the form “As a <role>, I want <capability>, so that <benefit>”.
+    Write the story in one or two sentences in the form "As a <role>, I want <capability>, so that <benefit>".
 
     State scope boundaries in plain language, including what is explicitly out of scope for this story.
 
@@ -147,7 +147,7 @@ If you change course mid-way, document why in the Decision Log and reflect the i
 
     Each example must include inputs and the expected observable outcome.
 
-    Each example must be concrete. Avoid placeholders like “valid data” unless you also define what makes it valid.
+    Each example must be concrete. Avoid placeholders like "valid data" unless you also define what makes it valid.
 
     If timing matters, use explicit durations and clocks. If ordering matters, describe the exact sequence of steps.
 

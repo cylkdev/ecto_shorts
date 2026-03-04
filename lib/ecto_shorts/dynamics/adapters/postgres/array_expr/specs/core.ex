@@ -6,11 +6,15 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
+  alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+
+  require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
 
   @doc false
   @impl true
   def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
     list_semantic_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
+      alias_op_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       nil_specs(context, binding_head_ast, target_binding_var, binding_body_asts) ++
       base_op_specs(context, binding_head_ast, target_binding_var, binding_body_asts)
   end
@@ -73,6 +77,53 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
   end
 
   @doc false
+  def alias_op_specs(context, binding_head_ast, _target_binding_var, _binding_body_asts) do
+    key_var = Macro.var(:key, context)
+    op_var = Macro.var(:op, context)
+    value_var = Macro.var(:value, context)
+
+    op_guard =
+      quote do
+        unquote(op_var) in [:gt, :gte, :lt, :lte, :eq, :ne]
+      end
+
+    [
+      %ClauseSpec{
+        binding_head: binding_head_ast,
+        key: key_var,
+        head: quote(do: {unquote(op_var), unquote(value_var)}),
+        guard: op_guard,
+        body:
+          quote do
+            mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
+
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {mapped_op, unquote(value_var)}
+            )
+          end
+      },
+      %ClauseSpec{
+        binding_head: binding_head_ast,
+        key: key_var,
+        head: quote(do: {:not, {unquote(op_var), unquote(value_var)}}),
+        guard: op_guard,
+        body:
+          quote do
+            mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
+
+            apply_dynamic_expr(
+              unquote(binding_head_ast),
+              unquote(key_var),
+              {:not, {mapped_op, unquote(value_var)}}
+            )
+          end
+      }
+    ]
+  end
+
+  @doc false
   def nil_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
     key_var = Macro.var(:key, context)
     op_var = Macro.var(:op, context)
@@ -86,10 +137,16 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
         body:
           quote do
             case unquote(op_var) do
+              :eq ->
+                unquote(AST.dynamic_ast(binding_body_asts, quote(do: is_nil(unquote(field_ast)))))
+
               :== ->
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: is_nil(unquote(field_ast)))))
 
               :!= ->
+                unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
+
+              :ne ->
                 unquote(AST.dynamic_ast(binding_body_asts, quote(do: not is_nil(unquote(field_ast)))))
 
               _ ->

@@ -34,6 +34,6 @@ Do not skip any steps of the User Approval Workflow.
 
 4. After that, explain how to verify the change using a repeatable command. The verification must be something a human novice can run and understand. If the change affects linting, the verification should include running mix credo. If the change affects formatting rules, the verification should include running mix format. If the change affects dependencies, the verification should include running mix deps.get and then compiling or running tests. If you are not sure which command proves the change, you must choose the simplest command that demonstrates the effect you described.
 
-5. You must then get explicit user approval for the patch before applying it. Approval means the user clearly agrees to the exact change you showed, not a general “sounds good.”
+5. You must then get explicit user approval for the patch before applying it. Approval means the user clearly agrees to the exact change you showed, not a general "sounds good."
 
 6. Once approval is given, apply the change and immediately run the verification step you described. You must report the observable result in plain language, including whether anything unexpected happened.

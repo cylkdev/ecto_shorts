@@ -2,7 +2,7 @@
 trigger: always_on
 ---
 
-Living documents keep a coding agent’s reasoning visible and traceable across long sessions. Write every document artifact to one shared place so any contributor can find it and continue the work without hunting through multiple directories.
+Living documents keep a coding agent's reasoning visible and traceable across long sessions. Write every document artifact to one shared place so any contributor can find it and continue the work without hunting through multiple directories.
 
 ## Requirements
 
@@ -58,5 +58,5 @@ Each scenario below requires a document. These are required so decisions, plans,
 - If you write behaviour specifications with runnable proofs, write a SpecPlan.
   The format reference is `.agent/SPEC_PLANS.md`.
 
-- If you review a system’s architecture for failure modes, scalability risks, or operational resilience, write an Architecture Review.
+- If you review a system's architecture for failure modes, scalability risks, or operational resilience, write an Architecture Review.
   The format reference is `.agent/ARCHITECTURE_REVIEW.md`.

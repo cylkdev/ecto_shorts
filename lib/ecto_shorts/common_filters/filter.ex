@@ -159,7 +159,8 @@ defmodule EctoShorts.CommonFilters.Filter do
   end
 
   defp resolve_exists_payload(source, params, opts) when is_list(params) do
-    CommonFilters.convert_params_to_filter(source, put_default_select(params, true), opts)
+    {from_source, filter_params} = Keyword.pop(params, :from, source)
+    CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, true), opts)
   end
 
   defp resolve_exists_payload(_source, value, _opts), do: value
@@ -174,19 +175,18 @@ defmodule EctoShorts.CommonFilters.Filter do
   defp resolve_quantifier_inner(_source, _field_key, %Ecto.Query{} = q, _opts), do: q
   defp resolve_quantifier_inner(_source, _field_key, %Ecto.SubQuery{} = sq, _opts), do: sq
 
-  defp resolve_quantifier_inner(_source, _field_key, {_op, _value} = expr, _opts), do: expr
-
   defp resolve_quantifier_inner(source, field_key, params, opts)
        when is_map(params) and not is_struct(params) do
     resolve_quantifier_inner(source, field_key, Map.to_list(params), opts)
   end
 
-  defp resolve_quantifier_inner(source, field_key, [{_key, _val}] = params, opts) do
-    resolve_quantifier_inner(source, field_key, List.first(params), opts)
-  end
-
-  defp resolve_quantifier_inner(source, field_key, params, opts) when is_list(params) do
-    CommonFilters.convert_params_to_filter(source, put_default_select(params, field_key), opts)
+  defp resolve_quantifier_inner(_source, field_key, params, opts) when is_list(params) do
+    if Keyword.keyword?(params) and Keyword.has_key?(params, :from) do
+      {from_source, filter_params} = Keyword.pop(params, :from)
+      CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, field_key), opts)
+    else
+      params
+    end
   end
 
   defp resolve_quantifier_inner(_source, _field_key, value, _opts), do: value

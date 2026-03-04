@@ -56,7 +56,7 @@ You will generate a text coverage report, find uncovered lines, write tests that
 5. Open that source file.
 
 6. Choose one uncovered block to cover next.
-   - A block is “one uncovered block” when it is one contiguous group of uncovered lines.
+   - A block is "one uncovered block" when it is one contiguous group of uncovered lines.
    - Prefer a block inside one function clause or one small helper function.
 
 7. Identify one callable entry point that should execute the uncovered block.
@@ -78,7 +78,7 @@ You will generate a text coverage report, find uncovered lines, write tests that
    - Call the entry point you identified in step 7 with inputs that will cause the uncovered lines to run.
    - Add at least one assertion that checks a user-observable result.
    - A user-observable result is a return value, a raised error, a sent message you can assert, or a persisted change you can query.
-   - Do not write a test that only asserts `true` or only checks that the code “does not crash” unless the intended behaviour is “does not raise”.
+   - Do not write a test that only asserts `true` or only checks that the code "does not crash" unless the intended behaviour is "does not raise".
 
 11. Run only the test file you changed until it passes.
    - Run `mix test path/to/test_file.exs`.

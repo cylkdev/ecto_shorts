@@ -284,8 +284,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   @behaviour EctoShorts.Dynamics.Adapter
 
   @operators [:ids, :before, :after, :start_date, :end_date, :exists]
-  @helper_operators [:datetime, :date]
-  @alias_operators %{eq: :==, ne: :!=, gt: :>, gte: :>=, lt: :<, lte: :<=}
+  @instruction_boundary_operators [:datetime, :date]
 
   @impl true
   def operators, do: @operators
@@ -297,7 +296,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   def build_dynamic(source, binding_selector, key, expr) do
     cond do
       key in @operators ->
-        CommonExpr.apply_dynamic_expr(binding_selector, key, normalize_operator_expr(expr))
+        CommonExpr.apply_dynamic_expr(binding_selector, key, flatten_operator_expr(expr))
 
       match?({:array, _}, CommonSchema.get_schema_reflection(source, :type, key)) ->
         build_field_dynamic(ArrayExpr, binding_selector, key, expr)
@@ -309,7 +308,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
 
   defp build_field_dynamic(mod, binding_selector, key, expr) do
     expr
-    |> normalize_field_expr()
+    |> flatten_expression_params()
     |> Enum.reduce(nil, fn item, acc ->
       case mod.apply_dynamic_expr(binding_selector, key, item) do
         nil -> acc
@@ -318,70 +317,82 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
     end)
   end
 
-  defp normalize_field_expr(map) when is_map(map) and not is_struct(map) do
-    Enum.flat_map(map, &normalize_entry/1)
+  defp flatten_expression_params(map) when is_map(map) and not is_struct(map) do
+    map
+    |> Map.to_list()
+    |> do_flatten([])
+    |> Enum.reverse()
   end
 
-  defp normalize_field_expr(list) when is_list(list) do
+  defp flatten_expression_params(list) when is_list(list) do
     if Keyword.keyword?(list) do
-      Enum.flat_map(list, &normalize_entry/1)
+      list
+      |> do_flatten([])
+      |> Enum.reverse()
     else
       [{:==, list}]
     end
   end
 
-  defp normalize_field_expr({op, value}) when is_atom(op) do
-    normalize_entry({op, value})
+  defp flatten_expression_params({op, value}) when is_atom(op) do
+    {op, value}
+    |> do_flatten([])
+    |> Enum.reverse()
   end
 
-  defp normalize_field_expr(value), do: [{:==, value}]
+  defp flatten_expression_params(value), do: [{:==, value}]
 
-  defp normalize_entry({op, value}) when op in @helper_operators do
-    [{op, to_keyword_payload(value)}]
+  defp do_flatten(map, acc) when is_map(map) and not is_struct(map) do
+    do_flatten(Map.to_list(map), acc)
   end
 
-  defp normalize_entry({op, value}) when is_map_key(@alias_operators, op) do
-    normalize_entry({Map.fetch!(@alias_operators, op), value})
-  end
+  defp do_flatten([], acc), do: acc
 
-  defp normalize_entry({op, value}) do
-    case normalize_inner(value) do
-      nil ->
-        [{op, value}]
-
-      inner_list ->
-        Enum.map(inner_list, fn inner -> {op, inner} end)
+  defp do_flatten(list, acc) when is_list(list) do
+    if Keyword.keyword?(list) do
+      Enum.reduce(list, acc, &do_flatten(&1, &2))
+    else
+      [list | acc]
     end
   end
 
-  defp normalize_inner(map) when is_map(map) and not is_struct(map) do
-    Enum.flat_map(map, &normalize_entry/1)
+  defp do_flatten({k, v}, acc)
+       when k in @instruction_boundary_operators and is_map(v) and not is_struct(v) do
+    [{k, Map.to_list(v)} | acc]
   end
 
-  defp normalize_inner(list) when is_list(list) do
-    if Keyword.keyword?(list), do: Enum.flat_map(list, &normalize_entry/1), else: nil
+  defp do_flatten({k, v}, acc)
+       when k in @instruction_boundary_operators and is_list(v) do
+    [{k, v} | acc]
   end
 
-  defp normalize_inner(_), do: nil
-
-  defp to_keyword_payload(map) when is_map(map) and not is_struct(map) do
-    Enum.map(map, fn {k, v} -> {k, v} end)
+  defp do_flatten({k, v}, acc) when is_map(v) and not is_struct(v) do
+    do_flatten({k, Map.to_list(v)}, acc)
   end
 
-  defp to_keyword_payload(list) when is_list(list), do: list
-  defp to_keyword_payload(value), do: value
+  defp do_flatten({k, v}, acc) when is_list(v) do
+    if Keyword.keyword?(v) do
+      v
+      |> flatten_expression_params()
+      |> Enum.reduce(acc, fn inner, inner_acc -> [{k, inner} | inner_acc] end)
+    else
+      [{k, v} | acc]
+    end
+  end
 
-  defp normalize_operator_expr(map) when is_map(map) and not is_struct(map) do
+  defp do_flatten(v, acc), do: [v | acc]
+
+  defp flatten_operator_expr(map) when is_map(map) and not is_struct(map) do
     case Map.to_list(map) do
-      [{k, v}] -> {k, normalize_operator_expr(v)}
+      [{k, v}] -> {k, flatten_operator_expr(v)}
       _other -> map
     end
   end
 
-  defp normalize_operator_expr(list) when is_list(list) do
+  defp flatten_operator_expr(list) when is_list(list) do
     if Keyword.keyword?(list) do
       case list do
-        [{k, v}] -> {k, normalize_operator_expr(v)}
+        [{k, v}] -> {k, flatten_operator_expr(v)}
         _other -> list
       end
     else
@@ -389,5 +400,5 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
     end
   end
 
-  defp normalize_operator_expr(value), do: value
+  defp flatten_operator_expr(value), do: value
 end
