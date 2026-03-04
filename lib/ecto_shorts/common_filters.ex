@@ -986,19 +986,19 @@ defmodule EctoShorts.CommonFilters do
           params
         end
 
-      build_filters(schema_source, CommonSchema.to_query(source), base_params, opts)
+      reduce_filter_params(schema_source, CommonSchema.to_query(source), base_params, opts)
     else
       Enum.reduce(params, CommonSchema.to_query(source), fn entry, query_acc ->
-        build_filters(source, query_acc, entry, opts)
+        reduce_filter_params(source, query_acc, entry, opts)
       end)
     end
   end
 
-  defp build_filters(schema_source, query, params, opts) do
+  defp reduce_filter_params(schema_source, query, params, opts) do
     normalized_params = normalize_filter_params(params)
 
     if is_map(normalized_params) or Keyword.keyword?(normalized_params) do
-      create_schema_filter(
+      apply_filters(
         schema_source,
         query,
         @default_binding_selector,
@@ -1012,26 +1012,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp create_schema_filter(
-         schema_source,
-         query,
-         binding_selector,
-         _filter_op,
-         {key, value},
-         opts
-       )
-       when key in @where_filters do
-    reduce_schema_filter_params(
-      schema_source,
-      query,
-      binding_selector,
-      key,
-      value,
-      opts
-    )
-  end
-
-  defp create_schema_filter(
+  defp apply_filters(
          schema_source,
          query,
          _binding_selector,
@@ -1055,7 +1036,7 @@ defmodule EctoShorts.CommonFilters do
 
       {{:as, bind_alias}, filters}, q when is_atom(bind_alias) ->
         if CommonQuery.get_query_binding_source(q, bind_alias) do
-          create_schema_filter(schema_source, q, {:as, bind_alias}, filter_op, filters, opts)
+          apply_filters(schema_source, q, {:as, bind_alias}, filter_op, filters, opts)
         else
           Logger.warning(
             @binding_params_prefix,
@@ -1105,7 +1086,7 @@ defmodule EctoShorts.CommonFilters do
             q
 
           true ->
-            create_schema_filter(
+            apply_filters(
               schema_source,
               q,
               {:at, bind_index},
@@ -1117,7 +1098,7 @@ defmodule EctoShorts.CommonFilters do
     end)
   end
 
-  defp create_schema_filter(
+  defp apply_filters(
          schema_source,
          query,
          binding_selector,
@@ -1125,25 +1106,65 @@ defmodule EctoShorts.CommonFilters do
          {key, value},
          opts
        ) do
-    if key in @query_filters do
-      build_query(schema_source, query, binding_selector, key, value, opts)
-    else
-      reduce_schema_filters(
-        schema_source,
-        query,
-        binding_selector,
-        filter_op,
-        key,
-        value,
-        opts
-      )
+    cond do
+      key in @where_filters ->
+        if (is_map(value) and not is_struct(value)) or is_list(value) do
+          Enum.reduce(value, query, fn entry, query_acc ->
+            build_schema_filters(schema_source, query_acc, binding_selector, filter_op, entry, opts)
+          end)
+        else
+          Logger.warning(
+            @logger_prefix,
+            "Expected params for #{filter_op} to be a map or keyword list, got: #{inspect(value)}"
+          )
+
+          query
+        end
+
+      key in @query_filters ->
+        build_query(schema_source, query, binding_selector, key, value, opts)
+
+      true ->
+        case CommonSchema.get_schema_reflection(schema_source, :associations) do
+          nil ->
+            build_schema_filters(
+              schema_source,
+              query,
+              binding_selector,
+              filter_op,
+              {key, value},
+              opts
+            )
+
+          assocs ->
+            if key in assocs do
+              apply_join(
+                schema_source,
+                query,
+                binding_selector,
+                filter_op,
+                key,
+                value,
+                opts
+              )
+            else
+              build_schema_filters(
+                schema_source,
+                query,
+                binding_selector,
+                filter_op,
+                {key, value},
+                opts
+              )
+            end
+        end
     end
   end
 
-  defp create_schema_filter(schema_source, query, binding_selector, filter_op, params, opts) do
+  defp apply_filters(schema_source, query, binding_selector, filter_op, params, opts) do
     cond do
       is_map(params) and not is_struct(params) ->
-        create_schema_filter(
+        apply_filters(
           schema_source,
           query,
           binding_selector,
@@ -1154,7 +1175,7 @@ defmodule EctoShorts.CommonFilters do
 
       Keyword.keyword?(params) ->
         Enum.reduce(params, query, fn {key, value}, query_acc ->
-          create_schema_filter(
+          apply_filters(
             schema_source,
             query_acc,
             binding_selector,
@@ -1172,66 +1193,7 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp reduce_schema_filter_params(schema_source, query, binding_selector, filter_op, value, opts) do
-    if is_map(value) or is_list(value) do
-      Enum.reduce(value, query, fn entry, query_acc ->
-        build_schema_filters(schema_source, query_acc, binding_selector, filter_op, entry, opts)
-      end)
-    else
-      Logger.warning(
-        @logger_prefix,
-        "Expected params for #{filter_op} to be a map or keyword list, got: #{inspect(value)}"
-      )
-
-      query
-    end
-  end
-
-  defp reduce_schema_filters(
-         schema_source,
-         query,
-         binding_selector,
-         filter_op,
-         key,
-         value,
-         opts
-       ) do
-    case CommonSchema.get_schema_reflection(schema_source, :associations) do
-      nil ->
-        build_schema_filters(
-          schema_source,
-          query,
-          binding_selector,
-          filter_op,
-          {key, value},
-          opts
-        )
-
-      assocs ->
-        if key in assocs do
-          build_join_filters(
-            schema_source,
-            query,
-            binding_selector,
-            filter_op,
-            key,
-            value,
-            opts
-          )
-        else
-          build_schema_filters(
-            schema_source,
-            query,
-            binding_selector,
-            filter_op,
-            {key, value},
-            opts
-          )
-        end
-    end
-  end
-
-  defp build_join_filters(
+  defp apply_join(
          schema_source,
          query,
          binding_selector,
@@ -1271,7 +1233,7 @@ defmodule EctoShorts.CommonFilters do
           {:at, CommonQuery.query_binding_count(joined_query)}
         end
 
-      create_schema_filter(
+      apply_filters(
         assoc_schema,
         joined_query,
         {join_binding_mode, join_binding_target},
@@ -1299,7 +1261,7 @@ defmodule EctoShorts.CommonFilters do
        ) do
     cond do
       is_map(value) and not is_struct(value) ->
-        create_schema_filter(
+        apply_filters(
           schema_source,
           query,
           binding_selector,
@@ -1320,7 +1282,7 @@ defmodule EctoShorts.CommonFilters do
 
       Keyword.keyword?(value) ->
         Enum.reduce(value, query, fn entry, query_acc ->
-          create_schema_filter(
+          apply_filters(
             schema_source,
             query_acc,
             binding_selector,
@@ -1344,10 +1306,10 @@ defmodule EctoShorts.CommonFilters do
 
   defp build_query(schema_source, query, binding_selector, :subquery, params, opts)
        when is_map(params) or is_list(params) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
+    binding_source = resolve_binding_source(schema_source, query, binding_selector)
 
     inner_query =
-      create_schema_filter(
+      apply_filters(
         schema_source,
         query,
         binding_selector,
@@ -1376,27 +1338,29 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp build_query(schema_source, query, binding_selector, filter_op, params, opts) do
-    binding_source = to_binding_source(schema_source, query, binding_selector)
+    binding_source = resolve_binding_source(schema_source, query, binding_selector)
 
-    case Map.get(@query_builder_modules, filter_op) do
-      nil ->
-        Filter.build(binding_source, filter_op, query, binding_selector, params, opts)
-
-      module ->
+    case @query_builder_modules do
+      %{^filter_op => module} ->
         module.build(binding_source, filter_op, query, binding_selector, params, opts)
+
+      _ ->
+        Filter.build(binding_source, filter_op, query, binding_selector, params, opts)
+    end
+  end
+
+  defp resolve_binding_source(schema_source, query, binding_selector) do
+    case binding_selector do
+      {:as, nil} ->
+        schema_source
+
+      {mode, binding_target} when mode in @binding_modes ->
+        CommonQuery.get_query_binding_source(query, binding_target)
     end
   end
 
   defp source_has_schema?({_, nil}), do: false
   defp source_has_schema?({_, mod}) when is_atom(mod), do: true
-
-  defp to_binding_source(schema_source, _query, {:as, nil}) do
-    schema_source
-  end
-
-  defp to_binding_source(_schema_source, query, {mode, binding_target}) when mode in @binding_modes do
-    CommonQuery.get_query_binding_source(query, binding_target)
-  end
 
   defp normalize_filter_params({k, v}) when is_map(v) or is_list(v) do
     {k, normalize_filter_params(v)}
