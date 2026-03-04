@@ -523,7 +523,7 @@ This section shows before/after comparisons for common patterns.
   `EctoShorts.Actions.Error` behaviour for error formatting.
 
 * `:dynamic_adapter` - a module implementing the
-  `EctoShorts.Dynamics.Adapter` behaviour for dynamic expressions.
+  `EctoShorts.Dynamic` behaviour for dynamic expressions.
 
 * `:max_binding_positions` - maximum query bindings before falling
   back to a subquery strategy. Defaults to `3`.

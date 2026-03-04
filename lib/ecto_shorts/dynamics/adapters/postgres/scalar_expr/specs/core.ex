@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core do
+defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.Core do
   @moduledoc since: "3.0.0"
   @moduledoc false
 
@@ -6,8 +6,8 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
-  require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
-  alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+  require EctoShorts.Dynamics.Postgres.ExprHelpers
+  alias EctoShorts.Dynamics.Postgres.ExprHelpers
 
   @doc false
   @impl true
@@ -68,7 +68,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core do
         head: quote(do: {:not, {:==, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:!=, unquote(value_var)}
@@ -81,7 +81,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core do
         head: quote(do: {:not, {:!=, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:==, unquote(value_var)}
@@ -126,7 +126,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core do
           quote do
             mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
 
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {mapped_op, unquote(value_var)}
@@ -142,7 +142,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core do
           quote do
             mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
 
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {mapped_op, unquote(value_var)}}
@@ -200,7 +200,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core do
         head: quote(do: {:==, {:lower, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:lower, unquote(value_var)}
@@ -213,7 +213,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core do
         head: quote(do: {:==, {:upper, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:upper, unquote(value_var)}

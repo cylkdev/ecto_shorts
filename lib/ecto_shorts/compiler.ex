@@ -1,7 +1,7 @@
 defmodule EctoShorts.Compiler do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Compiles `apply_dynamic_expr/3` clauses from specs at compile time.
+  Compiles `compose/3` clauses from specs at compile time.
 
   Use this module when building a custom dynamic expression adapter that needs
   to dispatch expression construction to different function clauses based on
@@ -48,9 +48,9 @@ defmodule EctoShorts.Compiler do
         use EctoShorts.Compiler, specs: MyApp.Adapter.Specs
       end
 
-  After compilation, `MyApp.Adapter.apply_dynamic_expr/3` is available:
+  After compilation, `MyApp.Adapter.compose/3` is available:
 
-      MyApp.Adapter.apply_dynamic_expr({:as, :post}, :title, {:==, "Hello"})
+      MyApp.Adapter.compose({:as, :post}, :title, {:==, "Hello"})
       # Returns: dynamic([{:as, :post}, r], field(r, :title) == ^"Hello")
 
   ## How it works
@@ -60,17 +60,17 @@ defmodule EctoShorts.Compiler do
   1. **Collect specs** - `EctoShorts.Compiler` calls `MySpecs.clause_specs/4`
      with each query binding pattern (named and positional) to collect
      `%EctoShorts.Compiler.ClauseSpec{}` structs.
-  2. **Generate clauses** - it compiles those specs into `apply_dynamic_expr/3`
+  2. **Generate clauses** - it compiles those specs into `compose/3`
      function clauses and injects them into a generated submodule `X.Compiled`.
-  3. **Define delegator** - it defines `X.apply_dynamic_expr/3` as a public
-     delegator to `X.Compiled.apply_dynamic_expr/3`.
+  3. **Define delegator** - it defines `X.compose/3` as a public
+     delegator to `X.Compiled.compose/3`.
 
   The specs module (`MySpecs`) must be already compiled before `X` is compiled,
   and must export `clause_specs/4`.
 
   ## Clause spec structure
 
-  A `ClauseSpec` defines one function clause for `apply_dynamic_expr/3`:
+  A `ClauseSpec` defines one function clause for `compose/3`:
 
       ClauseSpec.new(%{
         binding_head: binding_head,      # Binding pattern (e.g. {:as, :post})
@@ -103,7 +103,7 @@ defmodule EctoShorts.Compiler do
 
   The generated clause looks like:
 
-      def apply_dynamic_expr({:as, :post}, key, {:==, val}) do
+      def compose({:as, :post}, key, {:==, val}) do
         Ecto.Query.dynamic([{:as, :post}, r], field(r, ^key) == ^val)
       end
 
@@ -209,7 +209,7 @@ defmodule EctoShorts.Compiler do
   **Problem:** Generated clauses do not match at runtime.
 
   **Solution:** Check that the `:head` pattern in your `ClauseSpec` matches
-  the expression structure you are passing to `apply_dynamic_expr/3`. Use
+  the expression structure you are passing to `compose/3`. Use
   `IO.inspect/2` to see the actual expression structure.
 
   **Problem:** Recompilation is not triggered when config changes.
@@ -217,7 +217,7 @@ defmodule EctoShorts.Compiler do
   **Solution:** Verify the `:max_binding_positions` config is set correctly.
   Run `mix clean` and `mix compile` to force a full recompile.
 
-  See also `EctoShorts.Compiler.ClauseSpec`, `EctoShorts.Dynamics.Adapter`,
+  See also `EctoShorts.Compiler.ClauseSpec`, `EctoShorts.Dynamic`,
   and `EctoShorts.Config.max_binding_positions/0`.
   """
 
@@ -226,7 +226,7 @@ defmodule EctoShorts.Compiler do
   alias EctoShorts.Compiler.QueryBindingBuilder
 
   @doc """
-  Defines `X.Compiled` and `X.apply_dynamic_expr/3` in the caller module `X`.
+  Defines `X.Compiled` and `X.compose/3` in the caller module `X`.
 
   Injects a `@before_compile` hook that generates the compiled clause module
   and the public delegator at the end of the caller's compilation. The caller
@@ -300,7 +300,7 @@ defmodule EctoShorts.Compiler do
 
               unquote_splicing(clause_asts)
 
-              def apply_dynamic_expr(_, _, _), do: nil
+              def compose(_, _, _), do: nil
             end
           end
 
@@ -316,7 +316,7 @@ defmodule EctoShorts.Compiler do
       unquote_splicing(sub_module_defs)
 
       @doc false
-      def apply_dynamic_expr(binding_selector, key, expr) do
+      def compose(binding_selector, key, expr) do
         unquote(dispatch_ast)
       end
 
@@ -336,13 +336,13 @@ defmodule EctoShorts.Compiler do
 
   defp build_dispatch_chain([single]) do
     quote do
-      unquote(single).apply_dynamic_expr(binding_selector, key, expr)
+      unquote(single).compose(binding_selector, key, expr)
     end
   end
 
   defp build_dispatch_chain([head | tail]) do
     quote do
-      unquote(head).apply_dynamic_expr(binding_selector, key, expr) ||
+      unquote(head).compose(binding_selector, key, expr) ||
         unquote(build_dispatch_chain(tail))
     end
   end

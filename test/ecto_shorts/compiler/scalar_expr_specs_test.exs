@@ -1,12 +1,12 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
+defmodule EctoShorts.Dynamics.Postgres.ScalarExprSpecsTest do
   use ExUnit.Case, async: true
 
   alias EctoShorts.Compiler.ClauseBuilder
-  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Core, as: ScalarExprSpecs
-  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Aggregate, as: AggregateSpecs
-  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Arithmetic, as: ArithmeticSpecs
-  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.DateTime, as: DateTimeSpecs
-  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Quantifier, as: QuantifierSpecs
+  alias EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.Core, as: ScalarExprSpecs
+  alias EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.Aggregate, as: AggregateSpecs
+  alias EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.Arithmetic, as: ArithmeticSpecs
+  alias EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.DateTime, as: DateTimeSpecs
+  alias EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.Quantifier, as: QuantifierSpecs
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -59,12 +59,12 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected_is_nil,
-      module.apply_dynamic_expr({:as, nil}, key, {:eq, nil})
+      module.compose({:as, nil}, key, {:eq, nil})
     )
 
     assert_dynamic(
       expected_not_nil,
-      module.apply_dynamic_expr({:as, nil}, key, {:!=, nil})
+      module.compose({:as, nil}, key, {:!=, nil})
     )
   end
 
@@ -89,12 +89,12 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected_in,
-      module.apply_dynamic_expr({:as, nil}, key, {:==, [1, 2]})
+      module.compose({:as, nil}, key, {:==, [1, 2]})
     )
 
     assert_dynamic(
       expected_not_in,
-      module.apply_dynamic_expr({:as, nil}, key, {:!=, [1, 2]})
+      module.compose({:as, nil}, key, {:!=, [1, 2]})
     )
   end
 
@@ -117,7 +117,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected_like,
-      module.apply_dynamic_expr({:as, nil}, key, {:like, "foo"})
+      module.compose({:as, nil}, key, {:like, "foo"})
     )
 
     patterns = ["%foo%", "%bar%"]
@@ -125,7 +125,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected_like_list,
-      module.apply_dynamic_expr({:as, nil}, key, {:like, ["foo", "bar"]})
+      module.compose({:as, nil}, key, {:like, ["foo", "bar"]})
     )
   end
 
@@ -155,12 +155,12 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected_lower,
-      module.apply_dynamic_expr({:as, nil}, key, {:lower, "foo"})
+      module.compose({:as, nil}, key, {:lower, "foo"})
     )
 
     assert_dynamic(
       expected_upper,
-      module.apply_dynamic_expr({:as, nil}, key, {:upper, "FOO"})
+      module.compose({:as, nil}, key, {:upper, "FOO"})
     )
   end
 
@@ -194,7 +194,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:>=, {:datetime, [{:add, payload}]}})
+      module.compose({:as, nil}, key, {:>=, {:datetime, [{:add, payload}]}})
     )
   end
 
@@ -217,7 +217,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:>, {:+, [:views, 10]}})
+      module.compose({:as, nil}, key, {:>, {:+, [:views, 10]}})
     )
   end
 
@@ -247,7 +247,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:any, {:>, subquery_expr}})
+      module.compose({:as, nil}, key, {:any, {:>, subquery_expr}})
     )
   end
 
@@ -277,7 +277,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:all, {:>, subquery_expr}})
+      module.compose({:as, nil}, key, {:all, {:>, subquery_expr}})
     )
   end
 
@@ -306,7 +306,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:avg, {:>, 10}})
+      module.compose({:as, nil}, key, {:avg, {:>, 10}})
     )
   end
 end

@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.DateTime do
+defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.DateTime do
   @moduledoc since: "3.0.0"
   @moduledoc false
 
@@ -90,7 +90,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.DateTime do
           head: quote(do: {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}),
           body:
             quote do
-              apply_dynamic_expr(
+              compose(
                 unquote(binding_head_ast),
                 unquote(key_var),
                 {:==, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}
@@ -103,7 +103,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.DateTime do
           head: quote(do: {:not, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}),
           body:
             quote do
-              apply_dynamic_expr(
+              compose(
                 unquote(binding_head_ast),
                 unquote(key_var),
                 {:!=, {unquote(wrapper), [{unquote(operation), unquote(payload_var)}]}}

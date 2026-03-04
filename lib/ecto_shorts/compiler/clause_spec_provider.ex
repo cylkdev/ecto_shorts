@@ -4,7 +4,7 @@ defmodule EctoShorts.Compiler.ClauseSpecProvider do
   Defines the behaviour for clause spec providers.
 
   Use this module when building custom dynamic expression adapters that need
-  to generate `apply_dynamic_expr/3` clauses at compile time. A clause spec
+  to generate `compose/3` clauses at compile time. A clause spec
   provider implements the `clause_specs/4` callback, which returns a list of
   clause specs for each binding pattern.
 
@@ -292,7 +292,7 @@ defmodule EctoShorts.Compiler.ClauseSpecProvider do
   **Problem:** Clauses do not match at runtime.
 
   **Solution:** Verify that the `:head` pattern in your specs matches the
-  expression structure you are passing to `apply_dynamic_expr/3`.
+  expression structure you are passing to `compose/3`.
 
   **Problem:** Too many or too few clauses generated.
 

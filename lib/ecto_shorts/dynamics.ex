@@ -30,9 +30,9 @@ defmodule EctoShorts.Dynamics do
   ### Adapter delegation
 
   `EctoShorts.Dynamics` does not build Ecto expressions itself. Instead it
-  resolves the configured `EctoShorts.Dynamics.Adapter` implementation and
+  resolves the configured `EctoShorts.Dynamic` implementation and
   calls `build_dynamic/4` for each field. The built-in adapter is
-  `EctoShorts.Dynamics.Adapters.Postgres`. Override it by configuring
+  `EctoShorts.Dynamics.Postgres`. Override it by configuring
   `:dynamic_adapter` in your application config.
 
   ### Schema-aware filtering
@@ -54,19 +54,19 @@ defmodule EctoShorts.Dynamics do
 
   ## Configuration
 
-  * `:dynamic_adapter` - A module that implements the `EctoShorts.Dynamics.Adapter` behaviour.
+  * `:dynamic_adapter` - A module that implements the `EctoShorts.Dynamic` behaviour.
     Configurable globally via `config :ecto_shorts, dynamic_adapter: MyApp.Adapter`
     or at runtime via the `:dynamic_adapter` option on `convert_to_dynamic/4`.
     Defaults to resolved from repo adapter.
 
-  See also `EctoShorts.Dynamics.Adapter`, `EctoShorts.CommonFilters`, and
+  See also `EctoShorts.Dynamic`, `EctoShorts.CommonFilters`, and
   `EctoShorts.Config`.
   """
 
   alias Ecto.Query
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
-  alias EctoShorts.Dynamics.Adapters.Postgres
+  alias EctoShorts.Dynamics.Postgres
   alias EctoShorts.Logger
 
   require Ecto.Query
@@ -88,7 +88,7 @@ defmodule EctoShorts.Dynamics do
 
   ## Options
 
-  * `:dynamic_adapter` - A module that implements the `EctoShorts.Dynamics.Adapter`
+  * `:dynamic_adapter` - A module that implements the `EctoShorts.Dynamic`
     behaviour to use for this call. Defaults to resolved from repo adapter.
 
   * `:repo` - The `Ecto.Repo` module used to resolve the dynamic expression adapter
@@ -104,7 +104,7 @@ defmodule EctoShorts.Dynamics do
       iex> EctoShorts.Dynamics.convert_to_dynamic(EctoShorts.Schema.Post, nil, %{})
       nil
 
-  See also `EctoShorts.Dynamics.Adapter`.
+  See also `EctoShorts.Dynamic`.
   """
   @spec convert_to_dynamic(
           source :: term(),

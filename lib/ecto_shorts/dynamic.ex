@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapter do
+defmodule EctoShorts.Dynamic do
   @moduledoc since: "3.0.0"
   @moduledoc """
   Defines the behaviour for pluggable dynamic expression adapters.
@@ -42,7 +42,7 @@ defmodule EctoShorts.Dynamics.Adapter do
   `build_dynamic/4`.
 
       defmodule MyApp.DynamicAdapter do
-        @behaviour EctoShorts.Dynamics.Adapter
+        @behaviour EctoShorts.Dynamic
 
         @operators [:ids, :before, :after]
 
@@ -83,7 +83,7 @@ defmodule EctoShorts.Dynamics.Adapter do
   An adapter that handles multiple operators with type checking:
 
       defmodule MyApp.DynamicAdapter do
-        @behaviour EctoShorts.Dynamics.Adapter
+        @behaviour EctoShorts.Dynamic
 
         import Ecto.Query, only: [dynamic: 2]
 
@@ -273,7 +273,7 @@ defmodule EctoShorts.Dynamics.Adapter do
   **Solution:** Add guards to your `build_dynamic/4` clauses to validate value
   types before building expressions.
 
-  See also `EctoShorts.Dynamics`, `EctoShorts.Dynamics.Adapters.Postgres`,
+  See also `EctoShorts.Dynamics`, `EctoShorts.Dynamics.Postgres`,
   `EctoShorts.Config`, and `EctoShorts.CommonFilters`.
   """
 

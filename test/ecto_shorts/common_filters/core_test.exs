@@ -198,7 +198,6 @@ defmodule EctoShorts.CommonFilters.CoreTest do
 
       assert_sql(expected, q2)
     end
-
   end
 
   describe "convert_params_to_filter/3 custom filters" do

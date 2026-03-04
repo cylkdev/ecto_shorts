@@ -1,7 +1,7 @@
 defmodule EctoShorts.Compiler.ClauseSpec do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Validates and constructs clause specs for generating `apply_dynamic_expr/3` clauses.
+  Validates and constructs clause specs for generating `compose/3` clauses.
 
   Use this module when building clause spec providers that generate function
   clauses for dynamic expression adapters. A clause spec is a struct containing
@@ -15,7 +15,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
 
   * **Build custom adapters** - create dynamic expression adapters with
     database-specific operators.
-  * **Generate function clauses** - produce `apply_dynamic_expr/3` clauses
+  * **Generate function clauses** - produce `compose/3` clauses
     that match specific binding and expression patterns.
   * **Implement clause providers** - build modules that implement
     `EctoShorts.Compiler.ClauseSpecProvider`.
@@ -117,7 +117,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
 
   This generates:
 
-      def apply_dynamic_expr({:as, nil}, key, {:==, val}) do
+      def compose({:as, nil}, key, {:==, val}) do
         Ecto.Query.dynamic([r], field(r, ^key) == ^val)
       end
 
@@ -133,7 +133,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
 
   This generates:
 
-      def apply_dynamic_expr({:as, nil}, key, {:>, val}) when is_number(val) do
+      def compose({:as, nil}, key, {:>, val}) when is_number(val) do
         Ecto.Query.dynamic([r], field(r, ^key) > ^val)
       end
 
@@ -149,7 +149,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
 
   This generates:
 
-      def apply_dynamic_expr({:as, nil}, key, {:in, vals}) when is_list(vals) do
+      def compose({:as, nil}, key, {:in, vals}) when is_list(vals) do
         Ecto.Query.dynamic([r], field(r, ^key) in ^vals)
       end
 
@@ -168,7 +168,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
 
   This generates:
 
-      def apply_dynamic_expr({:as, binding_alias}, key, {:==, val}) do
+      def compose({:as, binding_alias}, key, {:==, val}) do
         Ecto.Query.dynamic([{^binding_alias, r}], field(r, ^key) == ^val)
       end
 
@@ -211,7 +211,7 @@ defmodule EctoShorts.Compiler.ClauseSpec do
 
   ### Output clause
 
-      def apply_dynamic_expr({:at, 1}, key, {:>=, val}) do
+      def compose({:at, 1}, key, {:>=, val}) do
         Ecto.Query.dynamic([r], field(r, ^key) >= ^val)
       end
 
@@ -262,14 +262,14 @@ defmodule EctoShorts.Compiler.ClauseSpec do
       end
 
   The compiler calls this function for each binding pattern and generates
-  the corresponding `apply_dynamic_expr/3` clauses.
+  the corresponding `compose/3` clauses.
 
   See also `EctoShorts.Compiler`, `EctoShorts.Compiler.ClauseBuilder`,
   `EctoShorts.Compiler.ClauseSpecProvider`, and `EctoShorts.Compiler.AST`.
   """
 
   @typedoc """
-  A validated clause spec used to generate a single `apply_dynamic_expr/3`
+  A validated clause spec used to generate a single `compose/3`
   function clause.
 
   All field values are Elixir AST terms produced by `quote/1` or

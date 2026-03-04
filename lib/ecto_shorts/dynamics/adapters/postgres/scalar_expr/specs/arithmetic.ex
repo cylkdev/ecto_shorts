@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr.Specs.Arithmetic do
+defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.Arithmetic do
   @moduledoc since: "3.0.0"
   @moduledoc false
 

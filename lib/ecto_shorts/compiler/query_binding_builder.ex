@@ -6,7 +6,7 @@ defmodule EctoShorts.Compiler.QueryBindingBuilder do
   Use this module when building the compiler infrastructure that needs to
   generate function clauses for every binding pattern. The builder produces
   `{binding_head, binding_body}` tuples that represent how to match and
-  reference query bindings in generated `apply_dynamic_expr/3` clauses.
+  reference query bindings in generated `compose/3` clauses.
 
   ## Binding patterns explained
 
@@ -79,7 +79,7 @@ defmodule EctoShorts.Compiler.QueryBindingBuilder do
   Each tuple contains:
 
   * **binding_head** - the pattern to match in the first argument of
-    `apply_dynamic_expr/3`.
+    `compose/3`.
   * **binding_body** - the binding list to use in `dynamic/2` expressions.
 
   ## How it works
@@ -122,7 +122,7 @@ defmodule EctoShorts.Compiler.QueryBindingBuilder do
 
   Used in a clause:
 
-      def apply_dynamic_expr({:at, 1}, key, {:==, val}) do
+      def compose({:at, 1}, key, {:==, val}) do
         dynamic([q], field(q, ^key) == ^val)
       end
 
@@ -133,7 +133,7 @@ defmodule EctoShorts.Compiler.QueryBindingBuilder do
 
   Used in a clause:
 
-      def apply_dynamic_expr({:at, 2}, key, {:==, val}) do
+      def compose({:at, 2}, key, {:==, val}) do
         dynamic([_, q], field(q, ^key) == ^val)
       end
 
@@ -144,7 +144,7 @@ defmodule EctoShorts.Compiler.QueryBindingBuilder do
 
   Used in a clause:
 
-      def apply_dynamic_expr({:at, 3}, key, {:==, val}) do
+      def compose({:at, 3}, key, {:==, val}) do
         dynamic([_, _, q], field(q, ^key) == ^val)
       end
 
@@ -157,7 +157,7 @@ defmodule EctoShorts.Compiler.QueryBindingBuilder do
 
   Used in a clause:
 
-      def apply_dynamic_expr({:as, nil}, key, {:==, val}) do
+      def compose({:as, nil}, key, {:==, val}) do
         dynamic([q], field(q, ^key) == ^val)
       end
 
@@ -168,7 +168,7 @@ defmodule EctoShorts.Compiler.QueryBindingBuilder do
 
   Used in a clause:
 
-      def apply_dynamic_expr({:as, binding_alias}, key, {:==, val}) do
+      def compose({:as, binding_alias}, key, {:==, val}) do
         dynamic([{^binding_alias, q}], field(q, ^key) == ^val)
       end
 

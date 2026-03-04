@@ -6,7 +6,7 @@ Reference: `.agent/REFACTOR_PLANS.md`
 
 ## Purpose / Big Picture
 
-The test file `test/ecto_shorts/dynamics_test.exs` currently mixes tests for two different modules: `EctoShorts.Dynamics` (boolean operator unwrapping, helper expression preprocessing, schema-less fallback) and `EctoShorts.Dynamics.Adapters.Postgres` (operator routing, scalar expressions, array expressions, common expressions). This makes it hard to tell which module a test is exercising and where to add new tests when either module changes.
+The test file `test/ecto_shorts/dynamics_test.exs` currently mixes tests for two different modules: `EctoShorts.Dynamics` (boolean operator unwrapping, helper expression preprocessing, schema-less fallback) and `EctoShorts.Dynamics.Postgres` (operator routing, scalar expressions, array expressions, common expressions). This makes it hard to tell which module a test is exercising and where to add new tests when either module changes.
 
 After this refactor, each module has its own test file. The Postgres adapter tests call `Postgres.build_dynamic/4` directly, making the test-to-code relationship explicit. The `dynamics_test.exs` file retains only tests that exercise `Dynamics`-level preprocessing logic.
 
@@ -53,7 +53,7 @@ Full suite: 9 doctests, 1014 tests, 0 failures.
 
 `EctoShorts.Dynamics` (in `lib/ecto_shorts/dynamics.ex`) is a preprocessing layer. It receives filter parameter maps, unwraps boolean operators (`:and`, `:or`), applies helper expressions (`:datetime`, `:date`, subquery builders), normalizes expression params into `{operator, value}` tuples, and delegates each tuple to the configured adapter's `build_dynamic/4`.
 
-`EctoShorts.Dynamics.Adapters.Postgres` (in `lib/ecto_shorts/dynamics/adapters/postgres.ex`) is the adapter. Its `build_dynamic/4` receives a normalized source, a binding selector, a field key, and an expression (either a raw value for operator keys, or a `{operator, value}` tuple for field keys). It routes to three sub-modules: `CommonExpr` (operator keys), `ArrayExpr` (array fields), and `ScalarExpr` (scalar fields).
+`EctoShorts.Dynamics.Postgres` (in `lib/ecto_shorts/dynamics/adapters/postgres.ex`) is the adapter. Its `build_dynamic/4` receives a normalized source, a binding selector, a field key, and an expression (either a raw value for operator keys, or a `{operator, value}` tuple for field keys). It routes to three sub-modules: `CommonExpr` (operator keys), `ArrayExpr` (array fields), and `ScalarExpr` (scalar fields).
 
 The current test file `test/ecto_shorts/dynamics_test.exs` contains ~150 tests. About 22 test `Dynamics`-level logic. The rest exercise Postgres adapter expression generation through the `Dynamics.convert_to_dynamic/3` indirection.
 

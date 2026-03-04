@@ -24,7 +24,7 @@ Verification: `mix test --seed 0 --trace` must pass all tests with 0 failures.
 
 ## Surprises & Discoveries
 
-- Observation: The Compiler creates isolated compiled sub-modules for each entry in the `specs:` list. Unqualified `apply_dynamic_expr` calls inside a compiled sub-module resolve only within that sub-module, not through the top-level dispatch chain.
+- Observation: The Compiler creates isolated compiled sub-modules for each entry in the `specs:` list. Unqualified `compose` calls inside a compiled sub-module resolve only within that sub-module, not through the top-level dispatch chain.
   Evidence: After initial extraction, 2 tests failed because Core's `list_semantic_specs` delegated `{:not, {:==, {:lower, "elixir"}}}` to `{:!=, {:lower, "elixir"}}`, which hit Core's own `base_op_specs` catch-all instead of reaching LowerUpper's `{:!=, {:lower, val}}` clause.
 
 - Observation: The fix was to add 4 interceptor clauses to LowerUpper for `{:not, {:==/:!=, {:lower/:upper, val}}}` patterns. Since LowerUpper dispatches before Core, these clauses match first and delegate to targets within LowerUpper itself, bypassing Core's catch-all entirely.
@@ -43,7 +43,7 @@ Verification: `mix test --seed 0 --trace` must pass all tests with 0 failures.
 
 The refactor is complete. Core went from 440 lines to 299 lines. Two new focused modules were created: LowerUpper (130 lines) and LikeIlike (81 lines). All 903 tests pass with both fixed and random seeds, confirming behaviour preservation.
 
-Key lesson: the Compiler's compiled sub-module isolation means cross-module delegation is impossible via unqualified `apply_dynamic_expr` calls. Any future split must account for inbound delegation dependencies by adding interceptor clauses to the extracted module.
+Key lesson: the Compiler's compiled sub-module isolation means cross-module delegation is impossible via unqualified `compose` calls. Any future split must account for inbound delegation dependencies by adding interceptor clauses to the extracted module.
 
 ## Context and Orientation
 
@@ -56,15 +56,15 @@ Key files before refactoring:
 - `lib/ecto_shorts/dynamics/adapters/postgres/array_expr/specs/aggregate.ex` - already-extracted aggregate specs
 - `test/ecto_shorts/compiler/array_expr_specs_test.exs` - unit tests for spec groups
 
-A "compiled sub-module" is a module generated at compile time by the Compiler (e.g., `ArrayExpr.Compiled.Core`). Each entry in the `specs:` list becomes one compiled sub-module with its own `apply_dynamic_expr/3` function and a catch-all clause returning `nil`.
+A "compiled sub-module" is a module generated at compile time by the Compiler (e.g., `ArrayExpr.Compiled.Core`). Each entry in the `specs:` list becomes one compiled sub-module with its own `compose/3` function and a catch-all clause returning `nil`.
 
 An "interceptor clause" is a clause added to a module specifically to match a pattern before another module's catch-all can misroute it.
 
 ## Behaviour Boundary (Must Remain Unchanged)
 
-- `EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.apply_dynamic_expr/3` returns the same `Ecto.Query.DynamicExpr` for every input combination as before the refactor.
+- `EctoShorts.Dynamics.Postgres.ArrayExpr.compose/3` returns the same `Ecto.Query.DynamicExpr` for every input combination as before the refactor.
 - All existing tests in the suite pass without modification to assertions.
-- The public API surface of `ArrayExpr` is unchanged (only `apply_dynamic_expr/3`).
+- The public API surface of `ArrayExpr` is unchanged (only `compose/3`).
 
 ## Code Smell Identified
 
@@ -125,7 +125,7 @@ Files modified:
 
 In `lib/ecto_shorts/dynamics/adapters/postgres/array_expr.ex`, preserve:
 
-    def apply_dynamic_expr(binding_selector, key, expr) :: Ecto.Query.DynamicExpr.t() | nil
+    def compose(binding_selector, key, expr) :: Ecto.Query.DynamicExpr.t() | nil
 
 All three spec modules (`Core`, `LowerUpper`, `LikeIlike`) implement:
 

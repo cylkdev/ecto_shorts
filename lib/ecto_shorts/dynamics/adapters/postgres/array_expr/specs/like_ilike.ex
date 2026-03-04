@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LikeIlike do
+defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.LikeIlike do
   @moduledoc since: "3.0.0"
   @moduledoc false
 

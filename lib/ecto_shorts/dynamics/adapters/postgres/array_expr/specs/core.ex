@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
+defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.Core do
   @moduledoc since: "3.0.0"
   @moduledoc false
 
@@ -6,9 +6,9 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
 
   alias EctoShorts.Compiler.AST
   alias EctoShorts.Compiler.ClauseSpec
-  alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+  alias EctoShorts.Dynamics.Postgres.ExprHelpers
 
-  require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+  require EctoShorts.Dynamics.Postgres.ExprHelpers
 
   @doc false
   @impl true
@@ -53,7 +53,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
         head: quote(do: {:not, {:==, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:!=, unquote(value_var)}
@@ -66,7 +66,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
         head: quote(do: {:not, {:!=, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:==, unquote(value_var)}
@@ -97,7 +97,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
           quote do
             mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
 
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {mapped_op, unquote(value_var)}
@@ -113,7 +113,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
           quote do
             mapped_op = unquote(ExprHelpers.alias_to_canonical_map_ast(op_var))
 
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {mapped_op, unquote(value_var)}}
@@ -258,7 +258,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
         head: quote(do: {:!=, unquote(value_var)}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:not, {:in, unquote(value_var)}})
+            compose(unquote(binding_head_ast), unquote(key_var), {:not, {:in, unquote(value_var)}})
           end
       },
       %ClauseSpec{
@@ -329,7 +329,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core do
         head: quote(do: {:==, unquote(value_var)}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:in, unquote(value_var)})
+            compose(unquote(binding_head_ast), unquote(key_var), {:in, unquote(value_var)})
           end
       },
       %ClauseSpec{

@@ -35,11 +35,11 @@ The dynamic expression system has this call chain:
 
 1. `EctoShorts.CommonFilters.Filter` calls `EctoShorts.Dynamics.convert_to_dynamic/4`
 2. `Dynamics` calls `dynamic_adapter.build_dynamic/4` (via the configured adapter)
-3. `EctoShorts.Dynamics.Adapters.Postgres.build_dynamic/4` dispatches to one of:
-   - `CommonExpr.apply_dynamic_expr/3` for operator keys (`:ids`, `:before`, etc.)
-   - `ArrayExpr.apply_dynamic_expr/3` for array-typed fields
-   - `ScalarExpr.apply_dynamic_expr/3` for all other fields
-4. These `apply_dynamic_expr` functions are generated at compile time by `EctoShorts.Compiler` from specs modules (`ArrayExpr.Specs`, `ScalarExpr.Specs`, etc.)
+3. `EctoShorts.Dynamics.Postgres.build_dynamic/4` dispatches to one of:
+   - `CommonExpr.compose/3` for operator keys (`:ids`, `:before`, etc.)
+   - `ArrayExpr.compose/3` for array-typed fields
+   - `ScalarExpr.compose/3` for all other fields
+4. These `compose` functions are generated at compile time by `EctoShorts.Compiler` from specs modules (`ArrayExpr.Specs`, `ScalarExpr.Specs`, etc.)
 
 Specs return `nil` when they cannot build a dynamic expression. The caller in `dynamics.ex` previously silently skipped nil results. Now it logs a warning before skipping.
 

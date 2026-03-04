@@ -937,7 +937,7 @@ defmodule EctoShorts.CommonFilters do
     * `:repo` (default: `EctoShorts.Config.repo/0`) - the `Ecto.Repo`
       module used to resolve the dynamic expression adapter.
     * `:dynamic_adapter` - a module implementing
-      `EctoShorts.Dynamics.Adapter`. Defaults to the adapter resolved
+      `EctoShorts.Dynamic`. Defaults to the adapter resolved
       from `:repo`.
 
   ## Examples

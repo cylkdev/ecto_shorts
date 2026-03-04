@@ -1,7 +1,7 @@
 defmodule EctoShorts.Compiler.ClauseBuilder do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Builds quoted `apply_dynamic_expr/3` function clauses from validated clause specs.
+  Builds quoted `compose/3` function clauses from validated clause specs.
 
   Use this module when you need to generate the AST for a complete function
   clause from a `ClauseSpec` struct. The builder takes the spec's fields and
@@ -36,7 +36,7 @@ defmodule EctoShorts.Compiler.ClauseBuilder do
 
   ### Output: Generated clause
 
-      def apply_dynamic_expr({:as, nil}, key, {:==, val}) do
+      def compose({:as, nil}, key, {:==, val}) do
         Ecto.Query.dynamic([r], field(r, ^key) == ^val)
       end
 
@@ -54,7 +54,7 @@ defmodule EctoShorts.Compiler.ClauseBuilder do
 
   ### Output: Clause with guard
 
-      def apply_dynamic_expr({:as, nil}, key, {:>, val}) when is_number(val) do
+      def compose({:as, nil}, key, {:>, val}) when is_number(val) do
         Ecto.Query.dynamic([r], field(r, ^key) > ^val)
       end
 
@@ -74,7 +74,7 @@ defmodule EctoShorts.Compiler.ClauseBuilder do
 
   Generates:
 
-      def apply_dynamic_expr({:at, 1}, key, {:in, vals}) when is_list(vals) do
+      def compose({:at, 1}, key, {:in, vals}) when is_list(vals) do
         Ecto.Query.dynamic([r], field(r, ^key) in ^vals)
       end
 
@@ -116,7 +116,7 @@ defmodule EctoShorts.Compiler.ClauseBuilder do
   ## Integration with compiler
 
   The clause builder is used by `EctoShorts.Compiler` to generate all
-  `apply_dynamic_expr/3` clauses at compile time:
+  `compose/3` clauses at compile time:
 
       # Inside EctoShorts.Compiler
       specs = provider.clause_specs(context, binding_head, target_binding, binding_bodies)
@@ -154,7 +154,7 @@ defmodule EctoShorts.Compiler.ClauseBuilder do
   alias EctoShorts.Compiler.ClauseSpec
 
   @doc """
-  Builds a quoted `apply_dynamic_expr/3` clause from a clause spec.
+  Builds a quoted `compose/3` clause from a clause spec.
   """
   @spec clause_ast(ClauseSpec.t() | map() | keyword()) :: Macro.t()
   def clause_ast(attrs) do
@@ -164,7 +164,7 @@ defmodule EctoShorts.Compiler.ClauseBuilder do
 
   defp quote_def(binding_head_ast, key_ast, head_ast, body_ast, nil) do
     quote do
-      def apply_dynamic_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast)) do
+      def compose(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast)) do
         unquote(body_ast)
       end
     end
@@ -172,7 +172,7 @@ defmodule EctoShorts.Compiler.ClauseBuilder do
 
   defp quote_def(binding_head_ast, key_ast, head_ast, body_ast, guard_ast) do
     quote do
-      def apply_dynamic_expr(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast))
+      def compose(unquote(binding_head_ast), unquote(key_ast), unquote(head_ast))
           when unquote(guard_ast) do
         unquote(body_ast)
       end

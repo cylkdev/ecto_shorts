@@ -158,7 +158,7 @@ defmodule EctoShorts.CommonFilters.Windows do
   defp normalize_partition_by(nil, _binding_selector), do: []
 
   defp normalize_partition_by(value, binding_selector) when is_atom(value) do
-    [apply_dynamic_expr(binding_selector, value)]
+    [compose(binding_selector, value)]
   end
 
   defp normalize_partition_by(value, binding_selector)
@@ -172,7 +172,7 @@ defmodule EctoShorts.CommonFilters.Windows do
     else
       Enum.map(values, fn
         value when is_atom(value) ->
-          apply_dynamic_expr(binding_selector, value)
+          compose(binding_selector, value)
 
         other ->
           other
@@ -185,11 +185,11 @@ defmodule EctoShorts.CommonFilters.Windows do
   defp normalize_order_by(nil, _binding_selector), do: []
 
   defp normalize_order_by(value, binding_selector) when is_atom(value) do
-    [apply_dynamic_expr(binding_selector, value)]
+    [compose(binding_selector, value)]
   end
 
   defp normalize_order_by({direction, field_name}, binding_selector) when is_atom(field_name) do
-    [{direction, apply_dynamic_expr(binding_selector, field_name)}]
+    [{direction, compose(binding_selector, field_name)}]
   end
 
   defp normalize_order_by(value, binding_selector)
@@ -201,7 +201,7 @@ defmodule EctoShorts.CommonFilters.Windows do
     if Keyword.keyword?(values) do
       Enum.map(values, fn
         {direction, field_name} when is_atom(field_name) ->
-          {direction, apply_dynamic_expr(binding_selector, field_name)}
+          {direction, compose(binding_selector, field_name)}
 
         other ->
           other
@@ -209,7 +209,7 @@ defmodule EctoShorts.CommonFilters.Windows do
     else
       Enum.map(values, fn
         value when is_atom(value) ->
-          apply_dynamic_expr(binding_selector, value)
+          compose(binding_selector, value)
 
         other ->
           other
@@ -250,7 +250,7 @@ defmodule EctoShorts.CommonFilters.Windows do
         )
       end
 
-      defp apply_dynamic_expr(unquote(quoted_binding_head), field_name) do
+      defp compose(unquote(quoted_binding_head), field_name) do
         Query.dynamic(
           [unquote_splicing(quoted_binding_body)],
           field(unquote(target_binding_var), ^field_name)

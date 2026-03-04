@@ -1,10 +1,10 @@
-defmodule EctoShorts.Dynamics.Adapters.PostgresTest do
+defmodule EctoShorts.Dynamics.PostgresTest do
   use ExUnit.Case, async: true
   use EctoShorts.Testing
 
   import Ecto.Query
 
-  alias EctoShorts.Dynamics.Adapters.Postgres
+  alias EctoShorts.Dynamics.Postgres
   alias EctoShorts.Schema.Post
 
   describe "operators/0" do

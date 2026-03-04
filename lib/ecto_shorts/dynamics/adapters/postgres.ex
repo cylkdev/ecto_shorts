@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres do
+defmodule EctoShorts.Dynamics.Postgres do
   @moduledoc since: "3.0.0"
   @moduledoc """
   PostgreSQL-specific dynamic expression adapter.
@@ -12,13 +12,13 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
 
   The adapter is split into three components:
 
-  * **EctoShorts.Dynamics.Adapters.Postgres.CommonExpr** - Handles special operators
+  * **EctoShorts.Dynamics.Postgres.CommonExpr** - Handles special operators
     (`:ids`, `:before`, `:after`,  `:start_date`, `:end_date`, `:exists`).
 
-  * **EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr** - Handles array field
+  * **EctoShorts.Dynamics.Postgres.ArrayExpr** - Handles array field
     operations (membership, overlap, contains, pattern matching).
 
-  * **EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr** - Handles scalar field
+  * **EctoShorts.Dynamics.Postgres.ScalarExpr** - Handles scalar field
     operations (equality, comparison, pattern matching, ranges).
 
   ## How operators are resolved
@@ -167,9 +167,9 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   PostgreSQL adapter for standard operations:
 
       defmodule MyApp.CustomAdapter do
-        @behaviour EctoShorts.Dynamics.Adapter
+        @behaviour EctoShorts.Dynamic
 
-        alias EctoShorts.Dynamics.Adapters.Postgres
+        alias EctoShorts.Dynamics.Postgres
 
         @operators [:custom_op | Postgres.operators()]
 
@@ -194,11 +194,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   ### Example 1: Full-text search
 
       defmodule MyApp.SearchAdapter do
-        @behaviour EctoShorts.Dynamics.Adapter
+        @behaviour EctoShorts.Dynamic
 
         import Ecto.Query, only: [dynamic: 2]
 
-        @operators [:search | EctoShorts.Dynamics.Adapters.Postgres.operators()]
+        @operators [:search | EctoShorts.Dynamics.Postgres.operators()]
 
         @impl true
         def operators, do: @operators
@@ -216,7 +216,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
         end
 
         def build_dynamic(source, binding_selector, key, expr) do
-          EctoShorts.Dynamics.Adapters.Postgres.build_dynamic(
+          EctoShorts.Dynamics.Postgres.build_dynamic(
             source,
             binding_selector,
             key,
@@ -228,11 +228,11 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   ### Example 2: JSON operations
 
       defmodule MyApp.JsonAdapter do
-        @behaviour EctoShorts.Dynamics.Adapter
+        @behaviour EctoShorts.Dynamic
 
         import Ecto.Query, only: [dynamic: 2]
 
-        @operators [:json_contains | EctoShorts.Dynamics.Adapters.Postgres.operators()]
+        @operators [:json_contains | EctoShorts.Dynamics.Postgres.operators()]
 
         @impl true
         def operators, do: @operators
@@ -245,7 +245,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
         end
 
         def build_dynamic(source, binding_selector, key, expr) do
-          EctoShorts.Dynamics.Adapters.Postgres.build_dynamic(
+          EctoShorts.Dynamics.Postgres.build_dynamic(
             source,
             binding_selector,
             key,
@@ -271,20 +271,20 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   **Solution:** Use `Ecto.Adapters.SQL.to_sql/3` to inspect the generated SQL.
   Verify that the filter parameters match the expected structure.
 
-  See also `EctoShorts.Dynamics.Adapter`, `EctoShorts.Dynamics`,
+  See also `EctoShorts.Dynamic`, `EctoShorts.Dynamics`,
   `EctoShorts.CommonFilters`, and `EctoShorts.CommonSchema`.
   """
 
   alias Ecto.Query
   alias EctoShorts.CommonSchema
-  alias EctoShorts.Dynamics.Adapters.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
+  alias EctoShorts.Dynamics.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
 
   require Ecto.Query
 
-  @behaviour EctoShorts.Dynamics.Adapter
+  @behaviour EctoShorts.Dynamic
 
   @operators [:ids, :before, :after, :start_date, :end_date, :exists]
-  @instruction_boundary_operators [:datetime, :date]
+  @datetime_operators [:datetime, :date]
 
   @impl true
   def operators, do: @operators
@@ -293,112 +293,69 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   def operator?(key), do: key in @operators
 
   @impl true
-  def build_dynamic(source, binding_selector, key, expr) do
+  def build_dynamic(source, binding_selector, key, value) do
     cond do
       key in @operators ->
-        CommonExpr.apply_dynamic_expr(binding_selector, key, flatten_operator_expr(expr))
+        reduce_entries(CommonExpr, binding_selector, key, [value])
 
       match?({:array, _}, CommonSchema.get_schema_reflection(source, :type, key)) ->
-        build_field_dynamic(ArrayExpr, binding_selector, key, expr)
+        reduce_entries(ArrayExpr, binding_selector, key, normalize_entries(value, []))
 
       true ->
-        build_field_dynamic(ScalarExpr, binding_selector, key, expr)
+        reduce_entries(ScalarExpr, binding_selector, key, normalize_entries(value, []))
     end
   end
 
-  defp build_field_dynamic(mod, binding_selector, key, expr) do
-    expr
-    |> flatten_expression_params()
-    |> Enum.reduce(nil, fn item, acc ->
-      case mod.apply_dynamic_expr(binding_selector, key, item) do
-        nil -> acc
-        dyn -> if acc, do: Query.dynamic([], ^acc and ^dyn), else: dyn
+  defp reduce_entries(clause_module, binding_selector, key, entries) do
+    Enum.reduce(entries, nil, fn entry, dyn_left ->
+      case clause_module.compose(binding_selector, key, entry) do
+        nil ->
+          dyn_left
+
+        dyn_right ->
+          if is_nil(dyn_left) do
+            dyn_right
+          else
+            Query.dynamic([], ^dyn_left and ^dyn_right)
+          end
       end
     end)
   end
 
-  defp flatten_expression_params(map) when is_map(map) and not is_struct(map) do
+  defp normalize_entries({key, map}, acc) when is_map(map) and not is_struct(map) do
+    normalize_entries({key, Map.to_list(map)}, acc)
+  end
+
+  defp normalize_entries({key, value}, acc) do
+    cond do
+      key in @datetime_operators ->
+        [{key, value} | acc]
+
+      Keyword.keyword?(value) ->
+        value
+        |> normalize_entries([])
+        |> Enum.reduce(acc, fn entry, acc2 ->
+          [{key, entry} | acc2]
+        end)
+
+      true ->
+        [{key, value} | acc]
+    end
+  end
+
+  defp normalize_entries(map, acc) when is_map(map) and not is_struct(map) do
     map
     |> Map.to_list()
-    |> do_flatten([])
-    |> Enum.reverse()
+    |> normalize_entries(acc)
   end
 
-  defp flatten_expression_params(list) when is_list(list) do
-    if Keyword.keyword?(list) do
-      list
-      |> do_flatten([])
-      |> Enum.reverse()
+  defp normalize_entries(term, acc) do
+    if Keyword.keyword?(term) do
+      Enum.reduce(term, acc, fn entry, acc2 ->
+        normalize_entries(entry, acc2)
+      end)
     else
-      [{:==, list}]
+      [{:==, term} | acc]
     end
   end
-
-  defp flatten_expression_params({op, value}) when is_atom(op) do
-    {op, value}
-    |> do_flatten([])
-    |> Enum.reverse()
-  end
-
-  defp flatten_expression_params(value), do: [{:==, value}]
-
-  defp do_flatten(map, acc) when is_map(map) and not is_struct(map) do
-    do_flatten(Map.to_list(map), acc)
-  end
-
-  defp do_flatten([], acc), do: acc
-
-  defp do_flatten(list, acc) when is_list(list) do
-    if Keyword.keyword?(list) do
-      Enum.reduce(list, acc, &do_flatten(&1, &2))
-    else
-      [list | acc]
-    end
-  end
-
-  defp do_flatten({k, v}, acc)
-       when k in @instruction_boundary_operators and is_map(v) and not is_struct(v) do
-    [{k, Map.to_list(v)} | acc]
-  end
-
-  defp do_flatten({k, v}, acc)
-       when k in @instruction_boundary_operators and is_list(v) do
-    [{k, v} | acc]
-  end
-
-  defp do_flatten({k, v}, acc) when is_map(v) and not is_struct(v) do
-    do_flatten({k, Map.to_list(v)}, acc)
-  end
-
-  defp do_flatten({k, v}, acc) when is_list(v) do
-    if Keyword.keyword?(v) do
-      v
-      |> flatten_expression_params()
-      |> Enum.reduce(acc, fn inner, inner_acc -> [{k, inner} | inner_acc] end)
-    else
-      [{k, v} | acc]
-    end
-  end
-
-  defp do_flatten(v, acc), do: [v | acc]
-
-  defp flatten_operator_expr(map) when is_map(map) and not is_struct(map) do
-    case Map.to_list(map) do
-      [{k, v}] -> {k, flatten_operator_expr(v)}
-      _other -> map
-    end
-  end
-
-  defp flatten_operator_expr(list) when is_list(list) do
-    if Keyword.keyword?(list) do
-      case list do
-        [{k, v}] -> {k, flatten_operator_expr(v)}
-        _other -> list
-      end
-    else
-      list
-    end
-  end
-
-  defp flatten_operator_expr(value), do: value
 end

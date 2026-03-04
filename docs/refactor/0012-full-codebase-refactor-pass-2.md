@@ -158,9 +158,9 @@ In `lib/ecto_shorts/actions.ex`, all public `def` functions unchanged. Internal 
 
 In `lib/ecto_shorts/dynamics/adapters/postgres/expr_helpers.ex`, three new `@doc false` public functions:
 
-    EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers.alias_to_canonical_map_ast/1
-    EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers.aggregate_dynamic_case_ast/4
-    EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers.not_aggregate_dynamic_case_ast/4
+    EctoShorts.Dynamics.Postgres.ExprHelpers.alias_to_canonical_map_ast/1
+    EctoShorts.Dynamics.Postgres.ExprHelpers.aggregate_dynamic_case_ast/4
+    EctoShorts.Dynamics.Postgres.ExprHelpers.not_aggregate_dynamic_case_ast/4
 
 In `lib/ecto_shorts/dynamics.ex`, two new private functions:
 

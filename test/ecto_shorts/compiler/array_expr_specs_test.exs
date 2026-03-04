@@ -1,11 +1,11 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
+defmodule EctoShorts.Dynamics.Postgres.ArrayExprSpecsTest do
   use ExUnit.Case, async: true
 
   alias EctoShorts.Compiler.ClauseBuilder
-  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Aggregate, as: AggregateSpecs
-  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.Core, as: ArrayExprSpecs
-  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LikeIlike, as: LikeIlikeSpecs
-  alias EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper, as: LowerUpperSpecs
+  alias EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.Aggregate, as: AggregateSpecs
+  alias EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.Core, as: ArrayExprSpecs
+  alias EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.LikeIlike, as: LikeIlikeSpecs
+  alias EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.LowerUpper, as: LowerUpperSpecs
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -71,7 +71,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:lower, "elixir"})
+      module.compose({:as, nil}, key, {:lower, "elixir"})
     )
   end
 
@@ -95,7 +95,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:not, {:==, ["a", "b"]}})
+      module.compose({:as, nil}, key, {:not, {:==, ["a", "b"]}})
     )
   end
 
@@ -118,7 +118,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:==, nil})
+      module.compose({:as, nil}, key, {:==, nil})
     )
   end
 
@@ -147,7 +147,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:count, {:>, 1}})
+      module.compose({:as, nil}, key, {:count, {:>, 1}})
     )
   end
 
@@ -185,7 +185,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExprSpecsTest do
 
     assert_dynamic(
       expected,
-      module.apply_dynamic_expr({:as, nil}, key, {:like, "foo"})
+      module.compose({:as, nil}, key, {:like, "foo"})
     )
   end
 end

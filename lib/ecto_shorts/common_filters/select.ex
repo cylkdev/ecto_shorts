@@ -225,13 +225,13 @@ defmodule EctoShorts.CommonFilters.Select do
 
   defp build_select_map(enum, binding_selector) do
     Enum.reduce(enum, %{}, fn {field_alias, field}, acc ->
-      Map.put(acc, field_alias, apply_dynamic_expr(binding_selector, field))
+      Map.put(acc, field_alias, compose(binding_selector, field))
     end)
   end
 
   Compiler.define_clauses do
     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
-      defp apply_dynamic_expr(unquote(quoted_binding_head), field) do
+      defp compose(unquote(quoted_binding_head), field) do
         Query.dynamic(
           [unquote_splicing(quoted_binding_body)],
           field(unquote(target_binding_var), ^field)

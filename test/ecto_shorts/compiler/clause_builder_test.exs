@@ -56,7 +56,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
     expected_dyn = dynamic([q], field(q, ^:title) == ^"hello")
 
     # Call the generated function clause and compare to the expected dynamic.
-    actual_dyn = module.apply_dynamic_expr({:as, nil}, :title, {:==, "hello"})
+    actual_dyn = module.compose({:as, nil}, :title, {:==, "hello"})
     assert_dynamic(expected_dyn, actual_dyn)
   end
 
@@ -85,7 +85,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
 
     module = compile_clause_module!(clause_ast)
     expected_dyn = dynamic([q], field(q, ^:id) in ^[1, 2])
-    actual_dyn = module.apply_dynamic_expr({:as, nil}, :id, {:==, [1, 2]})
+    actual_dyn = module.compose({:as, nil}, :id, {:==, [1, 2]})
     assert_dynamic(expected_dyn, actual_dyn)
   end
 

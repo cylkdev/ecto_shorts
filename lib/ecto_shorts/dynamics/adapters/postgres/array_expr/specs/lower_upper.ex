@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
+defmodule EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.LowerUpper do
   @moduledoc since: "3.0.0"
   @moduledoc false
 
@@ -26,7 +26,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:not, {:==, {:lower, unquote(value_var)}}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {:lower, unquote(value_var)}}
@@ -39,7 +39,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:not, {:==, {:upper, unquote(value_var)}}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {:upper, unquote(value_var)}}
@@ -52,7 +52,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:not, {:!=, {:lower, unquote(value_var)}}}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:lower, unquote(value_var)})
+            compose(unquote(binding_head_ast), unquote(key_var), {:lower, unquote(value_var)})
           end
       },
       %ClauseSpec{
@@ -61,7 +61,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:not, {:!=, {:upper, unquote(value_var)}}}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:upper, unquote(value_var)})
+            compose(unquote(binding_head_ast), unquote(key_var), {:upper, unquote(value_var)})
           end
       },
       %ClauseSpec{
@@ -102,7 +102,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:==, {:lower, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:lower, unquote(value_var)})
+            compose(unquote(binding_head_ast), unquote(key_var), {:lower, unquote(value_var)})
           end
       },
       %ClauseSpec{
@@ -111,7 +111,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:==, {:upper, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(unquote(binding_head_ast), unquote(key_var), {:upper, unquote(value_var)})
+            compose(unquote(binding_head_ast), unquote(key_var), {:upper, unquote(value_var)})
           end
       },
       %ClauseSpec{
@@ -120,7 +120,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:!=, {:lower, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {:lower, unquote(value_var)}}
@@ -133,7 +133,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr.Specs.LowerUpper do
         head: quote(do: {:!=, {:upper, unquote(value_var)}}),
         body:
           quote do
-            apply_dynamic_expr(
+            compose(
               unquote(binding_head_ast),
               unquote(key_var),
               {:not, {:upper, unquote(value_var)}}

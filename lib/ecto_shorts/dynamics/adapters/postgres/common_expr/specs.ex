@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExpr.Specs do
+defmodule EctoShorts.Dynamics.Postgres.CommonExpr.Specs do
   @moduledoc since: "3.0.0"
   @moduledoc false
 

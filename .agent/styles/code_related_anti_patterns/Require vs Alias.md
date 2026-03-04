@@ -24,17 +24,17 @@ Don't do this:
 
 ```elixir
 # BAD EXAMPLE, DO NOT COPY!
-require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
-alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+require EctoShorts.Dynamics.Postgres.ExprHelpers
+alias EctoShorts.Dynamics.Postgres.ExprHelpers
 ```
 
 Do this:
 
 ```elixir
 # GOOD EXAMPLE, COPY THIS!
-alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+alias EctoShorts.Dynamics.Postgres.ExprHelpers
 
-require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+require EctoShorts.Dynamics.Postgres.ExprHelpers
 ```
 
 Don't do this:
@@ -43,8 +43,8 @@ Don't do this:
 # BAD EXAMPLE, DO NOT COPY!
 alias EctoShorts.Compiler.AST
 alias EctoShorts.Compiler.ClauseSpec
-require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
-alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+require EctoShorts.Dynamics.Postgres.ExprHelpers
+alias EctoShorts.Dynamics.Postgres.ExprHelpers
 ```
 
 Do this:
@@ -53,9 +53,9 @@ Do this:
 # GOOD EXAMPLE, COPY THIS!
 alias EctoShorts.Compiler.AST
 alias EctoShorts.Compiler.ClauseSpec
-alias EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+alias EctoShorts.Dynamics.Postgres.ExprHelpers
 
-require EctoShorts.Dynamics.Adapters.Postgres.ExprHelpers
+require EctoShorts.Dynamics.Postgres.ExprHelpers
 ```
 
 ## Why do this

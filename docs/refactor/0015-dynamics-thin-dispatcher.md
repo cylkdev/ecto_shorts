@@ -8,7 +8,7 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 `EctoShorts.Dynamics` had 421 lines with a 70-line recursive flatten chain (`normalize_expression_params`, `flatten_expression_params`, and helpers) that converted maps to keyword lists and then to tuples before passing to the adapter. The function `apply_helper_expressions` mixed two unrelated concerns - map-to-keyword conversion and `:from` subquery detection - behind a vague name. A beginner could not understand what the module did without tracing every clause.
 
-After this refactor, the module is a thin dispatcher that does three things a beginner can identify at a glance: boolean grouping, `:from` subquery resolution, and adapter dispatch. Maps flow through untouched. The adapter converts maps to canonical tuples at its own boundary right before `apply_dynamic_expr/3`. Spec modules only match canonical tuple shapes and never pattern match on maps.
+After this refactor, the module is a thin dispatcher that does three things a beginner can identify at a glance: boolean grouping, `:from` subquery resolution, and adapter dispatch. Maps flow through untouched. The adapter converts maps to canonical tuples at its own boundary right before `compose/3`. Spec modules only match canonical tuple shapes and never pattern match on maps.
 
 The behaviour that must remain unchanged is: `EctoShorts.Dynamics.convert_to_dynamic/4` produces identical dynamic expressions for every existing test input. The public API signature and return types are unchanged.
 
@@ -52,7 +52,7 @@ The behaviour that must remain unchanged is: `EctoShorts.Dynamics.convert_to_dyn
   Date/Author: 2026-03-02, cascade
 
 - Decision: Pass module directly to `build_field_dynamic` instead of function captures.
-  Rationale: `build_field_dynamic(ArrayExpr, binding, key, expr)` reads more clearly than `build_field_dynamic(binding, key, expr, &ArrayExpr.apply_dynamic_expr/3)`. Direct module call is simpler.
+  Rationale: `build_field_dynamic(ArrayExpr, binding, key, expr)` reads more clearly than `build_field_dynamic(binding, key, expr, &ArrayExpr.compose/3)`. Direct module call is simpler.
   Date/Author: 2026-03-02, user correction
 
 ## Outcomes & Retrospective
@@ -69,7 +69,7 @@ Three files were changed in this refactor.
 
 `lib/ecto_shorts/dynamics.ex` is the module that converts filter parameter maps into composable Ecto dynamic expressions. It is called by `CommonFilters.Filter`, `CommonFilters.Join`, and `CommonFilters.Having`. Its single public function is `convert_to_dynamic/4`.
 
-`lib/ecto_shorts/dynamics/adapters/postgres.ex` is the PostgreSQL-specific adapter that implements the `EctoShorts.Dynamics.Adapter` behaviour. Its `build_dynamic/4` callback routes to `ScalarExpr`, `ArrayExpr`, or `CommonExpr` compiled spec modules.
+`lib/ecto_shorts/dynamics/adapters/postgres.ex` is the PostgreSQL-specific adapter that implements the `EctoShorts.Dynamic` behaviour. Its `build_dynamic/4` callback routes to `ScalarExpr`, `ArrayExpr`, or `CommonExpr` compiled spec modules.
 
 `lib/ecto_shorts/dynamics/adapters/postgres/scalar_expr/specs/date_time.ex` defines `ClauseSpec` entries for datetime/date helper expressions. It had 4 entries that pattern matched on maps, violating the "specs only match tuples" boundary.
 
@@ -141,7 +141,7 @@ In `lib/ecto_shorts/dynamics/adapters/postgres.ex`, preserve:
     @impl true
     def build_dynamic(source, binding_selector, key, expr)
 
-The `EctoShorts.Dynamics.Adapter` behaviour callback signatures are unchanged.
+The `EctoShorts.Dynamic` behaviour callback signatures are unchanged.
 
 ## Milestones
 

@@ -15,8 +15,8 @@ defmodule EctoShorts.Config do
     behaviour. Used to construct error values returned by `EctoShorts.Actions`
     functions. Defaults to `EctoShorts.Actions.Error`.
 
-  * `:dynamic_adapter` - A module implementing `EctoShorts.Dynamics.Adapter`.
-    Auto-resolved to `EctoShorts.Dynamics.Adapters.Postgres` when the repo uses
+  * `:dynamic_adapter` - A module implementing `EctoShorts.Dynamic`.
+    Auto-resolved to `EctoShorts.Dynamics.Postgres` when the repo uses
     `Ecto.Adapters.Postgres`. Defaults to resolved from the repo's adapter.
 
   * `:fragment_provider` - A module that resolves fragment-based join and lock
@@ -38,7 +38,7 @@ defmodule EctoShorts.Config do
         dynamic_adapter: MyApp.DynamicAdapter,
         max_binding_positions: 3
 
-  See also `EctoShorts.Actions.Error`, `EctoShorts.Dynamics.Adapter`, and
+  See also `EctoShorts.Actions.Error`, `EctoShorts.Dynamic`, and
   `EctoShorts.FragmentProvider`.
   """
 
@@ -207,7 +207,7 @@ defmodule EctoShorts.Config do
 
   Defaults to `nil`. When `nil`, `EctoShorts.Dynamics` auto-resolves the
   adapter from the repo's database adapter (Postgres only, out of the box).
-  Set this to a custom module implementing `EctoShorts.Dynamics.Adapter` to
+  Set this to a custom module implementing `EctoShorts.Dynamic` to
   override expression-building behaviour.
 
   ## Examples
@@ -215,7 +215,7 @@ defmodule EctoShorts.Config do
       iex> EctoShorts.Config.dynamic_adapter()
       nil
 
-  See also `EctoShorts.Dynamics.Adapter` and `repo!/1`.
+  See also `EctoShorts.Dynamic` and `repo!/1`.
   """
   @spec dynamic_adapter :: module() | nil
   def dynamic_adapter do

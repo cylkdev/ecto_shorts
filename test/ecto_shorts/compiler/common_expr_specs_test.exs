@@ -1,8 +1,8 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExprSpecsTest do
+defmodule EctoShorts.Dynamics.Postgres.CommonExprSpecsTest do
   use ExUnit.Case, async: true
 
   alias EctoShorts.Compiler.ClauseBuilder
-  alias EctoShorts.Dynamics.Adapters.Postgres.CommonExpr.Specs, as: CommonExprSpecs
+  alias EctoShorts.Dynamics.Postgres.CommonExpr.Specs, as: CommonExprSpecs
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -52,7 +52,7 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExprSpecsTest do
 
     assert_dynamic(
       expected_ids,
-      module.apply_dynamic_expr({:as, nil}, :ids, [1, 2])
+      module.compose({:as, nil}, :ids, [1, 2])
     )
   end
 end

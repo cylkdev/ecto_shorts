@@ -6,14 +6,14 @@ defmodule EctoShorts.Compiler.AST do
   Use this module when building clause spec providers that need to generate
   quoted AST for `Ecto.Query.dynamic/2` expressions, field references, negations,
   or pattern matching expressions. These helpers produce the quoted code that
-  becomes part of compiled `apply_dynamic_expr/3` function clauses.
+  becomes part of compiled `compose/3` function clauses.
 
   ## When to use AST helpers
 
   Use these functions when you need to:
 
   * **Build clause specs** - generate the `:body` field for a `ClauseSpec`
-    that will be compiled into an `apply_dynamic_expr/3` clause.
+    that will be compiled into an `compose/3` clause.
   * **Create dynamic expressions** - build `dynamic/2` calls with proper
     binding references at compile time.
   * **Reference fields** - generate `field/2` calls that work with any
@@ -127,7 +127,7 @@ defmodule EctoShorts.Compiler.AST do
 
   ### Output (compiled function clause)
 
-      def apply_dynamic_expr({:as, nil}, key, {:==, val}) do
+      def compose({:as, nil}, key, {:==, val}) do
         Ecto.Query.dynamic([r], field(r, ^key) == ^val)
       end
 
@@ -186,7 +186,7 @@ defmodule EctoShorts.Compiler.AST do
       })
 
   The `:body` field contains the AST that will become the function body of
-  the generated `apply_dynamic_expr/3` clause.
+  the generated `compose/3` clause.
 
   See also `EctoShorts.Compiler.ClauseSpec`, `EctoShorts.Compiler.ClauseBuilder`,
   and `EctoShorts.Compiler`.
