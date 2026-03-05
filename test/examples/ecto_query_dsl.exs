@@ -1729,7 +1729,7 @@ defmodule EctoShorts.QueryFiltersTest do
       # Given: [last: 2]
       # Expected: SELECT ... FROM (SELECT ... ORDER BY id DESC LIMIT 2) AS subquery ORDER BY id ASC
 
-      {:ok, post1} = TestRepo.insert(%Post{title: "First"})
+      {:ok, _post1} = TestRepo.insert(%Post{title: "First"})
       {:ok, post2} = TestRepo.insert(%Post{title: "Second"})
       {:ok, post3} = TestRepo.insert(%Post{title: "Third"})
 
