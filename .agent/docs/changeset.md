@@ -189,7 +189,7 @@ defmodule Ecto.Changeset do
       existing entries.
 
   These functions are opinionated on how it works with associations.
-  If you need different behaviour or explicit control over the associated
+  If you need different behavior or explicit control over the associated
   data, you can skip this functionality and use `Ecto.Multi` to encode how
   several database operations will happen on several schemas and changesets
   at once.
@@ -208,7 +208,7 @@ defmodule Ecto.Changeset do
   data is being replaced. For example, imagine a Post has many Comments where
   the comments have IDs 1, 2 and 3. If you call `cast_assoc/3` passing only
   the IDs 1 and 2, Ecto will consider 3 is being "replaced" and it will raise
-  by default. Such behaviour can be changed when defining the relation by
+  by default. Such behavior can be changed when defining the relation by
   setting `:on_replace` option when defining your association/embed according
   to the values below:
 
@@ -296,7 +296,7 @@ defmodule Ecto.Changeset do
 
   Besides the basic types which are mentioned above, such as `:boolean` and `:string`,
   parameterized types can also be used in schemaless changesets. They implement
-  the `Ecto.ParameterizedType` behaviour and we can create the necessary type info by
+  the `Ecto.ParameterizedType` behavior and we can create the necessary type info by
   calling the `init/2` function.
 
   For example, to use `Ecto.Enum` in a schemaless changeset:
@@ -1036,7 +1036,7 @@ defmodule Ecto.Changeset do
 
   This function requires the associated data to have been preloaded, except
   when the parent changeset has been newly built and not yet persisted.
-  Missing data will invoke the `:on_replace` behaviour defined on the
+  Missing data will invoke the `:on_replace` behavior defined on the
   association.
 
   For associations with cardinality one, `nil` can be used to remove the existing
@@ -1102,7 +1102,7 @@ defmodule Ecto.Changeset do
   Once the parent changeset is given to an `Ecto.Repo` function, all entries
   will be inserted/updated/deleted within the same transaction.
 
-  If you need different behaviour or explicit control over how this function
+  If you need different behavior or explicit control over how this function
   behaves, you can drop it altogether and use `Ecto.Multi` to encode how several
   database operations will happen on several schemas and changesets at once.
 
@@ -1223,7 +1223,7 @@ defmodule Ecto.Changeset do
   If the embed has no changes, it will be skipped. If the embed is
   invalid, the changeset will be marked as invalid.
 
-  The list of supported values and their behaviour is described in
+  The list of supported values and their behavior is described in
   `put_assoc/4`. If the given value is not any of values listed there,
   it will raise.
 
@@ -1952,7 +1952,7 @@ defmodule Ecto.Changeset do
 
   This is done by regularly fetching the record from the database, then checking
   whether another user has made changes to the record *only when updating the
-  record*. This behaviour is ideal in situations where the chances of concurrent
+  record*. This behavior is ideal in situations where the chances of concurrent
   updates to the same record are low; if they're not, pessimistic locking or
   other concurrency patterns may be more suited.
 

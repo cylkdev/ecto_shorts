@@ -51,7 +51,7 @@ Or with `Enum.reduce_while/3` when richer control is needed.
 
 - Control flags are removed.
 - Flow is expressed directly by language/library constructs.
-- Behaviour is unchanged.
+- Behavior is unchanged.
 
 ## Eliminates Code Smell
 

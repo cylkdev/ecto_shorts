@@ -43,9 +43,9 @@ The dynamic expression system has this call chain:
 
 Specs return `nil` when they cannot build a dynamic expression. The caller in `dynamics.ex` previously silently skipped nil results. Now it logs a warning before skipping.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
-The public `EctoShorts.Dynamics.convert_to_dynamic/4` function must return identical dynamic expressions for all valid inputs. For unsupported operator+nil combinations (e.g., `%{field: %{>: nil}}`), the behaviour changes from "log warning deep in specs + return nil + skip" to "return nil from specs + log warning in dynamics + skip" - same observable query result, different log message location.
+The public `EctoShorts.Dynamics.convert_to_dynamic/4` function must return identical dynamic expressions for all valid inputs. For unsupported operator+nil combinations (e.g., `%{field: %{>: nil}}`), the behavior changes from "log warning deep in specs + return nil + skip" to "return nil from specs + log warning in dynamics + skip" - same observable query result, different log message location.
 
 ## Code Smell Identified
 
@@ -74,7 +74,7 @@ Run `mix test` from the repository root. All existing tests must pass. The warni
 
 ## Idempotence and Recovery
 
-Safe to apply multiple times. Reverting the three files restores original behaviour.
+Safe to apply multiple times. Reverting the three files restores original behavior.
 
 ## Artifacts and Notes
 

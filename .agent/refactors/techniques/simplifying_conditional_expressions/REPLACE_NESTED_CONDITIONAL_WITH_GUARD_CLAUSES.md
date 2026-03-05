@@ -41,7 +41,7 @@ def payout(employee), do: employee.salary
 ## Why Refactor
 
 - Flattens control flow.
-- Highlights normal behaviour.
+- Highlights normal behavior.
 - Reduces indentation and branching complexity.
 
 ## How to Refactor
@@ -55,7 +55,7 @@ def payout(employee), do: employee.salary
 
 - Nesting depth is reduced.
 - Main path is obvious.
-- Behaviour is unchanged.
+- Behavior is unchanged.
 
 ## Eliminates Code Smell
 

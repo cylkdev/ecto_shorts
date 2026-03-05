@@ -6,7 +6,7 @@ Use when a function in a shared module is relevant to only some variants.
 
 ## Problem
 
-A shared module defines behaviour unused by many variants.
+A shared module defines behavior unused by many variants.
 
 ```elixir
 defmodule Payment.Shared do
@@ -38,5 +38,5 @@ end
 
 ## Validation
 
-- Shared module no longer holds variant-only behaviour.
-- Behaviour remains correct at call sites.
+- Shared module no longer holds variant-only behavior.
+- Behavior remains correct at call sites.

@@ -1,4 +1,4 @@
-# Extract Behaviour
+# Extract Behavior
 
 ## When to use
 
@@ -20,7 +20,7 @@ end
 
 ## Solution
 
-Define a behaviour to formalize the shared API.
+Define a behavior to formalize the shared API.
 
 ```elixir
 defmodule ShippingStrategy do
@@ -36,7 +36,7 @@ end
 
 ## How to Refactor
 
-1. Define behaviour callbacks.
+1. Define behavior callbacks.
 2. Add `@behaviour` to implementations.
 3. Align function signatures.
 4. Run formatter and tests.

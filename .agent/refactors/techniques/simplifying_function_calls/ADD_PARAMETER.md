@@ -4,9 +4,9 @@
 
 Use when any of the following are true:
 
-- A function needs new input to implement required behaviour.
+- A function needs new input to implement required behavior.
 - Hidden global/config state is being read implicitly.
-- Callers need to control behaviour explicitly.
+- Callers need to control behavior explicitly.
 
 ## Problem
 

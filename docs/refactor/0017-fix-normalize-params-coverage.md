@@ -1,4 +1,4 @@
-# Fix normalize_params to cover full flatten_expression_params behaviour
+# Fix normalize_params to cover full flatten_expression_params behavior
 
 This RefactorPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
@@ -59,7 +59,7 @@ The commented-out old code has been removed, leaving a clean single implementati
 
 ## Context and Orientation
 
-The file `lib/ecto_shorts/dynamics/adapters/postgres.ex` defines `EctoShorts.Dynamics.Postgres`, the PostgreSQL-specific dynamic expression adapter. It implements the `EctoShorts.Dynamic` behaviour with one public callback `build_dynamic/4`.
+The file `lib/ecto_shorts/dynamics/adapters/postgres.ex` defines `EctoShorts.Dynamics.Postgres`, the PostgreSQL-specific dynamic expression adapter. It implements the `EctoShorts.Dynamic` behavior with one public callback `build_dynamic/4`.
 
 `build_dynamic/4` routes filter expressions to one of three sub-modules:
 
@@ -71,7 +71,7 @@ For `ArrayExpr` and `ScalarExpr`, filter expressions are first normalized by `no
 
 For `CommonExpr`, the raw expression is wrapped in a single-element list `[expr]` and passed to `reduce_expr/4` directly, since `CommonExpr.compose/3` expects the original value shape.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 `EctoShorts.Dynamics.Postgres.build_dynamic/4` returns the same `Ecto.Query.dynamic_expr()` for all input shapes as before refactor 0016. Verified by the full test suite: 9 doctests, 884 tests, 0 failures.
 
@@ -79,7 +79,7 @@ For `CommonExpr`, the raw expression is wrapped in a single-element list `[expr]
 
 `Dead Code` from `.agent/refactor/code_smells/dispensables/DEAD_CODE.md`. The commented-out old functions (`flatten_expression_params/1`, `do_flatten/2`, `flatten_operator_expr/1`) were dead code left as a reference. They are removed now that the replacement is verified.
 
-Additionally, three bugs in the replacement code constituted incorrect behaviour from an incomplete `Inline Function` application:
+Additionally, three bugs in the replacement code constituted incorrect behavior from an incomplete `Inline Function` application:
 
 1. Over-recursion into scalar values (wrapping in `{:==, ...}`)
 2. Infinite recursion for keyword lists
@@ -87,7 +87,7 @@ Additionally, three bugs in the replacement code constituted incorrect behaviour
 
 ## Refactoring Technique Selected
 
-`Inline Function` from `.agent/refactor/techniques/composing_functions/INLINE_FUNCTION.md`. The three old functions were consolidated into one `normalize_params/2` function. This refactor completes that consolidation by fixing the behaviour gaps.
+`Inline Function` from `.agent/refactor/techniques/composing_functions/INLINE_FUNCTION.md`. The three old functions were consolidated into one `normalize_params/2` function. This refactor completes that consolidation by fixing the behavior gaps.
 
 ## Plan of Work
 

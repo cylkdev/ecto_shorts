@@ -36,7 +36,7 @@ end
 ## How to Refactor
 
 1. Identify layers with no meaningful specialization.
-2. Move behaviour into one target module.
+2. Move behavior into one target module.
 3. Update call sites.
 4. Remove obsolete modules.
 5. Run formatter and tests.
@@ -44,4 +44,4 @@ end
 ## Validation
 
 - Removed layers had no unique value.
-- Behaviour is unchanged.
+- Behavior is unchanged.

@@ -89,7 +89,7 @@ end
 
 - **Extract Module**: Move related functions into dedicated modules.
 - **Move Function**: Relocate functions to modules where they belong.
-- **Extract Behaviour**: If the module implements multiple interfaces, separate them.
+- **Extract Behavior**: If the module implements multiple interfaces, separate them.
 - **Group by Domain**: Organize modules by business domain, not technical layer.
 
 ## Why Refactor
@@ -116,4 +116,4 @@ end
 
 - `Extract Module`
 - `Move Function`
-- `Extract Behaviour`
+- `Extract Behavior`

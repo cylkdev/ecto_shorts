@@ -37,13 +37,13 @@ defp last_name(%User{last_name: value}), do: value
 ## How to Refactor
 
 1. Identify repeated direct access to one field.
-2. Add internal helper functions for read/write behaviour.
+2. Add internal helper functions for read/write behavior.
 3. Replace direct accesses incrementally.
 4. Run formatter and tests.
 
 ## Validation
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 - Field access logic is centralized in helper functions.
 
 ## Eliminates Code Smell

@@ -10,7 +10,7 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 After this refactor, the module is a thin dispatcher that does three things a beginner can identify at a glance: boolean grouping, `:from` subquery resolution, and adapter dispatch. Maps flow through untouched. The adapter converts maps to canonical tuples at its own boundary right before `compose/3`. Spec modules only match canonical tuple shapes and never pattern match on maps.
 
-The behaviour that must remain unchanged is: `EctoShorts.Dynamics.convert_to_dynamic/4` produces identical dynamic expressions for every existing test input. The public API signature and return types are unchanged.
+The behavior that must remain unchanged is: `EctoShorts.Dynamics.convert_to_dynamic/4` produces identical dynamic expressions for every existing test input. The public API signature and return types are unchanged.
 
 ## Progress
 
@@ -69,13 +69,13 @@ Three files were changed in this refactor.
 
 `lib/ecto_shorts/dynamics.ex` is the module that converts filter parameter maps into composable Ecto dynamic expressions. It is called by `CommonFilters.Filter`, `CommonFilters.Join`, and `CommonFilters.Having`. Its single public function is `convert_to_dynamic/4`.
 
-`lib/ecto_shorts/dynamics/adapters/postgres.ex` is the PostgreSQL-specific adapter that implements the `EctoShorts.Dynamic` behaviour. Its `build_dynamic/4` callback routes to `ScalarExpr`, `ArrayExpr`, or `CommonExpr` compiled spec modules.
+`lib/ecto_shorts/dynamics/adapters/postgres.ex` is the PostgreSQL-specific adapter that implements the `EctoShorts.Dynamic` behavior. Its `build_dynamic/4` callback routes to `ScalarExpr`, `ArrayExpr`, or `CommonExpr` compiled spec modules.
 
 `lib/ecto_shorts/dynamics/adapters/postgres/scalar_expr/specs/date_time.ex` defines `ClauseSpec` entries for datetime/date helper expressions. It had 4 entries that pattern matched on maps, violating the "specs only match tuples" boundary.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
-`EctoShorts.Dynamics.convert_to_dynamic/4` returns identical `Ecto.Query.DynamicExpr` values for every existing test input. Returns `nil` for empty params. The `Adapter` behaviour callback `build_dynamic/4` signature is unchanged.
+`EctoShorts.Dynamics.convert_to_dynamic/4` returns identical `Ecto.Query.DynamicExpr` values for every existing test input. Returns `nil` for empty params. The `Adapter` behavior callback `build_dynamic/4` signature is unchanged.
 
 ## Code Smell Identified
 
@@ -105,7 +105,7 @@ Expect 9 pre-existing failures (all `posts_with_lock` table), 0 new failures.
 
 ## Validation and Acceptance
 
-Run `mix test --seed 0 --trace` and expect 908 tests with 9 failures (all pre-existing `posts_with_lock` table issues). The refactor preserves all existing tests. No new tests were added because this is a behaviour-preserving refactor.
+Run `mix test --seed 0 --trace` and expect 908 tests with 9 failures (all pre-existing `posts_with_lock` table issues). The refactor preserves all existing tests. No new tests were added because this is a behavior-preserving refactor.
 
 ## Idempotence and Recovery
 
@@ -141,7 +141,7 @@ In `lib/ecto_shorts/dynamics/adapters/postgres.ex`, preserve:
     @impl true
     def build_dynamic(source, binding_selector, key, expr)
 
-The `EctoShorts.Dynamic` behaviour callback signatures are unchanged.
+The `EctoShorts.Dynamic` behavior callback signatures are unchanged.
 
 ## Milestones
 

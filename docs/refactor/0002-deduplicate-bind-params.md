@@ -8,11 +8,11 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 Eight filter submodules under `lib/ecto_shorts/common_filters/` each contain a private `reduce_*_bind` function that implements the same ~40-line algorithm: validate that `:bind` params are a keyword list or map, normalize maps to keyword lists, validate that each key is a recognized binding mode (`:as` or `:at`), normalize each scoped payload, iterate `{binding_target, value}` pairs, and dispatch each pair back into the module's own reducer. The only difference between the eight copies is the callback function invoked on each pair.
 
-This duplication means that any bug fix or behaviour change to bind-parameter handling must be applied in eight places. It also inflates total line count by approximately 280 lines of near-identical code.
+This duplication means that any bug fix or behavior change to bind-parameter handling must be applied in eight places. It also inflates total line count by approximately 280 lines of near-identical code.
 
 This refactor extracts the common algorithm into a single shared function in `EctoShorts.CommonFilters.BindingParams`, parameterized by a callback. Each submodule replaces its private copy with a one-line call to the shared function, passing a closure that dispatches to its own reducer. No public API changes. All existing tests continue to pass.
 
-To verify behaviour is preserved, run `mix test` from the repository root. All tests must pass after every milestone.
+To verify behavior is preserved, run `mix test` from the repository root. All tests must pass after every milestone.
 
 ## Progress
 
@@ -41,7 +41,7 @@ To verify behaviour is preserved, run `mix test` from the repository root. All t
 
 The refactor is complete. Eight near-identical `reduce_*_bind` private functions (each ~40 lines) were replaced with single-line calls to the new shared `BindingParams.reduce_submodule_bind_params/3`. This eliminated approximately 280 lines of duplicated code and reduced the credo `mods/funs` count from 749 to 735 (14 fewer function clauses).
 
-The behaviour boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same `ArgumentError` messages are raised for invalid bind params. `mix format` is clean. `mix credo --strict` shows no new warnings.
+The behavior boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same `ArgumentError` messages are raised for invalid bind params. `mix format` is clean. `mix credo --strict` shows no new warnings.
 
 Files changed:
 - `lib/ecto_shorts/common_filters/bind_params.ex` - added `reduce_submodule_bind_params/3`
@@ -75,7 +75,7 @@ Key files:
 - `lib/ecto_shorts/common_filters/windows.ex` - has `reduce_windows_bind/3`
 - `lib/ecto_shorts/common_filters/with_ties.ex` - has `reduce_with_ties_bind/3`
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 All public functions in all affected modules must return identical results for identical inputs. Specifically:
 
@@ -89,7 +89,7 @@ Duplicate Code, from `.agent/refactor/code_smells/dispensables/DUPLICATE_CODE.md
 
 ## Refactoring Technique Selected
 
-Extract Function (`.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`) combined with Form Template Function (`.agent/refactor/techniques/dealing_with_generalization/FORM_TEMPLATE_FUNCTION.md`). The common algorithm is extracted into a single shared function. The variable step (dispatching to the module's own reducer) is parameterized as a callback function argument. This preserves behaviour because the shared function performs identical validation and iteration, and the callback preserves each module's dispatch semantics.
+Extract Function (`.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`) combined with Form Template Function (`.agent/refactor/techniques/dealing_with_generalization/FORM_TEMPLATE_FUNCTION.md`). The common algorithm is extracted into a single shared function. The variable step (dispatching to the module's own reducer) is parameterized as a callback function argument. This preserves behavior because the shared function performs identical validation and iteration, and the callback preserves each module's dispatch semantics.
 
 ## Plan of Work
 

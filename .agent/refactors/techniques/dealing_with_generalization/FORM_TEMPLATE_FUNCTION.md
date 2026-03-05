@@ -51,4 +51,4 @@ end
 ## Validation
 
 - Shared flow exists once.
-- Variant step behaviour remains correct.
+- Variant step behavior remains correct.

@@ -82,7 +82,7 @@ Root fields are fields on the root `query`, `mutation`, or `subscription` object
 - `:conversation_delete` - deletes a conversation
 - `:conversation_archive` - domain-specific action
 
-Choose one verb per meaning and reuse it across the schema. If your API uses `delete`, do not also use `remove` for the same behaviour.
+Choose one verb per meaning and reuse it across the schema. If your API uses `delete`, do not also use `remove` for the same behavior.
 
 **Subscriptions** use `<resource>_<past_tense_event>` format.
 
@@ -688,7 +688,7 @@ defmodule MyAppWeb.Schema.Mutations.Message do
 
   ### Why `userErrors` is shown in the examples
 
-  Many GraphQL APIs return validation and business-rule failures in the mutation payload (for example in a `userErrors` field) instead of relying only on top-level GraphQL errors. Requesting `userErrors` makes client behaviour easier to debug.
+  Many GraphQL APIs return validation and business-rule failures in the mutation payload (for example in a `userErrors` field) instead of relying only on top-level GraphQL errors. Requesting `userErrors` makes client behavior easier to debug.
 
   ### What this module does not define
 

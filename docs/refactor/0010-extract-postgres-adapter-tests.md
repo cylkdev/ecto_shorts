@@ -10,13 +10,13 @@ The test file `test/ecto_shorts/dynamics_test.exs` currently mixes tests for two
 
 After this refactor, each module has its own test file. The Postgres adapter tests call `Postgres.build_dynamic/4` directly, making the test-to-code relationship explicit. The `dynamics_test.exs` file retains only tests that exercise `Dynamics`-level preprocessing logic.
 
-Behaviour that must remain unchanged: every dynamic expression currently asserted in `dynamics_test.exs` must still be asserted somewhere after the refactor. No production code changes.
+Behavior that must remain unchanged: every dynamic expression currently asserted in `dynamics_test.exs` must still be asserted somewhere after the refactor. No production code changes.
 
 Verification: `mix test --seed 0 --trace` passes with the same number of assertions and 0 failures.
 
 ## Progress
 
-- [x] (2026-03-01 00:31Z) Identified behaviour boundary and test groupings.
+- [x] (2026-03-01 00:31Z) Identified behavior boundary and test groupings.
 - [x] (2026-03-01 00:31Z) Created RefactorPlan document.
 - [x] (2026-03-01 00:45Z) Created `test/ecto_shorts/dynamics/adapters/postgres_test.exs` with 117 tests calling `Postgres.build_dynamic/4` directly. All green.
 - [x] (2026-03-01 00:50Z) Removed moved tests from `dynamics_test.exs`. 20 tests remain, all green.
@@ -59,7 +59,7 @@ The current test file `test/ecto_shorts/dynamics_test.exs` contains ~150 tests. 
 
 The expression shape difference is critical. `Dynamics.convert_to_dynamic` normalizes `%{title: %{like: "foo"}}` into a call like `build_dynamic(source, binding, :title, {:like, "foo"})`. The direct adapter tests must pass the already-normalized tuple.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 No production code changes. Every dynamic expression currently asserted must still be asserted in exactly one test file after the refactor.
 

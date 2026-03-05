@@ -70,6 +70,6 @@ Now the test never touches global config:
       end
     end
     
-Using `Application.put_env/4` is only valid when it's to test a specific behaviour (for example, a test that checks your supervision tree or init logic reads config correctly). Keep those tests `async: false`, and restore state with `on_exit/1`.
+Using `Application.put_env/4` is only valid when it's to test a specific behavior (for example, a test that checks your supervision tree or init logic reads config correctly). Keep those tests `async: false`, and restore state with `on_exit/1`.
 
 For most feature and unit tests, treat "test changes global application env" as a smell and refactor toward explicit dependencies.

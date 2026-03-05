@@ -73,7 +73,7 @@ defmodule EctoShorts.CommonFilters do
     * `:<=` / `:lte` - less than or equal
     * `:in` - value is in a list
 
-  Some comparison operators have different behaviours depending on the field type.
+  Some comparison operators have different behaviors depending on the field type.
 
   When a `list` value is used with an equality operator:
 
@@ -620,7 +620,7 @@ defmodule EctoShorts.CommonFilters do
   The `:dynamic` key accepts a raw dynamic struct for expressions
   that cannot be represented with the data-driven filter keys above.
   Prefer filter keys when possible - they are composable and produce
-  predictable behaviour.
+  predictable behavior.
 
       %{dynamic: dynamic([p], p.views > ^10)}
       %{where: %{dynamic: dynamic([p], p.published == ^true)}}
@@ -740,7 +740,7 @@ defmodule EctoShorts.CommonFilters do
   Schema-backed queries use schema reflection to distinguish array fields
   from scalar fields, which changes how list values are compared (equality
   vs. membership). Without a schema, all comparisons use the default
-  scalar behaviour. For example, `%{tags: ["a", "b"]}` produces
+  scalar behavior. For example, `%{tags: ["a", "b"]}` produces
   `tags IN ('a', 'b')` instead of the array-equality check you would get
   with a schema that declares `tags` as `{:array, :string}`.
 

@@ -6,12 +6,12 @@ Abstraction Abusers
 
 ## Description
 
-Complex conditional logic based on type checking or value discrimination that is scattered across multiple functions or modules. In Elixir, this manifests as repeated `case`, `cond`, or pattern matching on the same discriminator across the codebase, rather than using polymorphism via behaviours or protocols.
+Complex conditional logic based on type checking or value discrimination that is scattered across multiple functions or modules. In Elixir, this manifests as repeated `case`, `cond`, or pattern matching on the same discriminator across the codebase, rather than using polymorphism via behaviors or protocols.
 
 ## Signs and Symptoms
 
 - The same `case` or `cond` expression appears in multiple functions.
-- Functions check the type of a value using guards like `is_map/1`, `is_list/1`, or struct matching to decide behaviour.
+- Functions check the type of a value using guards like `is_map/1`, `is_list/1`, or struct matching to decide behavior.
 - Adding a new variant requires modifying multiple functions.
 - Large `case` statements with many clauses handling different "types" of the same concept.
 - Atoms or strings are used as type discriminators (e.g., `type: :admin`, `type: :guest`).
@@ -19,7 +19,7 @@ Complex conditional logic based on type checking or value discrimination that is
 ## Causes
 
 - Procedural thinking carried over from other languages.
-- Unfamiliarity with Elixir protocols and behaviours.
+- Unfamiliarity with Elixir protocols and behaviors.
 - Starting simple and not refactoring as variants grow.
 - Fear of "over-engineering" with protocols.
 
@@ -119,7 +119,7 @@ defmodule NotificationSender do
 end
 ```
 
-## Alternative: Behaviour-based Approach
+## Alternative: Behavior-based Approach
 
 ```elixir
 defmodule NotificationStrategy do
@@ -158,7 +158,7 @@ end
 ## Treatment
 
 - **Replace Conditional with Protocol**: Define a protocol and implement it for each variant type.
-- **Replace Conditional with Behaviour**: Use behaviours when variants are modules, not data.
+- **Replace Conditional with Behavior**: Use behaviors when variants are modules, not data.
 - **Extract Function**: If the conditional is simple, extract each branch into a named function clause.
 - **Use Pattern Matching Clauses**: Replace `case` with multiple function clauses when appropriate.
 
@@ -185,6 +185,6 @@ end
 ## Related Refactoring Techniques
 
 - `Replace Conditional with Protocol`
-- `Replace Conditional with Behaviour`
+- `Replace Conditional with Behavior`
 - `Extract Function`
 - `Introduce Null Object`

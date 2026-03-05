@@ -72,7 +72,7 @@ Each milestone must be independently verifiable and must incrementally produce a
 
 Every ExampleMapPlan must contain and maintain these sections: Progress, Surprises & Discoveries, Decision Log, and Outcomes & Retrospective.
 
-When you discover unclear behaviour, conflicting requirements, or surprising system constraints, capture them in Surprises & Discoveries with short evidence.
+When you discover unclear behavior, conflicting requirements, or surprising system constraints, capture them in Surprises & Discoveries with short evidence.
 
 If you change course mid-way, document why in the Decision Log and reflect the implications in Progress.
 
@@ -86,7 +86,7 @@ If you change course mid-way, document why in the Decision Log and reflect the i
 
     Explain in a few sentences what someone gains after this feature exists and how they can see it working once implemented.
 
-    State the single observable boundary you will use to prove the behaviour, such as an API response shape, a function result, a CLI output, or a UI flow that can be exercised manually.
+    State the single observable boundary you will use to prove the behavior, such as an API response shape, a function result, a CLI output, or a UI flow that can be exercised manually.
 
     ## Progress
 
@@ -100,7 +100,7 @@ If you change course mid-way, document why in the Decision Log and reflect the i
 
     ## Surprises & Discoveries
 
-    Document unexpected behaviours, contradictions, missing requirements, or important constraints discovered while mapping.
+    Document unexpected behaviors, contradictions, missing requirements, or important constraints discovered while mapping.
 
     - Observation: …
       Evidence: …
@@ -125,7 +125,7 @@ If you change course mid-way, document why in the Decision Log and reflect the i
 
     Define any non-obvious term you will use.
 
-    State assumptions explicitly, including environment assumptions, product assumptions, and any relevant existing behaviour.
+    State assumptions explicitly, including environment assumptions, product assumptions, and any relevant existing behavior.
 
     ## Story
 
@@ -139,7 +139,7 @@ If you change course mid-way, document why in the Decision Log and reflect the i
 
     Each rule must be phrased so a human can decide whether an example satisfies it.
 
-    Each rule must avoid hidden implementation details. It must describe behaviour, not code structure.
+    Each rule must avoid hidden implementation details. It must describe behavior, not code structure.
 
     ## Examples
 
@@ -209,7 +209,7 @@ If you change course mid-way, document why in the Decision Log and reflect the i
 
     No unresolved questions that block implementation, or a clearly documented decision on how unresolved questions will be handled.
 
-    Phrase acceptance as behaviour with specific inputs and outputs.
+    Phrase acceptance as behavior with specific inputs and outputs.
 
     ## Idempotence and Recovery
 

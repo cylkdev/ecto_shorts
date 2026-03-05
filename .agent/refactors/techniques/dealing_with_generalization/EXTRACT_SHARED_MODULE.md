@@ -2,7 +2,7 @@
 
 ## When to use
 
-Use when multiple modules duplicate a common subset of behaviour.
+Use when multiple modules duplicate a common subset of behavior.
 
 ## Problem
 
@@ -20,7 +20,7 @@ end
 
 ## Solution
 
-Extract shared behaviour into one module reused by variants.
+Extract shared behavior into one module reused by variants.
 
 ```elixir
 defmodule Invoice.Shared do
@@ -43,4 +43,4 @@ end
 ## Validation
 
 - Shared logic lives in one module.
-- Variant modules keep only variant behaviour.
+- Variant modules keep only variant behavior.

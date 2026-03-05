@@ -62,7 +62,7 @@ This improves code in the following ways:
 ## Validation
 
 - Callers no longer traverse internal nested shapes directly.
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 - Internal structure can evolve with minimal caller edits.
 
 ## Eliminates Code Smell

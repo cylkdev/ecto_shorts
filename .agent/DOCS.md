@@ -2,7 +2,7 @@
 
 This is the documentation standard for this project.
 
-Follow it so a beginner can understand the public API, call it correctly on the first try, predict every user-observable behaviour, and verify that behaviour using examples.
+Follow it so a beginner can understand the public API, call it correctly on the first try, predict every user-observable behavior, and verify that behavior using examples.
 
 ## What counts as "documentation" in Elixir
 
@@ -15,7 +15,7 @@ Elixir documentation is Markdown attached to code.
 * `@doc false` to hide internal public functions from generated docs.
 * `@doc group: "Category"` to organize functions into logical groups.
 * `@moduledoc groups:` to define the ordering and descriptions of those groups.
-* `@callback` for behaviour callbacks.
+* `@callback` for behavior callbacks.
 
 Readers will treat these docs as the source of truth, so they must be complete and accurate.
 
@@ -108,7 +108,7 @@ For simple notes, use a blockquote with `NOTE:`:
 Use `**bold**` for critical terms: `**wrong**`, `**all**`, `**full data**`.
 Use backticks for all code references: module names, function names, option keys, atoms, types, and values.
 
-## User-observable behaviour
+## User-observable behavior
 
 "User-observable" means anything a caller can see happen at the boundary.
 This includes return values, raised errors, logs, messages to other processes, database writes, files created, telemetry emitted, retries, timeouts, ordering, and concurrency effects.
@@ -118,11 +118,11 @@ If a caller could notice it, document it.
 ## How to write module docs
 
 Every moduledoc is a self-contained guide organized with `##` section headers.
-A reader who has never seen the module should be able to understand it, use it, and predict its behaviour from the moduledoc alone.
+A reader who has never seen the module should be able to understand it, use it, and predict its behavior from the moduledoc alone.
 
 ### Structure
 
-Follow this structure. Use `##` headers for each section. Omit a section only if it genuinely does not apply - never omit observable behaviour.
+Follow this structure. Use `##` headers for each section. Omit a section only if it genuinely does not apply - never omit observable behavior.
 
 **1. One-line summary**
 
@@ -149,7 +149,7 @@ Include inline code examples whenever they help a reader understand the relation
 
 **3. Conceptual sections** (`## Title`)
 
-Break the module's behaviour into named sections. Each section explains one concept the reader needs.
+Break the module's behavior into named sections. Each section explains one concept the reader needs.
 
 Teach each concept progressively: start with the simplest case, then add complexity. Include inline code examples in every section - not just in the Examples section.
 
@@ -177,7 +177,7 @@ A copy-paste-able snippet showing the happy path from start to finish. This sect
 
 **5. Configuration** (`## Configuration`)
 
-If the module accepts options at startup or has configurable behaviour, list them here using the `*` options format. Describe each option in terms of what the caller observes.
+If the module accepts options at startup or has configurable behavior, list them here using the `*` options format. Describe each option in terms of what the caller observes.
 
 **6. Struct fields** (`## Fields` or `## The Struct`)
 
@@ -253,7 +253,7 @@ Prefer concrete shapes like `{:ok, value}` and `{:error, reason}`.
 If the function can raise, say what triggers the exception and what the caller will observe.
 
 List side effects.
-Mention logs, database writes, messages, telemetry, file IO, network calls, and any observable timing behaviour.
+Mention logs, database writes, messages, telemetry, file IO, network calls, and any observable timing behavior.
 
 Only describe performance when it changes how a caller should use the function.
 
@@ -314,7 +314,7 @@ For `func!/arity` that mirrors `func/arity`, use the "Similar to" pattern instea
 Simple accessor functions (getters, predicates, delegations) get 2-5 lines.
 Complex multi-clause functions with options, multiple input shapes, or subtle semantics get rich docs with multiple `##` sections, narrative prose, and many examples.
 
-Match the depth to the function. If a caller could be surprised by the behaviour, the docs are not detailed enough.
+Match the depth to the function. If a caller could be surprised by the behavior, the docs are not detailed enough.
 
 ## Multi-clause functions
 
@@ -394,20 +394,20 @@ Do not use `@doc false` to hide functions that callers might need. If a function
 
 ## OTP modules
 
-If a module starts or supervises processes, document startup and crash behaviour in caller terms.
+If a module starts or supervises processes, document startup and crash behavior in caller terms.
 
 Cover these in dedicated `##` sections:
 
 * **How to start** - what arguments are required, what `start_link/1` returns, where it fits in a supervision tree.
 * **Supervision tree context** - ASCII diagram or prose showing where this process sits relative to its parent and siblings.
-* **Crash and restart behaviour** - what happens to in-flight work, what state survives, what the caller observes during recovery.
+* **Crash and restart behavior** - what happens to in-flight work, what state survives, what the caller observes during recovery.
 * **Messages** - if the module sends or expects specific messages (e.g., `{:DOWN, ...}`, `{:"ETS-TRANSFER", ...}`), document them and what the caller should do.
 
 Use `## Examples` for a start-and-use snippet.
 
 ## Templates
 
-Use these as starting points. Adapt the structure to fit the module. Delete sections that do not apply, but never omit observable behaviour.
+Use these as starting points. Adapt the structure to fit the module. Delete sections that do not apply, but never omit observable behavior.
 
 Module template:
 
@@ -521,7 +521,7 @@ Consider docs done only when a beginner can answer these from the doc they are r
 * They can predict return values and error shapes.
 * They can predict side effects.
 * They can predict relevant ordering, concurrency, retries, and timeouts.
-* They can verify behaviour using the examples.
+* They can verify behavior using the examples.
 
 Additionally, verify these structural requirements:
 
@@ -533,4 +533,4 @@ Additionally, verify these structural requirements:
 * Internal public functions use `@doc false`.
 * Modules with 5+ public functions use `@doc group:` and `@moduledoc groups:`.
 
-If any user-observable behaviour is missing, the docs are not done.
+If any user-observable behavior is missing, the docs are not done.

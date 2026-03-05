@@ -6,7 +6,7 @@ Use when any of the following are true:
 
 - One function both changes state and returns queried data.
 - Callers depend on side effects and return value at once.
-- Order-dependent behaviour is hard to reason about.
+- Order-dependent behavior is hard to reason about.
 
 ## Problem
 
@@ -39,7 +39,7 @@ def deactivate_user(user), do: %{user | status: :inactive}
 ## How to Refactor
 
 1. Identify mixed read/write function.
-2. Extract pure query behaviour.
+2. Extract pure query behavior.
 3. Keep modification in separate function.
 4. Update callers to use correct function.
 5. Run formatter and tests.

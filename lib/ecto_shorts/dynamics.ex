@@ -51,7 +51,7 @@ defmodule EctoShorts.Dynamics do
 
   ## Configuration
 
-  * `:dynamic_adapter` - A module that implements the `EctoShorts.Dynamic` behaviour.
+  * `:dynamic_adapter` - A module that implements the `EctoShorts.Dynamic` behavior.
     Configurable globally via `config :ecto_shorts, dynamic_adapter: MyApp.Adapter`
     or at runtime via the `:dynamic_adapter` option on `convert_to_dynamic/4`.
     Defaults to resolved from repo adapter.
@@ -91,7 +91,7 @@ defmodule EctoShorts.Dynamics do
   ## Options
 
   * `:dynamic_adapter` - A module that implements the `EctoShorts.Dynamic`
-    behaviour to use for this call. Defaults to resolved from repo adapter.
+    behavior to use for this call. Defaults to resolved from repo adapter.
 
   * `:repo` - The `Ecto.Repo` module used to resolve the dynamic expression adapter
     when the option `:dynamic_adapter` is not set. Defaults to `EctoShorts.Config.repo/0`.

@@ -52,7 +52,7 @@ Or use direct pattern matching / `raise` for invalid programmer-state inputs.
 
 - Impossible states fail loudly.
 - Valid inputs still behave as before.
-- Tests cover assertion behaviour.
+- Tests cover assertion behavior.
 
 ## Eliminates Code Smell
 

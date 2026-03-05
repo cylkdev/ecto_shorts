@@ -73,7 +73,7 @@ This improves code in the following ways:
 
 ## Validation
 
-- Behaviour is unchanged from a caller perspective.
+- Behavior is unchanged from a caller perspective.
 - All reads/writes use the field in its new owner.
 - No code references the old field location.
 

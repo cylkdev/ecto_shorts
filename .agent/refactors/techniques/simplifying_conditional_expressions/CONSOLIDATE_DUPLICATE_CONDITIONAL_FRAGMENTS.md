@@ -50,7 +50,7 @@ total
 ## Validation
 
 - Shared fragment exists once.
-- Branches contain only unique behaviour.
+- Branches contain only unique behavior.
 - Tests pass.
 
 ## Eliminates Code Smell

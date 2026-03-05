@@ -21,7 +21,7 @@ Two or more modules perform similar jobs but have different function names, arit
 - Different developers implementing similar functionality independently.
 - Wrapping third-party libraries without normalizing interfaces.
 - Evolving requirements leading to inconsistent API design.
-- Lack of defined contracts (behaviours) for interchangeable modules.
+- Lack of defined contracts (behaviors) for interchangeable modules.
 
 ## Example
 
@@ -158,7 +158,7 @@ end
 
 ## Treatment
 
-- **Extract Behaviour**: Define a behaviour that all implementations must follow.
+- **Extract Behavior**: Define a behavior that all implementations must follow.
 - **Rename Function**: Align function names across modules.
 - **Normalize Return Values**: Ensure all implementations return the same format.
 - **Add Adapter Layer**: Wrap inconsistent third-party APIs with a consistent interface.
@@ -167,7 +167,7 @@ end
 
 - Modules become truly interchangeable.
 - Callers don't need conditional logic for different implementations.
-- Adding new implementations requires only implementing the behaviour.
+- Adding new implementations requires only implementing the behavior.
 - Testing is simplified with consistent interfaces.
 - Dialyzer can verify implementations satisfy the contract.
 
@@ -177,7 +177,7 @@ end
 - [ ] Same arities (or consistent use of options)
 - [ ] Same return value formats
 - [ ] Same error handling patterns
-- [ ] Documented behaviour with `@callback`
+- [ ] Documented behavior with `@callback`
 - [ ] Type specs that match across implementations
 
 ## Related Smells
@@ -188,7 +188,7 @@ end
 
 ## Related Refactoring Techniques
 
-- `Extract Behaviour`
+- `Extract Behavior`
 - `Rename Function`
 - `Move Function`
 - `Introduce Adapter`

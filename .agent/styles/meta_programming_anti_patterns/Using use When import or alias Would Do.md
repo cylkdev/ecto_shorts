@@ -29,4 +29,4 @@ defmodule ClientApp do
 end
 ```
 
-When `use` is genuinely necessary (for example, extension points in OTP behaviours), document its public effects clearly, like a "nutrition facts label": what behaviours are set, which public functions are defined, and what public attributes/macros are introduced.
+When `use` is genuinely necessary (for example, extension points in OTP behaviors), document its public effects clearly, like a "nutrition facts label": what behaviors are set, which public functions are defined, and what public attributes/macros are introduced.

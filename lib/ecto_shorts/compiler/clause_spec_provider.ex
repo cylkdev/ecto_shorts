@@ -1,7 +1,7 @@
 defmodule EctoShorts.Compiler.ClauseSpecProvider do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Defines the behaviour for clause spec providers.
+  Defines the behavior for clause spec providers.
 
   Use this module when building custom dynamic expression adapters that need
   to generate `compose/3` clauses at compile time. A clause spec

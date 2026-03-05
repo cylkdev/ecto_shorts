@@ -16,7 +16,7 @@ The question was: how can we add opt-in optimistic locking to the existing updat
 
 ## Decision Drivers
 
-* Backward compatibility - existing callers must not change behaviour.
+* Backward compatibility - existing callers must not change behavior.
 * Discoverability - a schema should be able to declare its own locking requirement so callers do not need to remember.
 * Override control - callers must be able to enable, disable, or change locking per call.
 * Consistent error contract - stale entries must return an error tuple, not raise an exception, to match the existing `{:ok, _} | {:error, _}` contract.

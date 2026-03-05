@@ -8,7 +8,7 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 This refactor addresses the remaining code smells identified after refactor 0001 (Extract Focused Submodules). The largest wins come from deduplicating compile-time AST code across the two expression specs files, simplifying a 16-arm case dispatch in CommonFilters, and extracting bulk operations from the still-oversized Actions module. After the refactor, the codebase has fewer copy-pasted code blocks, a data-driven dispatch pattern replacing a long case statement, and one more focused submodule in the Actions namespace.
 
-To verify behaviour is preserved, run `mix test --seed 0` from the repository root. All 898 tests and 9 doctests must pass.
+To verify behavior is preserved, run `mix test --seed 0` from the repository root. All 898 tests and 9 doctests must pass.
 
 ## Progress
 
@@ -92,7 +92,7 @@ EctoShorts is an Elixir library providing a data-driven API for Ecto. This refac
 - `lib/ecto_shorts/actions/bulk.ex` - New module for bulk operation internals.
 - `lib/ecto_shorts/dynamics.ex` - Dynamic expression builder. Two near-duplicate predicate builder functions consolidated.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 - All public functions in `EctoShorts.Actions` retain their signatures and return shapes.
 - `EctoShorts.CommonFilters.convert_params_to_filter/3` returns the same `Ecto.Query.t()`.
@@ -134,7 +134,7 @@ Expected: 898 tests, 9 doctests, 0 failures. Credo passes (pre-existing warnings
 
 ## Validation and Acceptance
 
-Run `mix test --seed 0` and observe 9 doctests, 898 tests, 0 failures. The refactor preserves all existing tests. No new tests were needed because no behaviour changed.
+Run `mix test --seed 0` and observe 9 doctests, 898 tests, 0 failures. The refactor preserves all existing tests. No new tests were needed because no behavior changed.
 
 ## Idempotence and Recovery
 

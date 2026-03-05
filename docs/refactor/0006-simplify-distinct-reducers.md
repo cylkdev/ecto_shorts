@@ -8,7 +8,7 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 The keyword-list handler in `reduce_params` (Distinct), `reduce_group_by` (GroupBy), and `reduce_order_by` (OrderBy) each contained a three-way `case` over `Enum.split_with` that separated bind entries from operation entries. All three branches did the same work - process operation entries then bind entries - but the `{[], ...}` and `{..., []}` branches were unnecessary special cases of the general branch, because `Enum.reduce` over an empty list is a no-op and passing an empty list to `apply_*_expr` is harmless. Additionally, in Distinct and GroupBy, operation keyword entries were reduced one-by-one through the reducer function back to `apply_*_expr`, when `apply_*_expr` already handles lists directly.
 
-After this refactor, all three modules use a single path: split, pass operation entries as a list if non-empty, then reduce bind entries. The behaviour is unchanged.
+After this refactor, all three modules use a single path: split, pass operation entries as a list if non-empty, then reduce bind entries. The behavior is unchanged.
 
 ## Progress
 
@@ -52,7 +52,7 @@ Each module has a private reducer function that normalises input (maps to keywor
 
 The "three-way case" refers to the pattern where `Enum.split_with` produces `{bind_entries, operation_entries}`, and the code matched on three shapes: only operation entries, only bind entries, or both. All three shapes performed the same two-step reduce.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 The public `build/6` function in each module must produce identical `Ecto.Query` structs for all existing test inputs. Specifically:
 
@@ -90,7 +90,7 @@ Run `mix test` from the repository root. All existing tests must pass with no fa
 
 ## Idempotence and Recovery
 
-The changes are safe to apply multiple times. If any test fails, reverting the three edited files restores the original behaviour.
+The changes are safe to apply multiple times. If any test fails, reverting the three edited files restores the original behavior.
 
 ## Artifacts and Notes
 

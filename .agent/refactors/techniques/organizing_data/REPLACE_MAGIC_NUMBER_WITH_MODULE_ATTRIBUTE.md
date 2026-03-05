@@ -43,7 +43,7 @@ if retries > @max_retries, do: :fail, else: :retry
 
 - No business-critical literals remain unnamed.
 - Constant names describe domain intent.
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 
 ## Eliminates Code Smell
 

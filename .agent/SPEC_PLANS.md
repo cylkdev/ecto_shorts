@@ -1,6 +1,6 @@
-# Behaviour Specification Plans (SpecPlans)
+# Behavior Specification Plans (SpecPlans)
 
-This document describes the requirements for a behaviour specification plan ("SpecPlan"). A SpecPlan is a design document that a coding agent or human can follow to produce high-quality behaviour specifications, and the supporting automation hooks (step definitions, fixtures, and test runners) needed to prove the behaviour works.
+This document describes the requirements for a behavior specification plan ("SpecPlan"). A SpecPlan is a design document that a coding agent or human can follow to produce high-quality behavior specifications, and the supporting automation hooks (step definitions, fixtures, and test runners) needed to prove the behavior works.
 
 Treat the reader as a complete beginner to this repository. They have only the current working tree and the single SpecPlan file you provide. There is no memory of prior plans and no external context.
 
@@ -18,13 +18,13 @@ Every SpecPlan must be fully self-contained. Self-contained means that the plan 
 
 Every SpecPlan is a living document. Contributors must revise it as progress is made, as discoveries occur, and as design decisions are finalized. Each revision must remain fully self-contained.
 
-Every SpecPlan must enable a complete novice to produce the behaviour spec end-to-end without prior knowledge of this repo.
+Every SpecPlan must enable a complete novice to produce the behavior spec end-to-end without prior knowledge of this repo.
 
-Every SpecPlan must produce demonstrably working behaviour, not merely "nice looking feature files". The spec must be backed by a runnable proof that fails before and passes after.
+Every SpecPlan must produce demonstrably working behavior, not merely "nice looking feature files". The spec must be backed by a runnable proof that fails before and passes after.
 
 Every SpecPlan must define every term of art in plain language, or avoid using it.
 
-Purpose and intent come first. Start by explaining, in a few sentences, why the behaviour matters from a user's perspective, what someone can do after this work, and how to observe it working. Then guide the reader through the exact steps to get that outcome, including what to edit, what to run, and what they should observe.
+Purpose and intent come first. Start by explaining, in a few sentences, why the behavior matters from a user's perspective, what someone can do after this work, and how to observe it working. Then guide the reader through the exact steps to get that outcome, including what to edit, what to run, and what they should observe.
 
 The agent executing your plan can list files, read files, search, run the project, and run tests. It does not know any prior context. Repeat any assumption you rely on.
 
@@ -46,7 +46,7 @@ When writing a SpecPlan to a Markdown file where the file content is only the si
 
 Self-containment and plain language are paramount. If you introduce a phrase that is not ordinary English, define it immediately and explain where it appears in this repository by naming files, commands, or outputs.
 
-Anchor the plan with observable outcomes. Acceptance should be phrased as behaviour a human can verify using specific inputs and outputs. Do not phrase acceptance as internal attributes like "added a struct" or "created a module".
+Anchor the plan with observable outcomes. Acceptance should be phrased as behavior a human can verify using specific inputs and outputs. Do not phrase acceptance as internal attributes like "added a struct" or "created a module".
 
 Specify repository context explicitly. Name files with full repository-relative paths, name functions and modules precisely, and describe where new files should be created. When running commands, show the working directory and the exact command line.
 
@@ -54,17 +54,17 @@ Validation is not optional. Include instructions to run tests, to start the syst
 
 Capture evidence. When steps produce terminal output, short diffs, or logs, include them as indented examples. Keep them concise and focused on what proves success.
 
-## What "behaviour specification" means in this repo
+## What "behavior specification" means in this repo
 
-A behaviour specification is a set of readable, example-driven scenarios that define what the system must do from a user-observable point of view.
+A behavior specification is a set of readable, example-driven scenarios that define what the system must do from a user-observable point of view.
 
 The canonical shape is a feature file with `Feature`, `Scenario`, and `Given/When/Then` steps, but the plan must follow whatever tooling exists in the repo.
 
-A behaviour specification is not a UI script. Steps should describe intent and outcomes in domain language rather than low-level interactions like clicking buttons or waiting for timers.
+A behavior specification is not a UI script. Steps should describe intent and outcomes in domain language rather than low-level interactions like clicking buttons or waiting for timers.
 
-A behaviour specification must have a proof. A proof is the smallest runnable thing in this repo that demonstrates the behaviour end-to-end.
+A behavior specification must have a proof. A proof is the smallest runnable thing in this repo that demonstrates the behavior end-to-end.
 
-If the repo does not have BDD tooling, the plan must still use the behaviour-spec style, but it must map each scenario to the project's existing test style in a way a novice can run and verify.
+If the repo does not have BDD tooling, the plan must still use the behavior-spec style, but it must map each scenario to the project's existing test style in a way a novice can run and verify.
 
 ## Milestones
 
@@ -92,7 +92,7 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
 
     ## Purpose / Big Picture
 
-    Explain in a few sentences what someone gains after this change and how they can see it working. State the user-visible behaviour the specification will cover.
+    Explain in a few sentences what someone gains after this change and how they can see it working. State the user-visible behavior the specification will cover.
 
     ## Progress
 
@@ -104,7 +104,7 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
 
     ## Surprises & Discoveries
 
-    Document unexpected behaviours, tooling constraints, test runner quirks, or domain edge cases discovered while writing or automating the spec. Provide concise evidence.
+    Document unexpected behaviors, tooling constraints, test runner quirks, or domain edge cases discovered while writing or automating the spec. Provide concise evidence.
 
     - Observation: …
       Evidence: …
@@ -123,17 +123,17 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
 
     ## Context and Orientation
 
-    Describe the current state relevant to this behaviour in plain language as if the reader knows nothing. Name the key files and modules by full path. Define any non-obvious term you will use.
+    Describe the current state relevant to this behavior in plain language as if the reader knows nothing. Name the key files and modules by full path. Define any non-obvious term you will use.
 
-    Include a short "map" of where behaviour specs live in this repo. If they do not exist yet, define the new folder and naming conventions you will introduce.
+    Include a short "map" of where behavior specs live in this repo. If they do not exist yet, define the new folder and naming conventions you will introduce.
 
-    ## Behaviour Vocabulary
+    ## Behavior Vocabulary
 
     Define the domain terms that appear in the scenarios. Each term must have one clear meaning. If a term maps to data in the system, name the exact fields or tables or JSON keys that correspond to it.
 
-    ## Behaviour Spec Draft
+    ## Behavior Spec Draft
 
-    Write the initial behaviour specification in the target format, as it should appear in the repo. Prefer a small number of scenarios that cover the main behaviour and the most important failure mode.
+    Write the initial behavior specification in the target format, as it should appear in the repo. Prefer a small number of scenarios that cover the main behavior and the most important failure mode.
 
     Include:
     - The `Feature:` title as a short statement of capability.
@@ -146,7 +146,7 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
 
     ## Plan of Work
 
-    Describe, in prose, the sequence of edits and additions needed to land the behaviour spec and its proof.
+    Describe, in prose, the sequence of edits and additions needed to land the behavior spec and its proof.
 
     For each edit, name:
     - the file path
@@ -166,9 +166,9 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
 
     ## Validation and Acceptance
 
-    Describe how to prove the behaviour end-to-end.
+    Describe how to prove the behavior end-to-end.
 
-    Acceptance must be phrased as behaviour with specific inputs and outputs. If tests are involved, state the exact test command and what "passing" looks like. Name the new test(s) or scenario(s) and state that they fail before and pass after.
+    Acceptance must be phrased as behavior with specific inputs and outputs. If tests are involved, state the exact test command and what "passing" looks like. Name the new test(s) or scenario(s) and state that they fail before and pass after.
 
     ## Idempotence and Recovery
 
@@ -180,7 +180,7 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
 
     ## Traceability Map
 
-    Create a short mapping that lets a novice answer: "Where is this behaviour specified, and where is it proven?"
+    Create a short mapping that lets a novice answer: "Where is this behavior specified, and where is it proven?"
 
     Include:
     - the spec file path(s)
@@ -193,7 +193,7 @@ At completion of a major task or the full plan, write an `Outcomes & Retrospecti
     Write 2–6 milestones. Each milestone must be independently verifiable.
 
     For each milestone, include:
-    - the goal (what new behaviour spec/proof exists after this)
+    - the goal (what new behavior spec/proof exists after this)
     - the exact files you will add/change
     - the command(s) to run
     - the expected observable outcome (pass/fail signals, output snippets)

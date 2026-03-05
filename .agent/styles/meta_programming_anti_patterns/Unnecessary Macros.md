@@ -2,7 +2,7 @@
 
 **Problem**
 
-Macros should be the last resort. If you can express the same behaviour with a function, do it with a function. Macros are harder to reason about, harder to debug, and often require `require/2` at call sites.
+Macros should be the last resort. If you can express the same behavior with a function, do it with a function. Macros are harder to reason about, harder to debug, and often require `require/2` at call sites.
 
 **Example**
 

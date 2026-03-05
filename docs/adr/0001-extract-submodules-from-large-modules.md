@@ -24,11 +24,11 @@ The question was: how should we restructure these modules to reduce their size a
 
 2. **Inline refactor only**: Keep all code in the same modules but restructure internally - extract private helper functions, rename for clarity, reorder for readability. This would not reduce module size and would not address the divergent-change smell.
 
-3. **Behaviour-based dispatch for CommonFilters**: Define a `QueryBuilder` behaviour and have each filter module implement it. Use a registry or config to dispatch. This would add significant abstraction overhead for a pattern that is stable and unlikely to gain new filter types frequently.
+3. **Behavior-based dispatch for CommonFilters**: Define a `QueryBuilder` behavior and have each filter module implement it. Use a registry or config to dispatch. This would add significant abstraction overhead for a pattern that is stable and unlikely to gain new filter types frequently.
 
 ## Decision Outcome
 
-Chosen option: **Extract focused submodules**, because it directly reduces module size, isolates unrelated concerns into separate files, and preserves the public API through simple internal delegation. It avoids the over-engineering risk of a behaviour-based approach while being more effective than inline-only restructuring.
+Chosen option: **Extract focused submodules**, because it directly reduces module size, isolates unrelated concerns into separate files, and preserves the public API through simple internal delegation. It avoids the over-engineering risk of a behavior-based approach while being more effective than inline-only restructuring.
 
 ### Consequences
 
@@ -66,7 +66,7 @@ Additionally, `mix credo --strict` passes with no new warnings, and `mix dialyze
 ## When to Revisit
 
 - If `actions.ex` grows beyond 700 lines again, consider extracting CRUD, bulk, and transaction helpers into their own submodules.
-- If new query filter types are added frequently to `CommonFilters`, consider whether the map-based dispatch should be promoted to a behaviour-based registry.
+- If new query filter types are added frequently to `CommonFilters`, consider whether the map-based dispatch should be promoted to a behavior-based registry.
 - If `CommonParams` gains new insert-entry normalization paths, the `normalize_insert_entry` dispatch chain may benefit from extraction.
 
 ## More Information

@@ -10,7 +10,7 @@ Use when any of the following are true:
 
 - The same logic appears more than once in the same module.
 
-- A block can be moved to a function by passing required values as arguments without changing behaviour.
+- A block can be moved to a function by passing required values as arguments without changing behavior.
 
 - A comment is used to label a block (for example `# print details`, `# calculate total`, `# normalize input`). The comment usually indicates the block is one extractable step.
 
@@ -75,7 +75,7 @@ This improves code in the following ways:
 
 - It allows duplicate logic to be replaced by one function call.
 
-- It isolates behaviour behind clear function boundaries, which also makes pattern-matching clauses easier to reason about.
+- It isolates behavior behind clear function boundaries, which also makes pattern-matching clauses easier to reason about.
 
 - It reduces the chance of accidental edits to unrelated lines when changing one step.
 
@@ -104,7 +104,7 @@ This improves code in the following ways:
 
 The refactoring is successful if all of the following are true:
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 
 - The extracted function has a single stated purpose (one step group).
 

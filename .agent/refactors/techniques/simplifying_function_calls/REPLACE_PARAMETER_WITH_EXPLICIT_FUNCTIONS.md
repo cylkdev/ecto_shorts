@@ -4,13 +4,13 @@
 
 Use when any of the following are true:
 
-- A boolean/type parameter selects fundamentally different behaviour.
+- A boolean/type parameter selects fundamentally different behavior.
 - Callers pass flags like `true/false` that hide intent.
 - Branches are clearer as named entry points.
 
 ## Problem
 
-One function uses a control parameter to pick behaviour.
+One function uses a control parameter to pick behavior.
 
 ```elixir
 def booking_fee(amount, :premium), do: amount * 0.03
@@ -36,7 +36,7 @@ def standard_booking_fee(amount), do: amount * 0.05
 
 ## How to Refactor
 
-1. Identify control parameters selecting behaviour.
+1. Identify control parameters selecting behavior.
 2. Create explicit functions per variant.
 3. Redirect callers to explicit functions.
 4. Remove old selector parameter API.

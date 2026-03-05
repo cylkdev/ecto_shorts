@@ -45,7 +45,7 @@ For every component and boundary, always ask:
 - What data can be lost, duplicated, or corrupted.
 - What the system does during recovery.
 
-Do not stop at "it crashes and restarts". Restart is only one mechanism. The real question is whether restart restores correct behaviour and correct state.
+Do not stop at "it crashes and restarts". Restart is only one mechanism. The real question is whether restart restores correct behavior and correct state.
 
 Anchor your conclusions in observable outcomes. If you claim something is safe, state how to prove it with a command, a test, a trace, or an operational drill.
 
@@ -85,7 +85,7 @@ Look for:
 - mailbox growth risks when producers outpace consumers.
 - missing backpressure and missing bounded concurrency.
 
-### Crash behaviour and cascade control
+### Crash behavior and cascade control
 
 Crashes are normal in OTP. Cascades are not automatically safe.
 
@@ -109,7 +109,7 @@ Look for:
 
 Define "armageddon" for this system in concrete terms. State what is lost, what is recomputed, what must be replayed, and what requires manual intervention.
 
-### Distributed behaviour
+### Distributed behavior
 
 If the system runs on multiple nodes, assume partitions and partial failure.
 
@@ -177,13 +177,13 @@ These are defaults. Add questions when the code suggests new risks.
     - [ ] (YYYY-MM-DD HH:MMZ) Map the supervision tree and restart strategy.
     - [ ] (YYYY-MM-DD HH:MMZ) Identify serialized chokepoints and mailbox growth risks.
     - [ ] (YYYY-MM-DD HH:MMZ) Review state ownership and durability boundaries.
-    - [ ] (YYYY-MM-DD HH:MMZ) Review dependency failure behaviour and cascade control.
-    - [ ] (YYYY-MM-DD HH:MMZ) Review distributed behaviour, partitions, and coordination.
+    - [ ] (YYYY-MM-DD HH:MMZ) Review dependency failure behavior and cascade control.
+    - [ ] (YYYY-MM-DD HH:MMZ) Review distributed behavior, partitions, and coordination.
     - [ ] (YYYY-MM-DD HH:MMZ) Produce prioritized risk list with mitigations and proofs.
 
     ## Surprises & Discoveries
 
-    Record unexpected behaviours or constraints you learn during review. Include short evidence like logs, traces, or test output.
+    Record unexpected behaviors or constraints you learn during review. Include short evidence like logs, traces, or test output.
 
     - Observation: …
       Evidence:
@@ -215,7 +215,7 @@ These are defaults. Add questions when the code suggests new risks.
 
     ## Validation and Acceptance
 
-    Describe how you will prove the review findings are real and that mitigations work. Phrase acceptance as behaviour a human can verify, not as internal refactors.
+    Describe how you will prove the review findings are real and that mitigations work. Phrase acceptance as behavior a human can verify, not as internal refactors.
 
     Examples:
 

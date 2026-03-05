@@ -29,7 +29,7 @@ def discount(total, rate), do: total * (1 - rate)
 ## Why Refactor
 
 - Removes duplication.
-- Keeps behaviour changes centralized.
+- Keeps behavior changes centralized.
 - Makes variation explicit.
 
 ## How to Refactor

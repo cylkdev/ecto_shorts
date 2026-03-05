@@ -78,7 +78,7 @@ This improves code in the following ways:
 ## Drawbacks
 
 - You introduce more local bindings, but this is usually offset by better readability.
-- Be careful when extracting boolean subexpressions that currently benefit from short-circuit evaluation. In Elixir, `and`/`or` and `&&`/`||` short-circuit; if you precompute both sides into bindings, both expressions will run, which can hurt performance or change behaviour if they do expensive work or have side effects.
+- Be careful when extracting boolean subexpressions that currently benefit from short-circuit evaluation. In Elixir, `and`/`or` and `&&`/`||` short-circuit; if you precompute both sides into bindings, both expressions will run, which can hurt performance or change behavior if they do expensive work or have side effects.
 
 ## How to Refactor
 
@@ -93,7 +93,7 @@ This improves code in the following ways:
 
 The refactor is successful if all of the following are true:
 
-- The original behaviour is unchanged (tests pass).
+- The original behavior is unchanged (tests pass).
 
 - The extracted binding is assigned exactly the same value the sub-expression produced before.
 

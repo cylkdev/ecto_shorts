@@ -6,7 +6,7 @@ Use when one module contains conditional branches for one special case that keep
 
 ## Problem
 
-Variant-specific behaviour is buried in one broad module.
+Variant-specific behavior is buried in one broad module.
 
 ```elixir
 defmodule Quote do
@@ -21,7 +21,7 @@ end
 
 ## Solution
 
-Extract the special-case behaviour into a dedicated variant module.
+Extract the special-case behavior into a dedicated variant module.
 
 ```elixir
 defmodule Quote.Marketplace do
@@ -38,7 +38,7 @@ end
 
 1. Identify stable variant branch.
 2. Create variant module.
-3. Move variant behaviour.
+3. Move variant behavior.
 4. Route calls appropriately.
 5. Run formatter and tests.
 

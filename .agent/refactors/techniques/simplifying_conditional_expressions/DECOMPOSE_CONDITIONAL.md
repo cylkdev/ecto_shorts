@@ -22,7 +22,7 @@ end
 
 ## Solution
 
-Extract the condition and branch behaviours into named functions.
+Extract the condition and branch behaviors into named functions.
 
 ```elixir
 def discounted_total(plan, amount, today) do
@@ -47,7 +47,7 @@ defp regular_amount(amount), do: amount
 ## Why Refactor
 
 - Names explain intent better than raw boolean expressions.
-- Branch behaviour becomes independently testable.
+- Branch behavior becomes independently testable.
 - Future rule changes are localized.
 
 ## How to Refactor
@@ -59,7 +59,7 @@ defp regular_amount(amount), do: amount
 
 ## Validation
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 - Condition and branches are readable through function names.
 
 ## Eliminates Code Smell

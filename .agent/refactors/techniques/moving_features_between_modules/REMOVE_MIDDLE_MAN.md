@@ -33,7 +33,7 @@ ProjectService.archive(user, id)
 Projects.archive(user, id)
 ```
 
-Keep delegators only when they add policy, authorization, telemetry, or compatibility behaviour.
+Keep delegators only when they add policy, authorization, telemetry, or compatibility behavior.
 
 ## Why Refactor
 
@@ -53,11 +53,11 @@ This improves code in the following ways:
 ## Drawbacks
 
 - Large migrations can touch many call sites.
-- If the wrapper provided meaningful facade behaviour, removing it may hurt readability.
+- If the wrapper provided meaningful facade behavior, removing it may hurt readability.
 
 ## How to Refactor
 
-1. List delegator functions and classify which add real behaviour.
+1. List delegator functions and classify which add real behavior.
 2. Keep only delegators with clear policy value.
 3. Migrate callers of pass-through functions to direct calls.
 4. Remove obsolete delegators.
@@ -65,7 +65,7 @@ This improves code in the following ways:
 
 ## Validation
 
-- Removed delegators had no unique behaviour.
+- Removed delegators had no unique behavior.
 - Callers compile and tests pass with direct calls.
 - Remaining delegators have explicit justification.
 

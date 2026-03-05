@@ -6,7 +6,7 @@ Use when any of the following are true:
 
 - The function computes the same result as a simpler algorithm you can state and test.
 
-- The implementation uses manual branching/iteration where a standard library function expresses the same behaviour directly.
+- The implementation uses manual branching/iteration where a standard library function expresses the same behavior directly.
 
 - The current algorithm contains special-case logic that disappears when rewritten with a better approach.
 
@@ -35,7 +35,7 @@ end
 
 ## Solution
 
-Replace the body of the function (or the internal algorithm portion) with a different algorithm that produces the same externally observable behaviour.
+Replace the body of the function (or the internal algorithm portion) with a different algorithm that produces the same externally observable behavior.
 
 This often means replacing custom recursion, nested `cond`, or manual state tracking with clearer `Enum`, `MapSet`, `Map`, or pattern-matching based implementations.
 
@@ -53,9 +53,9 @@ end
 
 This improves code in the following ways:
 
-- It reduces branching or step count for the same output behaviour.
+- It reduces branching or step count for the same output behavior.
 
-- It replaces custom logic with standard library behaviour when appropriate.
+- It replaces custom logic with standard library behavior when appropriate.
 
 - It can improve correctness by removing ad hoc edge-case handling.
 
@@ -66,7 +66,7 @@ This improves code in the following ways:
 
 ## How to Refactor
 
-1. Define the current behaviour with tests before changing the algorithm (including edge cases).
+1. Define the current behavior with tests before changing the algorithm (including edge cases).
 
 2. Isolate unrelated work from the function so the algorithm portion is easier to replace.
 
@@ -76,9 +76,9 @@ This improves code in the following ways:
 
 5. If outputs differ, identify whether:
    - the old implementation had a bug, or
-   - the new implementation changed behaviour unintentionally.
+   - the new implementation changed behavior unintentionally.
 
-6. Switch the original function to use the new algorithm once behaviour matches the intended result.
+6. Switch the original function to use the new algorithm once behavior matches the intended result.
 
 7. Remove the old implementation.
 
@@ -86,11 +86,11 @@ This improves code in the following ways:
 
 ## Validation
 
-- Behaviour is unchanged for the intended contract (tests pass).
+- Behavior is unchanged for the intended contract (tests pass).
 - The function now uses the replacement algorithm at the original call boundary.
 - The old algorithm implementation has been removed (or intentionally kept only temporarily during migration).
 - The replacement reduces at least one measurable source of complexity (for example: fewer branches, fewer manual loop steps, fewer special cases, or use of a standard library primitive).
-- Any changed behaviour is explicitly documented and covered by updated tests.
+- Any changed behavior is explicitly documented and covered by updated tests.
 
 
 ## Eliminates Code Smell

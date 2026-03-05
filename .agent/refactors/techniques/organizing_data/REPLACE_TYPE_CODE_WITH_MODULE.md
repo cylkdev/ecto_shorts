@@ -4,13 +4,13 @@
 
 Use when any of the following are true:
 
-- A type atom/string encodes behaviour selection.
+- A type atom/string encodes behavior selection.
 - `case` on type appears repeatedly.
 - Type-specific rules belong to separate modules.
 
 ## Problem
 
-Type code is stored as data, but behaviour is scattered in conditionals.
+Type code is stored as data, but behavior is scattered in conditionals.
 
 ```elixir
 def fee(type, amount) do
@@ -33,7 +33,7 @@ Where `module` is `Pricing.Regular` or `Pricing.Premium`.
 
 ## Why Refactor
 
-- Moves behaviour next to the type concept.
+- Moves behavior next to the type concept.
 - Removes repeated branching.
 - Improves extensibility.
 
@@ -41,13 +41,13 @@ Where `module` is `Pricing.Regular` or `Pricing.Premium`.
 
 1. Identify repeated type-code branching.
 2. Create modules per type.
-3. Move type-specific behaviour into each module.
+3. Move type-specific behavior into each module.
 4. Replace branching with module dispatch.
 5. Run formatter and tests.
 
 ## Validation
 
-- Type behaviour is implemented in dedicated modules.
+- Type behavior is implemented in dedicated modules.
 - Repeated `case` on type is reduced or removed.
 - Tests pass for each type module.
 

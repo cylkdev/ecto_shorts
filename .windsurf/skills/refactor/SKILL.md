@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: Guides a safe, behaviour-preserving refactor from smell identification through implementation using a RefactorPlan. Use this skill when refactoring code in any project.
+description: Guides a safe, behavior-preserving refactor from smell identification through implementation using a RefactorPlan. Use this skill when refactoring code in any project.
 ---
 
 ## When to use
@@ -25,7 +25,7 @@ Read the matching smell file. Use its signs, symptoms, and examples to confirm t
 
 ### 2. Select the technique
 
-Browse the technique catalog in `.agent/refactor/techniques/` to find the technique that addresses the smell. Read the matching technique file. Confirm the technique preserves the existing behaviour.
+Browse the technique catalog in `.agent/refactor/techniques/` to find the technique that addresses the smell. Read the matching technique file. Confirm the technique preserves the existing behavior.
 
 ### 3. Write the RefactorPlan
 
@@ -34,7 +34,7 @@ Create a new `.md` file at the path specified by the `document-artifacts` rule i
 At minimum the plan must include:
 
 - **Purpose / Big Picture** - why the refactor matters.
-- **Behaviour Boundary** - the exact observable behaviour that must not change.
+- **Behavior Boundary** - the exact observable behavior that must not change.
 - **Code Smell Identified** - the smell, where it appears, and a brief summary.
 - **Refactoring Technique Selected** - the technique and why it fits.
 - **Plan of Work** - the sequence of edits, naming files and functions precisely.
@@ -48,7 +48,7 @@ At minimum the plan must include:
 Work through each milestone in order. After each milestone:
 
 1. Run `mix format` to ensure formatting is correct.
-2. Run `mix test` to confirm behaviour is preserved.
+2. Run `mix test` to confirm behavior is preserved.
 3. Update the **Progress** section in the plan.
 
 Do not skip validation between milestones.

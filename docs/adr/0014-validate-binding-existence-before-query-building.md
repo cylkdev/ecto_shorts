@@ -24,7 +24,7 @@ The existing code in `create_schema_filter` checked positional bindings against 
 
 - **Early validation in the `:bind` reduce** - check binding existence at the entry point where `:at` and `:as` selectors are first processed.
 - **Centralized validation in `build_query`** - check binding existence in the shared `build_query` function that all code paths converge on.
-- **No validation** - leave the current behaviour and let Ecto raise at execution time.
+- **No validation** - leave the current behavior and let Ecto raise at execution time.
 
 ## Decision Outcome
 
@@ -76,7 +76,7 @@ Bad, because it requires special-casing `{:as, nil}` (the default root binding s
 
 ### No validation
 
-Leave the current behaviour unchanged.
+Leave the current behavior unchanged.
 
 Good, because there is zero implementation risk.
 

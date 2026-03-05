@@ -20,7 +20,7 @@ After the refactor:
 - Near-identical `put_order_by`/`put_group_by` were deduplicated into a single `put_param/3`.
 - 15 repetitive `apply_query_builder` clauses were replaced with map-based dispatch.
 
-To verify behaviour is preserved, run `mix test` from the repository root. All 645 tests and 9 doctests must pass.
+To verify behavior is preserved, run `mix test` from the repository root. All 645 tests and 9 doctests must pass.
 
 ## Progress
 
@@ -51,7 +51,7 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
   Date/Author: 2026-02-28 / Cascade
 
 - Decision: Keep `:subquery` as a separate `apply_query_builder` clause instead of including it in the `@query_builder_modules` map.
-  Rationale: The `:subquery` handler has unique pre-filtering logic (it applies filters to the query before calling `SubQuery.build`) and a fallback clause for invalid params. This special behaviour doesn't fit the uniform `module.build(...)` pattern.
+  Rationale: The `:subquery` handler has unique pre-filtering logic (it applies filters to the query before calling `SubQuery.build`) and a fallback clause for invalid params. This special behavior doesn't fit the uniform `module.build(...)` pattern.
   Date/Author: 2026-02-28 / Cascade
 
 - Decision: Consolidate `get_query_fields/2` into `CommonSchema` rather than creating a new shared module.
@@ -97,7 +97,7 @@ EctoShorts is an Elixir library that provides a standardized, data-driven API fo
 - `lib/ecto_shorts/common_params.ex` - Converts application-level data into Ecto-compatible insert/update structures. Timestamp and placeholder logic were extracted to `timestamps.ex` and `placeholders.ex`.
 - `lib/ecto_shorts/common_schema.ex` - Schema introspection utilities. Now also houses the shared `get_query_fields/2`.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 - `EctoShorts.Actions.all/3` returns a list of schema structs matching the given params.
 - `EctoShorts.Actions.find/3` returns `{:ok, record}` or `{:error, %ErrorMessage{code: :not_found}}`.
@@ -142,7 +142,7 @@ Expected: 645 tests, 0 failures. Credo passes. Dialyzer shows 1 pre-existing err
 
 ## Validation and Acceptance
 
-Run `mix test` and observe 645 tests, 9 doctests, 0 failures. The refactor preserves all existing tests. No new tests were needed because no behaviour changed.
+Run `mix test` and observe 645 tests, 9 doctests, 0 failures. The refactor preserves all existing tests. No new tests were needed because no behavior changed.
 
 ## Idempotence and Recovery
 

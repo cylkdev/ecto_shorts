@@ -47,7 +47,7 @@ end
 
 - Collection mutations go through module API.
 - Invariants are maintained in one place.
-- Behaviour is covered by tests.
+- Behavior is covered by tests.
 
 ## Eliminates Code Smell
 

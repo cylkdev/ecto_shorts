@@ -1,12 +1,12 @@
 ---
-description: Guides a safe, behaviour-preserving refactor from smell identification through implementation using a RefactorPlan. Use this workflow when refactoring code to improve structure, reduce duplication, or address a code smell.
+description: Guides a safe, behavior-preserving refactor from smell identification through implementation using a RefactorPlan. Use this workflow when refactoring code to improve structure, reduce duplication, or address a code smell.
 ---
 
 // turbo-all
 
 ## Goal
 
-You will identify a code smell, select a refactoring technique, write a RefactorPlan, execute it milestone by milestone, and verify that observable behaviour is preserved throughout.
+You will identify a code smell, select a refactoring technique, write a RefactorPlan, execute it milestone by milestone, and verify that observable behavior is preserved throughout.
 
 ## Requirements
 
@@ -33,7 +33,7 @@ You will identify a code smell, select a refactoring technique, write a Refactor
 
 2. Select the technique.
    - Browse the technique catalog in `.agent/refactor/techniques/` to find the technique that addresses the smell.
-   - Read the matching technique file. Confirm the technique preserves the existing behaviour.
+   - Read the matching technique file. Confirm the technique preserves the existing behavior.
 
 3. Write the RefactorPlan.
    - Create a new `.md` file at the path specified by the `document-artifacts` rule in `.windsurf/rules/document-artifacts.md`.
@@ -41,7 +41,7 @@ You will identify a code smell, select a refactoring technique, write a Refactor
    - The plan must be self-contained: a novice with only the plan and the working tree must be able to execute it end-to-end.
    - At minimum the plan must include:
      - **Purpose / Big Picture** - why the refactor matters.
-     - **Behaviour Boundary** - the exact observable behaviour that must not change.
+     - **Behavior Boundary** - the exact observable behavior that must not change.
      - **Code Smell Identified** - the smell, where it appears, and a brief summary.
      - **Refactoring Technique Selected** - the technique and why it fits.
      - **Plan of Work** - the sequence of edits, naming files and functions precisely.
@@ -54,7 +54,7 @@ You will identify a code smell, select a refactoring technique, write a Refactor
    - Work through each milestone in order.
    - After each milestone:
      1. Run `mix format` to ensure formatting is correct.
-     2. Run `mix test` to confirm behaviour is preserved.
+     2. Run `mix test` to confirm behavior is preserved.
      3. Update the **Progress** section in the RefactorPlan.
    - Do not skip validation between milestones.
 

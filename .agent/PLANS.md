@@ -19,7 +19,7 @@ NON-NEGOTIABLE REQUIREMENTS:
 * Every ExecPlan must be fully self-contained. Self-contained means that in its current form it contains all knowledge and instructions needed for a novice to succeed.
 * Every ExecPlan is a living document. Contributors are required to revise it as progress is made, as discoveries occur, and as design decisions are finalized. Each revision must remain fully self-contained.
 * Every ExecPlan must enable a complete novice to implement the feature end-to-end without prior knowledge of this repo.
-* Every ExecPlan must produce a demonstrably working behaviour, not merely code changes to "meet a definition".
+* Every ExecPlan must produce a demonstrably working behavior, not merely code changes to "meet a definition".
 * Every ExecPlan must define every term of art in plain language or do not use it.
 
 Purpose and intent come first. Start by explaining, in a few sentences, why the work matters from a user's perspective: what someone can do after this change that they could not do before, and how to see it working. Then guide the reader through the exact steps to achieve that outcome, including what to edit, what to run, and what they should observe.
@@ -40,7 +40,7 @@ Self-containment and plain language are paramount. If you introduce a phrase tha
 
 Avoid common failure modes. Do not rely on undefined jargon. Do not describe "the letter of a feature" so narrowly that the resulting code compiles but does nothing meaningful. Do not outsource key decisions to the reader. When ambiguity exists, resolve it in the plan itself and explain why you chose that path. Err on the side of over-explaining user-visible effects and under-specifying incidental implementation details.
 
-Anchor the plan with observable outcomes. State what the user can do after implementation, the commands to run, and the outputs they should see. Acceptance should be phrased as behaviour a human can verify ("after starting the server, sending a request, and observing the response") rather than internal attributes ("added a struct").
+Anchor the plan with observable outcomes. State what the user can do after implementation, the commands to run, and the outputs they should see. Acceptance should be phrased as behavior a human can verify ("after starting the server, sending a request, and observing the response") rather than internal attributes ("added a struct").
 
 Specify repository context explicitly. Name files with full repository-relative paths, name functions and modules precisely, and describe where new files should be created. For Elixir, prefer `lib/my_app/...` and `test/...` paths, and name functions with arity (for example, `MyApp.KV.put/3`). If touching multiple areas, include a short orientation paragraph that explains how those parts fit together so a novice can navigate confidently. When running commands, show the working directory and exact command line. When outcomes depend on environment, state the assumptions and provide alternatives when reasonable.
 
@@ -60,13 +60,13 @@ Each milestone must be independently verifiable and incrementally implement the 
 
 * ExecPlans are living documents. As you make key design decisions, update the plan to record both the decision and the thinking behind it. Record all decisions in the `Decision Log` section.
 * ExecPlans must contain and maintain a `Progress` section, a `Surprises & Discoveries` section, a `Decision Log`, and an `Outcomes & Retrospective` section. These are not optional.
-* When you discover compiler behaviour, performance tradeoffs (for example around ETS table types or GenServer contention), unexpected bugs, or inverse/unapply semantics that shaped your approach, capture those observations in the `Surprises & Discoveries` section with short evidence snippets (test output is ideal).
+* When you discover compiler behavior, performance tradeoffs (for example around ETS table types or GenServer contention), unexpected bugs, or inverse/unapply semantics that shaped your approach, capture those observations in the `Surprises & Discoveries` section with short evidence snippets (test output is ideal).
 * If you change course mid-implementation, document why in the `Decision Log` and reflect the implications in `Progress`. Plans are guides for the next contributor as much as checklists for you.
 * At completion of a major task or the full plan, write an `Outcomes & Retrospective` entry summarizing what was achieved, what remains, and lessons learned.
 
 # Prototyping milestones and parallel implementations
 
-It is acceptable--and often encouraged--to include explicit prototyping milestones when they de-risk a larger change. Examples: exploring two supervision tree shapes while measuring restart behaviour, validating an ETS access pattern under load, or confirming a third-party library behaves as expected in isolation. Keep prototypes additive and testable. Clearly label the scope as "prototyping"; describe how to run and observe results; and state the criteria for promoting or discarding the prototype.
+It is acceptable--and often encouraged--to include explicit prototyping milestones when they de-risk a larger change. Examples: exploring two supervision tree shapes while measuring restart behavior, validating an ETS access pattern under load, or confirming a third-party library behaves as expected in isolation. Keep prototypes additive and testable. Clearly label the scope as "prototyping"; describe how to run and observe results; and state the criteria for promoting or discarding the prototype.
 
 Prefer additive code changes followed by subtractions that keep tests passing. Parallel implementations (e.g., keeping a new adapter module alongside an older path during migration) are fine when they reduce risk or enable tests to continue passing during a large migration. Describe how to validate both paths and how to retire one safely with tests. When working with multiple new libraries or feature areas, consider creating spikes that evaluate the feasibility of these features _independently_ of one another, proving that the external library performs as expected and implements the features we need in isolation.
 
@@ -80,7 +80,7 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Purpose / Big Picture
 
-    Explain in a few sentences what someone gains after this change and how they can see it working. State the user-visible behaviour you will enable.
+    Explain in a few sentences what someone gains after this change and how they can see it working. State the user-visible behavior you will enable.
 
     ## Progress
 
@@ -102,7 +102,7 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Surprises & Discoveries
 
-    Document unexpected behaviours, bugs, optimizations, or insights discovered during implementation. Provide concise evidence.
+    Document unexpected behaviors, bugs, optimizations, or insights discovered during implementation. Provide concise evidence.
 
     - Observation: …
       Evidence: …
@@ -133,7 +133,7 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Validation and Acceptance
 
-    Describe how to start or exercise the system and what to observe. Phrase acceptance as behaviour, with specific inputs and outputs. If tests are involved, say "run <project's test command> and expect <N> passed; the new test <name> fails before the change and passes after>".
+    Describe how to start or exercise the system and what to observe. Phrase acceptance as behavior, with specific inputs and outputs. If tests are involved, say "run <project's test command> and expect <N> passed; the new test <name> fails before the change and passes after>".
 
     ## Idempotence and Recovery
 
@@ -145,9 +145,9 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Interfaces and Dependencies
 
-    Be prescriptive. Name the libraries, modules, and services to use and why. Specify the modules, behaviours (interfaces), and function signatures that must exist at the end of the milestone. Prefer stable names and paths such as `MyApp.Module.function/arity` or `MyApp.Module` and concrete file paths such as `lib/my_app/module.ex`. E.g.:
+    Be prescriptive. Name the libraries, modules, and services to use and why. Specify the modules, behaviors (interfaces), and function signatures that must exist at the end of the milestone. Prefer stable names and paths such as `MyApp.Module.function/arity` or `MyApp.Module` and concrete file paths such as `lib/my_app/module.ex`. E.g.:
 
-    In lib/my_app/planner.ex, define a behaviour:
+    In lib/my_app/planner.ex, define a behavior:
 
         defmodule MyApp.Planner do
           @moduledoc false

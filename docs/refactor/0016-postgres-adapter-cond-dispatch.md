@@ -47,9 +47,9 @@ The reference module is `lib/ecto_shorts/common_filters.ex` (`EctoShorts.CommonF
 
 The test file is `test/ecto_shorts/query_builder/dynamics/adapters/postgres_test.exs` (1077 lines, covering all operator types, array/scalar dispatch, arithmetic, aggregates, etc.).
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
-`Postgres.build_dynamic/4` must return the same `Ecto.Query.DynamicExpr` structs for all inputs tested in `postgres_test.exs`. The 884 existing tests and 9 doctests are the behaviour boundary.
+`Postgres.build_dynamic/4` must return the same `Ecto.Query.DynamicExpr` structs for all inputs tested in `postgres_test.exs`. The 884 existing tests and 9 doctests are the behavior boundary.
 
 ## Code Smell Identified
 

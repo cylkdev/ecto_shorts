@@ -4,9 +4,9 @@
 
 Use when any of the following are true:
 
-- A `case` on kind/type repeatedly selects behaviour.
+- A `case` on kind/type repeatedly selects behavior.
 - New variants require editing existing branching functions.
-- Variant behaviour can be expressed through module dispatch or protocol implementations.
+- Variant behavior can be expressed through module dispatch or protocol implementations.
 
 ## Problem
 
@@ -23,7 +23,7 @@ end
 
 ## Solution
 
-Move variant behaviour into dedicated modules behind a shared contract.
+Move variant behavior into dedicated modules behind a shared contract.
 
 ```elixir
 defmodule ShippingMethod do
@@ -49,7 +49,7 @@ end
 
 ## How to Refactor
 
-1. Define a behaviour callback contract.
+1. Define a behavior callback contract.
 2. Implement one module per variant.
 3. Replace branching with module dispatch.
 4. Migrate callers gradually.
@@ -59,7 +59,7 @@ end
 
 - Variant-specific branching is minimized or removed.
 - Each variant module is tested independently.
-- Behaviour is preserved.
+- Behavior is preserved.
 
 ## Eliminates Code Smell
 

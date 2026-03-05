@@ -16,8 +16,8 @@ Users can write readable word aliases for most comparison operators, like `:eq`,
 
 * Keep the public filter language consistent and predictable.
 * Follow existing alias implementation patterns in scalar and array expression builders.
-* Avoid breaking existing `:!=` behaviour.
-* Keep runtime behaviour unchanged except for new accepted input shape.
+* Avoid breaking existing `:!=` behavior.
+* Keep runtime behavior unchanged except for new accepted input shape.
 * Keep validation simple through existing test suites.
 
 ## Considered Options
@@ -34,7 +34,7 @@ Chosen option: "Add `:ne` as a strict alias for `:!=` everywhere alias compariso
 
 Good, because users can write `%{field: %{ne: value}}` anywhere they already use other word aliases.
 
-Good, because existing `:!=` behaviour remains unchanged, so current callers keep working.
+Good, because existing `:!=` behavior remains unchanged, so current callers keep working.
 
 Bad, because alias mapping logic remains duplicated across scalar and array spec modules.
 

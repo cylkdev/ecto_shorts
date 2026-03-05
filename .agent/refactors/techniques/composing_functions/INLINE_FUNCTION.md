@@ -18,7 +18,7 @@ A function is "simple" here if it only does one of the following:
 
 - returns a map or struct field
 - performs a single comparison
-- wraps one direct call with no added behaviour
+- wraps one direct call with no added behavior
 - returns a literal / constant
 - forwards arguments unchanged
 
@@ -43,7 +43,7 @@ end
 ## Solution
 
 Replace calls to the function with the function body, then delete the function.
-This removes unnecessary indirection and keeps the behaviour at the call site where it is already clear.
+This removes unnecessary indirection and keeps the behavior at the call site where it is already clear.
 
 Example:
 
@@ -59,7 +59,7 @@ end
 
 This improves code in the following ways:
 
-- It reduces the number of function jumps needed to follow one behaviour path.
+- It reduces the number of function jumps needed to follow one behavior path.
 
 - It removes functions that add no transformation, branching, or domain meaning.
 
@@ -79,7 +79,7 @@ By reducing unnecessary function layers, the code is easier to read and follow.
 
   - It is not part of a public API that callers depend on.
 
-  - It is not intentionally a dispatch boundary (for example behaviour callbacks, protocol implementations, or clause-based routing you want to keep explicit).
+  - It is not intentionally a dispatch boundary (for example behavior callbacks, protocol implementations, or clause-based routing you want to keep explicit).
 
   - It has no side effects that depend on call boundaries (for example tracing, instrumentation, or expected stack traces).
 
@@ -99,7 +99,7 @@ By reducing unnecessary function layers, the code is easier to read and follow.
 
 The refactoring is successful if all of the following are true:
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 
 - The deleted function had no remaining call sites.
 

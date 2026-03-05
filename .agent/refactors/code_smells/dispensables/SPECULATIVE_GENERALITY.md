@@ -11,12 +11,12 @@ Code that was written to handle future requirements that never materialized. Thi
 ## Signs and Symptoms
 
 - Functions with parameters that are always passed the same value.
-- Abstract behaviours with only one implementation.
+- Abstract behaviors with only one implementation.
 - Configuration options that are never changed from defaults.
 - "Plugin" architectures with no plugins.
 - Generic names like `process/1` when only one type is ever processed.
 - Comments like "for future use" or "in case we need to..."
-- Unused callback implementations in behaviours.
+- Unused callback implementations in behaviors.
 
 ## Causes
 
@@ -29,7 +29,7 @@ Code that was written to handle future requirements that never materialized. Thi
 ## Example
 
 ```elixir
-# Abstract behaviour with only one implementation
+# Abstract behavior with only one implementation
 defmodule MyApp.StorageStrategy do
   @callback store(data :: term(), opts :: keyword()) :: {:ok, term()} | {:error, term()}
   @callback retrieve(id :: term(), opts :: keyword()) :: {:ok, term()} | {:error, term()}
@@ -141,7 +141,7 @@ end
 - Simpler code is easier to understand and maintain.
 - Removes indirection that adds no value.
 - Reduces the surface area for bugs.
-- Makes actual behaviour clearer.
+- Makes actual behavior clearer.
 - Easier onboarding for new developers.
 
 ## When Abstraction Is Warranted

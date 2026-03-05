@@ -1,7 +1,7 @@
 defmodule EctoShorts.Dynamic do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Defines the behaviour for pluggable dynamic expression adapters.
+  Defines the behavior for pluggable dynamic expression adapters.
 
   Use this module when building custom adapters that translate filter
   parameters into Ecto dynamic expressions. An adapter implements two

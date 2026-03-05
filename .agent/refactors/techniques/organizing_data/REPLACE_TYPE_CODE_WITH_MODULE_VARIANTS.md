@@ -5,7 +5,7 @@
 Use when any of the following are true:
 
 - A type code has a fixed closed set of variants.
-- Each variant requires different behaviour.
+- Each variant requires different behavior.
 - You want explicit modules per variant.
 
 ## Problem
@@ -14,7 +14,7 @@ One module handles many variant branches with growing conditional logic.
 
 ## Solution
 
-Create a module per variant and route behaviour to the right module.
+Create a module per variant and route behavior to the right module.
 
 ```elixir
 defmodule Discount.Standard do
@@ -36,7 +36,7 @@ end
 
 1. Enumerate stable variants.
 2. Create one module per variant.
-3. Move behaviour from `case` branches to each module.
+3. Move behavior from `case` branches to each module.
 4. Route callers to variant modules.
 5. Run formatter and tests.
 

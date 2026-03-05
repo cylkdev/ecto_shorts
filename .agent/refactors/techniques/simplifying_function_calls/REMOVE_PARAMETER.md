@@ -43,7 +43,7 @@ def total(order), do: order.subtotal_cents
 ## Validation
 
 - Signature has no redundant parameters.
-- Behaviour is unchanged.
+- Behavior is unchanged.
 - Tests pass.
 
 ## Eliminates Code Smell

@@ -5,11 +5,11 @@ description: Guides the creation and execution of a self-contained ExecPlan for 
 
 ## When to use
 
-Use this skill when you need to implement a complex feature, significant system change, or any work with multiple steps that benefits from a structured plan. Examples: adding a new module with behaviour contracts, integrating a third-party library, building a new API surface, or migrating an existing subsystem.
+Use this skill when you need to implement a complex feature, significant system change, or any work with multiple steps that benefits from a structured plan. Examples: adding a new module with behavior contracts, integrating a third-party library, building a new API surface, or migrating an existing subsystem.
 
 ## When not to use
 
-Do **not** use this skill for simple bug fixes, small refactors, or single-function changes. Use the `refactor` skill for behaviour-preserving refactors. Use the `write-adr` skill for architecture decision records. Use the `write-docs` skill for code-level documentation.
+Do **not** use this skill for simple bug fixes, small refactors, or single-function changes. Use the `refactor` skill for behavior-preserving refactors. Use the `write-adr` skill for architecture decision records. Use the `write-docs` skill for code-level documentation.
 
 ## What to do
 
@@ -17,7 +17,7 @@ Read `.agent/PLANS.md` and load it into your context. If it already exists in co
 
 ### 1. Understand the goal
 
-State what the user can do after the change that they cannot do now. Phrase this as observable behaviour, not internal implementation.
+State what the user can do after the change that they cannot do now. Phrase this as observable behavior, not internal implementation.
 
 ### 2. Research the codebase
 
@@ -36,7 +36,7 @@ At minimum the plan must include:
 - **Plan of Work** - the sequence of edits, naming files and functions precisely.
 - **Concrete Steps** - exact commands, working directories, and expected output.
 - **Validation and Acceptance** - how to exercise the system and what to observe.
-- **Interfaces and Dependencies** - modules, behaviours, and function signatures that must exist.
+- **Interfaces and Dependencies** - modules, behaviors, and function signatures that must exist.
 - **Milestones** - independently verifiable steps.
 - **Progress** - checklist updated as work proceeds.
 - **Decision Log**, **Surprises & Discoveries**, **Outcomes & Retrospective** - living sections.

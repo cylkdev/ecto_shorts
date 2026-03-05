@@ -104,13 +104,13 @@ This refactoring may add extra function calls; the cost is usually negligible co
 
 The refactoring is successful if all of the following are true:
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 
 - The original expression now exists in a dedicated function that returns a value.
 
 - The local binding used only for storing that derived value was removed (or intentionally kept for caching).
 
-- The new function can be called from at least the original call site without changing behaviour.
+- The new function can be called from at least the original call site without changing behavior.
 
 - No side effects were moved into the query/helper function.
 

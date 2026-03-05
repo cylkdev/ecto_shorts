@@ -7,7 +7,7 @@ auto_execution_mode: 3
 
 ## Goal
 
-You will identify which modules and public functions changed, update their documentation to match the current behaviour, and verify the docs are accurate and rich.
+You will identify which modules and public functions changed, update their documentation to match the current behavior, and verify the docs are accurate and rich.
 
 ## Requirements
 
@@ -31,12 +31,12 @@ You will identify which modules and public functions changed, update their docum
    - State which scope you picked so the reviewer can see it.
 
 3. **Identify the user-visible changes.**
-   - List the modules and public APIs whose behaviour, inputs, outputs, error cases, or performance characteristics changed.
+   - List the modules and public APIs whose behavior, inputs, outputs, error cases, or performance characteristics changed.
    - Include new modules and new public functions.
 
 4. **Update module documentation for each affected module.**
    - If the module has no `@moduledoc`, add one.
-   - If it already has `@moduledoc`, update it so it matches the current behaviour.
+   - If it already has `@moduledoc`, update it so it matches the current behavior.
    - Every moduledoc must follow the structure from `.agent/DOCS.md`:
      - One-line summary starting with a verb.
      - Orientation paragraph (when to use, when not to, how it fits, entry points).
@@ -51,7 +51,7 @@ You will identify which modules and public functions changed, update their docum
 
 5. **Update function documentation for each affected public function.**
    - If the function has no `@doc`, add one.
-   - If it already has `@doc`, update it so it matches the current behaviour.
+   - If it already has `@doc`, update it so it matches the current behavior.
    - Every function doc must include:
      - One-line summary starting with a verb.
      - Argument descriptions in plain language.
@@ -71,7 +71,7 @@ You will identify which modules and public functions changed, update their docum
 
 7. **Verify the documentation.**
    - Add a short, concrete way to verify the docs match reality.
-   - Prefer pointing at an existing test or a command that demonstrates the behaviour.
+   - Prefer pointing at an existing test or a command that demonstrates the behavior.
    - If you add a new doc example, ensure it is correct and runnable if the project's doc tooling checks examples.
 
 8. **Keep changes small and reviewable.**
@@ -80,7 +80,7 @@ You will identify which modules and public functions changed, update their docum
 
 9. **Final consistency pass.**
    - Ensure names, terms, and examples match the code.
-   - Ensure the docs describe the current public API and do not mention removed options or old behaviour.
+   - Ensure the docs describe the current public API and do not mention removed options or old behavior.
    - Verify these structural requirements from `.agent/DOCS.md`:
      - Every moduledoc has `##` section headers.
      - Every section contains at least one inline code example.

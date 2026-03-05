@@ -11,7 +11,7 @@ Use when any of the following are true:
 
 ## Problem
 
-A tiny module still exists as its own boundary, even though its behaviour is tightly coupled to one owner module.
+A tiny module still exists as its own boundary, even though its behavior is tightly coupled to one owner module.
 
 ```elixir
 defmodule Checkout.FeeBreakdown do
@@ -34,7 +34,7 @@ end
 
 ## Solution
 
-Move the behaviour into the owning module, keep internal helpers private, and remove the inlined module.
+Move the behavior into the owning module, keep internal helpers private, and remove the inlined module.
 
 ```elixir
 defmodule Checkout.Pricing do
@@ -58,9 +58,9 @@ end
 This improves code in the following ways:
 
 - Removes a weak boundary that does not carry independent meaning.
-- Keeps tightly related behaviour in one module.
+- Keeps tightly related behavior in one module.
 - Reduces cross-module jumps for a single workflow.
-- Makes ownership of the behaviour explicit.
+- Makes ownership of the behavior explicit.
 
 ## Benefits
 
@@ -84,7 +84,7 @@ This improves code in the following ways:
 
 ## Validation
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 - The old module no longer exists.
 - Related workflow logic is now coherent in one module.
 - The owner module remains within acceptable complexity.

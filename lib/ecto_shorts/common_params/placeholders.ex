@@ -4,7 +4,7 @@ defmodule EctoShorts.CommonParams.Placeholders do
   Replaces matching field values with placeholder tuples for `insert_all`.
 
   When a field's value matches the configured placeholder value, it is
-  replaced with `{:placeholder, field_name}`. Conflict behaviour is
+  replaced with `{:placeholder, field_name}`. Conflict behavior is
   controlled by the `:on_placeholder_conflict` option.
   """
 

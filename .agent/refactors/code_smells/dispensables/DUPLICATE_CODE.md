@@ -178,7 +178,7 @@ def fetch(schema, id), do: Repo.get(schema, id)
 ```
 
 ### 3. Algorithmic Duplication
-Same algorithm with different types. Use protocols or behaviours.
+Same algorithm with different types. Use protocols or behaviors.
 
 ```elixir
 # Before: same algorithm, different types
@@ -209,7 +209,7 @@ end
 - Bug fixes apply everywhere automatically.
 - Reduced code size and cognitive load.
 - Easier testing of shared functionality.
-- Consistent behaviour across the codebase.
+- Consistent behavior across the codebase.
 
 ## Related Smells
 

@@ -13,7 +13,7 @@ A module that does too little to justify its existence. It may have been created
 - A module with only 1-2 small functions.
 - A module that simply delegates to another module without adding value.
 - A module created "for future expansion" that never expanded.
-- A wrapper module that adds no behaviour or abstraction.
+- A wrapper module that adds no behavior or abstraction.
 - A module whose functions could easily live in a related module.
 
 ## Causes
@@ -93,11 +93,11 @@ Not every small module is lazy. Keep modules that:
 
 - **Define a clear boundary**: Even if small, it represents a distinct concept.
 - **Will grow**: You have concrete plans to add functionality.
-- **Implement a behaviour**: The module satisfies a contract.
+- **Implement a behavior**: The module satisfies a contract.
 - **Provide a stable API**: External code depends on this interface.
 
 ```elixir
-# This small module is justified - it's a behaviour implementation
+# This small module is justified - it's a behavior implementation
 defmodule MyApp.Cache.NullCache do
   @behaviour MyApp.Cache
 
@@ -118,7 +118,7 @@ Ask these questions:
 
 1. Does this module have a single, clear responsibility? -> Keep if yes
 2. Will this module grow with planned features? -> Keep if yes
-3. Does it implement a behaviour or protocol? -> Keep if yes
+3. Does it implement a behavior or protocol? -> Keep if yes
 4. Is it just wrapping another module? -> Consider inlining
 5. Could its functions live naturally in a related module? -> Consider merging
 

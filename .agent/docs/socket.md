@@ -22,7 +22,7 @@ defmodule Phoenix.Socket do
 
   See `Phoenix.Channel` for more information on channels.
 
-  ## Socket Behaviour
+  ## Socket Behavior
 
   Socket handlers are mounted in Endpoints and must define two callbacks:
 

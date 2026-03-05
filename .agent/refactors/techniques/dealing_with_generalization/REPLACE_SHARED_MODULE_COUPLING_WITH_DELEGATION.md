@@ -41,4 +41,4 @@ end
 ## Validation
 
 - Module depends on explicit collaborators.
-- Behaviour is unchanged.
+- Behavior is unchanged.

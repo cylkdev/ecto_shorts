@@ -4,7 +4,7 @@
 
 Use when any of the following are true:
 
-- Behaviour varies by runtime state or policy.
+- Behavior varies by runtime state or policy.
 - New variants are expected over time.
 - Large conditionals select algorithms repeatedly.
 
@@ -14,7 +14,7 @@ Type code drives algorithm selection inline in many places.
 
 ## Solution
 
-Use behaviour-driven strategy modules (or explicit state modules) and dispatch through a common callback contract.
+Use behavior-driven strategy modules (or explicit state modules) and dispatch through a common callback contract.
 
 ```elixir
 defmodule ShippingStrategy do
@@ -35,7 +35,7 @@ end
 
 ## How to Refactor
 
-1. Define a behaviour callback contract.
+1. Define a behavior callback contract.
 2. Implement one module per state/strategy.
 3. Replace type-code branching with strategy module calls.
 4. Inject/select strategy at runtime.
@@ -43,7 +43,7 @@ end
 
 ## Validation
 
-- Branching is replaced by behaviour-based dispatch.
+- Branching is replaced by behavior-based dispatch.
 - New strategies can be added without editing core dispatcher.
 - Tests cover each strategy module.
 

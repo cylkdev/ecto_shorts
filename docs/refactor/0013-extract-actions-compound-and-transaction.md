@@ -8,7 +8,7 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 `EctoShorts.Actions` at 1956 lines contains five distinct responsibility groups beyond the CRUD primitives: compound find-and-X operations, transaction wrappers, batch delegation, bulk delegation, and multi delegation. The compound operations and transaction helpers are the last two groups with significant internal logic that have not been extracted. After this refactor, compound operations move to `Actions.Compound` and transaction private helpers move to `Actions.Transaction`. The Multi delegation pattern is also simplified by extracting a shared `run_multi/4` helper. The result is a thinner `Actions` module focused on CRUD primitives and thin delegators.
 
-To verify behaviour is preserved, run `mix test --seed 0` from the repository root. All 898 tests and 9 doctests must pass.
+To verify behavior is preserved, run `mix test --seed 0` from the repository root. All 898 tests and 9 doctests must pass.
 
 ## Progress
 
@@ -56,7 +56,7 @@ The transaction helpers (`normalize_transaction_response`, `eval_transaction_fun
 
 The six Multi functions all follow an identical 3-line pattern: build multi, run transaction, handle response.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 All public functions in `EctoShorts.Actions` retain their exact signatures, return shapes, and error handling. All 898 tests and 9 doctests pass.
 

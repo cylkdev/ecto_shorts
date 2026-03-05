@@ -5,17 +5,17 @@
 Use when any of the following are true:
 
 - External-type helper logic appears in many modules.
-- Your app needs domain-specific behaviour around a library type.
+- Your app needs domain-specific behavior around a library type.
 - You want a stable local API that can outlive dependency API changes.
 - Multiple teams need one canonical way to work with that external type.
 
 ## Problem
 
-External library types are used directly everywhere, and app-specific behaviour is duplicated.
+External library types are used directly everywhere, and app-specific behavior is duplicated.
 
 ## Solution
 
-Create a local wrapper module (optionally with a wrapper struct) that owns app-specific behaviour and delegates to the external library.
+Create a local wrapper module (optionally with a wrapper struct) that owns app-specific behavior and delegates to the external library.
 
 ```elixir
 defmodule MoneyAmount do
@@ -45,7 +45,7 @@ This improves code in the following ways:
 ## Benefits
 
 - Consistent naming and semantics across the codebase.
-- Easier testing of domain-specific behaviour.
+- Easier testing of domain-specific behavior.
 - Better control over dependency coupling.
 
 ## Drawbacks
@@ -65,9 +65,9 @@ This improves code in the following ways:
 
 ## Validation
 
-- Callers use the wrapper API for app-specific behaviour.
+- Callers use the wrapper API for app-specific behavior.
 - Duplicated helper logic is removed.
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 - Dependency usage is centralized.
 
 ## Eliminates Code Smell

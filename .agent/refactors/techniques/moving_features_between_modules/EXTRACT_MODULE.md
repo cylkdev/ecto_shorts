@@ -52,7 +52,7 @@ This improves code in the following ways:
 - Each module has one clear purpose.
 - Changes in one area stop causing churn in unrelated code.
 - Module names map cleanly to domain concepts.
-- Tests target smaller behaviour surfaces.
+- Tests target smaller behavior surfaces.
 
 ## Benefits
 
@@ -78,7 +78,7 @@ This improves code in the following ways:
 
 ## Validation
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 - The extracted module has one clear responsibility.
 - The original module is materially smaller and more focused.
 

@@ -10,7 +10,7 @@ The private function `apply_changeset!/4` in `EctoShorts.CommonSchema` has three
 
 This refactor extracts the repeated validation into a single `defp validate_changeset!/1` helper. Each branch delegates to it. A change to the validation logic (e.g. improving the error message) then needs to happen in one place instead of three.
 
-To verify behaviour is preserved, run `mix test` from the repository root. All 645 tests and 9 doctests must pass.
+To verify behavior is preserved, run `mix test` from the repository root. All 645 tests and 9 doctests must pass.
 
 ## Progress
 
@@ -34,7 +34,7 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
 
 The refactor is complete. Three copies of a 5-line `if changeset?(term) do term else raise_not_changeset!(term) end` validation block were replaced with single-line calls to the new `defp validate_changeset!/1`. The two helpers `changeset?/1` and `raise_not_changeset!/1` were removed since their logic is now combined in `validate_changeset!/1`.
 
-The behaviour boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same `RuntimeError` with "Expected an Ecto.Changeset, got: ..." is raised for invalid callback returns. `mix format` is clean. `mix credo --strict` shows no new warnings.
+The behavior boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same `RuntimeError` with "Expected an Ecto.Changeset, got: ..." is raised for invalid callback returns. `mix format` is clean. `mix credo --strict` shows no new warnings.
 
 File changed: `lib/ecto_shorts/common_schema.ex` - added `defp validate_changeset!/1`, simplified 3 case branches in `apply_changeset!/4`, removed `changeset?/1` and `raise_not_changeset!/1`.
 
@@ -56,7 +56,7 @@ Two existing helpers support this:
 
 These will be replaced by a single `defp validate_changeset!/1`.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 - `EctoShorts.CommonSchema.create_changeset/3` and `create_changeset/4` with a `:changeset` option must return the same `Ecto.Changeset` for valid callbacks.
 - When a callback returns a non-changeset value, the same `RuntimeError` with message "Expected an Ecto.Changeset, got: ..." must be raised.
@@ -92,7 +92,7 @@ All commands run from: `/Users/kurthogarth/Documents/GitHub/ecto_shorts`
 
 ## Validation and Acceptance
 
-Run `mix test` after Milestone 1. All 645 tests and 9 doctests must pass. The refactor preserves all existing changeset creation and validation behaviour.
+Run `mix test` after Milestone 1. All 645 tests and 9 doctests must pass. The refactor preserves all existing changeset creation and validation behavior.
 
 Run `mix credo --strict` at Milestone 2. No new warnings should appear.
 

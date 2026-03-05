@@ -940,7 +940,7 @@ defmodule Ecto.Query do
 
     * `:as` - the CTE query itself or a fragment
     * `:materialized` - a boolean indicating whether the CTE should
-    be materialized. If blank, the database's default behaviour
+    be materialized. If blank, the database's default behavior
     will be used (only supported by Postgrex, for the built-in adapters)
     * `:operation` - one of `:all`, `:update_all`, or `:delete_all`
     indicating the operation type of the CTE query. If blank, it defaults to `:all`,
@@ -1315,7 +1315,7 @@ defmodule Ecto.Query do
       from c in City, where: (c.country === "Sweden") or
                              (c.country === "USA" and c.name === "New York")
 
-  The behaviour above is by design to keep the changes between `where`
+  The behavior above is by design to keep the changes between `where`
   and `or_where` minimal. Plus, if you have a keyword list and you
   would like each pair to be combined using `or`, it can be easily done
   with `Enum.reduce/3`:
@@ -1448,9 +1448,9 @@ defmodule Ecto.Query do
   to combine multiple result sets without removing duplicate rows
   consider using `union_all/2`.
 
-  ## Combination behaviour
+  ## Combination behavior
 
-  There are several behaviours of combination queries that must be taken
+  There are several behaviors of combination queries that must be taken
   into account, otherwise you may unexpectedly return the wrong query result.
 
   ### Order by, limit and offset
@@ -1517,9 +1517,9 @@ defmodule Ecto.Query do
   Combines result sets of multiple queries. The `select` of each query
   must be exactly the same, with the same types in the same order.
 
-  ## Combination behaviour
+  ## Combination behavior
 
-  There are several behaviours of combination queries that must be taken
+  There are several behaviors of combination queries that must be taken
   into account, otherwise you may unexpectedly return the wrong query result.
 
   ### Order by, limit and offset
@@ -1591,9 +1591,9 @@ defmodule Ecto.Query do
   to take the difference of multiple result sets without
   removing duplicate rows consider using `except_all/2`.
 
-  ## Combination behaviour
+  ## Combination behavior
 
-  There are several behaviours of combination queries that must be taken
+  There are several behaviors of combination queries that must be taken
   into account, otherwise you may unexpectedly return the wrong query result.
 
   ### Order by, limit and offset
@@ -1660,9 +1660,9 @@ defmodule Ecto.Query do
   `select` of each query must be exactly the same, with the same
   types in the same order.
 
-  ## Combination behaviour
+  ## Combination behavior
 
-  There are several behaviours of combination queries that must be taken
+  There are several behaviors of combination queries that must be taken
   into account, otherwise you may unexpectedly return the wrong query result.
 
   ### Order by, limit and offset
@@ -1734,9 +1734,9 @@ defmodule Ecto.Query do
   to take the intersection of multiple result sets without
   removing duplicate rows consider using `intersect_all/2`.
 
-  ## Combination behaviour
+  ## Combination behavior
 
-  There are several behaviours of combination queries that must be taken
+  There are several behaviors of combination queries that must be taken
   into account, otherwise you may unexpectedly return the wrong query result.
 
   ### Order by, limit and offset
@@ -1803,9 +1803,9 @@ defmodule Ecto.Query do
   `select` of each query must be exactly the same, with the same
   types in the same order.
 
-  ## Combination behaviour
+  ## Combination behavior
 
-  There are several behaviours of combination queries that must be taken
+  There are several behaviors of combination queries that must be taken
   into account, otherwise you may unexpectedly return the wrong query result.
 
   ### Order by, limit and offset

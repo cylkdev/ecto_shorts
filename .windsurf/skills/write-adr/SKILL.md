@@ -31,7 +31,7 @@ Copy the skeleton from `.agent/ADRS.md` into the new file. Fill in every section
 
 ### 4. Make the decision testable
 
-In "Validation", include at least one concrete way to confirm the decision was applied correctly. Prefer a command to run, a test to run, or an observable runtime behaviour.
+In "Validation", include at least one concrete way to confirm the decision was applied correctly. Prefer a command to run, a test to run, or an observable runtime behavior.
 
 ### 5. Ensure the ADR is reviewable
 

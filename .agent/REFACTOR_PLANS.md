@@ -1,16 +1,16 @@
 # Refactoring Execution Plans (RefactorPlans)
 
-This document describes the requirements for a refactoring execution plan ("RefactorPlan"), a design document that a coding agent can follow to safely improve code structure without changing behaviour. Treat the reader as a complete beginner to this repository: they have only the current working tree and the single RefactorPlan file you provide. There is no memory of prior refactors and no external context.
+This document describes the requirements for a refactoring execution plan ("RefactorPlan"), a design document that a coding agent can follow to safely improve code structure without changing behavior. Treat the reader as a complete beginner to this repository: they have only the current working tree and the single RefactorPlan file you provide. There is no memory of prior refactors and no external context.
 
 ## How to use RefactorPlans and REFACTORS.md
 
-When authoring a RefactorPlan, follow this REFACTORS.md _to the letter_. If it is not in your context, refresh your memory by reading the entire REFACTORS.md file. Be thorough in reading (and re-reading) source material so the refactoring work remains behaviour-preserving and accurate. When creating a RefactorPlan, start from the skeleton and flesh it out as you inspect the code.
+When authoring a RefactorPlan, follow this REFACTORS.md _to the letter_. If it is not in your context, refresh your memory by reading the entire REFACTORS.md file. Be thorough in reading (and re-reading) source material so the refactoring work remains behavior-preserving and accurate. When creating a RefactorPlan, start from the skeleton and flesh it out as you inspect the code.
 
 When implementing a RefactorPlan, do not prompt the user for "next steps"; simply proceed to the next milestone. Keep all sections up to date, add or split entries in the list at every stopping point to affirmatively state the progress made and next steps. Resolve ambiguities autonomously, and commit frequently.
 
 When discussing a RefactorPlan, record decisions in a log in the plan for posterity; it should be unambiguously clear why any change to the plan was made. RefactorPlans are living documents, and it should always be possible to restart from _only_ the RefactorPlan and no other work.
 
-When researching a refactor with challenging requirements or significant unknowns, use milestones to implement proof of concepts or small intermediate extractions that allow validating whether the proposed refactor is safe. Read the code deeply, identify the exact behaviour boundary, and include prototypes to guide a fuller implementation.
+When researching a refactor with challenging requirements or significant unknowns, use milestones to implement proof of concepts or small intermediate extractions that allow validating whether the proposed refactor is safe. Read the code deeply, identify the exact behavior boundary, and include prototypes to guide a fuller implementation.
 
 ## Requirements
 
@@ -19,10 +19,10 @@ NON-NEGOTIABLE REQUIREMENTS:
 * Every RefactorPlan must be fully self-contained. Self-contained means that in its current form it contains all knowledge and instructions needed for a novice to succeed.
 * Every RefactorPlan is a living document. Contributors are required to revise it as progress is made, as discoveries occur, and as refactoring decisions are finalized. Each revision must remain fully self-contained.
 * Every RefactorPlan must enable a complete novice to perform the refactoring end-to-end without prior knowledge of this repo.
-* Every RefactorPlan must produce demonstrably unchanged behaviour, not merely code changes that "look cleaner".
+* Every RefactorPlan must produce demonstrably unchanged behavior, not merely code changes that "look cleaner".
 * Every RefactorPlan must define every term of art in plain language or do not use it.
 
-Purpose and intent come first. Start by explaining, in a few sentences, why the refactoring matters from a maintainer's perspective: what becomes easier to read, change, test, or reason about after this change, and how to verify that behaviour did not change. Then guide the reader through the exact steps to achieve that outcome, including what to edit, what to run, and what they should observe.
+Purpose and intent come first. Start by explaining, in a few sentences, why the refactoring matters from a maintainer's perspective: what becomes easier to read, change, test, or reason about after this change, and how to verify that behavior did not change. Then guide the reader through the exact steps to achieve that outcome, including what to edit, what to run, and what they should observe.
 
 The agent executing your plan can list files, read files, search, run the project, and run tests. It does not know any prior context and cannot infer what you meant from earlier milestones. Repeat any assumption you rely on. Do not point to external blogs or docs; if knowledge is required, embed it in the plan itself in your own words. If a RefactorPlan builds upon a prior RefactorPlan and that file is checked in, incorporate it by reference. If it is not, you must include all relevant context from that plan.
 
@@ -60,7 +60,7 @@ Code smells are located in `.agent/refactor/code_smells/` and organized by categ
 - `.agent/refactor/code_smells/dispensables/LAZY_MODULE.md`
 - `.agent/refactor/code_smells/dispensables/SPECULATIVE_GENERALITY.md`
 
-**Abstraction Abusers** - patterns that misuse abstraction mechanisms (behaviours, protocols, use/import, structs):
+**Abstraction Abusers** - patterns that misuse abstraction mechanisms (behaviors, protocols, use/import, structs):
 - `.agent/refactor/code_smells/abstraction_abusers/ALTERNATIVE_MODULES_WITH_DIFFERENT_INTERFACES.md`
 - `.agent/refactor/code_smells/abstraction_abusers/REFUSED_BEQUEST.md`
 - `.agent/refactor/code_smells/abstraction_abusers/SWITCH_STATEMENTS.md`
@@ -92,17 +92,17 @@ Write in plain prose. Prefer sentences over lists. Avoid checklists, tables, and
 
 ## Guidelines
 
-Self-containment and plain language are paramount. If you introduce a phrase that is not ordinary English ("code smell", "behaviour boundary", "adapter", "macro hygiene"), define it immediately and remind the reader how it manifests in this repository (for example, by naming the files or commands where it appears). Do not say "as defined previously" or "according to the architecture doc." Include the needed explanation here, even if you repeat yourself.
+Self-containment and plain language are paramount. If you introduce a phrase that is not ordinary English ("code smell", "behavior boundary", "adapter", "macro hygiene"), define it immediately and remind the reader how it manifests in this repository (for example, by naming the files or commands where it appears). Do not say "as defined previously" or "according to the architecture doc." Include the needed explanation here, even if you repeat yourself.
 
-Avoid common failure modes. Do not rely on undefined jargon. Do not describe "the letter of a refactor" so narrowly that the resulting code compiles but changes behaviour. Do not outsource key decisions to the reader. When ambiguity exists, resolve it in the plan itself and explain why you chose that path. Err on the side of over-explaining behaviour preservation and under-specifying incidental stylistic preferences.
+Avoid common failure modes. Do not rely on undefined jargon. Do not describe "the letter of a refactor" so narrowly that the resulting code compiles but changes behavior. Do not outsource key decisions to the reader. When ambiguity exists, resolve it in the plan itself and explain why you chose that path. Err on the side of over-explaining behavior preservation and under-specifying incidental stylistic preferences.
 
-Anchor the plan with observable outcomes. State what behaviour must remain the same, the commands to run, and the outputs they should see. Acceptance should be phrased as behaviour a human can verify ("calling `MyModule.parse/1` with input `\"a,b\"` still returns `{:ok, [\"a\", \"b\"]}`") rather than internal attributes ("added helper function"). If a change is internal, explain how its impact can still be demonstrated (for example, by running tests that fail before a mistaken change and pass after the correct refactor).
+Anchor the plan with observable outcomes. State what behavior must remain the same, the commands to run, and the outputs they should see. Acceptance should be phrased as behavior a human can verify ("calling `MyModule.parse/1` with input `\"a,b\"` still returns `{:ok, [\"a\", \"b\"]}`") rather than internal attributes ("added helper function"). If a change is internal, explain how its impact can still be demonstrated (for example, by running tests that fail before a mistaken change and pass after the correct refactor).
 
 Specify repository context explicitly. Name files with full repository-relative paths, name functions and modules precisely, and describe where new files should be created. If touching multiple areas, include a short orientation paragraph that explains how those parts fit together so a novice can navigate confidently. When running commands, show the working directory and exact command line. When outcomes depend on environment, state the assumptions and provide alternatives when reasonable.
 
 Be idempotent and safe. Write the steps so they can be run multiple times without causing damage or drift. If a step can fail halfway, include how to retry or adapt. Prefer additive, testable changes (for example, extracting a helper while keeping the original call path) before subtractive cleanups (for example, deleting duplicated code after tests pass).
 
-Validation is not optional. Include instructions to run tests, to exercise the system if applicable, and to observe behaviour that proves the refactor did not change outcomes. Describe comprehensive testing for the area being refactored. Include expected outputs and failure signals so a novice can distinguish success from regressions. Where possible, show how to prove that the change is effective beyond compilation (for example, through a small end-to-end scenario or test output transcript). State the exact test commands appropriate to the project's toolchain and how to interpret their results.
+Validation is not optional. Include instructions to run tests, to exercise the system if applicable, and to observe behavior that proves the refactor did not change outcomes. Describe comprehensive testing for the area being refactored. Include expected outputs and failure signals so a novice can distinguish success from regressions. Where possible, show how to prove that the change is effective beyond compilation (for example, through a small end-to-end scenario or test output transcript). State the exact test commands appropriate to the project's toolchain and how to interpret their results.
 
 Capture evidence. When your steps produce terminal output, short diffs, or logs, include them inside the single fenced block as indented examples. Keep them concise and focused on what proves success. If you need to include a patch, prefer file-scoped diffs or small excerpts that a reader can recreate by following your instructions rather than pasting large blobs.
 
@@ -110,11 +110,11 @@ Capture evidence. When your steps produce terminal output, short diffs, or logs,
 
 Prefer refactors that improve readability without changing semantics. Prefer smaller focused functions when a function is performing multiple distinct operations. Prefer pattern matching and function heads when they make branching logic clearer and preserve the same outcomes. Prefer guard clauses when they reduce nesting and preserve the same conditions.
 
-Keep public and private APIs clear. Use `def` for public functions that are part of a module's external contract. Use `defp` for internal helpers introduced during refactoring. If moving code across functions, preserve the original return shape, error tuple conventions, raising behaviour, and side effects unless the task explicitly authorizes a behaviour change.
+Keep public and private APIs clear. Use `def` for public functions that are part of a module's external contract. Use `defp` for internal helpers introduced during refactoring. If moving code across functions, preserve the original return shape, error tuple conventions, raising behavior, and side effects unless the task explicitly authorizes a behavior change.
 
-Be careful with bang (`!`) functions and non-bang variants. A bang function should continue to raise on failure if that is the existing behaviour. A non-bang function should continue to return error values in the repository's established style. Do not "normalize" these semantics during refactoring unless the task explicitly states that behaviour changes are allowed.
+Be careful with bang (`!`) functions and non-bang variants. A bang function should continue to raise on failure if that is the existing behavior. A non-bang function should continue to return error values in the repository's established style. Do not "normalize" these semantics during refactoring unless the task explicitly states that behavior changes are allowed.
 
-When refactoring macros or code-generation paths, treat generated behaviour as part of the behaviour boundary. Verify both compile-time and runtime behaviour if the affected code changes quoting, binding, hygiene, or generated function structure.
+When refactoring macros or code-generation paths, treat generated behavior as part of the behavior boundary. Verify both compile-time and runtime behavior if the affected code changes quoting, binding, hygiene, or generated function structure.
 
 ## Verification
 
@@ -128,7 +128,7 @@ If the project uses a different command (for example, `mix ci`, `mix test --only
 
 ## Milestones
 
-Milestones are narrative, not bureaucracy. If you break the work into milestones, introduce each with a brief paragraph that describes the scope, what will exist at the end of the milestone that did not exist before, the commands to run, and the acceptance you expect to observe. Keep it readable as a story: behaviour boundary, smell addressed, technique used, result, proof. Progress and milestones are distinct: milestones tell the story, progress tracks granular work. Both must exist. Never abbreviate a milestone merely for the sake of brevity, do not leave out details that could be crucial to preserving behaviour.
+Milestones are narrative, not bureaucracy. If you break the work into milestones, introduce each with a brief paragraph that describes the scope, what will exist at the end of the milestone that did not exist before, the commands to run, and the acceptance you expect to observe. Keep it readable as a story: behavior boundary, smell addressed, technique used, result, proof. Progress and milestones are distinct: milestones tell the story, progress tracks granular work. Both must exist. Never abbreviate a milestone merely for the sake of brevity, do not leave out details that could be crucial to preserving behavior.
 
 Each milestone must be independently verifiable and incrementally move the code toward the refactored state.
 
@@ -142,7 +142,7 @@ Each milestone must be independently verifiable and incrementally move the code 
 
 ## Prototyping milestones and parallel implementations
 
-It is acceptable-and often encouraged-to include explicit prototyping milestones when they de-risk a larger refactor. Examples: extracting a helper in one call site first to validate naming and return shape, or introducing a parallel implementation behind an internal switch to compare outcomes while preserving external behaviour. Keep prototypes additive and testable. Clearly label the scope as "prototyping"; describe how to run and observe results; and state the criteria for promoting or discarding the prototype.
+It is acceptable-and often encouraged-to include explicit prototyping milestones when they de-risk a larger refactor. Examples: extracting a helper in one call site first to validate naming and return shape, or introducing a parallel implementation behind an internal switch to compare outcomes while preserving external behavior. Keep prototypes additive and testable. Clearly label the scope as "prototyping"; describe how to run and observe results; and state the criteria for promoting or discarding the prototype.
 
 Prefer additive code changes followed by subtractions that keep tests passing. Parallel implementations (for example, preserving the old function path while a new helper path is introduced and validated) are fine when they reduce risk or enable tests to continue passing during a large refactor. Describe how to validate both paths and how to retire one safely with tests.
 
@@ -156,13 +156,13 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Purpose / Big Picture
 
-    Explain in a few sentences why this refactor matters and what becomes easier to read, change, or test after the refactor. State the exact behaviour that must remain unchanged and how a person can verify it.
+    Explain in a few sentences why this refactor matters and what becomes easier to read, change, or test after the refactor. State the exact behavior that must remain unchanged and how a person can verify it.
 
     ## Progress
 
     Use a list with checkboxes to summarize granular steps. Every stopping point must be documented here, even if it requires splitting a partially completed task into two ("done" vs. "remaining"). This section must always reflect the actual current state of the work.
 
-    - [x] (2026-02-21 10:00Z) Identified behaviour boundary for `MyApp.Parser.parse/1` and documented existing return values.
+    - [x] (2026-02-21 10:00Z) Identified behavior boundary for `MyApp.Parser.parse/1` and documented existing return values.
     - [ ] Extract duplicated normalization logic into a private helper while preserving all return shapes.
     - [ ] Run focused tests and full test suite; record evidence and finalize retrospective.
 
@@ -170,7 +170,7 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Surprises & Discoveries
 
-    Document unexpected behaviours, side effects, hidden coupling, or test gaps discovered during refactoring. Provide concise evidence.
+    Document unexpected behaviors, side effects, hidden coupling, or test gaps discovered during refactoring. Provide concise evidence.
 
     - Observation: …
       Evidence: …
@@ -185,15 +185,15 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Outcomes & Retrospective
 
-    Summarize outcomes, remaining smells or follow-up opportunities, and lessons learned at major milestones or at completion. Compare the result against the original purpose and behaviour boundary.
+    Summarize outcomes, remaining smells or follow-up opportunities, and lessons learned at major milestones or at completion. Compare the result against the original purpose and behavior boundary.
 
     ## Context and Orientation
 
     Describe the current state relevant to this refactor as if the reader knows nothing. Name the key files and modules by full path. Define any non-obvious term you will use. Do not refer to prior plans.
 
-    ## Behaviour Boundary (Must Remain Unchanged)
+    ## Behavior Boundary (Must Remain Unchanged)
 
-    State the exact observable behaviour that must remain unchanged during the refactor. Be concrete and specific.
+    State the exact observable behavior that must remain unchanged during the refactor. Be concrete and specific.
 
     Examples:
     - `MyApp.Parser.parse/1` returns `{:ok, tokens}` for valid input and `{:error, reason}` for invalid input, with the same `reason` atoms as before.
@@ -206,11 +206,11 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Refactoring Technique Selected
 
-    Name the technique(s) from the catalog (e.g., `Extract Function` from `.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`) and explain why they address the smell without changing the behaviour boundary. Include a brief summary of the technique so the plan remains self-contained.
+    Name the technique(s) from the catalog (e.g., `Extract Function` from `.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`) and explain why they address the smell without changing the behavior boundary. Include a brief summary of the technique so the plan remains self-contained.
 
     ## Plan of Work
 
-    Describe, in prose, the sequence of edits and additions. For each edit, name the file and location (function, module) and what to insert or change. Keep it concrete and minimal. Prefer small, behaviour-preserving steps.
+    Describe, in prose, the sequence of edits and additions. For each edit, name the file and location (function, module) and what to insert or change. Keep it concrete and minimal. Prefer small, behavior-preserving steps.
 
     ## Concrete Steps
 
@@ -218,7 +218,7 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Validation and Acceptance
 
-    Describe how to exercise the code and what to observe to prove behaviour did not change. Phrase acceptance as behaviour, with specific inputs and outputs. If tests are involved, say "run <project's test command> and expect <N> passed; the refactor preserves the existing tests and any new guard tests pass".
+    Describe how to exercise the code and what to observe to prove behavior did not change. Phrase acceptance as behavior, with specific inputs and outputs. If tests are involved, say "run <project's test command> and expect <N> passed; the refactor preserves the existing tests and any new guard tests pass".
 
     ## Idempotence and Recovery
 
@@ -226,7 +226,7 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     ## Artifacts and Notes
 
-    Include the most important transcripts, diffs, or snippets as indented examples. Keep them concise and focused on what proves behaviour preservation and successful completion.
+    Include the most important transcripts, diffs, or snippets as indented examples. Keep them concise and focused on what proves behavior preservation and successful completion.
 
     ## Interfaces and Dependencies
 
@@ -243,7 +243,7 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
     Write 2–6 milestones. Each milestone must be independently verifiable.
 
     For each milestone, include:
-    - the goal (what behaviour is preserved, what smell is addressed)
+    - the goal (what behavior is preserved, what smell is addressed)
     - the exact files you will add/change
     - the command(s) to run
     - the expected observable outcome (pass/fail signals, output snippets)

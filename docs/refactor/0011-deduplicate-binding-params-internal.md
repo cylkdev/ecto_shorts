@@ -14,7 +14,7 @@ The caller picture reinforced the duplication: `common_filters.ex` called `build
 
 After this refactor, `binding_params.ex` shrank from 288 lines to 138 lines. `build_binding_params/6` and its 4 private helpers were deleted. `common_filters.ex` calls `normalize_bind_params/2` + `Enum.reduce`, matching the pattern already used by the 7 submodules. All callers now use one shared normalization path.
 
-To verify behaviour is preserved, run `mix test --seed 0 --trace` from the repository root. All tests must pass after every milestone.
+To verify behavior is preserved, run `mix test --seed 0 --trace` from the repository root. All tests must pass after every milestone.
 
 ## Progress
 
@@ -44,7 +44,7 @@ To verify behaviour is preserved, run `mix test --seed 0 --trace` from the repos
 
 The refactor is complete. `binding_params.ex` shrank from 288 lines to 138 lines (52% reduction). The duplicate input-validation algorithm (~140 lines across `build_binding_params/6` and its 4 private helpers) was eliminated. `common_filters.ex` now calls `BindingParams.normalize_bind_params/2` + `Enum.reduce`, matching the pattern already used by 7 submodules.
 
-The behaviour boundary was fully preserved: all 898 tests and 9 doctests pass. No public API was changed. Warning messages preserve the same prefix and content. `mix format`, `mix credo --strict`, and `mix dialyzer` show no new issues.
+The behavior boundary was fully preserved: all 898 tests and 9 doctests pass. No public API was changed. Warning messages preserve the same prefix and content. `mix format`, `mix credo --strict`, and `mix dialyzer` show no new issues.
 
 Files changed:
 
@@ -69,7 +69,7 @@ Key files:
 - `lib/ecto_shorts/common_filters/binding_params.ex` - the refactored module.
 - `lib/ecto_shorts/common_filters.ex` - the main dispatch module that now contains the inlined reduce.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 All public functions in all affected modules must return identical results for identical inputs.
 
@@ -86,7 +86,7 @@ Signs: copy-pasted code blocks within the same module, similar functions that di
 
 ## Refactoring Technique Selected
 
-Extract Function (`.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`) combined with Inline Function (`.agent/refactor/techniques/composing_functions/INLINE_FUNCTION.md`). The shared normalization logic already existed as `normalize_bind_params/2`. The duplicate code in `build_binding_params/6` was rewritten to call it (Extract pattern - reuse existing extraction). Then the thin `build_binding_params/6` wrapper was inlined into its single call site in `common_filters.ex` (Inline). This preserved behaviour because the shared function performs identical validation and the reduce callback preserves the original dispatch semantics.
+Extract Function (`.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`) combined with Inline Function (`.agent/refactor/techniques/composing_functions/INLINE_FUNCTION.md`). The shared normalization logic already existed as `normalize_bind_params/2`. The duplicate code in `build_binding_params/6` was rewritten to call it (Extract pattern - reuse existing extraction). Then the thin `build_binding_params/6` wrapper was inlined into its single call site in `common_filters.ex` (Inline). This preserved behavior because the shared function performs identical validation and the reduce callback preserves the original dispatch semantics.
 
 ## Plan of Work
 

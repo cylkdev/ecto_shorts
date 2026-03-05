@@ -49,7 +49,7 @@ end
 
 - Value rules live in one module.
 - Call sites use the struct consistently.
-- Behaviour is unchanged or intentionally improved with tests.
+- Behavior is unchanged or intentionally improved with tests.
 
 ## Eliminates Code Smell
 

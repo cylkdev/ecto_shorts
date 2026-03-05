@@ -25,7 +25,7 @@ end
 
 ## Why Refactor
 
-- Makes sync behaviour explicit.
+- Makes sync behavior explicit.
 - Prevents silent divergence between representations.
 - Keeps UI-specific and domain-specific models separate but coordinated.
 

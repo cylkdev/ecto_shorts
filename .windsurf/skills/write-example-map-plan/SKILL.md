@@ -5,11 +5,11 @@ description: Guides the creation of a self-contained ExampleMapPlan that clarifi
 
 ## When to use
 
-Use this skill when you need to clarify a feature or story before implementation. Example Mapping produces concrete, testable examples that drive design and acceptance tests. Use it when requirements are ambiguous, when a feature has many edge cases, or when you want to define behaviour specifications with concrete examples first.
+Use this skill when you need to clarify a feature or story before implementation. Example Mapping produces concrete, testable examples that drive design and acceptance tests. Use it when requirements are ambiguous, when a feature has many edge cases, or when you want to define behavior specifications with concrete examples first.
 
 ## When not to use
 
-Do **not** use this skill for implementing features directly. Use the `write-exec-plan` skill for that. Do **not** use this skill for behaviour-preserving refactors. Use the `refactor` skill for that.
+Do **not** use this skill for implementing features directly. Use the `write-exec-plan` skill for that. Do **not** use this skill for behavior-preserving refactors. Use the `refactor` skill for that.
 
 ## What to do
 
@@ -17,11 +17,11 @@ Read `.agent/EXAMPLE_MAP_PLANS.md` and load it into your context. If it already 
 
 ### 1. Understand the story
 
-State who wants what and why. Phrase it as observable behaviour from a user's perspective. Define scope boundaries including what is explicitly out of scope.
+State who wants what and why. Phrase it as observable behavior from a user's perspective. Define scope boundaries including what is explicitly out of scope.
 
 ### 2. Research the codebase
 
-Identify the key files, modules, and existing behaviour relevant to the story. Note any conventions for test structure and naming.
+Identify the key files, modules, and existing behavior relevant to the story. Note any conventions for test structure and naming.
 
 ### 3. Write the ExampleMapPlan
 

@@ -10,7 +10,7 @@ Six private function clauses in `EctoShorts.CommonFilters.Filter` (`apply_expr/6
 
 After the refactor, the shared logic lives in a single guarded `apply_expr/6` clause, and a compile-time `for` comprehension generates the six one-liner dispatch clauses. The file shrank by ~15 lines and the shared pattern has a single point of change.
 
-To verify behaviour is preserved, run `mix test --seed 0 --trace` from the repository root. All 791 tests and 9 doctests must pass.
+To verify behavior is preserved, run `mix test --seed 0 --trace` from the repository root. All 791 tests and 9 doctests must pass.
 
 ## Progress
 
@@ -48,9 +48,9 @@ No remaining smells in this area. The other `apply_expr` clauses (`:lock`, `:las
 
 The six set operations (`:except`, `:except_all`, `:intersect`, `:intersect_all`, `:union`, `:union_all`) all follow the same pattern: convert the user-provided value into an `Ecto.Query` via `to_query/3`, then call the corresponding `Ecto.Query` macro to combine it with the base query. Before this refactor, each had its own dedicated `apply_expr/6` clause.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
-The observable behaviour of `EctoShorts.CommonFilters.convert_params_to_filter/3` must remain unchanged. Specifically:
+The observable behavior of `EctoShorts.CommonFilters.convert_params_to_filter/3` must remain unchanged. Specifically:
 
 - Passing `%{except: value}`, `%{except_all: value}`, `%{intersect: value}`, `%{intersect_all: value}`, `%{union: value}`, or `%{union_all: value}` produces the same `Ecto.Query` struct as before.
 - The `value` can be an `Ecto.Query` struct (passed through) or a filter params map (converted via `CommonFilters.convert_params_to_filter/3`).

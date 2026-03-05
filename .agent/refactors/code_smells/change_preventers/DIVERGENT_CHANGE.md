@@ -183,4 +183,4 @@ If a module changes for multiple unrelated reasons, it has divergent change.
 
 - `Extract Module`
 - `Move Function`
-- `Extract Behaviour`
+- `Extract Behavior`

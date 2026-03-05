@@ -10,7 +10,7 @@ The `EctoShorts.CommonChanges` module has two definitions of `preload_change_ass
 
 This refactor merges the two by adding `opts \\ []` to the 3-arity head and deleting the 2-arity clause. This eliminates 8 lines of duplicated code and ensures future changes to the preload-change logic happen in one place.
 
-To verify behaviour is preserved, run `mix test` from the repository root. All 645 tests and 9 doctests must pass.
+To verify behavior is preserved, run `mix test` from the repository root. All 645 tests and 9 doctests must pass.
 
 ## Progress
 
@@ -32,7 +32,7 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
 
 The refactor is complete. The duplicate 2-arity `preload_change_assoc/2` clause (8 lines) was eliminated by adding `opts \\ []` to the 3-arity definition. Callers using either arity continue to work identically.
 
-The behaviour boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed - `preload_change_assoc(changeset, key)` and `preload_change_assoc(changeset, key, opts)` both resolve to the same function. `mix format` is clean. `mix credo --strict` shows no new warnings.
+The behavior boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed - `preload_change_assoc(changeset, key)` and `preload_change_assoc(changeset, key, opts)` both resolve to the same function. `mix format` is clean. `mix credo --strict` shows no new warnings.
 
 File changed: `lib/ecto_shorts/common_changes.ex` - merged 2-arity into 3-arity with default argument.
 
@@ -47,7 +47,7 @@ The function `preload_change_assoc` is a public function used in schema changese
 
 The downstream functions already accept optional keyword lists: `preload_changeset_assoc(changeset, key, opts \\ [])` and `put_or_cast_assoc(changeset, key, opts \\ [])`.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 - `EctoShorts.CommonChanges.preload_change_assoc(changeset, key)` must produce the same changeset as before - preloading and casting (or just casting) the association based on whether the key is present in params.
 - `EctoShorts.CommonChanges.preload_change_assoc(changeset, key, opts)` must handle `:required_when_missing` and `:required` opts identically.

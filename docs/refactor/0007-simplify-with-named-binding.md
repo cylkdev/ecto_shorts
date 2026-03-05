@@ -39,7 +39,7 @@ Pending test verification. The `apply_entry` keyword-list clause went from 22 li
 - `reduce_entries/3` - normalises input (maps to keyword lists) and iterates over entries, calling `apply_entry` for each.
 - `apply_entry/4` - validates a single `{binding_key, binding_params}` entry, checks if the named binding already exists, applies filters, and verifies the binding was created.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 The public `build/6` function must produce identical results for all existing test inputs. The 6 tests in `describe "convert_params_to_filter/3 with_named_binding"` (query_operation_test.exs) cover: missing binding creation, no-op when binding exists, multiple entries, map payload, invalid key type, invalid params type, and missing binding callback result.
 
@@ -77,7 +77,7 @@ Run `mix test` from the repository root. All existing tests must pass. The 6 wit
 
 ## Idempotence and Recovery
 
-The changes are safe to apply multiple times. Reverting `lib/ecto_shorts/common_filters/with_named_binding.ex` restores the original behaviour.
+The changes are safe to apply multiple times. Reverting `lib/ecto_shorts/common_filters/with_named_binding.ex` restores the original behavior.
 
 ## Artifacts and Notes
 

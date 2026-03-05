@@ -44,7 +44,7 @@ end
 
 - Callers no longer depend on positional indexes.
 - Pattern matches use named fields.
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 
 ## Eliminates Code Smell
 

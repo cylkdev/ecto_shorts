@@ -2,7 +2,7 @@
 
 ## When to use
 
-Use when many modules delegate the same calls and now share stable behaviour.
+Use when many modules delegate the same calls and now share stable behavior.
 
 ## Problem
 
@@ -20,7 +20,7 @@ end
 
 ## Solution
 
-Promote repeated delegated behaviour into one shared module API used directly.
+Promote repeated delegated behavior into one shared module API used directly.
 
 ```elixir
 defmodule Quote do
@@ -31,7 +31,7 @@ end
 ## Why Refactor
 
 - Removes repetitive wrapper modules.
-- Clarifies single point of shared behaviour.
+- Clarifies single point of shared behavior.
 
 ## How to Refactor
 

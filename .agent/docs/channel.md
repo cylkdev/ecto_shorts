@@ -214,7 +214,7 @@ defmodule Phoenix.Channel do
   trigger terminate with the reason given in the tuple.
 
   `terminate/2`, however, won't be invoked in case of errors nor in
-  case of exits. This is the same behaviour as you find in Elixir
+  case of exits. This is the same behavior as you find in Elixir
   abstractions like `GenServer` and others. Similar to `GenServer`,
   it would also be possible to `:trap_exit` to guarantee that `terminate/2`
   is invoked. This practice is not encouraged though.
@@ -232,7 +232,7 @@ defmodule Phoenix.Channel do
       {:stop, :shutdown, socket}
       {:stop, {:error, :enoent}, socket}
 
-  the second argument is the exit reason, which follows the same behaviour as
+  the second argument is the exit reason, which follows the same behavior as
   standard `GenServer` exits.
 
   You have three options to choose from when shutting down a channel:
@@ -301,7 +301,7 @@ defmodule Phoenix.Channel do
 
   ## Shutdown
 
-  You can configure the shutdown behaviour of each channel used when your
+  You can configure the shutdown behavior of each channel used when your
   application is shutting down by setting the `:shutdown` value on use:
 
       use Phoenix.Channel, shutdown: 5_000

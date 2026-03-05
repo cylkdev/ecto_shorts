@@ -4,7 +4,7 @@ trigger: always_on
 
 ## Why use TDD + BDD
 
-Starting with a boundary test made of plain data removes ambiguity. There is nothing to misinterpret - the test is the specification. The outside-in approach (concentric circles) ensures you only build what the boundary test demands, and the red-green-refactor cycle at every level keeps the implementation growing from proven behaviour, not assumptions.
+Starting with a boundary test made of plain data removes ambiguity. There is nothing to misinterpret - the test is the specification. The outside-in approach (concentric circles) ensures you only build what the boundary test demands, and the red-green-refactor cycle at every level keeps the implementation growing from proven behavior, not assumptions.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ Before implementing a feature or making a change, take a TDD + BDD approach as d
 
 ## TDD + BDD Workflow
 
-1. Clarify the expected behaviour at the boundary. If multiple interpretations exist, use an `ExampleMapDoc` (`.agent/EXAMPLE_MAP_PLANS.md`) to reach agreement before writing code.
+1. Clarify the expected behavior at the boundary. If multiple interpretations exist, use an `ExampleMapDoc` (`.agent/EXAMPLE_MAP_PLANS.md`) to reach agreement before writing code.
 
 2. Write one failing boundary test that expresses the next observable outcome. The test should be pure data in, data out - no implementation details.
 
@@ -34,4 +34,4 @@ Before implementing a feature or making a change, take a TDD + BDD approach as d
 
 8. Run the full test suite. If anything broke, fix it.
 
-9. Repeat from step 2 for the next slice of behaviour.
+9. Repeat from step 2 for the next slice of behavior.

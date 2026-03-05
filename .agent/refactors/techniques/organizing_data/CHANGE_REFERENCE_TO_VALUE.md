@@ -41,7 +41,7 @@ Replace the reference with embedded value fields (or embedded schema) that captu
 
 ## Validation
 
-- Behaviour matches required snapshot semantics.
+- Behavior matches required snapshot semantics.
 - No unnecessary reference lookups remain.
 - Tests cover historical correctness.
 

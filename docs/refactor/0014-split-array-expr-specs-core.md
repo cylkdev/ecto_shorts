@@ -8,7 +8,7 @@ This document must be maintained in accordance with `.agent/REFACTOR_PLANS.md`.
 
 `ArrayExpr.Specs.Core` was a 440-line module containing 6 distinct spec groups (list semantics, alias operators, nil handling, lower/upper case transforms, like/ilike pattern matching, and base comparison operators). Splitting the text-operation domains into their own modules makes each file focused on one concern and easier to navigate, while mirroring the pattern already established in `ScalarExpr.Specs` where aggregate, arithmetic, date-time, and quantifier specs each have their own file.
 
-The exact runtime behaviour must remain unchanged. The `EctoShorts.Compiler` dispatch chain (`||` across compiled sub-modules) preserves clause-matching semantics as long as more-specific modules appear earlier in the `specs:` list.
+The exact runtime behavior must remain unchanged. The `EctoShorts.Compiler` dispatch chain (`||` across compiled sub-modules) preserves clause-matching semantics as long as more-specific modules appear earlier in the `specs:` list.
 
 Verification: `mix test --seed 0 --trace` must pass all tests with 0 failures.
 
@@ -41,13 +41,13 @@ Verification: `mix test --seed 0 --trace` must pass all tests with 0 failures.
 
 ## Outcomes & Retrospective
 
-The refactor is complete. Core went from 440 lines to 299 lines. Two new focused modules were created: LowerUpper (130 lines) and LikeIlike (81 lines). All 903 tests pass with both fixed and random seeds, confirming behaviour preservation.
+The refactor is complete. Core went from 440 lines to 299 lines. Two new focused modules were created: LowerUpper (130 lines) and LikeIlike (81 lines). All 903 tests pass with both fixed and random seeds, confirming behavior preservation.
 
 Key lesson: the Compiler's compiled sub-module isolation means cross-module delegation is impossible via unqualified `compose` calls. Any future split must account for inbound delegation dependencies by adding interceptor clauses to the extracted module.
 
 ## Context and Orientation
 
-The EctoShorts Compiler (`lib/ecto_shorts/compiler.ex`) accepts a `specs:` list of modules that implement the `ClauseSpecProvider` behaviour. Each specs module returns `ClauseSpec` structs that get compiled into function clauses inside isolated sub-modules. A dispatch chain using `||` tries each sub-module in list order, falling through on `nil`.
+The EctoShorts Compiler (`lib/ecto_shorts/compiler.ex`) accepts a `specs:` list of modules that implement the `ClauseSpecProvider` behavior. Each specs module returns `ClauseSpec` structs that get compiled into function clauses inside isolated sub-modules. A dispatch chain using `||` tries each sub-module in list order, falling through on `nil`.
 
 Key files before refactoring:
 
@@ -60,7 +60,7 @@ A "compiled sub-module" is a module generated at compile time by the Compiler (e
 
 An "interceptor clause" is a clause added to a module specifically to match a pattern before another module's catch-all can misroute it.
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 - `EctoShorts.Dynamics.Postgres.ArrayExpr.compose/3` returns the same `Ecto.Query.DynamicExpr` for every input combination as before the refactor.
 - All existing tests in the suite pass without modification to assertions.
@@ -72,7 +72,7 @@ An "interceptor clause" is a clause added to a module specifically to match a pa
 
 ## Refactoring Technique Selected
 
-`Extract Function` generalized to `Extract Module` from `.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`. The technique moves a cohesive group of functions into a new module with the same interface (here, `ClauseSpecProvider`), reducing the size and responsibility count of the original module while preserving all observable behaviour.
+`Extract Function` generalized to `Extract Module` from `.agent/refactor/techniques/composing_functions/EXTRACT_FUNCTION.md`. The technique moves a cohesive group of functions into a new module with the same interface (here, `ClauseSpecProvider`), reducing the size and responsibility count of the original module while preserving all observable behavior.
 
 ## Plan of Work
 

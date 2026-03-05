@@ -132,7 +132,7 @@ defmodule MyApp.Users.Policy do
 end
 ```
 
-## Alternative: Use Behaviours for Cross-Cutting Concerns
+## Alternative: Use Behaviors for Cross-Cutting Concerns
 
 ```elixir
 defmodule MyApp.Serializable do
@@ -156,7 +156,7 @@ end
 - **Move Function**: Consolidate parallel modules into domain-focused modules.
 - **Collapse Module Hierarchy**: Merge thin parallel modules.
 - **Use Protocols**: Replace parallel serializers with protocol implementations.
-- **Use Behaviours**: Define contracts that modules implement inline.
+- **Use Behaviors**: Define contracts that modules implement inline.
 - **Organize by Domain**: Group by business concept, not technical layer.
 
 ## Why Refactor
@@ -192,5 +192,5 @@ end
 
 - `Move Function`
 - `Collapse Module Hierarchy`
-- `Extract Behaviour`
+- `Extract Behavior`
 - `Inline Module`

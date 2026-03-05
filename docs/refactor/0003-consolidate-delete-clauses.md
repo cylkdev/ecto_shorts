@@ -10,7 +10,7 @@ The `EctoShorts.Actions.delete/2` function has two clauses (for changesets and s
 
 After this refactor, a bug fix to the delete error-wrapping logic needs to be made in one place instead of two. The public `delete/2` API, return values, and error shapes are unchanged.
 
-To verify behaviour is preserved, run `mix test` from the repository root. All 645 tests and 9 doctests must pass.
+To verify behavior is preserved, run `mix test` from the repository root. All 645 tests and 9 doctests must pass.
 
 ## Progress
 
@@ -33,7 +33,7 @@ To verify behaviour is preserved, run `mix test` from the repository root. All 6
 
 The refactor is complete. Two near-identical `delete/2` clause bodies (each 16 lines) were replaced with single-line delegations to the new `defp do_delete/3` helper. This eliminates 15 lines of exact duplication and ensures that any future change to delete error-wrapping logic only needs to happen in one place.
 
-The behaviour boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same error shapes (`:conflict` code, "failed to delete record." message, `%{schema: _, changeset: _}` details) are returned for both changeset and schema struct inputs. `mix format` is clean. `mix credo --strict` shows no new warnings.
+The behavior boundary was fully preserved: all 645 tests and 9 doctests pass. No public API was changed. The same error shapes (`:conflict` code, "failed to delete record." message, `%{schema: _, changeset: _}` details) are returned for both changeset and schema struct inputs. `mix format` is clean. `mix credo --strict` shows no new warnings.
 
 File changed: `lib/ecto_shorts/actions.ex` - added `defp do_delete/3`, simplified two `delete/2` clause bodies.
 
@@ -53,7 +53,7 @@ Key modules:
 - `lib/ecto_shorts/common_schema.ex` - provides `create_changeset/3` which handles both changesets and structs
 - `lib/ecto_shorts/actions/error.ex` - provides `Error.call/4` for error wrapping
 
-## Behaviour Boundary (Must Remain Unchanged)
+## Behavior Boundary (Must Remain Unchanged)
 
 - `EctoShorts.Actions.delete/1` returns `{:ok, record}` or `{:error, error}` for a single record/changeset.
 - `EctoShorts.Actions.delete/2` with a changeset and opts returns `{:ok, record}` or `{:error, error}` with the same error shape (`:conflict` code, "failed to delete record." message, `%{schema: _, changeset: _}` details).
@@ -91,7 +91,7 @@ All commands run from: `/Users/kurthogarth/Documents/GitHub/ecto_shorts`
 
 ## Validation and Acceptance
 
-Run `mix test` after Milestone 1. All 645 tests and 9 doctests must pass. The refactor preserves all existing delete behaviour.
+Run `mix test` after Milestone 1. All 645 tests and 9 doctests must pass. The refactor preserves all existing delete behavior.
 
 Run `mix credo --strict` at Milestone 2. No new warnings should appear.
 

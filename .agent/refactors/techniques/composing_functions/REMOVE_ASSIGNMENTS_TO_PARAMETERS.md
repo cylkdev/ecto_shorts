@@ -96,7 +96,7 @@ This refactoring helps to extract `repetitive code to separate functions`.
 
 The refactoring is successful if all of the following are true:
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 
 - No parameter name is rebound in the function body.
 

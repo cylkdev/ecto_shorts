@@ -7,7 +7,7 @@ Use when any of the following are true:
 - A function in module `A` mostly reads data owned by module `B`.
 - Most edits to the function are triggered by changes in `B`'s struct shape or rules.
 - The function primarily calls helpers in `B`.
-- The function name expresses behaviour that belongs to `B`'s domain.
+- The function name expresses behavior that belongs to `B`'s domain.
 
 ## Problem
 
@@ -58,7 +58,7 @@ This improves code in the following ways:
 
 - Better module cohesion.
 - Lower risk of feature envy between modules.
-- Simpler tests because behaviour and data are colocated.
+- Simpler tests because behavior and data are colocated.
 
 ## How to Refactor
 
@@ -72,7 +72,7 @@ This improves code in the following ways:
 
 ## Validation
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 - Call sites use the function in the target module.
 - The source module has less knowledge of target internals.
 

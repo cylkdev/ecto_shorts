@@ -6,7 +6,7 @@ Starting long-running processes outside a supervision tree makes their lifecycle
 
 - startup ordering becomes ad-hoc ("hope it starts before users call it")
 - shutdown ordering is unpredictable
-- crash/restart behaviour is undefined (no configured restart strategy)
+- crash/restart behavior is undefined (no configured restart strategy)
 - runtime visibility is worse (harder to introspect as part of the application)
 
 This is especially problematic in libraries that hide background processes from their callers.

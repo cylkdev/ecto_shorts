@@ -43,4 +43,4 @@ end
 ## Validation
 
 - Shared field is defined once.
-- Variant behaviour is unchanged.
+- Variant behavior is unchanged.

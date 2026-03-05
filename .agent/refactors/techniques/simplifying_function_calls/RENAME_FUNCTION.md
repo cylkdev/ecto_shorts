@@ -4,7 +4,7 @@
 
 Use when any of the following are true:
 
-- A function name does not reflect current behaviour.
+- A function name does not reflect current behavior.
 - Callers need comments to understand what the function does.
 - Domain language changed, but function names did not.
 
@@ -18,7 +18,7 @@ def process(user), do: Accounts.deactivate(user)
 
 ## Solution
 
-Rename the function to describe its real behaviour.
+Rename the function to describe its real behavior.
 
 ```elixir
 def deactivate_user(user), do: Accounts.deactivate(user)
@@ -39,7 +39,7 @@ def deactivate_user(user), do: Accounts.deactivate(user)
 
 ## Validation
 
-- Function name matches behaviour.
+- Function name matches behavior.
 - No stale call sites remain.
 - Tests pass.
 

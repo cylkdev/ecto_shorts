@@ -1,16 +1,16 @@
 # TDD + BDD Workflow
 
-This document describes the workflow for delivering a feature or system change using a combination of Test-Driven Development (TDD) and Behaviour-Driven Development (BDD). Treat the reader as a complete beginner to this repository. They have only the current working tree and this document. There is no memory of prior work and no external context. A novice following this document will take any request, clarify what it means, prove the behaviour with a test before writing any code, and grow the implementation in small, safe steps.
+This document describes the workflow for delivering a feature or system change using a combination of Test-Driven Development (TDD) and Behavior-Driven Development (BDD). Treat the reader as a complete beginner to this repository. They have only the current working tree and this document. There is no memory of prior work and no external context. A novice following this document will take any request, clarify what it means, prove the behavior with a test before writing any code, and grow the implementation in small, safe steps.
 
 ## Why TDD + BDD
 
-Test-driven development is not primarily about writing tests. It is an approach to problem-solving that begins with the end in mind. Writing a test first describes the desired behaviour before the implementation is decided. That single discipline change has three effects that compound over time.
+Test-driven development is not primarily about writing tests. It is an approach to problem-solving that begins with the end in mind. Writing a test first describes the desired behavior before the implementation is decided. That single discipline change has three effects that compound over time.
 
 First, it catches misunderstandings early. A test written before any code exists is pure data: inputs go in, expected outputs come out, and there are no implementation details to confuse the reader. If the test does not match what the user actually wanted, the misunderstanding surfaces immediately, before hours are invested building the wrong thing.
 
 Second, it guides design. A test that is hard to write is a signal that the code is too complex or too coupled. Listening to that signal and adjusting leads to simpler designs naturally.
 
-Third, it makes refactoring safe. A test that fails when behaviour changes means code can be restructured with confidence. If the tests pass after a change, the observable behaviour is preserved.
+Third, it makes refactoring safe. A test that fails when behavior changes means code can be restructured with confidence. If the tests pass after a change, the observable behavior is preserved.
 
 Outside-in BDD adds one more idea: start from what the user can observe (the boundary) and work inward. The workflow starts with a boundary test that describes the feature from the outside. When that test fails because some inner piece of logic is missing, step inward and write a focused test for that piece. Once the focused test passes, step back out to see if the boundary test has moved forward. This cycle of stepping in and stepping out continues until the boundary test passes, at which point the feature is done.
 
@@ -20,9 +20,9 @@ The combination of TDD and outside-in BDD provides a clear definition of "done" 
 
 NON-NEGOTIABLE REQUIREMENTS:
 
-1. Drive work from observable behaviour at a boundary. Grow the implementation in small proven slices. Keep a written record of what the system is supposed to do and how you proved it.
+1. Drive work from observable behavior at a boundary. Grow the implementation in small proven slices. Keep a written record of what the system is supposed to do and how you proved it.
 
-2. Do not start implementing if the expected behaviour is not fully defined. If multiple reasonable interpretations exist, use an ExampleMapDoc (as described in `.agent/EXAMPLE_MAP_PLANS.md`) to write concrete examples and rules and reach agreement fast. Behaviour is ready to implement when different readers would write the same boundary test for it.
+2. Do not start implementing if the expected behavior is not fully defined. If multiple reasonable interpretations exist, use an ExampleMapDoc (as described in `.agent/EXAMPLE_MAP_PLANS.md`) to write concrete examples and rules and reach agreement fast. Behavior is ready to implement when different readers would write the same boundary test for it.
 
 3. Never write code without a failing test that demands it. If there is no failing test asking for a particular line of code, that line should not exist yet.
 
@@ -30,11 +30,11 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 Every term used in this document is defined here. If you encounter a term elsewhere in the document that is not in this glossary, it is being used in its ordinary English sense.
 
-`Boundary` means any place where behaviour can be observed from outside the implementation. Examples include a public function in a library module, an HTTP endpoint, a CLI command's output, a message handler's return value, a job's side effects, or a file written to disk. The boundary is the contract between your code and its callers.
+`Boundary` means any place where behavior can be observed from outside the implementation. Examples include a public function in a library module, an HTTP endpoint, a CLI command's output, a message handler's return value, a job's side effects, or a file written to disk. The boundary is the contract between your code and its callers.
 
 `Boundary test` means an automated test that exercises the system through the boundary. It calls the public API, sends the HTTP request, or invokes the CLI command. It knows nothing about the internals. It checks only what went in and what came out.
 
-`Focused test` means a narrower, unit-level test used after a boundary test reveals a missing behaviour that is easier to drive at a smaller seam. A focused test targets one module or one function rather than the whole feature.
+`Focused test` means a narrower, unit-level test used after a boundary test reveals a missing behavior that is easier to drive at a smaller seam. A focused test targets one module or one function rather than the whole feature.
 
 `Seam` means the point in the code where it becomes easier to continue working with focused tests instead of only boundary tests. In a web application, the seam is often the boundary between the web layer (controllers, views, templates) and the business logic layer (contexts, domain modules). In a library, the seam might be the boundary between a public API module and an internal query builder.
 
@@ -42,9 +42,9 @@ Every term used in this document is defined here. If you encounter a term elsewh
 
 `Feature test` means the outermost boundary test for a feature. It describes the complete user-observable outcome. When this test passes, the feature is done.
 
-`Red / Green / Refactor` is the three-step cycle at the heart of TDD. Red means a failing test that expresses one missing fact about the system. Green means the smallest code change has been written to make that test pass. Refactor means restructuring the code to improve its design while keeping the test green. If the test turns red during refactoring, behaviour has changed and the last change must be undone.
+`Red / Green / Refactor` is the three-step cycle at the heart of TDD. Red means a failing test that expresses one missing fact about the system. Green means the smallest code change has been written to make that test pass. Refactor means restructuring the code to improve its design while keeping the test green. If the test turns red during refactoring, behavior has changed and the last change must be undone.
 
-`Behaviour specification` means a written description of expected behaviour at a boundary. It states observable outcomes clearly using scenarios, acceptance tests, or plain-language descriptions with concrete inputs and outputs.
+`Behavior specification` means a written description of expected behavior at a boundary. It states observable outcomes clearly using scenarios, acceptance tests, or plain-language descriptions with concrete inputs and outputs.
 
 `Example document` means a short document of rules and concrete examples used to remove ambiguity before implementing. In this repository, it is produced by following the ExampleMapPlan process described in `.agent/EXAMPLE_MAP_PLANS.md`.
 
@@ -101,7 +101,7 @@ Inside the inner circle, write a focused test that fails in the same way the bou
 
 Once the focused test passes, step back out to the outer circle and run the boundary test again. One of two things will happen. Either the boundary test now fails with a new error, in which case progress has been made and the process repeats for the next error. Or the boundary test passes, in which case the feature is done at the code level.
 
-After the boundary test passes, refactor the entire feature. This is the refactor step of the outer circle. Restructure code, improve naming, extract helpers, remove duplication, and clean up generated code that is not needed. The boundary test must stay green throughout. If it turns red, behaviour has changed and the last change must be undone.
+After the boundary test passes, refactor the entire feature. This is the refactor step of the outer circle. Restructure code, improve naming, extract helpers, remove duplication, and clean up generated code that is not needed. The boundary test must stay green throughout. If it turns red, behavior has changed and the last change must be undone.
 
 When the refactor is complete, run the full test suite to confirm nothing else is broken. If everything passes, the feature is done.
 
@@ -234,11 +234,11 @@ What to do inside:
 
 1. Read the request. Restate it in your own words as a one-sentence user story in the form "As a [role], I want [capability], so that [benefit]."
 
-2. Identify the boundary. What is the outermost interface through which this behaviour can be observed? For a library, it is the public function. For a web app, it might be an HTTP endpoint or a page a user visits. For a CLI tool, it is the command's output.
+2. Identify the boundary. What is the outermost interface through which this behavior can be observed? For a library, it is the public function. For a web app, it might be an HTTP endpoint or a page a user visits. For a CLI tool, it is the command's output.
 
-3. Check for ambiguity. Could two reasonable people interpret this request differently? If yes, create an ExampleMapDoc (`.agent/EXAMPLE_MAP_PLANS.md`) to write concrete examples and rules until the behaviour is unambiguous. If no, continue.
+3. Check for ambiguity. Could two reasonable people interpret this request differently? If yes, create an ExampleMapDoc (`.agent/EXAMPLE_MAP_PLANS.md`) to write concrete examples and rules until the behavior is unambiguous. If no, continue.
 
-4. Decide what kind of work this is. Is it a behaviour change (new feature or bug fix), a refactor (change structure without changing behaviour), or research (exploration with no code)? This determines which loop structure to follow. For behaviour changes, continue below. For refactors, see `.agent/REFACTOR_PLANS.md`.
+4. Decide what kind of work this is. Is it a behavior change (new feature or bug fix), a refactor (change structure without changing behavior), or research (exploration with no code)? This determines which loop structure to follow. For behavior changes, continue below. For refactors, see `.agent/REFACTOR_PLANS.md`.
 
 5. Break the feature into small slices. Each slice is one observable outcome at the boundary. Order the slices from simplest to most complex. Each slice becomes one pass through the milestone-level loop.
 
@@ -250,9 +250,9 @@ When to exit: all slices pass, the full test suite passes, and the feature is ve
 
 ### Loop 2: Milestone Level (BDD)
 
-The milestone-level loop delivers one small, provable slice of behaviour. It runs once per slice.
+The milestone-level loop delivers one small, provable slice of behavior. It runs once per slice.
 
-When to enter: one proof target has been identified from the task-level loop. A proof target is one scenario, one edge case, one contract detail, or one preserved behaviour during a refactor.
+When to enter: one proof target has been identified from the task-level loop. A proof target is one scenario, one edge case, one contract detail, or one preserved behavior during a refactor.
 
 What to do inside:
 
@@ -318,7 +318,7 @@ When to exit: the test that triggered entry is now green and has been refactored
   │
   │  Rename variables, extract helpers, remove duplication.
   │  Run the test after every change. If it turns red,
-  │  undo the last change - you accidentally changed behaviour.
+  │  undo the last change - you accidentally changed behavior.
   │
   ▼
   Done. Pick up the next failing test and repeat.
@@ -333,7 +333,7 @@ This section restates the three loops above as a single numbered procedure. Foll
 
 2. Identify the boundary (public API, HTTP endpoint, CLI output, etc.).
 
-3. Check: is the expected behaviour unambiguous? If no, create an ExampleMapDoc (`.agent/EXAMPLE_MAP_PLANS.md`). If yes, continue.
+3. Check: is the expected behavior unambiguous? If no, create an ExampleMapDoc (`.agent/EXAMPLE_MAP_PLANS.md`). If yes, continue.
 
 4. Write one boundary test. It must be pure data in, data out. No implementation details. Show it to the user and confirm it matches their intent.
 
@@ -351,7 +351,7 @@ This section restates the three loops above as a single numbered procedure. Foll
 
 11. Run the full test suite. If anything broke, fix it.
 
-12. Move to the next slice of behaviour. Repeat from step 1.
+12. Move to the next slice of behavior. Repeat from step 1.
 
 ```
   RECIPE SUMMARY
@@ -365,7 +365,7 @@ This section restates the three loops above as a single numbered procedure. Foll
   ──────────────────────────────
   1. Restate the request in your own words
   2. Identify the public function you are testing
-  3. Is the expected behaviour clear?
+  3. Is the expected behavior clear?
      │
      ├── No  -> write an ExampleMapDoc first
      │
@@ -520,12 +520,12 @@ No regressions. The first slice is done.
 
 ### Next slices
 
-If the feature needed more slices (for example, listing products with no filter returns all products, or handling an invalid category), repeat the entire process from step 1 for each slice. Each slice adds one boundary test, one proven behaviour, and one small increment of code.
+If the feature needed more slices (for example, listing products with no filter returns all products, or handling an invalid category), repeat the entire process from step 1 for each slice. Each slice adds one boundary test, one proven behavior, and one small increment of code.
 
 
 ## Refactoring Guidelines
 
-Refactoring means changing the internal structure of code without changing its observable behaviour. It is the third step of every red-green-refactor cycle, and it is not optional.
+Refactoring means changing the internal structure of code without changing its observable behavior. It is the third step of every red-green-refactor cycle, and it is not optional.
 
 When refactoring, always keep a test green. Which test to keep green depends on the scope of the refactor. When restructuring a single function, keep the focused test for that function green. When restructuring how two modules interact, keep the boundary test green because public function names or signatures may change along the way, requiring focused test updates.
 
@@ -549,7 +549,7 @@ These are the pitfalls that beginners and coding agents hit most often. Knowing 
 
 Writing the implementation first and tests after. A test written after the implementation becomes a rubber stamp for whatever the code already does. It does not catch misunderstandings because the test is shaped by the implementation rather than by the user's intent. Always write the test first.
 
-Testing implementation details instead of observable outcomes. A test that checks whether a specific private function was called, or whether data was stored in a specific internal format, will break during refactoring even though the behaviour has not changed. Test what went in and what came out at the boundary. Ignore the internals.
+Testing implementation details instead of observable outcomes. A test that checks whether a specific private function was called, or whether data was stored in a specific internal format, will break during refactoring even though the behavior has not changed. Test what went in and what came out at the boundary. Ignore the internals.
 
 Making the test pass with a large change instead of the smallest change. Writing a lot of code at once removes the ability to trace which line of code satisfies which test. If something breaks, there is no way to know where to look. Make the smallest change, run the test, and repeat.
 

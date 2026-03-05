@@ -4,14 +4,14 @@
 
 Use when any of the following are true:
 
-- You need behaviour for a type from a library you do not control.
-- The behaviour is needed in one module or a small number of places.
+- You need behavior for a type from a library you do not control.
+- The behavior is needed in one module or a small number of places.
 - Repeating inline transformations is starting to duplicate logic.
 - Creating a full wrapper module would be premature.
 
 ## Problem
 
-You need app-specific behaviour around an external type, but cannot modify the dependency.
+You need app-specific behavior around an external type, but cannot modify the dependency.
 
 ```elixir
 defmodule BillingReport do
@@ -39,7 +39,7 @@ end
 
 This improves code in the following ways:
 
-- Centralizes local behaviour for an external type.
+- Centralizes local behavior for an external type.
 - Removes inline duplication.
 - Keeps third-party boundaries explicit.
 
@@ -64,7 +64,7 @@ This improves code in the following ways:
 
 ## Validation
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 - External-type logic is centralized for the module.
 - No attempt is made to patch dependency code.
 

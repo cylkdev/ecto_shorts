@@ -81,7 +81,7 @@ Sometimes seemingly useless temporary bindings are used to cache the result of a
 
 The refactoring is successful if all of the following are true:
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 
 - The removed binding had exactly one use.
 

@@ -6,7 +6,7 @@ Use when the same function logic is duplicated across related modules.
 
 ## Problem
 
-Sibling modules repeat identical function behaviour.
+Sibling modules repeat identical function behavior.
 
 ```elixir
 defmodule CsvExporter do
@@ -30,7 +30,7 @@ end
 
 ## Why Refactor
 
-- Removes duplicated behaviour.
+- Removes duplicated behavior.
 - Centralizes future changes.
 
 ## How to Refactor
@@ -43,4 +43,4 @@ end
 ## Validation
 
 - One canonical implementation remains.
-- Callers preserve behaviour.
+- Callers preserve behavior.

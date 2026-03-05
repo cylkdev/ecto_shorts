@@ -88,7 +88,7 @@ This improves code in the following ways:
 
 The refactoring is successful if all of the following are true:
 
-- Behaviour is unchanged (tests pass).
+- Behavior is unchanged (tests pass).
 
 - No local binding name is reused for different conceptual values in the same function clause.
 
