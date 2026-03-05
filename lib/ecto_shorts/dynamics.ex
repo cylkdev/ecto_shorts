@@ -139,6 +139,8 @@ defmodule EctoShorts.Dynamics do
         expand_and_reduce(adapter, source, dyn_left, binding_selector, key, value, opts)
 
       true ->
+        resolved_value = resolve_quantifier_payload(source, key, value, opts)
+
         if source_has_schema?(source) do
           schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
 
@@ -150,10 +152,30 @@ defmodule EctoShorts.Dynamics do
 
             dyn_left
           else
-            build_field_predicate(adapter, source, dyn_left, binding_selector, key, value, opts)
+            if Keyword.keyword?(resolved_value) do
+              Enum.reduce(resolved_value, dyn_left, fn entry, dyn_acc ->
+                append_predicates(adapter, source, dyn_acc, binding_selector, {key, entry}, opts)
+              end)
+            else
+              merge_predicate(
+                dyn_left,
+                :and,
+                build_dynamic_or_warn(adapter, source, binding_selector, key, resolved_value)
+              )
+            end
           end
         else
-          build_field_predicate(adapter, source, dyn_left, binding_selector, key, value, opts)
+          if Keyword.keyword?(resolved_value) do
+            Enum.reduce(resolved_value, dyn_left, fn entry, dyn_acc ->
+              append_predicates(adapter, source, dyn_acc, binding_selector, {key, entry}, opts)
+            end)
+          else
+            merge_predicate(
+              dyn_left,
+              :and,
+              build_dynamic_or_warn(adapter, source, binding_selector, key, resolved_value)
+            )
+          end
         end
     end
   end
@@ -184,30 +206,12 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  defp build_field_predicate(adapter, source, dyn_left, binding_selector, key, value, opts) do
-    resolved_value = resolve_quantifier_payload(source, key, value, opts)
-
-    if Keyword.keyword?(resolved_value) do
-      Enum.reduce(resolved_value, dyn_left, fn entry, dyn_acc ->
-        append_predicates(adapter, source, dyn_acc, binding_selector, {key, entry}, opts)
-      end)
-    else
-      merge_predicate(
-        dyn_left,
-        :and,
-        build_dynamic_or_warn(adapter, source, binding_selector, key, resolved_value)
-      )
-    end
-  end
-
   defp expand_and_reduce(adapter, source, dyn_left, binding_selector, boolean_op, entries, opts) do
     Enum.reduce(entries, dyn_left, fn
       {field, keyword_value}, dyn_acc when is_atom(field) and is_list(keyword_value) ->
         if Keyword.keyword?(keyword_value) do
-          expanded = keyword_value |> normalize_entries([]) |> Enum.reverse()
-
-          Enum.reduce(expanded, dyn_acc, fn entry, inner_acc ->
-            dyn_right = build_dynamic_or_warn(adapter, source, binding_selector, field, entry)
+          Enum.reduce(keyword_value, dyn_acc, fn {op, val}, inner_acc ->
+            dyn_right = build_dynamic_or_warn(adapter, source, binding_selector, field, {op, val})
             merge_predicate(inner_acc, boolean_op, dyn_right)
           end)
         else
@@ -244,45 +248,6 @@ defmodule EctoShorts.Dynamics do
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
   defp source_has_schema?(_), do: false
 
-  defp normalize_entries({key, map}, acc) when is_map(map) and not is_struct(map) do
-    normalize_entries({key, Map.to_list(map)}, acc)
-  end
-
-  defp normalize_entries({key, value}, acc) do
-    datetime_operators = [:datetime, :date]
-
-    cond do
-      key in datetime_operators ->
-        [{key, value} | acc]
-
-      Keyword.keyword?(value) ->
-        value
-        |> normalize_entries([])
-        |> Enum.reduce(acc, fn entry, acc2 ->
-          [{key, entry} | acc2]
-        end)
-
-      true ->
-        [{key, value} | acc]
-    end
-  end
-
-  defp normalize_entries(map, acc) when is_map(map) and not is_struct(map) do
-    map
-    |> Map.to_list()
-    |> normalize_entries(acc)
-  end
-
-  defp normalize_entries(term, acc) do
-    if Keyword.keyword?(term) do
-      Enum.reduce(term, acc, fn entry, acc2 ->
-        normalize_entries(entry, acc2)
-      end)
-    else
-      [{:==, term} | acc]
-    end
-  end
-
   defp resolve_exists_payload(source, {:not, inner}, opts) do
     {:not, resolve_exists_payload(source, inner, opts)}
   end
@@ -303,8 +268,7 @@ defmodule EctoShorts.Dynamics do
         resolve_exists_payload(source, Map.to_list(value), opts)
 
       is_list(value) ->
-        {from_source, filter_params} = Keyword.pop(value, :from, source)
-        CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, true), opts)
+        build_subquery(source, value, true, opts)
 
       true ->
         value
@@ -345,12 +309,16 @@ defmodule EctoShorts.Dynamics do
         resolve_subquery_payload(source, Map.to_list(params), select_default, opts)
 
       Keyword.keyword?(params) and Keyword.has_key?(params, :from) ->
-        {from_source, filter_params} = Keyword.pop(params, :from, source)
-        CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, select_default), opts)
+        build_subquery(source, params, select_default, opts)
 
       true ->
         params
     end
+  end
+
+  defp build_subquery(source, params, select_default, opts) do
+    {from_source, filter_params} = Keyword.pop(params, :from, source)
+    CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, select_default), opts)
   end
 
   defp put_default_select(params, default) when is_list(params) do
