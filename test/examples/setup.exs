@@ -8,6 +8,7 @@ end
 # Ensure Repo configuration is available
 Application.put_env(:ecto_shorts, :sql_sandbox, true)
 Application.put_env(:ecto_shorts, :ecto_repos, [TestRepo])
+
 Application.put_env(:ecto_shorts, TestRepo,
   username: "postgres",
   database: "ecto_shorts_test",
@@ -19,8 +20,9 @@ Application.put_env(:ecto_shorts, TestRepo,
   pool_size: 20
 )
 
-defmodule Post do
+defmodule EctoShorts.TestPost do
   use Ecto.Schema
+  import Ecto.Changeset
 
   schema "posts" do
     field :title, :string
@@ -29,16 +31,38 @@ defmodule Post do
     field :published, :boolean
     field :published_at, :utc_datetime
     field :tags, {:array, :string}
-    belongs_to :author, User
+    belongs_to :author, EctoShorts.TestUser
+    has_many :comments, EctoShorts.TestComment
+    has_many :participants, through: [:comments, :user]
     timestamps()
   end
 end
 
-defmodule User do
+defmodule EctoShorts.TestUser do
   use Ecto.Schema
+  import Ecto.Changeset
 
   schema "users" do
     field :first_name, :string
-    has_many :posts, Post
+    has_many :posts, EctoShorts.TestPost
+    has_many :comments, EctoShorts.TestComment
+  end
+end
+
+defmodule EctoShorts.TestComment do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "comments" do
+    belongs_to :author, EctoShorts.TestUser
+    belongs_to :post, EctoShorts.TestPost
+
+    field :body, :string
+    field :published, :boolean
+    field :published_at, :naive_datetime
+    field :replies, :integer
+    field :tags, {:array, :string}
+
+    timestamps()
   end
 end

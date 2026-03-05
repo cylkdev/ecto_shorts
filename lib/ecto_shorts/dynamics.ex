@@ -318,7 +318,12 @@ defmodule EctoShorts.Dynamics do
 
   defp build_subquery(source, params, select_default, opts) do
     {from_source, filter_params} = Keyword.pop(params, :from, source)
-    CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, select_default), opts)
+
+    CommonFilters.convert_params_to_filter(
+      from_source,
+      put_default_select(filter_params, select_default),
+      opts
+    )
   end
 
   defp put_default_select(params, default) when is_list(params) do

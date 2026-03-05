@@ -103,41 +103,41 @@ Here’s the order the parser follows:
 
 #### What the slots mean
 
-1. Top-Level Logical Operator Directive
+**1. Top-Level Logical Operator Directive**
 
 Examples: `:and`, `:or`
 
 Combines multiple filter groups into one condition.
 
-2. Negation Directive
+**2. Negation Directive**
 
 Examples: `:not`
 
 Wraps a filter and inverts it.
 
-3. Field Transform Directive
+**3. Field Transform Directive**
 
 Examples: `:lower`, `:upper`
 
 Changes the field before it is compared. Appears before the field name. String transformations only.
 
-4. Field (Scalar/Array)
+**4. Field (Scalar/Array)**
 
 The schema field you are filtering on (for example `:title`, `:views`, `:published`). 
 
-5. Aggregate Operator Directive
+**5. Aggregate Operator Directive**
 
 Examples: `:avg`, `:sum`, `:count`, `:max`, `:min`
 
 Applies an aggregate function to the field. Appears after the field name. Used with `group_by` and `having` clauses.
 
-6. Field-Level Logical Operator Directive
+**6. Field-Level Logical Operator Directive**
 
 Examples: `:and`, `:or`
 
 Combines multiple operations that all target the same field. When multiple operations appear in a list without an explicit logical operator directive, AND is implicit: `[views: [>: 10, <: 20]]` means `views > 10 and views < 20`. You can also use explicit `:and` or `:or` at the field level to change the combinator.
 
-7. Comparison Operator Directive
+**7. Comparison Operator Directive**
 
 | Directive | Alias  | Meaning                        |
 | --------- | ------ | ------------------------------ |
@@ -151,13 +151,13 @@ Combines multiple operations that all target the same field. When multiple opera
 | `:like`   |        | pattern match                  |
 | `:ilike`  |        | case-insensitive pattern match |
 
-8. Value Transformation Directive
+**8. Value Transformation Directive**
 
 Examples: `:lower`, `:upper`, `:all`, `:any`, `:datetime`, `:date`, `:+`, `:-`, `:*`, `:/`
 
 Changes the value before it is compared. String transformations (`:lower`, `:upper`), set comparisons (`:all`, `:any`), date/time operations (`:datetime`, `:date`), and arithmetic operator directives (`:+`, `:-`, `:*`, `:/`).
 
-9. Value
+**9. Value**
 
 The actual value used in the comparison (for example `1`, `"hello"`, `[1, 2, 3]`, `true`, `false`, `nil`, or a subquery filter).
 
@@ -1341,73 +1341,73 @@ _Test reference: test/examples/ecto_query_dsl.exs:1096_
 ### Examples
 
     [title: [==: [lower: "hello"]]]
-    [lower: [title: [==: "hello"]]]
-    [not: [title: [==: [lower: "hello"]]]]
+    [title: [==: [upper: "HELLO"]]]
     [title: [!=: [lower: "hello"]]]
     [title: [!=: [upper: "HELLO"]]]
-    [lower: [title: [!=: "hello"]]]
-    [upper: [title: [==: "HELLO"]]]
-    [not: [lower: [title: [==: "hello"]]]]
+    [not: [title: [==: [lower: "hello"]]]]
+    [not: [title: [==: [upper: "HELLO"]]]]
+    [title: [==: [lower: "HELLO"]]]
+    [title: [==: [upper: "hello"]]]
 
 ### Rule Statements
 
 **Rule Statement 1:**
 
-**Given** filter params: `[title: [lower: [==: "hello"]]]`
+**Given** filter params: `[title: [==: [lower: "hello"]]]`
 **When** the filter params are converted into a query condition
-**Then** it must apply `lower/1` to the `:title` field
-**And** it must compare the result to "hello" using equality
-**And** the resulting expression is: `fragment("lower(?)", p.title) == "hello"`
+**Then** it must apply `lower/1` to the comparison value "hello"
+**And** it must compare the `:title` field to the result using equality
+**And** the resulting expression is: `p.title == fragment("lower(?)", "hello")`
 
 _Test reference: test/examples/ecto_query_dsl.exs:1112_
 
 **Rule Statement 2:**
 
-**Given** filter params: `[title: [upper: [==: "HELLO"]]]`
+**Given** filter params: `[title: [==: [upper: "HELLO"]]]`
 **When** the filter params are converted into a query condition
-**Then** it must apply `upper/1` to the `:title` field
-**And** it must compare the result to "HELLO" using equality
-**And** the resulting expression is: `fragment("upper(?)", p.title) == "HELLO"`
+**Then** it must apply `upper/1` to the comparison value "HELLO"
+**And** it must compare the `:title` field to the result using equality
+**And** the resulting expression is: `p.title == fragment("upper(?)", "HELLO")`
 
 _Test reference: test/examples/ecto_query_dsl.exs:1125_
 
 **Rule Statement 3:**
 
-**Given** filter params: `[title: [lower: [!=: "hello"]]]`
+**Given** filter params: `[title: [!=: [lower: "hello"]]]`
 **When** the filter params are converted into a query condition
-**Then** it must apply `lower/1` to the `:title` field
-**And** it must compare the result to "hello" using inequality
-**And** the resulting expression is: `fragment("lower(?)", p.title) != "hello"`
+**Then** it must apply `lower/1` to the comparison value "hello"
+**And** it must compare the `:title` field to the result using inequality
+**And** the resulting expression is: `p.title != fragment("lower(?)", "hello")`
 
 _Test reference: test/examples/ecto_query_dsl.exs:1138_
 
 **Rule Statement 4:**
 
-**Given** filter params: `[title: [upper: [!=: "HELLO"]]]`
+**Given** filter params: `[title: [!=: [upper: "HELLO"]]]`
 **When** the filter params are converted into a query expression
-**Then** it must apply `upper/1` to the `:title` field
-**And** it must compare the result to "HELLO" using inequality
-**And** the resulting expression is: `fragment("upper(?)", p.title) != "HELLO"`
+**Then** it must apply `upper/1` to the comparison value "HELLO"
+**And** it must compare the `:title` field to the result using inequality
+**And** the resulting expression is: `p.title != fragment("upper(?)", "HELLO")`
 
 _Test reference: test/examples/ecto_query_dsl.exs:1151_
 
 **Rule Statement 5:**
 
-**Given** filter params: `[not: [title: [lower: [==: "hello"]]]]`
+**Given** filter params: `[not: [title: [==: [lower: "hello"]]]]`
 **When** the filter params are converted into a query expression
-**Then** it must apply `lower/1` to the `:title` field
+**Then** it must apply `lower/1` to the comparison value "hello"
 **And** it must negate the equality comparison
-**And** the resulting expression is: `not (fragment("lower(?)", p.title) == "hello")`
+**And** the resulting expression is: `not (p.title == fragment("lower(?)", "hello"))`
 
 _Test reference: test/examples/ecto_query_dsl.exs:1164_
 
 **Rule Statement 6:**
 
-**Given** filter params: `[not: [title: [upper: [==: "HELLO"]]]]`
+**Given** filter params: `[not: [title: [==: [upper: "HELLO"]]]]`
 **When** the filter params are converted into a query expression
-**Then** it must apply `upper/1` to the `:title` field
+**Then** it must apply `upper/1` to the comparison value "HELLO"
 **And** it must negate the equality comparison
-**And** the resulting expression is: `not (fragment("upper(?)", p.title) == "HELLO")`
+**And** the resulting expression is: `not (p.title == fragment("upper(?)", "HELLO"))`
 
 _Test reference: test/examples/ecto_query_dsl.exs:1177_
 
@@ -1431,7 +1431,7 @@ _Test reference: test/examples/ecto_query_dsl.exs:1190_
 
 _Test reference: test/examples/ecto_query_dsl.exs:1203_
 
-Note: String transformations can be applied to field names (transform before comparison) or values (transform the comparison value). Both `:lower` and `:upper` work with all comparison operators.
+Note: String transformations at slot 8 (after the comparison operator) transform the value before comparison. Both `:lower` and `:upper` work with all comparison operators and with `:not`.
 
 ---
 
@@ -1618,6 +1618,8 @@ Note: All aggregate operators (avg, count, max, min, sum) work with all comparis
 **And** it must apply the `>` comparison to the `:id` field against all values returned by the subquery
 **And** the resulting expression is: `p.id > all(subquery_expr)`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1506_
+
 **Rule Statement 2:**
 
 **Given** filter params: `[not: [id: [>: [all: subquery_expr]]]]`
@@ -1626,12 +1628,16 @@ Note: All aggregate operators (avg, count, max, min, sum) work with all comparis
 **And** it must negate the entire comparison
 **And** the resulting expression is: `not (p.id > all(subquery_expr))`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1521_
+
 **Rule Statement 3:**
 
 **Given** filter params: `[id: [>: [any: subquery_expr]]]`
 **When** the filter params are converted into a query condition
 **And** it must apply the `>` comparison to the `:id` field against any value returned by the subquery
 **And** the resulting expression is: `p.id > any(subquery_expr)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:1535_
 
 **Rule Statement 4:**
 
@@ -1641,12 +1647,16 @@ Note: All aggregate operators (avg, count, max, min, sum) work with all comparis
 **And** it must negate the entire comparison
 **And** the resulting expression is: `not (p.id > any(subquery_expr))`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1549_
+
 **Rule Statement 5:**
 
 **Given** filter params: `[id: [>=: [all: subquery_expr]]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply the `>=` comparison to the `:id` field against all values returned by the subquery
 **And** the resulting expression is: `p.id >= all(subquery_expr)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:1563_
 
 **Rule Statement 6:**
 
@@ -1655,12 +1665,16 @@ Note: All aggregate operators (avg, count, max, min, sum) work with all comparis
 **Then** it must apply the `<` comparison to the `:id` field against all values returned by the subquery
 **And** the resulting expression is: `p.id < all(subquery_expr)`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1579_
+
 **Rule Statement 7:**
 
 **Given** filter params: `[id: [<=: [all: subquery_expr]]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply the `<=` comparison to the `:id` field against all values returned by the subquery
 **And** the resulting expression is: `p.id <= all(subquery_expr)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:1593_
 
 **Rule Statement 8:**
 
@@ -1669,12 +1683,16 @@ Note: All aggregate operators (avg, count, max, min, sum) work with all comparis
 **Then** it must apply the `==` comparison to the `:id` field against all values returned by the subquery
 **And** the resulting expression is: `p.id == all(subquery_expr)`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1609_
+
 **Rule Statement 9:**
 
 **Given** filter params: `[id: [!=: [all: subquery_expr]]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply the `!=` comparison to the `:id` field against all values returned by the subquery
 **And** the resulting expression is: `p.id != all(subquery_expr)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:1623_
 
 **Rule Statement 10:**
 
@@ -1683,12 +1701,16 @@ Note: All aggregate operators (avg, count, max, min, sum) work with all comparis
 **Then** it must apply the default comparison to the `:id` field against all values returned by the subquery
 **And** the resulting expression is: `p.id == all(subquery_expr)`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1638_
+
 **Rule Statement 11:**
 
 **Given** filter params: `[id: [all: [from: Post, id: 1]]]`
 **When** the filter params are converted into a query condition
 **Then** it must build a subquery from the filter params and apply the comparison to the `:id` field against all values
 **And** the resulting expression is: `p.id == all(subquery(from p in Post, where: p.id == 1))`
+
+_Test reference: test/examples/ecto_query_dsl.exs:1652_
 
 **Rule Statement 12:**
 
@@ -1698,12 +1720,16 @@ Note: All aggregate operators (avg, count, max, min, sum) work with all comparis
 **And** it must negate the entire comparison
 **And** the resulting expression is: `not (p.id == all(subquery_expr))`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1666_
+
 **Rule Statement 13:**
 
 **Given** filter params: `[id: [any: subquery_expr]]`
 **When** the filter params are converted into a query condition
 **And** it must apply the default comparison to the `:id` field against any value returned by the subquery
 **And** the resulting expression is: `p.id == any(subquery_expr)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:1680_
 
 **Rule Statement 14:**
 
@@ -1712,6 +1738,8 @@ Note: All aggregate operators (avg, count, max, min, sum) work with all comparis
 **Then** it must apply the default comparison to the `:id` field against any value returned by the subquery
 **And** it must negate the entire comparison
 **And** the resulting expression is: `not (p.id == any(subquery_expr))`
+
+_Test reference: test/examples/ecto_query_dsl.exs:1694_
 
 ---
 
@@ -2020,6 +2048,8 @@ Note: Both `:datetime` and `:date` support the same sub-operations (add, ago, fr
 **And** it must compare the `:published` field to `true` using equality
 **And** the resulting expression is: `post.published == true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1932_
+
 **Rule Statement 2:**
 
 **Given** filter params: `[bind: [[as: :post, published: true], [as: :author, first_name: "John"]]]`
@@ -2029,6 +2059,8 @@ Note: Both `:datetime` and `:date` support the same sub-operations (add, ago, fr
 **And** it must compare `:first_name` to `"John"` on the `:author` binding
 **And** the resulting expression is: `post.published == true and author.first_name == "John"`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1945_
+
 **Rule Statement 3:**
 
 **Given** filter params: `[bind: [at: 1, published: true]]`
@@ -2036,6 +2068,8 @@ Note: Both `:datetime` and `:date` support the same sub-operations (add, ago, fr
 **Then** it must apply the filter to the positional binding at index `1`
 **And** it must compare the `:published` field to `true` using equality
 **And** the resulting expression is: `binding_at_1.published == true`
+
+_Test reference: test/examples/ecto_query_dsl.exs:1965_
 
 **Rule Statement 4:**
 
@@ -2045,6 +2079,8 @@ Note: Both `:datetime` and `:date` support the same sub-operations (add, ago, fr
 **And** it must compare the `:published` field to `true` using equality
 **And** the resulting expression is: `binding_at_1.published == true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1978_
+
 **Rule Statement 5:**
 
 **Given** filter params: `[bind: [at: :first, published: true]]`
@@ -2053,6 +2089,8 @@ Note: Both `:datetime` and `:date` support the same sub-operations (add, ago, fr
 **And** it must compare the `:published` field to `true` using equality
 **And** the resulting expression is: `first_binding.published == true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:1991_
+
 **Rule Statement 6:**
 
 **Given** filter params: `[bind: [at: :last, first_name: "John"]]`
@@ -2060,6 +2098,8 @@ Note: Both `:datetime` and `:date` support the same sub-operations (add, ago, fr
 **Then** it must apply the filter to the last binding
 **And** it must compare the `:first_name` field to `"John"` using equality
 **And** the resulting expression is: `last_binding.first_name == "John"`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2004_
 
 ---
 
@@ -2140,7 +2180,7 @@ _Test reference: test/examples/ecto_query_dsl.exs:1705_
 
     [last: 2]
     [last: [title: 2]]
-    [subquery: %{id: 2}]
+    [subquery: [id: 2]]
     [published: true, subquery: [id: 2]]
     [subquery: [published: true, views: [>: 10]]]
 
@@ -2289,12 +2329,16 @@ Note: `:last` can accept an integer, a tuple `{field, limit}`, or a keyword list
 **Then** it must apply the raw dynamic expression to the query
 **And** the resulting expression is: `p.views > 10`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2338_
+
 **Rule Statement 2:**
 
 **Given** filter params: `[where: [dynamic: dynamic([p], p.published === ^true)]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply the raw dynamic expression within an explicit WHERE clause
 **And** the resulting expression is: `where: p.published === true`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2352_
 
 **Rule Statement 3:**
 
@@ -2303,12 +2347,16 @@ Note: `:last` can accept an integer, a tuple `{field, limit}`, or a keyword list
 **Then** it must apply the raw dynamic expression within an OR WHERE clause
 **And** the resulting expression is: `or_where: p.views > 100`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2366_
+
 **Rule Statement 4:**
 
 **Given** filter params: `[where: [exists: subquery_expr]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply an EXISTS subquery check within a WHERE clause
 **And** the resulting expression is: `where: exists(subquery_expr)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2380_
 
 **Rule Statement 5:**
 
@@ -2317,12 +2365,16 @@ Note: `:last` can accept an integer, a tuple `{field, limit}`, or a keyword list
 **Then** it must apply a negated EXISTS subquery check within a WHERE clause
 **And** the resulting expression is: `where: not exists(subquery_expr)`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2396_
+
 **Rule Statement 6:**
 
 **Given** filter params: `[published: true, subquery: [id: 2]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply the filter and convert to a subquery
 **And** the resulting expression is: `from(s in subquery(from p in Post, where: p.id == 2), where: s.published == true)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2412_
 
 **Rule Statement 7:**
 
@@ -2340,6 +2392,8 @@ _Test reference: test/examples/ecto_query_dsl.exs:1804_
 **Then** it must specify the source schema as `Post` and filter by `:id`
 **And** the resulting expression is: `from: Post, where: p.id == 1`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2426_
+
 **Rule Statement 9:**
 
 **Given** filter params: `[from: "posts", id: 1]`
@@ -2347,12 +2401,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1804_
 **Then** it must specify the source table as `"posts"` and filter by `:id`
 **And** the resulting expression is: `from: "posts", where: p.id == 1`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2439_
+
 **Rule Statement 10:**
 
 **Given** filter params: `[from: "posts", select: [:id]]`
 **When** the filter params are converted into a query condition
 **Then** it must specify the source table and select only the `:id` field
 **And** the resulting expression is: `from: "posts", select: [:id]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2452_
 
 **Rule Statement 11:**
 
@@ -2415,6 +2473,8 @@ _Test reference: test/examples/ecto_query_dsl.exs:1877_
 **Then** it must merge the `:id` field mapped to `:custom_id` into the existing selection
 **And** the resulting expression is: `select_merge: %{custom_id: p.id}`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2464_
+
 **Rule Statement 18:**
 
 **Given** filter params: `[select_merge: [map: [:id, :title]]]`
@@ -2422,12 +2482,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1877_
 **Then** it must merge `:id` and `:title` fields into the existing selection
 **And** the resulting expression is: `select_merge: %{id: p.id, title: p.title}`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2477_
+
 **Rule Statement 19:**
 
 **Given** filter params: `[select: [map: [:id]], select_merge: [map: [post_title: :title]]]`
 **When** the filter params are converted into a query condition
 **Then** it must select `:id` and merge `:title` as `:post_title`
 **And** the resulting expression is: `select: %{id: p.id, post_title: p.title}`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2490_
 
 **Rule Statement 20:**
 
@@ -2445,12 +2509,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1889_
 **Then** it must not apply DISTINCT to the query results
 **And** the resulting expression is: `distinct: false`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2503_
+
 **Rule Statement 22:**
 
 **Given** filter params: `[distinct: :title]`
 **When** the filter params are converted into a query condition
 **Then** it must apply DISTINCT on the `:title` field
 **And** the resulting expression is: `distinct: p.title`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2516_
 
 **Rule Statement 23:**
 
@@ -2459,12 +2527,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1889_
 **Then** it must apply DISTINCT on `:title` with descending order
 **And** the resulting expression is: `distinct: [desc: p.title]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2530_
+
 **Rule Statement 24:**
 
 **Given** filter params: `[distinct: :title, order_by: :id]`
 **When** the filter params are converted into a query condition
 **Then** it must apply DISTINCT on `:title` and order by `:id`
 **And** the resulting expression is: `distinct: p.title, order_by: p.id`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2544_
 
 **Rule Statement 25:**
 
@@ -2482,6 +2554,8 @@ _Test reference: test/examples/ecto_query_dsl.exs:1902_
 **Then** it must group results by `:author_id` and `:published` fields
 **And** the resulting expression is: `group_by: [p.author_id, p.published]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2557_
+
 **Rule Statement 27:**
 
 **Given** filter params: `[having: [published: true]]`
@@ -2498,12 +2572,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1915_
 **Then** it must apply a HAVING clause filtering on `:views` greater than `10`
 **And** the resulting expression is: `having: p.views > 10`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2570_
+
 **Rule Statement 29:**
 
 **Given** filter params: `[having: [views: [avg: [>: 10]]]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply a HAVING clause with aggregate function `avg` on `:views`
 **And** the resulting expression is: `having: avg(p.views) > 10`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2583_
 
 **Rule Statement 30:**
 
@@ -2512,12 +2590,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1915_
 **Then** it must apply a HAVING clause with a raw dynamic expression
 **And** the resulting expression is: `having: p.views > 10`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2596_
+
 **Rule Statement 31:**
 
 **Given** filter params: `[having: [and: [published: true, views: [>: 10]]]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply a HAVING clause with AND logic
 **And** the resulting expression is: `having: p.published == true and p.views > 10`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2610_
 
 **Rule Statement 32:**
 
@@ -2526,12 +2608,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1915_
 **Then** it must apply a HAVING clause with OR logic
 **And** the resulting expression is: `having: p.views > 10 or p.views < 5`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2627_
+
 **Rule Statement 33:**
 
 **Given** filter params: `[or_having: [views: [<: 5]]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply an OR HAVING clause
 **And** the resulting expression is: `or_having: p.views < 5`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2644_
 
 **Rule Statement 34:**
 
@@ -2558,12 +2644,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1944_
 **Then** it must order results by `:title` ascending then `:id` descending
 **And** the resulting expression is: `order_by: [asc: p.title, desc: p.id]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2660_
+
 **Rule Statement 37:**
 
 **Given** filter params: `[prepend_order_by: :title]`
 **When** the filter params are converted into a query condition
 **Then** it must prepend `:title` to the existing order
 **And** the resulting expression is: `prepend_order_by: [asc: p.title]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2675_
 
 **Rule Statement 38:**
 
@@ -2572,6 +2662,8 @@ _Test reference: test/examples/ecto_query_dsl.exs:1944_
 **Then** it must prepend `:published_at` ascending and `:title` descending to the existing order
 **And** the resulting expression is: `prepend_order_by: [asc: p.published_at, desc: p.title]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2690_
+
 **Rule Statement 39:**
 
 **Given** filter params: `[after: 10]`
@@ -2579,12 +2671,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1944_
 **Then** it must apply pagination starting after cursor position `10`
 **And** the resulting expression is: `after: 10`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2703_
+
 **Rule Statement 40:**
 
 **Given** filter params: `[before: 10]`
 **When** the filter params are converted into a query condition
 **Then** it must apply pagination ending before cursor position `10`
 **And** the resulting expression is: `before: 10`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2717_
 
 **Rule Statement 41:**
 
@@ -2611,6 +2707,8 @@ _Test reference: test/examples/ecto_query_dsl.exs:1971_
 **Then** it must limit results to the first `10` records
 **And** the resulting expression is: `first: 10`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2731_
+
 **Rule Statement 44:**
 
 **Given** filter params: `[limit: 10, offset: 5]`
@@ -2627,12 +2725,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1985_
 **Then** it must reverse the existing order
 **And** the resulting expression is: `reverse_order: true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2745_
+
 **Rule Statement 46:**
 
 **Given** filter params: `[exclude: :order_by]`
 **When** the filter params are converted into a query condition
 **Then** it must exclude the ORDER BY clause from the query
 **And** the resulting expression is: `exclude: :order_by`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2759_
 
 **Rule Statement 47:**
 
@@ -2641,6 +2743,8 @@ _Test reference: test/examples/ecto_query_dsl.exs:1985_
 **Then** it must exclude both ORDER BY and LIMIT clauses from the query
 **And** the resulting expression is: `exclude: [:order_by, :limit]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2773_
+
 **Rule Statement 48:**
 
 **Given** filter params: `[put_query_prefix: "tenant_a"]`
@@ -2648,12 +2752,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:1985_
 **Then** it must set the schema prefix to `"tenant_a"`
 **And** the resulting expression is: `put_query_prefix: "tenant_a"`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2788_
+
 **Rule Statement 49:**
 
 **Given** filter params: `[put_query_prefix: "tenant_a", put_query_prefix: "tenant_b"]`
 **When** the filter params are converted into a query condition
 **Then** it must set the schema prefix to `"tenant_b"` (last one wins)
 **And** the resulting expression is: `put_query_prefix: "tenant_b"`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2801_
 
 **Rule Statement 50:**
 
@@ -2712,12 +2820,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must apply a set EXCEPT operation with the filter
 **And** the resulting expression is: `except: from(p in Post, where: p.published == false)`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2816_
+
 **Rule Statement 2:**
 
 **Given** filter params: `[except: from(p in Post, where: p.published === ^false)]`
 **When** the filter params are converted into a query condition
 **Then** it must apply a set EXCEPT operation with the provided query
 **And** the resulting expression is: `except: from(p in Post, where: p.published === false)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2830_
 
 **Rule Statement 3:**
 
@@ -2726,12 +2838,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must apply a set EXCEPT ALL operation with the filter
 **And** the resulting expression is: `except_all: from(p in Post, where: p.published == false)`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2844_
+
 **Rule Statement 4:**
 
 **Given** filter params: `[intersect: [published: false]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply a set INTERSECT operation with the filter
 **And** the resulting expression is: `intersect: from(p in Post, where: p.published == false)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2858_
 
 **Rule Statement 5:**
 
@@ -2740,6 +2856,8 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must apply a set INTERSECT ALL operation with the filter
 **And** the resulting expression is: `intersect_all: from(p in Post, where: p.published == false)`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2872_
+
 **Rule Statement 6:**
 
 **Given** filter params: `[union: [published: false]]`
@@ -2747,12 +2865,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must apply a set UNION operation with the filter
 **And** the resulting expression is: `union: from(p in Post, where: p.published == false)`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2886_
+
 **Rule Statement 7:**
 
 **Given** filter params: `[union_all: [published: false]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply a set UNION ALL operation with the filter
 **And** the resulting expression is: `union_all: from(p in Post, where: p.published == false)`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2901_
 
 ---
 
@@ -2774,12 +2896,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must apply a lock using the provided function
 **And** the resulting expression is: `lock: "FOR UPDATE"`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2918_
+
 **Rule Statement 2:**
 
 **Given** filter params: `[lock: [name: :for_share, values: []]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply a lock with the specified name and values
 **And** the resulting expression is: `lock: "FOR SHARE"`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2930_
 
 ---
 
@@ -2807,12 +2933,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must enable recursive CTEs for the query
 **And** the resulting expression is: `recursive_ctes: true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2944_
+
 **Rule Statement 2:**
 
 **Given** filter params: `[recursive_ctes: false]`
 **When** the filter params are converted into a query condition
 **Then** it must disable recursive CTEs for the query
 **And** the resulting expression is: `recursive_ctes: false`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2959_
 
 **Rule Statement 3:**
 
@@ -2821,12 +2951,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must define a CTE named `published_posts` using the provided query
 **And** the resulting expression is: `with_cte: [published_posts: [as: cte_query]]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:2971_
+
 **Rule Statement 4:**
 
 **Given** filter params: `[with_cte: [published_posts: [as: cte_query, materialized: false, operation: :all]]]`
 **When** the filter params are converted into a query condition
 **Then** it must define a CTE with materialization disabled and operation set to `:all`
 **And** the resulting expression is: `with_cte: [published_posts: [as: cte_query, materialized: false]]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:2988_
 
 **Rule Statement 5:**
 
@@ -2835,6 +2969,8 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must define a CTE by building a query from the filter params
 **And** the resulting expression is: `with_cte: [published_posts: [as: from(p in Post, where: p.published == true)]]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3004_
+
 **Rule Statement 6:**
 
 **Given** filter params: `[with_cte: [published_posts: [as: [from: [query: Post, id: 1]]]]]`
@@ -2842,12 +2978,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must define a CTE by building a query from the filter params
 **And** the resulting expression is: `with_cte: [published_posts: [as: from(p in Post, where: p.id == 1)]]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3021_
+
 **Rule Statement 7:**
 
 **Given** filter params: `[recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]]`
 **When** the filter params are converted into a query condition
 **Then** it must enable recursive CTEs and define a CTE named `published_posts`
 **And** the resulting expression is: `recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3038_
 
 ---
 
@@ -2869,12 +3009,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must create a named binding `:author` with an association join
 **And** the resulting expression is: `with_named_binding: [author: join]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3057_
+
 **Rule Statement 2:**
 
 **Given** filter params: `[with_named_binding: [author: [join: [association: [source: :author, as: :author]]], users_table: [join: [table: [source: "users", as: :users_table, on: true]]]]]`
 **When** the filter params are converted into a query condition
 **Then** it must create multiple named bindings with their respective joins
 **And** the resulting expression is: `with_named_binding: [author: join, users_table: join]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3071_
 
 ---
 
@@ -2911,12 +3055,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must include ties in the limit clause
 **And** the resulting expression is: `with_ties: true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3089_
+
 **Rule Statement 2:**
 
 **Given** filter params: `[with_ties: false]`
 **When** the filter params are converted into a query condition
 **Then** it must not include ties in the limit clause
 **And** the resulting expression is: `with_ties: false`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3103_
 
 **Rule Statement 3:**
 
@@ -2925,12 +3073,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must apply with_ties to the named binding `:post`
 **And** the resulting expression is: `with_ties: [bind: [as: :post, value: true]]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3116_
+
 **Rule Statement 4:**
 
 **Given** filter params: `[with_ties: [bind: [at: 1, value: true]]]`
 **When** the filter params are converted into a query condition
 **Then** it must apply with_ties to the positional binding at index `1`
 **And** the resulting expression is: `with_ties: [bind: [at: 1, value: true]]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3128_
 
 **Rule Statement 5:**
 
@@ -2939,12 +3091,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must set `:title` to `"After"` and increment `:views` by `1`
 **And** the resulting expression is: `update: [set: [title: "After"], inc: [views: 1]]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3140_
+
 **Rule Statement 6:**
 
 **Given** filter params: `[windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]]`
 **When** the filter params are converted into a query condition
 **Then** it must define a window function named `post_window` partitioned by `:author_id` and ordered by `:inserted_at` descending
 **And** the resulting expression is: `windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3154_
 
 **Rule Statement 7:**
 
@@ -2953,12 +3109,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must preload the `:author` association
 **And** the resulting expression is: `preload: :author`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3169_
+
 **Rule Statement 8:**
 
 **Given** filter params: `[preload: [:author]]`
 **When** the filter params are converted into a query condition
 **Then** it must preload the `:author` association
 **And** the resulting expression is: `preload: [:author]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3182_
 
 **Rule Statement 9:**
 
@@ -2967,12 +3127,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must preload the `:author` association with nested `:posts` association
 **And** the resulting expression is: `preload: [author: [:posts]]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3195_
+
 **Rule Statement 10:**
 
 **Given** filter params: `[preload: [bind: [as: :example, value: :author]]]`
 **When** the filter params are converted into a query condition
 **Then** it must preload the `:author` association from the named binding `:example`
 **And** the resulting expression is: `preload: [bind: [as: :example, value: :author]]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3208_
 
 **Rule Statement 11:**
 
@@ -2981,12 +3145,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must preload the `:author` association from the positional binding at index `2`
 **And** the resulting expression is: `preload: [bind: [at: 2, value: :author]]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3223_
+
 **Rule Statement 12:**
 
 **Given** filter params: `[preload: [bind: [at: 2, value: :author], posts: [:comments]]]`
 **When** the filter params are converted into a query condition
 **Then** it must preload `:author` from binding at index `2` and `:posts` with nested `:comments`
 **And** the resulting expression is: `preload: [bind: [at: 2, value: :author], posts: [:comments]]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3238_
 
 **Rule Statement 13:**
 
@@ -2995,12 +3163,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must preload `:author` from named binding `:author` and `:posts` with nested `:comments`
 **And** the resulting expression is: `preload: [bind: [as: :author, value: :author], posts: [:comments]]`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3253_
+
 **Rule Statement 14:**
 
 **Given** filter params: `[preload: [bind: [[as: :author, value: :author], [at: 2, value: :author]], posts: [:comments]]]`
 **When** the filter params are converted into a query condition
 **Then** it must preload `:author` from multiple bindings and `:posts` with nested `:comments`
 **And** the resulting expression is: `preload: [bind: [[as: :author, value: :author], [at: 2, value: :author]], posts: [:comments]]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3268_
 
 ---
 
@@ -3041,12 +3213,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must create an association join for `:author` with alias `:author` and filter on `:first_name`
 **And** the resulting expression is: `join: :author, as: :author, where: author.first_name == "John"`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3285_
+
 **Rule Statement 2:**
 
 **Given** filter params: `[author: [first_name: "John"]]`
 **When** the filter params are converted into a query condition
 **Then** it must create an association join for `:author` and filter on `:first_name`
 **And** the resulting expression is: `join: :author, where: author.first_name == "John"`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3301_
 
 **Rule Statement 3:**
 
@@ -3055,12 +3231,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must create an association join for `:author` with explicit ON condition and filter
 **And** the resulting expression is: `join: :author, as: :author, on: true, where: author.first_name == "John"`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3317_
+
 **Rule Statement 4:**
 
 **Given** filter params: `[author: [as: :author, type: :left, first_name: "John"]]`
 **When** the filter params are converted into a query condition
 **Then** it must create a LEFT association join for `:author` with filter
 **And** the resulting expression is: `left_join: :author, as: :author, where: author.first_name == "John"`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3332_
 
 **Rule Statement 5:**
 
@@ -3069,12 +3249,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must create an explicit association join for `:author` with alias
 **And** the resulting expression is: `join: :author, as: :author`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3348_
+
 **Rule Statement 6:**
 
 **Given** filter params: `[join: [schema: [source: User, as: :user_join, on: true]]]`
 **When** the filter params are converted into a query condition
 **Then** it must create a schema join with the `User` schema
 **And** the resulting expression is: `join: User, as: :user_join, on: true`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3361_
 
 **Rule Statement 7:**
 
@@ -3083,12 +3267,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must create a table join with the `"users"` table
 **And** the resulting expression is: `join: "users", as: :users_table, on: true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3376_
+
 **Rule Statement 8:**
 
 **Given** filter params: `[join: [query: [source: user_query, as: :adult_users, on: true]]]`
 **When** the filter params are converted into a query condition
 **Then** it must create a query join with the provided query
 **And** the resulting expression is: `join: user_query, as: :adult_users, on: true`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3391_
 
 **Rule Statement 9:**
 
@@ -3097,12 +3285,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must create a subquery join with the provided query
 **And** the resulting expression is: `join: subquery(user_query), as: :name, on: true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3407_
+
 **Rule Statement 10:**
 
 **Given** filter params: `[join: [subquery: [source: [from: [query: User, age: [>=: 18]]], as: :name, on: true]]]`
 **When** the filter params are converted into a query condition
 **Then** it must create a subquery join by building the query from filter params
 **And** the resulting expression is: `join: subquery(from u in User, where: u.age >= 18), as: :name, on: true`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3423_
 
 **Rule Statement 11:**
 
@@ -3111,12 +3303,16 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must create a subquery join by building the query from filter params
 **And** the resulting expression is: `join: subquery(from p in Post, where: p.published == true), as: :name, on: true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3439_
+
 **Rule Statement 12:**
 
 **Given** filter params: `[join: [fragment: [source: [name: :active_users, values: [min_age: 21]], as: :active_users, on: true]]]`
 **When** the filter params are converted into a query condition
 **Then** it must create a fragment join with the specified fragment name and values
 **And** the resulting expression is: `join: fragment("active_users(?)", 21), as: :active_users, on: true`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3456_
 
 **Rule Statement 13:**
 
@@ -3125,9 +3321,13 @@ _Test reference: test/examples/ecto_query_dsl.exs:2025_
 **Then** it must create a fragment join with hints
 **And** the resulting expression is: `join: fragment("active_users(?)", 21), as: :active_users, hints: :test_index, on: true`
 
+_Test reference: test/examples/ecto_query_dsl.exs:3468_
+
 **Rule Statement 14:**
 
 **Given** filter params: `[join: [author: [as: :author], table: [source: "users", as: :users_table, on: true]]]`
 **When** the filter params are converted into a query condition
 **Then** it must create multiple joins (association and table)
 **And** the resulting expression is: `join: [:author, "users"], as: [:author, :users_table]`
+
+_Test reference: test/examples/ecto_query_dsl.exs:3480_
