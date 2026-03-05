@@ -74,6 +74,13 @@ defmodule EctoShorts.Dynamics do
 
   @boolean_operators [:and, :or]
 
+  @adapters %{
+    Ecto.Adapters.Postgres => EctoShorts.Dynamics.Postgres
+  }
+
+  @doc false
+  def adapters, do: @adapters
+
   @doc """
   Converts filter params into a single composable dynamic expression.
 
@@ -108,185 +115,122 @@ defmodule EctoShorts.Dynamics do
   @spec convert_to_dynamic(
           source :: term(),
           binding_selector :: term(),
-          params :: term(),
+          value :: term(),
           opts :: keyword()
         ) :: Ecto.Query.dynamic_expr() | nil
-  def convert_to_dynamic(source, binding_selector, params, opts \\ []) do
-    source = CommonSchema.normalize_source(source)
-
-    if (is_map(params) and not is_struct(params)) or is_list(params) do
-      Enum.reduce(params, nil, fn entry, dyn_acc ->
-        append_predicates(source, dyn_acc, binding_selector, entry, opts)
-      end)
-    else
-      append_predicates(source, nil, binding_selector, params, opts)
-    end
+  def convert_to_dynamic(source, binding_selector, term, opts \\ []) do
+    source
+    |> CommonSchema.normalize_source()
+    |> append_predicates(nil, binding_selector, term, opts)
   end
 
-  defp append_predicates(source, dyn_a, binding_selector, {key, value}, opts) do
-    if key in @boolean_operators do
-      merge_boolean_predicates(source, dyn_a, binding_selector, key, value, opts)
-    else
-      adapter = adapter_for_repo!(opts)
-
-      cond do
-        key in adapter.operators() ->
-          build_and_merge(adapter, source, binding_selector, key, value, dyn_a)
-
-        source_has_schema?(source) ->
-          schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
-
-          if key not in schema_fields do
-            Logger.warning(
-              @logger_prefix,
-              "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
-            )
-
-            dyn_a
-          else
-            build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, opts)
-          end
-
-        true ->
-          build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, opts)
-      end
-    end
+  defp append_predicates(source, dyn_left, binding_selector, {key, map}, opts)
+       when is_map(map) and not is_struct(map) do
+    append_predicates(source, dyn_left, binding_selector, {key, Map.to_list(map)}, opts)
   end
 
-  defp append_predicates(source, dyn_a, binding_selector, term, opts) do
-    cond do
-      is_map(term) and not is_struct(term) ->
-        append_predicates(source, dyn_a, binding_selector, Map.to_list(term), opts)
-
-      is_list(term) ->
-        Enum.reduce(term, dyn_a, fn entry, dyn_acc ->
-          append_predicates(source, dyn_acc, binding_selector, entry, opts)
-        end)
-
-      true ->
-        raise "Expected a map or list, got: #{inspect(term)}"
-    end
-  end
-
-  defp build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, _opts)
-       when is_map(value) and not is_struct(value) do
-    reduce_field_value(source, dyn_a, binding_selector, key, value, adapter)
-  end
-
-  defp build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, _opts)
-       when is_list(value) do
-    if Keyword.keyword?(value) do
-      reduce_field_value(source, dyn_a, binding_selector, key, value, adapter)
-    else
-      build_and_merge(adapter, source, binding_selector, key, value, dyn_a)
-    end
-  end
-
-  defp build_field_predicate(source, dyn_a, binding_selector, key, {op, entries}, adapter, opts)
-       when op in @boolean_operators and is_list(entries) do
-    if Keyword.keyword?(entries) do
-      Enum.reduce(entries, dyn_a, fn entry, inner_acc ->
-        case adapter.build_dynamic(source, binding_selector, key, entry) do
-          nil -> inner_acc
-          dyn -> merge_dynamic(inner_acc, op, dyn)
-        end
-      end)
-    else
-      merge_boolean_predicates(source, dyn_a, binding_selector, op, entries, opts)
-    end
-  end
-
-  defp build_field_predicate(source, dyn_a, binding_selector, key, {op, inner}, adapter, _opts)
-       when op in @boolean_operators do
-    case adapter.build_dynamic(source, binding_selector, key, inner) do
-      nil -> dyn_a
-      dyn -> merge_dynamic(dyn_a, op, dyn)
-    end
-  end
-
-  defp build_field_predicate(source, dyn_a, binding_selector, key, value, adapter, _opts) do
-    build_and_merge(adapter, source, binding_selector, key, value, dyn_a)
-  end
-
-  defp reduce_field_value(source, dyn_a, binding_selector, key, entries, adapter) do
-    Enum.reduce(entries, dyn_a, fn
-      {op, list}, acc when op in @boolean_operators and is_list(list) ->
-        Enum.reduce(list, acc, fn entry, inner_acc ->
-          case adapter.build_dynamic(source, binding_selector, key, entry) do
-            nil -> inner_acc
-            dyn -> merge_dynamic(inner_acc, op, dyn)
-          end
-        end)
-
-      {op, inner}, acc when op in @boolean_operators ->
-        case adapter.build_dynamic(source, binding_selector, key, inner) do
-          nil -> acc
-          dyn -> merge_dynamic(acc, op, dyn)
-        end
-
-      {op, inner}, acc ->
-        build_and_merge(adapter, source, binding_selector, key, {op, inner}, acc)
+  defp append_predicates(source, dyn_left, binding_selector, {key, {boolean_op, sub_entries}}, opts)
+       when boolean_op in @boolean_operators and is_list(sub_entries) do
+    Enum.reduce(sub_entries, dyn_left, fn entry, dyn_acc ->
+      dyn_right = append_predicates(source, nil, binding_selector, {key, entry}, opts)
+      merge_dynamic(dyn_acc, boolean_op, dyn_right)
     end)
   end
 
-  defp build_and_merge(adapter, source, binding_selector, key, expr, dyn_a) do
+  defp append_predicates(source, dyn_left, binding_selector, {key, value}, opts) do
+    adapter = adapter_for_repo!(opts)
+
+    cond do
+      key in adapter.operators() ->
+        build_dynamic(adapter, source, binding_selector, key, value, dyn_left)
+
+      key in @boolean_operators ->
+        Enum.reduce(value, dyn_left, fn entry, dyn_acc ->
+          dyn_right = append_predicates(source, nil, binding_selector, entry, opts)
+          merge_dynamic(dyn_acc, key, dyn_right)
+        end)
+
+      source_has_schema?(source) ->
+        schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
+
+        if key not in schema_fields do
+          Logger.warning(
+            @logger_prefix,
+            "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
+          )
+
+          dyn_left
+        else
+          if Keyword.keyword?(value) do
+            Enum.reduce(value, dyn_left, fn entry, dyn_acc ->
+              append_predicates(source, dyn_acc, binding_selector, {key, entry}, opts)
+            end)
+          else
+            build_dynamic(adapter, source, binding_selector, key, value, dyn_left)
+          end
+        end
+
+      true ->
+        if Keyword.keyword?(value) do
+          Enum.reduce(value, dyn_left, fn entry, dyn_acc ->
+            append_predicates(source, dyn_acc, binding_selector, {key, entry}, opts)
+          end)
+        else
+          build_dynamic(adapter, source, binding_selector, key, value, dyn_left)
+        end
+    end
+  end
+
+  defp append_predicates(source, dyn_left, binding_selector, params, opts) do
+    if (is_map(params) and not is_struct(params)) or Keyword.keyword?(params) do
+      Enum.reduce(params, dyn_left, fn {k, v}, dyn_acc ->
+        append_predicates(source, dyn_acc, binding_selector, {k, v}, opts)
+      end)
+    else
+      raise "Expected a map or keyword-list, got: #{inspect(params)}"
+    end
+  end
+
+  defp build_dynamic(adapter, source, binding_selector, key, expr, dyn_left) do
     case adapter.build_dynamic(source, binding_selector, key, expr) do
       nil ->
         Logger.warning(
           @logger_prefix,
-          "No dynamic expression generated for field #{inspect(key)} with expression: #{inspect(expr)}"
+          "Adapter #{inspect(adapter)} returned nil for field #{inspect(key)} with expression: #{inspect(expr)}"
         )
 
-        dyn_a
+        dyn_left
 
-      dyn_b ->
-        merge_dynamic(dyn_a, :and, dyn_b)
+      dyn_right ->
+        merge_dynamic(dyn_left, :and, dyn_right)
     end
   end
 
-  defp merge_boolean_predicates(
-         source,
-         dyn_a,
-         binding_selector,
-         boolean_operator,
-         entries,
-         opts
-       ) do
-    Enum.reduce(entries, dyn_a, fn entry, dyn_acc ->
-      entry =
-        if is_map(entry) and not is_struct(entry) do
-          Map.to_list(entry)
-        else
-          entry
-        end
-
-      dyn_b =
-        append_predicates(source, nil, binding_selector, entry, opts)
-
-      merge_dynamic(dyn_acc, boolean_operator, dyn_b)
-    end)
+  defp merge_dynamic(nil, _, dyn_right) do
+    dyn_right
   end
 
-  defp merge_dynamic(nil, _, dyn_b) do
-    dyn_b
+  defp merge_dynamic(dyn_left, :and, dyn_right) do
+    Query.dynamic([], ^dyn_left and ^dyn_right)
   end
 
-  defp merge_dynamic(dyn_a, :and, dyn_b) do
-    Query.dynamic([], ^dyn_a and ^dyn_b)
-  end
-
-  defp merge_dynamic(dyn_a, :or, dyn_b) do
-    Query.dynamic([], ^dyn_a or ^dyn_b)
+  defp merge_dynamic(dyn_left, :or, dyn_right) do
+    Query.dynamic([], ^dyn_left or ^dyn_right)
   end
 
   defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
   defp source_has_schema?(_), do: false
 
   defp adapter_for_repo!(opts) do
-    adapter = opts[:dynamic_adapter] || Config.dynamic_adapter()
+    builder = opts[:dynamic_adapter] || Config.dynamic_adapter()
 
-    if adapter !== nil do
-      adapter
+    if not is_nil(builder) do
+      if Code.ensure_loaded?(builder) and function_exported?(builder, :build_dynamic, 4) do
+        builder
+      else
+        raise ArgumentError,
+              "The specified dynamic adapter #{inspect(builder)} does not implement build_dynamic/4"
+      end
     else
       repo = Config.repo!(opts)
 
@@ -296,20 +240,16 @@ defmodule EctoShorts.Dynamics do
               "Expected :repo to be an Ecto.Repo module that exports __adapter__/0, got: #{inspect(repo)}"
       end
 
-      case repo.__adapter__() do
-        Ecto.Adapters.Postgres ->
-          EctoShorts.Dynamics.Postgres
+      with nil <- Map.get(@adapters, repo.__adapter__()) do
+        raise ArgumentError, """
+        Unsupported Ecto repo adapter: #{inspect(repo.__adapter__())} (repo: #{inspect(repo)}).
 
-        other ->
-          raise ArgumentError, """
-          Unsupported Ecto repo adapter: #{inspect(other)} (repo: #{inspect(repo)}).
+        EctoShorts currently supports dynamic expressions for Postgres only.
 
-          EctoShorts currently supports dynamic expressions for Postgres only.
+        Use an Ecto SQL adapter with Postgres, or provide a custom dynamic expression adapter module via:
 
-          Use an Ecto SQL adapter with Postgres, or provide a custom dynamic expression adapter module via:
-
-              dynamic_adapter: MyApp.DynamicExpressionAdapter
-          """
+            dynamic_adapter: MyApp.DynamicExpressionAdapter
+        """
       end
     end
   end

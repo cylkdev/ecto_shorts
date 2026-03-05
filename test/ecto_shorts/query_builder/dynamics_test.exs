@@ -117,7 +117,7 @@ defmodule EctoShorts.DynamicsTest do
       )
 
     assert match?(%Ecto.Query.DynamicExpr{}, actual)
-    assert_received {:payload_probe_expr, :exists, %{from: Post, id: 1}}
+    assert_received {:payload_probe_expr, :exists, [from: Post, id: 1]}
   end
 
   test "convert_to_dynamic passes all/any payload wrappers through to adapter without subquery resolution" do

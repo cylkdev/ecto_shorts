@@ -166,7 +166,9 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "No dynamic expression generated for field :published_at with expression: {:>, nil}"
+      assert log =~
+               "Adapter EctoShorts.Dynamics.Postgres returned nil for field :published_at with expression: {:>, nil}"
+
       assert_received {:q2, q2}
       assert q2 === q
     end

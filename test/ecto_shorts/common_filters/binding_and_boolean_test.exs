@@ -189,7 +189,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
         end)
 
       assert log =~
-               "Expected a query field for schema {\"posts\", EctoShorts.Schema.Post}, got: :does_not_exist"
+               "Adapter EctoShorts.Dynamics.Postgres returned nil for field :id with expression: {:does_not_exist, \"value\"}"
 
       assert_received :done
     end

@@ -306,9 +306,9 @@ defmodule EctoShorts.Dynamics.Postgres do
     end
   end
 
-  defp reduce_entries(clause_module, binding_selector, key, entries) do
+  defp reduce_entries(expr_mod, binding_selector, key, entries) do
     Enum.reduce(entries, nil, fn entry, dyn_left ->
-      case clause_module.compose(binding_selector, key, entry) do
+      case expr_mod.compose(binding_selector, key, entry) do
         nil ->
           dyn_left
 
