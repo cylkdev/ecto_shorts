@@ -374,4 +374,10 @@ defmodule EctoShorts.Dynamic do
               key :: atom(),
               expr :: term()
             ) :: Ecto.Query.dynamic_expr()
+
+  @callback convert_to_dynamic(
+              source :: term(),
+              binding_selector :: term(),
+              term :: term()
+            ) :: Ecto.Query.dynamic_expr() | nil
 end

@@ -1760,7 +1760,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{where: [published: true, views: %{or: [>: 10, <: 5]}]},
+          %{where: [published: true, or: %{views: [>: 10, <: 5]}]},
           []
         )
 

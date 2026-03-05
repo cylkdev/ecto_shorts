@@ -16,11 +16,11 @@
 
 [%{id: 1}]
 
-[[id: 1]]
+[id: 1]
 
 [%{id: 1}, %{published: true}]
 
-[[id: 1], [published: true]]
+[id: 1, published: true]
 
 ## Comparison Operators Examples
 
@@ -230,13 +230,15 @@
 
 ## Logical Operators - Field Level Examples
 
-%{views: %{and: [>: 10, <: 20]}}
+%{and: %{views: [>: 10, <: 20]}}
 
-%{views: %{and: []}}
+%{and: %{views: []}}
 
-%{published: %{and: [==: true, !=: false]}}
+%{and: %{published: [==: true, !=: false]}}
 
-%{published: %{or: [==: true, ==: false]}}
+%{or: %{published: [==: true, ==: false]}}
+
+%{or: %{views: [>: 10, <: 5]}}
 
 ## Logical Operators - Top Level Examples
 
@@ -244,7 +246,7 @@
 
 %{and: [[published: true, views: 20], [title: "hello", views: 15]]}
 
-%{or: [[published: %{or: [==: true, ==: false]}], [published: %{or: [==: true, ==: false]}]]}
+%{or: [%{published: [==: true, ==: false]}, %{published: [==: true, ==: false]}]}
 
 %{or: [[published: true, views: 20]]}
 
@@ -284,7 +286,7 @@
 
 %{where: %{published: true}, or_where: %{published: false}}
 
-[or_where: %{views: %{or: [>: 10, <: 5]}}, published: true]
+[or_where: %{or: %{views: [>: 10, <: 5]}}, published: true]
 
 ## Terminal Filters Examples
 
@@ -674,4 +676,4 @@
 
 %{where: %{title: "test"}, or_where: %{or: [[published: true, views: 20], [published: false, views: 10]]}}
 
-%{where: [published: true, views: %{or: [>: 10, <: 5]}]}
+%{where: [published: true, or: %{views: [>: 10, <: 5]}]}

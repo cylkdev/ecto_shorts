@@ -1121,6 +1121,9 @@ defmodule EctoShorts.CommonFilters do
           query
         end
 
+      key in [:and, :or] ->
+        build_query(schema_source, query, binding_selector, filter_op, {key, value}, opts)
+
       key in @query_filters ->
         build_query(schema_source, query, binding_selector, key, value, opts)
 
@@ -1279,6 +1282,9 @@ defmodule EctoShorts.CommonFilters do
           {key, value},
           opts
         )
+
+      key in [:and, :or] ->
+        build_query(schema_source, query, binding_selector, filter_op, {key, value}, opts)
 
       Keyword.keyword?(value) ->
         Enum.reduce(value, query, fn entry, query_acc ->

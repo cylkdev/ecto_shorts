@@ -13,14 +13,14 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
   describe "convert_params_to_filter/3 field-level logical operators" do
     test "combines two conditions on the same field with and" do
       expected = from(p in Post, where: p.views > ^10 and p.views < ^20)
-      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{and: [>: 10, <: 20]}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{and: %{views: [>: 10, <: 20]}}, [])
 
       assert_sql(expected, q2)
     end
 
     test "does nothing when the and list is empty" do
       q = from(p in Post)
-      q2 = CommonFilters.convert_params_to_filter(q, %{views: %{and: []}}, [])
+      q2 = CommonFilters.convert_params_to_filter(q, %{and: %{views: []}}, [])
       assert q2 === q
     end
 
@@ -30,7 +30,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           where: p.published == ^true and p.published != ^false
         )
 
-      q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{and: [==: true, !=: false]}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{and: %{published: [==: true, !=: false]}}, [])
 
       assert_sql(expected, q2)
     end
@@ -41,7 +41,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           where: p.views > ^10 or p.views < ^5
         )
 
-      q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{or: [>: 10, <: 5]}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{or: %{views: [>: 10, <: 5]}}, [])
 
       assert_sql(expected, q2)
     end
@@ -52,7 +52,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           where: p.published == ^true or p.published == ^false
         )
 
-      q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{or: [==: true, ==: false]}}, [])
+      q2 = CommonFilters.convert_params_to_filter(Post, %{or: %{published: [==: true, ==: false]}}, [])
 
       assert_sql(expected, q2)
     end
@@ -93,18 +93,18 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       assert_sql(expected, q2)
     end
 
-    test "nests a field-level or inside a top-level or" do
+    test "nests a field-level and inside a top-level or" do
       expected =
         from(p in Post,
           where:
-            p.published == ^true or p.published == ^false or
-              (p.published == ^true or p.published == ^false)
+            (p.published == ^true and p.published == ^false) or
+              (p.published == ^true and p.published == ^false)
         )
 
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{or: [[published: [or: [==: true, ==: false]]], [published: [or: [==: true, ==: false]]]]},
+          %{or: [%{published: [==: true, ==: false]}, %{published: [==: true, ==: false]}]},
           []
         )
 
@@ -181,7 +181,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           _q2 =
             CommonFilters.convert_params_to_filter(
               q,
-              %{id: %{or: [[published: true, does_not_exist: "value"]]}},
+              %{or: %{id: [published: true, does_not_exist: "value"]}},
               []
             )
 
@@ -460,7 +460,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           Post,
-          [or_where: %{views: %{or: [>: 10, <: 5]}}, published: true],
+          [or_where: %{or: %{views: [>: 10, <: 5]}}, published: true],
           []
         )
 

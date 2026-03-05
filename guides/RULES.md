@@ -134,21 +134,14 @@ Examples:
 
 ## Logical Operator Rules
 
-**Rule 12:** When used at the field level, the `:and` operator must contain a list of comparison operators or other field-level expressions.
+**Rule 12:** The `:and` and `:or` operators are combiners that control how entries are merged.
 
-The `:and` operator combines multiple conditions with AND logic and must wrap a list of field-level filter entries.
-
-Examples:
-- `%{views: %{and: [>: 10, <: 20]}}` - `:and` wraps a list of operators
-- `%{views: %{and: []}}` - `:and` can wrap an empty list
-
-**Rule 13:** When used at the field level, the `:or` operator must contain a list of comparison operators or other field-level expressions.
-
-The `:or` operator combines multiple conditions with OR logic and must wrap a list of field-level filter entries.
+When used at the field level, the combiner wraps a map or keyword list of field filters. The filters are flattened to individual `{field, {operator, value}}` entries and merged with the combiner.
 
 Examples:
-- `%{published: %{or: [==: true, ==: false]}}` - `:or` wraps a list of operators
-- `%{views: %{or: [>: 10, <: 5]}}` - `:or` wraps a list of operators
+- `%{and: %{views: [>: 10, <: 20]}}` - `:and` combines `views > 10` AND `views < 20`
+- `%{or: %{views: [>: 10, <: 5]}}` - `:or` combines `views > 10` OR `views < 5`
+- `%{or: %{published: [==: true, ==: false]}}` - `:or` combines `published = true` OR `published = false`
 
 **Rule 14:** Top-level `:and` and `:or` operators must contain a list of filter maps or keyword lists.
 

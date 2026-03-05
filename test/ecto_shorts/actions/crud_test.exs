@@ -951,7 +951,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       |> Post.changeset(%{title: "NoMatch", views: 25})
       |> Repo.insert!()
 
-      assert [result] = Actions.all(Post, %{views: %{and: [>: 10, <: 20]}})
+      assert [result] = Actions.all(Post, %{and: %{views: [>: 10, <: 20]}})
       assert %Post{title: "Match", views: 15} = result
     end
 
@@ -964,7 +964,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       |> Post.changeset(%{title: "NoMatch", views: 7})
       |> Repo.insert!()
 
-      assert [result] = Actions.all(Post, %{views: %{or: [<: 5, >: 10]}})
+      assert [result] = Actions.all(Post, %{or: %{views: [<: 5, >: 10]}})
       assert %Post{title: "Match", views: 3} = result
     end
 
@@ -988,7 +988,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       results =
         Actions.all(Post, %{
           published: true,
-          or_where: %{views: %{or: [<: 5, >: 10]}}
+          or_where: %{or: %{views: [<: 5, >: 10]}}
         })
 
       assert Enum.count(results) === 2

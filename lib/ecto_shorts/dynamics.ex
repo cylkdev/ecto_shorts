@@ -63,16 +63,8 @@ defmodule EctoShorts.Dynamics do
   `EctoShorts.Config`.
   """
 
-  alias Ecto.Query
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
-  alias EctoShorts.Logger
-
-  require Ecto.Query
-
-  @logger_prefix "EctoShorts.Dynamics"
-
-  @boolean_operators [:and, :or]
 
   @adapters %{
     Ecto.Adapters.Postgres => EctoShorts.Dynamics.Postgres
@@ -119,107 +111,10 @@ defmodule EctoShorts.Dynamics do
           opts :: keyword()
         ) :: Ecto.Query.dynamic_expr() | nil
   def convert_to_dynamic(source, binding_selector, term, opts \\ []) do
-    source
-    |> CommonSchema.normalize_source()
-    |> append_predicates(nil, binding_selector, term, opts)
-  end
-
-  defp append_predicates(source, dyn_left, binding_selector, {key, map}, opts)
-       when is_map(map) and not is_struct(map) do
-    append_predicates(source, dyn_left, binding_selector, {key, Map.to_list(map)}, opts)
-  end
-
-  defp append_predicates(source, dyn_left, binding_selector, {key, {boolean_op, sub_entries}}, opts)
-       when boolean_op in @boolean_operators and is_list(sub_entries) do
-    Enum.reduce(sub_entries, dyn_left, fn entry, dyn_acc ->
-      dyn_right = append_predicates(source, nil, binding_selector, {key, entry}, opts)
-      merge_dynamic(dyn_acc, boolean_op, dyn_right)
-    end)
-  end
-
-  defp append_predicates(source, dyn_left, binding_selector, {key, value}, opts) do
     adapter = adapter_for_repo!(opts)
-
-    cond do
-      key in adapter.operators() ->
-        build_dynamic(adapter, source, binding_selector, key, value, dyn_left)
-
-      key in @boolean_operators ->
-        Enum.reduce(value, dyn_left, fn entry, dyn_acc ->
-          dyn_right = append_predicates(source, nil, binding_selector, entry, opts)
-          merge_dynamic(dyn_acc, key, dyn_right)
-        end)
-
-      source_has_schema?(source) ->
-        schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
-
-        if key not in schema_fields do
-          Logger.warning(
-            @logger_prefix,
-            "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
-          )
-
-          dyn_left
-        else
-          if Keyword.keyword?(value) do
-            Enum.reduce(value, dyn_left, fn entry, dyn_acc ->
-              append_predicates(source, dyn_acc, binding_selector, {key, entry}, opts)
-            end)
-          else
-            build_dynamic(adapter, source, binding_selector, key, value, dyn_left)
-          end
-        end
-
-      true ->
-        if Keyword.keyword?(value) do
-          Enum.reduce(value, dyn_left, fn entry, dyn_acc ->
-            append_predicates(source, dyn_acc, binding_selector, {key, entry}, opts)
-          end)
-        else
-          build_dynamic(adapter, source, binding_selector, key, value, dyn_left)
-        end
-    end
+    source = CommonSchema.normalize_source(source)
+    adapter.convert_to_dynamic(source, binding_selector, term)
   end
-
-  defp append_predicates(source, dyn_left, binding_selector, params, opts) do
-    if (is_map(params) and not is_struct(params)) or Keyword.keyword?(params) do
-      Enum.reduce(params, dyn_left, fn {k, v}, dyn_acc ->
-        append_predicates(source, dyn_acc, binding_selector, {k, v}, opts)
-      end)
-    else
-      raise "Expected a map or keyword-list, got: #{inspect(params)}"
-    end
-  end
-
-  defp build_dynamic(adapter, source, binding_selector, key, expr, dyn_left) do
-    case adapter.build_dynamic(source, binding_selector, key, expr) do
-      nil ->
-        Logger.warning(
-          @logger_prefix,
-          "Adapter #{inspect(adapter)} returned nil for field #{inspect(key)} with expression: #{inspect(expr)}"
-        )
-
-        dyn_left
-
-      dyn_right ->
-        merge_dynamic(dyn_left, :and, dyn_right)
-    end
-  end
-
-  defp merge_dynamic(nil, _, dyn_right) do
-    dyn_right
-  end
-
-  defp merge_dynamic(dyn_left, :and, dyn_right) do
-    Query.dynamic([], ^dyn_left and ^dyn_right)
-  end
-
-  defp merge_dynamic(dyn_left, :or, dyn_right) do
-    Query.dynamic([], ^dyn_left or ^dyn_right)
-  end
-
-  defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
-  defp source_has_schema?(_), do: false
 
   defp adapter_for_repo!(opts) do
     builder = opts[:dynamic_adapter] || Config.dynamic_adapter()

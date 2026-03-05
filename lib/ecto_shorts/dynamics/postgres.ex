@@ -285,12 +285,118 @@ defmodule EctoShorts.Dynamics.Postgres do
 
   @operators [:ids, :before, :after, :start_date, :end_date, :exists]
   @datetime_operators [:datetime, :date]
+  @boolean_operators [:and, :or]
+  @logger_prefix "EctoShorts.Dynamics"
 
   @impl true
   def operators, do: @operators
 
   @impl true
   def operator?(key), do: key in @operators
+
+  @doc false
+  @impl true
+  def convert_to_dynamic(source, binding_selector, term) do
+    append_predicates(source, nil, binding_selector, term)
+  end
+
+  defp append_predicates(source, dyn_left, binding_selector, {key, map})
+       when is_map(map) and not is_struct(map) do
+    append_predicates(source, dyn_left, binding_selector, {key, Map.to_list(map)})
+  end
+
+  defp append_predicates(source, dyn_left, binding_selector, {key, value}) do
+    cond do
+      key in @operators ->
+        merge_predicate(dyn_left, :and, build_dynamic_or_warn(source, binding_selector, key, value))
+
+      key in @boolean_operators ->
+        expand_and_reduce(source, dyn_left, binding_selector, key, value)
+
+      source_has_schema?(source) ->
+        schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
+
+        if key not in schema_fields do
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
+          )
+
+          dyn_left
+        else
+          if Keyword.keyword?(value) do
+            Enum.reduce(value, dyn_left, fn entry, dyn_acc ->
+              append_predicates(source, dyn_acc, binding_selector, {key, entry})
+            end)
+          else
+            merge_predicate(dyn_left, :and, build_dynamic_or_warn(source, binding_selector, key, value))
+          end
+        end
+
+      true ->
+        if Keyword.keyword?(value) do
+          Enum.reduce(value, dyn_left, fn entry, dyn_acc ->
+            append_predicates(source, dyn_acc, binding_selector, {key, entry})
+          end)
+        else
+          merge_predicate(dyn_left, :and, build_dynamic_or_warn(source, binding_selector, key, value))
+        end
+    end
+  end
+
+  defp append_predicates(source, dyn_left, binding_selector, params) do
+    if (is_map(params) and not is_struct(params)) or Keyword.keyword?(params) do
+      Enum.reduce(params, dyn_left, fn {k, v}, dyn_acc ->
+        append_predicates(source, dyn_acc, binding_selector, {k, v})
+      end)
+    else
+      raise "Expected a map or keyword-list, got: #{inspect(params)}"
+    end
+  end
+
+  defp expand_and_reduce(source, dyn_left, binding_selector, boolean_op, entries) do
+    Enum.reduce(entries, dyn_left, fn
+      {field, keyword_value}, dyn_acc when is_atom(field) and is_list(keyword_value) ->
+        if Keyword.keyword?(keyword_value) do
+          expanded = keyword_value |> normalize_entries([]) |> Enum.reverse()
+
+          Enum.reduce(expanded, dyn_acc, fn entry, inner_acc ->
+            dyn_right = build_dynamic_or_warn(source, binding_selector, field, entry)
+            merge_predicate(inner_acc, boolean_op, dyn_right)
+          end)
+        else
+          dyn_right = append_predicates(source, nil, binding_selector, {field, keyword_value})
+          merge_predicate(dyn_acc, boolean_op, dyn_right)
+        end
+
+      entry, dyn_acc ->
+        dyn_right = append_predicates(source, nil, binding_selector, entry)
+        merge_predicate(dyn_acc, boolean_op, dyn_right)
+    end)
+  end
+
+  defp build_dynamic_or_warn(source, binding_selector, key, expr) do
+    case build_dynamic(source, binding_selector, key, expr) do
+      nil ->
+        EctoShorts.Logger.warning(
+          @logger_prefix,
+          "Adapter #{inspect(__MODULE__)} returned nil for field #{inspect(key)} with expression: #{inspect(expr)}"
+        )
+
+        nil
+
+      dyn_right ->
+        dyn_right
+    end
+  end
+
+  defp merge_predicate(dyn_left, _op, nil), do: dyn_left
+  defp merge_predicate(nil, _op, dyn_right), do: dyn_right
+  defp merge_predicate(dyn_left, :and, dyn_right), do: Query.dynamic([], ^dyn_left and ^dyn_right)
+  defp merge_predicate(dyn_left, :or, dyn_right), do: Query.dynamic([], ^dyn_left or ^dyn_right)
+
+  defp source_has_schema?({_, schema}) when is_atom(schema) and not is_nil(schema), do: true
+  defp source_has_schema?(_), do: false
 
   @impl true
   def build_dynamic(source, binding_selector, key, value) do
