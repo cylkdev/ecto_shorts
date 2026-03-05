@@ -594,7 +594,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
         CommonFilters.convert_params_to_filter(
           q,
           %{lock: %{name: :for_share, values: []}},
-          fragment_provider: EctoShorts.TestFragmentProvider
+          query_provider: EctoShorts.TestQueryProvider
         )
 
       assert_sql(expected, q2)
@@ -613,7 +613,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
         CommonFilters.convert_params_to_filter(
           q,
           %{lock: [name: :for_share, values: []]},
-          fragment_provider: EctoShorts.TestFragmentProvider
+          query_provider: EctoShorts.TestQueryProvider
         )
 
       assert_sql(expected, q2)

@@ -19,7 +19,7 @@ defmodule EctoShorts.Config do
     Auto-resolved to `EctoShorts.Dynamics.Postgres` when the repo uses
     `Ecto.Adapters.Postgres`. Defaults to resolved from the repo's adapter.
 
-  * `:fragment_provider` - A module that resolves fragment-based join and lock
+  * `:query_provider` - A module that resolves fragment-based join and lock
     expressions. Must export `build_fragment_expression/3`. Defaults to `nil`.
 
   * `:max_binding_positions` - Controls how many positional query binding clauses
@@ -39,7 +39,7 @@ defmodule EctoShorts.Config do
         max_binding_positions: 3
 
   See also `EctoShorts.Actions.Error`, `EctoShorts.Dynamic`, and
-  `EctoShorts.FragmentProvider`.
+  `EctoShorts.QueryProvider`.
   """
 
   @app :ecto_shorts
@@ -224,23 +224,23 @@ defmodule EctoShorts.Config do
 
   @doc since: "3.0.0"
   @doc """
-  Returns the configured `:fragment_provider` module from the `:ecto_shorts` application environment.
+  Returns the configured `:query_provider` module from the `:ecto_shorts` application environment.
 
-  Defaults to `nil`. When `nil`, `EctoShorts.FragmentProvider` falls back to
-  `EctoShorts.CommonFilters.FragmentProviders.NoOp`. Set this to a custom module
+  Defaults to `nil`. When `nil`, `EctoShorts.QueryProvider` falls back to
+  `EctoShorts.CommonFilters.QueryProviders.NoOp`. Set this to a custom module
   that exports `build_fragment_expression/3` to control how join and lock
   expressions are resolved at runtime.
 
   ## Examples
 
-      iex> EctoShorts.Config.fragment_provider()
+      iex> EctoShorts.Config.query_provider()
       nil
 
-  See also `EctoShorts.FragmentProvider` and `dynamic_adapter/0`.
+  See also `EctoShorts.QueryProvider` and `dynamic_adapter/0`.
   """
-  @spec fragment_provider :: module() | nil
-  def fragment_provider do
-    Application.get_env(@app, :fragment_provider)
+  @spec query_provider :: module() | nil
+  def query_provider do
+    Application.get_env(@app, :query_provider)
   end
 
   @doc since: "3.0.0"

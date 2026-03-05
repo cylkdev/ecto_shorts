@@ -20,7 +20,7 @@ defmodule EctoShorts.CommonFilters.Join do
   alias EctoShorts.Compiler
   alias EctoShorts.Dynamics
   alias EctoShorts.Logger
-  alias EctoShorts.FragmentProvider
+  alias EctoShorts.QueryProvider
 
   alias Ecto.Query
 
@@ -479,7 +479,7 @@ defmodule EctoShorts.CommonFilters.Join do
   end
 
   defp resolve_expr_source(binding_selector, source_key, source_params, opts) do
-    case FragmentProvider.build_fragment_expression(binding_selector, source_key, source_params, opts) do
+    case QueryProvider.build_fragment_expression(binding_selector, source_key, source_params, opts) do
       {:ok, source} ->
         {:ok, source}
 

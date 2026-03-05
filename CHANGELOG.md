@@ -27,7 +27,7 @@
 - Added `EctoShorts.Compiler` which provides data-driven function clause generation at compile time. This adds support for `Ecto.Query` positional bindings.
 - Added `EctoShorts.Logger` which provides a consistent, prefixed logging interface (`debug/2`, `info/2`, `warning/2`, `error/2`).
 - Added `EctoShorts.Testing` which provides assertion helpers for verifying dynamic expressions and generated SQL. Use `use EctoShorts.Testing` to bring `assert_dynamic/2`, `refute_dynamic/2`, `assert_query/2`, `refute_query/2`, `assert_sql/3-4`, and `refute_sql/3-4` into test modules.
-- Added `EctoShorts.FragmentProvider` which resolves expression callbacks for joins and locks. This decouples query construction from execution.
+- Added `EctoShorts.QueryProvider` which resolves expression callbacks for joins and locks. This decouples query construction from execution.
 - Added `EctoShorts.Utils.atomize_keys/1` which recursively converts string-keyed maps to atom-keyed maps using only existing atoms.
 - New `Actions` helpers:
   - `preload/3` to preload associations.
@@ -38,7 +38,7 @@
   - `transact/2` for transactions that automatically roll back on `{:error, _}`.
   - `batch/5` for batch query operations by key.
   - `batch_preload/4` for batch preloading a list of entries.
-- New `Config` accessors: `error_module/0`, `dynamic_adapter/0`, `fragment_provider/0`, `max_binding_positions/0`.
+- New `Config` accessors: `error_module/0`, `dynamic_adapter/0`, `query_provider/0`, `max_binding_positions/0`.
 - New `SchemaHelpers` helpers:
   - `get_related_schema/2` to resolve related schemas, including `:through` associations.
   - `schema_field_type/2` to return a field's Ecto type.

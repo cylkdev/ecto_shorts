@@ -31,7 +31,7 @@ else
     error_module: EctoShorts.Actions.Error,
     dynamic_adapter: EctoShorts.Dynamics.Postgres,
     max_binding_positions: 10,
-    fragment_provider: nil,
+    query_provider: nil,
     hints: []
 
   config :ecto_shorts, EctoShorts.Repo,

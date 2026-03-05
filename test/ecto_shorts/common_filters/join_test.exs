@@ -488,7 +488,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
               ]
             ]
           },
-          fragment_provider: EctoShorts.TestFragmentProvider
+          query_provider: EctoShorts.TestQueryProvider
         )
 
       assert_sql(expected, q2)
@@ -517,7 +517,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
               ]
             ]
           },
-          fragment_provider: EctoShorts.TestFragmentProvider
+          query_provider: EctoShorts.TestQueryProvider
         )
 
       assert_sql(expected, q2)
@@ -551,7 +551,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
               ]
             ]
           },
-          fragment_provider: EctoShorts.TestFragmentProvider
+          query_provider: EctoShorts.TestQueryProvider
         )
 
       assert_sql(expected, q2)
@@ -574,7 +574,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
                   ]
                 ]
               },
-              fragment_provider: EctoShorts.TestFragmentProvider
+              query_provider: EctoShorts.TestQueryProvider
             )
 
           send(self(), {:q2, q2})
@@ -607,7 +607,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
                   ]
                 ]
               },
-              fragment_provider: EctoShorts.TestFragmentProvider
+              query_provider: EctoShorts.TestQueryProvider
             )
 
           send(self(), {:q2, q2})

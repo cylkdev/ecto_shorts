@@ -1,7 +1,7 @@
-defmodule EctoShorts.FragmentProvider do
+defmodule EctoShorts.QueryProvider do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Resolves fragment expressions via a configured provider.
+  Provides an API for injecting compiled query expressions into runtime expressions.
 
   Use this module when you need to inject custom SQL fragments, database
   functions, or complex expressions into queries built by
@@ -27,7 +27,7 @@ defmodule EctoShorts.FragmentProvider do
   fragment provider:
 
       config :ecto_shorts,
-        fragment_provider: MyApp.CustomFragments
+        query_provider: MyApp.CustomFragments
 
   Define your custom provider:
 
@@ -60,7 +60,7 @@ defmodule EctoShorts.FragmentProvider do
   Set the default fragment provider in your config:
 
       config :ecto_shorts,
-        fragment_provider: MyApp.CustomFragments
+        query_provider: MyApp.CustomFragments
 
   This provider is used for all queries unless overridden.
 
@@ -71,12 +71,12 @@ defmodule EctoShorts.FragmentProvider do
       EctoShorts.CommonFilters.convert_params_to_filter(
         Post,
         %{...},
-        fragment_provider: MyApp.SpecialFragments
+        query_provider: MyApp.SpecialFragments
       )
 
   ### Default provider
 
-  When no provider is configured, `EctoShorts.CommonFilters.FragmentProviders.NoOp`
+  When no provider is configured, `EctoShorts.CommonFilters.QueryProviders.NoOp`
   is used. This provider returns `nil` for all expressions, effectively
   disabling fragment support.
 
@@ -203,7 +203,7 @@ defmodule EctoShorts.FragmentProvider do
   **Problem:** Fragment is not being called.
 
   **Solution:** Verify the fragment provider is configured correctly. Check
-  that the `:fragment_provider` config points to the correct module.
+  that the `:query_provider` config points to the correct module.
 
   **Problem:** Fragment returns `nil` but should return an expression.
 
@@ -215,26 +215,26 @@ defmodule EctoShorts.FragmentProvider do
   **Solution:** Verify the fragment syntax is correct. Test the fragment
   directly in an Ecto query to ensure it works.
 
-  See also `EctoShorts.Config.fragment_provider/0`, `EctoShorts.CommonFilters`,
+  See also `EctoShorts.Config.query_provider/0`, `EctoShorts.CommonFilters`,
   and `Ecto.Query.API.fragment/1`.
   """
 
   alias EctoShorts.Config
 
-  @default_adapter EctoShorts.CommonFilters.FragmentProviders.NoOp
+  @default_adapter EctoShorts.CommonFilters.QueryProviders.NoOp
 
   @doc false
   def build_fragment_expression(binding_selector, expression_key, expression_params, opts \\ []) do
-    fragment_provider =
-      Keyword.get(opts, :fragment_provider, Config.fragment_provider()) ||
+    query_provider =
+      Keyword.get(opts, :query_provider, Config.query_provider()) ||
         @default_adapter
 
-    unless Code.ensure_loaded?(fragment_provider) and
-             function_exported?(fragment_provider, :build_fragment_expression, 3) do
+    unless Code.ensure_loaded?(query_provider) and
+             function_exported?(query_provider, :build_fragment_expression, 3) do
       raise ArgumentError,
-            "Expected expression resolver module to have a build_fragment_expression/3 function, got: #{inspect(fragment_provider)}"
+            "Expected expression resolver module to have a build_fragment_expression/3 function, got: #{inspect(query_provider)}"
     end
 
-    fragment_provider.build_fragment_expression(binding_selector, expression_key, expression_params)
+    query_provider.build_fragment_expression(binding_selector, expression_key, expression_params)
   end
 end
