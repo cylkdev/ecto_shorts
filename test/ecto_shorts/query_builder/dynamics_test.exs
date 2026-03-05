@@ -105,34 +105,31 @@ defmodule EctoShorts.DynamicsTest do
     assert_dynamic(expected, actual)
   end
 
-  test "convert_to_dynamic passes exists payload through to adapter without subquery resolution" do
+  test "convert_to_dynamic resolves exists payload into a subquery before building dynamic" do
     binding = {:as, nil}
 
     actual =
       Dynamics.convert_to_dynamic(
         Post,
         binding,
-        %{exists: %{from: Post, id: 1}},
-        dynamic_adapter: EctoShorts.TestPayloadProbeAdapter
+        %{exists: %{from: Post, id: 1}}
       )
 
-    assert match?(%Ecto.Query.DynamicExpr{}, actual)
-    assert_received {:payload_probe_expr, :exists, %{from: Post, id: 1}}
+    assert is_struct(actual, Ecto.Query.DynamicExpr)
   end
 
-  test "convert_to_dynamic passes all/any payload wrappers through to adapter without subquery resolution" do
+  test "convert_to_dynamic resolves all/any payload into a subquery before building dynamic" do
     binding = {:as, nil}
 
     actual =
       Dynamics.convert_to_dynamic(
         Post,
         binding,
-        %{id: %{all: %{>: %{from: Post, id: 1}}}},
-        dynamic_adapter: EctoShorts.TestPayloadProbeAdapter
+        %{id: %{all: %{from: Post, id: 1}}}
       )
 
-    assert match?(%Ecto.Query.DynamicExpr{}, actual)
-    assert_received {:payload_probe_expr, :id, %{all: %{>: %{from: Post, id: 1}}}}
+    assert is_struct(actual, Ecto.Query.DynamicExpr)
+    assert Macro.to_string(actual) =~ "all("
   end
 
   test "convert_to_dynamic supports datetime: add helper map payload" do

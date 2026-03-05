@@ -11,8 +11,8 @@ defmodule EctoShorts.CommonFilters.Filter do
   `:recursive_ctes`, and `:reverse_order`.
   """
 
-  alias EctoShorts.CommonSchema
   alias EctoShorts.CommonFilters
+  alias EctoShorts.CommonSchema
   alias EctoShorts.Dynamics
   alias EctoShorts.Logger
   alias EctoShorts.QueryProvider
@@ -21,8 +21,6 @@ defmodule EctoShorts.CommonFilters.Filter do
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.Filter"
-
-  @boolean_operators [:and, :or]
 
   @query_filters [
     :except,
@@ -42,40 +40,9 @@ defmodule EctoShorts.CommonFilters.Filter do
     :reverse_order
   ]
 
-  @custom_filters [:ids, :before, :after, :start_date, :end_date, :exists]
   @set_operations [:except, :except_all, :intersect, :intersect_all, :union, :union_all]
 
   @doc "Applies the given filter to the query."
-  def build(schema_source, filter, query, binding_selector, {boolean_operator, params}, opts)
-      when boolean_operator in @boolean_operators and is_list(params) do
-    dyn =
-      Dynamics.convert_to_dynamic(
-        schema_source,
-        binding_selector,
-        {boolean_operator, params},
-        opts
-      )
-
-    apply_where_expr(filter, query, dyn)
-  end
-
-  def build(schema_source, filter, query, binding_selector, {key, params}, opts)
-      when key in @custom_filters do
-    resolved_params =
-      if key === :exists do
-        resolve_exists_payload(schema_source, params, opts)
-      else
-        params
-      end
-
-    dyn =
-      schema_source
-      |> CommonSchema.get_schema_source()
-      |> Dynamics.convert_to_dynamic(binding_selector, {key, resolved_params}, opts)
-
-    apply_where_expr(filter, query, dyn)
-  end
-
   def build(
         _schema_source,
         filter,
@@ -103,21 +70,8 @@ defmodule EctoShorts.CommonFilters.Filter do
   end
 
   def build(schema_source, filter, query, binding_selector, {key, value}, opts) do
-    cond do
-      schemaless_source?(schema_source) ->
-        build_field(schema_source, filter, query, binding_selector, key, value, opts)
-
-      key in CommonSchema.get_schema_reflection(schema_source, :query_fields) ->
-        build_field(schema_source, filter, query, binding_selector, key, value, opts)
-
-      true ->
-        Logger.warning(
-          @logger_prefix,
-          "Expected a query field for schema #{inspect(schema_source)}, got: #{inspect(key)}"
-        )
-
-        query
-    end
+    dyn = Dynamics.convert_to_dynamic(schema_source, binding_selector, {key, value}, opts)
+    apply_where_expr(filter, query, dyn)
   end
 
   def build(_schema, _filter, query, _binding_selector, term, _opts) do
@@ -127,72 +81,6 @@ defmodule EctoShorts.CommonFilters.Filter do
     )
 
     query
-  end
-
-  defp schemaless_source?(source), do: not source_has_schema?(source)
-
-  defp source_has_schema?({_, schema}), do: is_atom(schema) and schema !== nil
-  defp source_has_schema?(_), do: false
-
-  defp build_field(schema_source, filter, query, binding_selector, key, value, opts) do
-    resolved_value = resolve_quantifier_payload(schema_source, key, value, opts)
-    dyn = Dynamics.convert_to_dynamic(schema_source, binding_selector, {key, resolved_value}, opts)
-    apply_where_expr(filter, query, dyn)
-  end
-
-  @quantifier_operators [:all, :any]
-
-  defp resolve_exists_payload(_source, %Ecto.Query{} = query, _opts), do: query
-  defp resolve_exists_payload(_source, %Ecto.SubQuery{} = sq, _opts), do: sq
-
-  defp resolve_exists_payload(source, {:not, inner}, opts) do
-    {:not, resolve_exists_payload(source, inner, opts)}
-  end
-
-  defp resolve_exists_payload(source, params, opts)
-       when is_map(params) and not is_struct(params) do
-    resolve_exists_payload(source, Map.to_list(params), opts)
-  end
-
-  defp resolve_exists_payload(source, [not: inner], opts) do
-    {:not, resolve_exists_payload(source, inner, opts)}
-  end
-
-  defp resolve_exists_payload(source, params, opts) when is_list(params) do
-    {from_source, filter_params} = Keyword.pop(params, :from, source)
-    CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, true), opts)
-  end
-
-  defp resolve_exists_payload(_source, value, _opts), do: value
-
-  defp resolve_quantifier_payload(source, field_key, {quantifier, inner}, opts)
-       when quantifier in @quantifier_operators do
-    {quantifier, resolve_quantifier_inner(source, field_key, inner, opts)}
-  end
-
-  defp resolve_quantifier_payload(_source, _field_key, value, _opts), do: value
-
-  defp resolve_quantifier_inner(_source, _field_key, %Ecto.Query{} = q, _opts), do: q
-  defp resolve_quantifier_inner(_source, _field_key, %Ecto.SubQuery{} = sq, _opts), do: sq
-
-  defp resolve_quantifier_inner(source, field_key, params, opts)
-       when is_map(params) and not is_struct(params) do
-    resolve_quantifier_inner(source, field_key, Map.to_list(params), opts)
-  end
-
-  defp resolve_quantifier_inner(_source, field_key, params, opts) when is_list(params) do
-    if Keyword.keyword?(params) and Keyword.has_key?(params, :from) do
-      {from_source, filter_params} = Keyword.pop(params, :from)
-      CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, field_key), opts)
-    else
-      params
-    end
-  end
-
-  defp resolve_quantifier_inner(_source, _field_key, value, _opts), do: value
-
-  defp put_default_select(params, default) when is_list(params) do
-    if Keyword.has_key?(params, :select), do: params, else: Keyword.put(params, :select, default)
   end
 
   defp apply_expr(_schema_source, :exclude, query, _binding_selector, entries, _opts) do

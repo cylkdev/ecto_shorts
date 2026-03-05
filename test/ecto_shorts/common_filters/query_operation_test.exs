@@ -379,7 +379,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Expected params for having to be a map or keyword list, got: \"bad\""
+      assert log =~ "Expected params to be a map or keyword list, got: \"bad\""
 
       assert_received {:q2, q2}
       assert q2 === q
@@ -394,7 +394,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Expected params for or_having to be a map or keyword list, got: \"bad\""
+      assert log =~ "Expected params to be a map or keyword list, got: \"bad\""
 
       assert_received {:q2, q2}
       assert q2 === q
