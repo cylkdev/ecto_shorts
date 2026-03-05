@@ -120,11 +120,6 @@ defmodule EctoShorts.Dynamics do
     append_predicates(adapter, source, nil, binding_selector, term, opts)
   end
 
-  defp append_predicates(adapter, source, dyn_left, binding_selector, {key, map}, opts)
-       when is_map(map) and not is_struct(map) do
-    append_predicates(adapter, source, dyn_left, binding_selector, {key, Map.to_list(map)}, opts)
-  end
-
   defp append_predicates(adapter, source, dyn_left, binding_selector, {:exists, value}, opts) do
     resolved = resolve_exists_payload(source, value, opts)
 
@@ -143,45 +138,22 @@ defmodule EctoShorts.Dynamics do
       key in @boolean_operators ->
         expand_and_reduce(adapter, source, dyn_left, binding_selector, key, value, opts)
 
-      source_has_schema?(source) ->
-        schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
-
-        if key not in schema_fields do
-          EctoShorts.Logger.warning(
-            @logger_prefix,
-            "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
-          )
-
-          dyn_left
-        else
-          resolved_value = resolve_quantifier_payload(source, key, value, opts)
-
-          if Keyword.keyword?(resolved_value) do
-            Enum.reduce(resolved_value, dyn_left, fn entry, dyn_acc ->
-              append_predicates(adapter, source, dyn_acc, binding_selector, {key, entry}, opts)
-            end)
-          else
-            merge_predicate(
-              dyn_left,
-              :and,
-              build_dynamic_or_warn(adapter, source, binding_selector, key, resolved_value)
-            )
-          end
-        end
-
       true ->
-        resolved_value = resolve_quantifier_payload(source, key, value, opts)
+        if source_has_schema?(source) do
+          schema_fields = CommonSchema.get_schema_reflection(source, :query_fields)
 
-        if Keyword.keyword?(resolved_value) do
-          Enum.reduce(resolved_value, dyn_left, fn entry, dyn_acc ->
-            append_predicates(adapter, source, dyn_acc, binding_selector, {key, entry}, opts)
-          end)
+          if key not in schema_fields do
+            EctoShorts.Logger.warning(
+              @logger_prefix,
+              "Expected a query field for schema #{inspect(source)}, got: #{inspect(key)}"
+            )
+
+            dyn_left
+          else
+            build_field_predicate(adapter, source, dyn_left, binding_selector, key, value, opts)
+          end
         else
-          merge_predicate(
-            dyn_left,
-            :and,
-            build_dynamic_or_warn(adapter, source, binding_selector, key, resolved_value)
-          )
+          build_field_predicate(adapter, source, dyn_left, binding_selector, key, value, opts)
         end
     end
   end
@@ -209,6 +181,22 @@ defmodule EctoShorts.Dynamics do
       )
 
       dyn_left
+    end
+  end
+
+  defp build_field_predicate(adapter, source, dyn_left, binding_selector, key, value, opts) do
+    resolved_value = resolve_quantifier_payload(source, key, value, opts)
+
+    if Keyword.keyword?(resolved_value) do
+      Enum.reduce(resolved_value, dyn_left, fn entry, dyn_acc ->
+        append_predicates(adapter, source, dyn_acc, binding_selector, {key, entry}, opts)
+      end)
+    else
+      merge_predicate(
+        dyn_left,
+        :and,
+        build_dynamic_or_warn(adapter, source, binding_selector, key, resolved_value)
+      )
     end
   end
 
@@ -295,54 +283,75 @@ defmodule EctoShorts.Dynamics do
     end
   end
 
-  defp resolve_exists_payload(_source, %Ecto.Query{} = query, _opts), do: query
-  defp resolve_exists_payload(_source, %Ecto.SubQuery{} = sq, _opts), do: sq
-
   defp resolve_exists_payload(source, {:not, inner}, opts) do
     {:not, resolve_exists_payload(source, inner, opts)}
-  end
-
-  defp resolve_exists_payload(source, params, opts)
-       when is_map(params) and not is_struct(params) do
-    resolve_exists_payload(source, Map.to_list(params), opts)
   end
 
   defp resolve_exists_payload(source, [not: inner], opts) do
     {:not, resolve_exists_payload(source, inner, opts)}
   end
 
-  defp resolve_exists_payload(source, params, opts) when is_list(params) do
-    {from_source, filter_params} = Keyword.pop(params, :from, source)
-    CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, true), opts)
-  end
+  defp resolve_exists_payload(source, value, opts) do
+    cond do
+      is_struct(value, Ecto.Query) ->
+        value
 
-  defp resolve_exists_payload(_source, value, _opts), do: value
+      is_struct(value, Ecto.SubQuery) ->
+        value
+
+      is_map(value) and not is_struct(value) ->
+        resolve_exists_payload(source, Map.to_list(value), opts)
+
+      is_list(value) ->
+        {from_source, filter_params} = Keyword.pop(value, :from, source)
+        CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, true), opts)
+
+      true ->
+        value
+    end
+  end
 
   defp resolve_quantifier_payload(source, field_key, {quantifier, inner}, opts)
        when quantifier in @quantifier_operators do
-    {quantifier, resolve_quantifier_inner(source, field_key, inner, opts)}
+    {quantifier, resolve_subquery_payload(source, inner, field_key, opts)}
+  end
+
+  defp resolve_quantifier_payload(source, field_key, value, opts)
+       when is_map(value) and not is_struct(value) do
+    resolve_quantifier_payload(source, field_key, Map.to_list(value), opts)
+  end
+
+  defp resolve_quantifier_payload(source, field_key, value, opts) when is_list(value) do
+    if Keyword.keyword?(value) do
+      Enum.map(value, fn {k, v} ->
+        {k, resolve_quantifier_payload(source, field_key, v, opts)}
+      end)
+    else
+      value
+    end
   end
 
   defp resolve_quantifier_payload(_source, _field_key, value, _opts), do: value
 
-  defp resolve_quantifier_inner(_source, _field_key, %Ecto.Query{} = q, _opts), do: q
-  defp resolve_quantifier_inner(_source, _field_key, %Ecto.SubQuery{} = sq, _opts), do: sq
+  defp resolve_subquery_payload(source, params, select_default, opts) do
+    cond do
+      is_struct(params, Ecto.Query) ->
+        params
 
-  defp resolve_quantifier_inner(source, field_key, params, opts)
-       when is_map(params) and not is_struct(params) do
-    resolve_quantifier_inner(source, field_key, Map.to_list(params), opts)
-  end
+      is_struct(params, Ecto.SubQuery) ->
+        params
 
-  defp resolve_quantifier_inner(_source, field_key, params, opts) when is_list(params) do
-    if Keyword.keyword?(params) and Keyword.has_key?(params, :from) do
-      {from_source, filter_params} = Keyword.pop(params, :from)
-      CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, field_key), opts)
-    else
-      params
+      is_map(params) and not is_struct(params) ->
+        resolve_subquery_payload(source, Map.to_list(params), select_default, opts)
+
+      Keyword.keyword?(params) and Keyword.has_key?(params, :from) ->
+        {from_source, filter_params} = Keyword.pop(params, :from, source)
+        CommonFilters.convert_params_to_filter(from_source, put_default_select(filter_params, select_default), opts)
+
+      true ->
+        params
     end
   end
-
-  defp resolve_quantifier_inner(_source, _field_key, value, _opts), do: value
 
   defp put_default_select(params, default) when is_list(params) do
     if Keyword.has_key?(params, :select), do: params, else: Keyword.put(params, :select, default)
