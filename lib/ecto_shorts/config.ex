@@ -12,7 +12,7 @@ defmodule EctoShorts.Config do
     not set. Used by read operations in `EctoShorts.Actions`. Defaults to `nil`.
 
   * `:error_module` - A module implementing the `EctoShorts.Actions.Error`
-    behavior. Used to construct error values returned by `EctoShorts.Actions`
+    behaviour. Used to construct error values returned by `EctoShorts.Actions`
     functions. Defaults to `EctoShorts.Actions.Error`.
 
   * `:dynamic_adapter` - A module implementing `EctoShorts.Dynamic`.
@@ -208,7 +208,7 @@ defmodule EctoShorts.Config do
   Defaults to `nil`. When `nil`, `EctoShorts.Dynamics` auto-resolves the
   adapter from the repo's database adapter (Postgres only, out of the box).
   Set this to a custom module implementing `EctoShorts.Dynamic` to
-  override expression-building behavior.
+  override expression-building behaviour.
 
   ## Examples
 

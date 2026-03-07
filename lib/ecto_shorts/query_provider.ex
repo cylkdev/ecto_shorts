@@ -172,7 +172,12 @@ defmodule EctoShorts.QueryProvider do
 
       EctoShorts.CommonFilters.convert_params_to_filter(
         Post,
-        %{lock: %{name: :for_update, values: []}}
+        %{lock: %{name: :for_update}}
+      )
+
+      EctoShorts.CommonFilters.convert_params_to_filter(
+        Post,
+        %{lock: %{name: :for_update_with_clause, values: [clause: "SKIP LOCKED"]}}
       )
 
   ## Fragment expression examples

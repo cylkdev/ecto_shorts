@@ -22,7 +22,7 @@ end
 
 In the code above, it is unclear how each pattern on the left side of `<-` relates to their error at the end. The more patterns in a with, the less clear the code gets, and the more likely it is that unrelated failures will overlap each other.
 
-### Refactoring
+### Solution
 
 In this situation, instead of concentrating all error handling within a single complex else block, it is better to normalize the return types in specific private functions. In this way, with can focus on the success case and the errors are normalized closer to where they happen, leading to better organized and maintainable code.
 

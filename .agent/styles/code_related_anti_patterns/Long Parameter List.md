@@ -17,7 +17,7 @@ defmodule Library do
 end
 ```
 
-#### Refactoring
+#### Solution
 
 To address this anti-pattern, related arguments can be grouped using key-value data structures, such as maps, structs, or even keyword lists in the case of optional arguments. This effectively reduces the number of arguments and the key-value data structures adds clarity to the caller.
 

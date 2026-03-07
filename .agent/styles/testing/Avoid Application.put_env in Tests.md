@@ -2,7 +2,7 @@
 
 Using `Application.put_env/4` (or `Application.delete_env/3`) inside a test is typically a code smell. It changes global state for the entire VM. That means one test can accidentally affect another test, especially when tests run at the same time.
 
-This often shows up when code reads config directly at runtime, like `Application.get_env/3`, and the test tries to "patch" config to force a behavior.
+This often shows up when code reads config directly at runtime, like `Application.get_env/3`, and the test tries to "patch" config to force a behaviour.
 
 This is bad because:
 
@@ -13,7 +13,7 @@ This is bad because:
 Instead you should do one of the following:
 
 1. Pass the value as a function argument (best default).
-2. Pass a module (behavior) as a dependency (good when the dependency is "how to do something", not just a value).
+2. Pass a module (behaviour) as a dependency (good when the dependency is "how to do something", not just a value).
 3. Compute config once at startup and store it in process state (good for OTP processes, avoids repeated global reads).
 
 ## Example: The Problem
@@ -70,6 +70,6 @@ Now the test never touches global config:
       end
     end
     
-Using `Application.put_env/4` is only valid when it's to test a specific behavior (for example, a test that checks your supervision tree or init logic reads config correctly). Keep those tests `async: false`, and restore state with `on_exit/1`.
+Using `Application.put_env/4` is only valid when it's to test a specific behaviour (for example, a test that checks your supervision tree or init logic reads config correctly). Keep those tests `async: false`, and restore state with `on_exit/1`.
 
 For most feature and unit tests, treat "test changes global application env" as a smell and refactor toward explicit dependencies.

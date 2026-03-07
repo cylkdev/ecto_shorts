@@ -1,11 +1,11 @@
 ---
 name: write-tests
-description: Helps you write and update tests in an Elixir project. Use this skill when adding a new feature, fixing a bug, or changing existing behavior.
+description: Helps you write and update tests in an Elixir project. Use this skill when adding a new feature, fixing a bug, or changing existing behaviour.
 ---
 
 ## When to use
 
-Use this skill when adding a new feature, fixing a bug, or changing existing behavior.
+Use this skill when adding a new feature, fixing a bug, or changing existing behaviour.
 
 ## Requirements
 

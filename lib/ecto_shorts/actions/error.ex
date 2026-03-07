@@ -1,6 +1,6 @@
 defmodule EctoShorts.Actions.Error do
   @moduledoc """
-  Defines the default error structure and a pluggable behavior for building
+  Defines the default error structure and a pluggable behaviour for building
   action errors across EctoShorts.
 
   Every `EctoShorts.Actions` function that can fail returns an error value
@@ -10,7 +10,7 @@ defmodule EctoShorts.Actions.Error do
 
   ## Implementing a custom error module
 
-  Implement the `EctoShorts.Actions.Error` behavior to control the shape of
+  Implement the `EctoShorts.Actions.Error` behaviour to control the shape of
   error values across your application:
 
       defmodule MyApp.Error do
@@ -86,7 +86,7 @@ defmodule EctoShorts.Actions.Error do
   ## Options
 
   * `:error_module` - a module implementing the `EctoShorts.Actions.Error`
-    behavior. Defaults to `EctoShorts.Config.error_module/0`.
+    behaviour. Defaults to `EctoShorts.Config.error_module/0`.
 
   ## Examples
 

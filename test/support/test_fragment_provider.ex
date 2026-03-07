@@ -19,6 +19,20 @@ defmodule EctoShorts.TestQueryProvider do
     {:ok, fn query -> from(q in query, lock: "FOR SHARE") end}
   end
 
+  def build_fragment_expression(_binding_selector, :for_update_with_clause, params) do
+    params = normalize_params(params)
+
+    with {:ok, clause} <- fetch_string(params, :clause) do
+      case clause do
+        "SKIP LOCKED" ->
+          {:ok, fn query -> from(q in query, lock: fragment("FOR UPDATE SKIP LOCKED")) end}
+
+        _ ->
+          {:error, {:unsupported_clause, clause}}
+      end
+    end
+  end
+
   def build_fragment_expression(_binding_selector, :post_window, _params) do
     {:ok, [partition_by: [:author_id], order_by: [desc: :inserted_at]]}
   end
@@ -37,6 +51,13 @@ defmodule EctoShorts.TestQueryProvider do
   defp fetch_integer(params, key) do
     case Keyword.get(params, key) do
       value when is_integer(value) -> {:ok, value}
+      _ -> {:error, {:missing_or_invalid, key}}
+    end
+  end
+
+  defp fetch_string(params, key) do
+    case Keyword.get(params, key) do
+      value when is_binary(value) and value != "" -> {:ok, value}
       _ -> {:error, {:missing_or_invalid, key}}
     end
   end

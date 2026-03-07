@@ -1,6 +1,6 @@
 ---
 name: write-changelog
-description: Compares old and new code versions and writes a concise changelog entry describing only user-facing changes to the public interface - new features, removed or renamed functions/parameters, behavior changes, and breaking changes - ignoring internal refactors or implementation details. Use this skill after completing a set of changes that affect the public API.
+description: Compares old and new code versions and writes a concise changelog entry describing only user-facing changes to the public interface - new features, removed or renamed functions/parameters, behaviour changes, and breaking changes - ignoring internal refactors or implementation details. Use this skill after completing a set of changes that affect the public API.
 ---
 
 ## When to use
@@ -27,7 +27,7 @@ Compare only the **public surface area** between old and new:
 
 - Exported functions and macros (those with `@doc` or without `@doc false`).
 - Public typespecs (`@type`, `@opaque`).
-- Behavior callbacks (`@callback`).
+- Behaviour callbacks (`@callback`).
 - Module-level configuration options documented in `@moduledoc`.
 - Mix task commands and their flags.
 
@@ -37,8 +37,8 @@ Ignore changes that are purely internal: private functions, internal module spli
 
 Sort every public-interface difference into exactly one category:
 
-- **Added** - new function, parameter, option, type, or behavior callback.
-- **Changed** - altered return value, parameter meaning, default value, or observable behavior of an existing function.
+- **Added** - new function, parameter, option, type, or behaviour callback.
+- **Changed** - altered return value, parameter meaning, default value, or observable behaviour of an existing function.
 - **Deprecated** - function or option still works but is scheduled for removal.
 - **Removed** - function, parameter, option, or type no longer exists.
 - **Fixed** - bug fix that changes user-observable output to match documented intent.

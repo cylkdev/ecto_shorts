@@ -5,7 +5,7 @@ description: Creates or updates project documentation after a code change. It wr
 
 ## When to use
 
-Use this skill after you implement a feature, change behavior, or refactor code in a way that affects how someone uses a module or function. This covers `@moduledoc`, `@doc`, `@typedoc`, `@spec`, and `@callback` documentation.
+Use this skill after you implement a feature, change behaviour, or refactor code in a way that affects how someone uses a module or function. This covers `@moduledoc`, `@doc`, `@typedoc`, `@spec`, and `@callback` documentation.
 
 ## When not to use
 
@@ -23,26 +23,26 @@ Choose either a **focused update** (only touch what changed) or a **full pass** 
 
 ### 2. Identify user-visible changes
 
-List the modules and public APIs whose behavior, inputs, outputs, error cases, or performance characteristics changed. Include new modules and new public functions.
+List the modules and public APIs whose behaviour, inputs, outputs, error cases, or performance characteristics changed. Include new modules and new public functions.
 
 ### 3. Update module documentation
 
-For each affected module: if it has no `@moduledoc`, add one. If it already has `@moduledoc`, update it to match the current behavior. Describe what the module is for, what it does that a caller can observe, and how it fits into the surrounding system if that matters to correct usage.
+For each affected module: if it has no `@moduledoc`, add one. If it already has `@moduledoc`, update it to match the current behaviour. Describe what the module is for, what it does that a caller can observe, and how it fits into the surrounding system if that matters to correct usage.
 
 ### 4. Update function documentation
 
-For each affected public function: if it has no `@doc`, add one. If it already has `@doc`, update it to match the current behavior. Document inputs, outputs, and the important cases a caller must handle.
+For each affected public function: if it has no `@doc`, add one. If it already has `@doc`, update it to match the current behaviour. Document inputs, outputs, and the important cases a caller must handle.
 
 ### 5. Document new public surfaces
 
 - New types get a `@typedoc` and a `@type`.
 - New macros get docs describing what they expand to and any hygiene constraints.
-- New callbacks or behaviors get docs describing the contract, when it is called, and what happens if it fails.
+- New callbacks or behaviours get docs describing the contract, when it is called, and what happens if it fails.
 
 ### 6. Include a verification note
 
-Add a short, concrete way to verify the docs match reality. Prefer pointing at an existing test or a command that demonstrates the behavior.
+Add a short, concrete way to verify the docs match reality. Prefer pointing at an existing test or a command that demonstrates the behaviour.
 
 ### 7. Final consistency pass
 
-Ensure names, terms, and examples match the code. Ensure the docs describe the current public API and do not mention removed options or old behavior.
+Ensure names, terms, and examples match the code. Ensure the docs describe the current public API and do not mention removed options or old behaviour.

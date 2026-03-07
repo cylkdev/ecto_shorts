@@ -159,7 +159,7 @@ defmodule EctoShorts.CommonParams do
   Use `build_on_conflict_options/3` to generate `:conflict_target` and
   `:on_conflict` options for `c:Ecto.Repo.insert_all/3`.
 
-  | Strategy         | Behavior                                     |
+  | Strategy         | Behaviour                                     |
   |------------------|----------------------------------------------|
   | `:insert_keys`   | Replace all non-primary-key fields (default) |
   | `:none`          | Insert or do nothing (no update on conflict) |

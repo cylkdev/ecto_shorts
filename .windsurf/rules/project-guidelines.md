@@ -30,4 +30,4 @@ If you want to modify any of these files you must first ask the user for approva
 
 - Use `<AppName>.DataCase.setup_sandbox/1` for SQL sandbox setup in `ConnCase`.
 
-- Do not use `Application.put_env/3` in tests. Pass the varying value into the code under test so each test controls its behavior without affecting others.
+- Do not use `Application.put_env/3` in tests. Pass the varying value into the code under test so each test controls its behaviour without affecting others.

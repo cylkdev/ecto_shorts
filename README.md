@@ -520,10 +520,10 @@ This section shows before/after comparisons for common patterns.
   `:repo` when not set.
 
 * `:error_module` - a module implementing the
-  `EctoShorts.Actions.Error` behavior for error formatting.
+  `EctoShorts.Actions.Error` behaviour for error formatting.
 
 * `:dynamic_adapter` - a module implementing the
-  `EctoShorts.Dynamic` behavior for dynamic expressions.
+  `EctoShorts.Dynamic` behaviour for dynamic expressions.
 
 * `:max_binding_positions` - maximum query bindings before falling
   back to a subquery strategy. Defaults to `3`.

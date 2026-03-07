@@ -1,172 +1,343 @@
-# Execution Plans (ExecPlans):
+# Execution Plans (ExecPlans)
 
-This document describes the requirements for an execution plan ("ExecPlan"), a design document that a coding agent can follow to deliver a working feature or system change. Treat the reader as a complete beginner to this repository: they have only the current working tree and the single ExecPlan file you provide. There is no memory of prior plans and no external context.
+This document defines the standard for an execution plan, or `ExecPlan`, a living design document that a coding agent or human can follow to deliver a working feature or system change. Treat the reader as a complete beginner to this repository: they have only the current working tree and the single ExecPlan you provide. There is no memory of prior plans and no external context.
 
-## How to use ExecPlans and PLANS.md
+## Purpose / Big Picture
 
-When authoring an executable specification (ExecPlan), follow PLANS.md _to the letter_. If it is not in your context, refresh your memory by reading the entire PLANS.md file. Be thorough in reading (and re-reading) source material to produce an accurate specification. When creating a spec, start from the skeleton and flesh it out as you do your research.
+Use an ExecPlan to turn a clear change request into a concrete implementation sequence that produces a demonstrably working result. Record what someone gains after the change, what files and interfaces must change, what commands must run, what outputs or behaviours should be observed, and what evidence proves the result is real.
 
-When implementing an executable specification (ExecPlan), do not prompt the user for "next steps"; simply proceed to the next milestone. Keep all sections up to date, add or split entries in the list at every stopping point to affirmatively state the progress made and next steps. Resolve ambiguities autonomously, and commit frequently.
+An ExecPlan does not own diagnosis and it does not define intended behaviour from scratch. It owns implementation sequence and validation. That makes it the execution layer that follows a BehaviourSpecDoc and can rely on supporting InvestigationLogs or ExampleMappingDocs without competing with them.
 
-When discussing an executable specification (ExecPlan), record decisions in a log in the spec for posterity; it should be unambiguously clear why any change to the specification was made. ExecPlans are living documents, and it should always be possible to restart from _only_ the ExecPlan and no other work.
+## Output
 
-When researching a design with challenging requirements or significant unknowns, use milestones to implement proof of concepts, "toy implementations", etc., that allow validating whether the user's proposal is feasible. Read the source code of libraries by finding or acquiring them, research deeply, and include prototypes to guide a fuller implementation.
+- Primary artifact: A self-contained implementation specification for one change, including edits, commands, and proof of the result.
+- Primary consumer: The implementer carrying out the change end-to-end.
+- Ready when: The execution sequence, interfaces, concrete steps, and validation path are explicit enough for a novice to produce a working result.
+- Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+
+## How to Use ExecPlans and PLANS.md
+
+When you author an ExecPlan, follow `.agent/PLANS.md` to the letter. If it is not in your context, read the entire file before you continue.
+
+Use this guide when the desired behaviour and proof mapping are already clear enough to implement. Keep the ExecPlan open while you work. Update it as progress is made, discoveries occur, decisions are finalized, blockers appear, and the handoff state changes. It should always be possible to restart from only the ExecPlan and the working tree.
+
+Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether work should stay here or move to another document or work state.
+
+When implementing an approved ExecPlan, do not stop for vague "next steps." Proceed to the next milestone unless a real external blocker appears. Resolve ambiguity by inspecting the code, tests, and current plan evidence, then record the result in the plan.
+
+Store completed ExecPlans under `docs/plans/` and name them with four-digit, zero-padded names such as `docs/plans/0001-my-change.md`.
+
+## Document Relationships
+
+Use this section to understand how the planning guides relate to each other before you choose or change documents. Focus on purpose first, then intent, then the point where each document becomes the right place to work. Use `Handoffs` for the valid transitions.
+
+### InvestigationLog
+
+Purpose: Diagnose one visible problem and gather evidence.
+
+Intent: Turn unclear failure into proven facts, interpretation, and a safe next action.
+
+Use it when: A visible problem exists, but the cause is not yet proven.
+
+### ExampleMappingDoc
+
+Purpose: Clarify intended behaviour at one visible boundary.
+
+Intent: Turn ambiguous or disputed behaviour into explicit rules, examples, and acceptance-test targets.
+
+Use it when: The boundary is known, but the intended behaviour is still unclear.
+
+### BehaviourSpecDoc
+
+Purpose: Record a proof-ready behaviour specification at one visible boundary.
+
+Intent: Turn accepted behaviour into concrete specification and proof mapping that implementation can follow without inventing behaviour.
+
+Use it when: Intended behaviour is accepted, but implementation planning should not begin until the proof path is explicit.
+
+### ExecPlan
+
+Purpose: Define a concrete implementation sequence for a behaviour-changing result.
+
+Intent: Turn a clear change request into exact edits, commands, and validation that produce a working result.
+
+Use it when: Diagnosis, behaviour, and proof expectations are already clear enough to implement.
+
+### RefactorPlan
+
+Purpose: Define a safe structural change that preserves observable behaviour.
+
+Intent: Turn a known refactor need into a restartable, behaviour-preserving work sequence with proof.
+
+Use it when: The goal is to improve structure without intentionally changing observable behaviour.
+
+### ArchitectureReview
+
+Purpose: Review system shape, risk, and failure behaviour.
+
+Intent: Turn a complex system into an explicit, evidence-backed architecture risk review and mitigation direction.
+
+Use it when: The question is about resilience, scaling, state ownership, dependency risk, or system-level failure spread.
+
+### ADR
+
+Purpose: Record one lasting architectural or design decision.
+
+Intent: Turn an important choice into a durable record of drivers, options, outcome, consequences, and validation.
+
+Use it when: A decision must stay explicit over time so future maintainers can understand and apply it.
+
+## Handoffs
+
+Only one document owns a question at a time. Use this section to decide when work should arrive in this document, when it should leave it, and how to record that transition.
+
+### Incoming Handoffs
+
+- From `BehaviourSpecDoc`: Use this guide when specification and proof mapping are complete and implementation planning should begin.
+- From `InvestigationLog`: Use this guide when diagnosis, behaviour, and proof path are already explicit.
+- From `ArchitectureReview`: Use this guide when mitigation requires behaviour-changing implementation.
+- From `ADR`: Use this guide when a recorded decision needs behaviour-changing implementation steps.
+
+### Outgoing Handoffs
+
+- To implementation work: Hand off when the plan is ready to execute.
+- To `InvestigationLog`: Hand off when implementation reopens a diagnosis question.
+- To `ExampleMappingDoc`: Hand off when implementation reopens an intended-behaviour question.
+- To `BehaviourSpecDoc`: Hand off when implementation reopens a proof-ready specification question.
+- To `ADR`: Hand off when implementation reveals a lasting design decision.
+
+### Recording the Handoff
+
+Use the `Next Handoff` section to name one valid next document or work state from `Handoffs` and explain why it applies now.
+
+If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
 ## Requirements
 
 NON-NEGOTIABLE REQUIREMENTS:
 
-* Every ExecPlan must be fully self-contained. Self-contained means that in its current form it contains all knowledge and instructions needed for a novice to succeed.
-* Every ExecPlan is a living document. Contributors are required to revise it as progress is made, as discoveries occur, and as design decisions are finalized. Each revision must remain fully self-contained.
-* Every ExecPlan must enable a complete novice to implement the feature end-to-end without prior knowledge of this repo.
-* Every ExecPlan must produce a demonstrably working behavior, not merely code changes to "meet a definition".
-* Every ExecPlan must define every term of art in plain language or do not use it.
+* Every ExecPlan must be fully self-contained, meaning that in its current form it contains all knowledge and instructions needed for a novice to succeed.
+* Every ExecPlan must be a living document, meaning you revise it as progress is made, discoveries occur, decisions are finalized, blockers appear, and outcomes become clear.
+* Every ExecPlan must keep the shared skeleton order defined in this guide.
+* Every ExecPlan must include an `Output` section that uses the exact four-line template from this guide.
+* Every ExecPlan must enable a complete novice to implement the change end-to-end without prior knowledge of this repository.
+* Every ExecPlan must produce a demonstrably working behaviour, not merely code changes that appear to satisfy a definition.
+* Every ExecPlan must define every term of art in plain language before it is used.
+* Every ExecPlan must restate the request in concrete language.
+* Every ExecPlan must define `Scope Boundaries` and a `Visible Boundary`.
+* Every ExecPlan must name the files, modules, functions, commands, and outputs precisely enough that a beginner can follow them.
+* Every ExecPlan must include exact validation instructions and the expected observable result.
+* Every ExecPlan must be safe to restart. If a step can fail halfway or is risky, the plan must describe how to retry, adapt, or recover.
+* Every ExecPlan must keep `Progress`, `Surprises & Discoveries`, `Decision Log`, `Open Questions / Blockers`, `Next Handoff`, `Outcomes & Retrospective`, and `Change Log` up to date.
 
-Purpose and intent come first. Start by explaining, in a few sentences, why the work matters from a user's perspective: what someone can do after this change that they could not do before, and how to see it working. Then guide the reader through the exact steps to achieve that outcome, including what to edit, what to run, and what they should observe.
+Treat these rules as mandatory. If one is missing, the ExecPlan is incomplete and the implementation is not ready to proceed safely.
 
-The agent executing your plan can list files, read files, search, run the project, and run tests. It does not know any prior context and cannot infer what you meant from earlier milestones. Repeat any assumption you rely on. Do not point to external blogs or docs; if knowledge is required, embed it in the plan itself in your own words. If an ExecPlan builds upon a prior ExecPlan and that file is checked in, incorporate it by reference. If it is not, you must include all relevant context from that plan.
+## Workflow
 
-## Formatting
+1. Write `Purpose / Big Picture`, `Output`, and `Current State Snapshot` so the implementer understands what will exist after the change and what is already true in the repository.
+2. Write `Request Restated`, `Scope Boundaries`, and `Visible Boundary` so the implementer knows exactly what problem is being solved, what is out of scope, and where the result will be observed.
+3. Build `Plan of Work` in concrete prose. Name the files, modules, functions, and interfaces that must change. State what to insert, remove, or update, and why.
+4. Write `Interfaces and Dependencies` so the implementer knows which modules, behaviours, function signatures, libraries, or services must exist at the end.
+5. Write `Concrete Steps` with the exact working directory, commands, sequencing, idempotence notes, and expected short transcripts when they matter.
+6. Use `Progress` to track granular work at every stopping point. If a task is partially complete, split it into completed and remaining work instead of leaving it vague.
+7. Record unexpected findings in `Surprises & Discoveries` and important choices in `Decision Log` as they happen.
+8. Keep `Open Questions / Blockers` and `Next Handoff` explicit. Set `Next Handoff` using `Handoffs` whenever implementation reveals a new question instead of improvising past the ambiguity.
+9. Finish with `Validation and Acceptance`, `Outcomes & Retrospective`, and `Change Log`. The plan is complete only when a beginner can follow it to a working, observable result.
 
-Format and envelope are simple and strict. Each ExecPlan must be one single fenced code block labeled as `md` that begins and ends with triple backticks. Do not nest additional triple-backtick code fences inside; when you need to show commands, transcripts, diffs, or code, present them as indented blocks within that single fence. Use indentation for clarity rather than code fences inside an ExecPlan to avoid prematurely closing the ExecPlan's code fence. Use two newlines after every heading, use # and ## and so on, and correct syntax for ordered and unordered lists.
+## Communication Rules
 
-When writing an ExecPlan to a Markdown (.md) file where the content of the file *is only* the single ExecPlan, you should omit the triple backticks.
+Do not write an ExecPlan in silence. Record decisions, blockers, rejected approaches, changes in direction, and important evidence in the plan as they happen.
+
+When ambiguity exists, resolve it in the plan itself when you can do so from repository evidence. If the ambiguity belongs to diagnosis, intended behaviour, or proof-ready specification rather than implementation, set `Next Handoff` using `Handoffs` instead of hiding the question inside the ExecPlan.
+
+Keep the plan concrete. State what the user will be able to do, what files will change, what commands will run, what outputs should appear, and what will prove success.
+
+Do not outsource key decisions to the implementer. If the plan depends on an assumption, write the assumption down. If the assumption is risky, make it an explicit blocker or handoff.
+
+## Document-Specific Guidance
+
+### Formatting
+
+Each ExecPlan must be one single fenced code block labeled `md` when it is embedded inside another document or message. When writing an ExecPlan to a Markdown file where the entire file is only the plan, omit the outer triple backticks. Do not nest additional triple-backtick fences inside the plan. When you need to show commands, transcripts, diffs, or code, present them as indented blocks inside the single `md` fence.
 
 Write in plain prose. Prefer sentences over lists. Avoid checklists, tables, and long enumerations unless brevity would obscure meaning. Checklists are permitted only in the `Progress` section, where they are mandatory. Narrative sections must remain prose-first.
 
-## Guidelines
+### Milestones, Prototypes, and Parallel Work
 
-Self-containment and plain language are paramount. If you introduce a phrase that is not ordinary English ("GenServer", "Supervisor", "OTP application", "ETS", "Plug", "Endpoint", "LiveView"), define it immediately and remind the reader how it manifests in this repository (for example, by naming the files or commands where it appears). Do not say "as defined previously" or "according to the architecture doc." Include the needed explanation here, even if you repeat yourself.
+Milestones are narrative, not bureaucracy. If you break the work into milestones, introduce each one with a brief paragraph that describes the scope, what will exist at the end of the milestone that did not exist before, the commands to run, and the acceptance you expect to observe.
 
-Avoid common failure modes. Do not rely on undefined jargon. Do not describe "the letter of a feature" so narrowly that the resulting code compiles but does nothing meaningful. Do not outsource key decisions to the reader. When ambiguity exists, resolve it in the plan itself and explain why you chose that path. Err on the side of over-explaining user-visible effects and under-specifying incidental implementation details.
+Prototyping milestones are acceptable when they reduce risk. Keep prototypes additive and testable. Clearly label the scope as prototyping, describe how to run and observe results, and state the criteria for promoting or discarding the prototype. Parallel implementations are acceptable when they reduce risk or keep tests passing during a larger migration. Explain how both paths will be validated and how one path will be retired safely.
 
-Anchor the plan with observable outcomes. State what the user can do after implementation, the commands to run, and the outputs they should see. Acceptance should be phrased as behavior a human can verify ("after starting the server, sending a request, and observing the response") rather than internal attributes ("added a struct").
+### Validation, Evidence, and Revision Discipline
 
-Specify repository context explicitly. Name files with full repository-relative paths, name functions and modules precisely, and describe where new files should be created. For Elixir, prefer `lib/my_app/...` and `test/...` paths, and name functions with arity (for example, `MyApp.KV.put/3`). If touching multiple areas, include a short orientation paragraph that explains how those parts fit together so a novice can navigate confidently. When running commands, show the working directory and exact command line. When outcomes depend on environment, state the assumptions and provide alternatives when reasonable.
+Validation is not optional. Include instructions to run tests, to start the system if applicable, and to observe it doing something useful. Capture concise evidence such as short transcripts, outputs, or diffs that prove success.
 
-Be idempotent and safe. Write the steps so they can be run multiple times without causing damage or drift. If a step can fail halfway, include how to retry or adapt. If a migration or destructive operation is necessary, spell out backups or safe fallbacks. Prefer additive, testable changes that can be validated as you go.
+Specify repository context explicitly. Name files with repository-relative paths, name modules and functions precisely, and describe where new files should be created. For Elixir, prefer explicit paths such as `lib/my_app/...` and `test/...`, and name functions with arity such as `MyApp.Module.function/arity`.
 
-Validation is not optional. Include instructions to run tests, to start the system if applicable, and to observe it doing something useful. In Elixir projects, the test command is typically `mix test`; in Phoenix apps, starting the server is typically `mix phx.server`. Describe comprehensive testing for any new features or capabilities. Include expected outputs and error messages so a novice can tell success from failure. Where possible, show how to prove that the change is effective beyond compilation (for example, through a small end-to-end scenario, a CLI invocation, or an HTTP request/response transcript). State the exact test commands appropriate to the project's toolchain and how to interpret their results.
-
-Capture evidence. When your steps produce terminal output, short diffs, or logs, include them inside the single fenced block as indented examples. Keep them concise and focused on what proves success. If you need to include a patch, prefer file-scoped diffs or small excerpts that a reader can recreate by following your instructions rather than pasting large blobs.
-
-## Milestones
-
-Milestones are narrative, not bureaucracy. If you break the work into milestones, introduce each with a brief paragraph that describes the scope, what will exist at the end of the milestone that did not exist before, the commands to run, and the acceptance you expect to observe. Keep it readable as a story: goal, work, result, proof. Progress and milestones are distinct: milestones tell the story, progress tracks granular work. Both must exist. Never abbreviate a milestone merely for the sake of brevity, do not leave out details that could be crucial to a future implementation.
-
-Each milestone must be independently verifiable and incrementally implement the overall goal of the execution plan.
-
-## Living plans and design decisions
-
-* ExecPlans are living documents. As you make key design decisions, update the plan to record both the decision and the thinking behind it. Record all decisions in the `Decision Log` section.
-* ExecPlans must contain and maintain a `Progress` section, a `Surprises & Discoveries` section, a `Decision Log`, and an `Outcomes & Retrospective` section. These are not optional.
-* When you discover compiler behavior, performance tradeoffs (for example around ETS table types or GenServer contention), unexpected bugs, or inverse/unapply semantics that shaped your approach, capture those observations in the `Surprises & Discoveries` section with short evidence snippets (test output is ideal).
-* If you change course mid-implementation, document why in the `Decision Log` and reflect the implications in `Progress`. Plans are guides for the next contributor as much as checklists for you.
-* At completion of a major task or the full plan, write an `Outcomes & Retrospective` entry summarizing what was achieved, what remains, and lessons learned.
-
-# Prototyping milestones and parallel implementations
-
-It is acceptable--and often encouraged--to include explicit prototyping milestones when they de-risk a larger change. Examples: exploring two supervision tree shapes while measuring restart behavior, validating an ETS access pattern under load, or confirming a third-party library behaves as expected in isolation. Keep prototypes additive and testable. Clearly label the scope as "prototyping"; describe how to run and observe results; and state the criteria for promoting or discarding the prototype.
-
-Prefer additive code changes followed by subtractions that keep tests passing. Parallel implementations (e.g., keeping a new adapter module alongside an older path during migration) are fine when they reduce risk or enable tests to continue passing during a large migration. Describe how to validate both paths and how to retire one safely with tests. When working with multiple new libraries or feature areas, consider creating spikes that evaluate the feasibility of these features _independently_ of one another, proving that the external library performs as expected and implements the features we need in isolation.
+When you revise an ExecPlan, ensure the revision is reflected across all relevant sections and record the revision in `Change Log`. If the plan builds upon another checked-in plan, incorporate the needed context directly or reference the exact file and restate the required facts.
 
 ## Skeleton of a Good ExecPlan
 
+Use this skeleton when you create a new ExecPlan. Keep it complete enough that a complete beginner can implement the change from the document alone.
+
     # <Short, action-oriented description>
 
-    This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
+    This ExecPlan is a living document. Keep it up to date as progress is made, discoveries occur, decisions are finalized, blockers appear, and outcomes become clear.
 
-    If PLANS.md file is checked into the repo, reference the path to that file here from the repository root and note that this document must be maintained in accordance with PLANS.md.
+    If `.agent/PLANS.md` is checked into the repository, maintain this ExecPlan in accordance with that file.
 
-    ## Purpose / Big Picture
+    ## Status
 
-    Explain in a few sentences what someone gains after this change and how they can see it working. State the user-visible behavior you will enable.
+    The status can be one of:
+
+    * `Proposed`: The plan exists as a written proposal. Work has not started.
+    * `In Progress`: Implementation of the plan has started and the work is actively being carried out.
+    * `Complete`: All planned work has been finished and no remaining implementation work is expected.
+    * `Abandoned`: Work on the plan has been stopped without completion.
+
+    Write the status in bold and follow it with one full sentence that describes the current state in plain language.
+
+    Example:
+
+        **Proposed.** The plan has been written and work has not started.
+
+    ## Current State Snapshot
+
+    Write a short summary of where the plan stands right now.
+
+    State what is already known, what is still undecided, what repository evidence has already been checked, and what a complete beginner should do first if they restart here.
+
+    ## Output
+
+    - Primary artifact: A self-contained implementation specification for one change, including edits, commands, and proof of the result.
+    - Primary consumer: The implementer carrying out the change end-to-end.
+    - Ready when: The execution sequence, interfaces, concrete steps, and validation path are explicit enough for a novice to produce a working result.
+    - Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
 
     ## Progress
 
-    Use a list with checkboxes to summarize granular steps. Every stopping point must be documented here, even if it requires splitting a partially completed task into two ("done" vs. "remaining"). This section must always reflect the actual current state of the work.
+    Use a list with checkboxes to summarize granular work and every meaningful stopping point.
 
     **Legend**
-
-    This legend indicates the status of each step in the progress list.
 
     [ ] - Not started
     [~] - In progress
     [x] - Completed
 
-    - [x] (2025-10-01 13:00Z) Example completed step.
+    - [x] (YYYY-MM-DD HH:MMZ) Example completed step.
     - [ ] Example incomplete step.
     - [ ] Example partially completed step (completed: X; remaining: Y).
 
-    Use timestamps to measure rates of progress.
+    Use timestamps so a future contributor can see the sequence of work.
 
-    ## Surprises & Discoveries
+    ## Purpose / Big Picture
 
-    Document unexpected behaviors, bugs, optimizations, or insights discovered during implementation. Provide concise evidence.
+    Explain what someone gains after this change and how they can see it working.
 
-    - Observation: …
-      Evidence: …
-
-    ## Decision Log
-
-    Record every decision made while working on the plan in the format:
-
-    - Decision: …
-      Rationale: …
-      Date/Author: …
-
-    ## Outcomes & Retrospective
-
-    Summarize outcomes, gaps, and lessons learned at major milestones or at completion. Compare the result against the original purpose.
+    State the user-visible behaviour you will enable.
 
     ## Context and Orientation
 
-    Describe the current state relevant to this task as if the reader knows nothing. Name the key files and modules by full path. Define any non-obvious term you will use. Do not refer to prior plans.
+    Describe the current state relevant to this task as if the reader knows nothing.
+
+    Name the key files, modules, commands, and entry points by full repository-relative path.
+
+    Define any non-obvious term you will use.
+
+    ## Request Restated
+
+    Restate the request so a complete beginner can answer "yes, that is the change" or "no, that is not what I meant."
+
+    If more than one interpretation is still possible, state the chosen interpretation and why it is the correct one for this plan.
+
+    ## Scope Boundaries
+
+    State what work is in scope and what work is explicitly out of scope.
+
+    If nearby follow-up work is intentionally deferred, say so directly.
+
+    ## Visible Boundary
+
+    Name the boundary where the final behaviour will be observed and proved.
+
+    Record the exact command, request, or action that exercises that boundary when applicable.
 
     ## Plan of Work
 
-    Describe, in prose, the sequence of edits and additions. For each edit, name the file and location (function, module) and what to insert or change. Keep it concrete and minimal.
+    Describe, in prose, the sequence of edits and additions.
 
-    ## Concrete Steps
+    For each edit, name the file and location and what to insert or change.
 
-    State the exact commands to run and where to run them (working directory). When a command generates output, show a short expected transcript so the reader can compare. This section must be updated as work proceeds.
-
-    ## Validation and Acceptance
-
-    Describe how to start or exercise the system and what to observe. Phrase acceptance as behavior, with specific inputs and outputs. If tests are involved, say "run <project's test command> and expect <N> passed; the new test <name> fails before the change and passes after>".
-
-    ## Idempotence and Recovery
-
-    If steps can be repeated safely, say so. If a step is risky, provide a safe retry or rollback path. Keep the environment clean after completion.
-
-    ## Artifacts and Notes
-
-    Include the most important transcripts, diffs, or snippets as indented examples. Keep them concise and focused on what proves success.
+    Keep the description concrete and minimal.
 
     ## Interfaces and Dependencies
 
-    Be prescriptive. Name the libraries, modules, and services to use and why. Specify the modules, behaviors (interfaces), and function signatures that must exist at the end of the milestone. Prefer stable names and paths such as `MyApp.Module.function/arity` or `MyApp.Module` and concrete file paths such as `lib/my_app/module.ex`. E.g.:
+    Be prescriptive.
 
-    In lib/my_app/planner.ex, define a behavior:
+    Name the libraries, modules, services, behaviours, and function signatures that must exist at the end of the work, and explain why they are required.
 
-        defmodule MyApp.Planner do
-          @moduledoc false
+    Prefer stable names such as `MyApp.Module.function/arity` and concrete file paths such as `lib/my_app/module.ex`.
 
-          @callback plan(observed :: MyApp.Observed.t()) :: [MyApp.Action.t()]
-        end
+    ## Concrete Steps
 
-    In lib/my_app/planner/default.ex, define a default implementation:
+    State the exact commands to run and where to run them.
 
-        defmodule MyApp.Planner.Default do
-          @moduledoc false
-          @behaviour MyApp.Planner
+    Include expected short transcripts when they help the reader compare results.
 
-          @impl true
-          def plan(observed) do
-            # return a list of actions derived from observed input
-          end
-        end
+    State any retry, rollback, or recovery notes needed if a step can fail halfway.
 
-If you follow the guidance above, a single, stateless agent -- or a human novice -- can read your ExecPlan from top to bottom and produce a working, observable result. That is the bar: SELF-CONTAINED, SELF-SUFFICIENT, NOVICE-GUIDING, OUTCOME-FOCUSED.
+    ## Surprises & Discoveries
 
-When you revise a plan, you must ensure your changes are comprehensively reflected across all sections, including the living document sections, and you must write a note at the bottom of the plan describing the change and the reason why. ExecPlans must describe not just the what but the why for almost everything.
+    Document unexpected behaviours, bugs, tradeoffs, or insights discovered during implementation.
+
+    Provide concise evidence.
+
+    - Observation: ...
+      Evidence: ...
+
+    ## Decision Log
+
+    Record every decision made while working on the plan in this format:
+
+    - Decision: ...
+      Rationale: ...
+      Date/Author: ...
+
+    ## Validation and Acceptance
+
+    Describe how to exercise the system and what to observe.
+
+    Phrase acceptance as behaviour with specific inputs and outputs.
+
+    If tests are involved, name the exact test commands and what should pass.
+
+    ## Open Questions / Blockers
+
+    Record anything still unknown that could change the implementation sequence or the validation path.
+
+    If there are no remaining blockers, say that explicitly.
+
+    ## Next Handoff
+
+    State the next safe handoff using `Handoffs`.
+
+    Name the exact next document or work state and explain why it applies now.
+
+    If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
+
+    ## Outcomes & Retrospective
+
+    Summarize what was achieved, what remains, and what was learned.
+
+    Compare the result against the original purpose.
+
+    ## Change Log
+
+    Record every revision so a newcomer can see how the plan changed over time.
+
+    - YYYY-MM-DD: ...
+      Rationale: ...
+
+## Final Reminder
+
+An ExecPlan is for delivering working behaviour, not for leaving key implementation choices to the next person. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next document or work state when the question changes.

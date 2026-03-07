@@ -166,7 +166,7 @@ Comprehensive smell-by-smell refactoring plan for every file under `lib/`, prior
 ### Milestones skipped (with rationale)
 
 - **M4** (`normalize_insert_entry`): Already well-structured via pattern matching. 6 clauses handle genuinely different input shapes.
-- **M6** (`join.ex` option extraction): Option extraction is inside `Compiler.define_clauses` macro block. Risk of subtle compile-time behavior changes outweighs the 4-line-per-clause savings.
+- **M6** (`join.ex` option extraction): Option extraction is inside `Compiler.define_clauses` macro block. Risk of subtle compile-time behaviour changes outweighs the 4-line-per-clause savings.
 - **M7** (`utils.ex` inline): Requires modifying `mix.exs` (restricted file) and migrating test file. Module is only 47 lines.
 
 ### Validation

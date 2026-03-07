@@ -1,7 +1,7 @@
 defmodule EctoShorts.Dynamic do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Defines the behavior for pluggable dynamic expression adapters.
+  Defines the behaviour for pluggable dynamic expression adapters.
 
   Use this module when building custom adapters that translate filter
   parameters into Ecto dynamic expressions. An adapter implements two
@@ -14,7 +14,7 @@ defmodule EctoShorts.Dynamic do
 
   * **Support database-specific operators** - add PostgreSQL array operators,
     MySQL JSON functions, or other database-specific features.
-  * **Override default behavior** - change how certain filter keys are
+  * **Override default behaviour** - change how certain filter keys are
     translated to dynamic expressions.
   * **Add custom filter operators** - implement domain-specific filters like
     `:before`, `:after`, `:ids`, or `:search`.

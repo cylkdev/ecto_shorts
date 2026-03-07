@@ -23,7 +23,7 @@
 - Added `EctoShorts.CommonSchema` which provides a unified interface for working with Ecto schemas. This covers normalizing query sources, building schema structs, constructing changesets, and inspecting schema metadata.
 - Added `EctoShorts.CommonQuery` which exposes utilities for inspecting `Ecto.Query` values at runtime. This lets you read the query prefix, source, binding count, and resolve individual binding sources (`get_query_prefix/1`, `get_query_source/1`, `query_binding_count/1`, `get_query_binding_source/2`).
 - Added `EctoShorts.CommonParams` which provides helpers for constructing bulk operation parameters. This simplifies building conflict-handling options and converting data for insert and update operations (`build_on_conflict_options/3`, `convert_to_insert_params/3`, `convert_to_update_params/3`).
-- Added `EctoShorts.Dynamics` which converts filter parameter maps into `Ecto.Query.DynamicExpr` values. Filtering behavior is customizable through a pluggable adapter.
+- Added `EctoShorts.Dynamics` which converts filter parameter maps into `Ecto.Query.DynamicExpr` values. Filtering behaviour is customizable through a pluggable adapter.
 - Added `EctoShorts.Compiler` which provides data-driven function clause generation at compile time. This adds support for `Ecto.Query` positional bindings.
 - Added `EctoShorts.Logger` which provides a consistent, prefixed logging interface (`debug/2`, `info/2`, `warning/2`, `error/2`).
 - Added `EctoShorts.Testing` which provides assertion helpers for verifying dynamic expressions and generated SQL. Use `use EctoShorts.Testing` to bring `assert_dynamic/2`, `refute_dynamic/2`, `assert_query/2`, `refute_query/2`, `assert_sql/3-4`, and `refute_sql/3-4` into test modules.

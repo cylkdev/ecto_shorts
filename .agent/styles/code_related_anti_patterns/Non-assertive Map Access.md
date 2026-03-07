@@ -41,7 +41,7 @@ Graphics.plot(point_3d)
 {5, 6, 7}
 ```
 
-Given we want to plot both 2D and 3D points, the behavior above is expected. But what happens if we forget to pass a point with either :x or :y?
+Given we want to plot both 2D and 3D points, the behaviour above is expected. But what happens if we forget to pass a point with either :x or :y?
 
 ```elixir
 bad_point = %{y: 3, z: 4}
@@ -50,7 +50,7 @@ Graphics.plot(bad_point)
 {nil, 3, 4}
 ```
 
-The behavior above is unexpected because our function should not work with points without a :x key. This leads to subtle bugs, as we may now pass nil to another function, instead of raising early on, as shown next:
+The behaviour above is unexpected because our function should not work with points without a :x key. This leads to subtle bugs, as we may now pass nil to another function, instead of raising early on, as shown next:
 
 ```elixir
 point_without_x = %{y: 10}
@@ -64,7 +64,7 @@ distance_from_origin = :math.sqrt(x * x + y * y)
 
 The error above occurs later in the code because nil (from missing :x) is invalid for arithmetic operations, making it harder to identify the original issue.
 
-### Refactoring
+### Solution
 
 To remove this anti-pattern, we must use the dynamic map[:key] syntax and the static map.key notation according to our requirements. We expect :x and :y to always exist, but not :z. The next code illustrates the refactoring of `plot/1`, removing this anti-pattern:
 
@@ -136,7 +136,7 @@ end
 
 Generally speaking, structs are useful when sharing data structures across modules, at the cost of adding a compile time dependency between these modules. If module A uses a struct defined in module B, A must be recompiled if the fields in the struct `B` change.
 
-In summary, Elixir provides several ways to access map values, each with different behaviors:
+In summary, Elixir provides several ways to access map values, each with different behaviours:
 
     1. Static access (`map.key`): Fails fast when keys are missing, ideal for structs and maps with known atom keys
 

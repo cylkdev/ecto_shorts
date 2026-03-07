@@ -1,0 +1,88 @@
+Create a new file at `.agent/plans/INVESTIGATION_LOGS.md`.
+
+Before writing, inspect these repository documents and use them as source material and style reference:
+
+- `.agent/plans/PLANS.md`
+- `.agent/TDD_BDD.md`
+- `.agent/rules/Writing Conventions.md`
+- `.agent/rules/Fixing a Failing Test in Elixir.md`
+- `.agent/rules/Stop And Investigate When The Same Task Repeats.md`
+
+Your goal is to create a standalone repository-level document that defines what an `InvestigationLog` is and how to use it.
+
+Non-negotiable outcome requirements:
+
+- The document must be self-contained and readable by a complete beginner.
+- It must follow the spirit and tone of `.agent/plans/PLANS.md`.
+- It must integrate cleanly with other rules, instructions, processes, documents, and workflows in this repo.
+- It must not be hyper specific to one workflow such as fixing failing tests.
+- It must operate at a more primitive, conceptual level: what a person is functionally doing when they do not yet know the cause of a visible problem.
+- It must make `InvestigationLog` the shared investigation layer that other guides can compose with.
+- It must explain that companion workflows own area-specific mechanics, while the `InvestigationLog` owns diagnosis.
+- It must define every technical term in plain language when it first appears. Do not create a separate glossary section.
+- Use `InvestigationLog` consistently everywhere. Do not switch to `Investigation Log`.
+- Do not rely on prior conversation or unstated assumptions.
+
+The document should be concise and should contain these sections in this order:
+
+1. `## Purpose / Big Picture`
+2. `## How to Use InvestigationLogs and INVESTIGATION_LOGS.md`
+3. `## Requirements`
+
+Content requirements:
+
+For `Purpose / Big Picture`:
+- Explain that an `InvestigationLog` is used when there is a visible mismatch between what happened and what should have happened, but the specific cause is not yet proven.
+- Explain that the document records the failure, expected result, facts gathered, interpretations considered, decision made, and checks proving resolution.
+- Explain that it does not replace plans or implementation guides, but gives them a shared investigation layer.
+- Make it work for any outwardly visible boundary: tests, public function calls, CLI commands, HTTP endpoints, background job results, visible data changes.
+- End by stating that success means another person can read the `InvestigationLog` alone and understand what failed, why, what was ruled out, what action follows, and how to verify it.
+
+For `How to Use InvestigationLogs and INVESTIGATION_LOGS.md`:
+- Say to follow the file to the letter.
+- Say to read it before investigating any problem whose cause is not already proven.
+- State that it is the source of truth for investigation behaviour.
+- Explain how it composes with other guides: this file handles investigation; companion guides handle area-specific mechanics.
+- Include a short bullet list of situations where an `InvestigationLog` is required. Include repeated failures, competing interpretations, risky “obvious” changes, blocked workflows, and future handoff.
+- State that the `InvestigationLog` must begin before meaningful edits.
+- State that it must be updated continuously while investigating.
+- State that even if the cause looks obvious, an `InvestigationLog` is still required if the work is being documented or handed off.
+
+For `Requirements`:
+- Use the exact heading `NON-NEGOTIABLE REQUIREMENTS:`
+- Group the bullets under three labels:
+  - `Core record requirements:`
+  - `Reasoning requirements:`
+  - `Outcome requirements:`
+- Make the requirements general, not test-specific.
+- Include requirements for:
+  - self-contained
+  - living document
+  - start before meaningful edits
+  - one concrete visible failure at a time
+  - start from a user-facing boundary
+  - distinguish facts from interpretation
+  - restate the request concretely
+  - force an explicit decision before more edits
+  - handle ambiguity openly
+  - define technical terms in plain language when first used
+  - readable by a beginner
+  - reduce an unclear problem into a clear next action supported by facts
+  - end with validation proving the original problem is resolved
+  - compose cleanly with companion workflows
+- After the bullet list, add short explanatory paragraphs for each requirement in the same style as `.agent/plans/PLANS.md`.
+- In those explanations, define specialized terms inline the first time they appear.
+- Replace any failing-test-specific framing with general diagnosis framing.
+- Do not include a separate glossary section.
+- Do not include implementation details, templates, or a skeleton yet.
+
+Writing constraints:
+- Use plain language.
+- Prefer short paragraphs.
+- Treat the reader as a complete beginner.
+- Keep the wording direct and instructional.
+- Avoid jargon unless you define it immediately.
+- Do not use em dashes.
+- Do not add commentary outside the file content.
+
+Write the file directly.

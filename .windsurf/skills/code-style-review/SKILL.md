@@ -9,7 +9,7 @@ Use this skill when you need to review or enforce the project's code style rules
 
 ## When not to use
 
-Do **not** use this skill for implementing features. Use the `write-exec-plan` skill for that. Do **not** use this skill for behavior-preserving refactors. Use the `refactor` skill for that. Do **not** use this skill for architecture reviews. Use the `architecture-review` skill for that.
+Do **not** use this skill for implementing features. Use the `write-exec-plan` skill for that. Do **not** use this skill for behaviour-preserving refactors. Use the `refactor` skill for that. Do **not** use this skill for architecture reviews. Use the `architecture-review` skill for that.
 
 ## What to do
 

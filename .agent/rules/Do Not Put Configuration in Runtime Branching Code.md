@@ -9,11 +9,11 @@ In application code, read a single config value and provide a safe default.
 
 - The function must have the same name as the :key it is retrieving from the application environment.
 
-- Application code must describe behavior. Configuration files must describe environment differences.
+- Application code must describe behaviour. Configuration files must describe environment differences.
 
 - Keep the code easy to read at a glance. The function must only return the configured value or a set default.
 
-- Avoids hidden behavior. The user must be able to look in `config/` and see what changes per environment.
+- Avoids hidden behaviour. The user must be able to look in `config/` and see what changes per environment.
 
 ## What to do
 

@@ -16,7 +16,7 @@ In other words, functions using the word "size" in its name will take the same a
 
 ### get, fetch, fetch!
 
-When you see the functions `get`, `fetch`, and `fetch!` for key-value data structures, you can expect the following behaviors:
+When you see the functions `get`, `fetch`, and `fetch!` for key-value data structures, you can expect the following behaviours:
 
 - `get` returns a default value (which itself defaults to nil) if the key is not present, or returns the requested value.
 - `fetch` returns :error if the key is not present, or returns {:ok, value} if it is.

@@ -72,9 +72,9 @@ Do not assume tests are correct.
 
 If a test appears incorrect, state why it might be incorrect and what evidence would confirm that.
 
-### Step 6: Resolve unclear behavior with examples
+### Step 6: Resolve unclear behaviour with examples
 
-If the intended behavior is unclear or disputed, you must define it before changing code.
+If the intended behaviour is unclear or disputed, you must define it before changing code.
 
 Use example mapping to write concrete input -> output examples.
 

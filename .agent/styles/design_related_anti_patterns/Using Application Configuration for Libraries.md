@@ -2,9 +2,9 @@
 
 **Problem**
 
-Libraries should not fetch application configuration to decide how they behave (for example, `Application.fetch_env!/2` inside library functions). It hides dependencies, makes code harder to test, and creates "action at a distance" where behavior changes based on runtime config.
+Libraries should not fetch application configuration to decide how they behave (for example, `Application.fetch_env!/2` inside library functions). It hides dependencies, makes code harder to test, and creates "action at a distance" where behaviour changes based on runtime config.
 
-This is especially problematic when multiple consumers want different behavior at the same time.
+This is especially problematic when multiple consumers want different behaviour at the same time.
 
 **Example**
 

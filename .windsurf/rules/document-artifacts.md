@@ -53,9 +53,9 @@ Each scenario below requires a document. These are required so decisions, plans,
 
 - If you refactor code, write a RefactorPlan.
   The format reference is `.agent/REFACTOR_PLANS.md`.
-  A refactor is a behavior-preserving structural improvement.
+  A refactor is a behaviour-preserving structural improvement.
 
-- If you write behavior specifications with runnable proofs, write a SpecPlan.
+- If you write behaviour specifications with runnable proofs, write a SpecPlan.
   The format reference is `.agent/SPEC_PLANS.md`.
 
 - If you review a system's architecture for failure modes, scalability risks, or operational resilience, write an Architecture Review.

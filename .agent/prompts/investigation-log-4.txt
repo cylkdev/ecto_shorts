@@ -1,0 +1,18 @@
+Revise the document you are given to follow these style rules:
+
+- Use plain, direct, instructional prose.
+- Write like you are teaching a complete beginner.
+- Prefer short paragraphs over long blocks.
+- Be concrete, not abstract.
+- Be imperative when giving rules or directions.
+- Define any technical or specialized term in the same sentence where it first appears.
+- Do not use a separate glossary unless I ask for one.
+- Explain things from the reader’s point of view: what they see, do, prove, or decide.
+- Keep the framing general and conceptual so it works across multiple workflows, not just one case.
+- Make the document integrate cleanly with other guides by explaining which document owns which responsibility.
+- Avoid jargon unless you immediately explain it.
+- Avoid fluff, motivational language, and vague summaries.
+- Do not use em dashes.
+- Preserve the strong “NON-NEGOTIABLE REQUIREMENTS:” style when writing requirements.
+- Prefer wording that turns an unclear problem into a clear next action supported by facts.
+- When writing requirements, use a calm and direct tone, steady cadence, and precise language.

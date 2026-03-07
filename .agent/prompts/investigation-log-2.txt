@@ -1,0 +1,91 @@
+Update `.agent/plans/INVESTIGATION_LOGS.md`.
+
+Do not rely on any external context, repository files, or prior conversation. Do not reinterpret or improve the wording. Replace the entire file with exactly the Markdown below. Preserve headings, paragraph order, blank lines, bullet structure, wording, and punctuation exactly. Use `InvestigationLog` everywhere exactly as written. Do not add commentary before or after the edit.
+
+BEGIN FILE
+
+## Purpose / Big Picture
+
+Use an InvestigationLog when there is a visible mismatch between what happened and what should have happened, but the specific cause is not yet proven.
+
+An InvestigationLog is the working document you keep while you turn that unclear problem into a clear next action supported by facts. It records the failure, the expected result, the facts you gathered, the interpretations you considered, the decision you made, and the checks that prove the problem is resolved.
+
+An InvestigationLog does not replace a plan, an implementation guide, a refactor guide, or another area-specific workflow. It gives those documents a shared investigation layer. Use it whenever a person needs to understand what is actually wrong before deciding what to change.
+
+This document must work for any place where a person or another part of the system can observe behaviour from the outside. Examples include a failing test, a public function call (a function meant to be called directly by other code), a CLI command (a terminal command), an HTTP endpoint (a web request path that accepts a request and returns a response), a background job result, or a visible data change.
+
+After following this document, a novice human or coding agent must be able to understand the exact failure being investigated, the request restated in concrete terms, the place used to reproduce the problem, the facts gathered, the most likely cause, the decision about what must change next, and the checks that prove the chosen action resolved the original problem.
+
+The standard for success is not just "a fix was made." The standard is that another person can read the InvestigationLog by itself and understand what failed, why it failed, what was ruled out, what action follows from the facts, and how to verify the result without relying on memory, chat history, or unstated assumptions.
+
+## How to Use InvestigationLogs and INVESTIGATION_LOGS.md
+
+When authoring an InvestigationLog, follow INVESTIGATION_LOGS.md to the letter. If it is not in your context, read the entire file before you continue.
+
+Read this file before you investigate any problem whose cause is not already proven. This file defines the standard investigation method for this repository. It explains when to stop editing, how to state the failure clearly, how to gather facts, how to handle competing interpretations, how to decide what is actually wrong, and how to record enough information that another person can restart the investigation from the log alone.
+
+Use this document as the source of truth for investigation behaviour. If another guide tells you to use an InvestigationLog, use that guide for the area-specific mechanics and use this file for the investigation itself. Area-specific mechanics are the concrete steps for one kind of work, such as running a test command, exercising an HTTP endpoint, or validating a plan.
+
+Use an InvestigationLog in all of these situations and any similar situation:
+
+- A test, function call, command, endpoint, or other visible entry point shows wrong behaviour and the first wrong step is not yet proven.
+- The same task repeats, the same complaint returns, or the user says the result is still wrong, so miscommunication is now a real risk.
+- Two or more reasonable interpretations of the request exist and the repository does not yet prove which one is correct.
+- The next change looks obvious, but being wrong would mean editing the wrong place, weakening a safeguard, or preserving the wrong behaviour.
+- Another workflow cannot continue safely until the problem, expected behaviour, and likely cause are written down clearly.
+- Another human or coding agent may need to continue the work later.
+
+Start an InvestigationLog before you change code, tests, settings, data, or expectations. If you already made changes before the investigation started, stop and record what was changed, why it was changed, and what facts existed at that time. Do not continue making new changes until the failure, expected behaviour, current facts, and next decision are written down clearly.
+
+Keep the InvestigationLog open and update it as you work. Record exact commands, outputs, file paths, function names, error lines, examples, decisions, rejected ideas, and reruns that prove the result. Do not treat the log as a summary you write at the end. It is a working document that must stay current while the investigation is happening.
+
+If the problem belongs to one specific area, combine this file with the smallest additional guide that helps with that area. This file should answer "what is the problem and why?" The companion guide should answer "how do I work in this area once the problem is clear?"
+
+If the cause is genuinely obvious and directly proven by one piece of evidence, still create an InvestigationLog. The log may be short, but it must still capture the failure, the facts, the decision, the next action, and the checks that prove the original problem is gone. If those items are missing, the work is not yet safely documented.
+
+## Requirements
+
+NON-NEGOTIABLE REQUIREMENTS:
+
+Core record requirements:
+
+* Every InvestigationLog must be fully self-contained.
+* Every InvestigationLog is a living document.
+* Every InvestigationLog must begin before meaningful edits begin.
+* Every InvestigationLog must define one concrete visible failure at a time.
+* Every InvestigationLog must start from a user-facing boundary, meaning the nearest visible entry point where the problem can be seen.
+
+Reasoning requirements:
+
+* Every InvestigationLog must distinguish facts from interpretation.
+* Every InvestigationLog must restate the request in concrete language.
+* Every InvestigationLog must force an explicit decision before edits continue.
+* Every InvestigationLog must handle ambiguity openly.
+* Every InvestigationLog must define every technical term in plain language when it first appears.
+
+Outcome requirements:
+
+* Every InvestigationLog must be readable by a complete beginner.
+* Every InvestigationLog must reduce an unclear problem into a clear next action supported by facts.
+* Every InvestigationLog must end with validation that proves the original problem is resolved.
+* Every InvestigationLog must compose cleanly with companion workflows, meaning other guides or processes in this repository.
+
+These are mandatory rules, not suggestions. If any one of them is missing, the InvestigationLog is incomplete and the investigation is not ready to guide changes, clarification, or handoff to another person.
+
+Every InvestigationLog must be fully self-contained. Self-contained means a person reading only the log and the current files in the repository can understand the problem, reproduce the failure, follow the facts, understand the decision, and verify the result without relying on chat history, memory, or prior drafts.
+
+Every InvestigationLog is a living document. Living document means the log must be updated as soon as new facts appear, a decision changes, a new unknown is discovered, or a check succeeds or fails. Do not wait until the end to clean it up. If the log is out of date, the investigation is out of control.
+
+Every InvestigationLog must begin before meaningful edits begin. Meaningful edits are changes to code, tests, settings, stored data, or expected results. The purpose of the log is to stop guessing before those things are changed. If you must first repair the environment or prerequisites just to reach the real failure, record that work in the log too. Once the visible failure can be reproduced, no further changes should happen until the failure, expected behaviour, current facts, and next decision are written clearly.
+
+Every InvestigationLog must define one concrete visible failure at a time. If more than one distinct problem is present, split them into separate problem statements or separate logs. Do not blur multiple failures together into one vague description such as "the feature is broken" or "the workflow is failing."
+
+Every InvestigationLog must start from a user-facing boundary, meaning the nearest visible entry point where the problem can be seen. Examples include a failing test, a public function call, a CLI command, an HTTP endpoint, a visible file output, or a stored data result. Do not start by changing helper functions, refactoring internals, or tracing random implementation details. The investigation must begin where the failure can actually be seen.
+
+Every InvestigationLog must distinguish facts from interpretation. Facts are concrete things such as commands, outputs, stacktraces, diffs, return values, logs, nearby tests, callers, documentation, and naming patterns. A stacktrace is the list of function calls shown in an error output. A diff is the displayed difference between two values or two versions of content. Interpretation means the meaning a person assigns to those facts. Guesses, hunches, and preferred fixes are not facts. If a conclusion is not tied to facts recorded in the log, treat it as unproven.
+
+Every InvestigationLog must restate the request in concrete language. The restatement must be specific enough that another person can say "yes, that is the problem" or "no, that is not what I meant." This is required because repeated work and failed fixes often come from solving a different problem than the reporter intended.
+
+Every InvestigationLog must force an explicit decision before edits continue. The investigator must decide whether the current implementation is wrong, the current expectation is wrong, or the intended behaviour is still unclear. The current implementation means the code, settings, and connections that currently produce the behaviour. The current expectation means the result another document, test, user statement, or assumption says should happen. If the intended behaviour is still unclear, stop changing things and switch to clarification with concrete examples.
+
+Every InvestigationLog must handle ambiguity openly. Ambiguity means the same request, failure, or expected result can reasonably be understood in more than one way. If

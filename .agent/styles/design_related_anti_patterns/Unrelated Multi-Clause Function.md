@@ -2,7 +2,7 @@
 
 **Problem**
 
-Multi-clause functions are great when each clause is a coherent part of the same concept. They become an anti-pattern when a single function name is used as a dumping ground for unrelated behaviors ("because it's convenient to pattern match").
+Multi-clause functions are great when each clause is a coherent part of the same concept. They become an anti-pattern when a single function name is used as a dumping ground for unrelated behaviours ("because it's convenient to pattern match").
 
 That produces functions that are hard to discover and hard to change because "what does this function do?" depends entirely on the input type.
 

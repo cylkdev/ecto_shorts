@@ -18,7 +18,7 @@ end
 
 Even if `Plug` does not currently define a `Plug.Auth` module, it may add such a module in the future, which would ultimately conflict with `plug_auth`'s definition.
 
-### Refactoring
+### Solution
 
 Given the package is named `:plug_auth`, it must define modules inside the `PlugAuth` namespace:
 

@@ -20,7 +20,7 @@ defp unix_five_min_from_now do
 end
 ```
 
-### Refactoring
+### Solution
 
 Prefer clear and self-explanatory function names, module names, and variable names when possible. In the example above, the function name explains well what the function does, so you likely won't need the comment before it. The code also explains the operations well through variable names and clear function calls.
 

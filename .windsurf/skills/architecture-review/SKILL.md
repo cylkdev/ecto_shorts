@@ -9,7 +9,7 @@ Use this skill when you need to review the architecture of an Elixir/Erlang/OTP 
 
 ## When not to use
 
-Do **not** use this skill for implementing features. Use the `write-exec-plan` skill for that. Do **not** use this skill for behavior-preserving refactors. Use the `refactor` skill for that. Do **not** use this skill for code style reviews. Use the `code-style-review` workflow for that.
+Do **not** use this skill for implementing features. Use the `write-exec-plan` skill for that. Do **not** use this skill for behaviour-preserving refactors. Use the `refactor` skill for that. Do **not** use this skill for code style reviews. Use the `code-style-review` workflow for that.
 
 ## What to do
 
@@ -41,9 +41,9 @@ At minimum the document must include:
 For each subsystem, evaluate:
 
 - **Serialized work and backpressure** - GenServer bottlenecks, mailbox growth, missing bounded concurrency.
-- **Crash behavior and cascade control** - restart storms, missing circuit breakers, blast radius.
+- **Crash behaviour and cascade control** - restart storms, missing circuit breakers, blast radius.
 - **State ownership and durability** - in-memory-only state, non-idempotent replay, at-least-once without dedup.
-- **Distributed behavior** - partition assumptions, global singletons, cross-node coordination.
+- **Distributed behaviour** - partition assumptions, global singletons, cross-node coordination.
 
 ### 5. Apply the standard questions
 

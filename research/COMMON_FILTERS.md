@@ -1,399 +1,2732 @@
-## CommonFilters
-
-This document defines the end-to-end behaviour of the query-building API.
-
-It uses example mapping: it lists examples, maps each example to a behaviour, and defines the rules, constraints, directives, and operators used by the API.
-
-Every example in this document is verified by a test in `test/examples/ecto_query_dsl.exs`.
-
-Run the examples with `mix run test/examples/run.exs`.
-
-## Keyword Lists vs Maps
-
-This API is designed with keyword lists as the primary input format. Keyword lists work well with the composeability of the `Ecto.Query` API because they preserve order and they let you repeat keys, which makes it easier to build up complex queries.
-
-Because of that, this API treats maps and keyword lists as the same shape.
-
-In other words, anywhere you can write a map (%{...}), you can also write a keyword list ([...]), and it will behave the same way.
-
-Because of this, each pair below is equivalent:
-
-    `%{id: 1}` means the same thing as `[id: 1]`.
-
-    `[%{id: 1}, %{id: 2}]` means the same thing as `[[id: 1], [id: 2]]`.
-
-    `[%{id: 1}, [id: 2]]` means the same thing as `[[id: 1], [id: 2]]`.
-
-This works because lists can mix maps and keyword lists, and the API still treats them as the same structure.
-
-This also works for nested values, including directive filters:
-
-    `%{id: %{>: 1}}` means the same thing as `[id: [>: 1]]`.
-
-Here’s what that looks like in code:
-
-    EctoShorts.CommonFilters.convert_params_to_filter(Post, %{id: 1})
-    EctoShorts.CommonFilters.convert_params_to_filter(Post, [id: 1])
-
-    EctoShorts.CommonFilters.convert_params_to_filter(Post, %{id: %{>: 1}})
-    EctoShorts.CommonFilters.convert_params_to_filter(Post, [id: [>: 1]])
-
----
-
-## Query Builder Language
-
-The query builder API’s “language” is based on directives.
-
-A directive is a named instruction. When the parser sees a directive key (for example `:and`, `:or`, `:not`, `:lower`, `:avg`, `:date`, `:datetime`), it knows the key is not a normal field name. Instead, that key tells the parser to apply a specific behavior that changes how a value or field is interpreted.
-
-Directives are grouped into "slots", and slots have a fixed priority order. When parsing filter params, the parser checks slots in order, from the outer-most slot to the inner-most slot.
-
-### Understanding Slots
-
-When you write a filter expression, the query builder reads it from the outer-most layer to the inner-most layer. At each layer, it looks for a directive that matches that layer’s rules.
-
-You can think of it like peeling an onion: each layer is a slot, and each slot only allows certain kinds of directives.
-
-Here’s the order the parser follows:
-
-    Top-Level Logical Operator Directive
-    (:or / :and)
-        |
-        v
-
-    Negation Directive
-    (:not)
-        |
-        v
-
-    Field Transform Directive
-    (:lower / :upper)
-        |
-        v
-
-    Field (Scalar/Array)
-    (:title / :views / :published)
-        |
-        v
-
-    Aggregate Operator Directive
-    (:avg / :sum / :count / :max / :min)
-        |
-        v
-
-    Field-Level Logical Operator Directive
-    (:and / :or)
-        |
-        v
-
-    Comparison Operator Directive
-    (:> / :== / :like / :in)
-        |
-        v
-
-    Value Transformation Directive
-    (:lower / :upper / :all / :any / :datetime / :date / :+ / :- / :* / :/)
-        |
-        v
-
-    Value
-    (1 / "hello" / [1, 2, 3])
-        |
-        v
-
-#### What the slots mean
-
-**1. Top-Level Logical Operator Directive**
-
-Examples: `:and`, `:or`
-
-Combines multiple filter groups into one condition.
-
-**2. Negation Directive**
-
-Examples: `:not`
-
-Wraps a filter and inverts it.
-
-**3. Field Transform Directive**
-
-Examples: `:lower`, `:upper`
-
-Changes the field before it is compared. Appears before the field name. String transformations only.
-
-**4. Field (Scalar/Array)**
-
-The schema field you are filtering on (for example `:title`, `:views`, `:published`). 
-
-**5. Aggregate Operator Directive**
-
-Examples: `:avg`, `:sum`, `:count`, `:max`, `:min`
-
-Applies an aggregate function to the field. Appears after the field name. Used with `group_by` and `having` clauses.
-
-**6. Field-Level Logical Operator Directive**
-
-Examples: `:and`, `:or`
-
-Combines multiple operations that all target the same field. When multiple operations appear in a list without an explicit logical operator directive, AND is implicit: `[views: [>: 10, <: 20]]` means `views > 10 and views < 20`. You can also use explicit `:and` or `:or` at the field level to change the combinator.
-
-**7. Comparison Operator Directive**
-
-| Directive | Alias  | Meaning                        |
-| --------- | ------ | ------------------------------ |
-| `:=`      | `:eq`  | equal to                       |
-| `:!`      | `:neq` | not equal to                   |
-| `:>`      | `:gt`  | greater than                   |
-| `:>=`     | `:gte` | greater than or equal to       |
-| `:<`      | `:lt`  | less than                      |
-| `:<=`     | `:lte` | less than or equal to          |
-| `:in`     |        | contains                       |
-| `:like`   |        | pattern match                  |
-| `:ilike`  |        | case-insensitive pattern match |
-
-**8. Value Transformation Directive**
-
-Examples: `:lower`, `:upper`, `:all`, `:any`, `:datetime`, `:date`, `:+`, `:-`, `:*`, `:/`
-
-Changes the value before it is compared. String transformations (`:lower`, `:upper`), set comparisons (`:all`, `:any`), date/time operations (`:datetime`, `:date`), and arithmetic operator directives (`:+`, `:-`, `:*`, `:/`).
-
-**9. Value**
-
-The actual value used in the comparison (for example `1`, `"hello"`, `[1, 2, 3]`, `true`, `false`, `nil`, or a subquery filter).
-
-### Slot Guidelines
-
-- Slots are optional. Not every filter uses every slot. You only include the slots you need.
-
-- Slots must appear in order. Do not skip ahead and come back. For example, Do not put `:not` after the field name:
-
-    # BAD EXAMPLE, DO NOT COPY THIS!
-    [id: [not: [==: 1]]]
-
-    # GOOD EXAMPLE, COPY THIS!
-    [not: [id: [==: 1]]]
-
-- The `:not` directive wraps everything after it. When `:not` is used it negates the entire filter that follows.
-
-- String transformation directives (`:lower`, `:upper`) behavior depends on context:
-  - **Slot 3** (before field): Transforms the field itself -> `[lower: [title: [==: "hello"]]]` produces `lower(title) == "hello"`
-  - **Slot 8** (after operator): Transforms the value -> `[title: [==: [lower: "hello"]]]` produces `title == lower("hello")`
-
-- Logical operator directives (`:and`, `:or`) behavior depends on context:
-  - **Top-Level (Slot 1)**: Wraps multiple field groups in a list: `[and: [[title: "hello"], [published: true]]]`
-  - **Top-Level with enumerable syntax**: Acts as top-level when appearing as an enumerable: `[and: [title: "hello", views: [>: 10]]]`
-  - **Field-Level (Slot 6)**: Implicit when multiple operations target the same field: `[views: [>: 10, <: 20]]`
+Run the tests with: `mix run test/examples/run.exs`
+
+## Join Directives
+
+- `:join`: explicit join
+  - `:association`: (association join type)
+  - `:schema`: (schema join type)
+  - `:table`: (table join type)
+  - `:query`: (query join type)
+  - `:fragment`: (fragment join type)
+  - `:on`: (join condition)
+  - `:type`: (join type - :left, etc.)
 
 ### Examples
 
-**Example 1: Simple comparison**
+    [author: [as: :author, first_name: "John"]]
+    [author: [first_name: "John"]]
+    [author: [as: :author, on: true, first_name: "John"]]
+    [author: [as: :author, type: :left, first_name: "John"]]
+    [join: [author: [as: :author]]]
+    [join: [schema: [source: User, as: :user_join, on: true]]]
+    [join: [table: [source: "users", as: :users_table, on: true]]]
+    [join: [query: [source: user_query, as: :named_users, on: true]]]
+    [join: [subquery: [source: user_query, as: :named_users_subquery, on: true]]]
+    [join: [subquery: [source: [from: [query: User, first_name: "John"]], as: :named_users_subquery, on: true]]]
+    [join: [subquery: [source: [from: [published: true]], as: :published_posts_subquery, on: true]]]
+    [join: [fragment: [source: [name: :active_posts, values: [min_views: 0]], as: :active_posts, on: true]]]
+    [join: [fragment: [source: [name: :active_posts, values: [min_views: 0]], hints: :test_index, as: :active_posts, on: true]]]
+    [join: [author: [as: :author], table: [source: "users", as: :users_table, on: true]]]
+
+### Rule Statements
 
-    [views: [>: 10]]
+**Rule Statement 1:**
 
-Find records where the views field is greater than 10.
+**Given** filter params: `[author: [as: :author, first_name: "John"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query joins the `:author` association as the named binding `:author` and filters by `as(:author).first_name == "John"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author, where: as(:author).first_name == "John", select: p)`
+
+test name: "Rule Statement 1: association join with named binding and filter"
 
-How the parser interprets it:
+**Rule Statement 2:**
 
-  - Slot 4: views is the field name
-  - Slot 7: > is the comparison operator directive (greater than)
-  - Slot 9: 10 is the value to compare against
+**Given** filter params: `[author: [first_name: "John"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query joins the `:author` association without a named binding and filters by `a.first_name == "John"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), where: a.first_name == "John", select: p)`
 
-SQL condition:
+test name: "Rule Statement 2: association join without named binding"
 
-    views > 10
+**Rule Statement 3:**
 
-**Example 2: Negating a comparison**
+**Given** filter params: `[author: [as: :author, on: true, first_name: "John"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query joins the `:author` association as the named binding `:author` with `on: true` and filters by `as(:author).first_name == "John"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author, on: true, where: as(:author).first_name == "John", select: p)`
 
-    [not: [views: [>: 10]]]
+test name: "Rule Statement 3: association join with explicit on condition"
 
-Find records where the `views` field is NOT greater than `10`.
+**Rule Statement 4:**
 
-How the parser interprets it:
+**Given** filter params: `[author: [as: :author, type: :left, first_name: "John"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query applies a `left_join` for the `:author` association as the named binding `:author` and filters by `as(:author).first_name == "John"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, left_join: a in assoc(p, :author), as: :author, where: as(:author).first_name == "John", select: p)`
 
-  - Slot 2: `:not` negates the entire filter
-  - Slot 4: `views` is the field name
-  - Slot 7: `>` is the comparison operator directive (greater than)
-  - Slot 9: `10` is the value to compare against
+test name: "Rule Statement 4: association join with left join qualifier"
 
-SQL condition:
+**Rule Statement 5:**
 
-    not (views > 10)
+**Given** filter params: `[join: [author: [as: :author]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query adds the canonical association join for `:author` as the named binding `:author`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author, select: p)`
 
-**Example 3: Transforming the field before comparison**
+test name: "Rule Statement 5: canonical association join"
 
-    [lower: [title: [==: "hello"]]]
+**Rule Statement 6:**
 
-Find records where the `title` field, converted to lowercase, equals `"hello"`.
+**Given** filter params: `[join: [schema: [source: User, as: :user_join, on: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query joins the schema source as the named binding `:user_join` with `on: true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, join: u in EctoShorts.TestUser, as: :user_join, on: true, select: {p.title, u.first_name})`
 
-How the parser interprets it:
+test name: "Rule Statement 6: canonical schema join"
 
-  - Slot 3: `:lower` transforms the field to lowercase
-  - Slot 4: `:title` is the field name
-  - Slot 7: `:==` is the comparison operator directive (equality)
-  - Slot 9: `"hello"` is the value to compare against
+**Rule Statement 7:**
 
-SQL condition:
+**Given** filter params: `[join: [table: [source: "users", as: :users_table, on: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query joins the table source as the named binding `:users_table` with `on: true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, join: u in "users", as: :users_table, on: true, select: {p.title, field(u, :first_name)})`
 
-    lower(title) == "hello"
+test name: "Rule Statement 7: canonical table join"
 
-**Example 4: Transforming the value before comparison**
+**Rule Statement 8:**
 
-    [title: [==: [lower: "hello"]]]
+**Given** filter params: `[join: [query: [source: user_query, as: :named_users, on: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query joins the provided query source as the named binding `:named_users` with `on: true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `user_query = from(u in EctoShorts.TestUser, where: u.first_name == "John"); from(p in EctoShorts.TestPost, join: u in ^user_query, as: :named_users, on: true, select: {p.title, u.first_name})`
 
-Find records where the `title` field equals the lowercase version of `"hello"`.
+test name: "Rule Statement 8: canonical query join"
 
-How the parser interprets it:
+**Rule Statement 9:**
 
-  - Slot 4: `:title` is the field name
-  - Slot 7: `:==` is the comparison operator directive (equality)
-  - Slot 8: `:lower` transforms the value to lowercase
-  - Slot 9: `"hello"` is the value to compare against
+**Given** filter params: `[join: [subquery: [source: user_query, as: :named_users_subquery, on: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query joins the provided query source as a subquery named binding `:named_users_subquery` with `on: true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `user_query = from(u in EctoShorts.TestUser, where: u.first_name == "John"); from(p in EctoShorts.TestPost, join: u in subquery(user_query), as: :named_users_subquery, on: true, select: {p.title, u.first_name})`
 
-SQL condition:
+test name: "Rule Statement 9: canonical subquery join"
 
-    title == lower("hello")
+**Rule Statement 10:**
 
-**Example 5: Negating a field transformation**
+**Given** filter params: `[join: [subquery: [source: [from: [query: User, first_name: "John"]], as: :named_users_subquery, on: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query builds the subquery source from the explicit `:from` payload and joins it as the named binding `:named_users_subquery` with `on: true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `named_users_query = from(u in EctoShorts.TestUser, where: u.first_name == "John"); from(p in EctoShorts.TestPost, join: u in subquery(named_users_query), as: :named_users_subquery, on: true, select: {p.title, u.first_name})`
 
-    [not: [lower: [title: [==: "hello"]]]]
+test name: "Rule Statement 10: canonical subquery join from filter params with explicit from"
 
-Find records where the `:title` field, converted to lowercase, does NOT equal `"hello"`.
+**Rule Statement 11:**
 
-How the parser interprets it:
+**Given** filter params: `[join: [subquery: [source: [from: [published: true]], as: :published_posts_subquery, on: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query builds the subquery source from the current schema filter params and joins it as the named binding `:published_posts_subquery`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `pub_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p.id); from(p in EctoShorts.TestPost, join: s in subquery(pub_query), as: :published_posts_subquery, on: s.id == p.id, select: p)`
 
-  - Slot 2: `:not` negates the entire filter
-  - Slot 3: `:lower` transforms the field to lowercase
-  - Slot 4: `:title` is the field name
-  - Slot 7: `:==` is the comparison operator directive (equality)
-  - Slot 9: `"hello"` is the value to compare against
+test name: "Rule Statement 11: canonical subquery join from current schema filter params"
 
-SQL condition:
+**Rule Statement 12:**
 
-    not (lower(title) == "hello")
+**Given** filter params: `[join: [fragment: [source: [name: :active_posts, values: [min_views: 0]], as: :active_posts, on: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query joins the fragment source as the named binding `:active_posts` with `on: ap.id == p.id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `active_posts_query = from(ap in fragment("SELECT id FROM posts WHERE views >= ?", ^0), select: %{id: field(ap, :id)}); from(p in EctoShorts.TestPost, join: ap in ^active_posts_query, as: :active_posts, on: ap.id == p.id, select: p)`
 
-**Example 6: Combining filters with OR and negation**
+test name: "Rule Statement 12: canonical fragment join"
 
-    [or: [[not: [views: [>: 10]]], [published: true]]]
+**Rule Statement 13:**
 
-Find records where EITHER the `:views` field is NOT greater than `10`, OR the `published` field is `true`.
+**Given** filter params: `[join: [fragment: [source: [name: :active_posts, values: [min_views: 0]], hints: :test_index, as: :active_posts, on: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query joins the fragment source as the named binding `:active_posts` and applies the join hints  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `active_posts_query = from(ap in fragment("SELECT id FROM posts WHERE views >= ?", ^0), select: %{id: field(ap, :id)}); from(p in EctoShorts.TestPost, join: ap in ^active_posts_query, as: :active_posts, on: ap.id == p.id, hints: ["USE INDEX(test_index)"], select: p)`
 
-How the parser interprets it:
+test name: "Rule Statement 13: canonical fragment join with hints"
 
-  - Slot 1: `:or` combines multiple filter groups
-  - Slot 2: `:not` negates the first filter
-  - Slot 4: `views` is the field name (first group), `published` is the field name (second group)
-  - Slot 7: `>` is the comparison operator directive (first group), equality is implicit (second group)
-  - Slot 9: `10` is the value (first group), `true` is the value (second group)
+**Rule Statement 14:**
 
-SQL condition:
+**Given** filter params: `[join: [author: [as: :author], table: [source: "users", as: :users_table, on: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided join directives  
+**And** it must check whether the query applies the `:author` association join first and then the table join for `"users"` in the same query  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author, join: u in "users", as: :users_table, on: true, select: {p.title, a.first_name, field(u, :first_name)})`
 
-    not (views > 10) or (published == true)
-
-**Example 7: Multiple conditions on the same field**
-
-    [and: [views: [>: 10, <: 20]]]
-
-Find records where the `:views` field is greater than `10` AND less than `20`.
-
-How the parser interprets it:
-
-  - Slot 1: `:and` is a top-level logical operator directive
-  - Slot 4: `views` is the field name
-  - Slot 7: `>` and `<` are the comparison operator directives
-  - Slot 9: `10` and `20` are the values to compare against
-  - Note: Multiple operations on the same field have implicit AND between them
-
-SQL condition:
-
-    views > 10 and views < 20
-
-**Example 8: Using an aggregate function**
-
-    [views: [avg: [>: 10]]]
-
-Find records where the average of the `views` field is greater than `10`.
-
-How the parser interprets it:
-
-  - Slot 4: `views` is the field name
-  - Slot 5: `:avg` aggregates the field
-  - Slot 7: `>` is the comparison operator directive (greater than)
-  - Slot 9: `10` is the value to compare against
-
-SQL condition:
-
-    avg(views) > 10
-
-**Example 9: Field-level implicit AND**
-
-    [views: [>: 10, <: 20]]
-
-Find records where the `views` field is greater than `10` AND less than `20`.
-
-How the parser interprets it:
-
-  - Slot 4: `views` is the field name
-  - Slot 6: Implicit `:and` combines multiple operations on the same field
-  - Slot 7: `>` and `<` are the comparison operator directives
-  - Slot 9: `10` and `20` are the values to compare against
-
-SQL condition:
-
-    views > 10 and views < 20
-
-### Invalid Examples
-
-These patterns violate the slot ordering rules and will not work:
-
-**Invalid Example 1: Negation after field**
-
-    [views: [not: [>: 10]]]
-
-This attempts to negate a comparison on the views field, but places :not after the field name.
-
-Why it fails:
-
-- Slot 4: `:views` is the field name
-  - Slot 2: `:not` attempts to negate, but Slot 2 must come before Slot 4
-  - Violation: `:not` (Slot 2) must come before field (Slot 4)
-
-Correct version:
-
-    [not: [views: [>: 10]]]
-
-**Invalid Example 2: Directive before field**
-
-    [>: [views: 10]]
-
-This attempts to use the `>` directive before specifying which field to compare.
-
-Why it fails:
-
-  - Slot 7: `:>` is the comparison operator directive
-  - Slot 4: `:views` attempts to specify the field name, but Slot 4 must come before Slot 7
-  - Violation: Directive (Slot 7) must come after field (Slot 4)
-
-Correct version:
-
-    [views: [>: 10]]
-
-**Invalid Example 3: Field after directive**
-
-    [==: [views: 10]]
-
-This attempts to use the `:==` directive before specifying which field to compare.
-
-Why it fails:
-
-  - Slot 7: `:==` is the comparison operator directive
-  - Slot 4: `:views` attempts to specify the field name, but Slot 4 must come before Slot 7
-  - Violation: Field (Slot 4) must come before directive (Slot 7)
-
-Correct version:
-
-    [views: [==: 10]]
+test name: "Rule Statement 14: canonical multiple joins"
 
 ---
+
+## Query Modifier Directives
+
+- `:with_ties`: include ties in limit
+- `:update`: update operations
+- `:windows`: window functions
+- `:preload`: preload associations
+
+### Examples
+
+    [with_ties: true]
+    [with_ties: false]
+    [with_ties: [bind: [as: :post, value: true]]]
+    [with_ties: [bind: [at: 1, value: true]]]
+    [update: [set: [title: "After"], inc: [views: 1]]]
+    [windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]]
+    [preload: :author]
+    [preload: [:author]]
+    [preload: [author: [:posts]]]
+    [preload: [bind: [as: :example, value: :author]]]
+    [preload: [bind: [at: 2, value: :author]]]
+    [preload: [bind: [at: 2, value: :author], posts: [:comments]]]
+    [preload: [bind: [as: :author, value: :author], posts: [:comments]]]
+    [preload: [bind: [[as: :author, value: :author], [at: 2, value: :author]], posts: [:comments]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[with_ties: true]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query enables `with_ties(true)` on a limited descending `:views` query  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, order_by: [desc: p.views], limit: 1) |> with_ties(true)`
+
+test name: "Rule Statement 1: with_ties true"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[with_ties: false]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query disables `with_ties` on a limited descending `:views` query  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, order_by: [desc: p.views], limit: 1) |> with_ties(false)`
+
+test name: "Rule Statement 2: with_ties false"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[with_ties: [bind: [as: :post, value: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query enables `with_ties(true)` while preserving the named `:post` binding  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, as: :post, order_by: [desc: p.views], limit: 1) |> with_ties(true)`
+
+test name: "Rule Statement 3: with_ties named binding"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[with_ties: [bind: [at: 1, value: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query enables `with_ties(true)` while preserving the positional binding selector  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, order_by: [desc: p.views], limit: 1) |> with_ties(true)`
+
+test name: "Rule Statement 4: with_ties positional binding"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[update: [set: [title: "After"], inc: [views: 1]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query adds the `set` and `inc` update operations to the filtered update query  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.id == ^post1.id, update: [set: [title: "After"], inc: [views: 1]])`
+
+test name: "Rule Statement 5: update set and inc"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query defines the `post_window` window with the provided partition and ordering fields  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, windows: [post_window: [partition_by: p.author_id, order_by: [desc: p.inserted_at]]], select: {p.title, over(count(p.id), :post_window)})`
+
+test name: "Rule Statement 6: windows partition_by and order_by"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[preload: :author]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query preloads the `:author` association by name  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.title == "Post", preload: :author, select: p)`
+
+test name: "Rule Statement 7: preload atom"
+
+**Rule Statement 8:**
+
+**Given** filter params: `[preload: [:author]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query preloads the `:author` association from a list payload  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.title == "Post", preload: [:author], select: p)`
+
+test name: "Rule Statement 8: preload list with atom"
+
+**Rule Statement 9:**
+
+**Given** filter params: `[preload: [author: [:posts]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query preloads the `:author` association with nested `:posts`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.title == "Post", preload: [author: [:posts]], select: p)`
+
+test name: "Rule Statement 9: preload nested associations"
+
+**Rule Statement 10:**
+
+**Given** filter params: `[preload: [bind: [as: :example, value: :author]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query preloads the `:author` association from the named `:example` binding  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.title == "Post 1", join: a in assoc(p, :author), as: :example, preload: [author: a], select: p)`
+
+test name: "Rule Statement 10: preload from named binding"
+
+**Rule Statement 11:**
+
+**Given** filter params: `[preload: [bind: [at: 2, value: :author]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query preloads the `:author` association from the positional binding  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.title == "Post 1", join: a in assoc(p, :author), preload: [author: a], select: p)`
+
+test name: "Rule Statement 11: preload from positional binding"
+
+**Rule Statement 12:**
+
+**Given** filter params: `[preload: [bind: [at: 2, value: :author], posts: [:comments]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query preloads the `:author` association from the positional binding with nested `posts: [:comments]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.title == "Post", join: a in assoc(p, :author), preload: [author: {a, [posts: [:comments]]}], select: p)`
+
+test name: "Rule Statement 12: preload from binding and nested"
+
+**Rule Statement 13:**
+
+**Given** filter params: `[preload: [bind: [as: :author, value: :author], posts: [:comments]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query preloads the `:author` association from the named `:author` binding with nested `posts: [:comments]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.title == "Post", join: a in assoc(p, :author), as: :author, preload: [author: {a, [posts: [:comments]]}], select: p)`
+
+test name: "Rule Statement 13: preload from named binding and nested"
+
+**Rule Statement 14:**
+
+**Given** filter params: `[preload: [bind: [[as: :author, value: :author], [at: 2, value: :author]], posts: [:comments]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query modifier directives  
+**And** it must check whether the query preloads the `:author` association from the named and positional bindings with shared nested `posts: [:comments]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.title == "Post", join: a in assoc(p, :author), as: :author, preload: [author: {a, [posts: [:comments]]}], preload: [author: {a, [posts: [:comments]]}], select: p)`
+
+test name: "Rule Statement 14: preload from multiple bindings and nested"
+
+---
+
+## Named Binding Directives
+
+- `:with_named_binding`: create named binding
+
+### Examples
+
+    [with_named_binding: [author: [join: [association: [source: :author, as: :author]]]]]
+    [with_named_binding: [author: [join: [association: [source: :author, as: :author]]], users_table: [join: [table: [source: "users", as: :users_table, on: true]]]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[with_named_binding: [author: [join: [association: [source: :author, as: :author]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided named binding directives  
+**And** it must check whether the query adds the `:author` named binding and filters by `as(:author).first_name == "John"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author, where: as(:author).first_name == "John")`
+
+test name: "Rule Statement 1: with_named_binding single named binding"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[with_named_binding: [author: [join: [association: [source: :author, as: :author]]], users_table: [join: [table: [source: "users", as: :users_table, on: true]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided named binding directives  
+**And** it must check whether the query adds the `:author` and `:users_table` named bindings and returns the matching joined user row  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author, join: u in "users", as: :users_table, on: u.id == p.author_id, where: as(:author).first_name == "John", select: {p.title, field(u, :first_name)})`
+
+test name: "Rule Statement 2: with_named_binding multiple named bindings"
+
+---
+
+## CTE Directives
+
+- `:recursive_ctes`: enable recursive CTEs
+- `:with_cte`: define CTE
+
+### Examples
+
+    [recursive_ctes: true]
+    [recursive_ctes: false]
+    [with_cte: [published_posts: [as: cte_query]]]
+    [with_cte: [published_posts: [as: cte_query, materialized: false, operation: :all]]]
+    [with_cte: [published_posts: [as: [from: [query: Post, published: true]]]]]
+    [with_cte: [target_post: [as: [from: [query: Post, id: 1]]]]]
+    [recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[recursive_ctes: true]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided CTE directives  
+**And** it must check whether the query enables recursive CTEs before applying the CTE definition  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p); EctoShorts.TestPost |> recursive_ctes(true) |> with_cte("published_posts", as: ^cte_query)`
+
+test name: "Rule Statement 1: recursive_ctes true"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[recursive_ctes: false]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided CTE directives  
+**And** it must check whether the query remains non-recursive when recursive CTEs are disabled  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost)`
+
+test name: "Rule Statement 2: recursive_ctes false"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[with_cte: [published_posts: [as: cte_query]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided CTE directives  
+**And** it must check whether the query defines the `published_posts` CTE from the provided query and filters published posts from the base query  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p); EctoShorts.TestPost |> from(as: :post) |> with_cte("published_posts", as: ^cte_query) |> where([p], p.published == true)`
+
+test name: "Rule Statement 3: with_cte basic"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[with_cte: [published_posts: [as: cte_query, materialized: false, operation: :all]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided CTE directives  
+**And** it must check whether the query defines the `published_posts` CTE as not materialized and filters published posts from the base query  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p); EctoShorts.TestPost |> with_cte("published_posts", as: ^cte_query, materialized: false) |> where([p], p.published == true)`
+
+test name: "Rule Statement 4: with_cte not materialized"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[with_cte: [published_posts: [as: [from: [query: Post, published: true]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided CTE directives  
+**And** it must check whether the query builds the `published_posts` CTE from the provided filter params and filters published posts from the base query  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p); EctoShorts.TestPost |> with_cte("published_posts", as: ^cte_query) |> where([p], p.published == true)`
+
+test name: "Rule Statement 5: with_cte from filter params published true"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[with_cte: [target_post: [as: [from: [query: Post, id: 1]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided CTE directives  
+**And** it must check whether the query builds the `target_post` CTE from the provided filter params and filters the matching post from the base query  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `cte_query = from(p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p); EctoShorts.TestPost |> with_cte("target_post", as: ^cte_query) |> where([p], p.id == ^post1.id)`
+
+test name: "Rule Statement 6: with_cte from filter params id"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided CTE directives  
+**And** it must check whether the query enables recursive CTEs and defines the `published_posts` CTE from the provided query before filtering published posts  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p); EctoShorts.TestPost |> recursive_ctes(true) |> with_cte("published_posts", as: ^cte_query) |> where([p], p.published == true)`
+
+test name: "Rule Statement 7: recursive_ctes with cte"
+
+---
+
+## Lock Directives
+
+- `:lock`: query locking
+
+### Examples
+
+    [lock: fn query -> from(p in query, lock: "FOR UPDATE") end]
+    [lock: [name: :for_share]]
+    [lock: [name: :for_update_with_clause, values: [clause: "SKIP LOCKED"]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[lock: fn query -> from(p in query, lock: "FOR UPDATE") end]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided lock directives  
+**And** it must check whether the query uses `lock: "FOR UPDATE"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, lock: "FOR UPDATE")`
+
+test name: "Rule Statement 1: lock for update"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[lock: [name: :for_share]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided lock directives  
+**And** it must check whether the query uses `lock: "FOR SHARE"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, lock: "FOR SHARE")`
+
+test name: "Rule Statement 2: lock for share"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[lock: [name: :for_update_with_clause, values: [clause: "SKIP LOCKED"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided lock directives  
+**And** it must check whether the query uses `lock: "FOR UPDATE SKIP LOCKED"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, lock: "FOR UPDATE SKIP LOCKED")`
+
+test name: "Rule Statement 3: lock with values"
+
+---
+
+## Set Directives
+
+- `:except`: set except
+- `:except_all`: set except all
+- `:intersect`: set intersect
+- `:intersect_all`: set intersect all
+- `:union`: set union
+- `:union_all`: set union all
+
+### Examples
+
+    [except: [published: false]]
+    [except: from(p in EctoShorts.TestPost, where: p.published == ^false)]
+    [except_all: [published: false]]
+    [intersect: [published: false]]
+    [intersect_all: [published: false]]
+    [union: [published: false]]
+    [union_all: [published: false]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[except: [published: false]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided set directives  
+**And** it must build the set query `from(q in EctoShorts.TestPost, where: q.published == false)` from the provided filter params and apply it with `except/2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `except_query = from(q in EctoShorts.TestPost, where: q.published == false); from(p in EctoShorts.TestPost) |> except(^except_query)`
+
+test name: "Rule Statement 1: except with filter params"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[except: from(p in EctoShorts.TestPost, where: p.published == ^false)]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided set directives  
+**And** it must use the provided raw query exactly and apply it with `except/2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `except_query = from(p in EctoShorts.TestPost, where: p.published == ^false); from(p in EctoShorts.TestPost) |> except(^except_query)`
+
+test name: "Rule Statement 2: except with raw query"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[except_all: [published: false]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided set directives  
+**And** it must build the set query `from(q in EctoShorts.TestPost, where: q.published == false)` from the provided filter params and apply it with `except_all/2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `except_query = from(q in EctoShorts.TestPost, where: q.published == false); from(p in EctoShorts.TestPost) |> except_all(^except_query)`
+
+test name: "Rule Statement 3: except_all with filter params"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[intersect: [published: false]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided set directives  
+**And** it must build the set query `from(q in EctoShorts.TestPost, where: q.published == false)` from the provided filter params and apply it with `intersect/2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `intersect_query = from(q in EctoShorts.TestPost, where: q.published == false); from(p in EctoShorts.TestPost) |> intersect(^intersect_query)`
+
+test name: "Rule Statement 4: intersect with filter params"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[intersect_all: [published: false]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided set directives  
+**And** it must build the set query `from(q in EctoShorts.TestPost, where: q.published == false)` from the provided filter params and apply it with `intersect_all/2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `intersect_query = from(q in EctoShorts.TestPost, where: q.published == false); from(p in EctoShorts.TestPost) |> intersect_all(^intersect_query)`
+
+test name: "Rule Statement 5: intersect_all with filter params"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[union: [published: false]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided set directives  
+**And** it must build the set query `from(p in EctoShorts.TestPost, where: p.published == false)` from the provided filter params and apply it with `union/2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `query1 = from(p in EctoShorts.TestPost, where: p.published == true); query2 = from(p in EctoShorts.TestPost, where: p.published == false); union(query1, ^query2)`
+
+test name: "Rule Statement 6: union with filter params"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[union_all: [published: false]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided set directives  
+**And** it must build the set query `from(p in EctoShorts.TestPost, where: p.published == false)` from the provided filter params and apply it with `union_all/2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `query1 = from(p in EctoShorts.TestPost, where: p.published == true); query2 = from(p in EctoShorts.TestPost, where: p.published == false); union_all(query1, ^query2)`
+
+test name: "Rule Statement 7: union_all with filter params"
+
+---
+
+## Query Configuration Directives
+
+- `:where`: explicit WHERE clause
+- `:or_where`: OR WHERE clause
+- `:from`: specify source schema/table
+- `:subquery`: wrap the query in a subquery
+- `:select`: select fields
+- `:select_merge`: merge additional selections
+- `:distinct`: distinct results
+- `:group_by`: group by fields
+- `:having`: having clause
+- `:or_having`: OR having clause
+- `:order_by`: order results
+- `:prepend_order_by`: prepend to existing order
+- `:limit`: limit results
+- `:offset`: skip results
+- `:first`: limit from start
+- `:after`: pagination after
+- `:before`: pagination before
+- `:reverse_order`: reverse ordering
+- `:exclude`: exclude query parts
+- `:put_query_prefix`: set schema prefix
+- `:start_date`: filter by start date
+- `:end_date`: filter by end date
+- `:ids`: filter by IDs
+- `:dynamic`: raw dynamic expression
+- `:exists`: exists subquery
+
+### Examples
+
+    [from: Post, id: 1, published: true]
+    [select: true]
+    [select: :id]
+    [select: [:id, :title]]
+    [select: [map: [:id, :title]]]
+    [select: [map: [custom_id: :id]]]
+    [select: [struct: [:id]]]
+    [distinct: true]
+    [group_by: :author_id]
+    [having: [published: true]]
+    [order_by: :title]
+    [order_by: [desc: :title]]
+    [limit: 10]
+    [offset: 5]
+    [limit: 10, offset: 5]
+    [start_date: ~N[2026-01-01 00:00:00]]
+    [end_date: ~N[2026-12-31 23:59:59]]
+    [ids: [1, 2, 3]]
+    [dynamic: dynamic([p], p.views > ^10)]
+    [where: [dynamic: dynamic([p], p.published === ^true)]]
+    [or_where: [dynamic: dynamic([p], p.views > ^100)]]
+    [where: [exists: subquery_expr]]
+    [where: [not: [exists: subquery_expr]]]
+    [published: true, subquery: [id: 2]]
+    [from: Post, id: 1]
+    [from: "posts", id: 1]
+    [from: "posts", select: [:id]]
+    [select_merge: [map: [custom_id: :id]]]
+    [select_merge: [map: [:id, :title]]]
+    [select: [map: [:id]], select_merge: [map: [post_title: :title]]]
+    [distinct: false]
+    [distinct: :title]
+    [distinct: [desc: :title]]
+    [distinct: :title, order_by: :id]
+    [group_by: [:author_id, :published]]
+    [having: [views: [>: 10]]]
+    [having: [views: [avg: [>: 10]]]]
+    [having: dynamic([p], p.views > ^10)]
+    [having: [and: [published: true, views: [>: 10]]]]
+    [having: [or: [views: [>: 10], views: [<: 5]]]]
+    [having: [not: [views: [>: 10]]]]
+    [or_having: [views: [<: 5]]]
+    [or_having: [views: [avg: [<: 5]]]]
+    [order_by: [asc: :title, desc: :id]]
+    [prepend_order_by: :title]
+    [prepend_order_by: [asc: :published_at, desc: :title]]
+    [after: 10]
+    [before: 10]
+    [first: 10]
+    [reverse_order: true]
+    [exclude: :order_by]
+    [exclude: [:order_by, :limit]]
+    [put_query_prefix: "tenant_a"]
+    [put_query_prefix: "tenant_a", put_query_prefix: "tenant_b"]
+
+### Rule Statements
+
+**Rule Statement 7:**
+
+**Given** filter params: `[from: Post, id: 1, published: true]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `from(p in EctoShorts.TestPost, where: p.id == 1 and p.published == true)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.id == 1 and p.published == true)`
+
+test name: "Rule Statement 7: from schema with filters"
+
+**Rule Statement 11:**
+
+**Given** filter params: `[select: true]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `select: p`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `select: p`
+
+test name: "Rule Statement 11: select true selects all fields"
+
+**Rule Statement 12:**
+
+**Given** filter params: `[select: :id]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `select: p.id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `select: p.id`
+
+test name: "Rule Statement 12: select single field"
+
+**Rule Statement 13:**
+
+**Given** filter params: `[select: [:id, :title]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `select: [p.id, p.title]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `select: [p.id, p.title]`
+
+test name: "Rule Statement 13: select list of fields"
+
+**Rule Statement 14:**
+
+**Given** filter params: `[select: [map: [:id, :title]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `select: %{id: p.id, title: p.title}`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `select: %{id: p.id, title: p.title}`
+
+test name: "Rule Statement 14: select map of fields"
+
+**Rule Statement 15:**
+
+**Given** filter params: `[select: [map: [custom_id: :id]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `select: %{custom_id: p.id}`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `select: %{custom_id: p.id}`
+
+test name: "Rule Statement 15: select map with renamed key"
+
+**Rule Statement 16:**
+
+**Given** filter params: `[select: [struct: [:id]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `select: struct(p, [:id])`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `select: struct(p, [:id])`
+
+test name: "Rule Statement 16: select struct"
+
+**Rule Statement 20:**
+
+**Given** filter params: `[distinct: true]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `distinct: true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `distinct: true`
+
+test name: "Rule Statement 20: distinct true"
+
+**Rule Statement 25:**
+
+**Given** filter params: `[group_by: :author_id]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `group_by: p.author_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `group_by: p.author_id`
+
+test name: "Rule Statement 25: group by single field"
+
+**Rule Statement 27:**
+
+**Given** filter params: `[having: [published: true]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `having: p.published == true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `having: p.published == true`
+
+test name: "Rule Statement 27: having clause with equality"
+
+**Rule Statement 34:**
+
+**Given** filter params: `[order_by: :title]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `order_by: [asc: p.title]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `order_by: [asc: p.title]`
+
+test name: "Rule Statement 34: order by field ascending"
+
+**Rule Statement 35:**
+
+**Given** filter params: `[order_by: [desc: :title]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `order_by: [desc: p.title]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `order_by: [desc: p.title]`
+
+test name: "Rule Statement 35: order by field descending"
+
+**Rule Statement 41:**
+
+**Given** filter params: `[limit: 10]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `limit: 10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `limit: 10`
+
+test name: "Rule Statement 41: limit results"
+
+**Rule Statement 42:**
+
+**Given** filter params: `[offset: 5]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `offset: 5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `offset: 5`
+
+test name: "Rule Statement 42: offset results"
+
+**Rule Statement 44:**
+
+**Given** filter params: `[limit: 10, offset: 5]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `limit: 10, offset: 5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `limit: 10, offset: 5`
+
+test name: "Rule Statement 44: limit and offset"
+
+**Rule Statement 50:**
+
+**Given** filter params: `[start_date: ~N[2026-01-01 00:00:00]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `where: p.inserted_at >= ^start_date`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `where: p.inserted_at >= ^start_date`
+
+test name: "Rule Statement 50: start_date filter"
+
+**Rule Statement 51:**
+
+**Given** filter params: `[end_date: ~N[2026-12-31 23:59:59]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `where: p.inserted_at <= ^end_date`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `where: p.inserted_at <= ^end_date`
+
+test name: "Rule Statement 51: end_date filter"
+
+**Rule Statement 52:**
+
+**Given** filter params: `[ids: [1, 2, 3]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `where: p.id in [1, 2, 3]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `where: p.id in [1, 2, 3]`
+
+test name: "Rule Statement 52: ids filter"
+
+**Rule Statement 1:**
+
+**Given** filter params: `[dynamic: dynamic([p], p.views > ^10)]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `dynamic([p], p.views > ^10)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `dynamic([p], p.views > ^10)`
+
+test name: "Rule Statement 1: raw dynamic expression"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[where: [dynamic: dynamic([p], p.published === ^true)]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `where: ^dynamic([p], p.published == ^true)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `where: ^dynamic([p], p.published == ^true)`
+
+test name: "Rule Statement 2: dynamic within where clause"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[or_where: [dynamic: dynamic([p], p.views > ^100)]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `or_where: ^dynamic([p], p.views > ^100)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `or_where: ^dynamic([p], p.views > ^100)`
+
+test name: "Rule Statement 3: dynamic within or_where clause"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[where: [exists: subquery_expr]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `where: exists(subquery_expr)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `where: exists(subquery_expr)`
+
+test name: "Rule Statement 4: exists subquery within where clause"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[where: [not: [exists: subquery_expr]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `where: not exists(subquery_expr)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `where: not exists(subquery_expr)`
+
+test name: "Rule Statement 5: negated exists subquery within where clause"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[published: true, subquery: [id: 2]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `from(p in subquery(from(q in EctoShorts.TestPost, where: q.published == true and q.id == 2)))`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, where: q.published == true and q.id == 2)))`
+
+test name: "Rule Statement 6: published and subquery"
+
+**Rule Statement 8:**
+
+**Given** filter params: `[from: Post, id: 1]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `from(p in EctoShorts.TestPost, where: p.id == 1)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.id == 1)`
+
+test name: "Rule Statement 8: from Post with id filter"
+
+**Rule Statement 9:**
+
+**Given** filter params: `[from: "posts", id: 1]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `from(p in "posts", where: p.id == 1, select: p.id)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in "posts", where: p.id == 1, select: p.id)`
+
+test name: "Rule Statement 9: from table string with id filter"
+
+**Rule Statement 10:**
+
+**Given** filter params: `[from: "posts", select: [:id]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `from(p in "posts", select: p.id)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in "posts", select: p.id)`
+
+test name: "Rule Statement 10: from table string with select"
+
+**Rule Statement 17:**
+
+**Given** filter params: `[select_merge: [map: [custom_id: :id]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `select_merge: %{custom_id: p.id}`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `select_merge: %{custom_id: p.id}`
+
+test name: "Rule Statement 17: select_merge map with renamed key"
+
+**Rule Statement 18:**
+
+**Given** filter params: `[select_merge: [map: [:id, :title]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `select_merge: %{id: p.id, title: p.title}`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `select_merge: %{id: p.id, title: p.title}`
+
+test name: "Rule Statement 18: select_merge map with field list"
+
+**Rule Statement 19:**
+
+**Given** filter params: `[select: [map: [:id]], select_merge: [map: [post_title: :title]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `select: %{id: p.id}, select_merge: %{post_title: p.title}`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `select: %{id: p.id}, select_merge: %{post_title: p.title}`
+
+test name: "Rule Statement 19: select then select_merge"
+
+**Rule Statement 21:**
+
+**Given** filter params: `[distinct: false]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `distinct: false`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `distinct: false`
+
+test name: "Rule Statement 21: distinct false"
+
+**Rule Statement 22:**
+
+**Given** filter params: `[distinct: :title]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `distinct: p.title`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `distinct: p.title`
+
+test name: "Rule Statement 22: distinct on field"
+
+**Rule Statement 23:**
+
+**Given** filter params: `[distinct: [desc: :title]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `distinct: [desc: p.title]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `distinct: [desc: p.title]`
+
+test name: "Rule Statement 23: distinct on field descending"
+
+**Rule Statement 24:**
+
+**Given** filter params: `[distinct: :title, order_by: :id]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `distinct: p.title, order_by: p.id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `distinct: p.title, order_by: p.id`
+
+test name: "Rule Statement 24: distinct with order_by"
+
+**Rule Statement 26:**
+
+**Given** filter params: `[group_by: [:author_id, :published]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `group_by: [p.author_id, p.published]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `group_by: [p.author_id, p.published]`
+
+test name: "Rule Statement 26: group by multiple fields"
+
+**Rule Statement 28:**
+
+**Given** filter params: `[having: [views: [>: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `having: p.views > 10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `having: p.views > 10`
+
+test name: "Rule Statement 28: having views greater than"
+
+**Rule Statement 29:**
+
+**Given** filter params: `[having: [views: [avg: [>: 10]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `having: avg(p.views) > 10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `having: avg(p.views) > 10`
+
+test name: "Rule Statement 29: having avg views greater than"
+
+**Rule Statement 30:**
+
+**Given** filter params: `[having: dynamic([p], p.views > ^10)]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `having: ^dynamic([p], p.views > ^10)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `having: ^dynamic([p], p.views > ^10)`
+
+test name: "Rule Statement 30: having dynamic expression"
+
+**Rule Statement 31:**
+
+**Given** filter params: `[having: [and: [published: true, views: [>: 10]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `having: p.published == true and p.views > 10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `having: p.published == true and p.views > 10`
+
+test name: "Rule Statement 31: having and"
+
+**Rule Statement 32:**
+
+**Given** filter params: `[having: [or: [views: [>: 10], views: [<: 5]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `having: p.views > 10 or p.views < 5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `having: p.views > 10 or p.views < 5`
+
+test name: "Rule Statement 32: having or"
+
+**Rule Statement 32A:**
+
+**Given** filter params: `[having: [not: [views: [>: 10]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `having: not (p.views > 10)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `having: not (p.views > 10)`
+
+test name: "Rule Statement 32A: having not views greater than"
+
+**Rule Statement 33:**
+
+**Given** filter params: `[or_having: [views: [<: 5]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `or_having: p.views < 5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `or_having: p.views < 5`
+
+test name: "Rule Statement 33: or_having"
+
+**Rule Statement 33A:**
+
+**Given** filter params: `[or_having: [views: [avg: [<: 5]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `or_having: avg(p.views) < 5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `or_having: avg(p.views) < 5`
+
+test name: "Rule Statement 33A: or_having avg views less than"
+
+**Rule Statement 36:**
+
+**Given** filter params: `[order_by: [asc: :title, desc: :id]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `order_by: [asc: p.title, desc: p.id]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `order_by: [asc: p.title, desc: p.id]`
+
+test name: "Rule Statement 36: order by asc and desc"
+
+**Rule Statement 37:**
+
+**Given** filter params: `[prepend_order_by: :title]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `prepend_order_by([p], desc: p.title)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `prepend_order_by([p], desc: p.title)`
+
+test name: "Rule Statement 37: prepend_order_by single field"
+
+**Rule Statement 38:**
+
+**Given** filter params: `[prepend_order_by: [asc: :published_at, desc: :title]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `prepend_order_by([p], asc: p.published_at, desc: p.title)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `prepend_order_by([p], asc: p.published_at, desc: p.title)`
+
+test name: "Rule Statement 38: prepend_order_by multiple fields"
+
+**Rule Statement 39:**
+
+**Given** filter params: `[after: 10]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `offset: 10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `offset: 10`
+
+test name: "Rule Statement 39: after cursor"
+
+**Rule Statement 40:**
+
+**Given** filter params: `[before: 10]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `limit: 10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `limit: 10`
+
+test name: "Rule Statement 40: before cursor"
+
+**Rule Statement 43:**
+
+**Given** filter params: `[first: 10]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `limit: 10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `limit: 10`
+
+test name: "Rule Statement 43: first N records"
+
+**Rule Statement 45:**
+
+**Given** filter params: `[reverse_order: true]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `reverse_order(query)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `reverse_order(query)`
+
+test name: "Rule Statement 45: reverse order"
+
+**Rule Statement 46:**
+
+**Given** filter params: `[exclude: :order_by]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `exclude(query, :order_by)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `exclude(query, :order_by)`
+
+test name: "Rule Statement 46: exclude order_by"
+
+**Rule Statement 47:**
+
+**Given** filter params: `[exclude: [:order_by, :limit]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `query |> exclude(:order_by) |> exclude(:limit)`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `query |> exclude(:order_by) |> exclude(:limit)`
+
+test name: "Rule Statement 47: exclude order_by and limit"
+
+**Rule Statement 48:**
+
+**Given** filter params: `[put_query_prefix: "tenant_a"]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `put_query_prefix(query, "tenant_a")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `put_query_prefix(query, "tenant_a")`
+
+test name: "Rule Statement 48: put_query_prefix single tenant"
+
+**Rule Statement 49:**
+
+**Given** filter params: `[put_query_prefix: "tenant_a", put_query_prefix: "tenant_b"]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the provided query configuration directives  
+**And** it must check whether the query uses `query |> put_query_prefix("tenant_a") |> put_query_prefix("tenant_b")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `query |> put_query_prefix("tenant_a") |> put_query_prefix("tenant_b")`
+
+test name: "Rule Statement 49: put_query_prefix last wins"
+
+---
+
+## Terminal Filter Directives
+
+- `:last`: Returns the last N records by reversing order, limiting, then re-ordering
+- `:subquery`: Wraps the query and any additional filters in a subquery
+
+### Examples
+
+    [last: 2]
+    [subquery: [title: "Second"]]
+    [published: true, subquery: [title: "Match"]]
+    [last: [title: 2]]
+    [subquery: [published: true, views: [>: 10]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[last: 2]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `:last` terminal directive  
+**And** it must check whether the query returns the last `2` records by reversing the default `:id` order, limiting, then re-ordering ascending  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, order_by: [desc: q.id], limit: 2)), order_by: [asc: p.id])`
+
+test name: "Rule Statement 1: last 2 records"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[subquery: [title: "Second"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `:subquery` terminal directive  
+**And** it must check whether the query wraps the `:title == "Second"` filter in a subquery  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, where: q.title == "Second")))`
+
+test name: "Rule Statement 2: subquery with title filter"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[published: true, subquery: [title: "Match"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `:subquery` terminal directive after applying the top-level filter conditions  
+**And** it must check whether the query wraps the `:published == true` and `:title == "Match"` filters in a subquery  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, where: q.published == true and q.title == "Match")))`
+
+test name: "Rule Statement 3: published true and subquery with title filter"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[last: [title: 2]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `:last` terminal directive using the provided sort field  
+**And** it must check whether the query returns the last `2` records by reversing the `:title` order, limiting, then re-ordering ascending  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, order_by: [desc: q.title], limit: 2)), order_by: [asc: p.title])`
+
+test name: "Rule Statement 4: last 2 records by title"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[subquery: [published: true, views: [>: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `:subquery` terminal directive  
+**And** it must check whether the query wraps the `:published == true` and `:views > 10` filters in a subquery  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, where: q.published == true and q.views > 10)))`
+
+test name: "Rule Statement 5: subquery with published true and views greater than 10"
+
+---
+
+## Binding Selector Directives
+
+- `:bind`: specify binding context
+  - `:as`: named binding
+  - `:at`: positional binding
+
+### Examples
+
+    [bind: [as: :post, published: true]]
+    [bind: [[as: :post, published: true], [as: :comment, body: "hi"]]]
+    [bind: [[as: :post, published: true], [as: :author, first_name: "John"]]]
+    [bind: [at: 1, published: true]]
+    [bind: [[at: 1, published: true]]]
+    [bind: [at: :first, published: true]]
+    [bind: [at: :last, title: "Published"]]
+    [bind: [at: :last, first_name: "John"]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[bind: [as: :post, published: true]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the named binding selector  
+**And** it must check whether the binding named `:post` has `:published == true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `as(:post).published == true`
+
+test name: "Rule Statement 1: named binding as :post"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[bind: [[as: :post, published: true], [as: :comment, body: "hi"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the named binding selector across the binding conditions  
+**And** it must check whether the binding named `:post` has `:published == true` and the binding named `:comment` has `:body == "hi"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `as(:post).published == true and as(:comment).body == "hi"`
+
+test name: "Rule Statement 2: multiple named bindings with comment"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[bind: [[as: :post, published: true], [as: :author, first_name: "John"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the named binding selector across the binding conditions  
+**And** it must check whether the binding named `:post` has `:published == true` and the binding named `:author` has `:first_name == "John"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `as(:post).published == true and as(:author).first_name == "John"`
+
+test name: "Rule Statement 3: multiple named bindings with author"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[bind: [at: 1, published: true]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the positional binding selector  
+**And** it must check whether the binding at index `1` has `:published == true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.published == true`
+
+test name: "Rule Statement 4: positional binding at index 1"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[bind: [[at: 1, published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the positional binding selector from the list-wrapped form  
+**And** it must check whether the binding at index `1` has `:published == true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.published == true`
+
+test name: "Rule Statement 5: positional binding at index 1 list-wrapped"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[bind: [at: :first, published: true]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the positional binding selector  
+**And** it must check whether the first binding has `:published == true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.published == true`
+
+test name: "Rule Statement 6: first binding"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[bind: [at: :last, title: "Published"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the positional binding selector  
+**And** it must check whether the last binding has `:title == "Published"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.title == "Published"`
+
+test name: "Rule Statement 7: last binding without join"
+
+**Rule Statement 8:**
+
+**Given** filter params: `[bind: [at: :last, first_name: "John"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the positional binding selector  
+**And** it must check whether the last binding has `:first_name == "John"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `a.first_name == "John"`
+
+test name: "Rule Statement 8: last binding with author first name"
+
+---
+
+## Date/Time Directives
+
+- `:datetime` or `:date`: Wrapper for date/time operations. Both use the same set of sub-keys.
+  - `:add`: add time interval
+  - `:ago`: time in the past
+  - `:from_now`: time in the future
+
+### Examples
+
+    [inserted_at: [>=: [datetime: [add: [field: :inserted_at, count: 1, interval: "day"]]]]]
+    [inserted_at: [>: [datetime: [ago: [count: 1, interval: "day"]]]]]
+    [inserted_at: [>: [datetime: [from_now: [count: 1, interval: "day"]]]]]
+    [not: [inserted_at: [>=: [datetime: [add: [field: :inserted_at, count: 1, interval: "day"]]]]]]
+    [inserted_at: [<: [datetime: [ago: [count: 7, interval: "day"]]]]]
+    [inserted_at: [<=: [datetime: [from_now: [count: 30, interval: "day"]]]]]
+    [inserted_at: [==: [date: [ago: [count: 1, interval: "day"]]]]]
+    [inserted_at: [!=: [date: [from_now: [count: 1, interval: "day"]]]]]
+    [not: [inserted_at: [<: [datetime: [ago: [count: 7, interval: "day"]]]]]]
+    [not: [inserted_at: [>: [date: [from_now: [count: 1, interval: "day"]]]]]]
+    [inserted_at: [>=: [date: [add: [field: :inserted_at, count: 7, interval: "day"]]]]]
+    [inserted_at: [<: [date: [ago: [count: 1, interval: "month"]]]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[inserted_at: [>=: [datetime: [add: [field: :inserted_at, count: 1, interval: "day"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `datetime` wrapper with the `add` directive before the comparison  
+**And** it must check whether the `:inserted_at` field is greater than or equal to `datetime_add(p.inserted_at, 1, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.inserted_at >= datetime_add(p.inserted_at, 1, "day")`
+
+test name: "Rule Statement 1: inserted_at greater than or equal to datetime_add"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[inserted_at: [>: [datetime: [ago: [count: 1, interval: "day"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `datetime` wrapper with the `ago` directive before the comparison  
+**And** it must check whether the `:inserted_at` field is greater than `ago(1, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.inserted_at > ago(1, "day")`
+
+test name: "Rule Statement 2: inserted_at greater than ago 1 day"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[inserted_at: [>: [datetime: [from_now: [count: 1, interval: "day"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `datetime` wrapper with the `from_now` directive before the comparison  
+**And** it must check whether the `:inserted_at` field is greater than `from_now(1, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.inserted_at > from_now(1, "day")`
+
+test name: "Rule Statement 3: inserted_at greater than from_now 1 day"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[not: [inserted_at: [>=: [datetime: [add: [field: :inserted_at, count: 1, interval: "day"]]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the `datetime_add` comparison  
+**And** it must check whether the `:inserted_at` field is not greater than or equal to `datetime_add(p.inserted_at, 1, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.inserted_at >= datetime_add(p.inserted_at, 1, "day"))`
+
+test name: "Rule Statement 4: inserted_at >= datetime_add negated"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[inserted_at: [<: [datetime: [ago: [count: 7, interval: "day"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `datetime` wrapper with the `ago` directive before the comparison  
+**And** it must check whether the `:inserted_at` field is less than `ago(7, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.inserted_at < ago(7, "day")`
+
+test name: "Rule Statement 5: inserted_at less than ago 7 days"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[inserted_at: [<=: [datetime: [from_now: [count: 30, interval: "day"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `datetime` wrapper with the `from_now` directive before the comparison  
+**And** it must check whether the `:inserted_at` field is less than or equal to `from_now(30, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.inserted_at <= from_now(30, "day")`
+
+test name: "Rule Statement 6: inserted_at less than or equal to from_now 30 days"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[inserted_at: [==: [date: [ago: [count: 1, interval: "day"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `date` wrapper with the `ago` directive before the comparison  
+**And** it must check whether the `:inserted_at` field equals `ago(1, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.inserted_at == ago(1, "day")`
+
+test name: "Rule Statement 7: inserted_at equals ago 1 day using date wrapper"
+
+**Rule Statement 8:**
+
+**Given** filter params: `[inserted_at: [!=: [date: [from_now: [count: 1, interval: "day"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `date` wrapper with the `from_now` directive before the comparison  
+**And** it must check whether the `:inserted_at` field is not equal to `from_now(1, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.inserted_at != from_now(1, "day")`
+
+test name: "Rule Statement 8: inserted_at not equals from_now 1 day using date wrapper"
+
+**Rule Statement 9:**
+
+**Given** filter params: `[not: [inserted_at: [<: [datetime: [ago: [count: 7, interval: "day"]]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the `ago` comparison  
+**And** it must check whether the `:inserted_at` field is not less than `ago(7, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.inserted_at < ago(7, "day"))`
+
+test name: "Rule Statement 9: inserted_at less than ago 7 days negated"
+
+**Rule Statement 10:**
+
+**Given** filter params: `[not: [inserted_at: [>: [date: [from_now: [count: 1, interval: "day"]]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the `from_now` comparison under the `date` wrapper  
+**And** it must check whether the `:inserted_at` field is not greater than `from_now(1, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.inserted_at > from_now(1, "day"))`
+
+test name: "Rule Statement 10: inserted_at greater than from_now 1 day negated using date wrapper"
+
+**Rule Statement 11:**
+
+**Given** filter params: `[inserted_at: [>=: [date: [add: [field: :inserted_at, count: 7, interval: "day"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `date` wrapper with the `add` directive before the comparison  
+**And** it must check whether the `:inserted_at` field is greater than or equal to `datetime_add(p.inserted_at, 7, "day")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.inserted_at >= datetime_add(p.inserted_at, 7, "day")`
+
+test name: "Rule Statement 11: inserted_at >= datetime_add 7 days using date wrapper"
+
+**Rule Statement 12:**
+
+**Given** filter params: `[inserted_at: [<: [date: [ago: [count: 1, interval: "month"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `date` wrapper with the `ago` directive before the comparison  
+**And** it must check whether the `:inserted_at` field is less than `ago(1, "month")`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.inserted_at < ago(1, "month")`
+
+test name: "Rule Statement 12: inserted_at less than ago 1 month using date wrapper"
+
+---
+
+## Arithmetic Operator Directives
+
+- `:+`: addition
+- `:-`: subtraction
+- `:*`: multiplication
+- `:/`: division
+
+### Examples
+
+    [views: [>: [+: [:views, 10]]]]
+    [not: [views: [>: [+: [:views, 10]]]]]
+    [views: [>=: [-: [:views, 5]]]]
+    [views: [<: [*: [:views, 2]]]]
+    [views: [==: [/: [:views, 2]]]]
+    [views: [!=: [+: [:views, 10]]]]
+    [not: [views: [>=: [-: [:views, 5]]]]]
+    [not: [views: [<: [*: [:views, 2]]]]]
+    [views: [<=: [+: [10, 5]]]]
+    [views: [>: [-: [100, 10]]]]
+    [views: [<=: [*: [10, 2]]]]
+    [views: [==: [/: [10, 2]]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[views: [>: [+: [:views, 10]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply addition before the greater-than comparison  
+**And** it must check whether the `:views` field is greater than the `:views` field plus `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views > p.views + 10`
+
+test name: "Rule Statement 1: views greater than views plus 10"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[not: [views: [>: [+: [:views, 10]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the greater-than comparison after applying addition  
+**And** it must check whether the `:views` field is not greater than the `:views` field plus `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.views > p.views + 10)`
+
+test name: "Rule Statement 2: views greater than views plus 10 negated"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[views: [>=: [-: [:views, 5]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply subtraction before the greater-than-or-equal comparison  
+**And** it must check whether the `:views` field is greater than or equal to the `:views` field minus `5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views >= p.views - 5`
+
+test name: "Rule Statement 3: views greater than or equal to views minus 5"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[views: [<: [*: [:views, 2]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply multiplication before the less-than comparison  
+**And** it must check whether the `:views` field is less than the `:views` field times `2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views < p.views * 2`
+
+test name: "Rule Statement 4: views less than views times 2"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[views: [==: [/: [:views, 2]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply division before the equality comparison  
+**And** it must check whether the `:views` field equals the `:views` field divided by `2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views == p.views / 2`
+
+test name: "Rule Statement 5: views equals views divided by 2"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[views: [!=: [+: [:views, 10]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply addition before the inequality comparison  
+**And** it must check whether the `:views` field is not equal to the `:views` field plus `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views != p.views + 10`
+
+test name: "Rule Statement 6: views not equals views plus 10"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[not: [views: [>=: [-: [:views, 5]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the greater-than-or-equal comparison after applying subtraction  
+**And** it must check whether the `:views` field is not greater than or equal to the `:views` field minus `5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.views >= p.views - 5)`
+
+test name: "Rule Statement 7: views greater than or equal to views minus 5 negated"
+
+**Rule Statement 8:**
+
+**Given** filter params: `[not: [views: [<: [*: [:views, 2]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the less-than comparison after applying multiplication  
+**And** it must check whether the `:views` field is not less than the `:views` field times `2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.views < p.views * 2)`
+
+test name: "Rule Statement 8: views less than views times 2 negated"
+
+**Rule Statement 9:**
+
+**Given** filter params: `[views: [<=: [+: [10, 5]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply addition before the less-than-or-equal comparison  
+**And** it must check whether the `:views` field is less than or equal to `10 + 5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views <= 10 + 5`
+
+test name: "Rule Statement 9: views less than or equal to literal 10 plus 5"
+
+**Rule Statement 10:**
+
+**Given** filter params: `[views: [>: [-: [100, 10]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply subtraction before the greater-than comparison  
+**And** it must check whether the `:views` field is greater than the result of `100 - 10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views > ^(100 - 10)`
+
+test name: "Rule Statement 10: views greater than literal 100 minus 10"
+
+**Rule Statement 11:**
+
+**Given** filter params: `[views: [<=: [*: [10, 2]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply multiplication before the less-than-or-equal comparison  
+**And** it must check whether the `:views` field is less than or equal to `10 * 2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views <= 10 * 2`
+
+test name: "Rule Statement 11: views less than or equal to literal 10 times 2"
+
+**Rule Statement 12:**
+
+**Given** filter params: `[views: [==: [/: [10, 2]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply division before the equality comparison  
+**And** it must check whether the `:views` field equals `10 / 2`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views == 10 / 2`
+
+test name: "Rule Statement 12: views equals literal 10 divided by 2"
+
+---
+
+## Set Comparison Directives
+
+- `:all`: compare against all values in subquery
+- `:any`: compare against any value in subquery
+
+When using `[from: Queryable, ...]`, the params after `:from` define the inner query. That inner query is wrapped in `subquery(...)` and passed to `:all` or `:any`.
+
+### Examples
+
+    [id: [>: [all: subquery_expr]]]
+    [not: [id: [>: [all: [from: Comment, body: "Hello"]]]]]
+    [id: [>: [any: [from: Comment, body: "Hello"]]]]
+    [not: [id: [>: [any: [from: Comment, body: "Hello"]]]]]
+    [id: [>=: [all: [from: Comment, body: "Hello"]]]]
+    [id: [<: [all: [from: Comment, body: "Hello"]]]]
+    [id: [<=: [all: [from: Comment, body: "Hello"]]]]
+    [id: [==: [all: [from: Comment, body: "Hello"]]]]
+    [id: [!=: [all: [from: Comment, body: "Hello"]]]]
+    [id: [all: [from: Comment, body: "Hello"]]]
+    [id: [all: [from: Comment, published: true]]]
+    [not: [id: [all: [from: Comment, body: "Hello"]]]]
+    [id: [any: [from: Comment, body: "Hello"]]]
+    [not: [id: [any: [from: Comment, body: "Hello"]]]]
+    [id: [>=: [any: [from: Comment, body: "Hello"]]]]
+    [id: [<: [any: [from: Comment, body: "Hello"]]]]
+    [id: [<=: [any: [from: Comment, body: "Hello"]]]]
+    [id: [==: [any: [from: Comment, body: "Hello"]]]]
+    [id: [!=: [any: [from: Comment, body: "Hello"]]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[id: [>: [all: subquery_expr]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than set comparison against all values from the provided subquery expression  
+**And** it must check whether the `:id` field is greater than every value returned by `subquery_expr`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id > all(subquery_expr)`
+
+test name: "Rule Statement 1: id greater than all subquery values"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[not: [id: [>: [all: [from: Comment, body: "Hello"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the negated greater-than set comparison against all values returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is not greater than every `post_id` returned by that subquery  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.id > all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id)))`
+
+test name: "Rule Statement 2: not id greater than all subquery values"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[id: [>: [any: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than set comparison against any value returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is greater than at least one returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id > any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 3: id greater than any subquery value"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[not: [id: [>: [any: [from: Comment, body: "Hello"]]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the negated greater-than set comparison against any value returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is not greater than any returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.id > any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id)))`
+
+test name: "Rule Statement 4: not id greater than any subquery value"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[id: [>=: [all: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than-or-equal set comparison against all values returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is greater than or equal to every returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id >= all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 5: id greater than or equal to all subquery values"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[id: [<: [all: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than set comparison against all values returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is less than every returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id < all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 6: id less than all subquery values"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[id: [<=: [all: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than-or-equal set comparison against all values returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is less than or equal to every returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id <= all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 7: id less than or equal to all subquery values"
+
+**Rule Statement 8:**
+
+**Given** filter params: `[id: [==: [all: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality set comparison against all values returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field equals every returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id == all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 8: id equals all subquery values"
+
+**Rule Statement 9:**
+
+**Given** filter params: `[id: [!=: [all: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality set comparison against all values returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is not equal to every returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id != all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 9: id not equals all subquery values"
+
+**Rule Statement 10:**
+
+**Given** filter params: `[id: [all: [from: Comment, body: "Hello"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality set comparison against all values returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field equals every returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id == all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 10: id default equals all subquery values"
+
+**Rule Statement 11:**
+
+**Given** filter params: `[id: [all: [from: Comment, published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality set comparison against all values returned by a subquery filtered by `published == true`  
+**And** it must check whether the `:id` field equals every returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id == all(subquery(from c in Comment, where: c.published == true, select: c.post_id))`
+
+test name: "Rule Statement 11: id equals all from inline filter params"
+
+**Rule Statement 12:**
+
+**Given** filter params: `[not: [id: [all: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the negated equality set comparison against all values returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is not equal to every returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.id == all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id)))`
+
+test name: "Rule Statement 12: not id default equals all subquery values"
+
+**Rule Statement 13:**
+
+**Given** filter params: `[id: [any: [from: Comment, body: "Hello"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality set comparison against any value returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field equals at least one returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id == any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 13: id default equals any subquery value"
+
+**Rule Statement 14:**
+
+**Given** filter params: `[not: [id: [any: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the negated equality set comparison against any value returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is not equal to any returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (p.id == any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id)))`
+
+test name: "Rule Statement 14: not id default equals any subquery value"
+
+**Rule Statement 15:**
+
+**Given** filter params: `[id: [>=: [any: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than-or-equal set comparison against any value returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is greater than or equal to at least one returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id >= any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 15: id greater than or equal to any subquery values"
+
+**Rule Statement 16:**
+
+**Given** filter params: `[id: [<: [any: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than set comparison against any value returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is less than at least one returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id < any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 16: id less than any subquery values"
+
+**Rule Statement 17:**
+
+**Given** filter params: `[id: [<=: [any: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than-or-equal set comparison against any value returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is less than or equal to at least one returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id <= any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 17: id less than or equal to any subquery values"
+
+**Rule Statement 18:**
+
+**Given** filter params: `[id: [==: [any: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality set comparison against any value returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field equals at least one returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id == any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 18: id equals any subquery values"
+
+**Rule Statement 19:**
+
+**Given** filter params: `[id: [!=: [any: [from: Comment, body: "Hello"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality set comparison against any value returned by a subquery filtered by `body == "Hello"`  
+**And** it must check whether the `:id` field is not equal to at least one returned `post_id`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.id != any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))`
+
+test name: "Rule Statement 19: id not equals any subquery values"
+
+---
+
+## Aggregate Operator Directives
+
+- `:avg`: average
+- `:count`: count
+- `:max`: maximum
+- `:min`: minimum
+- `:sum`: sum
+
+### Examples
+
+    [views: [avg: [>: 10]]]
+    [not: [views: [avg: [>: 10]]]]
+    [views: [count: [>: 0]]]
+    [views: [max: [>=: 100]]]
+    [views: [min: [<: 5]]]
+    [views: [sum: [==: 1000]]]
+    [views: [avg: [!=: 50]]]
+    [views: [count: [==: nil]]]
+    [not: [views: [count: [>: 0]]]]
+    [not: [views: [max: [>=: 100]]]]
+    [views: [avg: [<=: 10]]]
+    [views: [sum: [>: 500]]]
+    [views: [min: [==: 0]]]
+    [views: [sum: [!=: 0]]]
+    [not: [views: [min: [<: 5]]]]
+    [not: [views: [sum: [>: 500]]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[views: [avg: [>: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `avg` aggregate before the greater-than comparison  
+**And** it must check whether the average of the `:views` field is greater than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `avg(p.views) > 10`
+
+test name: "Rule Statement 1: avg views greater than"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[not: [views: [avg: [>: 10]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the aggregated greater-than comparison  
+**And** it must check whether the average of the `:views` field is not greater than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (avg(p.views) > 10)`
+
+test name: "Rule Statement 2: avg views greater than negated"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[views: [count: [>: 0]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `count` aggregate before the greater-than comparison  
+**And** it must check whether the count of the `:views` field is greater than `0`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `count(p.views) > 0`
+
+test name: "Rule Statement 3: count views greater than zero"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[views: [max: [>=: 100]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `max` aggregate before the greater-than-or-equal comparison  
+**And** it must check whether the maximum of the `:views` field is greater than or equal to `100`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `max(p.views) >= 100`
+
+test name: "Rule Statement 4: max views greater than or equal"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[views: [min: [<: 5]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `min` aggregate before the less-than comparison  
+**And** it must check whether the minimum of the `:views` field is less than `5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `min(p.views) < 5`
+
+test name: "Rule Statement 5: min views less than"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[views: [sum: [==: 1000]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `sum` aggregate before the equality comparison  
+**And** it must check whether the sum of the `:views` field equals `1000`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `sum(p.views) == 1000`
+
+test name: "Rule Statement 6: sum views equals"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[views: [avg: [!=: 50]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `avg` aggregate before the inequality comparison  
+**And** it must check whether the average of the `:views` field is not equal to `50`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `avg(p.views) != 50`
+
+test name: "Rule Statement 7: avg views not equals"
+
+**Rule Statement 8:**
+
+**Given** filter params: `[views: [count: [==: nil]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison to the aggregate result as a nil check  
+**And** it must check whether the count of the `:views` field is `nil`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `is_nil(count(p.views))`
+
+test name: "Rule Statement 8: count views equals nil"
+
+**Rule Statement 9:**
+
+**Given** filter params: `[not: [views: [count: [>: 0]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the aggregated greater-than comparison  
+**And** it must check whether the count of the `:views` field is not greater than `0`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (count(p.views) > 0)`
+
+test name: "Rule Statement 9: count views greater than zero negated"
+
+**Rule Statement 10:**
+
+**Given** filter params: `[not: [views: [max: [>=: 100]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the aggregated greater-than-or-equal comparison  
+**And** it must check whether the maximum of the `:views` field is not greater than or equal to `100`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (max(p.views) >= 100)`
+
+test name: "Rule Statement 10: max views greater than or equal negated"
+
+**Rule Statement 11:**
+
+**Given** filter params: `[views: [avg: [<=: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `avg` aggregate before the less-than-or-equal comparison  
+**And** it must check whether the average of the `:views` field is less than or equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `avg(p.views) <= 10`
+
+test name: "Rule Statement 11: avg views less than or equal"
+
+**Rule Statement 12:**
+
+**Given** filter params: `[views: [sum: [>: 500]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `sum` aggregate before the greater-than comparison  
+**And** it must check whether the sum of the `:views` field is greater than `500`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `sum(p.views) > 500`
+
+test name: "Rule Statement 12: sum views greater than"
+
+**Rule Statement 13:**
+
+**Given** filter params: `[views: [min: [==: 0]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `min` aggregate before the equality comparison  
+**And** it must check whether the minimum of the `:views` field equals `0`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `min(p.views) == 0`
+
+test name: "Rule Statement 13: min views equals zero"
+
+**Rule Statement 14:**
+
+**Given** filter params: `[views: [sum: [!=: 0]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the `sum` aggregate before the inequality comparison  
+**And** it must check whether the sum of the `:views` field is not equal to `0`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `sum(p.views) != 0`
+
+test name: "Rule Statement 14: sum views not equals zero"
+
+**Rule Statement 15:**
+
+**Given** filter params: `[not: [views: [min: [<: 5]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the aggregated less-than comparison  
+**And** it must check whether the minimum of the `:views` field is not less than `5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (min(p.views) < 5)`
+
+test name: "Rule Statement 15: min views less than negated"
+
+**Rule Statement 16:**
+
+**Given** filter params: `[not: [views: [sum: [>: 500]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the aggregated greater-than comparison  
+**And** it must check whether the sum of the `:views` field is not greater than `500`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (sum(p.views) > 500)`
+
+test name: "Rule Statement 16: sum views greater than negated"
+
+---
+
+## String Matching Directives
+
+- `:like`: pattern matching
+- `:ilike`: case-insensitive pattern matching
+
+### Examples
+
+    [title: [like: "%hello%"]]
+    [not: [title: [like: "%hello%"]]]
+    [title: [ilike: "%HELLO%"]]
+    [not: [title: [ilike: "%HELLO%"]]]
+    [title: [like: ["%hello%", "%world%"]]]
+    [title: [ilike: ["%HELLO%", "%WORLD%"]]]
+    [not: [title: [like: ["%hello%", "%world%"]]]]
+    [not: [title: [ilike: ["%HELLO%", "%WORLD%"]]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[title: [like: "%hello%"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a case-sensitive pattern match  
+**And** it must check whether the `:title` field matches the pattern `"%hello%"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `like(p.title, "%hello%")`
+
+test name: "Rule Statement 1: title like pattern"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[not: [title: [like: "%hello%"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a negated case-sensitive pattern match  
+**And** it must check whether the `:title` field is not matched by the pattern `"%hello%"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not like(p.title, "%hello%")`
+
+test name: "Rule Statement 2: title like pattern negated"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[title: [ilike: "%HELLO%"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a case-insensitive pattern match  
+**And** it must check whether the `:title` field matches the pattern `"%HELLO%"` case-insensitively  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `ilike(p.title, "%HELLO%")`
+
+test name: "Rule Statement 3: title ilike pattern"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[not: [title: [ilike: "%HELLO%"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a negated case-insensitive pattern match  
+**And** it must check whether the `:title` field is not matched by the pattern `"%HELLO%"` case-insensitively  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not ilike(p.title, "%HELLO%")`
+
+test name: "Rule Statement 4: title ilike pattern negated"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[title: [like: ["%hello%", "%world%"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the `or` grouping for the case-sensitive pattern matches  
+**And** it must check whether the `:title` field matches `"%hello%"` or `"%world%"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `like(p.title, "%hello%") or like(p.title, "%world%")`
+
+test name: "Rule Statement 5: title like list of patterns"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[title: [ilike: ["%HELLO%", "%WORLD%"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the `or` grouping for the case-insensitive pattern matches  
+**And** it must check whether the `:title` field matches `"%HELLO%"` or `"%WORLD%"` case-insensitively  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `ilike(p.title, "%HELLO%") or ilike(p.title, "%WORLD%")`
+
+test name: "Rule Statement 6: title ilike list of patterns"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[not: [title: [like: ["%hello%", "%world%"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the negated `or` grouping for the case-sensitive pattern matches  
+**And** it must check whether the `:title` field is not matched by either `"%hello%"` or `"%world%"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (like(p.title, "%hello%") or like(p.title, "%world%"))`
+
+test name: "Rule Statement 7: title like list negated"
+
+**Rule Statement 8:**
+
+**Given** filter params: `[not: [title: [ilike: ["%HELLO%", "%WORLD%"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the negated `or` grouping for the case-insensitive pattern matches  
+**And** it must check whether the `:title` field is not matched by either `"%HELLO%"` or `"%WORLD%"` case-insensitively  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not (ilike(p.title, "%HELLO%") or ilike(p.title, "%WORLD%"))`
+
+test name: "Rule Statement 8: title ilike list negated"
+
+---
+
+## Comparison Operator Directives
+
+- `:==`: equality
+- `:eq`: equality alias
+- `:!=`: inequality
+- `:ne`: inequality alias
+- `:> `: greater than
+- `:>=`: greater than or equal
+- `:< `: less than
+- `:<=`: less than or equal
+- `:gt`: greater than alias
+- `:gte`: greater than or equal alias
+- `:lt`: less than alias
+- `:lte`: less than or equal alias
+- `:in`: membership
+
+### Examples
+
+    [title: [==: "Post 1"]]
+    [title: [eq: "Post 1"]]
+    [published_at: [==: nil]]
+    [published_at: [eq: nil]]
+    [published_at: [!=: nil]]
+    [published_at: [ne: nil]]
+    [views: [>: 10]]
+    [views: [>=: 10]]
+    [views: [<: 10]]
+    [views: [<=: 10]]
+    [views: [!=: 10]]
+    [views: [ne: 10]]
+    [views: [gt: 10]]
+    [views: [gte: 10]]
+    [views: [lt: 10]]
+    [views: [lte: 10]]
+    [published: [in: [true, false]]]
+    [published: [==: [true, false]]]
+    [published: [!=: [true, false]]]
+    [published: [ne: [true, false]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[title: [==: "Post 1"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison  
+**And** it must check whether the `:title` field equals `"Post 1"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.title == "Post 1"`
+
+test name: "Rule Statement 1: title equals with == operator"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[title: [eq: "Post 1"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality alias comparison  
+**And** it must check whether the `:title` field equals `"Post 1"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.title == "Post 1"`
+
+test name: "Rule Statement 2: title equals with eq operator"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[published_at: [==: nil]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison as a nil check  
+**And** it must check whether the `:published_at` field is `nil`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `is_nil(p.published_at)`
+
+test name: "Rule Statement 3: published_at equals nil with =="
+
+**Rule Statement 4:**
+
+**Given** filter params: `[published_at: [eq: nil]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality alias comparison as a nil check  
+**And** it must check whether the `:published_at` field is `nil`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `is_nil(p.published_at)`
+
+test name: "Rule Statement 4: published_at equals nil with eq"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[published_at: [!=: nil]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality comparison as a non-nil check  
+**And** it must check whether the `:published_at` field is not `nil`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not is_nil(p.published_at)`
+
+test name: "Rule Statement 5: published_at not equals nil"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[published_at: [ne: nil]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality alias comparison as a non-nil check  
+**And** it must check whether the `:published_at` field is not `nil`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not is_nil(p.published_at)`
+
+test name: "Rule Statement 6: published_at ne nil"
+
+**Rule Statement 7:**
+
+**Given** filter params: `[views: [>: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than comparison  
+**And** it must check whether the `:views` field is greater than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views > 10`
+
+test name: "Rule Statement 7: views greater than"
+
+**Rule Statement 8:**
+
+**Given** filter params: `[views: [>=: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than-or-equal comparison  
+**And** it must check whether the `:views` field is greater than or equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views >= 10`
+
+test name: "Rule Statement 8: views greater than or equal"
+
+**Rule Statement 9:**
+
+**Given** filter params: `[views: [<: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than comparison  
+**And** it must check whether the `:views` field is less than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views < 10`
+
+test name: "Rule Statement 9: views less than"
+
+**Rule Statement 10:**
+
+**Given** filter params: `[views: [<=: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than-or-equal comparison  
+**And** it must check whether the `:views` field is less than or equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views <= 10`
+
+test name: "Rule Statement 10: views less than or equal"
+
+**Rule Statement 11:**
+
+**Given** filter params: `[views: [!=: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality comparison  
+**And** it must check whether the `:views` field is not equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views != 10`
+
+test name: "Rule Statement 11: views not equals"
+
+**Rule Statement 12:**
+
+**Given** filter params: `[views: [ne: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality alias comparison  
+**And** it must check whether the `:views` field is not equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views != 10`
+
+test name: "Rule Statement 12: views ne operator"
+
+**Rule Statement 13:**
+
+**Given** filter params: `[views: [gt: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than alias comparison  
+**And** it must check whether the `:views` field is greater than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views > 10`
+
+test name: "Rule Statement 13: views gt operator"
+
+**Rule Statement 14:**
+
+**Given** filter params: `[views: [gte: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than-or-equal alias comparison  
+**And** it must check whether the `:views` field is greater than or equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views >= 10`
+
+test name: "Rule Statement 14: views gte operator"
+
+**Rule Statement 15:**
+
+**Given** filter params: `[views: [lt: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than alias comparison  
+**And** it must check whether the `:views` field is less than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views < 10`
+
+test name: "Rule Statement 15: views lt operator"
+
+**Rule Statement 16:**
+
+**Given** filter params: `[views: [lte: 10]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than-or-equal alias comparison  
+**And** it must check whether the `:views` field is less than or equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views <= 10`
+
+test name: "Rule Statement 16: views lte operator"
+
+**Rule Statement 17:**
+
+**Given** filter params: `[published: [in: [true, false]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a membership check  
+**And** it must check whether the `:published` field is in `[true, false]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.published in [true, false]`
+
+test name: "Rule Statement 17: published in list"
+
+**Rule Statement 18:**
+
+**Given** filter params: `[published: [==: [true, false]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison as a membership check  
+**And** it must check whether the `:published` field is in `[true, false]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.published in [true, false]`
+
+test name: "Rule Statement 18: published equals list"
+
+**Rule Statement 19:**
+
+**Given** filter params: `[published: [!=: [true, false]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality comparison as a negated membership check that accounts for `nil`  
+**And** it must check whether the `:published` field is `nil` or not in `[true, false]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `is_nil(p.published) or p.published not in [true, false]`
+
+test name: "Rule Statement 19: published not equals list"
+
+**Rule Statement 20:**
+
+**Given** filter params: `[published: [ne: [true, false]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality alias comparison as a negated membership check that accounts for `nil`  
+**And** it must check whether the `:published` field is `nil` or not in `[true, false]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `is_nil(p.published) or p.published not in [true, false]`
+
+test name: "Rule Statement 20: published ne list"
+
+---
+
+## Logical Operator Directives
+
+- `:and`: field level and top level
+- `:or`: field level and top level
+
+### Examples
+
+    [and: [title: "hello", views: [>: 10, <: 20]]]
+    [and: [[title: "hello", views: [>: 10, <: 20]], [published: true]]]
+    [or: [[title: "hello", views: [>: 10, <: 20]], [published: true]]]
+    [or: [[or: [title: "hello", views: [>: 10, <: 20]]], [published: true]]]
+    [or: [[title: "hello", or: [views: [>: 10, <: 20]]], [published: true]]]
+    [views: [or: [>: 100, <: 5]]]
+
+### Rule Statements
+
+**Rule Statement 1:**
+
+**Given** filter params: `[and: [title: "hello", views: [>: 10, <: 20]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the `and` grouping across the field conditions  
+**And** it must check whether the `:title` field equals `"hello"` and the `:views` field is greater than `10` and less than `20`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.title == "hello" and (p.views > 10 and p.views < 20)`
+
+test name: "Rule Statement 1: and with multiple conditions on same field"
+
+**Rule Statement 2:**
+
+**Given** filter params: `[and: [[title: "hello", views: [>: 10, <: 20]], [published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the nested `and` grouping  
+**And** it must check whether the `:title` field equals `"hello"`, the `:views` field is greater than `10` and less than `20`, and the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.title == "hello" and (p.views > 10 and p.views < 20) and p.published == true`
+
+test name: "Rule Statement 2: nested and with multiple conditions"
+
+**Rule Statement 3:**
+
+**Given** filter params: `[or: [[title: "hello", views: [>: 10, <: 20]], [published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the top-level `or` grouping with an `and`-grouped first branch  
+**And** it must check whether the `:title` field equals `"hello"` and the `:views` field is greater than `10` and less than `20`, or whether the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `(p.title == "hello" and (p.views > 10 and p.views < 20)) or p.published == true`
+
+test name: "Rule Statement 3: or with nested and conditions"
+
+**Rule Statement 4:**
+
+**Given** filter params: `[or: [[or: [title: "hello", views: [>: 10, <: 20]]], [published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the nested `or` grouping in the first branch of the top-level `or`  
+**And** it must check whether the `:title` field equals `"hello"` or the `:views` field is greater than `10` and less than `20`, or whether the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.title == "hello" or (p.views > 10 and p.views < 20) or p.published == true`
+
+test name: "Rule Statement 4: nested or within or"
+
+**Rule Statement 5:**
+
+**Given** filter params: `[or: [[title: "hello", or: [views: [>: 10, <: 20]]], [published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the nested `or` grouping inside the `and`-grouped first branch of the top-level `or`  
+**And** it must check whether the `:title` field equals `"hello"` and the `:views` field is greater than `10` or less than `20`, or whether the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `(p.title == "hello" and (p.views > 10 or p.views < 20)) or p.published == true`
+
+test name: "Rule Statement 5: nested or within and within or"
+
+**Rule Statement 6:**
+
+**Given** filter params: `[views: [or: [>: 100, <: 5]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the same-field `or` grouping  
+**And** it must check whether the `:views` field is greater than `100` or less than `5`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.views > 100 or p.views < 5`
+
+No matching test currently in `test/examples/ecto_query_dsl.exs`.
 
 ## Array Fields
 
@@ -428,257 +2761,406 @@ Array fields (e.g., `{:array, :string}` in Ecto schemas) support special compari
     [tags: [<=: "elixir"]]
     [tags: [like: "elixir"]]
     [tags: [ilike: "elixir"]]
-    [tags: [like: ["elixir", "erlang"]]]
+    [tags: [like: ["%elixir%", "%erlang%"]]]
     [not: [tags: [like: "elixir"]]]
     [tags: [==: [lower: "elixir"]]]
     [tags: [!=: [upper: "ELIXIR"]]]
     [tags: [count: [>: 0]]]
     [tags: [count: [==: 0]]]
-
-### Rule Statements
+    [tags: [all: [>: "a"]]]
+    [tags: [ilike: ["elixir", "erlang"]]]
+    [not: [tags: [ilike: ["%elixir%"]]]]
+    [lower: [tags: [==: "elixir"]]]
+    [upper: [tags: [==: "ELIXIR"]]]
+    [tags: [count: [<: 5]]]
+    [tags: [count: [>=: 2]]]
+    [tags: [count: [<=: 10]]]
+    [tags: [count: [!=: 3]]]
 
 **Rule Statement 1:**
 
-**Given** filter params: `[tags: "elixir"]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` contains the value "elixir"
+**Given** filter params: `[tags: "elixir"]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a membership check against the array field  
+**And** it must check whether `"elixir"` is in the `:tags` field  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `"elixir" in p.tags`
 
-_Test reference: test/examples/ecto_query_dsl.exs:16_
+test name: "Rule Statement 1: tags contains single value"
 
 **Rule Statement 2:**
 
-**Given** filter params: `[tags: [==: "elixir"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` contains the value "elixir" using equality
+**Given** filter params: `[tags: [==: "elixir"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison as a membership check against the array field  
+**And** it must check whether `"elixir"` is in the `:tags` field  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `"elixir" in p.tags`
 
-_Test reference: test/examples/ecto_query_dsl.exs:29_
+test name: "Rule Statement 2: tags equals operator with single value"
 
 **Rule Statement 3:**
 
-**Given** filter params: `[tags: [!=: "elixir"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` does not contain the value "elixir"
-**And** the resulting expression is: `not ("elixir" in p.tags)`
+**Given** filter params: `[tags: [!=: "elixir"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a negated membership check against the array field  
+**And** it must check whether `"elixir"` is not in the `:tags` field  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `"elixir" not in p.tags`
 
-_Test reference: test/examples/ecto_query_dsl.exs:42_
+test name: "Rule Statement 3: tags not equals single value"
 
 **Rule Statement 4:**
 
-**Given** filter params: `[tags: [in: "elixir"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` contains the value "elixir" using the `:in` operator
+**Given** filter params: `[tags: [in: "elixir"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a membership check against the array field  
+**And** it must check whether `"elixir"` is in the `:tags` field  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `"elixir" in p.tags`
 
-_Test reference: test/examples/ecto_query_dsl.exs:55_
+test name: "Rule Statement 4: tags in operator with single value"
 
 **Rule Statement 5:**
 
-**Given** filter params: `[tags: ["elixir", "erlang"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` equals the list `["elixir", "erlang"]`
-**And** the resulting expression is: `p.tags == ["elixir", "erlang"]`
+**Given** filter params: `[tags: ["elixir", "erlang"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison against the array field  
+**And** it must check whether the `:tags` field is exactly `["elixir", "erlang"]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.tags == ^["elixir", "erlang"]`
 
-_Test reference: test/examples/ecto_query_dsl.exs:68_
+test name: "Rule Statement 5: tags equals array"
 
 **Rule Statement 6:**
 
-**Given** filter params: `[tags: [==: ["elixir", "erlang"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` equals the list `["elixir", "erlang"]`
-**And** the resulting expression is: `p.tags == ["elixir", "erlang"]`
+**Given** filter params: `[tags: [==: ["elixir", "erlang"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison against the array field  
+**And** it must check whether the `:tags` field is exactly `["elixir", "erlang"]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.tags == ^["elixir", "erlang"]`
 
-_Test reference: test/examples/ecto_query_dsl.exs:81_
+test name: "Rule Statement 6: tags equals operator with array"
 
 **Rule Statement 7:**
 
-**Given** filter params: `[tags: [!=: ["elixir"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` does not equal the list `["elixir"]`
-**And** the resulting expression is: `p.tags != ["elixir"]`
+**Given** filter params: `[tags: [!=: ["elixir"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality comparison against the array field  
+**And** it must check whether the `:tags` field is not exactly `["elixir"]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.tags != ^["elixir"]`
 
-_Test reference: test/examples/ecto_query_dsl.exs:94_
+test name: "Rule Statement 7: tags not equals array"
 
 **Rule Statement 8:**
 
-**Given** filter params: `[tags: nil]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` is nil
+**Given** filter params: `[tags: nil]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison as a nil check against the array field  
+**And** it must check whether the `:tags` field is `nil`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `is_nil(p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:107_
+test name: "Rule Statement 8: tags is nil"
 
 **Rule Statement 9:**
 
-**Given** filter params: `[tags: [==: nil]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` is nil using equality
+**Given** filter params: `[tags: [==: nil]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison as a nil check against the array field  
+**And** it must check whether the `:tags` field is `nil`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `is_nil(p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:120_
+test name: "Rule Statement 9: tags equals nil"
 
 **Rule Statement 10:**
 
-**Given** filter params: `[tags: [!=: nil]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` is not nil
+**Given** filter params: `[tags: [!=: nil]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the inequality comparison as a non-nil check against the array field  
+**And** it must check whether the `:tags` field is not `nil`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not is_nil(p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:133_
+test name: "Rule Statement 10: tags not equals nil"
 
 **Rule Statement 11:**
 
-**Given** filter params: `[tags: [in: ["elixir"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if any element in the array `:tags` is in the list `["elixir"]`
-**And** the resulting expression is: `fragment("? && ?", p.tags, ["elixir"])`
+**Given** filter params: `[tags: [in: ["elixir"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply an overlap check  
+**And** it must check whether the `:tags` field overlaps with the list `["elixir"]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("? && ?", p.tags, ^["elixir"])`
 
-_Test reference: test/examples/ecto_query_dsl.exs:146_
+test name: "Rule Statement 11: tags array overlaps"
 
 **Rule Statement 12:**
 
-**Given** filter params: `[tags: [all: [in: ["elixir", "erlang"]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if all elements in the array `:tags` are in the list `["elixir", "erlang"]`
+**Given** filter params: `[tags: [all: [in: ["elixir", "erlang"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a containment check  
+**And** it must check whether every value in `:tags` is included in `["elixir", "erlang"]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("? <@ ?", p.tags, ^["elixir", "erlang"])`
 
-_Test reference: test/examples/ecto_query_dsl.exs:159_
+test name: "Rule Statement 12: tags array is contained in list"
 
 **Rule Statement 13:**
 
-**Given** filter params: `[not: [tags: [==: ["elixir"]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` does not equal the list `["elixir"]`
-**And** it must negate the comparison
+**Given** filter params: `[not: [tags: [==: ["elixir"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a negated equality comparison against the array field  
+**And** it must check whether the `:tags` field is not exactly `["elixir"]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.tags == ^["elixir"])`
 
-_Test reference: test/examples/ecto_query_dsl.exs:172_
+test name: "Rule Statement 13: negated tags equals array"
 
 **Rule Statement 14:**
 
-**Given** filter params: `[not: [tags: [in: "elixir"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if the array `:tags` does not contain the value "elixir"
-**And** it must negate the comparison
-**And** the resulting expression is: `not ("elixir" in p.tags)`
+**Given** filter params: `[not: [tags: [in: "elixir"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a negated membership check against the array field  
+**And** it must check whether `"elixir"` is not in the `:tags` field  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `"elixir" not in p.tags`
 
-_Test reference: test/examples/ecto_query_dsl.exs:185_
+test name: "Rule Statement 14: negated tags contains value"
 
 **Rule Statement 15:**
 
-**Given** filter params: `[tags: [>: "elixir"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if any element in the array `:tags` is greater than "elixir"
+**Given** filter params: `[tags: [>: "elixir"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than comparison against any element of the array field  
+**And** it must check whether `"elixir"` is greater than at least one value in `:tags`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("? > ANY(?)", ^"elixir", p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:198_
+test name: "Rule Statement 15: value greater than any tag"
 
 **Rule Statement 16:**
 
-**Given** filter params: `[tags: [>=: "elixir"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if any element in the array `:tags` is greater than or equal to "elixir"
+**Given** filter params: `[tags: [>=: "elixir"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than-or-equal comparison against any element of the array field  
+**And** it must check whether `"elixir"` is greater than or equal to at least one value in `:tags`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("? >= ANY(?)", ^"elixir", p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:211_
+test name: "Rule Statement 16: value greater than or equal to any tag"
 
 **Rule Statement 17:**
 
-**Given** filter params: `[tags: [<: "elixir"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if any element in the array `:tags` is less than "elixir"
+**Given** filter params: `[tags: [<: "elixir"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than comparison against any element of the array field  
+**And** it must check whether `"elixir"` is less than at least one value in `:tags`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("? < ANY(?)", ^"elixir", p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:224_
+test name: "Rule Statement 17: value less than any tag"
 
 **Rule Statement 18:**
 
-**Given** filter params: `[tags: [<=: "elixir"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if any element in the array `:tags` is less than or equal to "elixir"
+**Given** filter params: `[tags: [<=: "elixir"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the less-than-or-equal comparison against any element of the array field  
+**And** it must check whether `"elixir"` is less than or equal to at least one value in `:tags`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("? <= ANY(?)", ^"elixir", p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:237_
+test name: "Rule Statement 18: value less than or equal to any tag"
 
 **Rule Statement 19:**
 
-**Given** filter params: `[tags: [like: "elixir"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if any element in the array `:tags` matches the pattern "elixir"
+**Given** filter params: `[tags: [like: "elixir"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a case-sensitive pattern match against any element of the array field  
+**And** it must check whether at least one value in `:tags` matches the provided pattern  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("? LIKE ANY(?)", ^"elixir", p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:250_
+test name: "Rule Statement 19: tags any like"
 
 **Rule Statement 20:**
 
-**Given** filter params: `[tags: [ilike: "elixir"]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if any element in the array `:tags` matches the pattern "elixir" case-insensitively
+**Given** filter params: `[tags: [ilike: "elixir"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a case-insensitive pattern match against any element of the array field  
+**And** it must check whether at least one value in `:tags` matches the provided pattern case-insensitively  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("? ILIKE ANY(?)", ^"elixir", p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:263_
+test name: "Rule Statement 20: tags any ilike"
 
 **Rule Statement 21:**
 
-**Given** filter params: `[tags: [like: ["elixir", "erlang"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if any element in the array `:tags` matches any of the patterns `["elixir", "erlang"]`
-**And** the resulting expression is: `fragment("? && ?", p.tags, ^["elixir", "erlang"])`
+**Given** filter params: `[tags: [like: ["%elixir%", "%erlang%"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a case-sensitive pattern match against any element of the array field  
+**And** it must check whether at least one value in `:tags` matches at least one of the provided patterns  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t LIKE ANY (?)\n)\n", p.tags, ^["%elixir%", "%erlang%"])`
 
-_Test reference: test/examples/ecto_query_dsl.exs:276_
+test name: "Rule Statement 21: tags any like any"
 
 **Rule Statement 22:**
 
-**Given** filter params: `[not: [tags: [like: "elixir"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must check if no element in the array `:tags` matches the pattern "elixir"
-**And** it must negate the comparison
+**Given** filter params: `[not: [tags: [like: "elixir"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a negated case-sensitive pattern match against any element of the array field  
+**And** it must check whether each value in `:tags` is not matched by the provided pattern  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not fragment("? LIKE ANY(?)", ^"elixir", p.tags)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:289_
+test name: "Rule Statement 22: negated tags any like"
 
 **Rule Statement 23:**
 
-**Given** filter params: `[tags: [==: [lower: "elixir"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `lower/1` to the comparison value "elixir"
-**And** it must check if the array `:tags` contains the lowercased value
+**Given** filter params: `[tags: [==: [lower: "elixir"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the lower transformation before the membership check against the array field  
+**And** it must check whether the lowercased value is in the `:tags` field  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("lower(?)", "elixir") in p.tags`
 
-_Test reference: test/examples/ecto_query_dsl.exs:302_
+test name: "Rule Statement 23: tags contains lowercased value"
 
 **Rule Statement 24:**
 
-**Given** filter params: `[tags: [!=: [upper: "ELIXIR"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `upper/1` to the comparison value "ELIXIR"
-**And** it must check if the array `:tags` does not contain the uppercased value
-**And** the resulting expression is: `not (fragment("upper(?)", "ELIXIR") in p.tags)`
+**Given** filter params: `[tags: [!=: [upper: "ELIXIR"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the upper transformation before the negated membership check against the array field  
+**And** it must check whether the uppercased value is not in the `:tags` field  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("upper(?)", "ELIXIR") not in p.tags`
 
-_Test reference: test/examples/ecto_query_dsl.exs:315_
+test name: "Rule Statement 24: tags not contains uppercased value"
 
 **Rule Statement 25:**
 
-**Given** filter params: `[tags: [count: [>: 0]]]`
-**When** the filter params are converted into a query expression
-**Then** it must count the elements in the array `:tags`
-**And** it must compare the count to `0` using `>`
+**Given** filter params: `[tags: [count: [>: 0]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the count helper before the greater-than comparison  
+**And** it must check whether the `:tags` field contains more than `0` elements  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("array_length(?, 1)", p.tags) > 0`
 
-_Test reference: test/examples/ecto_query_dsl.exs:328_
+test name: "Rule Statement 25: tags count greater than"
 
 **Rule Statement 26:**
 
-**Given** filter params: `[tags: [count: [==: 0]]]`
-**When** the filter params are converted into a query expression
-**Then** it must count the elements in the array `:tags`
-**And** it must compare the count to `0` using `==`
+**Given** filter params: `[tags: [count: [==: 0]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the count helper before the equality comparison  
+**And** it must check whether the `:tags` field has a count of `0`, treating both `nil` and empty arrays as `0`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `fragment("coalesce(array_length(?, 1), 0)", p.tags) == 0`
 
-_Test reference: test/examples/ecto_query_dsl.exs:341_
+test name: "Rule Statement 26: tags count equals zero"
 
-Note: Array fields support all comparison operators, string matching (like/ilike), transformations (lower/upper), and the special `:all` directive for universal quantification. The `:in` operator checks containment, while `:count` operates on array length.
+**Rule Statement 27:**
+
+**Given** filter params: `[tags: [all: [>: "a"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the greater-than comparison against all elements of the array field  
+**And** it must check whether `"a"` is greater than every value in `:tags`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("? > ALL(?)", ^"a", p.tags)`
+
+test name: "Rule Statement 27: value greater than all tags"
+
+**Rule Statement 28:**
+
+**Given** filter params: `[tags: [ilike: ["elixir", "erlang"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a case-insensitive pattern match against any element of the array field  
+**And** it must check whether at least one value in `:tags` matches at least one of the provided inputs case-insensitively  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n", p.tags, ^["%elixir%", "%erlang%"])`
+
+test name: "Rule Statement 28: tags any ilike any"
+
+**Rule Statement 29:**
+
+**Given** filter params: `[not: [tags: [ilike: ["%elixir%"]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a negated case-insensitive pattern match against any element of the array field  
+**And** it must check whether each value in `:tags` is not matched by the provided pattern case-insensitively  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `not fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n", p.tags, ^["%elixir%"])`
+
+test name: "Rule Statement 29: negated tags any ilike"
+
+**Rule Statement 30:**
+
+**Given** filter params: `[lower: [tags: [==: "elixir"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the lower transformation to the array field before the equality comparison  
+**And** it must check whether any lowercased value in `:tags` equals `"elixir"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n", p.tags, ^"elixir")`
+
+test name: "Rule Statement 30: lower tags equals value"
+
+**Rule Statement 31:**
+
+**Given** filter params: `[upper: [tags: [==: "ELIXIR"]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the upper transformation to the array field before the equality comparison  
+**And** it must check whether any uppercased value in `:tags` equals `"ELIXIR"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n", p.tags, ^"ELIXIR")`
+
+test name: "Rule Statement 31: upper tags equals value"
+
+**Rule Statement 32:**
+
+**Given** filter params: `[tags: [count: [<: 5]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the count helper before the less-than comparison  
+**And** it must check whether the `:tags` field contains fewer than `5` elements  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("array_length(?, 1)", p.tags) < 5`
+
+test name: "Rule Statement 32: tags count less than"
+
+**Rule Statement 33:**
+
+**Given** filter params: `[tags: [count: [>=: 2]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the count helper before the greater-than-or-equal comparison  
+**And** it must check whether the `:tags` field contains at least `2` elements  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("array_length(?, 1)", p.tags) >= 2`
+
+test name: "Rule Statement 33: tags count greater than or equal"
+
+**Rule Statement 34:**
+
+**Given** filter params: `[tags: [count: [<=: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the count helper before the less-than-or-equal comparison  
+**And** it must check whether the `:tags` field contains at most `10` elements  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("array_length(?, 1)", p.tags) <= 10`
+
+test name: "Rule Statement 34: tags count less than or equal"
+
+**Rule Statement 35:**
+
+**Given** filter params: `[tags: [count: [!=: 3]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the count helper before the inequality comparison  
+**And** it must check whether the `:tags` field has a count that is not equal to `3`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `fragment("array_length(?, 1)", p.tags) != 3`
+
+test name: "Rule Statement 35: tags count not equals"
 
 ---
 
@@ -698,131 +3180,142 @@ A scalar field is a field on a given schema or table. It can be used in filter c
     [and: [[id: 1], [published: true]]]
     [and: [id: 1, title: "hello"]]
     [and: [[id: 1, title: "hello"], [published: true]]]
-    [or: [[id: 1, title: "hello"], [published: true]]]
+    [or: [[views: 1, title: "hello"], [published: true]]]
     [or: [[id: 1, or: [title: "hello", body: "world"]], [published: true]]]
 
 ### Rule Statements
 
 **Rule Statement 1:**
- 
-**Given** filter params: `[id: 1]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:id` field to the value `1` using equality
+
+**Given** filter params: `[id: 1]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison  
+**And** it must check whether the `:id` field equals `1`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `p.id == 1`
 
-_Test reference: test/examples/ecto_query_dsl.exs:356_
+test name: "Rule Statement 1: id equals value"
 
 **Rule Statement 2:**
- 
-**Given** filter params: `[published: true]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:published` field to the value `true` using equality
+
+**Given** filter params: `[published: true]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison  
+**And** it must check whether the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `p.published == true`
 
-_Test reference: test/examples/ecto_query_dsl.exs:369_
+test name: "Rule Statement 2: published equals boolean"
 
 **Rule Statement 3:**
- 
-**Given** filter params: `[id: 1, published: true]`
-**When** the filter params are converted into a query condition
-**Then** it must combine multiple field comparisons with an implicit AND
-**And** it must compare the `:id` field to `1` and the `:published` field to `true`
+
+**Given** filter params: `[id: 1, published: true]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the top-level `and` grouping across the scalar field conditions  
+**And** it must check whether the `:id` field equals `1` and the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `p.id == 1 and p.published == true`
 
-_Test reference: test/examples/ecto_query_dsl.exs:382_
+test name: "Rule Statement 3: multiple scalar fields with and"
 
 **Rule Statement 4:**
- 
-**Given** filter params: `[published_at: nil]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:published_at` field to `nil` using equality
+
+**Given** filter params: `[published_at: nil]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison as a nil check  
+**And** it must check whether the `:published_at` field is `nil`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `is_nil(p.published_at)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:395_
+test name: "Rule Statement 4: published_at is nil"
 
 **Rule Statement 5:**
- 
-**Given** filter params: `[published: [true, false]]`
-**When** the filter params are converted into a query condition
-**Then** it must check if the `:published` field is in the list `[true, false]`
+
+**Given** filter params: `[published: [true, false]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply a membership check  
+**And** it must check whether the `:published` field is in the list `[true, false]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `p.published in [true, false]`
 
-_Test reference: test/examples/ecto_query_dsl.exs:408_
+test name: "Rule Statement 5: published in list"
 
 **Rule Statement 6:**
- 
-**Given** filter params: `[title: "hello"]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:title` field to the value `"hello"` using equality
+
+**Given** filter params: `[title: "hello"]`  
+**When** the filter params are converted into a query condition  
+**Then** it must apply the equality comparison  
+**And** it must check whether the `:title` field equals `"hello"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `p.title == "hello"`
 
-_Test reference: test/examples/ecto_query_dsl.exs:422_
+test name: "Rule Statement 6: title equals string"
 
 **Rule Statement 7:**
- 
-**Given** filter params: `[and: [[id: 1]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply an AND logical operator directive to the nested filter
-**And** it must compare the `:id` field to the value `1` using equality
+
+**Given** filter params: `[and: [[id: 1]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the explicit `and` wrapper around the single nested condition  
+**And** it must check whether the `:id` field equals `1`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `p.id == 1`
 
-_Test reference: test/examples/ecto_query_dsl.exs:435_
- 
+test name: "Rule Statement 7: explicit and with single condition"
+
 **Rule Statement 8:**
- 
-**Given** filter params: `[and: [[id: 1], [published: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must combine the nested filters with the `AND` directive
-**And** it must produce one group for `[id: 1]` and one group for `[published: true]`
-**And** it must compare `:id` to `1` and `:published` to `true`
+
+**Given** filter params: `[and: [[id: 1], [published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the `and` grouping across the nested conditions  
+**And** it must check whether the `:id` field equals `1` and the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `p.id == 1 and p.published == true`
 
-_Test reference: test/examples/ecto_query_dsl.exs:448_
+test name: "Rule Statement 8: explicit and with multiple conditions"
 
 **Rule Statement 9:**
- 
-**Given** filter params: `[and: [id: 1, title: "hello"]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply an AND logical operator directive to the nested filter
-**And** it must compare the `:id` field to the value `1` using equality
-**And** it must compare the `:title` field to the value `"hello"` using equality
+
+**Given** filter params: `[and: [id: 1, title: "hello"]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the explicit `and` grouping across the keyword conditions  
+**And** it must check whether the `:id` field equals `1` and the `:title` field equals `"hello"`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `p.id == 1 and p.title == "hello"`
 
-_Test reference: test/examples/ecto_query_dsl.exs:461_
+test name: "Rule Statement 9: explicit and with map conditions"
 
 **Rule Statement 10:**
 
-**Given** filter params: `[and: [[id: 1, title: "hello"], [published: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must combine the nested filters with the `AND` directive
-**And** it must produce one group for `[id: 1, title: "hello"]` and one group for `[published: true]`
-**And** it must compare `:id` to `1`, `:title` to `"hello"`, and `:published` to `true`
+**Given** filter params: `[and: [[id: 1, title: "hello"], [published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the nested `and` grouping  
+**And** it must check whether the `:id` field equals `1`, the `:title` field equals `"hello"`, and the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `(p.id == 1 and p.title == "hello") and p.published == true`
 
-_Test reference: test/examples/ecto_query_dsl.exs:474_
+test name: "Rule Statement 10: nested and conditions"
 
 **Rule Statement 11:**
- 
-**Given** filter params: `[or: [[id: 1, title: "hello"], [published: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must combine the nested filters with the `OR` directive
-**And** it must produce one group for `[id: 1, title: "hello"]` and one group for `[published: true]`
-**And** it must compare `:id` to `1`, `:title` to `"hello"`, and `:published` to `true`
-**And** the resulting expression is: `(p.id == 1 and p.title == "hello") or p.published == true`
 
-_Test reference: test/examples/ecto_query_dsl.exs:487_
- 
+**Given** filter params: `[or: [[views: 1, title: "hello"], [published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the top-level `or` grouping with an `and`-grouped first branch  
+**And** it must check whether the grouped `:views` and `:title` conditions match or the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `(p.views == 1 and p.title == "hello") or p.published == true`
+
+test name: "Rule Statement 11: or with map conditions"
+
 **Rule Statement 12:**
- 
-**Given** filter params: `[or: [[id: 1, or: [title: "hello", body: "world"]], [published: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must combine the top-level filters with the `OR` directive
-**And** it must produce one group for `[id: 1, or: [title: "hello", body: "world"]]` and one group for `[published: true]`
-**And** it must apply a nested `OR` directive to `:title` and `:body` within the first group
-**And** it must compare `:id` to `1`, `:title` to `"hello"`, `:body` to `"world"`, and `:published` to `true`
-**And** the resulting expression is: `(p.id == 1 and (p.title == "hello" or p.body == "world")) or p.published == true`
 
-_Test reference: test/examples/ecto_query_dsl.exs:502_
+**Given** filter params: `[or: [[id: 1, or: [title: "hello", body: "world"]], [published: true]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must preserve the nested `or` grouping inside the first branch of the top-level `or`  
+**And** it must check whether the `:id` field equals the provided id and either the `:title` field equals `"hello"` or the `:body` field equals `"world"`, or whether the `:published` field equals `true`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `(p.id == ^post1.id and (p.title == "hello" or p.body == "world")) or p.published == true`
+
+test name: "Rule Statement 12: nested or within and"
 
 ---
 
@@ -832,9 +3325,9 @@ _Test reference: test/examples/ecto_query_dsl.exs:502_
 
 ### Examples
 
-    [not: [published: [in: [true, false]]]]
-    [not: [published: [==: [true, false]]]]
-    [not: [published: [!=: [true, false]]]]
+    [not: [published: [in: [true]]]]
+    [not: [published: [==: [true]]]]
+    [not: [published: [!=: [true]]]]
     [not: [views: [>: 10]]]
     [not: [views: [>=: 10]]]
     [not: [views: [<: 10]]]
@@ -850,2484 +3343,143 @@ _Test reference: test/examples/ecto_query_dsl.exs:502_
 
 **Rule Statement 1:**
 
-**Given** filter params: `[not: [published: [in: [true, false]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the IN comparison
-**And** it must check if the `:published` field is not in the list `[true, false]`, accounting for NULL
-**And** the resulting expression is: `is_nil(p.published) or p.published not in [true, false]`
+**Given** filter params: `[not: [published: [in: [true]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the membership check  
+**And** it must check whether the `:published` field is not in the list `[true]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.published not in [true]`
 
-_Test reference: test/examples/ecto_query_dsl.exs:520_
+test name: "Rule Statement 1: negated published in list"
 
 **Rule Statement 2:**
 
-**Given** filter params: `[not: [published: [==: [true, false]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the equality comparison on a list value, coercing it to a NOT IN check
-**And** it must check if the `:published` field is not in the list `[true, false]`, accounting for NULL
-**And** the resulting expression is: `is_nil(p.published) or p.published not in [true, false]`
+**Given** filter params: `[not: [published: [==: [true]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the equality comparison after applying the membership check  
+**And** it must check whether the `:published` field is not in the list `[true]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.published not in [true]`
 
-_Test reference: test/examples/ecto_query_dsl.exs:535_
+test name: "Rule Statement 2: negated published equals operator with list"
 
 **Rule Statement 3:**
 
-**Given** filter params: `[not: [published: [!=: [true, false]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the inequality comparison on a list value, coercing it to an IN check
-**And** it must check if the `:published` field is in the list `[true, false]`
-**And** the resulting expression is: `p.published in [true, false]`
+**Given** filter params: `[not: [published: [!=: [true]]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the inequality comparison after applying the membership check  
+**And** it must check whether the `:published` field is in the list `[true]`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
+**And** the resulting expression is: `p.published in [true]`
 
-_Test reference: test/examples/ecto_query_dsl.exs:549_
+test name: "Rule Statement 3: negated published not equals operator with list"
 
 **Rule Statement 4:**
 
-**Given** filter params: `[not: [views: [>: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the greater-than comparison
-**And** it must check if the `:views` field is not greater than `10`
+**Given** filter params: `[not: [views: [>: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the greater-than comparison  
+**And** it must check whether the `:views` field is not greater than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views > 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:564_
+test name: "Rule Statement 4: negated views greater than"
 
 **Rule Statement 5:**
 
-**Given** filter params: `[not: [views: [>=: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the greater-than-or-equal comparison
-**And** it must check if the `:views` field is not greater than or equal to `10`
+**Given** filter params: `[not: [views: [>=: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the greater-than-or-equal comparison  
+**And** it must check whether the `:views` field is not greater than or equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views >= 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:577_
+test name: "Rule Statement 5: negated views greater than or equal"
 
 **Rule Statement 6:**
 
-**Given** filter params: `[not: [views: [<: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the less-than comparison
-**And** it must check if the `:views` field is not less than `10`
+**Given** filter params: `[not: [views: [<: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the less-than comparison  
+**And** it must check whether the `:views` field is not less than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views < 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:590_
+test name: "Rule Statement 6: negated views less than"
 
 **Rule Statement 7:**
 
-**Given** filter params: `[not: [views: [<=: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the less-than-or-equal comparison
-**And** it must check if the `:views` field is not less than or equal to `10`
+**Given** filter params: `[not: [views: [<=: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the less-than-or-equal comparison  
+**And** it must check whether the `:views` field is not less than or equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views <= 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:603_
+test name: "Rule Statement 7: negated views less than or equal"
 
 **Rule Statement 8:**
 
-**Given** filter params: `[not: [views: [==: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the equality comparison
-**And** it must check if the `:views` field is not equal to `10`
+**Given** filter params: `[not: [views: [==: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the equality comparison  
+**And** it must check whether the `:views` field is not equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views == 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:616_
+test name: "Rule Statement 8: negated views equals"
 
 **Rule Statement 9:**
 
-**Given** filter params: `[not: [views: [!=: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the inequality comparison
-**And** it must check if the `:views` field is not not-equal to `10`
+**Given** filter params: `[not: [views: [!=: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the inequality comparison  
+**And** it must check whether the `:views` field is equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views != 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:629_
+test name: "Rule Statement 9: negated views not equals"
 
 **Rule Statement 10:**
 
-**Given** filter params: `[not: [views: [gt: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the greater-than comparison
-**And** it must check if the `:views` field is not greater than `10`
+**Given** filter params: `[not: [views: [gt: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the greater-than comparison  
+**And** it must check whether the `:views` field is not greater than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views > 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:642_
+test name: "Rule Statement 10: negated views gt alias"
 
 **Rule Statement 11:**
 
-**Given** filter params: `[not: [views: [gte: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the greater-than-or-equal comparison
-**And** it must check if the `:views` field is not greater than or equal to `10`
+**Given** filter params: `[not: [views: [gte: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the greater-than-or-equal comparison  
+**And** it must check whether the `:views` field is not greater than or equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views >= 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:655_
+test name: "Rule Statement 11: negated views gte alias"
 
 **Rule Statement 12:**
 
-**Given** filter params: `[not: [views: [lt: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the less-than comparison
-**And** it must check if the `:views` field is not less than `10`
+**Given** filter params: `[not: [views: [lt: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the less-than comparison  
+**And** it must check whether the `:views` field is not less than `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views < 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:668_
+test name: "Rule Statement 12: negated views lt alias"
 
 **Rule Statement 13:**
 
-**Given** filter params: `[not: [views: [lte: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the less-than-or-equal comparison
-**And** it must check if the `:views` field is not less than or equal to `10`
+**Given** filter params: `[not: [views: [lte: 10]]]`  
+**When** the filter params are converted into a query condition  
+**Then** it must negate the less-than-or-equal comparison  
+**And** it must check whether the `:views` field is not less than or equal to `10`  
+**And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `not (p.views <= 10)`
 
-_Test reference: test/examples/ecto_query_dsl.exs:681_
-
----
-
-## Logical Operator Directives
-
-- `:and`: field level and top level
-- `:or`: field level and top level
-
-### Examples
-
-    [and: [title: "hello", views: [>: 10, <: 20]]]
-    [and: [[title: "hello", views: [>: 10, <: 20]], [published: true]]]
-    [or: [[title: "hello", views: [>: 10, <: 20]], [published: true]]]
-    [or: [[or: [title: "hello", views: [>: 10, <: 20]]], [published: true]]]
-    [or: [[title: "hello", or: [views: [>: 10, <: 20]]], [published: true]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[and: [title: "hello", views: [>: 10, <: 20]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply top-level AND to combine the field conditions
-**And** it must apply implicit AND between multiple operations on the `views` field
-**And** the resulting expression is: `p.title == "hello" and (p.views > 10 and p.views < 20)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:696_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[and: [[title: "hello", views: [>: 10, <: 20]], [published: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply top-level AND with list syntax to combine filter groups
-**And** it must apply implicit AND between multiple operations on the `views` field
-**And** the resulting expression is: `(p.title == "hello" and (p.views > 10 and p.views < 20)) and p.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:710_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[or: [[title: "hello", views: [>: 10, <: 20]], [published: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply top-level OR to combine filter groups
-**And** it must apply implicit AND between multiple operations on the `views` field
-**And** the resulting expression is: `(p.title == "hello" and (p.views > 10 and p.views < 20)) or p.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:724_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[or: [[or: [title: "hello", views: [>: 10, <: 20]]], [published: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply top-level OR to combine filter groups
-**And** it must apply nested OR to the first group, changing the inner combinator
-**And** it must apply implicit AND between multiple operations on the `views` field
-**And** the resulting expression is: `(p.title == "hello" or (p.views > 10 and p.views < 20)) or p.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:739_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[or: [[title: "hello", or: [views: [>: 10, <: 20]]], [published: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply top-level OR to combine filter groups
-**And** it must apply nested OR within the first group
-**And** it must apply implicit AND between multiple operations on the `views` field
-**And** the resulting expression is: `(p.title == "hello" or (p.views > 10 and p.views < 20)) or p.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:755_
-
----
-
-## Comparison Operator Directives
-
-- `:==`: equality
-- `:eq`: equality alias
-- `:!=`: inequality
-- `:> `: greater than
-- `:>=`: greater than or equal
-- `:< `: less than
-- `:<=`: less than or equal
-- `:gt`: greater than alias
-- `:gte`: greater than or equal alias
-- `:lt`: less than alias
-- `:lte`: less than or equal alias
-- `:in`: membership
-
-### Examples
-
-    [id: [==: 1]]
-    [id: [eq: 1]]
-    [published_at: [==: nil]]
-    [published_at: [eq: nil]]
-    [published_at: [!=: nil]]
-    [views: [>: 10]]
-    [views: [>=: 10]]
-    [views: [<: 10]]
-    [views: [<=: 10]]
-    [views: [!=: 10]]
-    [views: [gt: 10]]
-    [views: [gte: 10]]
-    [views: [lt: 10]]
-    [views: [lte: 10]]
-    [published: [in: [true, false]]]
-    [published: [==: [true, false]]]
-    [published: [!=: [true, false]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[id: [==: 1]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:id` field to the value `1` using equality
-**And** the resulting expression is: `p.id == 1`
-
-_Test reference: test/examples/ecto_query_dsl.exs:773_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[id: [eq: 1]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:id` field to the value `1` using the equality alias
-**And** the resulting expression is: `p.id == 1`
-
-_Test reference: test/examples/ecto_query_dsl.exs:786_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[published_at: [==: nil]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:published_at` field to `nil` using equality
-**And** the resulting expression is: `is_nil(p.published_at)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:799_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[published_at: [eq: nil]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:published_at` field to `nil` using the equality alias
-**And** the resulting expression is: `is_nil(p.published_at)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:812_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[published_at: [!=: nil]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:published_at` field to `nil` using inequality
-**And** the resulting expression is: `not is_nil(p.published_at)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:825_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[views: [>: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:views` field to `10` using greater than
-**And** the resulting expression is: `p.views > 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:838_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[views: [>=: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:views` field to `10` using greater than or equal
-**And** the resulting expression is: `p.views >= 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:851_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[views: [<: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:views` field to `10` using less than
-**And** the resulting expression is: `p.views < 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:864_
-
-**Rule Statement 9:**
-
-**Given** filter params: `[views: [<=: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:views` field to `10` using less than or equal
-**And** the resulting expression is: `p.views <= 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:877_
-
-**Rule Statement 10:**
-
-**Given** filter params: `[views: [!=: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:views` field to `10` using inequality
-**And** the resulting expression is: `p.views != 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:890_
-
-**Rule Statement 11:**
-
-**Given** filter params: `[views: [gt: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:views` field to `10` using the greater than alias
-**And** the resulting expression is: `p.views > 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:903_
-
-**Rule Statement 12:**
-
-**Given** filter params: `[views: [gte: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:views` field to `10` using the greater than or equal alias
-**And** the resulting expression is: `p.views >= 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:916_
-
-**Rule Statement 13:**
-
-**Given** filter params: `[views: [lt: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:views` field to `10` using the less than alias
-**And** the resulting expression is: `p.views < 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:929_
-
-**Rule Statement 14:**
-
-**Given** filter params: `[views: [lte: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must compare the `:views` field to `10` using the less than or equal alias
-**And** the resulting expression is: `p.views <= 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:942_
-
-**Rule Statement 15:**
-
-**Given** filter params: `[published: [in: [true, false]]]`
-**When** the filter params are converted into a query condition
-**Then** it must check if the `:published` field is in the list `[true, false]`
-**And** the resulting expression is: `p.published in [true, false]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:955_
-
-**Rule Statement 16:**
-
-**Given** filter params: `[published: [==: [true, false]]]`
-**When** the filter params are converted into a query condition
-**Then** it must coerce equality on a list value to an IN check
-**And** the resulting expression is: `p.published in [true, false]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:970_
-
-**Rule Statement 17:**
-
-**Given** filter params: `[published: [!=: [true, false]]]`
-**When** the filter params are converted into a query condition
-**Then** it must coerce inequality on a list value to a NOT IN check, accounting for NULL
-**And** the resulting expression is: `is_nil(p.published) or p.published not in [true, false]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:985_
-
----
-
-## String Matching Directives
-
-- `:like`: pattern matching
-- `:ilike`: case-insensitive pattern matching
-
-### Examples
-
-    [title: [like: "hello"]]
-    [title: [ilike: "hello"]]
-    [title: [like: ["hello", "world"]]]
-    [title: [ilike: ["hello", "world"]]]
-    [not: [title: [like: "hello"]]]
-    [not: [title: [ilike: "hello"]]]
-    [not: [title: [like: ["hello", "world"]]]]
-    [not: [title: [ilike: ["hello", "world"]]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[title: [like: "%hello%"]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply pattern matching to the `:title` field with the value `"%hello%"`
-**And** the resulting expression is: `like(p.title, "%hello%")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1002_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[not: [title: [like: "%hello%"]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the pattern matching comparison
-**And** the resulting expression is: `not like(p.title, "%hello%")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1015_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[title: [ilike: "%HELLO%"]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply case-insensitive pattern matching to the `:title` field with the value `"%HELLO%"`
-**And** the resulting expression is: `ilike(p.title, "%HELLO%")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1028_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[not: [title: [ilike: "%HELLO%"]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the case-insensitive pattern matching comparison
-**And** the resulting expression is: `not ilike(p.title, "%HELLO%")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1041_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[title: [like: ["%hello%", "%world%"]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply pattern matching to the `:title` field with multiple values `["%hello%", "%world%"]`
-**And** the resulting expression is: `like(p.title, "%hello%") or like(p.title, "%world%")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1054_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[title: [ilike: ["%HELLO%", "%WORLD%"]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply case-insensitive pattern matching to the `:title` field with multiple values `["%HELLO%", "%WORLD%"]`
-**And** the resulting expression is: `ilike(p.title, "%HELLO%") or ilike(p.title, "%WORLD%")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1068_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[not: [title: [like: ["%hello%", "%world%"]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the pattern matching comparison with multiple values
-**And** the resulting expression is: `not (like(p.title, "%hello%") or like(p.title, "%world%"))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1082_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[not: [title: [ilike: ["%HELLO%", "%WORLD%"]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must negate the case-insensitive pattern matching comparison with multiple values
-**And** the resulting expression is: `not (ilike(p.title, "%HELLO%") or ilike(p.title, "%WORLD%"))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1096_
-
----
-
-## String Transformation Directives
-
-- `:lower`: convert to lowercase
-- `:upper`: convert to uppercase
-
-### Examples
-
-    [title: [==: [lower: "hello"]]]
-    [title: [==: [upper: "HELLO"]]]
-    [title: [!=: [lower: "hello"]]]
-    [title: [!=: [upper: "HELLO"]]]
-    [not: [title: [==: [lower: "hello"]]]]
-    [not: [title: [==: [upper: "HELLO"]]]]
-    [title: [==: [lower: "HELLO"]]]
-    [title: [==: [upper: "hello"]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[title: [==: [lower: "hello"]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply `lower/1` to the comparison value "hello"
-**And** it must compare the `:title` field to the result using equality
-**And** the resulting expression is: `p.title == fragment("lower(?)", "hello")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1112_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[title: [==: [upper: "HELLO"]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply `upper/1` to the comparison value "HELLO"
-**And** it must compare the `:title` field to the result using equality
-**And** the resulting expression is: `p.title == fragment("upper(?)", "HELLO")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1125_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[title: [!=: [lower: "hello"]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply `lower/1` to the comparison value "hello"
-**And** it must compare the `:title` field to the result using inequality
-**And** the resulting expression is: `p.title != fragment("lower(?)", "hello")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1138_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[title: [!=: [upper: "HELLO"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `upper/1` to the comparison value "HELLO"
-**And** it must compare the `:title` field to the result using inequality
-**And** the resulting expression is: `p.title != fragment("upper(?)", "HELLO")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1151_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[not: [title: [==: [lower: "hello"]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `lower/1` to the comparison value "hello"
-**And** it must negate the equality comparison
-**And** the resulting expression is: `not (p.title == fragment("lower(?)", "hello"))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1164_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[not: [title: [==: [upper: "HELLO"]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `upper/1` to the comparison value "HELLO"
-**And** it must negate the equality comparison
-**And** the resulting expression is: `not (p.title == fragment("upper(?)", "HELLO"))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1177_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[title: [==: [lower: "HELLO"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `lower/1` to the comparison value "HELLO"
-**And** it must compare the `:title` field to the result using equality
-**And** the resulting expression is: `p.title == fragment("lower(?)", "HELLO")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1190_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[title: [==: [upper: "hello"]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `upper/1` to the comparison value "hello"
-**And** it must compare the `:title` field to the result using equality
-**And** the resulting expression is: `p.title == fragment("upper(?)", "hello")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1203_
-
-Note: String transformations at slot 8 (after the comparison operator) transform the value before comparison. Both `:lower` and `:upper` work with all comparison operators and with `:not`.
-
----
-
-## Aggregate Operator Directives
-
-- `:avg`: average
-- `:count`: count
-- `:max`: maximum
-- `:min`: minimum
-- `:sum`: sum
-
-### Examples
-
-    [views: [avg: [>: 10]]]
-    [not: [views: [avg: [>: 10]]]]
-    [views: [count: [>: 0]]]
-    [views: [max: [>=: 100]]]
-    [views: [min: [<: 5]]]
-    [views: [sum: [==: 1000]]]
-    [views: [avg: [!=: 50]]]
-    [views: [count: [==: nil]]]
-    [not: [views: [count: [>: 0]]]]
-    [not: [views: [max: [>=: 100]]]]
-    [views: [avg: [<=: 10]]]
-    [views: [sum: [>: 500]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[views: [avg: [>: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply `avg/1` to the `:views` field
-**And** it must compare the result to `10` using `>`
-**And** the resulting expression is: `avg(p.views) > 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1218_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[not: [views: [avg: [>: 10]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply `avg/1` to the `:views` field
-**And** it must compare the result to `10` using `>`
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (avg(p.views) > 10)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1231_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[views: [count: [>: 0]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `count/1` to the `:views` field
-**And** it must compare the result to `0` using `>`
-**And** the resulting expression is: `count(p.views) > 0`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1244_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[views: [max: [>=: 100]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `max/1` to the `:views` field
-**And** it must compare the result to `100` using `>=`
-**And** the resulting expression is: `max(p.views) >= 100`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1256_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[views: [min: [<: 5]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `min/1` to the `:views` field
-**And** it must compare the result to `5` using `<`
-**And** the resulting expression is: `min(p.views) < 5`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1269_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[views: [sum: [==: 1000]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `sum/1` to the `:views` field
-**And** it must compare the result to `1000` using `==`
-**And** the resulting expression is: `sum(p.views) == 1000`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1282_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[views: [avg: [!=: 50]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `avg/1` to the `:views` field
-**And** it must compare the result to `50` using `!=`
-**And** the resulting expression is: `avg(p.views) != 50`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1295_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[views: [count: [==: nil]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `count/1` to the `:views` field
-**And** it must compare the result to `nil` using `==`
-**And** the resulting expression is: `is_nil(count(p.views))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1308_
-
-**Rule Statement 9:**
-
-**Given** filter params: `[not: [views: [count: [>: 0]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `count/1` to the `:views` field
-**And** it must compare the result to `0` using `>`
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (count(p.views) > 0)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1320_
-
-**Rule Statement 10:**
-
-**Given** filter params: `[not: [views: [max: [>=: 100]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `max/1` to the `:views` field
-**And** it must compare the result to `100` using `>=`
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (max(p.views) >= 100)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1335_
-
-**Rule Statement 11:**
-
-**Given** filter params: `[views: [avg: [<=: 10]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `avg/1` to the `:views` field
-**And** it must compare the result to `10` using `<=`
-**And** the resulting expression is: `avg(p.views) <= 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1350_
-
-**Rule Statement 12:**
-
-**Given** filter params: `[views: [sum: [>: 500]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply `sum/1` to the `:views` field
-**And** it must compare the result to `500` using `>`
-**And** the resulting expression is: `sum(p.views) > 500`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1363_
-
-Note: All aggregate operators (avg, count, max, min, sum) work with all comparison operators (>, >=, <, <=, ==, !=, and their aliases). The pattern shown above applies universally across aggregates and comparisons.
-
----
-
-## Set Comparison Directives
-
-- `:all`: compare against all values in subquery
-- `:any`: compare against any value in subquery
-
-### Examples
-
-    [id: [>: [all: subquery_expr]]]
-    [not: [id: [>: [all: subquery_expr]]]]
-    [id: [>: [any: subquery_expr]]]
-    [not: [id: [>: [any: subquery_expr]]]]
-    [id: [>=: [all: subquery_expr]]]
-    [id: [<: [all: subquery_expr]]]
-    [id: [<=: [all: subquery_expr]]]
-    [id: [==: [all: subquery_expr]]]
-    [id: [!=: [all: subquery_expr]]]
-    [id: [all: subquery_expr]]
-    [id: [all: [from: Post, id: 1]]]
-    [not: [id: [all: subquery_expr]]]
-    [id: [any: subquery_expr]]
-    [not: [id: [any: subquery_expr]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[id: [>: [all: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**And** it must apply the `>` comparison to the `:id` field against all values returned by the subquery
-**And** the resulting expression is: `p.id > all(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1506_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[not: [id: [>: [all: subquery_expr]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `>` comparison to the `:id` field against all values returned by the subquery
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.id > all(subquery_expr))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1521_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[id: [>: [any: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**And** it must apply the `>` comparison to the `:id` field against any value returned by the subquery
-**And** the resulting expression is: `p.id > any(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1535_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[not: [id: [>: [any: subquery_expr]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `>` comparison to the `:id` field against any value returned by the subquery
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.id > any(subquery_expr))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1549_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[id: [>=: [all: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `>=` comparison to the `:id` field against all values returned by the subquery
-**And** the resulting expression is: `p.id >= all(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1563_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[id: [<: [all: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `<` comparison to the `:id` field against all values returned by the subquery
-**And** the resulting expression is: `p.id < all(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1579_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[id: [<=: [all: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `<=` comparison to the `:id` field against all values returned by the subquery
-**And** the resulting expression is: `p.id <= all(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1593_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[id: [==: [all: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `==` comparison to the `:id` field against all values returned by the subquery
-**And** the resulting expression is: `p.id == all(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1609_
-
-**Rule Statement 9:**
-
-**Given** filter params: `[id: [!=: [all: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `!=` comparison to the `:id` field against all values returned by the subquery
-**And** the resulting expression is: `p.id != all(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1623_
-
-**Rule Statement 10:**
-
-**Given** filter params: `[id: [all: subquery_expr]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the default comparison to the `:id` field against all values returned by the subquery
-**And** the resulting expression is: `p.id == all(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1638_
-
-**Rule Statement 11:**
-
-**Given** filter params: `[id: [all: [from: Post, id: 1]]]`
-**When** the filter params are converted into a query condition
-**Then** it must build a subquery from the filter params and apply the comparison to the `:id` field against all values
-**And** the resulting expression is: `p.id == all(subquery(from p in Post, where: p.id == 1))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1652_
-
-**Rule Statement 12:**
-
-**Given** filter params: `[not: [id: [all: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the default comparison to the `:id` field against all values returned by the subquery
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.id == all(subquery_expr))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1666_
-
-**Rule Statement 13:**
-
-**Given** filter params: `[id: [any: subquery_expr]]`
-**When** the filter params are converted into a query condition
-**And** it must apply the default comparison to the `:id` field against any value returned by the subquery
-**And** the resulting expression is: `p.id == any(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1680_
-
-**Rule Statement 14:**
-
-**Given** filter params: `[not: [id: [any: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the default comparison to the `:id` field against any value returned by the subquery
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.id == any(subquery_expr))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1694_
-
----
-
-## Arithmetic Operator Directives
-
-- `:+`: addition
-- `:-`: subtraction
-- `:*`: multiplication
-- `:/`: division
-
-### Examples
-
-    [views: [>: [+: [:views, 10]]]]
-    [not: [views: [>: [+: [:views, 10]]]]]
-    [views: [>=: [-: [:views, 5]]]]
-    [views: [<: [*: [:views, 2]]]]
-    [views: [==: [/: [:views, 2]]]]
-    [views: [!=: [+: [:views, 10]]]]
-    [not: [views: [>=: [-: [:views, 5]]]]]
-    [not: [views: [<: [*: [:views, 2]]]]]
-    [views: [<=: [+: [10, 5]]]]
-    [views: [>: [-: [100, 10]]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[views: [>: [+: [:views, 10]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `+` directive to the `:views` field and `10`
-**And** it must compare the `:views` field to the result using `>`
-**And** the resulting expression is: `p.views > p.views + 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1378_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[not: [views: [>: [+: [:views, 10]]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `+` directive to the `:views` field and `10`
-**And** it must compare the `:views` field to the result using `>`
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.views > p.views + 10)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1390_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[views: [>=: [-: [:views, 5]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `-` directive to the `:views` field and `5`
-**And** it must compare the `:views` field to the result using `>=`
-**And** the resulting expression is: `p.views >= p.views - 5`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1402_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[views: [<: [*: [:views, 2]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `*` directive to the `:views` field and `2`
-**And** it must compare the `:views` field to the result using `<`
-**And** the resulting expression is: `p.views < p.views * 2`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1414_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[views: [==: [/: [:views, 2]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `/` directive to the `:views` field and `2`
-**And** it must compare the `:views` field to the result using `==`
-**And** the resulting expression is: `p.views == p.views / 2`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1427_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[views: [!=: [+: [:views, 10]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `+` directive to the `:views` field and `10`
-**And** it must compare the `:views` field to the result using `!=`
-**And** the resulting expression is: `p.views != p.views + 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1440_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[not: [views: [>=: [-: [:views, 5]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `-` directive to the `:views` field and `5`
-**And** it must compare the `:views` field to the result using `>=`
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.views >= p.views - 5)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1452_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[not: [views: [<: [*: [:views, 2]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `*` directive to the `:views` field and `2`
-**And** it must compare the `:views` field to the result using `<`
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.views < p.views * 2)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1464_
-
-**Rule Statement 9:**
-
-**Given** filter params: `[views: [<=: [+: [10, 5]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `+` directive to the literal values `10` and `5`
-**And** it must compare the `:views` field to the result using `<=`
-**And** the resulting expression is: `p.views <= 10 + 5`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1477_
-
-**Rule Statement 10:**
-
-**Given** filter params: `[views: [>: [-: [100, 10]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `-` directive to the literal values `100` and `10`
-**And** it must compare the `:views` field to the result using `>`
-**And** the resulting expression is: `p.views > 100 - 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1490_
-
-Note: All arithmetic operators (+, -, *, /) work with all comparison operators. Arithmetic can be applied to field references (e.g., `:views`) or literal values.
-
----
-
-## Date/Time Directives
-
-- `:datetime` or `:date`: Wrapper for date/time operations. Both use the same set of sub-keys.
-  - `:add`: add time interval
-  - `:ago`: time in the past
-  - `:from_now`: time in the future
-
-### Examples
-
-    [inserted_at: [>=: [datetime: [add: [field: :inserted_at, count: 1, interval: "day"]]]]]
-    [inserted_at: [>: [datetime: [ago: [count: 1, interval: "day"]]]]]
-    [inserted_at: [>: [datetime: [from_now: [count: 1, interval: "day"]]]]]
-    [not: [inserted_at: [>=: [datetime: [add: [field: :inserted_at, count: 1, interval: "day"]]]]]]
-    [inserted_at: [<: [datetime: [ago: [count: 7, interval: "day"]]]]]
-    [inserted_at: [<=: [datetime: [from_now: [count: 30, interval: "day"]]]]]
-    [inserted_at: [==: [date: [ago: [count: 1, interval: "day"]]]]]
-    [inserted_at: [!=: [date: [from_now: [count: 1, interval: "day"]]]]]
-    [not: [inserted_at: [<: [datetime: [ago: [count: 7, interval: "day"]]]]]]
-    [not: [inserted_at: [>: [date: [from_now: [count: 1, interval: "day"]]]]]]
-    [inserted_at: [>=: [date: [add: [field: :inserted_at, count: 7, interval: "day"]]]]]
-    [inserted_at: [<: [date: [ago: [count: 1, interval: "month"]]]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[inserted_at: [>=: [datetime: [add: [field: :inserted_at, count: 1, interval: "day"]]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `datetime_add/3` function to the `:inserted_at` field with count `1` and interval `"day"`
-**And** it must compare the `:inserted_at` field to the result using `>=`
-**And** the resulting expression is: `p.inserted_at >= datetime_add(p.inserted_at, 1, "day")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1505_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[inserted_at: [>: [datetime: [ago: [count: 1, interval: "day"]]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `ago/2` function with count `1` and interval `"day"`
-**And** it must compare the `:inserted_at` field to the result using `>`
-**And** the resulting expression is: `p.inserted_at > ago(1, "day")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1517_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[inserted_at: [>: [datetime: [from_now: [count: 1, interval: "day"]]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `from_now/2` function with count `1` and interval `"day"`
-**And** it must compare the `:inserted_at` field to the result using `>`
-**And** the resulting expression is: `p.inserted_at > from_now(1, "day")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1529_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[not: [inserted_at: [>=: [datetime: [add: [field: :inserted_at, count: 1, interval: "day"]]]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `datetime_add/3` function to the `:inserted_at` field with count `1` and interval `"day"`
-**And** it must compare the `:inserted_at` field to the result using `>=`
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.inserted_at >= datetime_add(p.inserted_at, 1, "day"))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1541_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[inserted_at: [<: [datetime: [ago: [count: 7, interval: "day"]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `ago/2` function with count `7` and interval `"day"`
-**And** it must compare the `:inserted_at` field to the result using `<`
-**And** the resulting expression is: `p.inserted_at < ago(7, "day")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1553_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[inserted_at: [<=: [datetime: [from_now: [count: 30, interval: "day"]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `from_now/2` function with count `30` and interval `"day"`
-**And** it must compare the `:inserted_at` field to the result using `<=`
-**And** the resulting expression is: `p.inserted_at <= from_now(30, "day")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1565_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[inserted_at: [==: [date: [ago: [count: 1, interval: "day"]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `ago/2` function with count `1` and interval `"day"` using the `:date` wrapper
-**And** it must compare the `:inserted_at` field to the result using `==`
-**And** the resulting expression is: `p.inserted_at == ago(1, "day")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1577_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[inserted_at: [!=: [date: [from_now: [count: 1, interval: "day"]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `from_now/2` function with count `1` and interval `"day"` using the `:date` wrapper
-**And** it must compare the `:inserted_at` field to the result using `!=`
-**And** the resulting expression is: `p.inserted_at != from_now(1, "day")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1589_
-
-**Rule Statement 9:**
-
-**Given** filter params: `[not: [inserted_at: [<: [datetime: [ago: [count: 7, interval: "day"]]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `ago/2` function with count `7` and interval `"day"`
-**And** it must compare the `:inserted_at` field to the result using `<`
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.inserted_at < ago(7, "day"))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1601_
-
-**Rule Statement 10:**
-
-**Given** filter params: `[not: [inserted_at: [>: [date: [from_now: [count: 1, interval: "day"]]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `from_now/2` function with count `1` and interval `"day"` using the `:date` wrapper
-**And** it must compare the `:inserted_at` field to the result using `>`
-**And** it must negate the entire comparison
-**And** the resulting expression is: `not (p.inserted_at > from_now(1, "day"))`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1613_
-
-**Rule Statement 11:**
-
-**Given** filter params: `[inserted_at: [>=: [date: [add: [field: :inserted_at, count: 7, interval: "day"]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `datetime_add/3` function to the `:inserted_at` field with count `7` and interval `"day"` using the `:date` wrapper
-**And** it must compare the `:inserted_at` field to the result using `>=`
-**And** the resulting expression is: `p.inserted_at >= datetime_add(p.inserted_at, 7, "day")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1625_
-
-**Rule Statement 12:**
-
-**Given** filter params: `[inserted_at: [<: [date: [ago: [count: 1, interval: "month"]]]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply the `ago/2` function with count `1` and interval `"month"` using the `:date` wrapper
-**And** it must compare the `:inserted_at` field to the result using `<`
-**And** the resulting expression is: `p.inserted_at < ago(1, "month")`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1637_
-
-Note: Both `:datetime` and `:date` support the same sub-operations (add, ago, from_now). All work with all comparison operators. Use `:date` for date-only comparisons and `:datetime` for timestamp comparisons.
-
----
-
-## Binding Selector Directives
-
-- `:bind`: specify binding context
-  - `:as`: named binding
-  - `:at`: positional binding
-
-### Examples
-
-    [bind: [as: :post, published: true]]
-    [bind: [[as: :post, published: true], [as: :author, first_name: "John"]]]
-    [bind: [at: 1, published: true]]
-    [bind: [[at: 1, published: true]]]
-    [bind: [at: :first, published: true]]
-    [bind: [at: :last, first_name: "John"]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[bind: [as: :post, published: true]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the filter to the named binding `:post`
-**And** it must compare the `:published` field to `true` using equality
-**And** the resulting expression is: `post.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1932_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[bind: [[as: :post, published: true], [as: :author, first_name: "John"]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply filters to multiple named bindings
-**And** it must compare `:published` to `true` on the `:post` binding
-**And** it must compare `:first_name` to `"John"` on the `:author` binding
-**And** the resulting expression is: `post.published == true and author.first_name == "John"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1945_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[bind: [at: 1, published: true]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the filter to the positional binding at index `1`
-**And** it must compare the `:published` field to `true` using equality
-**And** the resulting expression is: `binding_at_1.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1965_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[bind: [[at: 1, published: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the filter to the positional binding at index `1`
-**And** it must compare the `:published` field to `true` using equality
-**And** the resulting expression is: `binding_at_1.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1978_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[bind: [at: :first, published: true]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the filter to the first binding
-**And** it must compare the `:published` field to `true` using equality
-**And** the resulting expression is: `first_binding.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1991_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[bind: [at: :last, first_name: "John"]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the filter to the last binding
-**And** it must compare the `:first_name` field to `"John"` using equality
-**And** the resulting expression is: `last_binding.first_name == "John"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2004_
-
----
-
-## Schema Filter Directives
-
-- `:where`: explicit where clause
-- `:or_where`: explicit OR where clause
-
-### Examples
-
-    [where: [published: true]]
-    [where: [published: true, views: 10]]
-    [or_where: [published: false]]
-    [where: [published: true], or_where: [published: false]]
-    [or_where: [or: [views: [>: 10, <: 5]]], published: true]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[where: [published: true]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply an explicit WHERE clause
-**And** it must compare the `:published` field to `true` using equality
-**And** the resulting expression is: `where: p.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1651_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[where: [published: true, views: 10]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply an explicit WHERE clause with multiple conditions
-**And** it must compare `:published` to `true` and `:views` to `10`
-**And** the resulting expression is: `where: p.published == true and p.views == 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1664_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[or_where: [published: false]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply an explicit OR WHERE clause
-**And** it must compare the `:published` field to `false` using equality
-**And** the resulting expression is: `or_where: p.published == false`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1678_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[where: [published: true], or_where: [published: false]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply both WHERE and OR WHERE clauses
-**And** it must compare `:published` to `true` in the WHERE clause
-**And** it must compare `:published` to `false` in the OR WHERE clause
-**And** the resulting expression is: `(p.published == true) or (p.published == false)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1691_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[or_where: [or: [views: [>: 10, <: 5]]], published: true]`
-**When** the filter params are converted into a query condition
-**Then** it must apply an OR WHERE clause with nested OR logic
-**And** it must also apply an implicit WHERE for the `:published` field
-**And** the resulting expression is: `(p.published == true) or (p.views > 10 or p.views < 5)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1705_
-
----
-
-## Terminal Filter Directives
-
-- `:last`: Returns the last N records by reversing order, limiting, then re-ordering
-- `:subquery`: Wraps the query and any additional filters in a subquery
-
-### Examples
-
-    [last: 2]
-    [last: [title: 2]]
-    [subquery: [id: 2]]
-    [published: true, subquery: [id: 2]]
-    [subquery: [published: true, views: [>: 10]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[last: 2]`
-**When** the filter params are converted into a query condition
-**Then** it must wrap the query in a subquery ordered descending by primary key with limit 2
-**And** it must re-order the subquery result ascending by primary key
-**And** the resulting expression is: `SELECT ... FROM (SELECT ... ORDER BY id DESC LIMIT 2) AS subquery ORDER BY id ASC`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1727_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[subquery: [id: 2]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the `id: 2` filter to the query
-**And** it must wrap the entire filtered query in a subquery
-**And** the resulting expression is: `SELECT ... FROM (SELECT ... WHERE id = 2) AS subquery`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1744_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[published: true, subquery: [id: 2]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply both `published: true` and `id: 2` filters to the query
-**And** it must wrap the entire filtered query in a subquery
-**And** the resulting expression is: `SELECT ... FROM (SELECT ... WHERE published = true AND id = 2) AS subquery`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1758_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[last: [title: 2]]`
-**When** the filter params are converted into a query expression
-**Then** it must wrap the query in a subquery ordered descending by `:title` with limit 2
-**And** it must re-order the subquery result ascending by `:title`
-**And** the resulting expression is: `SELECT ... FROM (SELECT ... ORDER BY title DESC LIMIT 2) AS subquery ORDER BY title ASC`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1772_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[subquery: [published: true, views: [>: 10]]]`
-**When** the filter params are converted into a query expression
-**Then** it must apply both `published: true` and `views: [>: 10]` filters to the query
-**And** it must wrap the entire filtered query in a subquery
-**And** the resulting expression is: `SELECT ... FROM (SELECT ... WHERE published = true AND views > 10) AS subquery`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1787_
-
-Note: `:last` can accept an integer, a tuple `{field, limit}`, or a keyword list with filters. `:subquery` wraps the entire query including all filters.
-
----
-
-## Query Configuration Directives
-
-- `:from`: specify source schema/table
-- `:select`: select fields
-- `:select_merge`: merge additional selections
-- `:distinct`: distinct results
-- `:group_by`: group by fields
-- `:having`: having clause
-- `:or_having`: OR having clause
-- `:order_by`: order results
-- `:prepend_order_by`: prepend to existing order
-- `:limit`: limit results
-- `:offset`: skip results
-- `:first`: limit from start
-- `:after`: pagination after
-- `:before`: pagination before
-- `:reverse_order`: reverse ordering
-- `:exclude`: exclude query parts
-- `:put_query_prefix`: set schema prefix
-- `:start_date`: filter by start date
-- `:end_date`: filter by end date
-- `:ids`: filter by IDs
-- `:dynamic`: raw dynamic expression
-- `:exists`: exists subquery
-
-### Examples
-
-    [dynamic: dynamic([p], p.views > ^10)]
-    [where: [dynamic: dynamic([p], p.published === ^true)]]
-    [or_where: [dynamic: dynamic([p], p.views > ^100)]]
-    [where: [exists: subquery_expr]]
-    [where: [not: [exists: subquery_expr]]]
-    [published: true, subquery: [id: 2]]
-    [from: Post, id: 1, published: true]
-    [from: Post, id: 1]
-    [from: "posts", id: 1]
-    [from: "posts", select: [:id]]
-    [select: true]
-    [select: :id]
-    [select: [:id, :title]]
-    [select: [map: [:id, :title]]]
-    [select: [map: [custom_id: :id]]]
-    [select: [struct: [:id]]]
-    [select_merge: [map: [custom_id: :id]]]
-    [select_merge: [map: [:id, :title]]]
-    [select: [map: [:id]], select_merge: [map: [post_title: :title]]]
-    [distinct: true]
-    [distinct: false]
-    [distinct: :title]
-    [distinct: [desc: :title]]
-    [distinct: :title, order_by: :id]
-    [group_by: :author_id]
-    [group_by: [:author_id, :published]]
-    [having: [published: true]]
-    [having: [views: [>: 10]]]
-    [having: [views: [avg: [>: 10]]]]
-    [having: dynamic([p], p.views > ^10)]
-    [having: [and: [published: true, views: [>: 10]]]]
-    [having: [or: [views: [>: 10], views: [<: 5]]]]
-    [or_having: [views: [<: 5]]]
-    [order_by: :title]
-    [order_by: [desc: :title]]
-    [order_by: [asc: :title, desc: :id]]
-    [prepend_order_by: :title]
-    [prepend_order_by: [asc: :published_at, desc: :title]]
-    [after: 10]
-    [before: 10]
-    [limit: 10]
-    [offset: 5]
-    [first: 10]
-    [limit: 10, offset: 5]
-    [reverse_order: true]
-    [exclude: :order_by]
-    [exclude: [:order_by, :limit]]
-    [put_query_prefix: "tenant_a"]
-    [put_query_prefix: "tenant_a", put_query_prefix: "tenant_b"]
-    [start_date: ~U[2026-01-01 00:00:00Z]]
-    [end_date: ~U[2026-12-31 23:59:59Z]]
-    [ids: [1, 2, 3]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[dynamic: dynamic([p], p.views > ^10)]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the raw dynamic expression to the query
-**And** the resulting expression is: `p.views > 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2338_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[where: [dynamic: dynamic([p], p.published === ^true)]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the raw dynamic expression within an explicit WHERE clause
-**And** the resulting expression is: `where: p.published === true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2352_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[or_where: [dynamic: dynamic([p], p.views > ^100)]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the raw dynamic expression within an OR WHERE clause
-**And** the resulting expression is: `or_where: p.views > 100`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2366_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[where: [exists: subquery_expr]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply an EXISTS subquery check within a WHERE clause
-**And** the resulting expression is: `where: exists(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2380_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[where: [not: [exists: subquery_expr]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a negated EXISTS subquery check within a WHERE clause
-**And** the resulting expression is: `where: not exists(subquery_expr)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2396_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[published: true, subquery: [id: 2]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply the filter and convert to a subquery
-**And** the resulting expression is: `from(s in subquery(from p in Post, where: p.id == 2), where: s.published == true)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2412_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[from: Post, id: 1, published: true]`
-**When** the filter params are converted into a query condition
-**Then** it must specify the source schema as `Post` and apply filters
-**And** the resulting expression is: `from: Post, where: p.id == 1 and p.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1804_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[from: Post, id: 1]`
-**When** the filter params are converted into a query condition
-**Then** it must specify the source schema as `Post` and filter by `:id`
-**And** the resulting expression is: `from: Post, where: p.id == 1`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2426_
-
-**Rule Statement 9:**
-
-**Given** filter params: `[from: "posts", id: 1]`
-**When** the filter params are converted into a query condition
-**Then** it must specify the source table as `"posts"` and filter by `:id`
-**And** the resulting expression is: `from: "posts", where: p.id == 1`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2439_
-
-**Rule Statement 10:**
-
-**Given** filter params: `[from: "posts", select: [:id]]`
-**When** the filter params are converted into a query condition
-**Then** it must specify the source table and select only the `:id` field
-**And** the resulting expression is: `from: "posts", select: [:id]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2452_
-
-**Rule Statement 11:**
-
-**Given** filter params: `[select: true]`
-**When** the filter params are converted into a query condition
-**Then** it must select all fields from the schema
-**And** the resulting expression is: `select: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1817_
-
-**Rule Statement 12:**
-
-**Given** filter params: `[select: :id]`
-**When** the filter params are converted into a query condition
-**Then** it must select only the `:id` field
-**And** the resulting expression is: `select: p.id`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1829_
-
-**Rule Statement 13:**
-
-**Given** filter params: `[select: [:id, :title]]`
-**When** the filter params are converted into a query condition
-**Then** it must select the `:id` and `:title` fields
-**And** the resulting expression is: `select: [p.id, p.title]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1841_
-
-**Rule Statement 14:**
-
-**Given** filter params: `[select: [map: [:id, :title]]]`
-**When** the filter params are converted into a query condition
-**Then** it must select `:id` and `:title` fields as an enumerable
-**And** the resulting expression is: `select: %{id: p.id, title: p.title}`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1853_
-
-**Rule Statement 15:**
-
-**Given** filter params: `[select: [map: [custom_id: :id]]]`
-**When** the filter params are converted into a query condition
-**Then** it must select the `:id` field mapped to `:custom_id` key
-**And** the resulting expression is: `select: %{custom_id: p.id}`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1865_
-
-**Rule Statement 16:**
-
-**Given** filter params: `[select: [struct: [:id]]]`
-**When** the filter params are converted into a query condition
-**Then** it must select the `:id` field as a struct
-**And** the resulting expression is: `select: struct(p, [:id])`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1877_
-
-**Rule Statement 17:**
-
-**Given** filter params: `[select_merge: [map: [custom_id: :id]]]`
-**When** the filter params are converted into a query condition
-**Then** it must merge the `:id` field mapped to `:custom_id` into the existing selection
-**And** the resulting expression is: `select_merge: %{custom_id: p.id}`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2464_
-
-**Rule Statement 18:**
-
-**Given** filter params: `[select_merge: [map: [:id, :title]]]`
-**When** the filter params are converted into a query condition
-**Then** it must merge `:id` and `:title` fields into the existing selection
-**And** the resulting expression is: `select_merge: %{id: p.id, title: p.title}`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2477_
-
-**Rule Statement 19:**
-
-**Given** filter params: `[select: [map: [:id]], select_merge: [map: [post_title: :title]]]`
-**When** the filter params are converted into a query condition
-**Then** it must select `:id` and merge `:title` as `:post_title`
-**And** the resulting expression is: `select: %{id: p.id, post_title: p.title}`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2490_
-
-**Rule Statement 20:**
-
-**Given** filter params: `[distinct: true]`
-**When** the filter params are converted into a query condition
-**Then** it must apply DISTINCT to the query results
-**And** the resulting expression is: `distinct: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1889_
-
-**Rule Statement 21:**
-
-**Given** filter params: `[distinct: false]`
-**When** the filter params are converted into a query condition
-**Then** it must not apply DISTINCT to the query results
-**And** the resulting expression is: `distinct: false`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2503_
-
-**Rule Statement 22:**
-
-**Given** filter params: `[distinct: :title]`
-**When** the filter params are converted into a query condition
-**Then** it must apply DISTINCT on the `:title` field
-**And** the resulting expression is: `distinct: p.title`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2516_
-
-**Rule Statement 23:**
-
-**Given** filter params: `[distinct: [desc: :title]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply DISTINCT on `:title` with descending order
-**And** the resulting expression is: `distinct: [desc: p.title]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2530_
-
-**Rule Statement 24:**
-
-**Given** filter params: `[distinct: :title, order_by: :id]`
-**When** the filter params are converted into a query condition
-**Then** it must apply DISTINCT on `:title` and order by `:id`
-**And** the resulting expression is: `distinct: p.title, order_by: p.id`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2544_
-
-**Rule Statement 25:**
-
-**Given** filter params: `[group_by: :author_id]`
-**When** the filter params are converted into a query condition
-**Then** it must group results by the `:author_id` field
-**And** the resulting expression is: `group_by: p.author_id`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1902_
-
-**Rule Statement 26:**
-
-**Given** filter params: `[group_by: [:author_id, :published]]`
-**When** the filter params are converted into a query condition
-**Then** it must group results by `:author_id` and `:published` fields
-**And** the resulting expression is: `group_by: [p.author_id, p.published]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2557_
-
-**Rule Statement 27:**
-
-**Given** filter params: `[having: [published: true]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a HAVING clause filtering on `:published` equals `true`
-**And** the resulting expression is: `having: p.published == true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1915_
-
-**Rule Statement 28:**
-
-**Given** filter params: `[having: [views: [>: 10]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a HAVING clause filtering on `:views` greater than `10`
-**And** the resulting expression is: `having: p.views > 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2570_
-
-**Rule Statement 29:**
-
-**Given** filter params: `[having: [views: [avg: [>: 10]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a HAVING clause with aggregate function `avg` on `:views`
-**And** the resulting expression is: `having: avg(p.views) > 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2583_
-
-**Rule Statement 30:**
-
-**Given** filter params: `[having: dynamic([p], p.views > ^10)]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a HAVING clause with a raw dynamic expression
-**And** the resulting expression is: `having: p.views > 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2596_
-
-**Rule Statement 31:**
-
-**Given** filter params: `[having: [and: [published: true, views: [>: 10]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a HAVING clause with AND logic
-**And** the resulting expression is: `having: p.published == true and p.views > 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2610_
-
-**Rule Statement 32:**
-
-**Given** filter params: `[having: [or: [views: [>: 10], views: [<: 5]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a HAVING clause with OR logic
-**And** the resulting expression is: `having: p.views > 10 or p.views < 5`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2627_
-
-**Rule Statement 33:**
-
-**Given** filter params: `[or_having: [views: [<: 5]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply an OR HAVING clause
-**And** the resulting expression is: `or_having: p.views < 5`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2644_
-
-**Rule Statement 34:**
-
-**Given** filter params: `[order_by: :title]`
-**When** the filter params are converted into a query condition
-**Then** it must order results by the `:title` field in ascending order
-**And** the resulting expression is: `order_by: [asc: p.title]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1931_
-
-**Rule Statement 35:**
-
-**Given** filter params: `[order_by: [desc: :title]]`
-**When** the filter params are converted into a query condition
-**Then** it must order results by the `:title` field in descending order
-**And** the resulting expression is: `order_by: [desc: p.title]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1944_
-
-**Rule Statement 36:**
-
-**Given** filter params: `[order_by: [asc: :title, desc: :id]]`
-**When** the filter params are converted into a query condition
-**Then** it must order results by `:title` ascending then `:id` descending
-**And** the resulting expression is: `order_by: [asc: p.title, desc: p.id]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2660_
-
-**Rule Statement 37:**
-
-**Given** filter params: `[prepend_order_by: :title]`
-**When** the filter params are converted into a query condition
-**Then** it must prepend `:title` to the existing order
-**And** the resulting expression is: `prepend_order_by: [asc: p.title]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2675_
-
-**Rule Statement 38:**
-
-**Given** filter params: `[prepend_order_by: [asc: :published_at, desc: :title]]`
-**When** the filter params are converted into a query condition
-**Then** it must prepend `:published_at` ascending and `:title` descending to the existing order
-**And** the resulting expression is: `prepend_order_by: [asc: p.published_at, desc: p.title]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2690_
-
-**Rule Statement 39:**
-
-**Given** filter params: `[after: 10]`
-**When** the filter params are converted into a query condition
-**Then** it must apply pagination starting after cursor position `10`
-**And** the resulting expression is: `after: 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2703_
-
-**Rule Statement 40:**
-
-**Given** filter params: `[before: 10]`
-**When** the filter params are converted into a query condition
-**Then** it must apply pagination ending before cursor position `10`
-**And** the resulting expression is: `before: 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2717_
-
-**Rule Statement 41:**
-
-**Given** filter params: `[limit: 10]`
-**When** the filter params are converted into a query condition
-**Then** it must limit results to `10` records
-**And** the resulting expression is: `limit: 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1957_
-
-**Rule Statement 42:**
-
-**Given** filter params: `[offset: 5]`
-**When** the filter params are converted into a query condition
-**Then** it must skip the first `5` records
-**And** the resulting expression is: `offset: 5`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1971_
-
-**Rule Statement 43:**
-
-**Given** filter params: `[first: 10]`
-**When** the filter params are converted into a query condition
-**Then** it must limit results to the first `10` records
-**And** the resulting expression is: `first: 10`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2731_
-
-**Rule Statement 44:**
-
-**Given** filter params: `[limit: 10, offset: 5]`
-**When** the filter params are converted into a query condition
-**Then** it must skip `5` records and limit to `10` records
-**And** the resulting expression is: `limit: 10, offset: 5`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1985_
-
-**Rule Statement 45:**
-
-**Given** filter params: `[reverse_order: true]`
-**When** the filter params are converted into a query condition
-**Then** it must reverse the existing order
-**And** the resulting expression is: `reverse_order: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2745_
-
-**Rule Statement 46:**
-
-**Given** filter params: `[exclude: :order_by]`
-**When** the filter params are converted into a query condition
-**Then** it must exclude the ORDER BY clause from the query
-**And** the resulting expression is: `exclude: :order_by`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2759_
-
-**Rule Statement 47:**
-
-**Given** filter params: `[exclude: [:order_by, :limit]]`
-**When** the filter params are converted into a query condition
-**Then** it must exclude both ORDER BY and LIMIT clauses from the query
-**And** the resulting expression is: `exclude: [:order_by, :limit]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2773_
-
-**Rule Statement 48:**
-
-**Given** filter params: `[put_query_prefix: "tenant_a"]`
-**When** the filter params are converted into a query condition
-**Then** it must set the schema prefix to `"tenant_a"`
-**And** the resulting expression is: `put_query_prefix: "tenant_a"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2788_
-
-**Rule Statement 49:**
-
-**Given** filter params: `[put_query_prefix: "tenant_a", put_query_prefix: "tenant_b"]`
-**When** the filter params are converted into a query condition
-**Then** it must set the schema prefix to `"tenant_b"` (last one wins)
-**And** the resulting expression is: `put_query_prefix: "tenant_b"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2801_
-
-**Rule Statement 50:**
-
-**Given** filter params: `[start_date: ~U[2026-01-01 00:00:00Z]]`
-**When** the filter params are converted into a query condition
-**Then** it must filter records with `inserted_at` greater than or equal to the start date
-**And** the resulting expression is: `where: p.inserted_at >= ~U[2026-01-01 00:00:00Z]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:1999_
-
-**Rule Statement 51:**
-
-**Given** filter params: `[end_date: ~U[2026-12-31 23:59:59Z]]`
-**When** the filter params are converted into a query condition
-**Then** it must filter records with `inserted_at` less than or equal to the end date
-**And** the resulting expression is: `where: p.inserted_at <= ~U[2026-12-31 23:59:59Z]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2012_
-
-**Rule Statement 52:**
-
-**Given** filter params: `[ids: [1, 2, 3]]`
-**When** the filter params are converted into a query condition
-**Then** it must filter records where `:id` is in the list `[1, 2, 3]`
-**And** the resulting expression is: `where: p.id in [1, 2, 3]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2025_
-
----
-
-## Set Directives
-
-- `:except`: set except
-- `:except_all`: set except all
-- `:intersect`: set intersect
-- `:intersect_all`: set intersect all
-- `:union`: set union
-- `:union_all`: set union all
-
-### Examples
-
-    [except: [published: false]]
-    [except: from(p in Post, where: p.published === ^false)]
-    [except_all: [published: false]]
-    [intersect: [published: false]]
-    [intersect_all: [published: false]]
-    [union: [published: false]]
-    [union_all: [published: false]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[except: [published: false]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a set EXCEPT operation with the filter
-**And** the resulting expression is: `except: from(p in Post, where: p.published == false)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2816_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[except: from(p in Post, where: p.published === ^false)]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a set EXCEPT operation with the provided query
-**And** the resulting expression is: `except: from(p in Post, where: p.published === false)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2830_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[except_all: [published: false]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a set EXCEPT ALL operation with the filter
-**And** the resulting expression is: `except_all: from(p in Post, where: p.published == false)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2844_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[intersect: [published: false]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a set INTERSECT operation with the filter
-**And** the resulting expression is: `intersect: from(p in Post, where: p.published == false)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2858_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[intersect_all: [published: false]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a set INTERSECT ALL operation with the filter
-**And** the resulting expression is: `intersect_all: from(p in Post, where: p.published == false)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2872_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[union: [published: false]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a set UNION operation with the filter
-**And** the resulting expression is: `union: from(p in Post, where: p.published == false)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2886_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[union_all: [published: false]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a set UNION ALL operation with the filter
-**And** the resulting expression is: `union_all: from(p in Post, where: p.published == false)`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2901_
-
----
-
-## Lock Directives
-
-- `:lock`: query locking
-
-### Examples
-
-    [lock: fn query -> from(p in query, lock: "FOR UPDATE") end]
-    [lock: [name: :for_share, values: []]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[lock: fn query -> from(p in query, lock: "FOR UPDATE") end]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a lock using the provided function
-**And** the resulting expression is: `lock: "FOR UPDATE"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2918_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[lock: [name: :for_share, values: []]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply a lock with the specified name and values
-**And** the resulting expression is: `lock: "FOR SHARE"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2930_
-
----
-
-## CTE Directives
-
-- `:recursive_ctes`: enable recursive CTEs
-- `:with_cte`: define CTE
-
-### Examples
-
-    [recursive_ctes: true]
-    [recursive_ctes: false]
-    [with_cte: [published_posts: [as: cte_query]]]
-    [with_cte: [published_posts: [as: cte_query, materialized: false, operation: :all]]]
-    [with_cte: [published_posts: [as: [from: [query: Post, published: true]]]]]
-    [with_cte: [published_posts: [as: [from: [query: Post, id: 1]]]]]
-    [recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[recursive_ctes: true]`
-**When** the filter params are converted into a query condition
-**Then** it must enable recursive CTEs for the query
-**And** the resulting expression is: `recursive_ctes: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2944_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[recursive_ctes: false]`
-**When** the filter params are converted into a query condition
-**Then** it must disable recursive CTEs for the query
-**And** the resulting expression is: `recursive_ctes: false`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2959_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[with_cte: [published_posts: [as: cte_query]]]`
-**When** the filter params are converted into a query condition
-**Then** it must define a CTE named `published_posts` using the provided query
-**And** the resulting expression is: `with_cte: [published_posts: [as: cte_query]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2971_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[with_cte: [published_posts: [as: cte_query, materialized: false, operation: :all]]]`
-**When** the filter params are converted into a query condition
-**Then** it must define a CTE with materialization disabled and operation set to `:all`
-**And** the resulting expression is: `with_cte: [published_posts: [as: cte_query, materialized: false]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:2988_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[with_cte: [published_posts: [as: [from: [query: Post, published: true]]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must define a CTE by building a query from the filter params
-**And** the resulting expression is: `with_cte: [published_posts: [as: from(p in Post, where: p.published == true)]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3004_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[with_cte: [published_posts: [as: [from: [query: Post, id: 1]]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must define a CTE by building a query from the filter params
-**And** the resulting expression is: `with_cte: [published_posts: [as: from(p in Post, where: p.id == 1)]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3021_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]]`
-**When** the filter params are converted into a query condition
-**Then** it must enable recursive CTEs and define a CTE named `published_posts`
-**And** the resulting expression is: `recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3038_
-
----
-
-## Named Binding Directives
-
-- `:with_named_binding`: create named binding
-
-### Examples
-
-    [with_named_binding: [author: [join: [association: [source: :author, as: :author]]]]]
-    [with_named_binding: [author: [join: [association: [source: :author, as: :author]]], users_table: [join: [table: [source: "users", as: :users_table, on: true]]]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[with_named_binding: [author: [join: [association: [source: :author, as: :author]]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a named binding `:author` with an association join
-**And** the resulting expression is: `with_named_binding: [author: join]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3057_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[with_named_binding: [author: [join: [association: [source: :author, as: :author]]], users_table: [join: [table: [source: "users", as: :users_table, on: true]]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create multiple named bindings with their respective joins
-**And** the resulting expression is: `with_named_binding: [author: join, users_table: join]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3071_
-
----
-
-## Query Modifier Directives
-
-- `:with_ties`: include ties in limit
-- `:update`: update operations
-- `:windows`: window functions
-- `:preload`: preload associations
-
-### Examples
-
-    [with_ties: true]
-    [with_ties: false]
-    [with_ties: [bind: [as: :post, value: true]]]
-    [with_ties: [bind: [at: 1, value: true]]]
-    [update: [set: [title: "After"], inc: [views: 1]]]
-    [windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]]
-    [preload: :author]
-    [preload: [:author]]
-    [preload: [author: [:posts]]]
-    [preload: [bind: [as: :example, value: :author]]]
-    [preload: [bind: [at: 2, value: :author]]]
-    [preload: [bind: [at: 2, value: :author], posts: [:comments]]]
-    [preload: [bind: [as: :author, value: :author], posts: [:comments]]]
-    [preload: [bind: [[as: :author, value: :author], [at: 2, value: :author]], posts: [:comments]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[with_ties: true]`
-**When** the filter params are converted into a query condition
-**Then** it must include ties in the limit clause
-**And** the resulting expression is: `with_ties: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3089_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[with_ties: false]`
-**When** the filter params are converted into a query condition
-**Then** it must not include ties in the limit clause
-**And** the resulting expression is: `with_ties: false`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3103_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[with_ties: [bind: [as: :post, value: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply with_ties to the named binding `:post`
-**And** the resulting expression is: `with_ties: [bind: [as: :post, value: true]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3116_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[with_ties: [bind: [at: 1, value: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must apply with_ties to the positional binding at index `1`
-**And** the resulting expression is: `with_ties: [bind: [at: 1, value: true]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3128_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[update: [set: [title: "After"], inc: [views: 1]]]`
-**When** the filter params are converted into a query condition
-**Then** it must set `:title` to `"After"` and increment `:views` by `1`
-**And** the resulting expression is: `update: [set: [title: "After"], inc: [views: 1]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3140_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]]`
-**When** the filter params are converted into a query condition
-**Then** it must define a window function named `post_window` partitioned by `:author_id` and ordered by `:inserted_at` descending
-**And** the resulting expression is: `windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3154_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[preload: :author]`
-**When** the filter params are converted into a query condition
-**Then** it must preload the `:author` association
-**And** the resulting expression is: `preload: :author`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3169_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[preload: [:author]]`
-**When** the filter params are converted into a query condition
-**Then** it must preload the `:author` association
-**And** the resulting expression is: `preload: [:author]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3182_
-
-**Rule Statement 9:**
-
-**Given** filter params: `[preload: [author: [:posts]]]`
-**When** the filter params are converted into a query condition
-**Then** it must preload the `:author` association with nested `:posts` association
-**And** the resulting expression is: `preload: [author: [:posts]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3195_
-
-**Rule Statement 10:**
-
-**Given** filter params: `[preload: [bind: [as: :example, value: :author]]]`
-**When** the filter params are converted into a query condition
-**Then** it must preload the `:author` association from the named binding `:example`
-**And** the resulting expression is: `preload: [bind: [as: :example, value: :author]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3208_
-
-**Rule Statement 11:**
-
-**Given** filter params: `[preload: [bind: [at: 2, value: :author]]]`
-**When** the filter params are converted into a query condition
-**Then** it must preload the `:author` association from the positional binding at index `2`
-**And** the resulting expression is: `preload: [bind: [at: 2, value: :author]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3223_
-
-**Rule Statement 12:**
-
-**Given** filter params: `[preload: [bind: [at: 2, value: :author], posts: [:comments]]]`
-**When** the filter params are converted into a query condition
-**Then** it must preload `:author` from binding at index `2` and `:posts` with nested `:comments`
-**And** the resulting expression is: `preload: [bind: [at: 2, value: :author], posts: [:comments]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3238_
-
-**Rule Statement 13:**
-
-**Given** filter params: `[preload: [bind: [as: :author, value: :author], posts: [:comments]]]`
-**When** the filter params are converted into a query condition
-**Then** it must preload `:author` from named binding `:author` and `:posts` with nested `:comments`
-**And** the resulting expression is: `preload: [bind: [as: :author, value: :author], posts: [:comments]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3253_
-
-**Rule Statement 14:**
-
-**Given** filter params: `[preload: [bind: [[as: :author, value: :author], [at: 2, value: :author]], posts: [:comments]]]`
-**When** the filter params are converted into a query condition
-**Then** it must preload `:author` from multiple bindings and `:posts` with nested `:comments`
-**And** the resulting expression is: `preload: [bind: [[as: :author, value: :author], [at: 2, value: :author]], posts: [:comments]]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3268_
-
----
-
-## Join Directives
-
-- `:join`: explicit join
-  - `:association`: (association join type)
-  - `:schema`: (schema join type)
-  - `:table`: (table join type)
-  - `:query`: (query join type)
-  - `:fragment`: (fragment join type)
-  - `:on`: (join condition)
-  - `:type`: (join type - :left, etc.)
-
-### Examples
-
-    [author: [as: :author, first_name: "John"]]
-    [author: [first_name: "John"]]
-    [author: [as: :author, on: true, first_name: "John"]]
-    [author: [as: :author, type: :left, first_name: "John"]]
-    [join: [author: [as: :author]]]
-    [join: [schema: [source: User, as: :user_join, on: true]]]
-    [join: [table: [source: "users", as: :users_table, on: true]]]
-    [join: [query: [source: user_query, as: :adult_users, on: true]]]
-    [join: [subquery: [source: user_query, as: :name, on: true]]]
-    [join: [subquery: [source: [from: [query: User, age: [>=: 18]]], as: :name, on: true]]]
-    [join: [subquery: [source: [from: [published: true]], as: :name, on: true]]]
-    [join: [fragment: [source: [name: :active_users, values: [min_age: 21]], as: :active_users, on: true]]]
-    [join: [fragment: [source: [name: :active_users, values: [min_age: 21]], hints: :test_index, as: :active_users, on: true]]]
-    [join: [author: [as: :author], table: [source: "users", as: :users_table, on: true]]]
-
-### Rule Statements
-
-**Rule Statement 1:**
-
-**Given** filter params: `[author: [as: :author, first_name: "John"]]`
-**When** the filter params are converted into a query condition
-**Then** it must create an association join for `:author` with alias `:author` and filter on `:first_name`
-**And** the resulting expression is: `join: :author, as: :author, where: author.first_name == "John"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3285_
-
-**Rule Statement 2:**
-
-**Given** filter params: `[author: [first_name: "John"]]`
-**When** the filter params are converted into a query condition
-**Then** it must create an association join for `:author` and filter on `:first_name`
-**And** the resulting expression is: `join: :author, where: author.first_name == "John"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3301_
-
-**Rule Statement 3:**
-
-**Given** filter params: `[author: [as: :author, on: true, first_name: "John"]]`
-**When** the filter params are converted into a query condition
-**Then** it must create an association join for `:author` with explicit ON condition and filter
-**And** the resulting expression is: `join: :author, as: :author, on: true, where: author.first_name == "John"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3317_
-
-**Rule Statement 4:**
-
-**Given** filter params: `[author: [as: :author, type: :left, first_name: "John"]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a LEFT association join for `:author` with filter
-**And** the resulting expression is: `left_join: :author, as: :author, where: author.first_name == "John"`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3332_
-
-**Rule Statement 5:**
-
-**Given** filter params: `[join: [author: [as: :author]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create an explicit association join for `:author` with alias
-**And** the resulting expression is: `join: :author, as: :author`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3348_
-
-**Rule Statement 6:**
-
-**Given** filter params: `[join: [schema: [source: User, as: :user_join, on: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a schema join with the `User` schema
-**And** the resulting expression is: `join: User, as: :user_join, on: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3361_
-
-**Rule Statement 7:**
-
-**Given** filter params: `[join: [table: [source: "users", as: :users_table, on: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a table join with the `"users"` table
-**And** the resulting expression is: `join: "users", as: :users_table, on: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3376_
-
-**Rule Statement 8:**
-
-**Given** filter params: `[join: [query: [source: user_query, as: :adult_users, on: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a query join with the provided query
-**And** the resulting expression is: `join: user_query, as: :adult_users, on: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3391_
-
-**Rule Statement 9:**
-
-**Given** filter params: `[join: [subquery: [source: user_query, as: :name, on: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a subquery join with the provided query
-**And** the resulting expression is: `join: subquery(user_query), as: :name, on: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3407_
-
-**Rule Statement 10:**
-
-**Given** filter params: `[join: [subquery: [source: [from: [query: User, age: [>=: 18]]], as: :name, on: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a subquery join by building the query from filter params
-**And** the resulting expression is: `join: subquery(from u in User, where: u.age >= 18), as: :name, on: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3423_
-
-**Rule Statement 11:**
-
-**Given** filter params: `[join: [subquery: [source: [from: [published: true]], as: :name, on: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a subquery join by building the query from filter params
-**And** the resulting expression is: `join: subquery(from p in Post, where: p.published == true), as: :name, on: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3439_
-
-**Rule Statement 12:**
-
-**Given** filter params: `[join: [fragment: [source: [name: :active_users, values: [min_age: 21]], as: :active_users, on: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a fragment join with the specified fragment name and values
-**And** the resulting expression is: `join: fragment("active_users(?)", 21), as: :active_users, on: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3456_
-
-**Rule Statement 13:**
-
-**Given** filter params: `[join: [fragment: [source: [name: :active_users, values: [min_age: 21]], hints: :test_index, as: :active_users, on: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create a fragment join with hints
-**And** the resulting expression is: `join: fragment("active_users(?)", 21), as: :active_users, hints: :test_index, on: true`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3468_
-
-**Rule Statement 14:**
-
-**Given** filter params: `[join: [author: [as: :author], table: [source: "users", as: :users_table, on: true]]]`
-**When** the filter params are converted into a query condition
-**Then** it must create multiple joins (association and table)
-**And** the resulting expression is: `join: [:author, "users"], as: [:author, :users_table]`
-
-_Test reference: test/examples/ecto_query_dsl.exs:3480_
+test name: "Rule Statement 13: negated views lte alias"

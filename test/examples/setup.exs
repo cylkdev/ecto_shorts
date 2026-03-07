@@ -22,7 +22,6 @@ Application.put_env(:ecto_shorts, TestRepo,
 
 defmodule EctoShorts.TestPost do
   use Ecto.Schema
-  import Ecto.Changeset
 
   schema "posts" do
     field :title, :string
@@ -32,7 +31,7 @@ defmodule EctoShorts.TestPost do
     field :published_at, :utc_datetime
     field :tags, {:array, :string}
     belongs_to :author, EctoShorts.TestUser
-    has_many :comments, EctoShorts.TestComment
+    has_many :comments, EctoShorts.TestComment, foreign_key: :post_id
     has_many :participants, through: [:comments, :user]
     timestamps()
   end
@@ -40,18 +39,18 @@ end
 
 defmodule EctoShorts.TestUser do
   use Ecto.Schema
-  import Ecto.Changeset
 
   schema "users" do
     field :first_name, :string
-    has_many :posts, EctoShorts.TestPost
-    has_many :comments, EctoShorts.TestComment
+    has_many :posts, EctoShorts.TestPost, foreign_key: :author_id
+    has_many :comments, EctoShorts.TestComment, foreign_key: :author_id
+
+    timestamps()
   end
 end
 
 defmodule EctoShorts.TestComment do
   use Ecto.Schema
-  import Ecto.Changeset
 
   schema "comments" do
     belongs_to :author, EctoShorts.TestUser

@@ -593,7 +593,7 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{lock: %{name: :for_share, values: []}},
+          %{lock: %{name: :for_share}},
           query_provider: EctoShorts.TestQueryProvider
         )
 
@@ -612,7 +612,26 @@ defmodule EctoShorts.CommonFilters.QueryOperationTest do
       q2 =
         CommonFilters.convert_params_to_filter(
           q,
-          %{lock: [name: :for_share, values: []]},
+          %{lock: [name: :for_share]},
+          query_provider: EctoShorts.TestQueryProvider
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "applies a lock using resolver values" do
+      q = from(p in Post, where: p.published == ^true)
+
+      expected =
+        from(p in Post,
+          where: p.published == ^true,
+          lock: fragment("FOR UPDATE SKIP LOCKED")
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          q,
+          %{lock: [name: :for_update_with_clause, values: [clause: "SKIP LOCKED"]]},
           query_provider: EctoShorts.TestQueryProvider
         )
 

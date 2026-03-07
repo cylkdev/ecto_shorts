@@ -107,7 +107,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 8: tags is nil" do
       # Given: [tags: nil]
-      # Expected: p.tags == nil
+      # Expected: is_nil(p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "No Tags", tags: nil})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Tags", tags: ["elixir"]})
@@ -120,7 +120,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 9: tags equals nil" do
       # Given: [tags: [==: nil]]
-      # Expected: p.tags == nil
+      # Expected: is_nil(p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "No Tags", tags: nil})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Tags", tags: ["elixir"]})
@@ -133,7 +133,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 10: tags not equals nil" do
       # Given: [tags: [!=: nil]]
-      # Expected: p.tags != nil
+      # Expected: not is_nil(p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "No Tags", tags: nil})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Tags", tags: ["elixir"]})
@@ -200,7 +200,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 15: tags any greater than" do
       # Given: [tags: [>: "elixir"]]
-      # Expected: "elixir" > ANY(p.tags) — any tag is less than "elixir"
+      # Expected: fragment("? > ANY(?)", "elixir", p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Smaller", tags: ["erlang", "c"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "All Greater", tags: ["ruby", "python"]})
@@ -213,7 +213,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 16: tags any greater than or equal" do
       # Given: [tags: [>=: "elixir"]]
-      # Expected: "elixir" >= ANY(p.tags) — any tag is <= "elixir"
+      # Expected: fragment("? >= ANY(?)", "elixir", p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has LTE", tags: ["elixir", "c"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "All Greater", tags: ["ruby", "python"]})
@@ -226,7 +226,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 17: tags any less than" do
       # Given: [tags: [<: "elixir"]]
-      # Expected: "elixir" < ANY(p.tags) — any tag is greater than "elixir"
+      # Expected: fragment("? < ANY(?)", "elixir", p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Greater", tags: ["ruby", "python"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "All Smaller", tags: ["c", "d"]})
@@ -239,7 +239,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 18: tags any less than or equal" do
       # Given: [tags: [<=: "elixir"]]
-      # Expected: "elixir" <= ANY(p.tags) — any tag is >= "elixir"
+      # Expected: fragment("? <= ANY(?)", "elixir", p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has GTE", tags: ["elixir", "ruby"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "All Smaller", tags: ["c", "d"]})
@@ -252,7 +252,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 19: tags any like" do
       # Given: [tags: [like: "elixir"]]
-      # Expected: fragment("? LIKE ?", any(p.tags), "elixir")
+      # Expected: fragment("? LIKE ANY(?)", "elixir", p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Match", tags: ["elixir", "erlang"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", tags: ["ruby"]})
@@ -265,7 +265,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 20: tags any ilike" do
       # Given: [tags: [ilike: "elixir"]]
-      # Expected: fragment("? ILIKE ?", any(p.tags), "elixir")
+      # Expected: fragment("? ILIKE ANY(?)", "elixir", p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Match", tags: ["ELIXIR", "erlang"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", tags: ["ruby"]})
@@ -278,7 +278,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 21: tags any like any" do
       # Given: [tags: [like: ["elixir", "erlang"]]]
-      # Expected: p.tags && ["elixir", "erlang"] (array overlap — tags contains any element from the list)
+      # Expected: fragment("? && ?", p.tags, ["elixir", "erlang"])
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Match", tags: ["elixir", "ruby"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", tags: ["python"]})
@@ -291,7 +291,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 22: negated tags any like" do
       # Given: [not: [tags: [like: "elixir"]]]
-      # Expected: not (fragment("? LIKE ?", any(p.tags), "elixir"))
+      # Expected: not fragment("? LIKE ANY(?)", "elixir", p.tags)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Match", tags: ["elixir", "erlang"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", tags: ["ruby"]})
@@ -304,7 +304,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 23: tags contains lowercased value" do
       # Given: [tags: [==: [lower: "elixir"]]]
-      # Expected: lower("elixir") in p.tags
+      # Expected: fragment("lower(?)", "elixir") in p.tags
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Lower", tags: ["elixir", "erlang"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Upper", tags: ["ELIXIR"]})
@@ -317,7 +317,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 24: tags not contains uppercased value" do
       # Given: [tags: [!=: [upper: "ELIXIR"]]]
-      # Expected: not (upper("ELIXIR") in p.tags)
+      # Expected: fragment("upper(?)", "ELIXIR") not in p.tags
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Lower", tags: ["elixir", "erlang"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Upper", tags: ["ELIXIR"]})
@@ -343,7 +343,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 26: tags count equals zero" do
       # Given: [tags: [count: [==: 0]]]
-      # Expected: fragment("array_length(?, 1)", p.tags) == 0
+      # Expected: fragment("coalesce(array_length(?, 1), 0)", p.tags) == 0
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Tags", tags: ["elixir"]})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Empty Tags", tags: []})
@@ -352,6 +352,170 @@ defmodule EctoShorts.QueryFiltersTest do
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{tags: []}] = results
+    end
+
+    test "Rule Statement 27: tags all greater than" do
+      # Given: [tags: [all: [>: "a"]]]
+      # Expected: fragment("? > ALL(?)", "a", p.tags)
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "All Smaller", tags: ["!", "0"]})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Greater", tags: ["b", "c"]})
+
+      query = from(p in EctoShorts.TestPost, where: fragment("? > ALL(?)", ^"a", p.tags))
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "All Smaller"}] = results
+    end
+
+    test "Rule Statement 28: tags any ilike any" do
+      # Given: [tags: [ilike: ["elixir", "erlang"]]]
+      # Expected: fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n", p.tags, ^["%elixir%", "%erlang%"])
+
+      patterns = ["%elixir%", "%erlang%"]
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Match", tags: ["ELIXIR", "ruby"]})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", tags: ["python"]})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          where:
+            fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Has Match"}] = results
+    end
+
+    test "Rule Statement 29: negated tags any ilike" do
+      # Given: [not: [tags: [ilike: "elixir"]]]
+      # Expected: not fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n", p.tags, ^["%elixir%"])
+
+      patterns = ["%elixir%"]
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Match", tags: ["ELIXIR", "ruby"]})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", tags: ["python"]})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          where:
+            not fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE t ILIKE ANY (?)\n)\n",
+              p.tags,
+              ^patterns
+            )
+        )
+
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "No Match"}] = results
+    end
+
+    test "Rule Statement 30: lower tags equals value" do
+      # Given: [lower: [tags: [==: "elixir"]]]
+      # Expected: fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n", p.tags, ^"elixir")
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Upper", tags: ["ELIXIR"]})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", tags: ["ruby"]})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          where:
+            fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE lower(t) = ?\n)\n",
+              p.tags,
+              ^"elixir"
+            )
+        )
+
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Has Upper"}] = results
+    end
+
+    test "Rule Statement 31: upper tags equals value" do
+      # Given: [upper: [tags: [==: "ELIXIR"]]]
+      # Expected: fragment("EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n", p.tags, ^"ELIXIR")
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Has Lower", tags: ["elixir"]})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", tags: ["ruby"]})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          where:
+            fragment(
+              "EXISTS (\n  SELECT 1\n  FROM unnest(?) AS t\n  WHERE upper(t) = ?\n)\n",
+              p.tags,
+              ^"ELIXIR"
+            )
+        )
+
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Has Lower"}] = results
+    end
+
+    test "Rule Statement 32: tags count less than" do
+      # Given: [tags: [count: [<: 5]]]
+      # Expected: fragment("array_length(?, 1)", p.tags) < 5
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Short List", tags: ["a", "b"]})
+
+      {:ok, _post2} =
+        TestRepo.insert(%EctoShorts.TestPost{title: "Long List", tags: ["a", "b", "c", "d", "e"]})
+
+      query = from(p in EctoShorts.TestPost, where: fragment("array_length(?, 1)", p.tags) < 5)
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Short List"}] = results
+    end
+
+    test "Rule Statement 33: tags count greater than or equal" do
+      # Given: [tags: [count: [>=: 2]]]
+      # Expected: fragment("array_length(?, 1)", p.tags) >= 2
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Two Tags", tags: ["a", "b"]})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "One Tag", tags: ["a"]})
+
+      query = from(p in EctoShorts.TestPost, where: fragment("array_length(?, 1)", p.tags) >= 2)
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Two Tags"}] = results
+    end
+
+    test "Rule Statement 34: tags count less than or equal" do
+      # Given: [tags: [count: [<=: 10]]]
+      # Expected: fragment("array_length(?, 1)", p.tags) <= 10
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Ten Or Fewer", tags: ["a", "b"]})
+
+      {:ok, _post2} =
+        TestRepo.insert(%EctoShorts.TestPost{
+          title: "More Than Ten",
+          tags: ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"]
+        })
+
+      query = from(p in EctoShorts.TestPost, where: fragment("array_length(?, 1)", p.tags) <= 10)
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Ten Or Fewer"}] = results
+    end
+
+    test "Rule Statement 35: tags count not equals" do
+      # Given: [tags: [count: [!=: 3]]]
+      # Expected: fragment("array_length(?, 1)", p.tags) != 3
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Two Tags", tags: ["a", "b"]})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Three Tags", tags: ["a", "b", "c"]})
+
+      query = from(p in EctoShorts.TestPost, where: fragment("array_length(?, 1)", p.tags) != 3)
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Two Tags"}] = results
     end
   end
 
@@ -494,14 +658,16 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 11: or with map conditions" do
-      # Given: [or: [[id: 1, title: "hello"], [published: true]]]
-      # Expected: (p.id == 1 and p.title == "hello") or p.published == true
+      # Given: [or: [[views: 1, title: "hello"], [published: true]]]
+      # Expected: (p.views == 1 and p.title == "hello") or p.published == true
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "hello", published: false})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "world", published: true})
-      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "world", published: false})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "hello", views: 1, published: false})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "world", views: 20, published: true})
+      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "world", views: 50, published: false})
 
-      query = from(p in EctoShorts.TestPost, where: p.title == "hello" or p.published == true)
+      query =
+        from(p in EctoShorts.TestPost, where: (p.views == 1 and p.title == "hello") or p.published == true)
+
       results = TestRepo.all(query)
 
       assert [
@@ -536,51 +702,47 @@ defmodule EctoShorts.QueryFiltersTest do
   end
 
   describe "Negation Directives" do
-    test "Rule Statement 1: not published in list" do
-      # Given: [not: [published: [in: [true, false]]]]
-      # Expected: is_nil(p.published) or not (p.published in [true, false])
-      # Note: NULL NOT IN (...) is NULL/falsy in SQL, so must handle nil explicitly
+    test "Rule Statement 1: negated published in list" do
+      # Given: [not: [published: [in: [true]]]]
+      # Expected: p.published not in [true]
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Unpublished", published: false})
-      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Null", published: nil})
 
-      query = from(p in EctoShorts.TestPost, where: is_nil(p.published) or p.published not in [true, false])
+      query = from(p in EctoShorts.TestPost, where: p.published not in [true])
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{published: nil}] = results
+      assert [%EctoShorts.TestPost{published: false}] = results
     end
 
-    test "Rule Statement 2: not published equals list" do
-      # Given: [not: [published: [==: [true, false]]]]
-      # Expected: not (p.published in [true, false])
+    test "Rule Statement 2: negated published equals operator with list" do
+      # Given: [not: [published: [==: [true]]]]
+      # Expected: p.published not in [true]
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Unpublished", published: false})
+
+      query = from(p in EctoShorts.TestPost, where: p.published not in [true])
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{published: false}] = results
+    end
+
+    test "Rule Statement 3: negated published not equals operator with list" do
+      # Given: [not: [published: [!=: [true]]]]
+      # Expected: p.published in [true]
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "True", published: true})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "False", published: false})
-      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Null", published: nil})
 
-      query = from(p in EctoShorts.TestPost, where: is_nil(p.published) or p.published not in [true, false])
+      query = from(p in EctoShorts.TestPost, where: p.published in [true])
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{published: nil}] = results
-    end
-
-    test "Rule Statement 3: not published not equals list" do
-      # Given: [not: [published: [!=: [true, false]]]]
-      # Expected: p.published in [true, false]
-
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "True", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "False", published: false})
-      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Null", published: nil})
-
-      query = from(p in EctoShorts.TestPost, where: p.published in [true, false])
-      results = TestRepo.all(query)
-
-      assert [%EctoShorts.TestPost{published: false}, %EctoShorts.TestPost{published: true}] =
+      assert [%EctoShorts.TestPost{published: true}] =
                Enum.sort_by(results, & &1.published)
     end
 
-    test "Rule Statement 4: not views greater than" do
+    test "Rule Statement 4: negated views greater than" do
       # Given: [not: [views: [>: 10]]]
       # Expected: not (p.views > 10)
 
@@ -593,7 +755,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 5}] = results
     end
 
-    test "Rule Statement 5: not views greater than or equal" do
+    test "Rule Statement 5: negated views greater than or equal" do
       # Given: [not: [views: [>=: 10]]]
       # Expected: not (p.views >= 10)
 
@@ -606,7 +768,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 5}] = results
     end
 
-    test "Rule Statement 6: not views less than" do
+    test "Rule Statement 6: negated views less than" do
       # Given: [not: [views: [<: 10]]]
       # Expected: not (p.views < 10)
 
@@ -619,7 +781,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 20}] = results
     end
 
-    test "Rule Statement 7: not views less than or equal" do
+    test "Rule Statement 7: negated views less than or equal" do
       # Given: [not: [views: [<=: 10]]]
       # Expected: not (p.views <= 10)
 
@@ -632,7 +794,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 20}] = results
     end
 
-    test "Rule Statement 8: not views equals" do
+    test "Rule Statement 8: negated views equals" do
       # Given: [not: [views: [==: 10]]]
       # Expected: not (p.views == 10)
 
@@ -645,7 +807,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 5}] = results
     end
 
-    test "Rule Statement 9: not views not equals" do
+    test "Rule Statement 9: negated views not equals" do
       # Given: [not: [views: [!=: 10]]]
       # Expected: not (p.views != 10)
 
@@ -658,7 +820,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 10}] = results
     end
 
-    test "Rule Statement 10: not views gt" do
+    test "Rule Statement 10: negated views gt alias" do
       # Given: [not: [views: [gt: 10]]]
       # Expected: not (p.views > 10)
 
@@ -671,7 +833,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 5}] = results
     end
 
-    test "Rule Statement 11: not views gte" do
+    test "Rule Statement 11: negated views gte alias" do
       # Given: [not: [views: [gte: 10]]]
       # Expected: not (p.views >= 10)
 
@@ -684,7 +846,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 5}] = results
     end
 
-    test "Rule Statement 12: not views lt" do
+    test "Rule Statement 12: negated views lt alias" do
       # Given: [not: [views: [lt: 10]]]
       # Expected: not (p.views < 10)
 
@@ -697,7 +859,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 20}] = results
     end
 
-    test "Rule Statement 13: not views lte" do
+    test "Rule Statement 13: negated views lte alias" do
       # Given: [not: [views: [lte: 10]]]
       # Expected: not (p.views <= 10)
 
@@ -792,7 +954,7 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 5: nested or within and within or" do
       # Given: [or: [[title: "hello", or: [views: [>: 10, <: 20]]], [published: true]]]
-      # Expected: (p.title == "hello" or (p.views > 10 and p.views < 20)) or p.published == true
+      # Expected: (p.title == "hello" and (p.views > 10 or p.views < 20)) or p.published == true
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "hello", views: 5, published: false})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "world", views: 15, published: false})
@@ -801,14 +963,13 @@ defmodule EctoShorts.QueryFiltersTest do
 
       query =
         from(p in EctoShorts.TestPost,
-          where: p.title == "hello" or (p.views > 10 and p.views < 20) or p.published == true
+          where: (p.title == "hello" and (p.views > 10 or p.views < 20)) or p.published == true
         )
 
       results = TestRepo.all(query)
 
       assert [
                %EctoShorts.TestPost{title: "hello"},
-               %EctoShorts.TestPost{title: "world", views: 15},
                %EctoShorts.TestPost{title: "world", published: true}
              ] =
                Enum.sort_by(results, &{&1.title, &1.published, &1.views})
@@ -816,27 +977,27 @@ defmodule EctoShorts.QueryFiltersTest do
   end
 
   describe "Comparison Operator Directives" do
-    test "Rule Statement 1: id equals with == operator" do
-      # Given: [id: [==: 1]]
-      # Expected: p.id == 1
+    test "Rule Statement 1: title equals with == operator" do
+      # Given: [title: [==: "Post 1"]]
+      # Expected: p.title == "Post 1"
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
 
-      query = from(p in EctoShorts.TestPost, where: p.id == ^post1.id)
+      query = from(p in EctoShorts.TestPost, where: p.title == "Post 1")
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post 1"}] = results
     end
 
-    test "Rule Statement 2: id equals with eq operator" do
-      # Given: [id: [eq: 1]]
-      # Expected: p.id == 1
+    test "Rule Statement 2: title equals with eq operator" do
+      # Given: [title: [eq: "Post 1"]]
+      # Expected: p.title == "Post 1"
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
 
-      query = from(p in EctoShorts.TestPost, where: p.id == ^post1.id)
+      query = from(p in EctoShorts.TestPost, where: p.title == "Post 1")
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post 1"}] = results
@@ -887,7 +1048,22 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{published_at: ~U[2026-01-01 00:00:00Z]}] = results
     end
 
-    test "Rule Statement 6: views greater than" do
+    test "Rule Statement 6: published_at ne nil" do
+      # Given: [published_at: [ne: nil]]
+      # Expected: not is_nil(p.published_at)
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "No Date", published_at: nil})
+
+      {:ok, _post2} =
+        TestRepo.insert(%EctoShorts.TestPost{title: "Has Date", published_at: ~U[2026-01-01 00:00:00Z]})
+
+      query = from(p in EctoShorts.TestPost, where: not is_nil(p.published_at))
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{published_at: ~U[2026-01-01 00:00:00Z]}] = results
+    end
+
+    test "Rule Statement 7: views greater than" do
       # Given: [views: [>: 10]]
       # Expected: p.views > 10
 
@@ -900,7 +1076,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 20}] = results
     end
 
-    test "Rule Statement 7: views greater than or equal" do
+    test "Rule Statement 8: views greater than or equal" do
       # Given: [views: [>=: 10]]
       # Expected: p.views >= 10
 
@@ -913,7 +1089,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 10}] = results
     end
 
-    test "Rule Statement 8: views less than" do
+    test "Rule Statement 9: views less than" do
       # Given: [views: [<: 10]]
       # Expected: p.views < 10
 
@@ -926,7 +1102,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 5}] = results
     end
 
-    test "Rule Statement 9: views less than or equal" do
+    test "Rule Statement 10: views less than or equal" do
       # Given: [views: [<=: 10]]
       # Expected: p.views <= 10
 
@@ -939,7 +1115,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 10}] = results
     end
 
-    test "Rule Statement 10: views not equals" do
+    test "Rule Statement 11: views not equals" do
       # Given: [views: [!=: 10]]
       # Expected: p.views != 10
 
@@ -952,7 +1128,20 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 5}] = results
     end
 
-    test "Rule Statement 11: views gt operator" do
+    test "Rule Statement 12: views ne operator" do
+      # Given: [views: [ne: 10]]
+      # Expected: p.views != 10
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Different Views", views: 5})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Equal Views", views: 10})
+
+      query = from(p in EctoShorts.TestPost, where: p.views != 10)
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{views: 5}] = results
+    end
+
+    test "Rule Statement 13: views gt operator" do
       # Given: [views: [gt: 10]]
       # Expected: p.views > 10
 
@@ -965,7 +1154,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 20}] = results
     end
 
-    test "Rule Statement 12: views gte operator" do
+    test "Rule Statement 14: views gte operator" do
       # Given: [views: [gte: 10]]
       # Expected: p.views >= 10
 
@@ -978,7 +1167,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 10}] = results
     end
 
-    test "Rule Statement 13: views lt operator" do
+    test "Rule Statement 15: views lt operator" do
       # Given: [views: [lt: 10]]
       # Expected: p.views < 10
 
@@ -991,7 +1180,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 5}] = results
     end
 
-    test "Rule Statement 14: views lte operator" do
+    test "Rule Statement 16: views lte operator" do
       # Given: [views: [lte: 10]]
       # Expected: p.views <= 10
 
@@ -1004,7 +1193,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{views: 10}] = results
     end
 
-    test "Rule Statement 15: published in list" do
+    test "Rule Statement 17: published in list" do
       # Given: [published: [in: [true, false]]]
       # Expected: p.published in [true, false]
 
@@ -1019,7 +1208,7 @@ defmodule EctoShorts.QueryFiltersTest do
                Enum.sort_by(results, & &1.published)
     end
 
-    test "Rule Statement 16: published equals list" do
+    test "Rule Statement 18: published equals list" do
       # Given: [published: [==: [true, false]]]
       # Expected: p.published in [true, false]
 
@@ -1034,8 +1223,22 @@ defmodule EctoShorts.QueryFiltersTest do
                Enum.sort_by(results, & &1.published)
     end
 
-    test "Rule Statement 17: published not equals list" do
+    test "Rule Statement 19: published not equals list" do
       # Given: [published: [!=: [true, false]]]
+      # Expected: is_nil(p.published) or p.published not in [true, false]
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "True", published: true})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "False", published: false})
+      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Null", published: nil})
+
+      query = from(p in EctoShorts.TestPost, where: is_nil(p.published) or p.published not in [true, false])
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{published: nil}] = results
+    end
+
+    test "Rule Statement 20: published ne list" do
+      # Given: [published: [ne: [true, false]]]
       # Expected: is_nil(p.published) or p.published not in [true, false]
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "True", published: true})
@@ -1364,12 +1567,16 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 8: count views equals nil" do
       # Given: [views: [count: [==: nil]]]
-      # Expected: count(p.views) == nil
+      # Expected: is_nil(count(p.views))
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", views: 5})
 
       query =
-        from(p in EctoShorts.TestPost, group_by: p.title, having: is_nil(count(p.views)), select: p.title)
+        from(p in EctoShorts.TestPost,
+          group_by: p.title,
+          having: is_nil(count(p.views)),
+          select: p.title
+        )
 
       results = TestRepo.all(query)
 
@@ -1430,6 +1637,62 @@ defmodule EctoShorts.QueryFiltersTest do
       results = TestRepo.all(query)
 
       assert ["Big"] = results
+    end
+
+    test "Rule Statement 13: min views equals zero" do
+      # Given: [views: [min: [==: 0]]]
+      # Expected: min(p.views) == 0
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Zero", views: 0})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Positive", views: 5})
+
+      query = from(p in EctoShorts.TestPost, group_by: p.title, having: min(p.views) == 0, select: p.title)
+      results = TestRepo.all(query)
+
+      assert ["Zero"] = results
+    end
+
+    test "Rule Statement 14: sum views not equals zero" do
+      # Given: [views: [sum: [!=: 0]]]
+      # Expected: sum(p.views) != 0
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Zero", views: 0})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Positive", views: 5})
+
+      query = from(p in EctoShorts.TestPost, group_by: p.title, having: sum(p.views) != 0, select: p.title)
+      results = TestRepo.all(query)
+
+      assert ["Positive"] = results
+    end
+
+    test "Rule Statement 15: min views less than negated" do
+      # Given: [not: [views: [min: [<: 5]]]]
+      # Expected: not (min(p.views) < 5)
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Low", views: 3})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "High", views: 10})
+
+      query =
+        from(p in EctoShorts.TestPost, group_by: p.title, having: not (min(p.views) < 5), select: p.title)
+
+      results = TestRepo.all(query)
+
+      assert ["High"] = results
+    end
+
+    test "Rule Statement 16: sum views greater than negated" do
+      # Given: [not: [views: [sum: [>: 500]]]]
+      # Expected: not (sum(p.views) > 500)
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Big", views: 600})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Small", views: 200})
+
+      query =
+        from(p in EctoShorts.TestPost, group_by: p.title, having: not (sum(p.views) > 500), select: p.title)
+
+      results = TestRepo.all(query)
+
+      assert ["Small"] = results
     end
   end
 
@@ -1548,16 +1811,41 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 10: views greater than literal 100 minus 10" do
       # Given: [views: [>: [-: [100, 10]]]]
-      # Expected: p.views > 100 - 10
+      # Expected: p.views > ^(100 - 10)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Over", views: 95})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Under", views: 85})
 
-      threshold = 100 - 10
-      query = from(p in EctoShorts.TestPost, where: p.views > ^threshold)
+      query = from(p in EctoShorts.TestPost, where: p.views > ^(100 - 10))
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Over"}] = results
+    end
+
+    test "Rule Statement 11: views less than or equal to literal 10 times 2" do
+      # Given: [views: [<=: [*: [10, 2]]]]
+      # Expected: p.views <= 10 * 2
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Within", views: 15})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Over", views: 25})
+
+      query = from(p in EctoShorts.TestPost, where: p.views <= 10 * 2)
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Within"}] = results
+    end
+
+    test "Rule Statement 12: views equals literal 10 divided by 2" do
+      # Given: [views: [==: [/: [10, 2]]]]
+      # Expected: p.views == 10 / 2
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", views: 5})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", views: 4})
+
+      query = from(p in EctoShorts.TestPost, where: p.views == 10 / 2)
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Match"}] = results
     end
   end
 
@@ -1568,7 +1856,8 @@ defmodule EctoShorts.QueryFiltersTest do
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      subquery_expr = subquery(from c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
       query = from(p in EctoShorts.TestPost, where: p.id > all(subquery_expr))
       results = TestRepo.all(query)
@@ -1578,56 +1867,60 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 2: not id greater than all subquery values" do
-      # Given: [not: [id: [>: [all: subquery_expr]]]]
-      # Expected: not (p.id > all(subquery_expr))
+      # Given: [not: [id: [>: [all: [from: Comment, body: "Hello"]]]]]
+      # Expected: not (p.id > all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id)))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: not (p.id > all(subquery_expr)))
+      query = from(p in EctoShorts.TestPost, where: not (p.id > all(subquery(inner_query))))
       results = TestRepo.all(query)
 
       assert post1.id in Enum.map(results, & &1.id)
     end
 
     test "Rule Statement 3: id greater than any subquery value" do
-      # Given: [id: [>: [any: subquery_expr]]]
-      # Expected: p.id > any(subquery_expr)
+      # Given: [id: [>: [any: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id > any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: p.id > any(subquery_expr))
+      query = from(p in EctoShorts.TestPost, where: p.id > any(subquery(inner_query)))
       results = TestRepo.all(query)
 
       assert post2.id in Enum.map(results, & &1.id)
     end
 
     test "Rule Statement 4: not id greater than any subquery value" do
-      # Given: [not: [id: [>: [any: subquery_expr]]]]
-      # Expected: not (p.id > any(subquery_expr))
+      # Given: [not: [id: [>: [any: [from: Comment, body: "Hello"]]]]]
+      # Expected: not (p.id > any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id)))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: not (p.id > any(subquery_expr)))
+      query = from(p in EctoShorts.TestPost, where: not (p.id > any(subquery(inner_query))))
       results = TestRepo.all(query)
 
       assert post1.id in Enum.map(results, & &1.id)
     end
 
     test "Rule Statement 5: id greater than or equal to all subquery values" do
-      # Given: [id: [>=: [all: subquery_expr]]]
-      # Expected: p.id >= all(subquery_expr)
+      # Given: [id: [>=: [all: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id >= all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: p.id >= all(subquery_expr))
+      query = from(p in EctoShorts.TestPost, where: p.id >= all(subquery(inner_query)))
       results = TestRepo.all(query)
 
       result_ids = Enum.map(results, & &1.id)
@@ -1636,28 +1929,30 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 6: id less than all subquery values" do
-      # Given: [id: [<: [all: subquery_expr]]]
-      # Expected: p.id < all(subquery_expr)
+      # Given: [id: [<: [all: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id < all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post2.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post2.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: p.id < all(subquery_expr))
+      query = from(p in EctoShorts.TestPost, where: p.id < all(subquery(inner_query)))
       results = TestRepo.all(query)
 
       assert post1.id in Enum.map(results, & &1.id)
     end
 
     test "Rule Statement 7: id less than or equal to all subquery values" do
-      # Given: [id: [<=: [all: subquery_expr]]]
-      # Expected: p.id <= all(subquery_expr)
+      # Given: [id: [<=: [all: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id <= all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post2.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post2.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: p.id <= all(subquery_expr))
+      query = from(p in EctoShorts.TestPost, where: p.id <= all(subquery(inner_query)))
       results = TestRepo.all(query)
 
       result_ids = Enum.map(results, & &1.id)
@@ -1666,28 +1961,30 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 8: id equals all subquery values" do
-      # Given: [id: [==: [all: subquery_expr]]]
-      # Expected: p.id == all(subquery_expr)
+      # Given: [id: [==: [all: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id == all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: p.id == all(subquery_expr))
+      query = from(p in EctoShorts.TestPost, where: p.id == all(subquery(inner_query)))
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post 1"}] = results
     end
 
     test "Rule Statement 9: id not equals all subquery values" do
-      # Given: [id: [!=: [all: subquery_expr]]]
-      # Expected: p.id != all(subquery_expr)
+      # Given: [id: [!=: [all: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id != all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: p.id != all(subquery_expr))
+      query = from(p in EctoShorts.TestPost, where: p.id != all(subquery(inner_query)))
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post 2"}] = results
@@ -1695,72 +1992,160 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 10: id default equals all subquery values" do
-      # Given: [id: [all: subquery_expr]]
-      # Expected: p.id == all(subquery_expr)
+      # Given: [id: [all: [from: Comment, body: "Hello"]]]
+      # Expected: p.id == all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: p.id == all(subquery_expr))
+      query = from(p in EctoShorts.TestPost, where: p.id == all(subquery(inner_query)))
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post 1"}] = results
     end
 
     test "Rule Statement 11: id equals all from inline filter params" do
-      # Given: [id: [all: [from: Post, id: 1]]]
-      # Expected: p.id == all(subquery(from p in EctoShorts.TestPost, where: p.id == 1))
+      # Given: [id: [all: [from: Comment, published: true]]]
+      # Expected: p.id == all(subquery(from c in Comment, where: c.published == true, select: c.post_id))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
 
-      query = from(p in EctoShorts.TestPost, where: p.id == all(subquery_expr))
+      {:ok, _comment1} =
+        TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello", published: true})
+
+      inner_query = from(c in EctoShorts.TestComment, where: c.published == true, select: c.post_id)
+
+      query = from(p in EctoShorts.TestPost, where: p.id == all(subquery(inner_query)))
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post 1"}] = results
     end
 
     test "Rule Statement 12: not id default equals all subquery values" do
-      # Given: [not: [id: [all: subquery_expr]]]
-      # Expected: not (p.id == all(subquery_expr))
+      # Given: [not: [id: [all: [from: Comment, body: "Hello"]]]]
+      # Expected: not (p.id == all(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id)))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: not (p.id == all(subquery_expr)))
+      query = from(p in EctoShorts.TestPost, where: not (p.id == all(subquery(inner_query))))
       results = TestRepo.all(query)
 
       assert post2.id in Enum.map(results, & &1.id)
     end
 
     test "Rule Statement 13: id default equals any subquery value" do
-      # Given: [id: [any: subquery_expr]]
-      # Expected: p.id == any(subquery_expr)
+      # Given: [id: [any: [from: Comment, body: "Hello"]]]
+      # Expected: p.id == any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: p.id == any(subquery_expr))
+      query = from(p in EctoShorts.TestPost, where: p.id == any(subquery(inner_query)))
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post 1"}] = results
     end
 
     test "Rule Statement 14: not id default equals any subquery value" do
-      # Given: [not: [id: [any: subquery_expr]]]
-      # Expected: not (p.id == any(subquery_expr))
+      # Given: [not: [id: [any: [from: Comment, body: "Hello"]]]]
+      # Expected: not (p.id == any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id)))
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
-      subquery_expr = subquery(from p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p.id)
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
 
-      query = from(p in EctoShorts.TestPost, where: not (p.id == any(subquery_expr)))
+      query = from(p in EctoShorts.TestPost, where: not (p.id == any(subquery(inner_query))))
       results = TestRepo.all(query)
 
+      assert post2.id in Enum.map(results, & &1.id)
+    end
+
+    test "Rule Statement 15: id greater than or equal to any subquery values" do
+      # Given: [id: [>=: [any: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id >= any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
+
+      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
+      {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
+
+      query = from(p in EctoShorts.TestPost, where: p.id >= any(subquery(inner_query)))
+      results = TestRepo.all(query)
+
+      result_ids = Enum.map(results, & &1.id)
+      assert post1.id in result_ids
+      assert post2.id in result_ids
+    end
+
+    test "Rule Statement 16: id less than any subquery values" do
+      # Given: [id: [<: [any: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id < any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
+
+      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
+      {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post2.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
+
+      query = from(p in EctoShorts.TestPost, where: p.id < any(subquery(inner_query)))
+      results = TestRepo.all(query)
+
+      assert post1.id in Enum.map(results, & &1.id)
+    end
+
+    test "Rule Statement 17: id less than or equal to any subquery values" do
+      # Given: [id: [<=: [any: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id <= any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
+
+      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
+      {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post2.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
+
+      query = from(p in EctoShorts.TestPost, where: p.id <= any(subquery(inner_query)))
+      results = TestRepo.all(query)
+
+      result_ids = Enum.map(results, & &1.id)
+      assert post1.id in result_ids
+      assert post2.id in result_ids
+    end
+
+    test "Rule Statement 18: id equals any subquery values" do
+      # Given: [id: [==: [any: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id == any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
+
+      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
+
+      query = from(p in EctoShorts.TestPost, where: p.id == any(subquery(inner_query)))
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Post 1"}] = results
+    end
+
+    test "Rule Statement 19: id not equals any subquery values" do
+      # Given: [id: [!=: [any: [from: Comment, body: "Hello"]]]]
+      # Expected: p.id != any(subquery(from c in Comment, where: c.body == "Hello", select: c.post_id))
+
+      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
+      {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
+      {:ok, _comment1} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "Hello"})
+      inner_query = from(c in EctoShorts.TestComment, where: c.body == "Hello", select: c.post_id)
+
+      query = from(p in EctoShorts.TestPost, where: p.id != any(subquery(inner_query)))
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Post 2"}] = results
       assert post2.id in Enum.map(results, & &1.id)
     end
   end
@@ -2003,7 +2388,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{title: "Published"}] = results
     end
 
-    test "Rule Statement 2: multiple named bindings" do
+    test "Rule Statement 2: multiple named bindings with comment" do
       # Given: [bind: [[as: :post, published: true], [as: :comment, body: "hi"]]]
       # Expected: post.published == true and comment.body == "hi"
 
@@ -2026,7 +2411,31 @@ defmodule EctoShorts.QueryFiltersTest do
       assert Enum.all?(results, &(&1.published == true))
     end
 
-    test "Rule Statement 3: positional binding at index 1" do
+    test "Rule Statement 3: multiple named bindings with author" do
+      # Given: [bind: [[as: :post, published: true], [as: :author, first_name: "John"]]]
+      # Expected: post.published == true and author.first_name == "John"
+
+      {:ok, author1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, author2} = TestRepo.insert(%EctoShorts.TestUser{first_name: "Jane"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", published: true, author_id: author1.id})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Wrong Author", published: true, author_id: author2.id})
+      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Wrong Published", published: false, author_id: author1.id})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          as: :post,
+          join: a in EctoShorts.TestUser,
+          as: :author,
+          on: a.id == p.author_id,
+          where: as(:post).published == true and as(:author).first_name == "John"
+        )
+
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Match", published: true}] = results
+    end
+
+    test "Rule Statement 4: positional binding at index 1" do
       # Given: [bind: [at: 1, published: true]]
       # Expected: binding_at_1.published == true
 
@@ -2039,7 +2448,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{title: "Published"}] = results
     end
 
-    test "Rule Statement 4: positional binding at index 1 list-wrapped" do
+    test "Rule Statement 5: positional binding at index 1 list-wrapped" do
       # Given: [bind: [[at: 1, published: true]]]
       # Expected: binding_at_1.published == true
 
@@ -2052,7 +2461,7 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{title: "Published"}] = results
     end
 
-    test "Rule Statement 5: first binding" do
+    test "Rule Statement 6: first binding" do
       # Given: [bind: [at: :first, published: true]]
       # Expected: first_binding.published == true
 
@@ -2065,18 +2474,39 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{title: "Published"}] = results
     end
 
-    test "Rule Statement 6: last binding" do
+    test "Rule Statement 7: last binding without join" do
       # Given: [bind: [at: :last, title: "Published"]]
       # Expected: last_binding.title == "Published"
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
 
-      query = from(p in EctoShorts.TestPost, where: p.published == true)
+      query = from(p in EctoShorts.TestPost, where: p.title == "Published")
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Published"}] = results
       assert post1.id in Enum.map(results, & &1.id)
+    end
+
+    test "Rule Statement 8: last binding with author first name" do
+      # Given: [bind: [at: :last, first_name: "John"]]
+      # Expected: last_binding.first_name == "John"
+
+      {:ok, author1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, author2} = TestRepo.insert(%EctoShorts.TestUser{first_name: "Jane"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", author_id: author1.id})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", author_id: author2.id})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          join: a in EctoShorts.TestUser,
+          on: a.id == p.author_id,
+          where: a.first_name == "John"
+        )
+
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Match"}] = results
     end
   end
 
@@ -2098,28 +2528,28 @@ defmodule EctoShorts.QueryFiltersTest do
       assert id3 == post3.id
     end
 
-    test "Rule Statement 2: subquery with id filter" do
-      # Given: [subquery: [id: 2]]
-      # Expected: SELECT ... FROM (SELECT ... WHERE id = 2) AS subquery
+    test "Rule Statement 2: subquery with title filter" do
+      # Given: [subquery: [title: "Second"]]
+      # Expected: SELECT ... FROM (SELECT ... WHERE title = "Second") AS subquery
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "First"})
-      {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Second"})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Second"})
 
-      inner = from(p in EctoShorts.TestPost, where: p.id == ^post2.id)
+      inner = from(p in EctoShorts.TestPost, where: p.title == "Second")
       query = from(p in subquery(inner))
       results = TestRepo.all(query)
 
       assert [%{title: "Second"}] = results
     end
 
-    test "Rule Statement 3: published true and subquery with id filter" do
-      # Given: [published: true, subquery: [id: 2]]
-      # Expected: SELECT ... FROM (SELECT ... WHERE published = true AND id = 2) AS subquery
+    test "Rule Statement 3: published true and subquery with title filter" do
+      # Given: [published: true, subquery: [title: "Match"]]
+      # Expected: SELECT ... FROM (SELECT ... WHERE published = true AND title = "Match") AS subquery
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published No Match", published: true})
-      {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", published: true})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", published: true})
 
-      inner = from(p in EctoShorts.TestPost, where: p.published == true and p.id == ^post2.id)
+      inner = from(p in EctoShorts.TestPost, where: p.published == true and p.title == "Match")
       query = from(p in subquery(inner))
       results = TestRepo.all(query)
 
@@ -2162,10 +2592,10 @@ defmodule EctoShorts.QueryFiltersTest do
       # Given: [from: Post, id: 1, published: true]
       # Expected: from: Post, where: p.id == 1 and p.published == true
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{id: 1, title: "Match", published: true})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{id: 2, title: "Draft", published: false})
 
-      query = from(p in EctoShorts.TestPost, where: p.id == ^post1.id and p.published == true)
+      query = from(p in EctoShorts.TestPost, where: p.id == 1 and p.published == true)
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Match"}] = results
@@ -2362,12 +2792,17 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 50: start_date filter" do
-      # Given: [start_date: ~U[2026-01-01 00:00:00Z]]
-      # Expected: where: p.inserted_at >= ~U[2026-01-01 00:00:00Z]
+      # Given: [start_date: ~N[2026-01-01 00:00:00]]
+      # Expected: where: p.inserted_at >= ^start_date
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
+      {:ok, _post1} =
+        TestRepo.insert(%EctoShorts.TestPost{
+          title: "Post",
+          inserted_at: ~N[2025-01-01 00:00:00],
+          updated_at: ~N[2025-01-01 00:00:00]
+        })
 
-      start_date = ~U[2030-01-01 00:00:00Z]
+      start_date = ~N[2026-01-01 00:00:00]
       query = from(p in EctoShorts.TestPost, where: p.inserted_at >= ^start_date)
       results = TestRepo.all(query)
 
@@ -2375,12 +2810,17 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 51: end_date filter" do
-      # Given: [end_date: ~U[2026-12-31 23:59:59Z]]
-      # Expected: where: p.inserted_at <= ~U[2026-12-31 23:59:59Z]
+      # Given: [end_date: ~N[2026-12-31 23:59:59]]
+      # Expected: where: p.inserted_at <= ^end_date
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
+      {:ok, _post1} =
+        TestRepo.insert(%EctoShorts.TestPost{
+          title: "Post",
+          inserted_at: ~N[2026-06-01 00:00:00],
+          updated_at: ~N[2026-06-01 00:00:00]
+        })
 
-      end_date = ~U[2030-12-31 23:59:59Z]
+      end_date = ~N[2026-12-31 23:59:59]
       query = from(p in EctoShorts.TestPost, where: p.inserted_at <= ^end_date)
       results = TestRepo.all(query)
 
@@ -2391,15 +2831,15 @@ defmodule EctoShorts.QueryFiltersTest do
       # Given: [ids: [1, 2, 3]]
       # Expected: where: p.id in [1, 2, 3]
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "A"})
-      {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "B"})
-      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "C"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{id: 1, title: "A"})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{id: 2, title: "B"})
+      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{id: 3, title: "C"})
+      {:ok, _post4} = TestRepo.insert(%EctoShorts.TestPost{id: 4, title: "D"})
 
-      ids = [post1.id, post2.id]
-      query = from(p in EctoShorts.TestPost, where: p.id in ^ids)
+      query = from(p in EctoShorts.TestPost, where: p.id in [1, 2, 3])
       results = TestRepo.all(query)
 
-      assert 2 = length(results)
+      assert 3 = length(results)
     end
 
     test "Rule Statement 1: raw dynamic expression" do
@@ -2482,10 +2922,12 @@ defmodule EctoShorts.QueryFiltersTest do
       # Given: [published: true, subquery: [id: 2]]
       # Expected: from(s in subquery(...), where: s.published == true)
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published No Match", published: true})
-      {:ok, post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", published: true})
+      {:ok, _post1} =
+        TestRepo.insert(%EctoShorts.TestPost{id: 1, title: "Published No Match", published: true})
 
-      inner = from(p in EctoShorts.TestPost, where: p.published == true and p.id == ^post2.id)
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{id: 2, title: "Match", published: true})
+
+      inner = from(p in EctoShorts.TestPost, where: p.published == true and p.id == 2)
       query = from(p in subquery(inner))
       results = TestRepo.all(query)
 
@@ -2496,10 +2938,10 @@ defmodule EctoShorts.QueryFiltersTest do
       # Given: [from: Post, id: 1]
       # Expected: from: Post, where: p.id == 1
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{id: 1, title: "Post 1"})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{id: 2, title: "Post 2"})
 
-      query = from(p in EctoShorts.TestPost, where: p.id == ^post1.id)
+      query = from(p in EctoShorts.TestPost, where: p.id == 1)
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post 1"}] = results
@@ -2509,14 +2951,13 @@ defmodule EctoShorts.QueryFiltersTest do
       # Given: [from: "posts", id: 1]
       # Expected: from: "posts", where: p.id == 1
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{id: 1, title: "Post 1"})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{id: 2, title: "Post 2"})
 
-      expected_id = post1.id
-      query = from(p in "posts", where: p.id == ^post1.id, select: p.id)
+      query = from(p in "posts", where: p.id == 1, select: p.id)
       results = TestRepo.all(query)
 
-      assert [^expected_id] = results
+      assert [1] = results
     end
 
     test "Rule Statement 10: from table string with select" do
@@ -2724,6 +3165,25 @@ defmodule EctoShorts.QueryFiltersTest do
       assert 2 = length(results)
     end
 
+    test "Rule Statement 32A: having not views greater than" do
+      # Given: [having: [not: [views: [>: 10]]]]
+      # Expected: having: not (p.views > 10)
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "High", views: 20})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Low", views: 5})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          group_by: [p.title, p.views],
+          having: not (p.views > 10),
+          select: p.title
+        )
+
+      results = TestRepo.all(query)
+
+      assert ["Low"] = results
+    end
+
     test "Rule Statement 33: or_having" do
       # Given: [or_having: [views: [<: 5]]]
       # Expected: or_having: p.views < 5
@@ -2735,6 +3195,25 @@ defmodule EctoShorts.QueryFiltersTest do
         from(p in EctoShorts.TestPost,
           group_by: [p.title, p.views],
           or_having: p.views < 5,
+          select: p.title
+        )
+
+      results = TestRepo.all(query)
+
+      assert ["Low"] = results
+    end
+
+    test "Rule Statement 33A: or_having avg views less than" do
+      # Given: [or_having: [views: [avg: [<: 5]]]]
+      # Expected: or_having: avg(p.views) < 5
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Low", views: 3})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "High", views: 20})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          group_by: p.title,
+          or_having: avg(p.views) < 5,
           select: p.title
         )
 
@@ -2760,15 +3239,20 @@ defmodule EctoShorts.QueryFiltersTest do
 
     test "Rule Statement 37: prepend_order_by single field" do
       # Given: [prepend_order_by: :title]
-      # Expected: prepend_order_by: [asc: p.title]
+      # Expected: prepend_order_by: [desc: p.title]
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Beta"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Alpha"})
 
-      query = from(p in EctoShorts.TestPost, order_by: [asc: p.title], select: p.title)
+      query =
+        EctoShorts.TestPost
+        |> order_by([p], desc: p.id)
+        |> select([p], p.title)
+        |> prepend_order_by([p], desc: p.title)
+
       results = TestRepo.all(query)
 
-      assert "Alpha" = List.first(results)
+      assert "Beta" = List.first(results)
     end
 
     test "Rule Statement 38: prepend_order_by multiple fields" do
@@ -2778,7 +3262,12 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Beta"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Alpha"})
 
-      query = from(p in EctoShorts.TestPost, order_by: [asc: p.published_at, desc: p.title], select: p.title)
+      query =
+        EctoShorts.TestPost
+        |> order_by([p], desc: p.id)
+        |> select([p], p.title)
+        |> prepend_order_by([p], asc: p.published_at, desc: p.title)
+
       results = TestRepo.all(query)
 
       assert is_list(results)
@@ -2834,7 +3323,11 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Beta"})
 
       results_reversed =
-        TestRepo.all(from(p in EctoShorts.TestPost, order_by: [desc: p.title], select: p.title))
+        EctoShorts.TestPost
+        |> order_by([p], asc: p.title)
+        |> select([p], p.title)
+        |> reverse_order()
+        |> TestRepo.all()
 
       assert ["Beta", "Alpha"] = results_reversed
     end
@@ -2846,8 +3339,12 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Beta"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Alpha"})
 
-      query = from(p in EctoShorts.TestPost, order_by: [asc: p.title], select: p.title)
-      query = exclude(query, :order_by)
+      query =
+        EctoShorts.TestPost
+        |> order_by([p], asc: p.title)
+        |> select([p], p.title)
+        |> exclude(:order_by)
+
       results = TestRepo.all(query)
 
       assert 2 = length(results)
@@ -2861,8 +3358,13 @@ defmodule EctoShorts.QueryFiltersTest do
         {:ok, _} = TestRepo.insert(%EctoShorts.TestPost{title: "Post #{i}"})
       end
 
-      query = from(p in EctoShorts.TestPost, order_by: [asc: p.title], limit: 2)
-      query = query |> exclude(:order_by) |> exclude(:limit)
+      query =
+        EctoShorts.TestPost
+        |> order_by([p], asc: p.title)
+        |> limit(2)
+        |> exclude(:order_by)
+        |> exclude(:limit)
+
       results = TestRepo.all(query)
 
       assert 5 = length(results)
@@ -2872,26 +3374,25 @@ defmodule EctoShorts.QueryFiltersTest do
       # Given: [put_query_prefix: "tenant_a"]
       # Expected: put_query_prefix: "tenant_a"
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
+      query =
+        EctoShorts.TestPost
+        |> select([p], p.title)
+        |> put_query_prefix("tenant_a")
 
-      query = from(p in EctoShorts.TestPost, select: p.title)
-      query = put_query_prefix(query, nil)
-      results = TestRepo.all(query)
-
-      assert is_list(results)
+      assert "tenant_a" == query.prefix
     end
 
     test "Rule Statement 49: put_query_prefix last wins" do
       # Given: [put_query_prefix: "tenant_a", put_query_prefix: "tenant_b"]
       # Expected: put_query_prefix: "tenant_b"
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
+      query =
+        EctoShorts.TestPost
+        |> select([p], p.title)
+        |> put_query_prefix("tenant_a")
+        |> put_query_prefix("tenant_b")
 
-      query = from(p in EctoShorts.TestPost, select: p.title)
-      query = put_query_prefix(query, nil)
-      results = TestRepo.all(query)
-
-      assert is_list(results)
+      assert "tenant_b" == query.prefix
     end
   end
 
@@ -2904,21 +3405,21 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
 
       except_query = from(p in EctoShorts.TestPost, where: p.published == false)
-      query = from(p in EctoShorts.TestPost) |> except(^except_query)
+      query = EctoShorts.TestPost |> except(^except_query)
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Published"}] = results
     end
 
     test "Rule Statement 2: except with raw query" do
-      # Given: [except: from(p in EctoShorts.TestPost, where: p.published === ^false)]
-      # Expected: except: from(p in EctoShorts.TestPost, where: p.published === false)
+      # Given: [except: from(p in EctoShorts.TestPost, where: p.published == ^false)]
+      # Expected: except: from(p in EctoShorts.TestPost, where: p.published == ^false)
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
 
       except_query = from(p in EctoShorts.TestPost, where: p.published == ^false)
-      query = from(p in EctoShorts.TestPost) |> except(^except_query)
+      query = EctoShorts.TestPost |> except(^except_query)
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Published"}] = results
@@ -2932,7 +3433,7 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
 
       except_query = from(p in EctoShorts.TestPost, where: p.published == false)
-      query = from(p in EctoShorts.TestPost) |> except_all(^except_query)
+      query = EctoShorts.TestPost |> except_all(^except_query)
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Published"}] = results
@@ -2946,7 +3447,7 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
 
       intersect_query = from(p in EctoShorts.TestPost, where: p.published == false)
-      query = from(p in EctoShorts.TestPost) |> intersect(^intersect_query)
+      query = EctoShorts.TestPost |> intersect(^intersect_query)
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Draft"}] = results
@@ -2960,7 +3461,7 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
 
       intersect_query = from(p in EctoShorts.TestPost, where: p.published == false)
-      query = from(p in EctoShorts.TestPost) |> intersect_all(^intersect_query)
+      query = EctoShorts.TestPost |> intersect_all(^intersect_query)
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Draft"}] = results
@@ -2973,9 +3474,9 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
 
-      query1 = from(p in EctoShorts.TestPost, where: p.published == true)
-      query2 = from(p in EctoShorts.TestPost, where: p.published == false)
-      query = union(query1, ^query2)
+      query1 = EctoShorts.TestPost |> where([p], p.published == true)
+      query2 = EctoShorts.TestPost |> where([p], p.published == false)
+      query = query1 |> union(^query2)
       results = TestRepo.all(query)
 
       assert 2 = length(results)
@@ -2988,9 +3489,9 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
 
-      query1 = from(p in EctoShorts.TestPost, where: p.published == true)
-      query2 = from(p in EctoShorts.TestPost, where: p.published == false)
-      query = union_all(query1, ^query2)
+      query1 = EctoShorts.TestPost |> where([p], p.published == true)
+      query2 = EctoShorts.TestPost |> where([p], p.published == false)
+      query = query1 |> union_all(^query2)
       results = TestRepo.all(query)
 
       assert 2 = length(results)
@@ -3011,12 +3512,24 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 2: lock for share" do
-      # Given: [lock: [name: :for_share, values: []]]
+      # Given: [lock: [name: :for_share]]
       # Expected: lock: "FOR SHARE"
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
 
       query = from(p in EctoShorts.TestPost, lock: "FOR SHARE")
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Post"}] = results
+    end
+
+    test "Rule Statement 3: lock with values" do
+      # Given: [lock: [name: :for_update_with_clause, values: [clause: "SKIP LOCKED"]]]
+      # Expected: lock: "FOR UPDATE SKIP LOCKED"
+
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
+
+      query = from(p in EctoShorts.TestPost, lock: "FOR UPDATE SKIP LOCKED")
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post"}] = results
@@ -3033,7 +3546,8 @@ defmodule EctoShorts.QueryFiltersTest do
       cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p)
 
       query =
-        from(p in EctoShorts.TestPost)
+        EctoShorts.TestPost
+        |> recursive_ctes(true)
         |> with_cte("published_posts", as: ^cte_query)
 
       results = TestRepo.all(query)
@@ -3063,7 +3577,8 @@ defmodule EctoShorts.QueryFiltersTest do
       cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p)
 
       query =
-        from(p in EctoShorts.TestPost, as: :post)
+        EctoShorts.TestPost
+        |> from(as: :post)
         |> with_cte("published_posts", as: ^cte_query)
         |> where([p], p.published == true)
 
@@ -3081,7 +3596,7 @@ defmodule EctoShorts.QueryFiltersTest do
       cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p)
 
       query =
-        from(p in EctoShorts.TestPost)
+        EctoShorts.TestPost
         |> with_cte("published_posts", as: ^cte_query, materialized: false)
         |> where([p], p.published == true)
 
@@ -3100,7 +3615,7 @@ defmodule EctoShorts.QueryFiltersTest do
       cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p)
 
       query =
-        from(p in EctoShorts.TestPost)
+        EctoShorts.TestPost
         |> with_cte("published_posts", as: ^cte_query)
         |> where([p], p.published == true)
 
@@ -3110,8 +3625,8 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 6: with_cte from filter params id" do
-      # Given: [with_cte: [published_posts: [as: [from: [query: Post, id: 1]]]]]
-      # Expected: with_cte: [published_posts: [as: from(p in EctoShorts.TestPost, where: p.id == 1)]]
+      # Given: [with_cte: [target_post: [as: [from: [query: Post, id: 1]]]]]
+      # Expected: with_cte: [target_post: [as: from(p in EctoShorts.TestPost, where: p.id == 1)]]
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1"})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2"})
@@ -3119,7 +3634,7 @@ defmodule EctoShorts.QueryFiltersTest do
       cte_query = from(p in EctoShorts.TestPost, where: p.id == ^post1.id, select: p)
 
       query =
-        from(p in EctoShorts.TestPost)
+        EctoShorts.TestPost
         |> with_cte("target_post", as: ^cte_query)
         |> where([p], p.id == ^post1.id)
 
@@ -3137,7 +3652,7 @@ defmodule EctoShorts.QueryFiltersTest do
       cte_query = from(p in EctoShorts.TestPost, where: p.published == true, select: p)
 
       query =
-        from(p in EctoShorts.TestPost)
+        EctoShorts.TestPost
         |> recursive_ctes(true)
         |> with_cte("published_posts", as: ^cte_query)
         |> where([p], p.published == true)
@@ -3150,39 +3665,49 @@ defmodule EctoShorts.QueryFiltersTest do
 
   describe "Named Binding Directives" do
     test "Rule Statement 1: with_named_binding single named binding" do
-      # Given: [with_named_binding: [post: [join: [schema: [source: Post, as: :post, on: true]]]]]
-      # Expected: with_named_binding: [post: join]
+      # Given: [with_named_binding: [author: [join: [association: [source: :author, as: :author]]]]]
+      # Expected: with_named_binding: [author: join]
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
-      {:ok, _} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "hi"})
+      {:ok, author1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, author2} = TestRepo.insert(%EctoShorts.TestUser{first_name: "Jane"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", author_id: author1.id})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", author_id: author2.id})
 
       query =
-        from(c in EctoShorts.TestComment,
-          join: p in EctoShorts.TestPost, as: :post, on: p.id == c.post_id,
-          where: as(:post).published == true)
+        from(p in EctoShorts.TestPost,
+          join: a in assoc(p, :author),
+          as: :author,
+          where: as(:author).first_name == "John"
+        )
 
       results = TestRepo.all(query)
 
-      assert is_list(results)
-      assert length(results) >= 1
+      assert [%EctoShorts.TestPost{title: "Match"}] = results
     end
 
     test "Rule Statement 2: with_named_binding multiple named bindings" do
-      # Given: [with_named_binding: [post: ..., comment: ...]]
-      # Expected: with_named_binding: [post: join, comment: join]
+      # Given: [with_named_binding: [author: [join: [association: [source: :author, as: :author]]], users_table: [join: [table: [source: "users", as: :users_table, on: true]]]]]
+      # Expected: with_named_binding: [author: join, users_table: join]
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
-      {:ok, _} = TestRepo.insert(%EctoShorts.TestComment{post_id: post1.id, body: "hi"})
+      {:ok, author1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, author2} = TestRepo.insert(%EctoShorts.TestUser{first_name: "Jane"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", author_id: author1.id})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", author_id: author2.id})
 
       query =
-        from(p in EctoShorts.TestPost, as: :post,
-          join: c in EctoShorts.TestComment, as: :comment, on: c.post_id == p.id,
-          where: as(:post).published == true and as(:comment).body == "hi")
+        from(p in EctoShorts.TestPost,
+          join: a in assoc(p, :author),
+          as: :author,
+          join: u in "users",
+          as: :users_table,
+          on: u.id == p.author_id,
+          where: as(:author).first_name == "John",
+          select: {p.title, field(u, :first_name)}
+        )
 
       results = TestRepo.all(query)
 
-      assert is_list(results)
-      assert length(results) >= 1
+      assert [{"Match", "John"}] = results
     end
   end
 
@@ -3195,10 +3720,14 @@ defmodule EctoShorts.QueryFiltersTest do
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2", views: 10})
       {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 3", views: 5})
 
-      query = from(p in EctoShorts.TestPost, order_by: [asc: p.views], limit: 1)
+      query =
+        from(p in EctoShorts.TestPost, order_by: [desc: p.views], limit: 1)
+        |> with_ties(true)
+
       results = TestRepo.all(query)
 
-      assert 1 = length(results)
+      assert 2 = length(results)
+      assert Enum.sort(Enum.map(results, & &1.title)) == ["Post 1", "Post 2"]
     end
 
     test "Rule Statement 2: with_ties false" do
@@ -3207,8 +3736,12 @@ defmodule EctoShorts.QueryFiltersTest do
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", views: 10})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2", views: 10})
+      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 3", views: 5})
 
-      query = from(p in EctoShorts.TestPost, order_by: [asc: p.views], limit: 1)
+      query =
+        from(p in EctoShorts.TestPost, order_by: [desc: p.views], limit: 1)
+        |> with_ties(false)
+
       results = TestRepo.all(query)
 
       assert 1 = length(results)
@@ -3219,11 +3752,17 @@ defmodule EctoShorts.QueryFiltersTest do
       # Expected: with_ties: [bind: [as: :post, value: true]]
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", views: 10})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2", views: 10})
+      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 3", views: 5})
 
-      query = from(p in EctoShorts.TestPost, as: :post, order_by: [asc: p.views], limit: 2)
+      query =
+        from(p in EctoShorts.TestPost, as: :post, order_by: [desc: p.views], limit: 1)
+        |> with_ties(true)
+
       results = TestRepo.all(query)
 
-      assert is_list(results)
+      assert 2 = length(results)
+      assert Enum.sort(Enum.map(results, & &1.title)) == ["Post 1", "Post 2"]
     end
 
     test "Rule Statement 4: with_ties positional binding" do
@@ -3231,11 +3770,17 @@ defmodule EctoShorts.QueryFiltersTest do
       # Expected: with_ties: [bind: [at: 1, value: true]]
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", views: 10})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2", views: 10})
+      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 3", views: 5})
 
-      query = from(p in EctoShorts.TestPost, order_by: [asc: p.views], limit: 2)
+      query =
+        from(p in EctoShorts.TestPost, order_by: [desc: p.views], limit: 1)
+        |> with_ties(true)
+
       results = TestRepo.all(query)
 
-      assert is_list(results)
+      assert 2 = length(results)
+      assert Enum.sort(Enum.map(results, & &1.title)) == ["Post 1", "Post 2"]
     end
 
     test "Rule Statement 5: update set and inc" do
@@ -3244,7 +3789,13 @@ defmodule EctoShorts.QueryFiltersTest do
 
       {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Before", views: 5})
 
-      TestRepo.update_all(from(p in EctoShorts.TestPost, where: p.id == ^post1.id), set: [title: "After"], inc: [views: 1])
+      query =
+        from(p in EctoShorts.TestPost,
+          where: p.id == ^post1.id,
+          update: [set: [title: "After"], inc: [views: 1]]
+        )
+
+      TestRepo.update_all(query, [])
 
       updated = TestRepo.get!(EctoShorts.TestPost, post1.id)
       assert updated.title == "After"
@@ -3270,260 +3821,386 @@ defmodule EctoShorts.QueryFiltersTest do
     end
 
     test "Rule Statement 7: preload atom" do
-      # Given: [preload: :association_atom]
-      # Expected: SELECT with preloaded association
-      # Note: preload validates SQL shape; uses existing association-free query
+      # Given: [preload: :author]
+      # Expected: preload: [:author]
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", author_id: author.id})
 
-      query = from(p in EctoShorts.TestPost, select: p)
+      query = from(p in EctoShorts.TestPost, where: p.title == "Post", preload: :author, select: p)
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post"}] = results
+      assert [%EctoShorts.TestPost{title: "Post", author: %EctoShorts.TestUser{first_name: "John"}}] = results
     end
 
     test "Rule Statement 8: preload list with atom" do
-      # Given: [preload: [:association_atom]]
-      # Expected: SELECT with preloaded association list
+      # Given: [preload: [:author]]
+      # Expected: preload: [:author]
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", author_id: author.id})
 
-      query = from(p in EctoShorts.TestPost, select: p)
+      query = from(p in EctoShorts.TestPost, where: p.title == "Post", preload: [:author], select: p)
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post"}] = results
+      assert [%EctoShorts.TestPost{title: "Post", author: %EctoShorts.TestUser{first_name: "John"}}] = results
     end
 
     test "Rule Statement 9: preload nested associations" do
-      # Given: [preload: [assoc: [nested: []]]]
-      # Expected: SELECT with nested preload
+      # Given: [preload: [author: [:posts]]]
+      # Expected: preload: [author: [:posts]]
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", author_id: author.id})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Nested Post", author_id: author.id})
 
-      query = from(p in EctoShorts.TestPost, select: p)
+      query =
+        from(p in EctoShorts.TestPost,
+          where: p.title == "Post",
+          preload: [author: [:posts]],
+          select: p
+        )
+
       results = TestRepo.all(query)
 
-      assert is_list(results)
+      assert [%EctoShorts.TestPost{title: "Post", author: %EctoShorts.TestUser{first_name: "John"} = loaded_author}] = results
+      assert Enum.sort(Enum.map(loaded_author.posts, & &1.title)) == ["Nested Post", "Post"]
     end
 
     test "Rule Statement 10: preload from named binding" do
-      # Given: [preload: [bind: [as: :binding_name, value: :assoc]]]
-      # Expected: preload via named binding
+      # Given: [preload: [bind: [as: :example, value: :author]]]
+      # Expected: preload: [author: binding]
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2", published: false})
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", author_id: author.id})
 
-      subq = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
-      query = from(p in EctoShorts.TestPost, as: :post, join: s in subquery(subq), as: :sub, on: s.id == p.id, select: p)
+      query =
+        from(p in EctoShorts.TestPost,
+          where: p.title == "Post 1",
+          join: a in assoc(p, :author),
+          as: :example,
+          preload: [author: a],
+          select: p
+        )
+
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post 1"}] = results
+      assert [%EctoShorts.TestPost{title: "Post 1", author: %EctoShorts.TestUser{first_name: "John"}}] = results
     end
 
     test "Rule Statement 11: preload from positional binding" do
-      # Given: [preload: [bind: [at: 2, value: :assoc]]]
-      # Expected: preload via positional binding
+      # Given: [preload: [bind: [at: 2, value: :author]]]
+      # Expected: preload: [author: binding]
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2", published: false})
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", author_id: author.id})
 
-      subq = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
-      query = from(p in EctoShorts.TestPost, join: s in subquery(subq), on: s.id == p.id, select: p)
+      query =
+        from(p in EctoShorts.TestPost,
+          where: p.title == "Post 1",
+          join: a in assoc(p, :author),
+          preload: [author: a],
+          select: p
+        )
+
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post 1"}] = results
+      assert [%EctoShorts.TestPost{title: "Post 1", author: %EctoShorts.TestUser{first_name: "John"}}] = results
     end
 
     test "Rule Statement 12: preload from binding and nested" do
-      # Given: [preload: [bind: [at: 2, value: :assoc], nested: []]]
-      # Expected: preload from binding with nested
+      # Given: [preload: [bind: [at: 2, value: :author], posts: [:comments]]]
+      # Expected: preload: [author: {binding, [posts: [:comments]]}]
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", published: true})
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", author_id: author.id})
+      {:ok, nested_post} = TestRepo.insert(%EctoShorts.TestPost{title: "Nested Post", author_id: author.id})
+      {:ok, _comment} = TestRepo.insert(%EctoShorts.TestComment{post_id: nested_post.id, body: "hi"})
 
-      subq = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
-      query = from(p in EctoShorts.TestPost, join: s in subquery(subq), on: s.id == p.id, select: p)
+      query =
+        from(p in EctoShorts.TestPost,
+          where: p.title == "Post",
+          join: a in assoc(p, :author),
+          preload: [author: {a, [posts: [:comments]]}],
+          select: p
+        )
+
       results = TestRepo.all(query)
 
-      assert is_list(results)
+      assert [%EctoShorts.TestPost{title: "Post", author: %EctoShorts.TestUser{} = loaded_author}] = results
+      assert Enum.sort(Enum.map(loaded_author.posts, & &1.title)) == ["Nested Post", "Post"]
+      assert Enum.all?(loaded_author.posts, &Ecto.assoc_loaded?(&1.comments))
     end
 
     test "Rule Statement 13: preload from named binding and nested" do
-      # Given: [preload: [bind: [as: :binding, value: :assoc], nested: []]]
-      # Expected: preload from named binding with nested
+      # Given: [preload: [bind: [as: :author, value: :author], posts: [:comments]]]
+      # Expected: preload: [author: {binding, [posts: [:comments]]}]
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", published: true})
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", author_id: author.id})
+      {:ok, nested_post} = TestRepo.insert(%EctoShorts.TestPost{title: "Nested Post", author_id: author.id})
+      {:ok, _comment} = TestRepo.insert(%EctoShorts.TestComment{post_id: nested_post.id, body: "hi"})
 
-      subq = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
-      query = from(p in EctoShorts.TestPost, as: :post, join: s in subquery(subq), as: :sub, on: s.id == p.id, select: p)
+      query =
+        from(p in EctoShorts.TestPost,
+          where: p.title == "Post",
+          join: a in assoc(p, :author),
+          as: :author,
+          preload: [author: {a, [posts: [:comments]]}],
+          select: p
+        )
+
       results = TestRepo.all(query)
 
-      assert is_list(results)
+      assert [%EctoShorts.TestPost{title: "Post", author: %EctoShorts.TestUser{} = loaded_author}] = results
+      assert Enum.sort(Enum.map(loaded_author.posts, & &1.title)) == ["Nested Post", "Post"]
+      assert Enum.all?(loaded_author.posts, &Ecto.assoc_loaded?(&1.comments))
     end
 
     test "Rule Statement 14: preload from multiple bindings and nested" do
-      # Given: [preload: [bind: [[as: :b1, value: :assoc], [at: 2, value: :assoc]], nested: []]]
-      # Expected: preload from multiple bindings
+      # Given: [preload: [bind: [[as: :author, value: :author], [at: 2, value: :author]], posts: [:comments]]]
+      # Expected: preload: [author: {binding, [posts: [:comments]]}]
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Other", published: false})
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", author_id: author.id})
+      {:ok, nested_post} = TestRepo.insert(%EctoShorts.TestPost{title: "Nested Post", author_id: author.id})
+      {:ok, _comment} = TestRepo.insert(%EctoShorts.TestComment{post_id: nested_post.id, body: "hi"})
 
-      subq = subquery(from p2 in EctoShorts.TestPost, where: p2.id == ^post1.id, select: p2.id)
-      query = from(p in EctoShorts.TestPost, as: :post, join: s in subquery(subq), as: :sub, on: s.id == p.id, select: p)
+      query =
+        from(p in EctoShorts.TestPost,
+          where: p.title == "Post",
+          join: a in assoc(p, :author),
+          as: :author,
+          preload: [author: {a, [posts: [:comments]]}],
+          preload: [author: {a, [posts: [:comments]]}],
+          select: p
+        )
+
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post"}] = results
+      assert [%EctoShorts.TestPost{title: "Post", author: %EctoShorts.TestUser{} = loaded_author}] = results
+      assert Enum.sort(Enum.map(loaded_author.posts, & &1.title)) == ["Nested Post", "Post"]
+      assert Enum.all?(loaded_author.posts, &Ecto.assoc_loaded?(&1.comments))
     end
   end
 
   describe "Join Directives" do
-    test "Rule Statement 1: schema join with alias and filter" do
-      # Given: [schema: [source: Post2, as: :post2, where: title == "Published"]]
-      # Expected: join: Post2, as: :post2, where: post2.title == "Published"
+    test "Rule Statement 1: association join with named binding and filter" do
+      # Given: [author: [as: :author, first_name: "John"]]
+      # Expected: join: author, as: :author, where: as(:author).first_name == "John"
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
+      {:ok, author1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, author2} = TestRepo.insert(%EctoShorts.TestUser{first_name: "Jane"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", author_id: author1.id})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", author_id: author2.id})
 
-      sub = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
       query =
         from(p in EctoShorts.TestPost,
-          join: s in subquery(sub), as: :published_id, on: s.id == p.id,
-          where: p.published == true)
+          join: a in assoc(p, :author),
+          as: :author,
+          where: as(:author).first_name == "John",
+          select: p
+        )
 
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Published"}] = results
+      assert [%EctoShorts.TestPost{title: "Match"}] = results
     end
 
-    test "Rule Statement 2: subquery join without alias" do
-      # Given: [join: [subquery: [source: sq, on: true]]]
-      # Expected: join: subquery(sq), where: filter
+    test "Rule Statement 2: association join without named binding" do
+      # Given: [author: [first_name: "John"]]
+      # Expected: join: author, where: a.first_name == "John"
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2", published: false})
+      {:ok, author1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, author2} = TestRepo.insert(%EctoShorts.TestUser{first_name: "Jane"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", author_id: author1.id})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", author_id: author2.id})
 
-      sub = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
-      query = from(p in EctoShorts.TestPost, join: s in subquery(sub), on: s.id == p.id, select: p)
+      query =
+        from(p in EctoShorts.TestPost,
+          join: a in assoc(p, :author),
+          where: a.first_name == "John",
+          select: p
+        )
+
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Match"}] = results
+    end
+
+    test "Rule Statement 3: association join with explicit on condition" do
+      # Given: [author: [as: :author, on: true, first_name: "John"]]
+      # Expected: join: author, as: :author, on: true, where: as(:author).first_name == "John"
+
+      {:ok, author1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, author2} = TestRepo.insert(%EctoShorts.TestUser{first_name: "Jane"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", author_id: author1.id})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", author_id: author2.id})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          join: a in assoc(p, :author),
+          as: :author,
+          on: true,
+          where: as(:author).first_name == "John",
+          select: p
+        )
+
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Match"}] = results
+    end
+
+    test "Rule Statement 4: association join with left join qualifier" do
+      # Given: [author: [as: :author, type: :left, first_name: "John"]]
+      # Expected: left_join: author, as: :author, where: as(:author).first_name == "John"
+
+      {:ok, author1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, author2} = TestRepo.insert(%EctoShorts.TestUser{first_name: "Jane"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", author_id: author1.id})
+      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "No Match", author_id: author2.id})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          left_join: a in assoc(p, :author),
+          as: :author,
+          where: as(:author).first_name == "John",
+          select: p
+        )
+
+      results = TestRepo.all(query)
+
+      assert [%EctoShorts.TestPost{title: "Match"}] = results
+    end
+
+    test "Rule Statement 5: canonical association join" do
+      # Given: [join: [author: [as: :author]]]
+      # Expected: join: author, as: :author
+
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", author_id: author.id})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          join: a in assoc(p, :author),
+          as: :author,
+          select: p
+        )
+
       results = TestRepo.all(query)
 
       assert [%EctoShorts.TestPost{title: "Post 1"}] = results
-      assert post1.id in Enum.map(results, & &1.id)
     end
 
-    test "Rule Statement 3: schema join with explicit on condition" do
-      # Given: [join: [schema: [source: Schema, as: :alias, on: condition]]]
-      # Expected: join: Schema, as: :alias, on: condition
+    test "Rule Statement 6: canonical schema join" do
+      # Given: [join: [schema: [source: User, as: :user_join, on: true]]]
+      # Expected: join: User, as: :user_join, on: true
 
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2", published: false})
+      {:ok, user} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", author_id: user.id})
 
-      sub = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
       query =
         from(p in EctoShorts.TestPost,
-          join: s in subquery(sub), as: :pub, on: s.id == p.id and p.published == true)
+          join: u in EctoShorts.TestUser,
+          as: :user_join,
+          on: true,
+          select: {p.title, u.first_name}
+        )
 
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post 1"}] = results
+      assert [{"Post", "John"}] = results
     end
 
-    test "Rule Statement 4: left join" do
-      # Given: [join: [type: :left, ...]]
-      # Expected: left_join: ...
+    test "Rule Statement 7: canonical table join" do
+      # Given: [join: [table: [source: "users", as: :users_table, on: true]]]
+      # Expected: join: "users", as: :users_table, on: true
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 2", published: false})
+      {:ok, user} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", author_id: user.id})
 
-      sub = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
       query =
         from(p in EctoShorts.TestPost,
-          left_join: s in subquery(sub), as: :pub_id, on: s.id == p.id)
+          join: u in "users",
+          as: :users_table,
+          on: true,
+          select: {p.title, field(u, :first_name)}
+        )
 
       results = TestRepo.all(query)
 
-      assert 2 = length(results)
+      assert [{"Post", "John"}] = results
     end
 
-    test "Rule Statement 5: explicit schema join with alias" do
-      # Given: [join: [schema: [source: Post, as: :alias]]]
-      # Expected: join: Post, as: :alias
+    test "Rule Statement 8: canonical query join" do
+      # Given: [join: [query: [source: user_query, as: :named_users, on: true]]]
+      # Expected: join: user_query, as: :named_users, on: true
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post 1", published: true})
-
-      sub = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
-      query = from(p in EctoShorts.TestPost, join: s in subquery(sub), as: :published_ids, on: s.id == p.id)
-      results = TestRepo.all(query)
-
-      assert is_list(results)
-    end
-
-    test "Rule Statement 6: schema join" do
-      # Given: [join: [schema: [source: EctoShorts.TestPost, as: :post_join, on: true]]]
-      # Expected: join: EctoShorts.TestPost, as: :post_join, on: true
-
+      {:ok, _user1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
 
-      query = from(p in EctoShorts.TestPost, join: p2 in EctoShorts.TestPost, as: :post_join, on: true, select: p)
+      user_query = from(u in EctoShorts.TestUser, where: u.first_name == "John")
+
+      query =
+        from(p in EctoShorts.TestPost,
+          join: u in ^user_query,
+          as: :named_users,
+          on: true,
+          select: {p.title, u.first_name}
+        )
+
       results = TestRepo.all(query)
 
-      assert is_list(results)
+      assert [{"Post", "John"}] = results
     end
 
-    test "Rule Statement 7: table join" do
-      # Given: [join: [table: [source: "posts", as: :posts_table, on: true]]]
-      # Expected: join: "posts", as: :posts_table, on: true
+    test "Rule Statement 9: canonical subquery join" do
+      # Given: [join: [subquery: [source: user_query, as: :named_users_subquery, on: true]]]
+      # Expected: join: subquery(user_query), as: :named_users_subquery, on: true
 
+      {:ok, _user1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
 
-      query = from(p in EctoShorts.TestPost, join: p2 in "posts", as: :posts_table, on: true, select: p)
+      user_query = from(u in EctoShorts.TestUser, where: u.first_name == "John")
+
+      query =
+        from(p in EctoShorts.TestPost,
+          join: u in subquery(user_query),
+          as: :named_users_subquery,
+          on: true,
+          select: {p.title, u.first_name}
+        )
+
       results = TestRepo.all(query)
 
-      assert is_list(results)
+      assert [{"Post", "John"}] = results
     end
 
-    test "Rule Statement 8: query join" do
-      # Given: [join: [query: [source: post_query, as: :sq, on: true]]]
-      # Expected: join: post_query, as: :sq, on: true
+    test "Rule Statement 10: canonical subquery join from filter params with explicit from" do
+      # Given: [join: [subquery: [source: [from: [query: User, first_name: "John"]], as: :named_users_subquery, on: true]]]
+      # Expected: join: subquery(from u in User, where: u.first_name == "John"), as: :named_users_subquery, on: true
 
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", published: true})
+      {:ok, _user1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
 
-      post_query = from(p2 in EctoShorts.TestPost, where: p2.published == true)
-      query = from(p in EctoShorts.TestPost, join: s in subquery(post_query), as: :sq, on: true, select: p)
+      named_users_query = from(u in EctoShorts.TestUser, where: u.first_name == "John")
+
+      query =
+        from(p in EctoShorts.TestPost,
+          join: u in subquery(named_users_query),
+          as: :named_users_subquery,
+          on: true,
+          select: {p.title, u.first_name}
+        )
+
       results = TestRepo.all(query)
 
-      assert is_list(results)
+      assert [{"Post", "John"}] = results
     end
 
-    test "Rule Statement 9: subquery join with raw query" do
-      # Given: [join: [subquery: [source: post_query, as: :name, on: true]]]
-      # Expected: join: subquery(post_query), as: :name, on: true
-
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", published: true})
-
-      post_query = from(p2 in EctoShorts.TestPost, where: p2.published == true)
-      query = from(p in EctoShorts.TestPost, join: s in subquery(post_query), as: :name, on: true, select: p)
-      results = TestRepo.all(query)
-
-      assert is_list(results)
-    end
-
-    test "Rule Statement 10: subquery join from filter params" do
-      # Given: [join: [subquery: [source: [from: [query: Post, published: true]], as: :name, on: true]]]
-      # Expected: join: subquery(from p in Post, where: p.published == true), as: :name, on: true
-
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
-
-      post_query = from(p2 in EctoShorts.TestPost, where: p2.published == true)
-      query = from(p in EctoShorts.TestPost, join: s in subquery(post_query), as: :name, on: s.id == p.id, select: p)
-      results = TestRepo.all(query)
-
-      assert [%EctoShorts.TestPost{title: "Post"}] = results
-      assert post1.id in Enum.map(results, & &1.id)
-    end
-
-    test "Rule Statement 11: subquery join from current schema filter params" do
-      # Given: [join: [subquery: [source: [from: [published: true]], as: :name, on: true]]]
-      # Expected: join: subquery(from p in Post, where: p.published == true), as: :name, on: true
+    test "Rule Statement 11: canonical subquery join from current schema filter params" do
+      # Given: [join: [subquery: [source: [from: [published: true]], as: :published_posts_subquery, on: true]]]
+      # Expected: join: subquery(from p in Post, where: p.published == true), as: :published_posts_subquery, on: true
 
       {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Published", published: true})
       {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
@@ -3533,7 +4210,7 @@ defmodule EctoShorts.QueryFiltersTest do
       query =
         from(p in EctoShorts.TestPost,
           join: s in subquery(pub_query),
-          as: :name,
+          as: :published_posts_subquery,
           on: s.id == p.id,
           select: p
         )
@@ -3543,53 +4220,76 @@ defmodule EctoShorts.QueryFiltersTest do
       assert [%EctoShorts.TestPost{title: "Published"}] = results
     end
 
-    test "Rule Statement 12: fragment join" do
+    test "Rule Statement 12: canonical fragment join" do
       # Given: [join: [fragment: [source: [name: :active_posts, values: [min_views: 0]], as: :active_posts, on: true]]]
-      # Expected: join: fragment("active_posts(?)", 0), as: :active_posts, on: true
-      # Note: fragment functions are database-specific; validated via SQL shape
+      # Expected: join: fragment source query, as: :active_posts, on: true
+      # Note: fragment join validates SQL shape
 
-      {:ok, _post} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
-
-      query = from(p in EctoShorts.TestPost, select: p)
-      results = TestRepo.all(query)
-
-      assert is_list(results)
-    end
-
-    test "Rule Statement 13: fragment join with hints" do
-      # Given: [join: [fragment: [..., hints: :test_index, ...]]]
-      # Expected: join with hints applied
-      # Note: hints are database-specific; validated via SQL shape
-
-      {:ok, _post} = TestRepo.insert(%EctoShorts.TestPost{title: "Post"})
-
-      query = from(p in EctoShorts.TestPost, select: p)
-      results = TestRepo.all(query)
-
-      assert is_list(results)
-    end
-
-    test "Rule Statement 14: multiple joins" do
-      # Given: [join: [sq1: [...], sq2: [...]]]
-      # Expected: multiple joins applied to the query
-
-      {:ok, post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", published: true})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Draft", published: false})
-
-      sub1 = subquery(from p2 in EctoShorts.TestPost, where: p2.published == true, select: p2.id)
-      sub2 = subquery(from p3 in EctoShorts.TestPost, where: p3.published == true, select: p3.id)
+      active_posts_query =
+        from(ap in fragment("SELECT id FROM posts WHERE views >= ?", ^0),
+          select: %{id: field(ap, :id)}
+        )
 
       query =
         from(p in EctoShorts.TestPost,
-          join: s1 in subquery(sub1), as: :sq1, on: s1.id == p.id,
-          join: s2 in subquery(sub2), as: :sq2, on: s2.id == p.id,
+          join: ap in ^active_posts_query,
+          as: :active_posts,
+          on: ap.id == p.id,
           select: p
+        )
+
+      {sql, params} = Ecto.Adapters.SQL.to_sql(:all, TestRepo, query)
+
+      assert sql =~ "INNER JOIN (SELECT id FROM posts WHERE views >="
+      assert is_list(params)
+    end
+
+    test "Rule Statement 13: canonical fragment join with hints" do
+      # Given: [join: [fragment: [source: [name: :active_posts, values: [min_views: 0]], hints: :test_index, as: :active_posts, on: true]]]
+      # Expected: join with hints applied
+      # Note: fragment join validates SQL shape
+
+      active_posts_query =
+        from(ap in fragment("SELECT id FROM posts WHERE views >= ?", ^0),
+          select: %{id: field(ap, :id)}
+        )
+
+      query =
+        from(p in EctoShorts.TestPost,
+          join: ap in ^active_posts_query,
+          as: :active_posts,
+          on: ap.id == p.id,
+          hints: ["USE INDEX(test_index)"],
+          select: p
+        )
+
+      {sql, params} = Ecto.Adapters.SQL.to_sql(:all, TestRepo, query)
+
+      assert sql =~ "INNER JOIN (SELECT id FROM posts WHERE views >="
+      assert is_list(params)
+      assert Enum.at(query.joins, 0).hints == ["USE INDEX(test_index)"]
+    end
+
+    test "Rule Statement 14: canonical multiple joins" do
+      # Given: [join: [author: [as: :author], table: [source: "users", as: :users_table, on: true]]]
+      # Expected: multiple joins applied in order
+
+      {:ok, author} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
+      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Post", author_id: author.id})
+
+      query =
+        from(p in EctoShorts.TestPost,
+          join: a in assoc(p, :author),
+          as: :author,
+          join: u in "users",
+          as: :users_table,
+          on: true,
+          select: {p.title, a.first_name, field(u, :first_name)}
         )
 
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post"}] = results
-      assert post1.id in Enum.map(results, & &1.id)
+      assert [{"Post", "John", "John"}] = results
     end
   end
 end

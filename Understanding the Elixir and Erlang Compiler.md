@@ -107,7 +107,7 @@ Elixir’s docs are very explicit about module attributes and compilation hooks:
 
 For “many clause” generators, two practical pitfalls recur:
 
-- If you rely on per-definition hooks (`@on_definition`) or heavy doc/spec machinery inside generated clauses, you may accidentally run O(N) expensive operations *per clause*, turning compilation into O(N²) behavior. (The mechanism is documented; the performance outcome is a consequence you should test with profiling.)   
+- If you rely on per-definition hooks (`@on_definition`) or heavy doc/spec machinery inside generated clauses, you may accidentally run O(N) expensive operations *per clause*, turning compilation into O(N²) behaviour. (The mechanism is documented; the performance outcome is a consequence you should test with profiling.)   
 - If your generator uses `quote`/`unquote_splicing` to splice very large lists of clauses, you are constructing huge intermediate lists and AST nodes; Elixir’s own expansion logic around quoting shows how it must track context, location, and binding rewriting.   
 
 ## How function clauses become BEAM and why “too many clauses” hurts
