@@ -13,7 +13,7 @@ An ADR does not diagnose why the current system is wrong, it does not define int
 - Primary artifact: A self-contained record of one architectural or design decision, including its drivers, alternatives, chosen outcome, consequences, and validation path.
 - Primary consumer: Future maintainers, reviewers, and implementers who need to understand why the decision exists and how to confirm it is being followed.
 - Ready when: The decision statement, drivers, real options, chosen outcome, consequences, related artifacts, and validation path are explicit enough for a beginner to understand and apply the decision without extra context.
-- Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+- Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
 ## How to Use ADRs and ADRS.md
 
@@ -21,7 +21,7 @@ When you write an ADR, follow `.agent/ADRS.md` to the letter. If it is not in yo
 
 Use this guide when one important architectural or design choice needs a durable record. Keep the ADR open while you work. Update it as the decision becomes clearer, tradeoffs are refined, consequences are discovered, validation improves, and follow-up work is identified. Do not treat the ADR as a one-shot template you fill in once and abandon.
 
-Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether work should stay here or move to another document or work state.
+Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
 
 Store completed ADRs under `docs/adrs/` and name them with four-digit, zero-padded names such as `docs/adrs/0001-short-decision-title.md`.
 
@@ -87,25 +87,27 @@ Use it when: A decision must stay explicit over time so future maintainers can u
 
 ## Handoffs
 
-Only one document owns a question at a time. Use this section to decide when work should arrive in this document, when it should leave it, and how to record that transition.
+This document owns a question only while it is the place where the next missing decision, evidence, or instructions must be added. Use this section to decide whether this document still owns the next unresolved question, which listed destination owns it if not, and what evidence makes the handoff safe now.
 
 ### Incoming Handoffs
 
-- From `ArchitectureReview`: Use this guide when the review establishes a lasting design choice that must be recorded.
-- From `ExecPlan`: Use this guide when implementation reveals a lasting design decision worth preserving.
-- From `RefactorPlan`: Use this guide when refactoring reveals a lasting design decision worth preserving.
-- From implementation work: Use this guide when code changes create a lasting architectural or design decision that future maintainers must understand.
+- From `ArchitectureReview`: Use this guide when the review findings, affected boundaries, and risk context are already explicit, and the main unresolved question is which lasting architectural or design decision must be recorded so future work can rely on it.
+- From `ExecPlan`: Use this guide when the implementation sequence is already explicit, and the main unresolved question revealed by that planning is which lasting architectural or design decision must be recorded for future work.
+- From `RefactorPlan`: Use this guide when the behaviour boundary and structural change are already explicit, and the main unresolved question revealed by that planning is which lasting architectural or design decision must be recorded for future work.
+- From direct repository changes in the working tree: Use this guide when code, configuration, documentation, or operational changes have already revealed that the main unresolved question is whether one lasting architectural or design decision must be recorded explicitly.
 
 ### Outgoing Handoffs
 
-- To `ExecPlan`: Hand off when the recorded decision needs behaviour-changing implementation steps.
-- To `RefactorPlan`: Hand off when the recorded decision needs behaviour-preserving structural work.
-- To `ArchitectureReview`: Hand off when the recorded decision needs follow-up system review.
-- To implementation work: Hand off when the decision is clear and the next work does not require another planning document first.
+- To `ExecPlan`: Hand off when the decision statement, consequences, and validation path are explicit enough to stop decision-recording, and the remaining unresolved question is how to plan behaviour-changing implementation that follows from this recorded decision.
+- To `RefactorPlan`: Hand off when the decision statement, consequences, and validation path are explicit enough to stop decision-recording, and the remaining unresolved question is how to plan behaviour-preserving structural change that follows from this recorded decision.
+- To `ArchitectureReview`: Hand off when the decision is already recorded clearly, and the remaining unresolved question is how that decision affects system shape, risk, failure spread, or follow-up review.
+- To direct repository changes in the working tree: Hand off when the decision statement, consequences, and validation path are explicit enough to stop decision-recording, and the remaining unresolved question is how to apply this recorded decision directly in code, configuration, documentation, or operations.
 
 ### Recording the Handoff
 
-Use the `Next Handoff` section to name one valid next document or work state from `Handoffs` and explain why it applies now.
+Use the `Next Handoff` section to name one destination listed in this section.
+
+State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
 If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -215,7 +217,7 @@ Use this skeleton when you create a new ADR. Keep it complete enough that a comp
     - Primary artifact: A self-contained record of one architectural or design decision, including its drivers, alternatives, chosen outcome, consequences, and validation path.
     - Primary consumer: Future maintainers, reviewers, and implementers who need to understand why the decision exists and how to confirm it is being followed.
     - Ready when: The decision statement, drivers, real options, chosen outcome, consequences, related artifacts, and validation path are explicit enough for a beginner to understand and apply the decision without extra context.
-    - Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+    - Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
     ## Progress
 
@@ -338,7 +340,9 @@ Use this skeleton when you create a new ADR. Keep it complete enough that a comp
 
     State the next safe handoff using `Handoffs`.
 
-    Name the exact next document or work state and explain why it applies now.
+    Name one exact destination listed in `Handoffs`.
+
+    State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
     If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -357,4 +361,4 @@ Use this skeleton when you create a new ADR. Keep it complete enough that a comp
 
 ## Important Reminder
 
-An ADR is for preserving one lasting decision, not for hiding uncertainty or replacing other planning documents. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next document or work state when the question changes.
+An ADR is for preserving one lasting decision, not for hiding uncertainty or replacing other planning documents. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next listed destination when the unresolved question changes.

@@ -13,7 +13,7 @@ An InvestigationLog does not define intended behaviour in the abstract and it do
 - Primary artifact: A self-contained diagnosis of one visible problem, including the proven failure, facts, interpretation, and next safe action.
 - Primary consumer: The person clarifying behaviour in an ExampleMappingDoc or BehaviourSpecDoc, or implementing a fix in an ExecPlan.
 - Ready when: The failure, expected result, facts, interpretation, and next safe action are explicit at one visible boundary.
-- Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+- Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
 ## How to Use InvestigationLogs and INVESTIGATION_LOGS.md
 
@@ -23,7 +23,7 @@ Use this guide before you investigate any problem whose cause is not already pro
 
 Keep the InvestigationLog open while you work. Record exact commands, outputs, file paths, function names, error lines, reruns, decisions, rejected interpretations, and handoff changes as they happen. Do not treat the log as a summary you write at the end.
 
-Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether work should stay here or move to another document or work state.
+Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
 
 ## Document Relationships
 
@@ -87,26 +87,28 @@ Use it when: A decision must stay explicit over time so future maintainers can u
 
 ## Handoffs
 
-Only one document owns a question at a time. Use this section to decide when work should arrive in this document, when it should leave it, and how to record that transition.
+This document owns a question only while it is the place where the next missing decision, evidence, or instructions must be added. Use this section to decide whether this document still owns the next unresolved question, which listed destination owns it if not, and what evidence makes the handoff safe now.
 
 ### Incoming Handoffs
 
-- From `ExecPlan`: Use this guide when implementation reopens a diagnosis question.
-- From `ExampleMappingDoc`: Use this guide when the real uncertainty becomes diagnosis instead of behaviour clarification.
-- From `BehaviourSpecDoc`: Use this guide when the real uncertainty becomes diagnosis instead of proof-ready specification.
-- From `RefactorPlan`: Use this guide when refactoring reopens a diagnosis question.
-- From `ArchitectureReview`: Use this guide when the remaining uncertainty becomes diagnosis instead of architecture risk or mitigation.
+- From `ExecPlan`: Use this guide when the implementation sequence is already known, and the main unresolved question reopened by execution is what failure or unexpected behaviour is actually happening.
+- From `ExampleMappingDoc`: Use this guide when the intended behaviour discussion is already explicit enough to stop mapping, and the main unresolved question is what the system is actually doing or why it is failing.
+- From `BehaviourSpecDoc`: Use this guide when the behaviour specification effort is already explicit enough to stop, and the main unresolved question is what the system is actually doing or why it is failing.
+- From `RefactorPlan`: Use this guide when the behaviour boundary and structural work are already explicit enough to stop refactor planning, and the main unresolved question reopened by that work is what the system is actually doing or why it is failing.
+- From `ArchitectureReview`: Use this guide when the broader system path is already explicit enough to stop architecture review, and the main unresolved question is which failure or unexpected behaviour must be diagnosed at a nearer visible boundary.
 
 ### Outgoing Handoffs
 
-- To `ExampleMappingDoc`: Hand off when diagnosis is complete but intended behaviour is still unclear.
-- To `BehaviourSpecDoc`: Hand off when diagnosis and expected behaviour are already explicit.
-- To `ExecPlan`: Hand off when diagnosis, behaviour, and proof path are already explicit.
-- To `RefactorPlan`: Hand off when diagnosis is complete and the next work is behaviour-preserving structural change.
+- To `ExampleMappingDoc`: Hand off when the failure, facts, and diagnosis are explicit enough to stop diagnosis, and the remaining unresolved question is what behaviour should be accepted at the visible boundary.
+- To `BehaviourSpecDoc`: Hand off when the failure, facts, diagnosis, and expected outcome are explicit enough to stop diagnosis, and the remaining unresolved question is how to write the accepted behaviour as a concrete specification and proof path.
+- To `ExecPlan`: Hand off when the failure, facts, diagnosis, accepted behaviour, and proof expectations are explicit enough to stop diagnosis, and the remaining unresolved question is how to plan behaviour-changing implementation.
+- To `RefactorPlan`: Hand off when the failure, facts, diagnosis, and behaviour boundary are explicit enough to stop diagnosis, and the remaining unresolved question is how to plan behaviour-preserving structural change.
 
 ### Recording the Handoff
 
-Use the `Next Handoff` section to name one valid next document or work state from `Handoffs` and explain why it applies now.
+Use the `Next Handoff` section to name one destination listed in this section.
+
+State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
 If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -220,7 +222,7 @@ Use this skeleton when you create a new InvestigationLog. Keep it complete enoug
     - Primary artifact: A self-contained diagnosis of one visible problem, including the proven failure, facts, interpretation, and next safe action.
     - Primary consumer: The person clarifying behaviour in an ExampleMappingDoc or BehaviourSpecDoc, or implementing a fix in an ExecPlan.
     - Ready when: The failure, expected result, facts, interpretation, and next safe action are explicit at one visible boundary.
-    - Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+    - Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
     ## Progress
 
@@ -338,7 +340,9 @@ Use this skeleton when you create a new InvestigationLog. Keep it complete enoug
 
     State the next safe handoff using `Handoffs`.
 
-    Name the exact next document or work state and explain why it applies now.
+    Name one exact destination listed in `Handoffs`.
+
+    State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
     If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -357,4 +361,4 @@ Use this skeleton when you create a new InvestigationLog. Keep it complete enoug
 
 ## Final Reminder
 
-Investigation is for proving what is happening, not for guessing what is probably wrong. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next document or work state when the question changes.
+Investigation is for proving what is happening, not for guessing what is probably wrong. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next listed destination when the unresolved question changes.

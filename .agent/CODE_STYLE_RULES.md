@@ -13,7 +13,7 @@ A CodeStyleRuleDoc does not diagnose a live failure, it does not define intended
 - Primary artifact: A short, self-contained style rule stored under `.agent/styles/<category>/...` with a title, `**Problem**`, `**Example**`, and `**Refactoring**`.
 - Primary consumer: A coding agent or human novice who needs to write, review, or revise code without guessing the preferred shape.
 - Ready when: The rule name, concrete problem, bad example, corrected example, plain-language reasoning, category placement, and catalog update are explicit enough for a beginner to apply the rule without extra context.
-- Hands off to: See `Handoffs` for the valid next guide or repository update and the condition for using it.
+- Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
 ## How to Use CodeStyleRuleDocs and CODE_STYLE_RULES.md
 
@@ -22,6 +22,8 @@ When you write or revise a CodeStyleRuleDoc, follow `.agent/CODE_STYLE_RULES.md`
 Start with `.agent/styles/AGENTS.md`. Use it to find the correct category before you draft the rule. If no category fits, create the new category and update `.agent/styles/AGENTS.md` in the same change as the new rule.
 
 Use this guide when you already know the repeated code pattern you want to teach. Keep the guide open while you work. Narrow the rule, name it, shape the bad and corrected examples, and revise the explanation until a complete beginner could follow it without outside help. Do not treat the rule as a private note or a one-shot summary.
+
+Use `Document Relationships` to understand how this guide differs from the other root `.agent` guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
 
 Store completed rules under `.agent/styles/<category>/` and use a short, descriptive file name such as `Complex Else Clauses in With.md`.
 
@@ -95,31 +97,37 @@ Use it when: The real question is how code should usually be written or reviewed
 
 ## Handoffs
 
-Only one guide should own a question at a time. Use this section to decide when style-rule writing should begin, when it should stop, and what must be updated before you move on.
+This document owns a question only while it is the place where the next missing decision, evidence, or instructions must be added. Use this section to decide whether this document still owns the next unresolved question, which listed destination owns it if not, and what evidence makes the handoff safe now.
 
 ### Incoming Handoffs
 
-- From code review or implementation work: Use this guide when the same code problem appears often enough that it should become a checked-in rule.
-- From `InvestigationLog`: Use this guide when diagnosis is complete and the durable result should be reusable code-writing guidance rather than a one-off fix.
-- From `ExecPlan`: Use this guide when implementation uncovers a repeated code pattern worth teaching beyond the current change.
-- From `RefactorPlan`: Use this guide when behaviour-preserving structural work reveals a repeated anti-pattern that should become a rule.
-- From `ArchitectureReview` or `ADR`: Use this guide when a recorded design concern also needs day-to-day code-writing guidance.
+- From code review or direct repository changes in the working tree: Use this guide when the local code example is already known, and the main unresolved question is how to turn a repeated pattern into reusable code-writing guidance for future work.
+- From `InvestigationLog`: Use this guide when the failure cause is already diagnosed, and the main unresolved question is how to capture the durable lesson as reusable code-writing guidance instead of a one-off fix.
+- From `ExecPlan`: Use this guide when the implementation approach is already known, and the main unresolved question is how to capture a repeated code pattern that should guide future code reviews and changes.
+- From `RefactorPlan`: Use this guide when the behaviour boundary and structural improvement are already clear, and the main unresolved question is how to capture the repeated anti-pattern as reusable code-writing guidance.
+- From `ArchitectureReview` or `ADR`: Use this guide when the system-level concern or recorded decision is already explicit, and the main unresolved question is how to translate it into day-to-day code-writing guidance.
 
 ### Outgoing Handoffs
 
-- To `.agent/styles/AGENTS.md`: Hand off when the rule path is known and the style catalog must be added or updated in the same change.
-- To `InvestigationLog`: Hand off when the real question is still diagnosis or failure cause.
-- To `ExampleMappingDoc`: Hand off when the real question is intended behaviour at a visible boundary, not coding style.
-- To `BehaviourSpecDoc`: Hand off when the behaviour is accepted but still needs proof-ready specification before implementation.
-- To `ExecPlan`: Hand off when the work now requires behaviour-changing implementation steps.
-- To `RefactorPlan`: Hand off when the work is a behaviour-preserving structural change rather than a reusable rule.
-- To `ADR`: Hand off when the rule depends on recording one lasting architectural or design decision first.
+- To `.agent/styles/AGENTS.md` companion catalog update: Hand off when the rule title and category path are explicit, and the remaining unresolved step is to update the checked-in style catalog in the same change as the rule file.
+- To `InvestigationLog`: Hand off when the draft rule shows the remaining unresolved question is what failure or behaviour is actually happening, not how code should usually be written.
+- To `ExampleMappingDoc`: Hand off when the draft rule shows the remaining unresolved question is intended behaviour at a visible boundary, not reusable code-writing guidance.
+- To `BehaviourSpecDoc`: Hand off when the draft rule shows the remaining unresolved question is how accepted behaviour should be specified and proved before implementation.
+- To `ExecPlan`: Hand off when the draft rule shows the remaining unresolved question is how to plan behaviour-changing implementation rather than how to state a reusable rule.
+- To `RefactorPlan`: Hand off when the draft rule shows the remaining unresolved question is how to plan behaviour-preserving structural change rather than how to state a reusable rule.
+- To `ADR`: Hand off when the draft rule depends on first recording one lasting architectural or design decision that the rule alone should not invent.
 
 ### Recording the Handoff
 
-When the result is a rule file, update `.agent/styles/AGENTS.md` in the same change so the catalog matches the working tree.
+The final rule file intentionally does not include a `Next Handoff` section.
 
-When the real question changes to diagnosis, behaviour, implementation, refactoring, or architecture, stop drafting the rule and continue in the correct guide instead of hiding that missing work inside the rule.
+While you are drafting the rule, record the next destination alongside the draft in the surrounding working notes, plan, review comment, or message.
+
+Name one destination listed in this section, state what question the rule draft no longer owns, state what question the next destination now owns, and cite the evidence that makes the transition safe.
+
+If the destination is `.agent/styles/AGENTS.md`, treat it as a required companion catalog update in the same change as the rule file.
+
+If no listed handoff applies yet, keep refining the rule and state what is still missing before work can move.
 
 ## Requirements
 

@@ -13,7 +13,7 @@ An ExampleMappingDoc does not diagnose why the current system is wrong and it do
 - Primary artifact: A self-contained behaviour-clarification document for one story at one visible boundary.
 - Primary consumer: The `BehaviourSpecDoc` author and the person writing or updating acceptance tests.
 - Ready when: Every rule has concrete example coverage, every blocker is explicit or resolved, and the target tests or scenarios are named.
-- Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+- Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
 ## How to Use ExampleMappingDocs and EXAMPLE_MAPPING.md
 
@@ -21,7 +21,7 @@ When you write an ExampleMappingDoc, follow `.agent/EXAMPLE_MAPPING.md` to the l
 
 Use this guide before you clarify any feature or story whose intended behaviour is not precise enough to implement safely. Keep the ExampleMappingDoc open while you work. Update it as rules change, examples are added, blockers are resolved, and handoff decisions change. Do not treat the document as a summary you write at the end.
 
-Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether work should stay here or move to another document or work state.
+Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
 
 Store completed ExampleMappingDocs under `docs/example_maps/` and name them with four-digit, zero-padded names such as `docs/example_maps/0001-array-field-rules.md`.
 
@@ -87,23 +87,25 @@ Use it when: A decision must stay explicit over time so future maintainers can u
 
 ## Handoffs
 
-Only one document owns a question at a time. Use this section to decide when work should arrive in this document, when it should leave it, and how to record that transition.
+This document owns a question only while it is the place where the next missing decision, evidence, or instructions must be added. Use this section to decide whether this document still owns the next unresolved question, which listed destination owns it if not, and what evidence makes the handoff safe now.
 
 ### Incoming Handoffs
 
-- From `InvestigationLog`: Use this guide when diagnosis is complete but intended behaviour is still unclear.
-- From `BehaviourSpecDoc`: Use this guide when proof-ready specification reopens an intended-behaviour question.
-- From `ExecPlan`: Use this guide when implementation reopens an intended-behaviour question.
-- From `RefactorPlan`: Use this guide when refactoring reopens an intended-behaviour question.
+- From `InvestigationLog`: Use this guide when the observed problem and likely cause are already explicit, and the main unresolved question is what behaviour should be accepted at one visible boundary.
+- From `BehaviourSpecDoc`: Use this guide when a specification attempt has already shown the remaining unresolved question is intended behaviour itself, not how to write or prove it.
+- From `ExecPlan`: Use this guide when implementation has already shown the remaining unresolved question is intended behaviour at the boundary, not implementation sequence.
+- From `RefactorPlan`: Use this guide when refactoring has already shown the remaining unresolved question is intended behaviour at the boundary, not structure.
 
 ### Outgoing Handoffs
 
-- To `BehaviourSpecDoc`: Hand off when the rules, examples, and acceptance-test mapping are complete.
-- To `InvestigationLog`: Hand off when the real uncertainty becomes diagnosis instead of behaviour clarification.
+- To `BehaviourSpecDoc`: Hand off when the story, rules, examples, and acceptance-test mapping are explicit enough to stop behaviour clarification, and the remaining unresolved question is how to turn that accepted behaviour into a concrete specification and proof path.
+- To `InvestigationLog`: Hand off when the mapping work shows the remaining unresolved question is what the system is actually doing or why it is failing, not what the intended behaviour should be.
 
 ### Recording the Handoff
 
-Use the `Next Handoff` section to name one valid next document or work state from `Handoffs` and explain why it applies now.
+Use the `Next Handoff` section to name one destination listed in this section.
+
+State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
 If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -143,7 +145,7 @@ Treat these rules as mandatory. If one is missing, the ExampleMappingDoc is inco
 7. Write concrete `Examples` for every rule. Use positive cases, negative cases, and boundary cases where they matter. Record rule coverage in both directions.
 8. Map the behaviour to exact tests or scenarios in `Mapping to Acceptance Tests`. Name the target files and the stable test or scenario names.
 9. Record only real `Open Questions / Blockers`. If a question can be answered from repository evidence, answer it and convert the answer into a rule or an example.
-10. Set `Next Handoff` using `Handoffs` when the question stops being behaviour clarification or becomes ready for the next document or work state.
+10. Set `Next Handoff` using `Handoffs` when the question stops being behaviour clarification or becomes ready for another listed destination.
 11. Complete `Validation and Acceptance` before you stop. Confirm that every rule has example coverage, every example names its rule coverage, the test mapping is explicit, and the document is usable without inventing missing decisions.
 
 ## Communication Rules
@@ -221,7 +223,7 @@ Use this skeleton when you create a new ExampleMappingDoc. Keep it complete enou
     - Primary artifact: A self-contained behaviour-clarification document for one story at one visible boundary.
     - Primary consumer: The `BehaviourSpecDoc` author and the person writing or updating acceptance tests.
     - Ready when: Every rule has concrete example coverage, every blocker is explicit or resolved, and the target tests or scenarios are named.
-    - Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+    - Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
     ## Progress
 
@@ -345,7 +347,9 @@ Use this skeleton when you create a new ExampleMappingDoc. Keep it complete enou
 
     State the next safe handoff using `Handoffs`.
 
-    Name the exact next document or work state and explain why it applies now.
+    Name one exact destination listed in `Handoffs`.
+
+    State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
     If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -364,4 +368,4 @@ Use this skeleton when you create a new ExampleMappingDoc. Keep it complete enou
 
 ## Final Reminder
 
-Example mapping is for clarifying behaviour, not for hiding ambiguity. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next document or work state when the question changes.
+Example mapping is for clarifying behaviour, not for hiding ambiguity. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next listed destination when the unresolved question changes.

@@ -13,7 +13,7 @@ An ArchitectureReview does not own diagnosis of one isolated bug, it does not de
 - Primary artifact: A self-contained architecture risk review for one system or subsystem, including the system model, constraints, findings, mitigation directions, and validation path.
 - Primary consumer: The architect, reviewer, or implementer deciding what structural changes, records, or follow-up work are required next.
 - Ready when: The reviewed boundaries, constraints, findings, mitigation directions, review coverage, and next safe handoff are explicit enough for a beginner to continue without inventing missing review logic.
-- Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+- Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
 ## How to Use ArchitectureReviews and ARCHITECTURE_REVIEW.md
 
@@ -21,7 +21,7 @@ When you write an ArchitectureReview, follow `.agent/ARCHITECTURE_REVIEW.md` to 
 
 Use this guide when the task is to review architecture, resilience, scaling behaviour, supervision behaviour, state ownership, dependency risk, or failure spread across an Elixir or OTP system. Start the ArchitectureReview before deep review work begins. Keep it open while you work. Update it as boundaries become clearer, passes are completed, findings are refined, mitigation directions change, blockers appear, and handoff decisions change. Do not treat the document as a summary you write at the end.
 
-Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether work should stay here or move to another document or work state.
+Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
 
 Review one visible boundary at a time, then repeat the same review loop across supervision trees, dependencies, state boundaries, recovery paths, concurrency chokepoints, discovery paths, and failure propagation paths until no meaningful unreviewed path remains or the remaining gap is recorded as a blocker.
 
@@ -89,22 +89,24 @@ Use it when: A decision must stay explicit over time so future maintainers can u
 
 ## Handoffs
 
-Only one document owns a question at a time. Use this section to decide when work should arrive in this document, when it should leave it, and how to record that transition.
+This document owns a question only while it is the place where the next missing decision, evidence, or instructions must be added. Use this section to decide whether this document still owns the next unresolved question, which listed destination owns it if not, and what evidence makes the handoff safe now.
 
 ### Incoming Handoffs
 
-- From `ADR`: Use this guide when a recorded decision needs follow-up system review.
+- From `ADR`: Use this guide when a lasting design choice is already recorded, and the main unresolved question is how that decision affects system shape, risk, failure spread, or follow-up review.
 
 ### Outgoing Handoffs
 
-- To `ADR`: Hand off when the review establishes a lasting design choice that must be recorded.
-- To `ExecPlan`: Hand off when mitigation requires behaviour-changing implementation.
-- To `RefactorPlan`: Hand off when mitigation is structural and behaviour-preserving.
-- To `InvestigationLog`: Hand off when the remaining uncertainty becomes diagnosis.
+- To `ADR`: Hand off when the review findings and mitigation direction make the lasting design choice explicit, and the remaining unresolved question is how to record that decision so future work can rely on it.
+- To `ExecPlan`: Hand off when the reviewed boundaries, findings, and mitigation direction are explicit enough to stop architectural review, and the remaining unresolved question is how to plan behaviour-changing implementation that reduces the reviewed risk.
+- To `RefactorPlan`: Hand off when the reviewed boundaries, findings, and mitigation direction are explicit enough to stop architectural review, and the remaining unresolved question is how to plan behaviour-preserving structural change that reduces the reviewed risk.
+- To `InvestigationLog`: Hand off when the broader system path is explicit enough to stop architecture review, and the remaining unresolved question is which failure or unexpected behaviour must be diagnosed at a nearer visible boundary.
 
 ### Recording the Handoff
 
-Use the `Next Handoff` section to name one valid next document or work state from `Handoffs` and explain why it applies now.
+Use the `Next Handoff` section to name one destination listed in this section.
+
+State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
 If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -417,7 +419,7 @@ Use this skeleton when you create a new ArchitectureReview. Keep it complete eno
     - Primary artifact: A self-contained architecture risk review for one system or subsystem, including the system model, constraints, findings, mitigation directions, and validation path.
     - Primary consumer: The architect, reviewer, or implementer deciding what structural changes, records, or follow-up work are required next.
     - Ready when: The reviewed boundaries, constraints, findings, mitigation directions, review coverage, and next safe handoff are explicit enough for a beginner to continue without inventing missing review logic.
-    - Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+    - Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
     ## Progress
 
@@ -562,7 +564,9 @@ Use this skeleton when you create a new ArchitectureReview. Keep it complete eno
 
     State the next safe handoff using `Handoffs`.
 
-    Name the exact next document or work state and explain why it applies now.
+    Name one exact destination listed in `Handoffs`.
+
+    State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
     If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -581,4 +585,4 @@ Use this skeleton when you create a new ArchitectureReview. Keep it complete eno
 
 ## Final Reminder
 
-An ArchitectureReview is for making system shape, risk, and mitigation direction explicit. It is not for guessing, hiding uncertainty, or leaving structural decisions to the next person. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next document or work state when the question changes.
+An ArchitectureReview is for making system shape, risk, and mitigation direction explicit. It is not for guessing, hiding uncertainty, or leaving structural decisions to the next person. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next listed destination when the unresolved question changes.

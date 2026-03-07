@@ -13,7 +13,7 @@ A RefactorPlan does not diagnose why the current system is wrong and it does not
 - Primary artifact: A self-contained refactor specification for one behaviour-preserving change, including the current code shape, smell and technique grounding, concrete work sequence, and proof that observable behaviour remains the same.
 - Primary consumer: The implementer carrying out the refactor and the reviewer checking that the chosen smells, techniques, and proof path are sound.
 - Ready when: The behaviour boundary, current code shape, smells, techniques, concrete steps, and validation path are explicit enough for a beginner to refactor safely without inventing missing decisions.
-- Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+- Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
 ## How to Use RefactorPlans and REFACTOR_PLANS.md
 
@@ -21,7 +21,7 @@ When you write a RefactorPlan, follow `.agent/REFACTOR_PLANS.md` to the letter. 
 
 Use this guide when the job is to improve structure without intentionally changing observable behaviour. Keep the RefactorPlan open while you work. Update it as the current code shape becomes clearer, smells are confirmed, techniques are chosen, experiments succeed or fail, blockers appear, and handoff decisions change. Do not treat the document as a summary you write at the end.
 
-Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether work should stay here or move to another document or work state.
+Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
 
 Store completed RefactorPlans under `docs/refactor_plans/` and name them with four-digit, zero-padded names such as `docs/refactor_plans/0001-short-title.md`.
 
@@ -87,28 +87,30 @@ Use it when: A decision must stay explicit over time so future maintainers can u
 
 ## Handoffs
 
-Only one document owns a question at a time. Use this section to decide when work should arrive in this document, when it should leave it, and how to record that transition.
+This document owns a question only while it is the place where the next missing decision, evidence, or instructions must be added. Use this section to decide whether this document still owns the next unresolved question, which listed destination owns it if not, and what evidence makes the handoff safe now.
 
 ### Incoming Handoffs
 
-- From `InvestigationLog`: Use this guide when diagnosis is complete and the next work should preserve observable behaviour.
-- From `ExampleMappingDoc`: Use this guide when accepted behaviour is clear enough to support a behaviour-preserving refactor.
-- From `BehaviourSpecDoc`: Use this guide when accepted behaviour and proof are clear enough to support a behaviour-preserving refactor.
-- From `ArchitectureReview`: Use this guide when mitigation is structural and behaviour-preserving.
-- From `ADR`: Use this guide when a recorded decision needs behaviour-preserving structural work.
+- From `InvestigationLog`: Use this guide when the failure diagnosis and behaviour boundary are already explicit, and the main unresolved question is how to sequence behaviour-preserving structural change.
+- From `ExampleMappingDoc`: Use this guide when the accepted behaviour at the visible boundary is already explicit enough to protect, and the main unresolved question is how to sequence behaviour-preserving structural change.
+- From `BehaviourSpecDoc`: Use this guide when the accepted behaviour and proof boundary are already explicit enough to protect, and the main unresolved question is how to sequence behaviour-preserving structural change.
+- From `ArchitectureReview`: Use this guide when the system risk and mitigation direction are already explicit, and the main unresolved question is how to plan structural change that preserves observable behaviour while reducing that risk.
+- From `ADR`: Use this guide when the lasting design choice is already recorded, and the main unresolved question is how to plan behaviour-preserving structural change that applies that decision.
 
 ### Outgoing Handoffs
 
-- To refactor implementation: Hand off when the refactor sequence is ready to execute.
-- To `InvestigationLog`: Hand off when refactoring reopens a diagnosis question.
-- To `ExampleMappingDoc`: Hand off when refactoring reopens an intended-behaviour question.
-- To `BehaviourSpecDoc`: Hand off when refactoring reopens a proof-ready specification question.
-- To `ExecPlan`: Hand off when the work stops being behaviour-preserving.
-- To `ADR`: Hand off when the refactor creates a lasting design decision.
+- To direct behaviour-preserving refactor changes in the working tree: Hand off when the behaviour boundary, code-shape analysis, edit sequence, validation, and restart notes are explicit enough to stop refactor planning, and the remaining unresolved question is how to carry out those behaviour-preserving changes in the working tree.
+- To `InvestigationLog`: Hand off when the refactor plan is explicit enough to show the remaining unresolved question is what failure or unexpected behaviour is actually happening, not how to sequence structural change.
+- To `ExampleMappingDoc`: Hand off when the refactor plan is explicit enough to show the remaining unresolved question is what behaviour should be accepted at the visible boundary, not how to sequence structural change.
+- To `BehaviourSpecDoc`: Hand off when the refactor plan is explicit enough to show the remaining unresolved question is how accepted behaviour should be specified and proved, not how to sequence structural change.
+- To `ExecPlan`: Hand off when the refactor plan is explicit enough to show the remaining unresolved question is how to plan behaviour-changing implementation because the work no longer preserves behaviour.
+- To `ADR`: Hand off when the refactor plan is explicit enough to show the remaining unresolved question is which lasting architectural or design decision must be recorded for future work.
 
 ### Recording the Handoff
 
-Use the `Next Handoff` section to name one valid next document or work state from `Handoffs` and explain why it applies now.
+Use the `Next Handoff` section to name one destination listed in this section.
+
+State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
 If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -213,7 +215,7 @@ Use this skeleton when you create a new RefactorPlan. Keep it complete enough th
 
         **Blocked.** The refactor need is known, but one or more blockers still prevent safe structural change.
 
-        **Ready for Refactor.** The code shape, smells, techniques, and proof path are complete enough to execute safely.
+        **Ready for Direct Refactor Changes.** The behaviour boundary, code-shape analysis, edit sequence, validation, and restart notes are explicit enough to stop planning and start behaviour-preserving changes in the working tree.
 
         **Resolved.** The refactor is complete and the checks that prove behaviour preservation are recorded below.
 
@@ -228,7 +230,7 @@ Use this skeleton when you create a new RefactorPlan. Keep it complete enough th
     - Primary artifact: A self-contained refactor specification for one behaviour-preserving change, including the current code shape, smell and technique grounding, concrete work sequence, and proof that observable behaviour remains the same.
     - Primary consumer: The implementer carrying out the refactor and the reviewer checking that the chosen smells, techniques, and proof path are sound.
     - Ready when: The behaviour boundary, current code shape, smells, techniques, concrete steps, and validation path are explicit enough for a beginner to refactor safely without inventing missing decisions.
-    - Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+    - Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
     ## Progress
 
@@ -355,7 +357,9 @@ Use this skeleton when you create a new RefactorPlan. Keep it complete enough th
 
     State the next safe handoff using `Handoffs`.
 
-    Name the exact next document or work state and explain why it applies now.
+    Name one exact destination listed in `Handoffs`.
+
+    State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
     If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -374,4 +378,4 @@ Use this skeleton when you create a new RefactorPlan. Keep it complete enough th
 
 ## Final Reminder
 
-Refactoring is for making structure safer and clearer without silently changing behaviour. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next document or work state when the question changes.
+Refactoring is for making structure safer and clearer without silently changing behaviour. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next listed destination when the unresolved question changes.

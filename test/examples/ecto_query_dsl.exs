@@ -2417,9 +2417,19 @@ defmodule EctoShorts.QueryFiltersTest do
 
       {:ok, author1} = TestRepo.insert(%EctoShorts.TestUser{first_name: "John"})
       {:ok, author2} = TestRepo.insert(%EctoShorts.TestUser{first_name: "Jane"})
-      {:ok, _post1} = TestRepo.insert(%EctoShorts.TestPost{title: "Match", published: true, author_id: author1.id})
-      {:ok, _post2} = TestRepo.insert(%EctoShorts.TestPost{title: "Wrong Author", published: true, author_id: author2.id})
-      {:ok, _post3} = TestRepo.insert(%EctoShorts.TestPost{title: "Wrong Published", published: false, author_id: author1.id})
+
+      {:ok, _post1} =
+        TestRepo.insert(%EctoShorts.TestPost{title: "Match", published: true, author_id: author1.id})
+
+      {:ok, _post2} =
+        TestRepo.insert(%EctoShorts.TestPost{title: "Wrong Author", published: true, author_id: author2.id})
+
+      {:ok, _post3} =
+        TestRepo.insert(%EctoShorts.TestPost{
+          title: "Wrong Published",
+          published: false,
+          author_id: author1.id
+        })
 
       query =
         from(p in EctoShorts.TestPost,
@@ -3863,7 +3873,13 @@ defmodule EctoShorts.QueryFiltersTest do
 
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post", author: %EctoShorts.TestUser{first_name: "John"} = loaded_author}] = results
+      assert [
+               %EctoShorts.TestPost{
+                 title: "Post",
+                 author: %EctoShorts.TestUser{first_name: "John"} = loaded_author
+               }
+             ] = results
+
       assert Enum.sort(Enum.map(loaded_author.posts, & &1.title)) == ["Nested Post", "Post"]
     end
 
@@ -3885,7 +3901,8 @@ defmodule EctoShorts.QueryFiltersTest do
 
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post 1", author: %EctoShorts.TestUser{first_name: "John"}}] = results
+      assert [%EctoShorts.TestPost{title: "Post 1", author: %EctoShorts.TestUser{first_name: "John"}}] =
+               results
     end
 
     test "Rule Statement 11: preload from positional binding" do
@@ -3905,7 +3922,8 @@ defmodule EctoShorts.QueryFiltersTest do
 
       results = TestRepo.all(query)
 
-      assert [%EctoShorts.TestPost{title: "Post 1", author: %EctoShorts.TestUser{first_name: "John"}}] = results
+      assert [%EctoShorts.TestPost{title: "Post 1", author: %EctoShorts.TestUser{first_name: "John"}}] =
+               results
     end
 
     test "Rule Statement 12: preload from binding and nested" do

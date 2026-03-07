@@ -13,7 +13,7 @@ A BehaviourSpecDoc does not diagnose why the current system is wrong and it does
 - Primary artifact: A self-contained, proof-ready behaviour specification for one story or change at one visible boundary.
 - Primary consumer: The ExecPlan author and the person writing or updating the runnable proof.
 - Ready when: The behaviour source, vocabulary, specification, proof mapping, and validation path are explicit enough for a beginner to implement without inventing behaviour.
-- Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+- Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
 ## How to Use BehaviourSpecDocs and BEHAVIOURS.md
 
@@ -21,7 +21,7 @@ When you write a BehaviourSpecDoc, follow `.agent/BEHAVIOURS.md` to the letter. 
 
 Use this guide after intended behaviour is accepted but before implementation planning begins. Keep the BehaviourSpecDoc open while you work. Update it as the behaviour source is confirmed, vocabulary is refined, proof targets are chosen, blockers are resolved, and handoff decisions change. Do not treat the document as a summary you write at the end.
 
-Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether work should stay here or move to another document or work state.
+Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
 
 Store completed BehaviourSpecDocs under `docs/behaviour_specs/` and name them with four-digit, zero-padded names such as `docs/behaviour_specs/0001-short-title.md`.
 
@@ -87,25 +87,27 @@ Use it when: A decision must stay explicit over time so future maintainers can u
 
 ## Handoffs
 
-Only one document owns a question at a time. Use this section to decide when work should arrive in this document, when it should leave it, and how to record that transition.
+This document owns a question only while it is the place where the next missing decision, evidence, or instructions must be added. Use this section to decide whether this document still owns the next unresolved question, which listed destination owns it if not, and what evidence makes the handoff safe now.
 
 ### Incoming Handoffs
 
-- From `InvestigationLog`: Use this guide when diagnosis and expected behaviour are already explicit.
-- From `ExampleMappingDoc`: Use this guide when the rules and examples are accepted and ready for proof-ready specification.
-- From `ExecPlan`: Use this guide when implementation reopens a proof-ready specification question.
-- From `RefactorPlan`: Use this guide when refactoring reopens a proof-ready specification question.
+- From `InvestigationLog`: Use this guide when the failure diagnosis and expected outcome are already explicit, and the main unresolved question is how to write the accepted behaviour as a concrete specification and proof path at one visible boundary.
+- From `ExampleMappingDoc`: Use this guide when the story, rules, examples, and acceptance intent are already explicit, and the main unresolved question is how to turn them into a concrete specification and proof path at one visible boundary.
+- From `ExecPlan`: Use this guide when the implementation attempt has already shown that the remaining unresolved question is not sequencing but how the behaviour should be specified and proved at the visible boundary.
+- From `RefactorPlan`: Use this guide when the refactor plan has already shown that the remaining unresolved question is not structure but how the behaviour should be specified and proved at the visible boundary.
 
 ### Outgoing Handoffs
 
-- To `ExecPlan`: Hand off when implementation planning should begin.
-- To `RefactorPlan`: Hand off when accepted behaviour is explicit and the next work is behaviour-preserving structural change.
-- To `ExampleMappingDoc`: Hand off when an intended-behaviour question reopens.
-- To `InvestigationLog`: Hand off when the real uncertainty becomes diagnosis.
+- To `ExecPlan`: Hand off when the behaviour source, specification, and proof mapping are explicit enough to stop specification work, and the remaining unresolved question is how to plan behaviour-changing implementation.
+- To `RefactorPlan`: Hand off when the accepted behaviour and proof boundary are explicit enough to stop specification work, and the remaining unresolved question is how to plan behaviour-preserving structural change.
+- To `ExampleMappingDoc`: Hand off when the current specification draft shows the remaining unresolved question is what the intended behaviour should be, not how to express or prove it.
+- To `InvestigationLog`: Hand off when the current specification draft shows the remaining unresolved question is what is actually happening in the system, not how accepted behaviour should be expressed or proved.
 
 ### Recording the Handoff
 
-Use the `Next Handoff` section to name one valid next document or work state from `Handoffs` and explain why it applies now.
+Use the `Next Handoff` section to name one destination listed in this section.
+
+State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
 If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -142,7 +144,7 @@ Treat these rules as mandatory. If one is missing, the BehaviourSpecDoc is incom
 6. Build `Mapping to Proof` so each behaviour statement points to exact files, stable scenario or test names, runner commands, and expected observable outcomes.
 7. Record `Concrete Steps` that show how to inspect the current behaviour, create or update the proof, rerun it, and safely restart the work if a step fails halfway.
 8. Keep `Progress`, `Surprises & Discoveries`, `Decision Log`, `Open Questions / Blockers`, and `Next Handoff` up to date as the document evolves.
-9. Set `Next Handoff` using `Handoffs` when the work is ready for the next document or when the question stops being proof-ready specification.
+9. Set `Next Handoff` using `Handoffs` when the work is ready for another listed destination or when the question stops being proof-ready specification.
 10. Complete `Validation and Acceptance` before you stop. Confirm that the behaviour source is explicit, the vocabulary is stable, the specification is concrete, the proof mapping is exact, and a beginner could implement the proof and the change without making new behaviour decisions.
 
 ## Communication Rules
@@ -224,7 +226,7 @@ Use this skeleton when you create a new BehaviourSpecDoc. Keep it complete enoug
     - Primary artifact: A self-contained, proof-ready behaviour specification for one story or change at one visible boundary.
     - Primary consumer: The ExecPlan author and the person writing or updating the runnable proof.
     - Ready when: The behaviour source, vocabulary, specification, proof mapping, and validation path are explicit enough for a beginner to implement without inventing behaviour.
-    - Hands off to: See `Handoffs` for the valid next document or work state and the condition for using it.
+    - Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
     ## Progress
 
@@ -345,7 +347,9 @@ Use this skeleton when you create a new BehaviourSpecDoc. Keep it complete enoug
 
     State the next safe handoff using `Handoffs`.
 
-    Name the exact next document or work state and explain why it applies now.
+    Name one exact destination listed in `Handoffs`.
+
+    State what question this document no longer owns, what question the next destination now owns, and what evidence or completed sections make the handoff safe now.
 
     If no listed handoff applies yet, stay in the current document and state what is still missing before work can move.
 
@@ -364,4 +368,4 @@ Use this skeleton when you create a new BehaviourSpecDoc. Keep it complete enoug
 
 ## Final Reminder
 
-Behaviour specification is for turning accepted behaviour into proof-ready guidance, not for hiding ambiguity or implementation guesses. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next document or work state when the question changes.
+Behaviour specification is for turning accepted behaviour into proof-ready guidance, not for hiding ambiguity or implementation guesses. Use `Document Relationships` to confirm what this guide owns. Use `Handoffs` to choose the next listed destination when the unresolved question changes.
