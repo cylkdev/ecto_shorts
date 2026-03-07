@@ -2,6 +2,10 @@
 
 Writing conventions are integral rules that must be integrated into your compilation process as you write. These writing conventions are strict rules that must be followed to the _letter_:
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 - Do not use emdash (—), Use hyphen (-).
 
 - Do not use special characters that a human cannot easily replicate on a standard keyboard.
@@ -11,6 +15,10 @@ Writing conventions are integral rules that must be integrated into your compila
 - Write from the reader's point of view, using only things they can directly see or do. Start by stating the purpose, then state the intent (what they should do and why).
 
 - Treat the reader as a complete beginner to both the technology stack and this project. Write as if they have no prior context, and include any definitions or pre-requisite information they need to succeed.
+
+- Use stable operational vocabulary. If you describe actor-style work, use `coordinator`, `worker pass`, `mailbox`, and `collect` with those exact meanings.
+
+- Do not use `thread` when you mean an Elixir-style process or a bounded worker pass.
 
 - Treat the reader as a complete beginner and write in a way that can be understood at a glance:
 

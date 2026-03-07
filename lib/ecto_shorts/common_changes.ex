@@ -7,7 +7,7 @@ defmodule EctoShorts.CommonChanges do
   values. All functions accept an `Ecto.Changeset` and return an
   `Ecto.Changeset`, making them composable in changeset pipelines.
 
-  ## Getting started
+  ## Add helpers to a changeset
 
   Preload and cast an association:
 

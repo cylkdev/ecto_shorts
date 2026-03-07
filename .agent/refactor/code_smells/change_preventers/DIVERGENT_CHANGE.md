@@ -1,5 +1,9 @@
 # Divergent Change
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Change Preventers
@@ -153,7 +157,7 @@ end
 
 - **Extract Module**: Split the module by responsibility or reason for change.
 - **Move Function**: Relocate functions to appropriate domain modules.
-- **Separate Layers**: Create distinct modules for data access, business logic, and presentation.
+- Split data access, business logic, and presentation concerns into distinct modules when they change for different reasons.
 
 ## Why Refactor
 

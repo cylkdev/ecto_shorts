@@ -1,5 +1,9 @@
 # Use Concrete Action Verbs for Instructions
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Purpose
 
 Use this rule when the reader must do something. This includes checklists, procedures, step-by-step guides, playbooks, runbooks, task lists, and acceptance steps.
@@ -15,78 +19,6 @@ If the sentence tells the reader to do something, write it as a concrete action.
 If the sentence explains, defines, or clarifies something, write it as plain description.
 
 Match the sentence style to its job.
-
-## Definitions
-
-### Instruction
-
-An instruction tells the reader to perform an action.
-
-Examples:
-
-    - Run `mix test`.
-    - Open `lib/my_app/example.ex`.
-    - Copy the failing output into your notes.
-
-### Explanation
-
-An explanation helps the reader understand something. It does not tell the reader to perform an action.
-
-Examples:
-
-    - This test verifies that the function returns the expected value for invalid input.
-    - The repository root is the directory that contains the project's `mix.exs`.
-    - This change matters because it keeps query construction in one visible shape.
-
-### Concrete Action Verb
-
-A concrete action verb names a specific action the reader can directly perform or observe.
-
-Examples:
-
-    - run
-    - open
-    - copy
-    - paste
-    - write
-    - choose
-    - select
-    - change
-    - edit
-    - verify
-
-### Abstract Process Verb
-
-An abstract process verb names a general responsibility or outcome, but does not tell the reader exactly what to do next.
-
-Examples:
-
-    - handle
-    - address
-    - manage
-    - ensure
-
-### Context-Specific Capture Verb
-
-A context-specific capture verb can be acceptable when the sentence names both what to capture and where it belongs.
-
-Examples:
-
-    - Record the decision in the Decision Log.
-    - Document the reason in the plan note at the bottom of the file.
-    - Log the failing command in your notes.
-
-### Executor-Facing
-
-Executor-facing writing is written for the person doing the task. It uses actions that person can actually take.
-
-Good executor-facing instruction:
-
-    - Copy the error message into your notes.
-
-Not executor-facing enough:
-
-    - Handle the error documentation.
 
 ## When to Use This Rule
 
@@ -127,6 +59,7 @@ Start each task step or checklist item with a verb that names the exact action.
 
 - Use direct task verbs that tell the reader exactly what to do.
 - Start each checklist item with a concrete action such as `run`, `copy`, `paste`, `write`, `choose`, `select`, `change`, `edit`, or `verify`.
+- Use actor-style verbs such as `fan out`, `collect`, `compare`, or `return` only when the sentence also names what is being delegated, collected, compared, or returned.
 - Use concrete executor-facing actions, not abstract process verbs.
 - Use `record`, `document`, or `log` only when the step names both what to capture and where it belongs.
 - Avoid vague process verbs such as `handle`, `address`, `manage`, or `ensure`.
@@ -230,6 +163,11 @@ Write:
 Acceptable when fully specified:
 
     - Record the decision in the Decision Log.
+
+Acceptable actor-style instruction when fully specified:
+
+    - Fan out worker passes across the target files after the file list is fixed.
+    - Collect the worker-pass results in `Progress` before you choose the next step.
 
 ### More Rewrites
 

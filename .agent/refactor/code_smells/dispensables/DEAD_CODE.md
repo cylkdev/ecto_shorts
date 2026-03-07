@@ -1,5 +1,9 @@
 # Dead Code
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Dispensables
@@ -145,10 +149,10 @@ mix coveralls.html
 
 ## Treatment
 
-- **Delete It**: Remove the dead code. Version control preserves history.
-- **Remove Commented Code**: If it's commented out, delete it.
-- **Simplify Conditionals**: Remove impossible branches.
-- **Clean Up Unused Variables**: Remove or use them.
+- Remove the dead code. Version control preserves history.
+- If the code is commented out, delete it instead of keeping it inline.
+- Remove impossible branches once they are proven unreachable.
+- Remove or use unused variables so they do not obscure live paths.
 
 ## Why Refactor
 
@@ -183,6 +187,6 @@ mix coveralls.html
 
 ## Related Refactoring Techniques
 
-- `Remove Dead Code`
 - `Collapse Module Hierarchy`
+- `Inline Module`
 - `Inline Function`

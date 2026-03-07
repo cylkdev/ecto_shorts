@@ -3,7 +3,7 @@ defmodule EctoShorts.CommonFilters do
   @moduledoc """
   Builds `Ecto.Query` structs from maps and keyword lists.
 
-  ## Getting started
+  ## Build a query from params
 
   The simplest way to build a query is to call `convert_params_to_filter/3` with
   parameters you want to filter by.

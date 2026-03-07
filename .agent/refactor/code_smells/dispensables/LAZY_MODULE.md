@@ -1,5 +1,9 @@
 # Lazy Module
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Dispensables
@@ -78,7 +82,7 @@ end
 
 - **Inline Module**: Move the module's functions into a related module.
 - **Collapse Module Hierarchy**: Merge with parent or sibling module.
-- **Delete Module**: If it only wraps standard library functions, remove it.
+- If it only wraps standard library functions, remove the wrapper boundary entirely.
 
 ## Why Refactor
 

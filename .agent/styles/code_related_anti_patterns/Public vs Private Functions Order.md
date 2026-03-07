@@ -8,6 +8,11 @@ A private function is only for code inside the same module. In Elixir it starts 
 This order matters because it helps a reader understand the module quickly.
 
 When someone opens a module, they usually want to know:
+
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 1. What can I call from the outside?
 2. How does it work on the inside?
 

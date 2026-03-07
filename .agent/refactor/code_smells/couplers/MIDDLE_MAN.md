@@ -1,5 +1,9 @@
 # Middle Man
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Couplers
@@ -166,8 +170,8 @@ end
 
 - **Remove Middle Man**: Let callers use the underlying module directly.
 - **Inline Module**: Merge the middle man into its caller or delegate.
-- **Add Value**: If the layer should exist, add logging, validation, events, or caching.
-- **Use defdelegate**: Make pure delegation explicit and intentional.
+- If the layer should exist, give it real value such as logging, validation, events, or caching.
+- Use `defdelegate` when pure delegation should stay explicit and intentional.
 
 ## Why Refactor
 

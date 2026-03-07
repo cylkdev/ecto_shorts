@@ -1,5 +1,9 @@
 # Remove Setter Function
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## When to use
 
 Use when any of the following are true:
@@ -50,5 +54,5 @@ def cancel_order(order), do: %{order | status: :cancelled}
 
 ## Eliminates Code Smell
 
-- `Data Class`
+- `Data Module`
 - `Inappropriate Intimacy`

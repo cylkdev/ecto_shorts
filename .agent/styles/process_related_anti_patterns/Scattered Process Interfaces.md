@@ -1,5 +1,9 @@
 # Scattered Process Interfaces
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 When direct interactions with a process are spread across many modules (multiple call sites doing `Agent.get/update`, `GenServer.call/cast`, raw `send/2`, etc.), the system becomes harder to maintain and more bug-prone:

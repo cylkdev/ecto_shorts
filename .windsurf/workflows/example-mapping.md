@@ -13,6 +13,6 @@ Follow `.agent/EXAMPLE_MAPPING.md` exactly. Do not duplicate or reinterpret the 
 
 1. Read `.agent/EXAMPLE_MAPPING.md`.
 
-2. Use the ExampleMappingDoc output location and naming rules defined in `.agent/EXAMPLE_MAPPING.md`.
+2. Read `.agent/OUTPUTS.md` to get the canonical ExampleMappingDoc output location and naming rules.
 
 3. Execute the example mapping workflow exactly as written in `.agent/EXAMPLE_MAPPING.md`.

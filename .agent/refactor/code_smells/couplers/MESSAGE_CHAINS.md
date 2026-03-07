@@ -1,12 +1,16 @@
 # Message Chains
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Couplers
 
 ## Description
 
-A sequence of calls where one function calls another, which calls another, forming a chain. The caller must know the entire structure of intermediate objects to navigate to the final value. This creates tight coupling to the internal structure of multiple modules.
+A sequence of calls where one function calls another, which calls another, forming a chain. The caller must know the entire structure of intermediate values to navigate to the final value. This creates tight coupling to the internal structure of multiple modules.
 
 ## Signs and Symptoms
 
@@ -162,10 +166,10 @@ end
 The Law of Demeter (or "principle of least knowledge") suggests a function should only call:
 - Functions on its own module
 - Functions on parameters passed to it
-- Functions on objects it creates
+- Functions on values it creates
 - Functions on its direct dependencies
 
-Avoid: `a.b().c().d()` - this violates the law by reaching through multiple objects.
+Avoid: `a.b().c().d()` - this violates the law by reaching through multiple values.
 
 ## Elixir Pipelines vs Message Chains
 

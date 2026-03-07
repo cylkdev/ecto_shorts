@@ -4,6 +4,10 @@ Elixir relies on underscores in different situations.
 
 For example, a value that is not meant to be used must be assigned to `_` or to a variable starting with underscore:
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ```elixir
 {:ok, _contents} = File.read("README.md")
 ```

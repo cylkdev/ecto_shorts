@@ -1,12 +1,16 @@
 # Switch Statements
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Abstraction Abusers
 
 ## Description
 
-Complex conditional logic based on type checking or value discrimination that is scattered across multiple functions or modules. In Elixir, this manifests as repeated `case`, `cond`, or pattern matching on the same discriminator across the codebase, rather than using polymorphism via behaviours or protocols.
+Condition-heavy logic based on type checking or value discrimination that is scattered across multiple functions or modules. In Elixir, this manifests as repeated `case`, `cond`, or pattern matching on the same discriminator across the codebase, rather than using polymorphism via behaviours or protocols.
 
 ## Signs and Symptoms
 
@@ -157,10 +161,9 @@ end
 
 ## Treatment
 
-- **Replace Conditional with Protocol**: Define a protocol and implement it for each variant type.
-- **Replace Conditional with Behaviour**: Use behaviours when variants are modules, not data.
+- **Replace Conditional with Polymorphism**: Use a protocol when variants are different data types, or use behaviours when the variants are modules.
 - **Extract Function**: If the conditional is simple, extract each branch into a named function clause.
-- **Use Pattern Matching Clauses**: Replace `case` with multiple function clauses when appropriate.
+- **Replace Nested Conditional with Guard Clauses**: Replace `case` with multiple function clauses when pattern matching is sufficient.
 
 ## Why Refactor
 
@@ -184,7 +187,7 @@ end
 
 ## Related Refactoring Techniques
 
-- `Replace Conditional with Protocol`
-- `Replace Conditional with Behaviour`
+- `Replace Conditional with Polymorphism`
 - `Extract Function`
+- `Replace Nested Conditional with Guard Clauses`
 - `Introduce Null Object`

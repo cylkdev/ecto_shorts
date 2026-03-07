@@ -1,5 +1,9 @@
 # Hide Delegate
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## When to use
 
 Use when any of the following are true:
@@ -49,7 +53,7 @@ This improves code in the following ways:
 ## Drawbacks
 
 - Overuse can create too many forwarding functions.
-- Excessive forwarding can introduce a middle module smell.
+- Excessive forwarding can introduce a middle man smell.
 
 ## How to Refactor
 

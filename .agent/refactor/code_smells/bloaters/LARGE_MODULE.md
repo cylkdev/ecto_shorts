@@ -1,5 +1,9 @@
 # Large Module
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Bloaters
@@ -90,7 +94,7 @@ end
 - **Extract Module**: Move related functions into dedicated modules.
 - **Move Function**: Relocate functions to modules where they belong.
 - **Extract Behaviour**: If the module implements multiple interfaces, separate them.
-- **Group by Domain**: Organize modules by business domain, not technical layer.
+- Group related modules by business domain instead of technical layer names.
 
 ## Why Refactor
 

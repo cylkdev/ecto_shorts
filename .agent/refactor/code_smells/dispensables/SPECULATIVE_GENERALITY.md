@@ -1,5 +1,9 @@
 # Speculative Generality
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Dispensables
@@ -133,8 +137,8 @@ end
 - **Collapse Module Hierarchy**: Remove abstract layers with single implementations.
 - **Inline Module**: Merge the abstraction into its only consumer.
 - **Remove Parameter**: Delete unused or always-same-value parameters.
-- **Remove Dead Code**: Delete unused branches and callbacks.
-- **Rename to Specific**: Change generic names to reflect actual usage.
+- Delete unused branches and callbacks.
+- Rename generic abstractions to the specific role they actually play.
 
 ## Why Refactor
 

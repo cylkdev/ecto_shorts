@@ -1,5 +1,9 @@
 # Prefer Specific Module Names Over alias as
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Using `alias ... as: ...` for modules you control in the codebase is a sign of a naming problem in the codebase.

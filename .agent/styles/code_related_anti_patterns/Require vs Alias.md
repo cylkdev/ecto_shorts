@@ -6,6 +6,10 @@ Use `alias` when you want a shorter name for a module. An alias only changes how
 
 Use `require` when you want to call macros from a module. A macro is code that runs at compile time. Elixir requires you to `require` the module before you can use its macros (unless you `import` them).
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Guidelines
 
 - Put all `alias` lines together in one block.

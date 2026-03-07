@@ -1,5 +1,9 @@
 # Large Code Generation
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Macros that generate a lot of code per invocation can make compilation slower and compiled artifacts larger. This frequently shows up in DSL-style macros that are called hundreds of times (for example, router declarations).

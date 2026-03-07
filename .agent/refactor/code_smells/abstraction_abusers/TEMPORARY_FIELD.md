@@ -1,5 +1,9 @@
 # Temporary Field
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Abstraction Abusers
@@ -174,9 +178,9 @@ end
 
 ## Treatment
 
-- **Extract Struct**: Create separate structs for each state or phase.
+- Split phase-specific data into separate structs when the states differ materially.
 - **Replace Data Value with Struct**: Move temporary data into a dedicated struct.
-- **Use State Machine Pattern**: Model state transitions explicitly.
+- Model state transitions explicitly when the workflow has real states.
 - **Introduce Null Object**: For optional associated data, use a null object pattern.
 
 ## Why Refactor

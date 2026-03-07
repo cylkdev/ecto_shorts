@@ -5,16 +5,16 @@ description: Runs Dialyzer for the relevant Elixir Mix project, fixes static ana
 
 ## When to use
 
-Use this skill after changing Elixir code, types, specs, behaviours, or function return shapes and you need to verify static analysis with Dialyzer.
+Use this skill when the current unresolved question is how to verify static analysis with Dialyzer after Elixir changes.
 
 ## When not to use
 
-Do **not** use this skill to run Credo or tests. Use the matching skills for those tools instead.
+Do **not** use this skill when the current unresolved question is Credo or test verification. Use the matching skill instead.
 
 ## What to do
 
 1. Read `.windsurf/workflows/run-dialyzer.md`.
 
-2. Use `.windsurf/workflows/run-dialyzer.md` as the source of truth for the exact step-by-step procedure.
+2. Treat `.windsurf/workflows/run-dialyzer.md` as the source of truth.
 
 3. Execute that workflow exactly as written.

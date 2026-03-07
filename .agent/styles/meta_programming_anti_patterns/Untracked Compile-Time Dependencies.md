@@ -1,5 +1,9 @@
 # Untracked Compile-Time Dependencies
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Elixir's incremental compilation relies on the compiler being able to see module references. If you generate module names programmatically (for example, with `Module.concat/2` or raw alias-atoms), you can bypass dependency tracking. This can lead to inconsistent recompiles (a dependency changes, but the caller is not recompiled).

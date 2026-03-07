@@ -38,7 +38,7 @@ defmodule EctoShorts.Dynamics do
   `:query_fields` reflection is used to warn on unknown filter keys
   rather than silently ignoring them.
 
-  ## Getting started
+  ## Build dynamic expressions
 
       import Ecto.Query
 

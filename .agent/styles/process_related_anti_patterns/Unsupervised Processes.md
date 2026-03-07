@@ -1,5 +1,9 @@
 # Unsupervised Processes
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Starting long-running processes outside a supervision tree makes their lifecycle harder to observe and control:

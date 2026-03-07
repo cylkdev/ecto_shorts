@@ -1,5 +1,9 @@
 # Extract Function
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## When to use
 
 Use when any of the following are true:
@@ -122,17 +126,17 @@ The refactoring is successful if all of the following are true:
 - `Switch Statements`
 - `Message Chains`
 - `Comments`
-- `Data Class`
+- `Data Module`
 
 ## Similar Refactoring Techniques
 
-- `Move Method`
+- `Move Function`
 
 ## Helps Other Refactoring Techniques
 
-- `Introduce Parameter Object`
-- `Form Template Method`
-- `Parameterize Method `
+- `Introduce Parameter Struct`
+- `Form Template Function`
+- `Parameterize Function`
 
 ## Anti-Refactoring
 

@@ -1,5 +1,9 @@
 # Comments
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Dispensables
@@ -115,10 +119,10 @@ end
 ## Treatment
 
 - **Extract Function**: Replace commented code blocks with well-named functions.
-- **Rename Variable**: Use descriptive names instead of comments explaining variables.
-- **Introduce Explaining Variable**: Extract complex expressions into named variables.
-- **Delete Commented Code**: Remove dead code; version control preserves history.
-- **Use Module Attributes**: Replace magic number comments with named constants.
+- Use descriptive variable names instead of comments explaining them.
+- **Extract Variable**: Extract complex expressions into named variables.
+- Remove commented-out code; version control already preserves history.
+- **Replace Magic Number with Module Attribute**: Replace magic-number comments with named constants.
 
 ## When Comments Are Valuable
 
@@ -132,7 +136,7 @@ Not all comments are bad. Keep comments that explain:
 ```elixir
 defmodule PaymentProcessor do
   # Stripe requires amounts in cents, not dollars
-  # See: https://stripe.com/docs/currencies#zero-decimal
+  # See: https://stripe.com/.docs/currencies#zero-decimal
   defp to_cents(dollars), do: round(dollars * 100)
 
   # Rate limit: max 100 requests/second per Stripe docs
@@ -178,6 +182,6 @@ end
 ## Related Refactoring Techniques
 
 - `Extract Function`
-- `Rename Variable`
-- `Introduce Explaining Variable`
+- `Extract Variable`
 - `Extract Module`
+- `Replace Magic Number with Module Attribute`

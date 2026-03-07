@@ -1,5 +1,9 @@
 # Accidental Compile-Time Dependencies
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Code outside of functions runs at compile time. If your macro expands into something that references another module outside of a function, you can accidentally make that other module a *compile-time dependency*, even if you only meant it to be a runtime dependency. This can balloon the recompilation graph: changing one module causes many others to recompile.

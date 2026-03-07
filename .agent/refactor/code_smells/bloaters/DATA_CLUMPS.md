@@ -1,5 +1,9 @@
 # Data Clumps
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Bloaters
@@ -130,9 +134,9 @@ end
 
 ## Treatment
 
-- **Extract Struct**: Create a struct to hold the related data.
-- **Introduce Parameter Object**: Replace multiple parameters with a single struct.
-- **Preserve Whole Object**: Pass the struct instead of extracting fields.
+- Group the repeated data into a struct when it regularly travels together.
+- **Introduce Parameter Struct**: Replace multiple parameters with a single struct.
+- **Preserve Whole Struct**: Pass the struct instead of extracting fields.
 - **Move Function**: If functions primarily operate on the clump, move them to the new module.
 
 ## Why Refactor
@@ -160,6 +164,6 @@ Look for these patterns:
 ## Related Refactoring Techniques
 
 - `Extract Module`
-- `Introduce Parameter Object`
-- `Preserve Whole Object`
+- `Introduce Parameter Struct`
+- `Preserve Whole Struct`
 - `Move Function`

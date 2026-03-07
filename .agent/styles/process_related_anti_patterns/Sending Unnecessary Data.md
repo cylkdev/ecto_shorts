@@ -1,5 +1,9 @@
 # Sending Unnecessary Data
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Message passing copies data between processes. Large messages can be CPU- and memory-expensive. This includes:

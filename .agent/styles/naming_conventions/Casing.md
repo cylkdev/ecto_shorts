@@ -3,6 +3,10 @@
 Use `snake_case` when defining variables, function names, module attributes, and the like
 in elixir:
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ```elixir
 some_map = %{this_is_a_key: "and a value"}
 is_map(some_map)

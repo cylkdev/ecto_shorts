@@ -26,7 +26,7 @@ defmodule EctoShorts.Config do
     `EctoShorts.Compiler` generates. Increase when your queries join more than
     three tables. Defaults to `3`.
 
-  ## Getting started
+  ## Configure EctoShorts
 
       # config/config.exs
       import Config

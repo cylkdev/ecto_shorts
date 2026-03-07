@@ -1,5 +1,9 @@
 # Code Organization by Process
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Do not introduce a process just to "organize code". A process should exist because you need runtime properties (serialization, isolation, backpressure, ordering, fault containment, etc.). When you wrap pure computation in a single process (for example, a GenServer), you create an unnecessary single-file bottleneck: every caller must funnel through one mailbox.

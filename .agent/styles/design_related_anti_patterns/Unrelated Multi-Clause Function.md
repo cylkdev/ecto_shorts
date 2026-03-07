@@ -1,5 +1,9 @@
 # Unrelated Multi-Clause Function
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Multi-clause functions are great when each clause is a coherent part of the same concept. They become an anti-pattern when a single function name is used as a dumping ground for unrelated behaviours ("because it's convenient to pattern match").

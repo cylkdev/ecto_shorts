@@ -4,6 +4,10 @@ A trailing bang (exclamation mark) signifies a function or macro where failure c
 
 One example is `File.read/1` and `File.read!/1`. `File.read/1` will return a success or failure tuple, whereas `File.read!/1` will return a plain value or else raise an exception:
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ```elixir
 File.read("file.txt")
 {:ok, "file contents"}

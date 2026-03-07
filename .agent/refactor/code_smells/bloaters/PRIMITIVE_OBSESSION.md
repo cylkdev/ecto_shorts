@@ -1,5 +1,9 @@
 # Primitive Obsession
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Bloaters
@@ -124,10 +128,10 @@ end
 
 ## Treatment
 
-- **Replace Primitive with Struct**: Create a struct to represent the domain concept.
-- **Introduce Type Alias**: Use `@type` to document expected shapes.
-- **Extract Validation**: Move validation into the struct's constructor.
-- **Use `@enforce_keys`**: Ensure required fields are always present.
+- **Replace Data Value with Struct**: Create a struct to represent the domain concept.
+- Use `@type` when a full struct would be too heavy for the problem.
+- Move validation into the value constructor or factory.
+- Use `@enforce_keys` when required fields must always be present.
 
 ## Why Refactor
 
@@ -157,5 +161,5 @@ end
 ## Related Refactoring Techniques
 
 - `Replace Data Value with Struct`
-- `Introduce Parameter Object`
+- `Introduce Parameter Struct`
 - `Extract Module`

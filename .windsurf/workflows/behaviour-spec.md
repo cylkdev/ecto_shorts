@@ -13,6 +13,6 @@ Follow `.agent/BEHAVIOURS.md` exactly. Do not duplicate or reinterpret the behav
 
 1. Read `.agent/BEHAVIOURS.md`.
 
-2. Use the BehaviourSpecDoc output location and naming rules defined in `.agent/BEHAVIOURS.md`.
+2. Read `.agent/OUTPUTS.md` to get the canonical BehaviourSpecDoc output location and naming rules.
 
 3. Execute the behaviour specification workflow exactly as written in `.agent/BEHAVIOURS.md`.

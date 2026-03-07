@@ -6,6 +6,10 @@ Example:
 
 Don't do this:
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ```elixir
 # BAD EXAMPLE, DO NOT DO THIS!
 defmodule MyApp.Chat.Supervisor do

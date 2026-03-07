@@ -1,5 +1,9 @@
 # Using Application Configuration for Libraries
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Libraries should not fetch application configuration to decide how they behave (for example, `Application.fetch_env!/2` inside library functions). It hides dependencies, makes code harder to test, and creates "action at a distance" where behaviour changes based on runtime config.

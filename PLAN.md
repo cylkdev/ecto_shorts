@@ -4,9 +4,22 @@ Each directive and each operator must have full defined behaviours through examp
 Together, the examples must show every valid data shape this API accepts. In other words,
 every possible behaviour that this api has should be covered.
 
+## Task and Key Files
+
+Active task: Define array-field behaviour through example mapping so every distinct accepted data shape and operator combination is covered explicitly.
+
+Key files:
+- `PLAN.md`
+- `research/COMMON_FILTERS.md`
+- `test/examples/ecto_query_dsl.exs`
+
+Document updates to track in the same change:
+- Create or refresh the active ExampleMappingDoc, BehaviourSpecDoc, or ExecPlan when the work hands off to one of those documents.
+- Keep `PLAN.md` and every companion planning document in sync as the task, proof path, or ownership changes.
+
 ## Milestones
 
-Keep the Milestones section up to date as you work. Milestones track your larger portions of work.
+Keep the Milestones section up to date as you work. Milestones track your larger portions of work, including required document creation and companion-document sync when the task changes shape.
 
 ### Array Fields
 
@@ -35,4 +48,6 @@ Keep the progress section up to date as you work.
 [~] in progress
 [x] completed
  
-- [ ] Description goes here...
+- [ ] Create or refresh the active planning document and keep its `Task and Key Files` section current.
+- [ ] Keep `PLAN.md` and every required companion planning document in sync with the current task.
+- [ ] Record the next concrete behaviour, example, or proof step here.

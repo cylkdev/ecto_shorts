@@ -2,6 +2,10 @@
 
 Some names have specific meaning in Elixir. We detail those cases below.
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ### length and size
 
 When you see size in a function name, it means the operation runs in constant time (also written as "O(1) time") because the size is stored alongside the data structure.

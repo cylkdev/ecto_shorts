@@ -21,7 +21,7 @@ defmodule EctoShorts.QueryProvider do
   * **Extend the filter language** - add custom filter keys that map to
     database-specific expressions.
 
-  ## Getting started
+  ## Add fragment-backed filters
 
   By default, fragment resolution is disabled. Enable it by configuring a
   fragment provider:

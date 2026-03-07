@@ -12,6 +12,10 @@ A struct serves two jobs if you put values directly in `defstruct`: it defines t
 
 It also makes runtime defaults explicit. For example, `System.schedulers_online()` depends on the runtime environment. A novice should be able to see that this value is computed when building defaults, not treated like a fixed constant.
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ### Bad example
 
 Do not do this:

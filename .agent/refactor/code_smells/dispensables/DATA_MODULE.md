@@ -1,5 +1,9 @@
 # Data Module
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Dispensables
@@ -21,7 +25,7 @@ A module that contains only data (struct definition and fields) with no behaviou
 - Separating data from behaviour (anemic domain model).
 - Treating Elixir structs like database records without logic.
 - Over-application of "single responsibility" to mean "data OR behaviour."
-- Migrating from languages where data classes are common.
+- Migrating from languages where data-only types are common.
 
 ## Example
 
@@ -150,7 +154,7 @@ A well-designed struct module should include:
 - **DTOs for external APIs**: Structs that map to JSON responses.
 - **Ecto schemas**: Behaviour lives in context modules by convention.
 - **Protocol implementations**: The struct exists to satisfy a protocol.
-- **Configuration structs**: Simple value objects for settings.
+- **Configuration structs**: Simple value structs for settings.
 
 ## Related Smells
 

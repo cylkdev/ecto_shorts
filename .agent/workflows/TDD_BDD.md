@@ -2,6 +2,10 @@
 
 This document describes the workflow for delivering a feature or system change using a combination of Test-Driven Development (TDD) and Behaviour-Driven Development (BDD). Treat the reader as a complete beginner to this repository. They have only the current working tree and this document. There is no memory of prior work and no external context. A novice following this document will take any request, clarify what it means, prove the behaviour with a test before writing any code, and grow the implementation in small, safe steps.
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Why TDD + BDD
 
 Test-driven development is not primarily about writing tests. It is an approach to problem-solving that begins with the end in mind. Writing a test first describes the desired behaviour before the implementation is decided. That single discipline change has three effects that compound over time.
@@ -12,7 +16,7 @@ Second, it guides design. A test that is hard to write is a signal that the code
 
 Third, it makes refactoring safe. A test that fails when behaviour changes means code can be restructured with confidence. If the tests pass after a change, the observable behaviour is preserved.
 
-Outside-in BDD adds one more idea: start from what the user can observe (the boundary) and work inward. The workflow starts with a boundary test that describes the feature from the outside. When that test fails because some inner piece of logic is missing, step inward and write a focused test for that piece. Once the focused test passes, step back out to see if the boundary test has moved forward. This cycle of stepping in and stepping out continues until the boundary test passes, at which point the feature is done.
+Outside-in BDD adds one more idea: start from what the user can observe at the user-observable boundary and work inward. The workflow starts with a boundary test that describes the feature from the outside. When that test fails because some inner piece of logic is missing, step inward and write a focused test for that piece. Once the focused test passes, step back out to see if the boundary test has moved forward. This cycle of stepping in and stepping out continues until the boundary test passes, at which point the feature is done.
 
 The combination of TDD and outside-in BDD provides a clear definition of "done" (the boundary test passes), a safe way to build incrementally (red-green-refactor at every level), and a living record of what the system does (the tests themselves).
 
@@ -20,35 +24,21 @@ The combination of TDD and outside-in BDD provides a clear definition of "done" 
 
 NON-NEGOTIABLE REQUIREMENTS:
 
-1. Drive work from observable behaviour at a boundary. Grow the implementation in small proven slices. Keep a written record of what the system is supposed to do and how you proved it.
+1. Drive work from observable behaviour at a user-observable boundary. Grow the implementation in small proven slices. Keep a written record of what the system is supposed to do and how you proved it.
 
-2. Do not start implementing if the expected behaviour is not fully defined. If multiple reasonable interpretations exist, use an ExampleMapDoc (as described in `.agent/EXAMPLE_MAP_PLANS.md`) to write concrete examples and rules and reach agreement fast. Behaviour is ready to implement when different readers would write the same boundary test for it.
+2. Do not start implementing if the expected behaviour is not fully defined. If multiple reasonable interpretations exist, use an ExampleMappingDoc (as described in `.agent/EXAMPLE_MAPPING.md`) to write concrete examples and rules and reach agreement fast. Behaviour is ready to implement when different readers would write the same boundary test for it.
 
 3. Never write code without a failing test that demands it. If there is no failing test asking for a particular line of code, that line should not exist yet.
 
-## Glossary
+## Actor-Style Coordination
 
-Every term used in this document is defined here. If you encounter a term elsewhere in the document that is not in this glossary, it is being used in its ordinary English sense.
+Use one coordinator per slice. The coordinator owns the current user-observable boundary, the current boundary test, and the decision to step inward or outward. Do not let multiple in-flight test ideas compete for the same slice.
 
-`Boundary` means any place where behaviour can be observed from outside the implementation. Examples include a public function in a library module, an HTTP endpoint, a CLI command's output, a message handler's return value, a job's side effects, or a file written to disk. The boundary is the contract between your code and its callers.
+Once the slice and boundary are stable, the coordinator may fan out bounded worker passes to inspect nearby tests, current public APIs, seed data, collaborators, or proof styles. Worker passes gather facts or draft one bounded artifact. They do not decide the next slice on their own.
 
-`Boundary test` means an automated test that exercises the system through the boundary. It calls the public API, sends the HTTP request, or invokes the CLI command. It knows nothing about the internals. It checks only what went in and what came out.
+Record worker-pass results in a mailbox such as an ExampleMappingDoc, InvestigationLog, BehaviourSpecDoc, or slice notes. Collect the mailbox before you write the next test, widen the command, or change the implementation direction.
 
-`Focused test` means a narrower, unit-level test used after a boundary test reveals a missing behaviour that is easier to drive at a smaller seam. A focused test targets one module or one function rather than the whole feature.
-
-`Seam` means the point in the code where it becomes easier to continue working with focused tests instead of only boundary tests. In a web application, the seam is often the boundary between the web layer (controllers, views, templates) and the business logic layer (contexts, domain modules). In a library, the seam might be the boundary between a public API module and an internal query builder.
-
-`Outside-in testing` means starting from the outermost boundary (what the user observes) and working inward toward the implementation details. Write a boundary test first, then step in to write focused tests only when the boundary test failure points to missing business logic.
-
-`Feature test` means the outermost boundary test for a feature. It describes the complete user-observable outcome. When this test passes, the feature is done.
-
-`Red / Green / Refactor` is the three-step cycle at the heart of TDD. Red means a failing test that expresses one missing fact about the system. Green means the smallest code change has been written to make that test pass. Refactor means restructuring the code to improve its design while keeping the test green. If the test turns red during refactoring, behaviour has changed and the last change must be undone.
-
-`Behaviour specification` means a written description of expected behaviour at a boundary. It states observable outcomes clearly using scenarios, acceptance tests, or plain-language descriptions with concrete inputs and outputs.
-
-`Example document` means a short document of rules and concrete examples used to remove ambiguity before implementing. In this repository, it is produced by following the ExampleMapPlan process described in `.agent/EXAMPLE_MAP_PLANS.md`.
-
-`Concentric circles` is a mental model for outside-in TDD. The outer circle is the boundary test. The inner circle is the focused test. Work starts in the outer circle, steps into the inner circle when needed, and steps back out when the inner work is done. The boundary test is always the final judge of whether the feature works.
+Do not force parallel work into single-writer steps. Writing the active boundary test, choosing the next failing test, and making the code change that turns red to green still belong to one coordinator at a time.
 
 ## The Outside-In Model (Concentric Circles)
 
@@ -103,9 +93,9 @@ Once the focused test passes, step back out to the outer circle and run the boun
 
 After the boundary test passes, refactor the entire feature. This is the refactor step of the outer circle. Restructure code, improve naming, extract helpers, remove duplication, and clean up generated code that is not needed. The boundary test must stay green throughout. If it turns red, behaviour has changed and the last change must be undone.
 
-When the refactor is complete, run the full test suite to confirm nothing else is broken. If everything passes, the feature is done.
+When the refactor is complete, run the wider project checks required by `.agent/PROJECT.md` to confirm nothing else is broken. If everything passes, the feature is done.
 
-This is the rhythm: outer test fails, follow errors, step in when business logic is reached, red-green-refactor inside, step back out, repeat until the outer test passes, refactor the whole feature, run the full suite.
+This is the rhythm: outer test fails, follow errors, step in when business logic is reached, red-green-refactor inside, step back out, repeat until the outer test passes, refactor the whole feature, run the wider project checks, and stop only when they stay green.
 
 ```
   HOW A SINGLE BOUNDARY TEST GETS TO GREEN
@@ -113,7 +103,6 @@ This is the rhythm: outer test fails, follow errors, step in when business logic
 
   You start with one boundary test (the public API test).
   Follow the steps top to bottom. Arrows show where you loop back.
-
 
   1. Run the boundary test
      │
@@ -170,12 +159,11 @@ This is the rhythm: outer test fails, follow errors, step in when business logic
           3. Clean up the whole feature while the test stays green.
              │
              ▼
-          4. Run `mix test` to make sure nothing else broke.
+         4. Run the wider project checks from `.agent/PROJECT.md`.
              │
              ▼
            DONE
 ```
-
 
 ## The Three Loops
 
@@ -185,7 +173,6 @@ This is the rhythm: outer test fails, follow errors, step in when business logic
 
   There are three loops, each one inside the next.
   You spend most of your time in the smallest loop.
-
 
   LOOP 1 - THE WHOLE FEATURE  (runs once)
   ────────────────────────────────────────
@@ -204,7 +191,7 @@ This is the rhythm: outer test fails, follow errors, step in when business logic
   ──────────────────────────────────────────
   Write one boundary test for this slice.
   Run it. It will fail. Now enter Loop 3 to make it pass.
-  When it passes, clean up the code, then run `mix test`.
+  When it passes, clean up the code, then run the wider project checks from `.agent/PROJECT.md`.
 
     For each error, enter Loop 3.
          │
@@ -213,7 +200,7 @@ This is the rhythm: outer test fails, follow errors, step in when business logic
   ──────────────────────────────────────────────────────────
   This is where you spend most of your time.
 
-    1. Read the error from `mix test`
+    1. Read the error from the smallest active test command
     2. Make the smallest change to fix that one error
     3. Run the test again
          │
@@ -234,19 +221,21 @@ What to do inside:
 
 1. Read the request. Restate it in your own words as a one-sentence user story in the form "As a [role], I want [capability], so that [benefit]."
 
-2. Identify the boundary. What is the outermost interface through which this behaviour can be observed? For a library, it is the public function. For a web app, it might be an HTTP endpoint or a page a user visits. For a CLI tool, it is the command's output.
+2. Identify the user-observable boundary. What is the outermost interface through which this behaviour can be observed? For a library, it is the public function. For a web app, it might be an HTTP endpoint or a page a user visits. For a CLI tool, it is the command's output.
 
-3. Check for ambiguity. Could two reasonable people interpret this request differently? If yes, create an ExampleMapDoc (`.agent/EXAMPLE_MAP_PLANS.md`) to write concrete examples and rules until the behaviour is unambiguous. If no, continue.
+3. Check for ambiguity. Could two reasonable people interpret this request differently? If yes, create an ExampleMappingDoc (`.agent/EXAMPLE_MAPPING.md`) to write concrete examples and rules until the behaviour is unambiguous. If no, continue.
 
 4. Decide what kind of work this is. Is it a behaviour change (new feature or bug fix), a refactor (change structure without changing behaviour), or research (exploration with no code)? This determines which loop structure to follow. For behaviour changes, continue below. For refactors, see `.agent/REFACTOR_PLANS.md`.
 
-5. Break the feature into small slices. Each slice is one observable outcome at the boundary. Order the slices from simplest to most complex. Each slice becomes one pass through the milestone-level loop.
+5. Break the feature into small slices. Each slice is one observable outcome at the user-observable boundary. Order the slices from simplest to most complex. Each slice becomes one pass through the milestone-level loop.
 
-6. Execute each slice through the milestone-level loop (see below).
+6. Once the slice list is stable, let the coordinator fan out bounded worker passes for independent repository checks such as nearby tests, public API constraints, fixture setup, or current proof style. Record those results in the mailbox and collect them before you write the first boundary test for a slice.
 
-7. After all slices are done, run the full test suite. If anything is broken, fix it.
+7. Execute each slice through the milestone-level loop (see below).
 
-When to exit: all slices pass, the full test suite passes, and the feature is verified at the boundary.
+8. After all slices are done, run the wider project checks required by `.agent/PROJECT.md`. Use its `Recommended Validation Paths` and `Command Surface` sections to choose the exact checks for this repository and this kind of change.
+
+When to exit: all slices pass, the required project checks from `.agent/PROJECT.md` pass, and the feature is verified at the user-observable boundary.
 
 ### Loop 2: Milestone Level (BDD)
 
@@ -256,17 +245,19 @@ When to enter: one proof target has been identified from the task-level loop. A 
 
 What to do inside:
 
-1. Write one boundary test that expresses the proof target. The test must be pure data: set up the inputs, call the boundary, and assert on the outputs. No implementation details. No mocks unless absolutely necessary. Show the test to the user and confirm it matches their intent before proceeding.
+1. Write one boundary test that expresses the proof target. The test must be pure data: set up the inputs, call the user-observable boundary, and assert on the outputs. No implementation details. No mocks unless absolutely necessary. Show the test to the user and confirm it matches their intent before proceeding.
 
-2. Run the test. Confirm it fails. Read the error message carefully. The error should indicate that the feature does not exist yet (for example, "module not found" or "function undefined"), not that the test itself is broken.
+2. If the slice still needs repository evidence, let the coordinator fan out bounded worker passes for one setup check, one collaborator path, or one current test pattern. Collect those mailbox results before you change the boundary test.
 
-3. Follow the errors through the test-level loop (see below) until the boundary test passes.
+3. Run the test. Confirm it fails. Read the error message carefully. The error should indicate that the feature does not exist yet (for example, "module not found" or "function undefined"), not that the test itself is broken.
 
-4. Refactor the whole slice while keeping the boundary test green.
+4. Follow the errors through the test-level loop (see below) until the boundary test passes.
 
-5. Run the full test suite to check for regressions.
+5. Refactor the whole slice while keeping the boundary test green.
 
-When to exit: the boundary test passes, the refactor is complete, and no other tests are broken.
+6. Run the wider project checks required by `.agent/PROJECT.md` for this slice.
+
+When to exit: the boundary test passes, the refactor is complete, and the required wider checks for the slice are green.
 
 ### Loop 3: Test Level (TDD)
 
@@ -282,13 +273,15 @@ What to do inside:
 
 3. Run the test again. A new, different error should appear. If the same error appears, the change did not address it.
 
-4. If the error is now about business logic (the function returned the wrong value, the data is missing, the assertion failed), and the current position is in the outer circle (boundary test), this is the point to step into the inner circle. Write a focused test for the specific piece of business logic that is failing. The focused test should fail with the same error as the boundary test.
+4. If the failure question branches, stop and collect the mailbox before you write more code. The coordinator must decide whether the next move is a focused test, a repository check, or a handoff.
 
-5. Make the smallest code change to pass the focused test. "Smallest" means the least amount of code that makes the test green. It is acceptable to hard-code a return value, return an empty list, or stub a function if that is truly the smallest change. The next test will force replacement of the stub with real logic.
+5. If the error is now about business logic (the function returned the wrong value, the data is missing, the assertion failed), and the current position is in the outer circle (boundary test), this is the point to step into the inner circle. Write a focused test for the specific piece of business logic that is failing. The focused test should fail with the same error as the boundary test.
 
-6. Run the focused test. If it passes, refactor while keeping it green. Then step back out to the boundary test.
+6. Make the smallest code change to pass the focused test. "Smallest" means the least amount of code that makes the test green. It is acceptable to hard-code a return value, return an empty list, or stub a function if that is truly the smallest change. The next test will force replacement of the stub with real logic.
 
-7. If the focused test does not pass, repeat from step 1 within the inner circle.
+7. Run the focused test. If it passes, refactor while keeping it green. Then step back out to the boundary test.
+
+8. If the focused test does not pass, repeat from step 1 within the inner circle.
 
 When to exit: the test that triggered entry is now green and has been refactored.
 
@@ -298,7 +291,6 @@ When to exit: the test that triggered entry is now green and has been refactored
 
   This is the heartbeat of TDD. Every small change follows
   these three steps, in order, every time.
-
 
   RED - the test fails
   │
@@ -324,59 +316,59 @@ When to exit: the test that triggered entry is now green and has been refactored
   Done. Pick up the next failing test and repeat.
 ```
 
-
 ## Step-by-Step Recipe
 
 This section restates the three loops above as a single numbered procedure. Follow it mechanically.
 
 1. Read the request. Restate it as a one-sentence user story.
 
-2. Identify the boundary (public API, HTTP endpoint, CLI output, etc.).
+2. Identify the user-observable boundary (public API, HTTP endpoint, CLI output, etc.).
 
-3. Check: is the expected behaviour unambiguous? If no, create an ExampleMapDoc (`.agent/EXAMPLE_MAP_PLANS.md`). If yes, continue.
+3. Check: is the expected behaviour unambiguous? If no, create an ExampleMappingDoc (`.agent/EXAMPLE_MAPPING.md`). If yes, continue.
 
-4. Write one boundary test. It must be pure data in, data out. No implementation details. Show it to the user and confirm it matches their intent.
+4. Let one coordinator own the current slice. If repository evidence still needs to be gathered, fan out bounded worker passes now, record the results in the mailbox, and collect them before you write the boundary test.
 
-5. Run the test. Confirm it fails for the right reason (the feature does not exist, not a test setup error).
+5. Write one boundary test. It must be pure data in, data out. No implementation details. Show it to the user and confirm it matches their intent.
 
-6. Read the error message. Make the smallest change to fix that one error. Run the test again.
+6. Run the test. Confirm it fails for the right reason (the feature does not exist, not a test setup error).
 
-7. Repeat step 6 until the error shifts from compile errors (`UndefinedFunctionError`, module not available) to assertion errors (wrong return value, missing data).
+7. Read the error message. Make the smallest change to fix that one error. Run the test again.
 
-8. When the error shifts to business logic, step in: write a focused test that fails the same way. Get it green with the smallest change. Refactor while green. Step back out to the boundary test.
+8. Repeat step 7 until the error shifts from compile errors (`UndefinedFunctionError`, module not available) to assertion errors (wrong return value, missing data).
 
-9. Repeat steps 6 through 8 until the boundary test passes.
+9. When the error shifts to business logic, collect any outstanding mailbox results, then step in: write a focused test that fails the same way. Get it green with the smallest change. Refactor while green. Step back out to the boundary test.
 
-10. Refactor the whole feature while keeping the boundary test green.
+10. Repeat steps 7 through 9 until the boundary test passes.
 
-11. Run the full test suite. If anything broke, fix it.
+11. Refactor the whole feature while keeping the boundary test green.
 
-12. Move to the next slice of behaviour. Repeat from step 1.
+12. Run the wider project checks required by `.agent/PROJECT.md`. If anything broke, fix it.
+
+13. Move to the next slice of behaviour. Repeat from step 1.
 
 ```
   RECIPE SUMMARY
   ══════════════
 
-  This is the same 12-step recipe above, shown as a picture
+  This is the slice recipe above, shown as a picture
   so you can see where you loop back.
-
 
   SETUP (do this once per slice)
   ──────────────────────────────
   1. Restate the request in your own words
-  2. Identify the public function you are testing
+  2. Identify the active user-observable boundary
   3. Is the expected behaviour clear?
      │
-     ├── No  -> write an ExampleMapDoc first
+     ├── No  -> write an ExampleMappingDoc first
      │
      └── Yes -> continue
   4. Write one boundary test
-  5. Run `mix test` - confirm it fails
+  5. Run the smallest test command - confirm it fails
      │
      ▼
   FIX ERRORS (repeat until the test passes)
   ──────────────────────────────────────────
-  6. Read the error message from `mix test`
+  6. Read the error message from that test command
   7. What kind of error?
      │
      ├── Module or function missing?
@@ -399,7 +391,7 @@ This section restates the three loops above as a single numbered procedure. Foll
   WRAP UP
   ───────
   10. Clean up the code while the boundary test stays green
-  11. Run `mix test` - make sure nothing else broke
+  11. Run the wider project checks from `.agent/PROJECT.md`
   12. More slices left? -> Go back to step 1 for the next slice
 ```
 
@@ -415,13 +407,13 @@ This example walks through the full workflow for a fictional library feature. Th
 
 "As a caller, I want to list products by category, so that I can display only the products relevant to a given section."
 
-### Step 2: Identify the boundary
+### Step 2: Identify the user-observable boundary
 
-The boundary is the public function `Catalog.list_products/1`. Callers will pass a map of filter parameters and receive a list of product structs.
+The user-observable boundary is the public function `Catalog.list_products/1`. Callers will pass a map of filter parameters and receive a list of product structs.
 
 ### Step 3: Check for ambiguity
 
-The request is clear enough for a single boundary test. No ExampleMapDoc needed.
+The request is clear enough for a single boundary test. No ExampleMappingDoc is needed.
 
 ### Step 4: Write the boundary test
 
@@ -480,7 +472,7 @@ The error has changed from a compile error (missing module, undefined function) 
 
 ### Step 7: Step in - write a focused test
 
-Since this is a library and the boundary is already a single function, the boundary test and the focused test are the same in this case. In a web application, this would be the point to step from a feature test (HTTP request) into a context test (function call). Here, the implementation continues at the same level.
+Since this is a library and the user-observable boundary is already a single function, the boundary test and the focused test are the same in this case. In a web application, this would be the point to step from a feature test (HTTP request) into a context test (function call). Here, the implementation continues at the same user-observable boundary.
 
 ### Step 8: Make the smallest change to pass
 
@@ -510,7 +502,7 @@ The implementation is simple enough that there is not much to refactor. The ques
 
 In this case, the function is clean. Move on.
 
-### Step 10: Run the full test suite
+### Step 10: Run the wider project checks
 
     $ mix test
 
@@ -521,7 +513,6 @@ No regressions. The first slice is done.
 ### Next slices
 
 If the feature needed more slices (for example, listing products with no filter returns all products, or handling an invalid category), repeat the entire process from step 1 for each slice. Each slice adds one boundary test, one proven behaviour, and one small increment of code.
-
 
 ## Refactoring Guidelines
 
@@ -549,7 +540,7 @@ These are the pitfalls that beginners and coding agents hit most often. Knowing 
 
 Writing the implementation first and tests after. A test written after the implementation becomes a rubber stamp for whatever the code already does. It does not catch misunderstandings because the test is shaped by the implementation rather than by the user's intent. Always write the test first.
 
-Testing implementation details instead of observable outcomes. A test that checks whether a specific private function was called, or whether data was stored in a specific internal format, will break during refactoring even though the behaviour has not changed. Test what went in and what came out at the boundary. Ignore the internals.
+Testing implementation details instead of observable outcomes. A test that checks whether a specific private function was called, or whether data was stored in a specific internal format, will break during refactoring even though the behaviour has not changed. Test what went in and what came out at the user-observable boundary. Ignore the internals.
 
 Making the test pass with a large change instead of the smallest change. Writing a lot of code at once removes the ability to trace which line of code satisfies which test. If something breaks, there is no way to know where to look. Make the smallest change, run the test, and repeat.
 

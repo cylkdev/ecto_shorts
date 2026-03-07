@@ -2,15 +2,19 @@
 
 This document defines the standard for a `CodeStyleRuleDoc`, a living reference document used to record one reusable code style rule. Treat the reader as a complete beginner to this repository: they have only the current working tree, this guide, and the single CodeStyleRuleDoc you provide. There is no memory of prior rule discussions and no external context.
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Purpose / Big Picture
 
 Use a CodeStyleRuleDoc to turn a recurring code problem into a short, reusable rule that teaches one thing clearly. Record the discouraged code shape, the concrete cost it creates, the preferred code shape, and the small amount of explanation a beginner needs in order to recognize the difference in real code.
 
-A CodeStyleRuleDoc does not diagnose a live failure, it does not define intended behaviour at a visible boundary, and it does not prescribe implementation or refactor sequence. It owns reusable code-writing guidance. That makes it the correct guide when the real task is to capture a repeated pattern so humans and coding agents can write or review code consistently.
+A CodeStyleRuleDoc does not diagnose a live failure, it does not define intended behaviour at a user-observable boundary, and it does not prescribe implementation or refactor sequence. It owns reusable code-writing guidance. That makes it the correct guide when the real task is to capture a repeated pattern so humans and coding agents can write or review code consistently.
 
 ## Output
 
-- Primary artifact: A short, self-contained style rule stored under `.agent/styles/<category>/...` with a title, `**Problem**`, `**Example**`, and `**Refactoring**`.
+- Primary artifact: A short, self-contained style rule stored in the canonical CodeStyleRuleDoc location defined in `.agent/OUTPUTS.md`, with a title, `**Problem**`, `**Example**`, and `**Refactoring**`.
 - Primary consumer: A coding agent or human novice who needs to write, review, or revise code without guessing the preferred shape.
 - Ready when: The rule name, concrete problem, bad example, corrected example, plain-language reasoning, category placement, and catalog update are explicit enough for a beginner to apply the rule without extra context.
 - Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
@@ -19,13 +23,25 @@ A CodeStyleRuleDoc does not diagnose a live failure, it does not define intended
 
 When you write or revise a CodeStyleRuleDoc, follow `.agent/CODE_STYLE_RULES.md` to the letter. If it is not in your context, read the entire file before you continue.
 
-Start with `.agent/styles/AGENTS.md`. Use it to find the correct category before you draft the rule. If no category fits, create the new category and update `.agent/styles/AGENTS.md` in the same change as the new rule.
+When you need the correct category before drafting the rule, use `.agent/styles/AGENTS.md` first. If no category fits, create the new category and update `.agent/styles/AGENTS.md` in the same change as the new rule.
+
+Before you draft or revise a rule, update the surrounding active document. Record the concrete task, the key files, and every required rule, catalog, or companion-document update in that document's `Task and Key Files` section.
+
+Keep the related document maintenance task visible in the surrounding active document's `Progress` section or checklist so rule creation and catalog sync stay explicit.
 
 Use this guide when you already know the repeated code pattern you want to teach. Keep the guide open while you work. Narrow the rule, name it, shape the bad and corrected examples, and revise the explanation until a complete beginner could follow it without outside help. Do not treat the rule as a private note or a one-shot summary.
 
 Use `Document Relationships` to understand how this guide differs from the other root `.agent` guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
 
-Store completed rules under `.agent/styles/<category>/` and use a short, descriptive file name such as `Complex Else Clauses in With.md`.
+Use `.agent/OUTPUTS.md` as the source of truth for the CodeStyleRuleDoc output location and naming rules. Use `.agent/styles/AGENTS.md` to choose the category and keep the catalog aligned with the rule file.
+
+## Safe Parallel Document Maintenance
+
+When you update this document itself, let one coordinator own the final document edit. The coordinator decides the active scope, the canonical wording, and the final structure that lands in the checked-in guide.
+
+After the change scope is stable, worker passes may inspect independent sections, companion files, or stale references in parallel. Each worker pass should return bounded facts such as outdated wording, missing sync updates, stale paths, or terminology drift.
+
+Collect those worker-pass results before you edit this document. Do not update the guide from half-collected scans.
 
 ## Document Relationships
 
@@ -41,7 +57,7 @@ Use it when: A visible problem exists, but the cause is not yet proven.
 
 ### ExampleMappingDoc
 
-Purpose: Clarify intended behaviour at one visible boundary.
+Purpose: Clarify intended behaviour at one user-observable boundary.
 
 Intent: Turn ambiguous or disputed behaviour into explicit rules, examples, and acceptance-test targets.
 
@@ -49,7 +65,7 @@ Use it when: The boundary is known, but the intended behaviour is still unclear.
 
 ### BehaviourSpecDoc
 
-Purpose: Record a proof-ready behaviour specification at one visible boundary.
+Purpose: Record a proof-ready behaviour specification at one user-observable boundary.
 
 Intent: Turn accepted behaviour into concrete specification and proof mapping that implementation can follow without inventing behaviour.
 
@@ -111,7 +127,7 @@ This document owns a question only while it is the place where the next missing 
 
 - To `.agent/styles/AGENTS.md` companion catalog update: Hand off when the rule title and category path are explicit, and the remaining unresolved step is to update the checked-in style catalog in the same change as the rule file.
 - To `InvestigationLog`: Hand off when the draft rule shows the remaining unresolved question is what failure or behaviour is actually happening, not how code should usually be written.
-- To `ExampleMappingDoc`: Hand off when the draft rule shows the remaining unresolved question is intended behaviour at a visible boundary, not reusable code-writing guidance.
+- To `ExampleMappingDoc`: Hand off when the draft rule shows the remaining unresolved question is intended behaviour at a user-observable boundary, not reusable code-writing guidance.
 - To `BehaviourSpecDoc`: Hand off when the draft rule shows the remaining unresolved question is how accepted behaviour should be specified and proved before implementation.
 - To `ExecPlan`: Hand off when the draft rule shows the remaining unresolved question is how to plan behaviour-changing implementation rather than how to state a reusable rule.
 - To `RefactorPlan`: Hand off when the draft rule shows the remaining unresolved question is how to plan behaviour-preserving structural change rather than how to state a reusable rule.
@@ -135,14 +151,15 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 * Every CodeStyleRuleDoc must be fully self-contained, meaning a complete beginner can read the rule and apply it using only the rule file and the current working tree.
 * Every CodeStyleRuleDoc must teach one narrow rule at a time.
-* Every CodeStyleRuleDoc must be stored under the correct `.agent/styles/<category>/` directory and must keep `.agent/styles/AGENTS.md` in sync.
+* Every CodeStyleRuleDoc must be stored in the canonical location defined in `.agent/OUTPUTS.md` and must keep `.agent/styles/AGENTS.md` in sync.
 * Every CodeStyleRuleDoc must use the canonical final structure defined in this guide: `# <Short rule name>`, `**Problem**`, `**Example**`, and `**Refactoring**`, in that order.
 * Every CodeStyleRuleDoc must define the forbidden or discouraged code shape in plain language.
 * Every CodeStyleRuleDoc must explain the concrete cost of the bad pattern without relying on taste alone.
 * Every CodeStyleRuleDoc must include one realistic bad example that clearly demonstrates the problem.
 * Every CodeStyleRuleDoc must include one corrected example that keeps the same intended job as the bad example.
 * Every CodeStyleRuleDoc must point to the exact code shape that causes the problem and the exact change that resolves it.
-* Every CodeStyleRuleDoc must define any technical term in plain language when it first appears.
+* Every CodeStyleRuleDoc must use `.agent/DEFINITIONS.md` as the source of truth for shared definitions. If a reusable term is missing, add it there instead of defining it locally.
+* Every CodeStyleRuleDoc task must record its concrete task, key files, and required rule or catalog updates in the surrounding active document's `Task and Key Files` section.
 * Every CodeStyleRuleDoc must avoid hidden project history, unwritten team memory, or outside references that are required to understand the rule.
 * Every CodeStyleRuleDoc must stay short enough that a beginner can read it in one pass.
 * Every CodeStyleRuleDoc must use optional extra notes only when they prevent a likely beginner misunderstanding.
@@ -151,18 +168,26 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 ## Recommended Workflow
 
-1. Start from a bad code example and a corrected version that solves the same problem.
+1. Start from a bad code example and a corrected version that solves the same problem, and record the concrete task, key files, and required rule or catalog updates in the surrounding active document's `Task and Key Files` section.
 2. Use `.agent/styles/AGENTS.md` to choose the correct category before you draft the rule.
-3. Reduce both code examples to the smallest realistic pair that still shows the same problem and the same correction.
-4. Name the rule from the bad pattern, not from a vague benefit.
-5. Write `**Problem**` so the reader knows what the bad shape is and why it causes trouble.
-6. Write `**Example**` with the bad code and one plain-language paragraph that points at the exact offending shape.
-7. Write `**Refactoring**` with the preferred approach, the corrected code, and the exact reason the change helps.
-8. Validate the rule, then update `.agent/styles/AGENTS.md` in the same change if the catalog changed.
+3. Once the rule scope and category are stable, let one coordinator fan out bounded worker passes to inspect repeated examples, nearby rules, review comments, or related code. Keep each worker pass narrow enough that it can return one concrete example or one supporting pattern without changing the rule question.
+4. Collect those worker pass results in the surrounding active document, review comment, or planning document before you draft the final rule text, and keep the document maintenance task visible there.
+5. Reduce both code examples to the smallest realistic pair that still shows the same problem and the same correction.
+6. Name the rule from the bad pattern, not from a vague benefit.
+7. Write `**Problem**` so the reader knows what the bad shape is and why it causes trouble.
+8. Write `**Example**` with the bad code and one plain-language paragraph that points at the exact offending shape.
+9. Write `**Refactoring**` with the preferred approach, the corrected code, and the exact reason the change helps.
+10. Validate the rule, then update `.agent/styles/AGENTS.md` in the same change if the catalog changed.
 
 ## Communication Rules
 
 Do not write style rules in silence. Record the concrete pattern, the concrete cost, the example pair, the chosen category, and any important uncertainty as you work.
+
+Let one coordinator own the decision about rule scope, rule name, and final wording. The coordinator decides when the category is stable enough to fan out worker passes and when the gathered examples are ready to collect into one final rule.
+
+Use worker passes only for bounded catalog work. A worker pass is one narrow check such as reviewing one example pair, inspecting one nearby rule, or scanning one code area for repeated evidence. Do not let separate worker passes invent different rule scopes.
+
+Collect worker results before you finalize the rule text or update `.agent/styles/AGENTS.md`. Do not update the catalog from half-collected examples.
 
 Before you settle on the rule, check whether the proposed problem is really one pattern or several. If it is several, narrow the scope or split the work into multiple rules instead of forcing unrelated advice into one file.
 
@@ -186,7 +211,7 @@ Use `.agent/styles/AGENTS.md` before you draft the rule. Choose the narrowest ex
 
 If no existing category fits, create the new category and describe it in `.agent/styles/AGENTS.md` in the same change as the rule file.
 
-When you add, move, rename, or remove a rule file, update `.agent/styles/AGENTS.md` immediately. Do not leave the style catalog behind the working tree.
+When you add, move, rename, or remove a rule file, update `.agent/styles/AGENTS.md` immediately. Do not leave the style catalog behind the working tree, and keep that catalog update listed in the surrounding active document.
 
 ### Canonical Final Rule Shape
 
@@ -237,9 +262,9 @@ Use this checklist to verify the rule before you stop:
 - [ ] The `**Problem**` section states what the bad shape is and why it causes a concrete problem.
 - [ ] The `**Example**` section shows the bad code and points to the exact offending shape.
 - [ ] The `**Refactoring**` section keeps the same intended job while showing the corrected shape.
-- [ ] The explanation uses plain language and defines non-obvious terms.
+- [ ] The explanation uses plain language and relies on `.agent/DEFINITIONS.md` for shared terminology.
 - [ ] The reader does not need hidden project history or outside explanation to understand the rule.
-- [ ] The rule lives under the correct `.agent/styles/<category>/` path.
+- [ ] The rule lives in the canonical CodeStyleRuleDoc location defined in `.agent/OUTPUTS.md`.
 - [ ] `.agent/styles/AGENTS.md` has been updated if the catalog changed.
 
 The rule fails validation if the reader can only give a vague summary, cannot point to the exact offending code, or cannot explain what change makes the corrected example right.
@@ -251,6 +276,10 @@ A good acceptance check is to ask whether a beginner could take a different bad 
 Use this skeleton when you create a new CodeStyleRuleDoc. Keep it complete enough that a complete beginner can understand the rule from the document alone.
 
     # <Short rule name>
+
+    ## Definitions
+
+    Use `.agent/DEFINITIONS.md` as the source of truth for shared definitions. If a reusable term is missing, add it there instead of defining it locally.
 
     **Problem**
 

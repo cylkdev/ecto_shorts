@@ -23,7 +23,7 @@ EctoShorts is split into the following main components:
 
 | Module                     | Use when                                                                                  |
 |----------------------------|-------------------------------------------------------------------------------------------|
-| `EctoShorts.Actions`       | You need CRUD, batch, bulk, or transactional operations. **Start here.**                  |
+| `EctoShorts.Actions`       | You need CRUD, batch, bulk, or transactional operations. Use this first.                  |
 | `EctoShorts.CommonFilters` | You need to build an `Ecto.Query` from a map or keyword list without executing it.        |
 | `EctoShorts.CommonChanges` | You need changeset helpers for associations, conditional changes, or field validation.    |
 | `EctoShorts.CommonSchema`  | You need schema introspection or polymorphic source handling.                             |
@@ -44,11 +44,11 @@ Configure a repo:
     # config/config.exs
     config :ecto_shorts, repo: MyApp.Repo
 
-## Getting started
+## Run the first examples
 
 ### Prerequisites
 
-Before getting started, to run these examples you need the following:
+When you want to run these examples, you need the following:
 
 * An `Ecto.Repo` module (for example `MyApp.Repo`) that is configured
   and started.

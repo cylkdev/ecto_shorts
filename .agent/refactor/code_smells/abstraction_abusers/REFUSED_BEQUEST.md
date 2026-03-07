@@ -1,5 +1,9 @@
 # Refused Bequest
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Abstraction Abusers
@@ -116,8 +120,8 @@ end
 ## Treatment
 
 - **Extract Behaviour**: Create a smaller behaviour with only the callbacks you need.
-- **Replace Use with Import**: Import only the specific functions needed.
-- **Replace Inheritance with Delegation**: Wrap the dependency and expose only required functions.
+- Prefer explicit `import`, `alias`, or composition when you only need a small subset of functionality.
+- **Replace Shared Module Coupling with Delegation**: Wrap the dependency and expose only the required functions.
 - **Push Down Function**: If a shared module has functions not all consumers need, push them to specific modules.
 
 ## Why Refactor

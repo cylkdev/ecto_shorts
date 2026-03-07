@@ -2,6 +2,10 @@
 
 Use when any of the following are true:
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 - A local binding is assigned from an expression result.
 
 - The expression is side-effect free (it only computes and returns a value).
@@ -113,7 +117,6 @@ The refactoring is successful if all of the following are true:
 - The new function can be called from at least the original call site without changing behaviour.
 
 - No side effects were moved into the query/helper function.
-
 
 ## Eliminates Code Smell
 

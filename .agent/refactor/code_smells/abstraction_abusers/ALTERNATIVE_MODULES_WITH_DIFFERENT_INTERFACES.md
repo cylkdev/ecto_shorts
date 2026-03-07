@@ -1,5 +1,9 @@
 # Alternative Modules with Different Interfaces
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Abstraction Abusers
@@ -160,8 +164,8 @@ end
 
 - **Extract Behaviour**: Define a behaviour that all implementations must follow.
 - **Rename Function**: Align function names across modules.
-- **Normalize Return Values**: Ensure all implementations return the same format.
-- **Add Adapter Layer**: Wrap inconsistent third-party APIs with a consistent interface.
+- Ensure all implementations return the same format.
+- **Introduce Local Wrapper**: Wrap inconsistent third-party APIs with a consistent interface.
 
 ## Why Refactor
 
@@ -191,4 +195,4 @@ end
 - `Extract Behaviour`
 - `Rename Function`
 - `Move Function`
-- `Introduce Adapter`
+- `Introduce Local Wrapper`

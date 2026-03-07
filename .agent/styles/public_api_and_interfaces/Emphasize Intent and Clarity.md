@@ -19,6 +19,10 @@ errors instead of clearer call-site mistakes.
 
 Elixir is built around explicit function heads and pattern matching. The function head is meant to describe what the function needs. When required values are pulled out of a map inside the body, the real contract is hidden. In Elixir, that goes against how the language is designed to be used.
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ### Bad Example (DO NOT COPY) - Hiding required values inside a map
 
 ```elixir

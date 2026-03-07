@@ -13,6 +13,6 @@ Follow `.agent/PLANS.md` exactly. Do not duplicate or reinterpret the execution 
 
 1. Read `.agent/PLANS.md`.
 
-2. Read `.windsurf/rules/document-artifacts.md` to get the required output location for the ExecPlan artifact.
+2. Read `.agent/OUTPUTS.md` to get the canonical ExecPlan output location and naming rules.
 
 3. Execute the ExecPlan workflow exactly as written in `.agent/PLANS.md`.

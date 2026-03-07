@@ -2,11 +2,15 @@
 
 This document defines the standard for an `ADR`, a living working document used to record one lasting architectural or design decision. Treat the reader as a complete beginner to this repository: they have only the current working tree and the single ADR you provide. There is no memory of prior decisions and no external context.
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Purpose / Big Picture
 
-Use an ADR to turn an important design choice into a durable, reviewable record that explains what was chosen, why it was chosen, what alternatives were seriously considered, what consequences follow from it, and how someone can confirm the decision was applied correctly. Record the request, the scope boundaries, the visible boundary where the decision matters, the exact decision statement, the drivers that shaped it, the considered options, the chosen outcome, the consequences, the related artifacts, and the validation path that proves the decision is real.
+Use an ADR to turn an important design choice into a durable, reviewable record that explains what was chosen, why it was chosen, what alternatives were seriously considered, what consequences follow from it, and how someone can confirm the decision was applied correctly. Record the request, the scope boundaries, the user-observable boundary where the decision matters, the exact decision statement, the drivers that shaped it, the considered options, the chosen outcome, the consequences, the related artifacts, and the validation path that proves the decision is real.
 
-An ADR does not diagnose why the current system is wrong, it does not define intended behaviour at a visible boundary, and it does not prescribe implementation sequence. It owns the durable record of one lasting decision. That makes it the document other guides can reference when a design choice must stay explicit over time.
+An ADR does not diagnose why the current system is wrong, it does not define intended behaviour at a user-observable boundary, and it does not prescribe implementation sequence. It owns the durable record of one lasting decision. That makes it the document other guides can reference when a design choice must stay explicit over time.
 
 ## Output
 
@@ -21,9 +25,19 @@ When you write an ADR, follow `.agent/ADRS.md` to the letter. If it is not in yo
 
 Use this guide when one important architectural or design choice needs a durable record. Keep the ADR open while you work. Update it as the decision becomes clearer, tradeoffs are refined, consequences are discovered, validation improves, and follow-up work is identified. Do not treat the ADR as a one-shot template you fill in once and abandon.
 
+As soon as you choose this guide, write `Trigger for Using This Document`. Record the exact observed trigger facts, the full explicit reasoning path that made `ADR` the correct document, the nearest competing document types you rejected and why, and a short replication rule a later contributor can reuse. If the owning question changes but the ADR still owns the work, update that section and record the revision in `Change Log`.
+
 Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
 
-Store completed ADRs under `docs/adrs/` and name them with four-digit, zero-padded names such as `docs/adrs/0001-short-decision-title.md`.
+Use `.agent/OUTPUTS.md` as the source of truth for the ADR output location and naming rules.
+
+## Safe Parallel Document Maintenance
+
+When you update this document itself, let one coordinator own the final document edit. The coordinator decides the active scope, the canonical wording, and the final structure that lands in the checked-in guide.
+
+After the change scope is stable, worker passes may inspect independent sections, companion files, or stale references in parallel. Each worker pass should return bounded facts such as outdated wording, missing sync updates, stale paths, or terminology drift.
+
+Collect those worker-pass results before you edit this document. Do not update the guide from half-collected scans.
 
 ## Document Relationships
 
@@ -39,7 +53,7 @@ Use it when: A visible problem exists, but the cause is not yet proven.
 
 ### ExampleMappingDoc
 
-Purpose: Clarify intended behaviour at one visible boundary.
+Purpose: Clarify intended behaviour at one user-observable boundary.
 
 Intent: Turn ambiguous or disputed behaviour into explicit rules, examples, and acceptance-test targets.
 
@@ -47,7 +61,7 @@ Use it when: The boundary is known, but the intended behaviour is still unclear.
 
 ### BehaviourSpecDoc
 
-Purpose: Record a proof-ready behaviour specification at one visible boundary.
+Purpose: Record a proof-ready behaviour specification at one user-observable boundary.
 
 Intent: Turn accepted behaviour into concrete specification and proof mapping that implementation can follow without inventing behaviour.
 
@@ -119,9 +133,13 @@ NON-NEGOTIABLE REQUIREMENTS:
 * Every ADR must be a living document, meaning you update it as decision details, tradeoffs, consequences, validation, and follow-up work become clearer.
 * Every ADR must keep the shared skeleton order defined in this guide.
 * Every ADR must include an `Output` section that uses the exact four-line template from this guide.
+* Every ADR must include a `Task and Key Files` section that records the concrete task, the key files, and every companion document, catalog, or artifact update that must stay in sync.
+* Every ADR must include a `Trigger for Using This Document` section immediately after `Task and Key Files` and before `Output`.
+* Every ADR must record the exact observed trigger facts, the full explicit reasoning path that made this the correct document, the nearest competing document types that were rejected and why, and a short replication rule another contributor can reuse.
+* Every ADR must revise `Trigger for Using This Document` whenever the trigger facts or reasoning change while the ADR remains the correct document, and record that revision in `Change Log`.
 * Every ADR must record one decision at a time.
 * Every ADR must restate the request or decision need in concrete language.
-* Every ADR must define every technical term in plain language when it first appears.
+* Every ADR must use `.agent/DEFINITIONS.md` as the source of truth for shared definitions. If a reusable term is missing, add it there instead of defining it locally.
 * Every ADR must state the exact decision being made.
 * Every ADR must record the real decision drivers that shaped the choice.
 * Every ADR must list only real options that a reasonable engineer could have chosen.
@@ -130,25 +148,38 @@ NON-NEGOTIABLE REQUIREMENTS:
 * Every ADR must include a concrete validation path that shows how someone can confirm the decision is applied correctly.
 * Every ADR must record linked artifacts, revisit signals, and follow-up work in `More Information`.
 * Every ADR must be readable by a complete beginner.
+* Every ADR must treat creating or refreshing the active document and syncing required companion documents, catalogs, or artifact notes as tracked work in `Progress`.
 * Every ADR must end with a clear current status and an explicit next handoff.
 
 Treat these rules as mandatory. If one is missing, the ADR is incomplete and the decision is not ready to guide future work safely.
 
 ## Workflow
 
-1. Write `Request Restated`, `Scope Boundaries`, and `Visible Boundary` so a complete beginner can see what decision is being made, what it affects, and where its consequences matter.
+1. Write `Request Restated`, `Scope Boundaries`, `User-Observable Boundary`, `Task and Key Files`, and `Trigger for Using This Document` so a complete beginner can see what decision is being made, what it affects, where its consequences matter, why this document owns the task, and which files and companion documents must stay in sync.
 2. Re-check the repository before you record the decision. Look for existing ADRs, architecture reviews, plans, refactor plans, documentation, tests, and code that already constrain or support the choice.
 3. Write `Decision Statement` in concrete language. If more than one decision is hiding in the request, split them into separate ADRs.
 4. Write `Decision Drivers` so the actual constraints, goals, risks, or tradeoffs that matter are visible. Drivers must be the reasons the choice matters now, not generic good ideas.
-5. Write `Considered Options`. Include only options a reasonable engineer could have chosen in this situation. Keep the chosen option first.
-6. Write `Decision Outcome` and `Consequences`. State what was chosen, why it wins against the drivers, what improves, what gets harder, and what stays neutral when that matters.
-7. Write `More Information` so the ADR points to related artifacts, follow-up work, revisit triggers, and superseding decisions when applicable.
-8. Keep `Progress`, `Surprises & Discoveries`, `Decision Log`, `Open Questions / Blockers`, and `Next Handoff` up to date. Set `Next Handoff` using `Handoffs` whenever the ADR reaches a real transition point.
-9. Complete `Validation and Acceptance` before you stop. Confirm that the decision is explicit, the options are real, the consequences are concrete, and the validation path shows how to confirm the decision is being followed.
+5. After the decision statement and drivers are stable, let one coordinator fan out bounded worker passes to gather real options, consequence notes, linked artifacts, or repository constraints. Keep each worker pass narrow enough that it can return one option comparison or one consequence cluster without changing the decision question.
+6. Record each worker pass result in the mailbox sections that fit it, such as `Considered Options`, `Consequences`, `More Information`, `Progress`, or `Decision Log`. Collect those results before you record the decision outcome or hand off.
+7. Write `Considered Options`. Include only options a reasonable engineer could have chosen in this situation. Keep the chosen option first.
+8. Write `Decision Outcome` and `Consequences`. State what was chosen, why it wins against the drivers, what improves, what gets harder, and what stays neutral when that matters.
+9. Write `More Information` so the ADR points to related artifacts, follow-up work, revisit triggers, and superseding decisions when applicable.
+10. Keep `Progress`, `Surprises & Discoveries`, `Decision Log`, `Open Questions / Blockers`, and `Next Handoff` up to date. Include one `Progress` item for creating or refreshing the active document and one for keeping required companion documents, catalogs, or artifact notes in sync. Set `Next Handoff` using `Handoffs` whenever the ADR reaches a real transition point.
+11. Complete `Validation and Acceptance` before you stop. Confirm that the decision is explicit, the options are real, the consequences are concrete, and the validation path shows how to confirm the decision is being followed.
 
 ## Communication Rules
 
 Do not record decisions in silence. Capture the drivers, options, consequences, blockers, rejected interpretations, and changes in direction in the ADR as they happen.
+
+Do not hide why the ADR owns the task. Record `Trigger for Using This Document` as soon as the owning question is clear, and revise it whenever the trigger facts or reasoning change while the ADR remains the correct document.
+
+Let one coordinator own sequencing. The coordinator decides when the decision question is stable enough to fan out worker passes, when option and consequence notes have been collected, and when the ADR should hand off instead of inventing new drivers.
+
+Use worker passes only for bounded comparison work. A worker pass is one narrow check such as comparing one option against the drivers, reading one linked artifact, or collecting one consequence family. Do not let separate worker passes record competing decision questions.
+
+Use the shared living sections as the mailbox for worker results. `Considered Options`, `Consequences`, `More Information`, `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Open Questions / Blockers` are where partial results wait until the coordinator collects them.
+
+Collect worker results before you settle the chosen option, widen the scope, or set `Next Handoff`. Do not lock the ADR from half-collected tradeoffs.
 
 Before you settle on the decision statement, check whether the request has one reasonable meaning or more than one. If it has more than one reasonable meaning, stop and name the competing interpretations instead of silently choosing one.
 
@@ -174,13 +205,15 @@ Use `Considered Options` to compare like with like. Do not include fake options 
 
 ### MADR Inside the Shared Structure
 
-This guide keeps the useful parts of the MADR approach, but inside the shared living-guide shell used by the rest of the planning system. That means the ADR skeleton should still contain MADR-style decision content such as decision drivers, considered options, outcome, and consequences, while also keeping the shared restartable sections like `Status`, `Current State Snapshot`, `Progress`, `Decision Log`, and `Change Log`.
+This guide keeps the useful parts of the MADR approach, but inside the shared living-guide shell used by the rest of the planning system. That means the ADR skeleton should still contain MADR-style decision content such as decision drivers, considered options, outcome, and consequences, while also keeping the shared restartable sections like `Status`, `Current State Snapshot`, `Task and Key Files`, `Progress`, `Decision Log`, and `Change Log`.
 
 Keep the chosen option first in `Considered Options`. In `Decision Outcome`, tie the rationale directly to the recorded drivers instead of using generic claims. In `Consequences`, record both what improves and what gets harder.
 
 ### Validation, Lifecycle, and Revisit Signals
 
 An ADR is not complete until someone can tell how to confirm the decision is being followed. Validation may be a command, a test, an observable behaviour, a code review checklist, or a repository pattern to inspect. Make it concrete.
+
+When validation needs repository-specific command selection or wider check breadth, consult `.agent/PROJECT.md` and cite the command you chose here.
 
 Use `More Information` to record linked ADRs, superseded or superseding decisions, follow-up plans, and the signal that would trigger revisiting this ADR. If the ADR changes meaning, record a new ADR and mark the old one as superseded instead of silently rewriting history.
 
@@ -193,6 +226,10 @@ Use this skeleton when you create a new ADR. Keep it complete enough that a comp
     This ADR is a living document. Keep it up to date as the decision becomes clearer, consequences are refined, validation improves, follow-up work becomes explicit, and the next handoff becomes clearer.
 
     If `.agent/ADRS.md` is checked into the repository, maintain this ADR in accordance with that file.
+
+    ## Definitions
+
+    Use `.agent/DEFINITIONS.md` as the source of truth for shared definitions. If a reusable term is missing, add it there instead of defining it locally.
 
     ## Status
 
@@ -212,6 +249,26 @@ Use this skeleton when you create a new ADR. Keep it complete enough that a comp
 
     State what is already known, what is still uncertain, what repository evidence has already been checked, and what a complete beginner should do first if they restart here.
 
+    ## Task and Key Files
+
+    Record the concrete task this ADR currently owns.
+
+    List the key repository files, commands, tests, catalogs, or companion documents that matter right now.
+
+    List every document, catalog, or artifact that must be created or updated in the same change and keep this section current as the task or handoff changes.
+
+    ## Trigger for Using This Document
+
+    Record the exact trigger that made this ADR the correct document.
+
+    State the concrete observed conditions from the request, repository, prior artifact, or observed system state that triggered this document choice.
+
+    Write the full explicit reasoning path from those facts to this document. Do not skip intermediate decision steps.
+
+    Name the nearest competing document types you considered and explain why each one does not own the current unresolved question.
+
+    End with a short replication rule another contributor can follow to reach the same document choice.
+
     ## Output
 
     - Primary artifact: A self-contained record of one architectural or design decision, including its drivers, alternatives, chosen outcome, consequences, and validation path.
@@ -223,14 +280,16 @@ Use this skeleton when you create a new ADR. Keep it complete enough that a comp
 
     Use a list with checkboxes to summarize the ADR work and every meaningful stopping point.
 
+    Include one item for creating or refreshing this ADR and one item for keeping required companion documents, catalogs, or artifact notes in sync.
+
     **Legend**
 
     [ ] - Not started
     [~] - In progress
     [x] - Completed
 
-    - [x] (YYYY-MM-DD HH:MMZ) Example completed step.
-    - [ ] Example incomplete step.
+    - [x] (YYYY-MM-DD HH:MMZ) Created or refreshed this ADR and updated `Task and Key Files` and `Trigger for Using This Document`.
+    - [ ] Keep required companion documents, catalogs, or artifact notes in sync with this ADR.
     - [ ] Example partially completed step (completed: X; remaining: Y).
 
     ## Purpose / Big Picture
@@ -245,7 +304,7 @@ Use this skeleton when you create a new ADR. Keep it complete enough that a comp
 
     Name the key files, modules, systems, documents, or review artifacts that a complete beginner must understand before they continue.
 
-    Define any non-obvious term you will use.
+    Use `.agent/DEFINITIONS.md` as the source of truth for shared definitions. If a reusable term is missing, add it there instead of defining it locally.
 
     ## Request Restated
 
@@ -259,9 +318,9 @@ Use this skeleton when you create a new ADR. Keep it complete enough that a comp
 
     If two nearby choices could be confused, name the difference directly.
 
-    ## Visible Boundary
+    ## User-Observable Boundary
 
-    Name the visible boundary where the impact of this decision will be observed or validated.
+    Name the user-observable boundary where the impact of this decision will be observed or validated.
 
     Record the exact command, behaviour, file pattern, review step, or operational signal that exercises that boundary when applicable.
 

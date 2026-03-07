@@ -1,5 +1,9 @@
 # Substitute Algorithm
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## When to use
 
 Use when any of the following are true:
@@ -63,7 +67,6 @@ This improves code in the following ways:
 
 - It can improve performance when the replacement uses a more suitable approach or data structure.
 
-
 ## How to Refactor
 
 1. Define the current behaviour with tests before changing the algorithm (including edge cases).
@@ -91,7 +94,6 @@ This improves code in the following ways:
 - The old algorithm implementation has been removed (or intentionally kept only temporarily during migration).
 - The replacement reduces at least one measurable source of complexity (for example: fewer branches, fewer manual loop steps, fewer special cases, or use of a standard library primitive).
 - Any changed behaviour is explicitly documented and covered by updated tests.
-
 
 ## Eliminates Code Smell
 

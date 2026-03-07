@@ -1,5 +1,9 @@
 # Replace Function with Module
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## When to use
 
 Use when any of the following are true:
@@ -39,7 +43,7 @@ end
 
 Move the calculation into a dedicated module that owns the operation state.
 
-In Elixir, the idiomatic version of the "method object" refactoring is usually a focused module (often with a struct) that carries inputs and intermediate results across small functions.
+In Elixir, the idiomatic version of the module-and-struct based extraction is usually a focused module (often with a struct) that carries inputs and intermediate results across small functions.
 
 The original function becomes a thin wrapper that initializes the state and delegates to the new module.
 
@@ -139,7 +143,7 @@ This improves code in the following ways:
 
 ## Similar Refactoring Techniques
 
-- `Replace Data Value with Object`
+- `Replace Data Value with Struct`
 
 ## Eliminates Code Smell
 

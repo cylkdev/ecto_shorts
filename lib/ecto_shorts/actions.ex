@@ -14,7 +14,7 @@ defmodule EctoShorts.Actions do
   * Run transactional multi-record operations with automatic rollback
   * Batch-fetch records by key for efficient lookups
 
-  ## Getting started
+  ## Run CRUD actions
 
   Configure your `Ecto.Repo` in your application config:
 

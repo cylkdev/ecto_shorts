@@ -13,4 +13,6 @@ Follow `.agent/INVESTIGATION_LOGS.md` exactly. Do not duplicate or reinterpret t
 
 1. Read `.agent/INVESTIGATION_LOGS.md`.
 
-2. Execute the InvestigationLog workflow exactly as written in `.agent/INVESTIGATION_LOGS.md`.
+2. Read `.agent/OUTPUTS.md` to get the canonical InvestigationLog output location and naming rules.
+
+3. Execute the InvestigationLog workflow exactly as written in `.agent/INVESTIGATION_LOGS.md`.

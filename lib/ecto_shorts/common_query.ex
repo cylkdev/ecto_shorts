@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonQuery do
   This is useful when building dynamic query composers, debugging query
   construction, or implementing query middleware.
 
-  ## Getting started
+  ## Inspect query structure
 
   Extract the source from a query:
 

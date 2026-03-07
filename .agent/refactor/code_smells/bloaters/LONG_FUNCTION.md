@@ -1,5 +1,9 @@
 # Long Function
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Bloaters
@@ -116,8 +120,8 @@ end
 
 - **Extract Function**: Move each step group into its own named function.
 - **Replace Nested Conditional with Guard Clauses**: Use pattern matching and guards to flatten conditionals.
-- **Introduce Parameter Object**: If many values are passed between steps, group them into a struct or map.
-- **Use `with` for Sequential Operations**: Replace nested `case` expressions with `with` chains.
+- **Introduce Parameter Struct**: If many values are passed between steps, group them into a struct or map.
+- Use `with` when it makes sequential success paths clearer than nested `case` expressions.
 
 ## Why Refactor
 
@@ -140,5 +144,5 @@ Extracting functions has negligible runtime cost in Elixir. The BEAM optimizes f
 
 - `Extract Function`
 - `Replace Nested Conditional with Guard Clauses`
-- `Introduce Parameter Object`
+- `Introduce Parameter Struct`
 - `Substitute Algorithm`

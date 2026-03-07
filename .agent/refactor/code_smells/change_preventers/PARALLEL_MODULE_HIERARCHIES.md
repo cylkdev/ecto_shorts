@@ -1,5 +1,9 @@
 # Parallel Module Hierarchies
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Change Preventers
@@ -155,9 +159,9 @@ end
 
 - **Move Function**: Consolidate parallel modules into domain-focused modules.
 - **Collapse Module Hierarchy**: Merge thin parallel modules.
-- **Use Protocols**: Replace parallel serializers with protocol implementations.
-- **Use Behaviours**: Define contracts that modules implement inline.
-- **Organize by Domain**: Group by business concept, not technical layer.
+- Use protocol implementations when the repeated variation is type-specific.
+- **Extract Behaviour**: Define contracts that modules implement inline.
+- Group code by business concept instead of by technical layer.
 
 ## Why Refactor
 

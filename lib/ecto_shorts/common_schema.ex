@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonSchema do
   structs, changesets, or queries) and provides a consistent API for
   introspection and struct creation.
 
-  ## Getting started
+  ## Inspect schema metadata
 
   The simplest use is to normalize a source into a `{table_name, schema}` tuple:
 

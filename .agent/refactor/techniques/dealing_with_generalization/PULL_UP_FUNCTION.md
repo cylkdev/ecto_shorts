@@ -1,5 +1,9 @@
 # Pull Up Function
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## When to use
 
 Use when the same function logic is duplicated across related modules.

@@ -8,7 +8,7 @@ defmodule EctoShorts.SchemaHelpers do
   inspect field types. These utilities help you write defensive code that
   works correctly with both schema structs and plain maps.
 
-  ## Getting started
+  ## Add schema helper functions
 
   Check if a value is a schema struct:
 

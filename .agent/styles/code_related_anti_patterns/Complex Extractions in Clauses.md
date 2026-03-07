@@ -1,5 +1,9 @@
 # Complex extractions in clauses
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Problem
 
 When we use multi-clause functions, it is possible to extract values in the clauses for further usage and for pattern matching/guard checking. This extraction itself does not represent an anti-pattern, but when you have extractions made across several clauses and several arguments of the same function, it becomes hard to know which extracted parts are used for pattern/guards and what is used only inside the function body. This anti-pattern is related to Unrelated multi-clause function, but with implications of its own. It impairs the code readability in a different way.

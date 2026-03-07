@@ -23,7 +23,7 @@ defmodule EctoShorts.Compiler do
   * **Integrate with EctoShorts.CommonFilters** - provide a custom adapter that
     works seamlessly with the filter language.
 
-  ## Getting started
+  ## Compile an adapter
 
   Define a specs module that exports `clause_specs/4`:
 

@@ -1,5 +1,9 @@
 # Long Parameter List
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Bloaters
@@ -145,9 +149,9 @@ Notifications.send_sms("555-1234", "Hello!", priority: :high, callback_url: "htt
 
 ## Treatment
 
-- **Introduce Parameter Object**: Group related parameters into a struct.
-- **Use Keyword Options**: For optional parameters, use a keyword list with defaults.
-- **Preserve Whole Object**: Pass the entire struct instead of extracting fields.
+- **Introduce Parameter Struct**: Group related parameters into a struct.
+- Use keyword options for optional parameters with defaults.
+- **Preserve Whole Struct**: Pass the entire struct instead of extracting fields.
 - **Replace Parameter with Function Call**: If a parameter can be derived, compute it inside the function.
 
 ## Why Refactor
@@ -174,6 +178,6 @@ Notifications.send_sms("555-1234", "Hello!", priority: :high, callback_url: "htt
 
 ## Related Refactoring Techniques
 
-- `Introduce Parameter Object`
-- `Preserve Whole Object`
+- `Introduce Parameter Struct`
+- `Preserve Whole Struct`
 - `Replace Parameter with Function Call`

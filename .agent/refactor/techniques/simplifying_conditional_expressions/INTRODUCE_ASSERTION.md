@@ -1,5 +1,9 @@
 # Introduce Assertion
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## When to use
 
 Use when any of the following are true:
@@ -56,5 +60,5 @@ Or use direct pattern matching / `raise` for invalid programmer-state inputs.
 
 ## Eliminates Code Smell
 
-- `Obscure Intent`
-- `Complex Conditional`
+- `Comments`
+- `Switch Statements`

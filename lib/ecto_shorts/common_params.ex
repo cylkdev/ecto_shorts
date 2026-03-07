@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonParams do
   format Ecto expects, handles validation, generates timestamps, manages
   placeholders, and builds conflict resolution options.
 
-  ## Getting started
+  ## Prepare params for bulk operations
 
   Convert params to insert format:
 

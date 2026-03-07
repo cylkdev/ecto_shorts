@@ -1,5 +1,5 @@
 ---
-description: Runs Credo in strict mode for the relevant Elixir Mix project, fixes lint and consistency issues, and repeats until the command passes cleanly.
+description: Runs the repository Credo workflow by using `.agent/PROJECT.md` for the exact command, the repository root, and prerequisite repair.
 auto_execution_mode: 3
 ---
 
@@ -13,37 +13,32 @@ Use this workflow after changing Elixir code, tests, or project configuration an
 
 Do **not** use this workflow to run Dialyzer or tests.
 
-## Definitions
+## Source of truth
 
-- A `Mix project` is any directory that contains `mix.exs`.
-- An `umbrella project` is a Mix project whose child applications live under `apps/`.
+Use `.agent/PROJECT.md` as the source of truth for the repository root, the canonical Credo commands, and prerequisite repair.
+
+Use `Command Surface` for the exact Credo command. Use `Repair Failed Command Prerequisites` when Credo cannot reach a meaningful lint result. Use `Recommended Validation Paths` when you need to confirm that Credo is the right validation path for the current change.
 
 ## What to do
 
-1. Choose the correct directory before you run anything.
-   - If the change is limited to one child application inside an umbrella project, run Credo from that child application's directory.
-   - If the change touches the umbrella root, shared configuration, or more than one child application, run Credo from the umbrella root.
-   - If this is not an umbrella project, run Credo from the project root that contains `mix.exs`.
+1. Read `.agent/PROJECT.md`.
 
-2. Make sure the project can load.
-   - If dependencies are missing, run `mix deps.get`.
-   - If the project does not compile, fix the compile error first. Credo output is not trustworthy until the project loads.
+2. Confirm in `Repository Snapshot` that this repository runs quality-check commands from the repository root.
 
-3. Run the linter:
+3. Choose the matching Credo command from `Command Surface`.
+   - Use the strict local Credo pass for ordinary local iteration.
+   - Use the CI-equivalent Credo command only when the task needs GitHub Actions parity.
 
-       mix credo --strict
+4. If Credo fails before it can lint the code, use `Repair Failed Command Prerequisites` and rerun the same Credo command.
 
-4. Fix the reported issues.
+5. Fix the reported issues.
    - Start with the first issue in the output.
    - Make the smallest change that removes the issue.
    - Keep behaviour unchanged unless the task explicitly allows a behaviour change.
-   - Re-run `mix credo --strict` after each coherent batch of fixes.
+   - Re-run the same Credo command after each coherent batch of fixes.
 
-5. Widen the scope only if the work widened.
-   - If you started in one child application and later changed shared or umbrella-level files, re-run `mix credo --strict` from the umbrella root.
-
-6. Stop only when the chosen scope passes with exit code `0` and no Credo issues.
+6. Stop only when the chosen Credo command exits with code `0` and no Credo issues.
 
 ## Report back
 
-State the directory you used, the exact command you ran, and whether the final run was clean.
+State that you ran the repository-root Credo command from `.agent/PROJECT.md`, name which Credo variant you chose, and say whether the final run was clean.

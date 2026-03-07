@@ -8,7 +8,7 @@ defmodule EctoShorts.Testing do
   The assertions compare queries at different levels (AST, inspect output,
   SQL) to give you flexibility in how you verify query construction.
 
-  ## Getting started
+  ## Assert queries and SQL
 
   Add `use EctoShorts.Testing` to your test module to get repo-bound
   helpers that delegate to this module:

@@ -1,5 +1,9 @@
 # Alternative Return Types
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 A single function should not return fundamentally different shapes based on options like `return: :raw` vs `return: :wrapped`. It forces callers to read implementation details, makes types unclear, and leads to "guess the shape" code at call sites.

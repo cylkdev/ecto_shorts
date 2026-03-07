@@ -1,5 +1,9 @@
 # Shotgun Surgery
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Change Preventers
@@ -152,8 +156,8 @@ end
 
 - **Move Function**: Consolidate scattered logic into one module.
 - **Inline Module**: If modules are too granular, combine them.
-- **Extract Shared Configuration**: Centralize field lists, constants, and metadata.
-- **Use Module Attributes**: Define shared data in one place and reference it.
+- Centralize repeated field lists, constants, and metadata in one place.
+- Use module attributes when one shared source of truth reduces the number of edits.
 
 ## Why Refactor
 
@@ -183,4 +187,4 @@ end
 - `Move Function`
 - `Inline Module`
 - `Extract Module`
-- `Introduce Parameter Object`
+- `Introduce Parameter Struct`

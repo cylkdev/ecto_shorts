@@ -6,12 +6,7 @@ Use this guide to decide what belongs in `.agent/skills/`, when to add a new ski
 
 ## Definitions
 
-- `Skill`: A reusable instruction file that tells a reader how to perform one class of task.
-- `Trigger`: The observable condition that tells the reader the skill should be used.
-- `Constraint`: A rule the reader must not break.
-- `Validation`: The observable proof that the skill was followed correctly and produced the required result.
-- `Template`: A reusable fill-in-the-blank structure that keeps skills consistent.
-- `Asset`: A supporting file or folder stored beside a skill, such as an example, template, reference snippet, or script.
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
 
 ## Purpose / Big Picture
 
@@ -24,7 +19,7 @@ This guide has two jobs. First, it explains how to work inside `.agent/skills/` 
 - Primary artifact: A new or revised skill stored under `.agent/skills/<skill_name>/SKILL.md`, with any supporting files kept inside the owning skill directory under clearly named subdirectories when needed.
 - Primary consumer: A coding agent or human novice who needs to add, revise, or use a skill from this directory without guessing.
 - Ready when: The directory layout is correct, the skill boundary is clear, the skill package is self-contained, and any needed supporting files are stored and named clearly enough for a beginner to find.
-- Hands off to: Use `Start Here` and `When to Create, Extend, or Stop` to decide whether the work belongs in this directory, another skill directory, a root `.agent` guide, or a one-off prompt.
+- Hands off to: Use `Guidelines` for the fastest directory-level routing and `When to Create, Extend, or Stop` when you need the boundary between skills, root `.agent` guides, and one-off prompts.
 
 ## When to use this document
 
@@ -45,9 +40,13 @@ Do not use this document when:
 
 ## How to Use this document
 
-Start here any time you touch `.agent/skills/`. Keep this file open while you work on a skill. If the local directory layout, naming convention, minimum required skill contract, or support-file placement rules change, update this guide in the same change so the next reader can restart from the working tree alone.
+When work touches `.agent/skills/`, keep this file open while you work on a skill. If the local directory layout, naming convention, minimum required skill contract, or support-file placement rules change, update this guide in the same change so the next reader can restart from the working tree alone.
 
-Read `Start Here` when you want the fastest answer. Read `Directory Layout` and `Important Path Rules` before you create or move files. Read `Writing a Skill in This Directory` when you need the minimum required sections, compatibility rules, and recommended authoring pattern.
+When you want the fastest answer, use `Guidelines`. When you are about to create or move files, read `Directory Layout` and `Important Path Rules`. When you need the minimum required sections, compatibility rules, and recommended authoring pattern, read `Writing a Skill in This Directory`.
+
+Before you create, revise, move, or catalog a skill, update the surrounding active document. Record the concrete task, the key files, and every skill or catalog file that must change in that document's `Task and Key Files` section.
+
+Keep the related document maintenance task visible in that document's `Progress` section or checklist so skill-package sync is never treated as implicit.
 
 ## Guidelines
 
@@ -57,9 +56,9 @@ Read `Start Here` when you want the fastest answer. Read `Directory Layout` and 
 
 - Add supporting examples, references, scripts, or templates. Keep them inside `.agent/skills/<skill_name>/` under clearly named subdirectories and update the skill so it points to them explicitly.
 
-- Unsure whether this should be a skill at all. Read `When to Create, Extend, or Stop` before you add anything.
+- When you are unsure whether the work should become a skill at all, read `When to Create, Extend, or Stop` before you add anything.
 
-- Need a root planning or policy document instead of a reusable skill. Stop here and use the relevant root `.agent` guide instead.
+- When the real job is a root planning or policy document instead of a reusable skill, use the relevant root `.agent` guide instead.
 
 ## Important Path Rules
 
@@ -126,6 +125,7 @@ NON-NEGOTIABLE REQUIREMENTS:
 * Every skill must make its responsibility boundaries explicit.
 * Every skill must be specific enough that two different readers would take the same action.
 * Every skill-owned supporting file must belong to a specific skill, live inside that skill's directory, and be named clearly enough that a beginner can tell why it exists.
+* Every new or revised skill task must record the concrete task, key files, and required skill-directory updates in the surrounding active document's `Task and Key Files` section.
 
 Treat these rules as mandatory. If one is missing, the skill is incomplete and is not safe for a beginner to use.
 
@@ -155,6 +155,16 @@ Update `Directory Layout` whenever the checked-in `.agent/skills/` tree changes.
 
 If this guide describes the current contents of a checked-in skill directory, keep those descriptions accurate.
 
+Keep any related skill-directory sync work visible in the surrounding active document until the tree, this guide, and the owning `SKILL.md` agree again.
+
+### Safe Parallel Document Maintenance
+
+When you update this document itself, let one coordinator own the final document edit. The coordinator decides the active scope, the canonical wording, and the final structure that lands in the checked-in guide.
+
+After the change scope is stable, worker passes may inspect independent sections, companion files, or stale references in parallel. Each worker pass should return bounded facts such as outdated wording, missing sync updates, stale paths, or terminology drift.
+
+Collect those worker-pass results before you edit this document. Do not update the guide from half-collected scans.
+
 ## Writing a Skill in This Directory
 
 Use this section when you are authoring or revising `.agent/skills/<skill_name>/SKILL.md`.
@@ -163,6 +173,7 @@ Use this section when you are authoring or revising `.agent/skills/<skill_name>/
 
 Every skill body must include these sections. They do not need to be the only sections, and they do not need to appear in this exact order.
 
+- `Definitions`: Make this the first section after the title and any lead paragraph. Point readers to `.agent/DEFINITIONS.md` instead of keeping a local glossary.
 - `Purpose`: Explain what the skill is for, what problem it solves, and why it exists.
 - `Goal`: State the end result the skill should produce, not the process.
 - `When to use`: Describe the exact situations that should trigger the skill. Use observable conditions.
@@ -182,26 +193,27 @@ Every skill body must include these sections. They do not need to be the only se
 The minimum contract above is authoritative, but it is not the only allowed structure.
 
 - Optional frontmatter or metadata above the body is allowed when another skill-creation workflow, tool, or consumer expects it.
-- Extra sections such as `Glossary`, `Background`, `References`, `Quick start`, or `Troubleshooting` are allowed before, between, or after the required sections.
+- Extra sections such as `Background`, `References`, `Quick start`, or `Troubleshooting` are allowed before, between, or after the required sections as long as they do not replace the required `Definitions` section.
 - Skill-owned support folders such as `assets/`, `references/`, `scripts/`, or metadata directories are allowed when the skill points to them clearly and they remain inside the owning skill directory.
 
 ### Recommended Base Layout
 
 If you do not have a good reason to do otherwise, use the required sections in the following order. Treat this as the default template, not as an exclusive format.
 
-1. `Purpose`
-2. `Goal`
-3. `When to use`
-4. `When not to use`
-5. `Inputs`
-6. `Outputs`
-7. `What to do`
-8. `Decision rules`
-9. `Constraints`
-10. `Validation`
-11. `Success criteria`
-12. `Examples`
-13. `Common mistakes`
+1. `Definitions`
+2. `Purpose`
+3. `Goal`
+4. `When to use`
+5. `When not to use`
+6. `Inputs`
+7. `Outputs`
+8. `What to do`
+9. `Decision rules`
+10. `Constraints`
+11. `Validation`
+12. `Success criteria`
+13. `Examples`
+14. `Common mistakes`
 
 ### Recommended Authoring Workflow
 
@@ -222,7 +234,7 @@ Use observable language. Prefer instructions that can be checked from the outsid
 
 Use imperative steps inside `What to do`. Prefer `Define the trigger conditions.` or `List the required inputs.` Avoid status-style instructions such as `The trigger conditions are defined.`
 
-Define terms of art in plain language or remove them. If a beginner would not know the word, the skill must explain it before relying on it.
+Use `.agent/DEFINITIONS.md` for shared terms of art. If a reusable term is missing, add it there or rewrite the skill so a beginner does not need the term.
 
 Prefer exact boundaries. State clearly what is included, what is excluded, and where the skill stops owning the task.
 
@@ -255,6 +267,10 @@ Use this skeleton when you create a new `SKILL.md` and do not need a more specia
 Optional frontmatter or metadata may appear above this skeleton. Additional sections may also appear before, between, or after the required sections when they help the skill.
 
     # <Skill name>
+
+    ## Definitions
+
+    Use `.agent/DEFINITIONS.md` as the source of truth for shared definitions. If a reusable term is missing, add it there instead of defining it locally.
 
     ## Purpose
     <Explain what this skill is for and why it exists.>

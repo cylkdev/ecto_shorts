@@ -13,6 +13,6 @@ Follow `.agent/ARCHITECTURE_REVIEW.md` exactly. Do not duplicate or reinterpret 
 
 1. Read `.agent/ARCHITECTURE_REVIEW.md`.
 
-2. Read `.windsurf/rules/document-artifacts.md` to get the required output location for the ArchitectureReview artifact.
+2. Read `.agent/OUTPUTS.md` to get the canonical ArchitectureReview output location and naming rules.
 
 3. Execute the architecture review exactly as written in `.agent/ARCHITECTURE_REVIEW.md`.

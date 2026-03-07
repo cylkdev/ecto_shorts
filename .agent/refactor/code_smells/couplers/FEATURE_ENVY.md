@@ -1,5 +1,9 @@
 # Feature Envy
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Couplers
@@ -132,7 +136,7 @@ end
 
 - **Move Function**: Move the function to the module whose data it uses most.
 - **Extract Function**: If only part of the function envies another module, extract that part.
-- **Introduce Delegate**: If the function must stay, delegate to the appropriate module.
+- **Hide Delegate**: If the function must stay, expose a delegating boundary at the appropriate module.
 
 ## Why Refactor
 

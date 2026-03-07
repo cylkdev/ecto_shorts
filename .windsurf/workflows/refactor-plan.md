@@ -13,6 +13,6 @@ Follow `.agent/REFACTOR_PLANS.md` exactly. Do not duplicate or reinterpret the r
 
 1. Read `.agent/REFACTOR_PLANS.md`.
 
-2. Use the RefactorPlan output location and naming rules defined in `.agent/REFACTOR_PLANS.md`.
+2. Read `.agent/OUTPUTS.md` to get the canonical RefactorPlan output location and naming rules.
 
 3. Execute the refactor planning workflow exactly as written in `.agent/REFACTOR_PLANS.md`.

@@ -1,5 +1,9 @@
 # Remove Middle Man
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## When to use
 
 Use when any of the following are true:
@@ -47,7 +51,7 @@ This improves code in the following ways:
 ## Benefits
 
 - Lower maintenance overhead.
-- Fewer stale wrapper docs/tests.
+- Fewer stale wrapper .docs/tests.
 - Cleaner dependency graph.
 
 ## Drawbacks
@@ -71,7 +75,7 @@ This improves code in the following ways:
 
 ## Eliminates Code Smell
 
-- `Middle Module`
+- `Middle Man`
 
 ## Similar Refactoring Techniques
 

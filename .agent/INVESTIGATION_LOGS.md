@@ -2,6 +2,10 @@
 
 This document defines the standard for an `InvestigationLog`, a living working document used to diagnose one visible problem whose cause is not yet proven. Treat the reader as a complete beginner to this repository: they have only the current working tree and the single InvestigationLog you provide. There is no memory of prior investigations and no external context.
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Purpose / Big Picture
 
 Use an InvestigationLog to turn an unclear problem into a clear next safe action supported by facts. Record the visible failure, the expected result, the facts you gathered, the interpretation those facts support, the decision you made, and the checks that prove the original problem is resolved or ready to hand off.
@@ -12,7 +16,7 @@ An InvestigationLog does not define intended behaviour in the abstract and it do
 
 - Primary artifact: A self-contained diagnosis of one visible problem, including the proven failure, facts, interpretation, and next safe action.
 - Primary consumer: The person clarifying behaviour in an ExampleMappingDoc or BehaviourSpecDoc, or implementing a fix in an ExecPlan.
-- Ready when: The failure, expected result, facts, interpretation, and next safe action are explicit at one visible boundary.
+- Ready when: The failure, expected result, facts, interpretation, and next safe action are explicit at one user-observable boundary.
 - Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
 ## How to Use InvestigationLogs and INVESTIGATION_LOGS.md
@@ -23,7 +27,19 @@ Use this guide before you investigate any problem whose cause is not already pro
 
 Keep the InvestigationLog open while you work. Record exact commands, outputs, file paths, function names, error lines, reruns, decisions, rejected interpretations, and handoff changes as they happen. Do not treat the log as a summary you write at the end.
 
+As soon as you choose this guide, write `Trigger for Using This Document`. Record the exact observed trigger facts, the full explicit reasoning path that made `InvestigationLog` the correct document, the nearest competing document types you rejected and why, and a short replication rule a later contributor can reuse. If the owning question changes but the InvestigationLog still owns the work, update that section and record the revision in `Change Log`.
+
 Use `Document Relationships` to understand how this guide differs from the other planning guides. Use `Handoffs` to decide whether this document still owns the next unresolved question or whether a listed destination owns it now.
+
+Use `.agent/OUTPUTS.md` as the source of truth for the InvestigationLog output location and naming rules.
+
+## Safe Parallel Document Maintenance
+
+When you update this document itself, let one coordinator own the final document edit. The coordinator decides the active scope, the canonical wording, and the final structure that lands in the checked-in guide.
+
+After the change scope is stable, worker passes may inspect independent sections, companion files, or stale references in parallel. Each worker pass should return bounded facts such as outdated wording, missing sync updates, stale paths, or terminology drift.
+
+Collect those worker-pass results before you edit this document. Do not update the guide from half-collected scans.
 
 ## Document Relationships
 
@@ -39,7 +55,7 @@ Use it when: A visible problem exists, but the cause is not yet proven.
 
 ### ExampleMappingDoc
 
-Purpose: Clarify intended behaviour at one visible boundary.
+Purpose: Clarify intended behaviour at one user-observable boundary.
 
 Intent: Turn ambiguous or disputed behaviour into explicit rules, examples, and acceptance-test targets.
 
@@ -47,7 +63,7 @@ Use it when: The boundary is known, but the intended behaviour is still unclear.
 
 ### BehaviourSpecDoc
 
-Purpose: Record a proof-ready behaviour specification at one visible boundary.
+Purpose: Record a proof-ready behaviour specification at one user-observable boundary.
 
 Intent: Turn accepted behaviour into concrete specification and proof mapping that implementation can follow without inventing behaviour.
 
@@ -95,11 +111,11 @@ This document owns a question only while it is the place where the next missing 
 - From `ExampleMappingDoc`: Use this guide when the intended behaviour discussion is already explicit enough to stop mapping, and the main unresolved question is what the system is actually doing or why it is failing.
 - From `BehaviourSpecDoc`: Use this guide when the behaviour specification effort is already explicit enough to stop, and the main unresolved question is what the system is actually doing or why it is failing.
 - From `RefactorPlan`: Use this guide when the behaviour boundary and structural work are already explicit enough to stop refactor planning, and the main unresolved question reopened by that work is what the system is actually doing or why it is failing.
-- From `ArchitectureReview`: Use this guide when the broader system path is already explicit enough to stop architecture review, and the main unresolved question is which failure or unexpected behaviour must be diagnosed at a nearer visible boundary.
+- From `ArchitectureReview`: Use this guide when the broader system path is already explicit enough to stop architecture review, and the main unresolved question is which failure or unexpected behaviour must be diagnosed at a nearer user-observable boundary.
 
 ### Outgoing Handoffs
 
-- To `ExampleMappingDoc`: Hand off when the failure, facts, and diagnosis are explicit enough to stop diagnosis, and the remaining unresolved question is what behaviour should be accepted at the visible boundary.
+- To `ExampleMappingDoc`: Hand off when the failure, facts, and diagnosis are explicit enough to stop diagnosis, and the remaining unresolved question is what behaviour should be accepted at the user-observable boundary.
 - To `BehaviourSpecDoc`: Hand off when the failure, facts, diagnosis, and expected outcome are explicit enough to stop diagnosis, and the remaining unresolved question is how to write the accepted behaviour as a concrete specification and proof path.
 - To `ExecPlan`: Hand off when the failure, facts, diagnosis, accepted behaviour, and proof expectations are explicit enough to stop diagnosis, and the remaining unresolved question is how to plan behaviour-changing implementation.
 - To `RefactorPlan`: Hand off when the failure, facts, diagnosis, and behaviour boundary are explicit enough to stop diagnosis, and the remaining unresolved question is how to plan behaviour-preserving structural change.
@@ -120,36 +136,52 @@ NON-NEGOTIABLE REQUIREMENTS:
 * Every InvestigationLog must be a living document, meaning you update it as facts, decisions, checks, and handoffs change.
 * Every InvestigationLog must keep the shared skeleton order defined in this guide.
 * Every InvestigationLog must include an `Output` section that uses the exact four-line template from this guide.
+* Every InvestigationLog must include a `Task and Key Files` section that records the concrete task, the key files, and every companion document, catalog, or artifact update that must stay in sync.
+* Every InvestigationLog must include a `Trigger for Using This Document` section immediately after `Task and Key Files` and before `Output`.
+* Every InvestigationLog must record the exact observed trigger facts, the full explicit reasoning path that made this the correct document, the nearest competing document types that were rejected and why, and a short replication rule another contributor can reuse.
+* Every InvestigationLog must revise `Trigger for Using This Document` whenever the trigger facts or reasoning change while the InvestigationLog remains the correct document, and record that revision in `Change Log`.
 * Every InvestigationLog must begin before meaningful edits begin, meaning changes to code, tests, settings, stored data, or expected results.
 * Every InvestigationLog must define one concrete visible failure at a time.
-* Every InvestigationLog must start from the nearest visible boundary where the problem can be observed directly.
+* Every InvestigationLog must start from the nearest user-observable boundary where the problem can be observed directly.
 * Every InvestigationLog must record how the current state was reached, not just what the current state is.
 * Every InvestigationLog must distinguish facts from interpretation.
 * Every InvestigationLog must restate the request in concrete language.
 * Every InvestigationLog must force an explicit decision before edits continue.
 * Every InvestigationLog must handle ambiguity openly.
-* Every InvestigationLog must define every technical term in plain language when it first appears.
+* Every InvestigationLog must use `.agent/DEFINITIONS.md` as the source of truth for shared definitions. If a reusable term is missing, add it there instead of defining it locally.
 * Every InvestigationLog must be readable by a complete beginner.
 * Every InvestigationLog must reduce an unclear problem into a clear next action supported by facts.
+* Every InvestigationLog must treat creating or refreshing the active document and syncing required companion documents, catalogs, or artifact notes as tracked work in `Progress`.
 * Every InvestigationLog must end with validation that proves the original problem is resolved or correctly handed off.
 
 Treat these rules as mandatory. If one is missing, the InvestigationLog is incomplete and the investigation is not ready to guide changes, clarification, or handoff.
 
 ## Workflow
 
-1. Write `Request Restated` and `Problem Statement` so a complete beginner can see one visible failure in concrete language.
-2. Choose the nearest `Visible Boundary`, which is the nearest place where the failure can be observed directly. Examples include a failing test, a public function call, a CLI command, an HTTP endpoint, a file output, or a visible data change.
+1. Write `Request Restated`, `Problem Statement`, `Task and Key Files`, and `Trigger for Using This Document` so a complete beginner can see one visible failure in concrete language, know why this document owns the task, and know which files and companion documents must stay in sync.
+2. Choose the nearest `User-Observable Boundary`, which is the nearest place where the failure can be observed directly. Examples include a failing test, a public function call, a CLI command, an HTTP endpoint, a file output, or a visible data change.
 3. Reproduce the problem at that boundary and record `Failure` before you explain it. Facts come first.
 4. Write `Expected Result` in plain language. If the expected result is still unclear, say so explicitly and gather repository evidence before you move further.
-5. Gather `Facts` from commands, outputs, file paths, line numbers, callers, nearby tests, documentation, names, stacktraces, or diffs. Follow the execution path only as far as needed to name the next useful check.
-6. Re-check the project before deciding what is wrong. Do not assume the first failing output tells the whole story.
-7. Write `Interpretation` and `Decision` explicitly. If the question stops being diagnosis, set `Next Handoff` using `Handoffs` before you keep editing.
-8. Use `Concrete Steps`, `Progress`, and `Next Handoff` to record exactly how to restart and what should happen next.
-9. Complete `Validation and Acceptance` by rerunning the original visible boundary and any wider checks required by the companion guide. Close the investigation only when the original problem no longer happens or the correct handoff is explicit.
+5. Re-check the project before deciding what is wrong. Do not assume the first failing output tells the whole story.
+6. After the boundary and expected result are stable, let one coordinator fan out bounded worker passes for independent evidence such as callers, nearby tests, stacktraces, logs, alternate code paths, or relevant documentation. Keep each worker pass narrow enough that it can return one concrete result without changing the investigation question.
+7. Record each worker pass result in the mailbox sections that fit the evidence, such as `Facts`, `Progress`, `Surprises & Discoveries`, or `Open Questions / Blockers`. Collect those results before you change interpretation, edit code, or hand off.
+8. Write `Interpretation` and `Decision` explicitly. If the question stops being diagnosis, set `Next Handoff` using `Handoffs` before you keep editing.
+9. Use `Concrete Steps`, `Progress`, and `Next Handoff` to record exactly how to restart and what should happen next. Keep one `Progress` item for creating or refreshing the active document and one for keeping required companion documents, catalogs, or artifact notes in sync.
+10. Complete `Validation and Acceptance` by rerunning the original user-observable boundary and any wider checks required by the companion guide. When wider repository command selection matters, consult `.agent/PROJECT.md` and record the exact command you chose. Close the investigation only when the original problem no longer happens or the correct handoff is explicit.
 
 ## Communication Rules
 
 Do not investigate in silence. Record facts, decisions, blockers, rejected interpretations, and changes in direction in the InvestigationLog as they happen.
+
+Do not hide why the InvestigationLog owns the task. Record `Trigger for Using This Document` as soon as the owning question is clear, and revise it whenever the trigger facts or reasoning change while the InvestigationLog remains the correct document.
+
+Let one coordinator own sequencing. The coordinator decides when the investigation question is stable enough to fan out worker passes, when results have been collected, and when the log should hand off instead of improvising a fix.
+
+Use worker passes only for bounded evidence gathering. A worker pass is one narrow inspection such as checking callers, reading nearby tests, tracing one stacktrace branch, or reviewing one log source. Do not let separate worker passes invent different investigation questions.
+
+Use the shared living sections as the mailbox for worker results. `Facts`, `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Open Questions / Blockers` are where partial results wait until the coordinator collects them.
+
+Collect worker results before you revise the interpretation, widen the boundary, edit code, or set `Next Handoff`. Do not branch the investigation from half-collected evidence.
 
 Before you act on a request, check whether it has one reasonable meaning or more than one. If it has more than one reasonable meaning, stop and name the competing interpretations instead of silently choosing one.
 
@@ -173,9 +205,11 @@ Write in plain prose. Prefer sentences over lists. Avoid checklists, tables, and
 
 Validation is not optional. Include the exact checks, runner commands, traces, or observable signals that prove the document is complete enough for its next handoff. Capture concise evidence such as short transcripts, outputs, diffs, or cited repository facts when they help a beginner restart safely.
 
+When validation needs repository-specific command selection or wider check breadth, consult `.agent/PROJECT.md` and cite the command you chose here.
+
 Specify repository context explicitly. Name files with repository-relative paths, name modules and functions precisely when they matter, and point to exact artifacts or output locations when the guide requires them.
 
-When you revise the document, ensure the revision is reflected across all relevant sections and record the change in `Change Log`. If the document builds on another checked-in artifact, incorporate the needed context directly or reference the exact file and restate the required facts.
+When you revise the document, ensure the revision is reflected across all relevant sections, including `Trigger for Using This Document`, and record the change in `Change Log`. If the document builds on another checked-in artifact, incorporate the needed context directly or reference the exact file and restate the required facts.
 
 ### Start Before More Editing
 
@@ -187,7 +221,7 @@ Facts include commands, outputs, return values, logs, nearby tests, callers, doc
 
 ### Restartability and Background Use
 
-Use the shared `Progress`, `Current State Snapshot`, `Concrete Steps`, `Surprises & Discoveries`, `Decision Log`, `Open Questions / Blockers`, `Next Handoff`, `Outcomes & Retrospective`, and `Change Log` sections to keep the log restartable. These sections let the InvestigationLog stay open as background evidence while another document owns a different question.
+Use the shared `Task and Key Files`, `Trigger for Using This Document`, `Progress`, `Current State Snapshot`, `Concrete Steps`, `Surprises & Discoveries`, `Decision Log`, `Open Questions / Blockers`, `Next Handoff`, `Outcomes & Retrospective`, and `Change Log` sections to keep the log restartable. These sections are also the mailbox where worker-pass results wait until the coordinator collects them. They let the InvestigationLog stay open as background evidence while another document owns a different question.
 
 ## Skeleton of a Good InvestigationLog
 
@@ -198,6 +232,10 @@ Use this skeleton when you create a new InvestigationLog. Keep it complete enoug
     This InvestigationLog is a living document. Keep it up to date as facts appear, decisions change, checks succeed or fail, and handoffs become clearer.
 
     If `.agent/INVESTIGATION_LOGS.md` is checked into the repository, maintain this InvestigationLog in accordance with that file.
+
+    ## Definitions
+
+    Use `.agent/DEFINITIONS.md` as the source of truth for shared definitions. If a reusable term is missing, add it there instead of defining it locally.
 
     ## Status
 
@@ -217,16 +255,38 @@ Use this skeleton when you create a new InvestigationLog. Keep it complete enoug
 
     State what is known, what is still unknown, what has already been ruled out, and what a complete beginner should do first if they restart here.
 
+    ## Task and Key Files
+
+    Record the concrete task this log currently owns.
+
+    List the key repository files, commands, tests, catalogs, or companion documents that matter right now.
+
+    List every document, catalog, or artifact that must be created or updated in the same change and keep this section current as the task or handoff changes.
+
+    ## Trigger for Using This Document
+
+    Record the exact trigger that made this InvestigationLog the correct document.
+
+    State the concrete observed conditions from the request, repository, prior artifact, or observed system state that triggered this document choice.
+
+    Write the full explicit reasoning path from those facts to this document. Do not skip intermediate decision steps.
+
+    Name the nearest competing document types you considered and explain why each one does not own the current unresolved question.
+
+    End with a short replication rule another contributor can follow to reach the same document choice.
+
     ## Output
 
     - Primary artifact: A self-contained diagnosis of one visible problem, including the proven failure, facts, interpretation, and next safe action.
     - Primary consumer: The person clarifying behaviour in an ExampleMappingDoc or BehaviourSpecDoc, or implementing a fix in an ExecPlan.
-    - Ready when: The failure, expected result, facts, interpretation, and next safe action are explicit at one visible boundary.
+    - Ready when: The failure, expected result, facts, interpretation, and next safe action are explicit at one user-observable boundary.
     - Hands off to: See `Handoffs` for the valid next destination, the unresolved question that moves there, and the evidence that makes the handoff safe.
 
     ## Progress
 
     Use a list with checkboxes to summarize the investigation work and every meaningful stopping point.
+
+    Include one item for creating or refreshing this InvestigationLog and one item for keeping required companion documents, catalogs, or artifact notes in sync.
 
     **Legend**
 
@@ -234,8 +294,8 @@ Use this skeleton when you create a new InvestigationLog. Keep it complete enoug
     [~] - In progress
     [x] - Completed
 
-    - [x] (YYYY-MM-DD HH:MMZ) Example completed step.
-    - [ ] Example incomplete step.
+    - [x] (YYYY-MM-DD HH:MMZ) Created or refreshed this InvestigationLog and updated `Task and Key Files` and `Trigger for Using This Document`.
+    - [ ] Keep required companion documents, catalogs, or artifact notes in sync with this InvestigationLog.
     - [ ] Example partially completed step (completed: X; remaining: Y).
 
     ## Purpose / Big Picture
@@ -258,9 +318,9 @@ Use this skeleton when you create a new InvestigationLog. Keep it complete enoug
 
     State what failure is in scope and what nearby failures, cleanup work, or refactors are explicitly out of scope.
 
-    ## Visible Boundary
+    ## User-Observable Boundary
 
-    Name the visible boundary where the problem is reproduced.
+    Name the user-observable boundary where the problem is reproduced.
 
     Record the exact command, input, request, or action that reproduces the problem.
 

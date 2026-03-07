@@ -1,5 +1,9 @@
 # Primitive Obsession
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 Using generic primitives (strings, integers, floats, bare maps) to represent rich domain concepts leads to code that is easy to misuse. Callers can pass "any string" where only a specific kind of string is valid.

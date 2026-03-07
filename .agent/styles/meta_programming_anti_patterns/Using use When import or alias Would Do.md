@@ -1,5 +1,9 @@
 # Using use When import or alias Would Do
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 **Problem**
 
 `use` is much broader than `import` and `alias`. `use` runs `__using__/1`, which can inject arbitrary code into the caller and also propagate dependencies (for example, importing additional modules). That makes code harder to read, and can cause unexpected conflicts between imported functions and local functions.

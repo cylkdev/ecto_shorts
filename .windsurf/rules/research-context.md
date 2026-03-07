@@ -2,4 +2,8 @@
 trigger: always_on
 ---
 
-When you need contextual information about the concepts or architecture being discussed in this project, read `research/AGENTS.md` first (if it exists) and follow it to the _letter_. That file explains what research documents are available and how to read them.
+Use this rule when the current unresolved question depends on project research context.
+
+Read `research/AGENTS.md` first if it exists. Treat it as the source of truth for available research documents and how to read them.
+
+Do not improvise a different research path while that guide is available.

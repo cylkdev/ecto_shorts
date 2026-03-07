@@ -6,6 +6,10 @@ This often shows up when code reads config directly at runtime, like `Applicatio
 
 This is bad because:
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 - It makes tests order-dependent. If one test forgets to restore the old value, later tests can fail in confusing ways.
 - It breaks async safety. Two tests can race and overwrite each other's config.
 - It hides the real dependency. The code depends on config, but the dependency is not visible in the function signature.

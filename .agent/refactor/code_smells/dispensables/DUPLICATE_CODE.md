@@ -1,5 +1,9 @@
 # Duplicate Code
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## Category
 
 Dispensables
@@ -201,7 +205,7 @@ end
 - **Extract Module**: Create a module for shared functionality.
 - **Pull Up Function**: Move common code to a shared module.
 - **Form Template Function**: Extract the common algorithm, parameterize differences.
-- **Use Protocols**: For type-specific duplication with common interface.
+- Use protocol implementations when the duplication varies by data type but shares a common interface.
 
 ## Why Refactor
 

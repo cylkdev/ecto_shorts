@@ -2,6 +2,10 @@
 
 Type checks and other boolean checks that are allowed in guard clauses are named with an `is_` prefix.
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 Examples: `Integer.is_even/1`, `is_list/1`
 
 These functions and macros follow the Erlang convention of an `is_` prefix, instead of a trailing question mark, precisely to indicate that they are allowed in guard clauses.

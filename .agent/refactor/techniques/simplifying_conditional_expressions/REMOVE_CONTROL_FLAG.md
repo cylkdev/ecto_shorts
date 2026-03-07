@@ -1,5 +1,9 @@
 # Remove Control Flag
 
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
 ## When to use
 
 Use when any of the following are true:
@@ -55,5 +59,5 @@ Or with `Enum.reduce_while/3` when richer control is needed.
 
 ## Eliminates Code Smell
 
-- `Complex Conditional`
+- `Switch Statements`
 - `Temporary Field`

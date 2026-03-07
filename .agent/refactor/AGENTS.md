@@ -3,9 +3,14 @@
 This document is the beginner-friendly guide to everything inside `.agent/refactor/`.
 Use it as the authoritative map for this directory.
 
-Important path rule:
-- The real directory in this repository is `.agent/refactor/` (plural).
-- If you see `.agent/refactor/` (singular) in an older document, treat that as outdated and use `.agent/refactor/` instead.
+## Definitions
+
+Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
+
+## Important Path Rule
+
+- The canonical directory path in this repository is `.agent/refactor/`.
+- If you see an older pluralized path for this directory in an older document, treat it as outdated and use `.agent/refactor/` instead.
 
 ## What This Directory Is For
 
@@ -27,17 +32,13 @@ A simple rule to remember:
 - A code smell names the problem.
 - A refactoring technique names the fix.
 
-## Beginner Glossary
+## Surrounding Active Document
 
-- Module: in Elixir, a named container for functions. Example: `MyApp.Users`.
-- Function: a named piece of behaviour inside a module. Example: `create_user/1`.
-- Struct: a fixed-shape data structure in Elixir. It is similar to a map with a known set of fields.
-- Code smell: a recurring sign that code structure is causing confusion, duplication, coupling, or change pain. A smell is not automatically a bug, but it is a reason to inspect the code carefully.
-- Refactoring: changing code structure without intentionally changing the external behaviour.
-- Refactoring technique: a repeatable, named way to improve structure. Example: `Extract Function`.
-- Category: a folder that groups similar smells or similar techniques.
-- Catalog: the full library of smell and technique documents in `.agent/refactor/`.
-- Canonical path: the one path that should be treated as the source of truth. In this repo, that path is `.agent/refactor/`.
+Before you use this catalog to drive a refactor, investigation, or maintenance pass, update the surrounding active document.
+
+Record the concrete task, the key code files, and every catalog file, plan, or companion document that must change in that document's `Task and Key Files` section.
+
+Keep the related document maintenance task visible in that document's `Progress` section or checklist so catalog updates and supporting-document sync stay explicit.
 
 ## Directory Layout
 
@@ -68,18 +69,19 @@ Catalog totals at the time this document was written:
 - `66` refactoring technique documents
 - `88` catalog documents in total, not counting this `AGENTS.md`
 
-## Fast Start
+## Use the Catalog in Order
 
-Follow this order when you use the catalog:
+When you need the shortest path from code pain to a safe refactoring technique, use the catalog in this order:
 
 1. Read the code you want to improve and describe the pain in one sentence.
-2. Choose the closest smell category from the quick picker below.
-3. Read the most likely smell file all the way through.
-4. Confirm that the signs, causes, and examples match your code.
-5. Choose the smallest technique that solves the root cause instead of only the visible symptom.
-6. Read the chosen technique file all the way through before editing code.
-7. Make small changes, keep behaviour stable, and run formatter/tests.
-8. If you add, remove, move, or rename any file in `.agent/refactor/`, update this `AGENTS.md` in the same change.
+2. Record the concrete task, key files, and required catalog or companion-document updates in the surrounding active document's `Task and Key Files` section.
+3. Choose the closest smell category from the quick picker below.
+4. Read the most likely smell file all the way through.
+5. Confirm that the signs, causes, and examples match your code.
+6. Choose the smallest technique that solves the root cause instead of only the visible symptom.
+7. Read the chosen technique file all the way through before editing code.
+8. Make small changes, keep behaviour stable, and run formatter/tests.
+9. If you add, remove, move, or rename any file in `.agent/refactor/`, update this `AGENTS.md` in the same change and keep that sync task visible in the surrounding active document.
 
 Do not force a smell onto code if it does not fit.
 It is normal for one change to involve:
@@ -87,11 +89,11 @@ It is normal for one change to involve:
 - one or two supporting smells
 - one or more techniques used together
 
-## Quick Picker
+## Choose a Starting Path
 
-Use this section when you do not know where to start.
+When you do not yet know which catalog path fits, use this section.
 
-| If the problem sounds like this... | Start here |
+| When the problem sounds like this... | Use this path |
 | --- | --- |
 | "This function or module is just too big." | `code_smells/bloaters/` |
 | "One small change forces edits in many places." | `code_smells/change_preventers/` |
@@ -137,6 +139,7 @@ This section explains what each document type normally contains so you can read 
 
 Most smell files follow this structure:
 - `# Title`
+- `## Definitions`
 - `## Category`
 - `## Description`
 - `## Signs and Symptoms`
@@ -162,6 +165,7 @@ What this means for a beginner:
 
 Most technique files follow this structure:
 - `# Title`
+- `## Definitions`
 - `## When to use`
 - `## Problem`
 - `## Solution`
@@ -200,9 +204,9 @@ These rules keep this directory and this guide stable and easy to maintain.
 ### Structure Rules For This AGENTS File
 
 Keep this document in this order:
-1. Purpose and glossary
+1. Purpose and definitions
 2. Directory layout
-3. Fast start and quick picker
+3. Ordered catalog use and starting-path chooser
 4. How to read smells and techniques together
 5. File anatomy
 6. Maintenance rules
@@ -227,6 +231,14 @@ If any file or directory inside `.agent/refactor/` is added, removed, moved, or 
 6. Re-read the changed file and make sure the one-line summary in this guide still describes both:
    - what it is
    - when to use it
+
+### Safe Parallel Document Maintenance
+
+When you update this document itself, let one coordinator own the final document edit. The coordinator decides the active scope, the canonical wording, and the final structure that lands in the checked-in guide.
+
+After the change scope is stable, worker passes may inspect independent sections, companion files, or stale references in parallel. Each worker pass should return bounded facts such as outdated wording, missing sync updates, stale paths, or terminology drift.
+
+Collect those worker-pass results before you edit this document. Do not update the guide from half-collected scans.
 
 ### Writing Rules For Beginner-Friendly Summaries
 
@@ -303,7 +315,7 @@ Typical follow-up techniques:
 | --- | --- | --- |
 | `code_smells/couplers/FEATURE_ENVY.md` | Explains functions that belong closer to another module because they mainly use that other module's data. | Read this when a function spends most of its time reaching into another struct or calling another module's helpers. |
 | `code_smells/couplers/INAPPROPRIATE_INTIMACY.md` | Explains modules that know too much about each other's internals. | Read this when modules reach into private state, internal fields, or hidden implementation details. |
-| `code_smells/couplers/MESSAGE_CHAINS.md` | Explains deep chains of field access or nested calls that leak object structure into callers. | Read this when callers repeatedly write long access chains like `order.customer.address.city`. |
+| `code_smells/couplers/MESSAGE_CHAINS.md` | Explains deep chains of field access or nested calls that leak nested struct shape into callers. | Read this when callers repeatedly write long access chains like `order.customer.address.city`. |
 | `code_smells/couplers/MIDDLE_MAN.md` | Explains modules that mainly forward calls without adding real policy or value. | Read this when a module is mostly pass-through delegation. |
 
 ### `code_smells/dispensables/` (6 files)
@@ -482,8 +494,8 @@ Use this checklist every time you maintain `.agent/refactor/` or this `AGENTS.md
 Use these commands from the repository root to verify the directory state:
 
 ```sh
-rg --files .agent/refactors | sort
-find .agent/refactors -maxdepth 2 -type d | sort
+rg --files .agent/refactor | sort
+find .agent/refactor -maxdepth 2 -type d | sort
 ```
 
 Use these commands to find stale path references:
