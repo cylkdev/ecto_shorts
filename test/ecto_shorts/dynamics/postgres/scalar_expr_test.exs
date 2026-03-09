@@ -21,6 +21,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
     assert_dynamic(expected, actual)
   end
 
+  test "dynamic_expr/4 keeps the schema field key dynamic" do
+    expected = dynamic([q], field(q, :title) == ^"hello")
+    actual = ScalarExpr.dynamic_expr({:as, nil}, :title, "hello", [])
+
+    assert_dynamic(expected, actual)
+  end
+
   test "dynamic_expr/4 builds a root named-binding equality expression" do
     expected = dynamic([q], field(q, :id) == ^1)
     actual = ScalarExpr.dynamic_expr({:as, nil}, :id, {:eq, 1}, [])
@@ -75,6 +82,31 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
     assert_sql(expected, actual)
   end
 
+  test "dynamic_expr/4 builds a named-binding alias expression from :==" do
+    id = 1
+    expected = from(p in Post, as: :post, where: p.id == ^id)
+
+    actual =
+      from(p in Post,
+        as: :post,
+        where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, {:==, id}, [])
+      )
+
+    assert_sql(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a named-binding alias nil expression from a plain scalar term" do
+    expected = from(p in Post, as: :post, where: is_nil(p.id))
+
+    actual =
+      from(p in Post,
+        as: :post,
+        where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, nil, [])
+      )
+
+    assert_sql(expected, actual)
+  end
+
   test "dynamic_expr/4 builds a named-binding alias nil expression" do
     expected = from(p in Post, as: :post, where: is_nil(p.id))
 
@@ -82,6 +114,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
       from(p in Post,
         as: :post,
         where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, {:eq, nil}, [])
+      )
+
+    assert_sql(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a named-binding alias nil expression from :==" do
+    expected = from(p in Post, as: :post, where: is_nil(p.id))
+
+    actual =
+      from(p in Post,
+        as: :post,
+        where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, {:==, nil}, [])
       )
 
     assert_sql(expected, actual)
@@ -103,9 +147,31 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
     assert_dynamic(expected, actual)
   end
 
+  test "dynamic_expr/4 builds a positional-binding expression from :==" do
+    id = 1
+    expected = dynamic([_, q], q.id == ^id)
+    actual = ScalarExpr.dynamic_expr({:at, 2}, :id, {:==, id}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a positional-binding nil expression from a plain scalar term" do
+    expected = dynamic([_, q], is_nil(q.id))
+    actual = ScalarExpr.dynamic_expr({:at, 2}, :id, nil, [])
+
+    assert_dynamic(expected, actual)
+  end
+
   test "dynamic_expr/4 builds a positional-binding nil expression" do
     expected = dynamic([_, q], is_nil(q.id))
     actual = ScalarExpr.dynamic_expr({:at, 2}, :id, {:eq, nil}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a positional-binding nil expression from :==" do
+    expected = dynamic([_, q], is_nil(q.id))
+    actual = ScalarExpr.dynamic_expr({:at, 2}, :id, {:==, nil}, [])
 
     assert_dynamic(expected, actual)
   end

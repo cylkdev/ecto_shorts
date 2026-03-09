@@ -73,28 +73,14 @@ defmodule EctoShorts.Generator do
 
   defp build_clauses(builder, opts) do
     named_clauses = AST.named_clause_asts(builder, opts)
-    count_or_range = opts[:positions] || 10
+    count = opts[:positions] || 10
 
     positional_clauses =
-      count_or_range
-      |> to_range()
-      |> Enum.flat_map(fn index -> AST.positional_clause_asts(builder, index, opts) end)
+      Enum.flat_map(1..count, fn index ->
+        AST.positional_clause_asts(builder, index, opts)
+      end)
 
     named_clauses ++ positional_clauses
-  end
-
-  defp to_range(count_or_range) do
-    cond do
-      is_integer(count_or_range) and count_or_range >= 1 ->
-        1..count_or_range
-
-      is_struct(count_or_range, Range) ->
-        count_or_range
-
-      true ->
-        raise ArgumentError,
-              "Expected a positive integer or range, got #{inspect(count_or_range)}"
-    end
   end
 
   defp module_template_string(module_name, clauses) do
