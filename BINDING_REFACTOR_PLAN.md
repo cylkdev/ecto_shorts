@@ -77,4 +77,4 @@ Legend:
   Remaining unrelated blockers observed in that full-suite run:
   `EctoShorts.Dynamics.convert_to_dynamic/3` and `/4` are not available to the legacy query-builder tests.
   Array/scalar filter tests still receive `nil` dynamics because `EctoShorts.Dynamics.Postgres.ArrayExpr` and `EctoShorts.Dynamics.Postgres.ScalarExpr` are still stubs in this workspace.
-  `test/ecto_shorts/compiler/common_expr_specs_test.exs` still contains an invalid nested alias form (`as: CommonExpr.Specs`).
+  `test/ecto_shorts/compiler/common_expr_specs_test.exs` still contains an invalid nested alias form (`as: CommonExprBuilders`).

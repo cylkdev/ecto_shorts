@@ -129,7 +129,7 @@ defmodule EctoShorts.CompilerTest do
     assert is_nil(caller_module.dynamic_expr({:as, :post}, :missing, 1))
   end
 
-  test "multiple generated modules are compiled in one pass and dispatch in declaration order" do
+  test "multiple generated modules are compiled in one pass and dispatch by key" do
     first_builder = unique_module("FirstBuilder")
     second_builder = unique_module("SecondBuilder")
     first_compiled = unique_module("FirstCompiled")
@@ -143,11 +143,12 @@ defmodule EctoShorts.CompilerTest do
         ],
         [
           builder_definition(first_builder, :id, :first),
-          builder_definition(second_builder, :id, :second)
+          builder_definition(second_builder, :slug, :second)
         ]
       )
 
     assert {:first, 1} = caller_module.dynamic_expr({:as, :post}, :id, 1)
+    assert {:second, "post"} = caller_module.dynamic_expr({:as, :post}, :slug, "post")
 
     assert String.starts_with?(
              List.to_string(:code.which(first_compiled)),

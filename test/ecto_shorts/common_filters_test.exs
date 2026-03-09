@@ -16,6 +16,14 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, actual)
     end
 
+    test "scalar field :id with operator :==" do
+      id = 1
+      expected = from(p in Post, where: p.id == ^id)
+      actual = CommonFilters.convert_params_to_filter(Post, %{id: %{==: id}}, [])
+
+      assert_sql(expected, actual)
+    end
+
     test ":ids" do
       ids = [1, 2, 3]
       expected = from(p in Post, where: p.id in ^ids)

@@ -1,18 +1,18 @@
 defmodule EctoShorts.Dynamics.Postgres.CommonExpr do
-  alias EctoShorts.Dynamics.Postgres.CommonExpr.Spec
+  alias EctoShorts.Dynamics.Postgres.CommonExprBuilder
 
-  @keys Spec.keys()
+  @keys CommonExprBuilder.keys()
 
   use EctoShorts.Compiler,
     modules: [
       [
-        builder: Spec,
+        builder: CommonExprBuilder,
         module: __MODULE__.Compiled.Core,
         keys: [:ids, :before, :after, :until, :since, :exists],
         positions: 10
       ],
       [
-        builder: Spec,
+        builder: CommonExprBuilder,
         module: __MODULE__.Compiled.Temporal,
         keys: [:start_date, :end_date, :since_date, :until_date],
         positions: 10

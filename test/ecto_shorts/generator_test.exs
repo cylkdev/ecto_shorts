@@ -1,7 +1,7 @@
 defmodule EctoShorts.GeneratorTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Dynamics.Postgres.CommonExpr.Spec
+  alias EctoShorts.Dynamics.Postgres.CommonExprBuilder
   alias EctoShorts.Generator
 
   test "generate_module/3 emits one module with named and positional clauses" do

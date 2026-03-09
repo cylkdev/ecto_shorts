@@ -1,4 +1,6 @@
 defmodule EctoShorts.Compiler do
+  alias EctoShorts.Generator.ClauseSpec
+
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       @__ecto_shorts_compiler_options__ opts
@@ -8,7 +10,7 @@ defmodule EctoShorts.Compiler do
 
   defmacro __before_compile__(env) do
     opts = Module.get_attribute(env.module, :__ecto_shorts_compiler_options__) || []
-    entries = Keyword.get(opts, :modules, [])
+    entries = opts |> Keyword.get(:modules, []) |> normalize_entries()
 
     generated =
       Enum.map(entries, fn entry ->
@@ -21,40 +23,40 @@ defmodule EctoShorts.Compiler do
 
     written = Enum.map(generated, &EctoShorts.Generator.write_module/1)
 
-    {compiled_modules, paths} = Enum.unzip(written)
+    {_compiled_modules, paths} = Enum.unzip(written)
 
-    unload_generated_modules!(compiled_modules)
     compile_generated_modules!(generated, paths, env)
+
+    dispatcher_body_ast = dispatcher_body_ast(entries)
 
     quote do
       def dynamic_expr(binding_selector, key, value) do
-        unquote(dispatcher_body_ast(Enum.map(entries, & &1[:module])))
+        unquote(dispatcher_body_ast)
       end
     end
   end
 
-  defp dispatcher_body_ast(modules) do
-    Enum.reduce(Enum.reverse(modules), quote(do: nil), fn module, acc ->
-      quote do
-        case unquote(module).dynamic_expr(binding_selector, key, value) do
-          nil -> unquote(acc)
-          result -> result
-        end
-      end
+  defp normalize_entries(entries) do
+    Enum.map(entries, fn entry ->
+      builder = Keyword.fetch!(entry, :builder)
+
+      entry
+      |> Keyword.put_new(:keys, ClauseSpec.keys(builder))
+      |> Keyword.update!(:keys, &List.wrap/1)
     end)
   end
 
-  defp unload_generated_modules!(modules) do
-    Enum.each(modules, fn module ->
-      case :code.is_loaded(module) do
-        false ->
-          :ok
+  defp dispatcher_body_ast(entries) do
+    clauses =
+      Enum.flat_map(entries, fn entry ->
+        module = Keyword.fetch!(entry, :module)
 
-        _path ->
-          :code.delete(module)
-          :code.purge(module)
-      end
-    end)
+        Enum.map(entry[:keys], fn key ->
+          {:->, [], [[key], quote(do: unquote(module).dynamic_expr(binding_selector, key, value))]}
+        end)
+      end)
+
+    {:case, [], [quote(do: key), [do: clauses ++ [{:->, [], [[{:_, [], Elixir}], nil]}]]]}
   end
 
   defp compile_generated_modules!(generated, paths, env) do
