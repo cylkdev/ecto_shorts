@@ -855,9 +855,9 @@
 #   @logger_prefix "EctoShorts.CommonFilters"
 #   @binding_params_prefix "EctoShorts.CommonFilters.BindingParams"
 
-#   @binding_selector_key :bind
+#   @selected_binding_key :bind
 #   @binding_modes [:as, :at]
-#   @default_binding_selector {:as, nil}
+#   @default_selected_binding {:as, nil}
 
 #   @where :where
 #   @where_filters [:where, :or_where]
@@ -1002,7 +1002,7 @@
 #       apply_filters(
 #         schema_source,
 #         query,
-#         @default_binding_selector,
+#         @default_selected_binding,
 #         @where,
 #         normalized_params,
 #         opts
@@ -1016,9 +1016,9 @@
 #   defp apply_filters(
 #          schema_source,
 #          query,
-#          _binding_selector,
+#          _selected_binding,
 #          filter_op,
-#          {@binding_selector_key, bind_params},
+#          {@selected_binding_key, bind_params},
 #          opts
 #        ) do
 #     bind_params
@@ -1102,7 +1102,7 @@
 #   defp apply_filters(
 #          schema_source,
 #          query,
-#          binding_selector,
+#          selected_binding,
 #          filter_op,
 #          {key, value},
 #          opts
@@ -1111,7 +1111,7 @@
 #       key in @where_filters ->
 #         if (is_map(value) and not is_struct(value)) or is_list(value) do
 #           Enum.reduce(value, query, fn entry, query_acc ->
-#             build_schema_filters(schema_source, query_acc, binding_selector, key, entry, opts)
+#             build_schema_filters(schema_source, query_acc, selected_binding, key, entry, opts)
 #           end)
 #         else
 #           Logger.warning(
@@ -1123,10 +1123,10 @@
 #         end
 
 #       key in [:and, :or] ->
-#         build_query(schema_source, query, binding_selector, filter_op, {key, value}, opts)
+#         build_query(schema_source, query, selected_binding, filter_op, {key, value}, opts)
 
 #       key in @query_filters ->
-#         build_query(schema_source, query, binding_selector, key, value, opts)
+#         build_query(schema_source, query, selected_binding, key, value, opts)
 
 #       true ->
 #         case CommonSchema.get_schema_reflection(schema_source, :associations) do
@@ -1134,7 +1134,7 @@
 #             build_schema_filters(
 #               schema_source,
 #               query,
-#               binding_selector,
+#               selected_binding,
 #               filter_op,
 #               {key, value},
 #               opts
@@ -1145,7 +1145,7 @@
 #               apply_join(
 #                 schema_source,
 #                 query,
-#                 binding_selector,
+#                 selected_binding,
 #                 filter_op,
 #                 key,
 #                 value,
@@ -1155,7 +1155,7 @@
 #               build_schema_filters(
 #                 schema_source,
 #                 query,
-#                 binding_selector,
+#                 selected_binding,
 #                 filter_op,
 #                 {key, value},
 #                 opts
@@ -1165,13 +1165,13 @@
 #     end
 #   end
 
-#   defp apply_filters(schema_source, query, binding_selector, filter_op, params, opts) do
+#   defp apply_filters(schema_source, query, selected_binding, filter_op, params, opts) do
 #     cond do
 #       is_map(params) and not is_struct(params) ->
 #         apply_filters(
 #           schema_source,
 #           query,
-#           binding_selector,
+#           selected_binding,
 #           filter_op,
 #           Map.to_list(params),
 #           opts
@@ -1182,7 +1182,7 @@
 #           apply_filters(
 #             schema_source,
 #             query_acc,
-#             binding_selector,
+#             selected_binding,
 #             filter_op,
 #             {key, value},
 #             opts
@@ -1190,17 +1190,17 @@
 #         end)
 
 #       is_list(params) ->
-#         build_query(schema_source, query, binding_selector, filter_op, params, opts)
+#         build_query(schema_source, query, selected_binding, filter_op, params, opts)
 
 #       true ->
-#         build_query(schema_source, query, binding_selector, filter_op, params, opts)
+#         build_query(schema_source, query, selected_binding, filter_op, params, opts)
 #     end
 #   end
 
 #   defp apply_join(
 #          schema_source,
 #          query,
-#          binding_selector,
+#          selected_binding,
 #          filter,
 #          assoc_key,
 #          params,
@@ -1224,7 +1224,7 @@
 #         build_query(
 #           schema_source,
 #           query,
-#           binding_selector,
+#           selected_binding,
 #           :join,
 #           [{assoc_key, params}],
 #           opts
@@ -1258,7 +1258,7 @@
 #   defp build_schema_filters(
 #          schema_source,
 #          query,
-#          binding_selector,
+#          selected_binding,
 #          filter_op,
 #          {key, value},
 #          opts
@@ -1268,7 +1268,7 @@
 #         apply_filters(
 #           schema_source,
 #           query,
-#           binding_selector,
+#           selected_binding,
 #           filter_op,
 #           {key, Map.to_list(value)},
 #           opts
@@ -1278,21 +1278,21 @@
 #         build_query(
 #           schema_source,
 #           query,
-#           binding_selector,
+#           selected_binding,
 #           filter_op,
 #           {key, value},
 #           opts
 #         )
 
 #       key in [:and, :or] ->
-#         build_query(schema_source, query, binding_selector, filter_op, {key, value}, opts)
+#         build_query(schema_source, query, selected_binding, filter_op, {key, value}, opts)
 
 #       Keyword.keyword?(value) ->
 #         Enum.reduce(value, query, fn entry, query_acc ->
 #           apply_filters(
 #             schema_source,
 #             query_acc,
-#             binding_selector,
+#             selected_binding,
 #             filter_op,
 #             {key, entry},
 #             opts
@@ -1303,7 +1303,7 @@
 #         build_query(
 #           schema_source,
 #           query,
-#           binding_selector,
+#           selected_binding,
 #           filter_op,
 #           {key, value},
 #           opts
@@ -1311,15 +1311,15 @@
 #     end
 #   end
 
-#   defp build_query(schema_source, query, binding_selector, :subquery, params, opts)
+#   defp build_query(schema_source, query, selected_binding, :subquery, params, opts)
 #        when is_map(params) or is_list(params) do
-#     binding_source = resolve_binding_source(schema_source, query, binding_selector)
+#     binding_source = resolve_binding_source(schema_source, query, selected_binding)
 
 #     inner_query =
 #       apply_filters(
 #         schema_source,
 #         query,
-#         binding_selector,
+#         selected_binding,
 #         @where,
 #         params,
 #         opts
@@ -1329,13 +1329,13 @@
 #       binding_source,
 #       :subquery,
 #       inner_query,
-#       binding_selector,
+#       selected_binding,
 #       params,
 #       opts
 #     )
 #   end
 
-#   defp build_query(_schema_source, query, _binding_selector, :subquery, params, _opts) do
+#   defp build_query(_schema_source, query, _selected_binding, :subquery, params, _opts) do
 #     Logger.warning(
 #       @logger_prefix,
 #       "Expected :subquery params to be a map or keyword list, got: #{inspect(params)}"
@@ -1344,20 +1344,20 @@
 #     query
 #   end
 
-#   defp build_query(schema_source, query, binding_selector, filter_op, params, opts) do
-#     binding_source = resolve_binding_source(schema_source, query, binding_selector)
+#   defp build_query(schema_source, query, selected_binding, filter_op, params, opts) do
+#     binding_source = resolve_binding_source(schema_source, query, selected_binding)
 
 #     case @query_builder_modules do
 #       %{^filter_op => module} ->
-#         module.build(binding_source, filter_op, query, binding_selector, params, opts)
+#         module.build(binding_source, filter_op, query, selected_binding, params, opts)
 
 #       _ ->
-#         Filter.build(binding_source, filter_op, query, binding_selector, params, opts)
+#         Filter.build(binding_source, filter_op, query, selected_binding, params, opts)
 #     end
 #   end
 
-#   defp resolve_binding_source(schema_source, query, binding_selector) do
-#     case binding_selector do
+#   defp resolve_binding_source(schema_source, query, selected_binding) do
+#     case selected_binding do
 #       {:as, nil} ->
 #         schema_source
 

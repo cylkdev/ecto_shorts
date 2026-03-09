@@ -50,14 +50,14 @@
 #         def operators, do: @operators
 
 #         @impl true
-#         def build_dynamic(source, binding_selector, key, expr) do
+#         def build_dynamic(source, selected_binding, key, expr) do
 #           import Ecto.Query, only: [dynamic: 2]
 
 #           case key do
-#             :ids -> dynamic([{^binding_selector, r}], r.id in ^expr)
-#             :before -> dynamic([{^binding_selector, r}], r.inserted_at < ^expr)
-#             :after -> dynamic([{^binding_selector, r}], r.inserted_at > ^expr)
-#             _ -> dynamic([{^binding_selector, r}], field(r, ^key) == ^expr)
+#             :ids -> dynamic([{^selected_binding, r}], r.id in ^expr)
+#             :before -> dynamic([{^selected_binding, r}], r.inserted_at < ^expr)
+#             :after -> dynamic([{^selected_binding, r}], r.inserted_at > ^expr)
+#             _ -> dynamic([{^selected_binding, r}], field(r, ^key) == ^expr)
 #           end
 #         end
 #       end
@@ -93,62 +93,62 @@
 #         def operators, do: @operators
 
 #         @impl true
-#         def build_dynamic(_source, binding_selector, key, expr) do
+#         def build_dynamic(_source, selected_binding, key, expr) do
 #           case key do
 #             :ids when is_list(expr) ->
-#               dynamic([{^binding_selector, r}], r.id in ^expr)
+#               dynamic([{^selected_binding, r}], r.id in ^expr)
 
 #             :before when is_struct(expr, DateTime) ->
-#               dynamic([{^binding_selector, r}], r.inserted_at < ^expr)
+#               dynamic([{^selected_binding, r}], r.inserted_at < ^expr)
 
 #             :after when is_struct(expr, DateTime) ->
-#               dynamic([{^binding_selector, r}], r.inserted_at > ^expr)
+#               dynamic([{^selected_binding, r}], r.inserted_at > ^expr)
 
 #             :search when is_binary(expr) ->
 #               pattern = "%\#{expr}%"
-#               dynamic([{^binding_selector, r}],
+#               dynamic([{^selected_binding, r}],
 #                 ilike(r.title, ^pattern) or ilike(r.body, ^pattern)
 #               )
 
 #             :published when is_boolean(expr) ->
-#               dynamic([{^binding_selector, r}], r.published == ^expr)
+#               dynamic([{^selected_binding, r}], r.published == ^expr)
 
 #             _ ->
-#               build_field_expression(binding_selector, key, expr)
+#               build_field_expression(selected_binding, key, expr)
 #           end
 #         end
 
-#         defp build_field_expression(binding_selector, key, expr) when is_map(expr) do
+#         defp build_field_expression(selected_binding, key, expr) when is_map(expr) do
 #           # Handle operator map: %{>: 10, <: 100}
 #           Enum.reduce(expr, true, fn {op, val}, acc ->
-#             condition = build_operator_expression(binding_selector, key, op, val)
-#             dynamic([{^binding_selector, r}], ^acc and ^condition)
+#             condition = build_operator_expression(selected_binding, key, op, val)
+#             dynamic([{^selected_binding, r}], ^acc and ^condition)
 #           end)
 #         end
 
-#         defp build_field_expression(binding_selector, key, expr) do
+#         defp build_field_expression(selected_binding, key, expr) do
 #           # Default equality
-#           dynamic([{^binding_selector, r}], field(r, ^key) == ^expr)
+#           dynamic([{^selected_binding, r}], field(r, ^key) == ^expr)
 #         end
 
-#         defp build_operator_expression(binding_selector, key, :>, val) do
-#           dynamic([{^binding_selector, r}], field(r, ^key) > ^val)
+#         defp build_operator_expression(selected_binding, key, :>, val) do
+#           dynamic([{^selected_binding, r}], field(r, ^key) > ^val)
 #         end
 
-#         defp build_operator_expression(binding_selector, key, :<, val) do
-#           dynamic([{^binding_selector, r}], field(r, ^key) < ^val)
+#         defp build_operator_expression(selected_binding, key, :<, val) do
+#           dynamic([{^selected_binding, r}], field(r, ^key) < ^val)
 #         end
 
-#         defp build_operator_expression(binding_selector, key, :>=, val) do
-#           dynamic([{^binding_selector, r}], field(r, ^key) >= ^val)
+#         defp build_operator_expression(selected_binding, key, :>=, val) do
+#           dynamic([{^selected_binding, r}], field(r, ^key) >= ^val)
 #         end
 
-#         defp build_operator_expression(binding_selector, key, :<=, val) do
-#           dynamic([{^binding_selector, r}], field(r, ^key) <= ^val)
+#         defp build_operator_expression(selected_binding, key, :<=, val) do
+#           dynamic([{^selected_binding, r}], field(r, ^key) <= ^val)
 #         end
 
-#         defp build_operator_expression(binding_selector, key, :in, vals) when is_list(vals) do
-#           dynamic([{^binding_selector, r}], field(r, ^key) in ^vals)
+#         defp build_operator_expression(selected_binding, key, :in, vals) when is_list(vals) do
+#           dynamic([{^selected_binding, r}], field(r, ^key) in ^vals)
 #         end
 #       end
 
@@ -189,34 +189,34 @@
 
 #   Route to different implementations based on value type:
 
-#       def build_dynamic(_source, binding_selector, key, expr) when is_list(expr) do
-#         dynamic([{^binding_selector, r}], field(r, ^key) in ^expr)
+#       def build_dynamic(_source, selected_binding, key, expr) when is_list(expr) do
+#         dynamic([{^selected_binding, r}], field(r, ^key) in ^expr)
 #       end
 
-#       def build_dynamic(_source, binding_selector, key, expr) when is_map(expr) do
+#       def build_dynamic(_source, selected_binding, key, expr) when is_map(expr) do
 #         # Handle operator map
-#         build_operator_map(binding_selector, key, expr)
+#         build_operator_map(selected_binding, key, expr)
 #       end
 
-#       def build_dynamic(_source, binding_selector, key, expr) do
+#       def build_dynamic(_source, selected_binding, key, expr) do
 #         # Default equality
-#         dynamic([{^binding_selector, r}], field(r, ^key) == ^expr)
+#         dynamic([{^selected_binding, r}], field(r, ^key) == ^expr)
 #       end
 
 #   ### Pattern 2: Schema introspection
 
 #   Use the source parameter to check field types:
 
-#       def build_dynamic(source, binding_selector, key, expr) do
+#       def build_dynamic(source, selected_binding, key, expr) do
 #         case EctoShorts.CommonSchema.get_schema_reflection(source, :type, key) do
 #           {:array, _} ->
-#             build_array_expression(binding_selector, key, expr)
+#             build_array_expression(selected_binding, key, expr)
 
 #           :string ->
-#             build_string_expression(binding_selector, key, expr)
+#             build_string_expression(selected_binding, key, expr)
 
 #           _ ->
-#             build_default_expression(binding_selector, key, expr)
+#             build_default_expression(selected_binding, key, expr)
 #         end
 #       end
 
@@ -224,16 +224,16 @@
 
 #   Delegate to specialized modules for complex operators:
 
-#       def build_dynamic(source, binding_selector, key, expr) do
+#       def build_dynamic(source, selected_binding, key, expr) do
 #         cond do
 #           key in @custom_operators ->
-#             CustomOperators.build_dynamic(binding_selector, key, expr)
+#             CustomOperators.build_dynamic(selected_binding, key, expr)
 
 #           match?({:array, _}, get_field_type(source, key)) ->
-#             ArrayOperators.build_dynamic(binding_selector, key, expr)
+#             ArrayOperators.build_dynamic(selected_binding, key, expr)
 
 #           true ->
-#             ScalarOperators.build_dynamic(binding_selector, key, expr)
+#             ScalarOperators.build_dynamic(selected_binding, key, expr)
 #         end
 #       end
 
@@ -342,7 +342,7 @@
 #   * `source` - the Ecto queryable or `{table_name, schema}` tuple that the
 #     query is built from. Use this to introspect schema field types when
 #     deciding which expression to generate.
-#   * `binding_selector` - the named or positional binding atom used to
+#   * `selected_binding` - the named or positional binding atom used to
 #     reference the correct query binding in the generated `dynamic/2`
 #     expression (for example `:post` or `nil` for the root binding).
 #   * `key` - the filter field atom (for example `:title`, `:inserted_at`,
@@ -357,12 +357,12 @@
 #   ## Example implementation
 
 #       @impl true
-#       def build_dynamic(_source, binding_selector, key, expr) do
+#       def build_dynamic(_source, selected_binding, key, expr) do
 #         import Ecto.Query, only: [dynamic: 2]
 
 #         case key do
-#           :ids -> dynamic([{^binding_selector, r}], r.id in ^expr)
-#           _ -> dynamic([{^binding_selector, r}], field(r, ^key) == ^expr)
+#           :ids -> dynamic([{^selected_binding, r}], r.id in ^expr)
+#           _ -> dynamic([{^selected_binding, r}], field(r, ^key) == ^expr)
 #         end
 #       end
 
@@ -370,7 +370,7 @@
 #   """
 #   @callback build_dynamic(
 #               source :: term(),
-#               binding_selector :: term(),
+#               selected_binding :: term(),
 #               key :: atom(),
 #               expr :: term()
 #             ) :: Ecto.Query.dynamic_expr()

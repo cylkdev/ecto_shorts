@@ -10,7 +10,7 @@
 #   """
 
 #   @doc false
-#   def build_fragment_expression(_binding_selector, _expression_key, _expression_params) do
+#   def build_fragment_expression(_selected_binding, _expression_key, _expression_params) do
 #     {:error, :no_op}
 #   end
 # end

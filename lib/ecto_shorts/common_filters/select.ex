@@ -15,17 +15,17 @@
 #   require EctoShorts.Generator
 #   require Ecto.Query
 
-#   @binding_selector_key :bind
+#   @selected_binding_key :bind
 
 #   @doc "Builds a select expression for the query."
-#   def build(schema, filter_op, query, binding_selector, term, opts)
+#   def build(schema, filter_op, query, selected_binding, term, opts)
 #       when is_map(term) or is_list(term) do
 #     if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
 #       Enum.reduce(term, query, fn entry, updated_query ->
-#         build(schema, filter_op, updated_query, binding_selector, entry, opts)
+#         build(schema, filter_op, updated_query, selected_binding, entry, opts)
 #       end)
 #     else
-#       reduce_select(filter_op, schema, query, binding_selector, term)
+#       reduce_select(filter_op, schema, query, selected_binding, term)
 #     end
 #   end
 
@@ -33,30 +33,30 @@
 #         schema,
 #         filter_op,
 #         query,
-#         binding_selector,
-#         {@binding_selector_key, bind_params},
+#         selected_binding,
+#         {@selected_binding_key, bind_params},
 #         opts
 #       ) do
-#     reduce_select_bind(schema, filter_op, query, binding_selector, bind_params, opts)
+#     reduce_select_bind(schema, filter_op, query, selected_binding, bind_params, opts)
 #   end
 
-#   def build(schema, filter_op, query, binding_selector, term, _opts) do
-#     reduce_select(filter_op, schema, query, binding_selector, term)
+#   def build(schema, filter_op, query, selected_binding, term, _opts) do
+#     reduce_select(filter_op, schema, query, selected_binding, term)
 #   end
 
-#   defp reduce_select(:select, schema, query, binding_selector, term) do
-#     apply_select_expr(schema, query, binding_selector, term)
+#   defp reduce_select(:select, schema, query, selected_binding, term) do
+#     apply_select_expr(schema, query, selected_binding, term)
 #   end
 
-#   defp reduce_select(:select_merge, schema, query, binding_selector, term) do
-#     apply_select_merge_expr(schema, query, binding_selector, term)
+#   defp reduce_select(:select_merge, schema, query, selected_binding, term) do
+#     apply_select_merge_expr(schema, query, selected_binding, term)
 #   end
 
-#   defp reduce_select_bind(schema, filter_op, query, _binding_selector, bind_params, opts) do
+#   defp reduce_select_bind(schema, filter_op, query, _selected_binding, bind_params, opts) do
 #     bind_params
 #     |> BindingParams.normalize_bind_params(query)
-#     |> Enum.reduce(query, fn {binding_selector, value}, q ->
-#       build(schema, filter_op, q, binding_selector, value, opts)
+#     |> Enum.reduce(query, fn {selected_binding, value}, q ->
+#       build(schema, filter_op, q, selected_binding, value, opts)
 #     end)
 #   end
 
@@ -223,9 +223,9 @@
 #       end
 #   end
 
-#   defp build_select_map(enum, binding_selector) do
+#   defp build_select_map(enum, selected_binding) do
 #     Enum.reduce(enum, %{}, fn {field_alias, field}, acc ->
-#       Map.put(acc, field_alias, compose(binding_selector, field))
+#       Map.put(acc, field_alias, compose(selected_binding, field))
 #     end)
 #   end
 

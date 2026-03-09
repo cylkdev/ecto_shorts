@@ -16,56 +16,56 @@
 #   require EctoShorts.Generator
 
 #   @logger_prefix "EctoShorts.CommonFilters.Preload"
-#   @binding_selector_key :bind
+#   @selected_binding_key :bind
 
-#   def build(schema_source, :preload, query, binding_selector, arg, _opts) do
-#     reduce_preload(schema_source, query, binding_selector, arg)
+#   def build(schema_source, :preload, query, selected_binding, arg, _opts) do
+#     reduce_preload(schema_source, query, selected_binding, arg)
 #   end
 
 #   defp reduce_preload(
 #          schema_source,
 #          query,
-#          binding_selector,
-#          {@binding_selector_key, bind_params}
+#          selected_binding,
+#          {@selected_binding_key, bind_params}
 #        ) do
-#     reduce_preload_bind(schema_source, query, binding_selector, bind_params)
+#     reduce_preload_bind(schema_source, query, selected_binding, bind_params)
 #   end
 
-#   defp reduce_preload(schema_source, query, binding_selector, values) when is_list(values) do
+#   defp reduce_preload(schema_source, query, selected_binding, values) when is_list(values) do
 #     if Keyword.keyword?(values) do
-#       case Enum.split_with(values, fn {k, _} -> k === @binding_selector_key end) do
+#       case Enum.split_with(values, fn {k, _} -> k === @selected_binding_key end) do
 #         {[], entries} ->
-#           apply_preload_expr(query, binding_selector, entries)
+#           apply_preload_expr(query, selected_binding, entries)
 
 #         {bind_entries, []} ->
 #           Enum.reduce(bind_entries, query, fn entry, query_acc ->
-#             reduce_preload(schema_source, query_acc, binding_selector, entry)
+#             reduce_preload(schema_source, query_acc, selected_binding, entry)
 #           end)
 
 #         {bind_entries, entries} ->
-#           Enum.reduce(bind_entries, query, fn {@binding_selector_key, bind_params}, query_acc ->
-#             reduce_preload_bind(schema_source, query_acc, binding_selector, bind_params, entries)
+#           Enum.reduce(bind_entries, query, fn {@selected_binding_key, bind_params}, query_acc ->
+#             reduce_preload_bind(schema_source, query_acc, selected_binding, bind_params, entries)
 #           end)
 #       end
 #     else
-#       apply_preload_expr(query, binding_selector, values)
+#       apply_preload_expr(query, selected_binding, values)
 #     end
 #   end
 
-#   defp reduce_preload(_schema_source, query, binding_selector, key) do
-#     apply_preload_expr(query, binding_selector, [key])
+#   defp reduce_preload(_schema_source, query, selected_binding, key) do
+#     apply_preload_expr(query, selected_binding, [key])
 #   end
 
-#   defp reduce_preload_bind(_schema_source, query, _binding_selector, bind_params, entries \\ nil) do
+#   defp reduce_preload_bind(_schema_source, query, _selected_binding, bind_params, entries \\ nil) do
 #     bind_params
 #     |> BindingParams.normalize_bind_params(query)
-#     |> Enum.reduce(query, fn {binding_selector, value}, q ->
-#       if valid_binding?(q, binding_selector) do
-#         apply_preload_expr(q, binding_selector, value, entries)
+#     |> Enum.reduce(query, fn {selected_binding, value}, q ->
+#       if valid_binding?(q, selected_binding) do
+#         apply_preload_expr(q, selected_binding, value, entries)
 #       else
 #         Logger.warning(
 #           @logger_prefix,
-#           "unknown bind name `#{inspect(elem(binding_selector, 1))}` in query"
+#           "unknown bind name `#{inspect(elem(selected_binding, 1))}` in query"
 #         )
 
 #         q
@@ -79,7 +79,7 @@
 #     Query.has_named_binding?(query, alias)
 #   end
 
-#   defp valid_binding?(_query, _binding_selector), do: true
+#   defp valid_binding?(_query, _selected_binding), do: true
 
 #   Compiler.define_clauses do
 #     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->

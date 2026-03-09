@@ -1,11 +1,11 @@
 # defmodule EctoShorts.CommonFilters.BindingParams do
 #   @moduledoc since: "3.0.0"
 #   @moduledoc """
-#   Normalizes `:bind` params into `{binding_selector, value}` tuples.
+#   Normalizes `:bind` params into `{selected_binding, value}` tuples.
 
 #   When a filter params map contains a `:bind` key, this module unpacks
 #   flat bind entries and normalizes each one into a
-#   `{binding_selector, value}` tuple that callers reduce over to apply
+#   `{selected_binding, value}` tuple that callers reduce over to apply
 #   filters or query operations to the correct binding.
 
 #   Each bind entry is a flat map (or keyword list) containing an `:as`
@@ -112,7 +112,7 @@
 
 #         case resolve_at_target(bind_target, query) do
 #           :error -> {{:as, nil}, []}
-#           binding_selector -> {binding_selector, value}
+#           selected_binding -> {selected_binding, value}
 #         end
 
 #       true ->

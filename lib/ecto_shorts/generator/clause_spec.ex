@@ -5,7 +5,7 @@ defmodule EctoShorts.Generator.ClauseSpec do
 
   @callback specs_for(
               key :: atom(),
-              binding_selector :: term(),
+              selected_binding :: term(),
               target_binding_var :: Macro.t(),
               opts :: Keyword.t()
             ) :: term()
@@ -16,13 +16,13 @@ defmodule EctoShorts.Generator.ClauseSpec do
   def specs_for(
         builder,
         key,
-        binding_selector,
+        selected_binding,
         binding_body_asts,
         opts
       ) do
     builder.specs_for(
       key,
-      binding_selector,
+      selected_binding,
       binding_body_asts,
       opts
     )

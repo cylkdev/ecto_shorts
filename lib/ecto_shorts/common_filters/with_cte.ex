@@ -17,7 +17,7 @@
 #   @logger_prefix "EctoShorts.CommonFilters.WithCte"
 
 #   @doc false
-#   def build(schema_source, :with_cte, query, _binding_selector, params, opts) do
+#   def build(schema_source, :with_cte, query, _selected_binding, params, opts) do
 #     reduce_cte(schema_source, query, params, opts)
 #   end
 

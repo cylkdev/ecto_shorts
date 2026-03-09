@@ -51,7 +51,7 @@ Current understanding:
 - Maps and keyword lists are both containers at this layer. They must be reduced recursively so the actual decision is made on the reduced item shape, not on the container itself.
 - `Ecto.Query` macros require compile-time-generated function heads for positional bindings, so the compiler API must be used for expression modules that need those generated clauses.
 - `ScalarExpr` must therefore gain a builder module and use `EctoShorts.Compiler` for generated clause compilation, while keeping its runtime routing explicit inside `ScalarExpr` itself.
-- The intended `ScalarExpr` runtime shape is schema-field-first: `dynamic_expr(binding_selector, schema_field_key, {op, value})`.
+- The intended `ScalarExpr` runtime shape is schema-field-first: `dynamic_expr(selected_binding, schema_field_key, {op, value})`.
 - If the current compiler-generated dispatcher does not naturally support open-ended schema field keys in that shape, the integration must be corrected instead of bending the API into an operator-first form.
 - The compiler should only compile the modules it is given. Routing should be literal inside the expression modules themselves, which already know the full compiled module names they need to call.
 - The public expression-module API should expose one arity only. For the current Postgres expression modules, that public arity is `dynamic_expr/4`, because `Postgres` passes `opts` and that is the runtime-facing boundary.
@@ -69,7 +69,7 @@ Current understanding:
 - The user-approved structure of `lib/ecto_shorts/dynamics/postgres.ex`, `lib/ecto_shorts/dynamics/postgres/common_expr.ex`, and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` is the current source of truth. Do not restructure those files unless explicitly asked.
 - `Postgres` owns map and keyword-list handling, recursive container reduction, and binding-selector validation.
 - `CommonExpr`, `ArrayExpr`, and `ScalarExpr` are dumb expression modules. They should only deal with resolved term shapes and return matching dynamic expressions.
-- `ScalarExpr` is schema-field-first: `dynamic_expr(binding_selector, schema_field_key, term, opts)`, where resolved operator input is carried inside `term` as `{op, value}`.
+- `ScalarExpr` is schema-field-first: `dynamic_expr(selected_binding, schema_field_key, term, opts)`, where resolved operator input is carried inside `term` as `{op, value}`.
 - `ScalarExprBuilder` is the compiler-backed proof of the minimal scalar equality behavior only. The in-scope operators are `:==` and `:eq`.
 - The minimal in-scope scalar behaviors are plain equality, `:==`, `:eq`, and their `nil` forms across `{:as, nil}`, `{:as, binding_alias}`, and `{:at, position}`.
 - The active direct proof file for `ScalarExpr` is `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`.
@@ -86,7 +86,7 @@ This specification applies only to the current minimal task.
 - These modules must not be responsible for resolving maps or keyword lists into tuple forms.
 - These modules must stay dumb. They only match on the tuple input shape they are given and return the corresponding `Ecto.Query.dynamic/2` expression.
 - Binding-selector validation belongs only to `lib/ecto_shorts/dynamics/postgres.ex`.
-- The expression modules must treat `binding_selector` as already-validated input and must not repeat `{:as, ...}` / `{:at, ...}` validity checks locally.
+- The expression modules must treat `selected_binding` as already-validated input and must not repeat `{:as, ...}` / `{:at, ...}` validity checks locally.
 - Resolution of `%{field: %{operator: value}}` into the tuple shape expected by `ScalarExpr` must happen before `ScalarExpr.dynamic_expr/4` is called.
 - That resolution must follow the keyword-list-first API shape: non-struct maps become keyword lists first, keyword lists are reduced recursively, and the reduced tuple items are what reach `ScalarExpr`.
 
@@ -483,22 +483,22 @@ For the remainder of this refactor:
    Expression modules must only receive resolved tuple inputs and must not normalize maps or keyword lists themselves.
 
 7. Clarification raised by later review:
-   “I'm confused what this means `dynamic_expr(binding_selector, op, {key, value})` and also how the arguments are connected to the expr builder. The way you are passing in the arguments looks like a red flag and an assumption in your understanding of the design that you must fix.”
+   “I'm confused what this means `dynamic_expr(selected_binding, op, {key, value})` and also how the arguments are connected to the expr builder. The way you are passing in the arguments looks like a red flag and an assumption in your understanding of the design that you must fix.”
    Initial uncertainty:
    The current compiler-backed `ScalarExpr` wrapper was written with an operator-first dispatch assumption: the second argument to generated `dynamic_expr/3` was treated as the operator key (`:==` or `:eq`), while the schema field key was moved into the third argument tuple.
    Interpretation used:
-   The current generated code confirms that this is exactly how the wrapper is dispatching today, because `ScalarExprBuilder.keys/0` returns `[:==, :eq]` and the generated clauses therefore match `dynamic_expr(binding_selector, :== | :eq, {field_key, value})`.
+   The current generated code confirms that this is exactly how the wrapper is dispatching today, because `ScalarExprBuilder.keys/0` returns `[:==, :eq]` and the generated clauses therefore match `dynamic_expr(selected_binding, :== | :eq, {field_key, value})`.
    Clarified meaning:
    This operator-first dispatch shape is a design assumption introduced during the refactor, not a source-of-truth pattern taken directly from `CommonExpr`. It needs explicit review and likely correction so the argument flow is easier to understand and more clearly aligned with the intended builder/compiler design.
 
 8. Clarification given:
-   “This is wrong: `dynamic_expr(binding_selector, operator_key, {field_key, value})` ... This is not an operator first api. It is a schema field first api ... This is the expected shape: `dynamic_expr(binding_selector, schema_field_key, {op, value})`”
+   “This is wrong: `dynamic_expr(selected_binding, operator_key, {field_key, value})` ... This is not an operator first api. It is a schema field first api ... This is the expected shape: `dynamic_expr(selected_binding, schema_field_key, {op, value})`”
    Initial uncertainty:
    The refactor had bent the runtime wrapper shape to fit the current compiler-injected dispatcher, which dispatches on argument 2 and therefore encouraged an operator-first internal API.
    Interpretation used:
    The public and internal runtime shape for `ScalarExpr` must stay schema-field-first. The operator belongs inside the third-argument tuple, not in the second argument.
    Clarified meaning:
-   `ScalarExpr` must use the shape `dynamic_expr(binding_selector, schema_field_key, {op, value})`. If the current compiler wrapper cannot support that shape for open-ended schema keys, the implementation must be corrected instead of changing the API shape to fit the wrapper.
+   `ScalarExpr` must use the shape `dynamic_expr(selected_binding, schema_field_key, {op, value})`. If the current compiler wrapper cannot support that shape for open-ended schema keys, the implementation must be corrected instead of changing the API shape to fit the wrapper.
 
 7. Clarification given:
    “Yes write the behaviour spec in DESIGN.md first and get it approved before any test/code edit”
@@ -1008,8 +1008,8 @@ Results:
   Removed the separate `{op, value}` wrapper clause.
   Rewrote the main binding-selector clause so it now does:
   `case value do`
-  `{op, value} when op in @keys -> dynamic_expr(binding_selector, op, {key, value})`
-  `value when not is_list(value) -> dynamic_expr(binding_selector, :==, {key, value})`
+  `{op, value} when op in @keys -> dynamic_expr(selected_binding, op, {key, value})`
+  `value when not is_list(value) -> dynamic_expr(selected_binding, :==, {key, value})`
   `_ -> nil`
   `end`
   The final fallback clause for non-binding-selector inputs remains unchanged.
@@ -1022,16 +1022,16 @@ Results:
   Corrected the mistaken operator-first `ScalarExpr` runtime shape across the paired builder/wrapper integration points.
   Purpose:
   Restore the intended schema-field-first runtime shape:
-  `dynamic_expr(binding_selector, schema_field_key, {op, value})`
+  `dynamic_expr(selected_binding, schema_field_key, {op, value})`
   instead of the incorrect operator-first shape:
-  `dynamic_expr(binding_selector, operator_key, {schema_field_key, value})`.
+  `dynamic_expr(selected_binding, operator_key, {schema_field_key, value})`.
   Exact change in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`:
   Changed `specs_for/4` so the generated clauses now use the schema field variable as `Blueprint.key` and the operator literal inside the third-argument tuple head.
-  The nil blueprint now generates `dynamic_expr(binding_selector, schema_field_key, {op, nil})`.
-  The non-nil blueprint now generates `dynamic_expr(binding_selector, schema_field_key, {op, value})`.
+  The nil blueprint now generates `dynamic_expr(selected_binding, schema_field_key, {op, nil})`.
+  The non-nil blueprint now generates `dynamic_expr(selected_binding, schema_field_key, {op, value})`.
   Exact change in `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`:
-  Changed the wrapper so it now calls `__MODULE__.Compiled.dynamic_expr(binding_selector, key, {op, value})` for tuple inputs.
-  Changed plain non-list values so they now route to `__MODULE__.Compiled.dynamic_expr(binding_selector, key, {:==, value})`.
+  Changed the wrapper so it now calls `__MODULE__.Compiled.dynamic_expr(selected_binding, key, {op, value})` for tuple inputs.
+  Changed plain non-list values so they now route to `__MODULE__.Compiled.dynamic_expr(selected_binding, key, {:==, value})`.
   Reason for this paired change:
   The previous implementation had bent the runtime API to fit the current compiler dispatcher. This change restores the correct field-first runtime shape and makes the generated module match that shape directly.
   Validation:
@@ -1049,7 +1049,7 @@ Results:
   Exact change:
   Added a `dispatch: :direct` branch for the single-entry case.
   When present, the injected `dynamic_expr/3` now delegates directly to the generated module with:
-  `module.dynamic_expr(binding_selector, key, value)`
+  `module.dynamic_expr(selected_binding, key, value)`
   instead of building a `case key do ... end` dispatcher.
   The existing keyed `case` dispatcher remains unchanged for all other compiler entries.
   Reason for this change:
@@ -1149,8 +1149,8 @@ Results:
 - Checkpoint 45:
   Recorded the design decision that binding-selector validation happens in one place only.
   Observed code state:
-  `lib/ecto_shorts/dynamics/postgres.ex` now owns `binding_selector?/1` and gates expression dispatch through `build_field_expr/5`.
-  `lib/ecto_shorts/dynamics/postgres/common_expr.ex` and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` both accept `binding_selector` as already-validated input and no longer re-check `{:as, ...}` / `{:at, ...}` validity themselves.
+  `lib/ecto_shorts/dynamics/postgres.ex` now owns `selected_binding?/1` and gates expression dispatch through `build_field_expr/5`.
+  `lib/ecto_shorts/dynamics/postgres/common_expr.ex` and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` both accept `selected_binding` as already-validated input and no longer re-check `{:as, ...}` / `{:at, ...}` validity themselves.
   Decision:
   Keep binding-selector validity checks centralized in `Postgres`. Do not duplicate that check inside the expression modules.
   Reason:
@@ -1161,7 +1161,7 @@ Results:
 - Checkpoint 46:
   Promoted the same binding-selector ownership rule into the formal behaviour specification.
   Scope of the rule:
-  `lib/ecto_shorts/dynamics/postgres.ex` is the only place that should validate `binding_selector`.
+  `lib/ecto_shorts/dynamics/postgres.ex` is the only place that should validate `selected_binding`.
   `lib/ecto_shorts/dynamics/postgres/common_expr.ex` and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` should assume that input has already passed the boundary check.
   Reason:
   The behaviour specification needs to state the ownership rule explicitly so the document remains self-contained for a novice reader following it from scratch.
@@ -1196,7 +1196,7 @@ Results:
   Not run yet in this checkpoint.
 
 - Checkpoint 50:
-  Changed `binding_selector?/1` in `lib/ecto_shorts/dynamics/postgres.ex`.
+  Changed `selected_binding?/1` in `lib/ecto_shorts/dynamics/postgres.ex`.
   Exact change:
   Renamed the clause variables from the placeholder `t` to `binding_alias` and `position`.
   Reason:
@@ -1225,7 +1225,7 @@ Results:
 - Checkpoint 53:
   Changed `build_field_expr/5` in `lib/ecto_shorts/dynamics/postgres.ex`.
   Exact change:
-  Flattened the nested `if` + `cond` structure into a single `cond do` flow with `not binding_selector?(binding_selector) -> nil` as the first branch.
+  Flattened the nested `if` + `cond` structure into a single `cond do` flow with `not selected_binding?(selected_binding) -> nil` as the first branch.
   Reason:
   This keeps the centralized binding-selector check and the expression-module routing in one readable control-flow block, which lowers mental overhead and matches the explicit-routing style used elsewhere in this refactor.
   Validation:

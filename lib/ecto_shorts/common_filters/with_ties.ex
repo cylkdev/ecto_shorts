@@ -19,23 +19,23 @@
 #   @default_limit 1000
 
 #   @doc false
-#   def build(_schema_source, :with_ties, query, binding_selector, params, _opts) do
-#     apply_with_ties(query, binding_selector, params)
+#   def build(_schema_source, :with_ties, query, selected_binding, params, _opts) do
+#     apply_with_ties(query, selected_binding, params)
 #   end
 
-#   defp apply_with_ties(query, binding_selector, params) when is_list(params) do
-#     apply_with_ties(query, binding_selector, Map.new(params))
+#   defp apply_with_ties(query, selected_binding, params) when is_list(params) do
+#     apply_with_ties(query, selected_binding, Map.new(params))
 #   end
 
-#   defp apply_with_ties(query, binding_selector, %{limit: limit}) do
+#   defp apply_with_ties(query, selected_binding, %{limit: limit}) do
 #     limit = limit || @default_limit
 
 #     query
 #     |> Query.limit(^limit)
-#     |> apply_with_ties_expr(binding_selector, true)
+#     |> apply_with_ties_expr(selected_binding, true)
 #   end
 
-#   defp apply_with_ties(query, _binding_selector, %{bind: bind_params}) do
+#   defp apply_with_ties(query, _selected_binding, %{bind: bind_params}) do
 #     entries =
 #       case bind_params do
 #         map when is_map(map) and not is_struct(map) ->
@@ -65,8 +65,8 @@
 #         Keyword.has_key?(entry_kw, :at) ->
 #           {bind_target, rest} = Keyword.pop(entry_kw, :at)
 #           value = Keyword.get(rest, :value, true)
-#           binding_selector = resolve_at_target(bind_target, q)
-#           apply_with_ties(q, binding_selector, value)
+#           selected_binding = resolve_at_target(bind_target, q)
+#           apply_with_ties(q, selected_binding, value)
 
 #         true ->
 #           Logger.warning(
@@ -79,20 +79,20 @@
 #     end)
 #   end
 
-#   defp apply_with_ties(query, binding_selector, true) do
+#   defp apply_with_ties(query, selected_binding, true) do
 #     query =
 #       if Query.exclude(query, :limit) === query,
 #         do: Query.limit(query, ^@default_limit),
 #         else: query
 
-#     apply_with_ties_expr(query, binding_selector, true)
+#     apply_with_ties_expr(query, selected_binding, true)
 #   end
 
-#   defp apply_with_ties(query, binding_selector, false) do
-#     apply_with_ties_expr(query, binding_selector, false)
+#   defp apply_with_ties(query, selected_binding, false) do
+#     apply_with_ties_expr(query, selected_binding, false)
 #   end
 
-#   defp apply_with_ties(query, _binding_selector, value) do
+#   defp apply_with_ties(query, _selected_binding, value) do
 #     Logger.warning(
 #       @logger_prefix,
 #       "Expected :with_ties value to be a boolean, got: #{inspect(value)}"
@@ -109,7 +109,7 @@
 #       end
 #   end
 
-#   defp apply_with_ties_expr(query, _binding_selector, value) do
+#   defp apply_with_ties_expr(query, _selected_binding, value) do
 #     Logger.warning(
 #       @logger_prefix,
 #       "Expected :with_ties value to be a boolean, got: #{inspect(value)}"

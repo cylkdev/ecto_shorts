@@ -5,12 +5,12 @@
 #         filter,
 #         source,
 #         query,
-#         binding_selector,
+#         selected_binding,
 #         key,
 #         value,
 #         opts
 #       ) do
-#     Postgres.build_dynamic(source, binding_selector, key, value, opts)
+#     Postgres.build_dynamic(source, selected_binding, key, value, opts)
 #   end
 # end
 
@@ -63,7 +63,7 @@
 # #         _schema_source,
 # #         filter,
 # #         query,
-# #         _binding_selector,
+# #         _selected_binding,
 # #         {:dynamic, value},
 # #         _opts
 # #       )
@@ -80,17 +80,17 @@
 # #     end
 # #   end
 
-# #   def build(schema_source, filter, query, binding_selector, value, opts)
+# #   def build(schema_source, filter, query, selected_binding, value, opts)
 # #       when filter in @query_filters do
-# #     apply_expr(schema_source, filter, query, binding_selector, value, opts)
+# #     apply_expr(schema_source, filter, query, selected_binding, value, opts)
 # #   end
 
-# #   def build(schema_source, filter, query, binding_selector, {key, value}, opts) do
-# #     dyn = Dynamics.convert_to_dynamic(schema_source, binding_selector, {key, value}, opts)
+# #   def build(schema_source, filter, query, selected_binding, {key, value}, opts) do
+# #     dyn = Dynamics.convert_to_dynamic(schema_source, selected_binding, {key, value}, opts)
 # #     apply_where_expr(filter, query, dyn)
 # #   end
 
-# #   def build(_schema, _filter, query, _binding_selector, term, _opts) do
+# #   def build(_schema, _filter, query, _selected_binding, term, _opts) do
 # #     Logger.warning(
 # #       @logger_prefix,
 # #       "Expected params to be a map or keyword list, got: #{inspect(term)}"
@@ -99,13 +99,13 @@
 # #     query
 # #   end
 
-# #   defp apply_expr(_schema_source, :exclude, query, _binding_selector, entries, _opts) do
+# #   defp apply_expr(_schema_source, :exclude, query, _selected_binding, entries, _opts) do
 # #     entries
 # #     |> List.wrap()
 # #     |> Enum.reduce(query, fn filter, q2 -> Query.exclude(q2, filter) end)
 # #   end
 
-# #   defp apply_expr(schema_source, op, query, _binding_selector, value, opts)
+# #   defp apply_expr(schema_source, op, query, _selected_binding, value, opts)
 # #        when op in @set_operations do
 # #     expr = to_query(schema_source, value, opts)
 # #     apply_set_operation(op, query, expr)
@@ -117,14 +117,14 @@
 # #     end
 # #   end
 
-# #   defp apply_expr(schema_source, :first, query, binding_selector, limit, opts) do
-# #     apply_expr(schema_source, :limit, query, binding_selector, limit, opts)
+# #   defp apply_expr(schema_source, :first, query, selected_binding, limit, opts) do
+# #     apply_expr(schema_source, :limit, query, selected_binding, limit, opts)
 # #   end
 
-# #   defp apply_expr(schema_source, :last, query, binding_selector, entries, opts)
+# #   defp apply_expr(schema_source, :last, query, selected_binding, entries, opts)
 # #        when is_map(entries) or is_list(entries) do
 # #     Enum.reduce(entries, query, fn entry, q ->
-# #       apply_expr(schema_source, :last, q, binding_selector, entry, opts)
+# #       apply_expr(schema_source, :last, q, selected_binding, entry, opts)
 # #     end)
 # #   end
 
@@ -132,7 +132,7 @@
 # #          schema_source,
 # #          :last,
 # #          query,
-# #          _binding_selector,
+# #          _selected_binding,
 # #          {sort_key, limit},
 # #          _opts
 # #        ) do
@@ -164,24 +164,24 @@
 # #     Enum.reduce(sort_keys, subquery, &Query.order_by(&2, asc: ^&1))
 # #   end
 
-# #   defp apply_expr(schema_source, :last, query, binding_selector, limit, opts) do
-# #     apply_expr(schema_source, :last, query, binding_selector, {nil, limit}, opts)
+# #   defp apply_expr(schema_source, :last, query, selected_binding, limit, opts) do
+# #     apply_expr(schema_source, :last, query, selected_binding, {nil, limit}, opts)
 # #   end
 
-# #   defp apply_expr(_schema_source, :lock, query, _binding_selector, value, _opts)
+# #   defp apply_expr(_schema_source, :lock, query, _selected_binding, value, _opts)
 # #        when is_function(value, 1) do
 # #     value.(query)
 # #   end
 
-# #   defp apply_expr(schema_source, :lock, query, binding_selector, params, opts)
+# #   defp apply_expr(schema_source, :lock, query, selected_binding, params, opts)
 # #        when is_map(params) and not is_struct(params) do
-# #     apply_expr(schema_source, :lock, query, binding_selector, Map.to_list(params), opts)
+# #     apply_expr(schema_source, :lock, query, selected_binding, Map.to_list(params), opts)
 # #   end
 
-# #   defp apply_expr(_schema_source, :lock, query, binding_selector, params, opts)
+# #   defp apply_expr(_schema_source, :lock, query, selected_binding, params, opts)
 # #        when is_list(params) do
 # #     if Keyword.keyword?(params) do
-# #       apply_lock_from_resolver(query, binding_selector, params, opts)
+# #       apply_lock_from_resolver(query, selected_binding, params, opts)
 # #     else
 # #       Logger.warning(
 # #         @logger_prefix,
@@ -192,7 +192,7 @@
 # #     end
 # #   end
 
-# #   defp apply_expr(_schema_source, :lock, query, _binding_selector, value, _opts) do
+# #   defp apply_expr(_schema_source, :lock, query, _selected_binding, value, _opts) do
 # #     Logger.warning(
 # #       @logger_prefix,
 # #       "Expected :lock params to be a unary function or a keyword/map resolver payload, got: #{inspect(value)}"
@@ -201,20 +201,20 @@
 # #     query
 # #   end
 
-# #   defp apply_expr(_schema_source, :limit, query, _binding_selector, value, _opts) do
+# #   defp apply_expr(_schema_source, :limit, query, _selected_binding, value, _opts) do
 # #     Query.limit(query, ^value)
 # #   end
 
-# #   defp apply_expr(_schema_source, :offset, query, _binding_selector, value, _opts) do
+# #   defp apply_expr(_schema_source, :offset, query, _selected_binding, value, _opts) do
 # #     Query.offset(query, ^value)
 # #   end
 
-# #   defp apply_expr(_schema_source, :put_query_prefix, query, _binding_selector, value, _opts)
+# #   defp apply_expr(_schema_source, :put_query_prefix, query, _selected_binding, value, _opts)
 # #        when is_binary(value) do
 # #     Query.put_query_prefix(query, value)
 # #   end
 
-# #   defp apply_expr(_schema_source, :put_query_prefix, query, _binding_selector, value, _opts) do
+# #   defp apply_expr(_schema_source, :put_query_prefix, query, _selected_binding, value, _opts) do
 # #     Logger.warning(
 # #       @logger_prefix,
 # #       "Expected :put_query_prefix value to be a string, got: #{inspect(value)}"
@@ -227,7 +227,7 @@
 # #          _schema_source,
 # #          :recursive_ctes,
 # #          query,
-# #          _binding_selector,
+# #          _selected_binding,
 # #          value,
 # #          _opts
 # #        )
@@ -239,7 +239,7 @@
 # #          _schema_source,
 # #          :recursive_ctes,
 # #          query,
-# #          _binding_selector,
+# #          _selected_binding,
 # #          value,
 # #          _opts
 # #        ) do
@@ -255,7 +255,7 @@
 # #          _schema_source,
 # #          :reverse_order,
 # #          query,
-# #          _binding_selector,
+# #          _selected_binding,
 # #          _value,
 # #          _opts
 # #        ) do
@@ -274,7 +274,7 @@
 # #     Query.where(query, ^dyn)
 # #   end
 
-# #   defp apply_lock_from_resolver(query, binding_selector, params, opts) do
+# #   defp apply_lock_from_resolver(query, selected_binding, params, opts) do
 # #     params =
 # #       if is_map(params) and not is_struct(params) do
 # #         Map.to_list(params)
@@ -293,7 +293,7 @@
 
 # #       query
 # #     else
-# #       case QueryProvider.build_fragment_expression(binding_selector, lock_name, lock_values, opts) do
+# #       case QueryProvider.build_fragment_expression(selected_binding, lock_name, lock_values, opts) do
 # #         {:ok, lock_builder} when is_function(lock_builder, 1) ->
 # #           lock_builder.(query)
 

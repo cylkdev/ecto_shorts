@@ -3,7 +3,6 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExpr do
 
   @core_keys [:ids, :before, :after, :until, :since, :exists]
   @temporal_keys [:start_date, :end_date, :since_date, :until_date]
-  @keys CommonExprBuilder.keys()
 
   use EctoShorts.Compiler,
     modules: [
@@ -21,15 +20,17 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExpr do
       ]
     ]
 
+  @keys CommonExprBuilder.keys()
+
   def keys, do: @keys
 
-  def dynamic_expr(binding_selector, key, term, _opts) do
+  def dynamic_expr(selected_binding, key, term, _opts) do
     cond do
       key in @core_keys ->
-        __MODULE__.Compiled.Core.dynamic_expr(binding_selector, key, term)
+        __MODULE__.Compiled.Core.dynamic_expr(selected_binding, key, term)
 
       key in @temporal_keys ->
-        __MODULE__.Compiled.Temporal.dynamic_expr(binding_selector, key, term)
+        __MODULE__.Compiled.Temporal.dynamic_expr(selected_binding, key, term)
 
       true ->
         nil

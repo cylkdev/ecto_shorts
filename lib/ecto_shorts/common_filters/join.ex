@@ -46,14 +46,14 @@
 #   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
 #   @doc false
-#   def build(schema_source, :join, query, binding_selector, params, opts) when is_map(params) do
-#     build(schema_source, :join, query, binding_selector, Map.to_list(params), opts)
+#   def build(schema_source, :join, query, selected_binding, params, opts) when is_map(params) do
+#     build(schema_source, :join, query, selected_binding, Map.to_list(params), opts)
 #   end
 
-#   def build(schema_source, :join, query, binding_selector, list, opts) do
+#   def build(schema_source, :join, query, selected_binding, list, opts) do
 #     Enum.reduce(list, query, fn
 #       {join_type, join_options}, q2 when join_type in @join_types ->
-#         reduce_join(schema_source, q2, binding_selector, {join_type, join_options}, opts)
+#         reduce_join(schema_source, q2, selected_binding, {join_type, join_options}, opts)
 
 #       {key, join_options}, q2 ->
 #         assocs = CommonSchema.get_schema_reflection(schema_source, :associations) || []
@@ -62,7 +62,7 @@
 #           reduce_join(
 #             schema_source,
 #             q2,
-#             binding_selector,
+#             selected_binding,
 #             {:association, Keyword.put(join_options, :source, key)},
 #             opts
 #           )
@@ -76,13 +76,13 @@
 #         end
 
 #       nested, q2 when is_map(nested) ->
-#         build(schema_source, :join, q2, binding_selector, nested, opts)
+#         build(schema_source, :join, q2, selected_binding, nested, opts)
 
 #       nested, q2 when is_list(nested) ->
 #         if Keyword.keyword?(nested) do
-#           build(schema_source, :join, q2, binding_selector, nested, opts)
+#           build(schema_source, :join, q2, selected_binding, nested, opts)
 #         else
-#           Enum.reduce(nested, q2, &build(schema_source, :join, &2, binding_selector, &1, opts))
+#           Enum.reduce(nested, q2, &build(schema_source, :join, &2, selected_binding, &1, opts))
 #         end
 
 #       other, q2 ->
@@ -95,14 +95,14 @@
 #     end)
 #   end
 
-#   defp reduce_join(schema_source, query, binding_selector, {join_type, join_options}, opts) do
+#   defp reduce_join(schema_source, query, selected_binding, {join_type, join_options}, opts) do
 #     {op_source, join_options} = Keyword.pop(join_options, :source)
 
 #     if op_source !== nil do
 #       apply_join_expr(
 #         schema_source,
 #         query,
-#         binding_selector,
+#         selected_binding,
 #         {join_type, op_source, join_options},
 #         opts
 #       )
@@ -121,11 +121,11 @@
 #       defp apply_join_expr(
 #              schema_source,
 #              query,
-#              unquote(quoted_binding_head) = binding_selector,
+#              unquote(quoted_binding_head) = selected_binding,
 #              {:association, assoc_key, join_options},
 #              opts
 #            ) do
-#         case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+#         case on_expr(schema_source, selected_binding, join_options[:on], opts) do
 #           {:ok, on_value} ->
 #             qualifier = join_options[:qualifier] || :inner
 #             prefix = join_options[:prefix]
@@ -134,7 +134,7 @@
 
 #             build_join(
 #               query,
-#               binding_selector,
+#               selected_binding,
 #               qualifier,
 #               {:association, assoc_key},
 #               as,
@@ -151,11 +151,11 @@
 #       defp apply_join_expr(
 #              schema_source,
 #              query,
-#              unquote(quoted_binding_head) = binding_selector,
+#              unquote(quoted_binding_head) = selected_binding,
 #              {:schema, target_schema, join_options},
 #              opts
 #            ) do
-#         case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+#         case on_expr(schema_source, selected_binding, join_options[:on], opts) do
 #           {:ok, on_value} ->
 #             qualifier = join_options[:qualifier] || :inner
 #             prefix = join_options[:prefix]
@@ -178,7 +178,7 @@
 
 #             build_join(
 #               query,
-#               binding_selector,
+#               selected_binding,
 #               qualifier,
 #               {:source, schema_source},
 #               as,
@@ -195,11 +195,11 @@
 #       defp apply_join_expr(
 #              schema_source,
 #              query,
-#              unquote(quoted_binding_head) = binding_selector,
+#              unquote(quoted_binding_head) = selected_binding,
 #              {:table, table_name, join_options},
 #              opts
 #            ) do
-#         case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+#         case on_expr(schema_source, selected_binding, join_options[:on], opts) do
 #           {:ok, on_value} ->
 #             qualifier = join_options[:qualifier] || :inner
 #             prefix = join_options[:prefix]
@@ -208,7 +208,7 @@
 
 #             build_join(
 #               query,
-#               binding_selector,
+#               selected_binding,
 #               qualifier,
 #               {:source, table_name},
 #               as,
@@ -225,11 +225,11 @@
 #       defp apply_join_expr(
 #              schema_source,
 #              query,
-#              unquote(quoted_binding_head) = binding_selector,
+#              unquote(quoted_binding_head) = selected_binding,
 #              {:query, source_query, join_options},
 #              opts
 #            ) do
-#         case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+#         case on_expr(schema_source, selected_binding, join_options[:on], opts) do
 #           {:ok, on_value} ->
 #             qualifier = join_options[:qualifier] || :inner
 #             prefix = join_options[:prefix]
@@ -243,7 +243,7 @@
 
 #             build_join(
 #               query,
-#               binding_selector,
+#               selected_binding,
 #               qualifier,
 #               {:source, source_query},
 #               as,
@@ -260,11 +260,11 @@
 #       defp apply_join_expr(
 #              schema_source,
 #              query,
-#              unquote(quoted_binding_head) = binding_selector,
+#              unquote(quoted_binding_head) = selected_binding,
 #              {:subquery, params, join_options},
 #              opts
 #            ) do
-#         case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+#         case on_expr(schema_source, selected_binding, join_options[:on], opts) do
 #           {:ok, on_value} ->
 #             qualifier = join_options[:qualifier] || :inner
 #             prefix = join_options[:prefix]
@@ -281,7 +281,7 @@
 
 #             build_join(
 #               query,
-#               binding_selector,
+#               selected_binding,
 #               qualifier,
 #               {:subquery, subquery_source},
 #               as,
@@ -298,11 +298,11 @@
 #       defp apply_join_expr(
 #              schema_source,
 #              query,
-#              unquote(quoted_binding_head) = binding_selector,
+#              unquote(quoted_binding_head) = selected_binding,
 #              {:fragment, params, join_options},
 #              opts
 #            ) do
-#         case on_expr(schema_source, binding_selector, join_options[:on], opts) do
+#         case on_expr(schema_source, selected_binding, join_options[:on], opts) do
 #           {:ok, on_value} ->
 #             qualifier = join_options[:qualifier] || :inner
 #             prefix = join_options[:prefix]
@@ -320,11 +320,11 @@
 #               raise ArgumentError, "Join source values are required, got: #{inspect(params)}"
 #             end
 
-#             case resolve_expr_source(binding_selector, source_name, source_values, opts) do
+#             case resolve_expr_source(selected_binding, source_name, source_values, opts) do
 #               {:ok, expr} ->
 #                 build_join(
 #                   query,
-#                   binding_selector,
+#                   selected_binding,
 #                   qualifier,
 #                   {:source, expr},
 #                   as,
@@ -345,7 +345,7 @@
 #       for {hint_key, hint_value} <- @hints do
 #         defp build_join(
 #                query,
-#                unquote(quoted_binding_head) = _binding_selector,
+#                unquote(quoted_binding_head) = _selected_binding,
 #                qualifier,
 #                {:association, assoc_key},
 #                as,
@@ -368,7 +368,7 @@
 
 #       defp build_join(
 #              query,
-#              unquote(quoted_binding_head) = _binding_selector,
+#              unquote(quoted_binding_head) = _selected_binding,
 #              qualifier,
 #              {:association, assoc_key},
 #              as,
@@ -390,7 +390,7 @@
 #       for {hint_key, hint_value} <- @hints do
 #         defp build_join(
 #                query,
-#                unquote(quoted_binding_head) = _binding_selector,
+#                unquote(quoted_binding_head) = _selected_binding,
 #                qualifier,
 #                {:source, source},
 #                as,
@@ -413,7 +413,7 @@
 
 #       defp build_join(
 #              query,
-#              unquote(quoted_binding_head) = _binding_selector,
+#              unquote(quoted_binding_head) = _selected_binding,
 #              qualifier,
 #              {:source, source},
 #              as,
@@ -435,7 +435,7 @@
 #       for {hint_key, hint_value} <- @hints do
 #         defp build_join(
 #                query,
-#                unquote(quoted_binding_head) = _binding_selector,
+#                unquote(quoted_binding_head) = _selected_binding,
 #                qualifier,
 #                {:subquery, subquery_source},
 #                as,
@@ -458,7 +458,7 @@
 
 #       defp build_join(
 #              query,
-#              unquote(quoted_binding_head) = _binding_selector,
+#              unquote(quoted_binding_head) = _selected_binding,
 #              qualifier,
 #              {:subquery, subquery_source},
 #              as,
@@ -478,8 +478,8 @@
 #       end
 #   end
 
-#   defp resolve_expr_source(binding_selector, source_key, source_params, opts) do
-#     case QueryProvider.build_fragment_expression(binding_selector, source_key, source_params, opts) do
+#   defp resolve_expr_source(selected_binding, source_key, source_params, opts) do
+#     case QueryProvider.build_fragment_expression(selected_binding, source_key, source_params, opts) do
 #       {:ok, source} ->
 #         {:ok, source}
 
@@ -501,7 +501,7 @@
 #     end
 #   end
 
-#   defp on_expr(schema_source, binding_selector, on_param, opts) do
+#   defp on_expr(schema_source, selected_binding, on_param, opts) do
 #     case on_param do
 #       true ->
 #         {:ok, true}
@@ -511,7 +511,7 @@
 
 #       list when is_list(list) ->
 #         if Keyword.keyword?(list) do
-#           {:ok, Dynamics.convert_to_dynamic(schema_source, binding_selector, list, opts)}
+#           {:ok, Dynamics.convert_to_dynamic(schema_source, selected_binding, list, opts)}
 #         else
 #           Logger.warning(
 #             @logger_prefix,
@@ -522,7 +522,7 @@
 #         end
 
 #       on_params when is_map(on_params) ->
-#         {:ok, Dynamics.convert_to_dynamic(schema_source, binding_selector, on_params, opts)}
+#         {:ok, Dynamics.convert_to_dynamic(schema_source, selected_binding, on_params, opts)}
 
 #       term ->
 #         Logger.warning(

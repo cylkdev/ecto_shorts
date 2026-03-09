@@ -2,7 +2,7 @@ defmodule EctoShorts.CompilerTest.PartitionedCompiledSecond137 do
   @moduledoc false
   import Ecto.Query, only: [dynamic: 2]
 
-  @type binding_selector :: {:as | :at, term()}
+  @type selected_binding :: {:as | :at, term()}
   @type key :: atom()
   @type value :: term()
   @type compose_res :: Ecto.Query.t() | nil

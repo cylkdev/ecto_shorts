@@ -67,18 +67,18 @@
 #   require EctoShorts.Generator
 
 #   @doc false
-#   def build(schema_source, filter_op, query, binding_selector, params, opts)
+#   def build(schema_source, filter_op, query, selected_binding, params, opts)
 #       when filter_op in [:having, :or_having] do
-#     dyn = Dynamics.convert_to_dynamic(schema_source, binding_selector, params, opts)
-#     apply_having_clause(filter_op, query, binding_selector, dyn)
+#     dyn = Dynamics.convert_to_dynamic(schema_source, selected_binding, params, opts)
+#     apply_having_clause(filter_op, query, selected_binding, dyn)
 #   end
 
-#   defp apply_having_clause(:having, query, binding_selector, dyn) do
-#     apply_having_expr(query, binding_selector, dyn)
+#   defp apply_having_clause(:having, query, selected_binding, dyn) do
+#     apply_having_expr(query, selected_binding, dyn)
 #   end
 
-#   defp apply_having_clause(:or_having, query, binding_selector, dyn) do
-#     apply_or_having_expr(query, binding_selector, dyn)
+#   defp apply_having_clause(:or_having, query, selected_binding, dyn) do
+#     apply_or_having_expr(query, selected_binding, dyn)
 #   end
 
 #   Compiler.define_clauses do

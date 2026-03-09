@@ -17,7 +17,7 @@
 #   require EctoShorts.Generator
 
 #   @logger_prefix "EctoShorts.CommonFilters.Distinct"
-#   @binding_selector_key :bind
+#   @selected_binding_key :bind
 
 #   @order_directions [
 #     :asc,
@@ -29,55 +29,55 @@
 #   ]
 
 #   @doc false
-#   def build(_schema_source, :distinct, query, binding_selector, params, _opts) do
-#     reduce_params(query, binding_selector, params)
+#   def build(_schema_source, :distinct, query, selected_binding, params, _opts) do
+#     reduce_params(query, selected_binding, params)
 #   end
 
-#   defp reduce_params(query, binding_selector, {key, params})
+#   defp reduce_params(query, selected_binding, {key, params})
 #        when is_map(params) and not is_struct(params) do
-#     reduce_params(query, binding_selector, {key, Map.to_list(params)})
+#     reduce_params(query, selected_binding, {key, Map.to_list(params)})
 #   end
 
-#   defp reduce_params(query, binding_selector, {@binding_selector_key, bind_params}) do
-#     reduce_params_bind(query, binding_selector, bind_params)
+#   defp reduce_params(query, selected_binding, {@selected_binding_key, bind_params}) do
+#     reduce_params_bind(query, selected_binding, bind_params)
 #   end
 
-#   defp reduce_params(query, binding_selector, {key, value}) do
-#     apply_distinct_expr(query, binding_selector, {key, value})
+#   defp reduce_params(query, selected_binding, {key, value}) do
+#     apply_distinct_expr(query, selected_binding, {key, value})
 #   end
 
-#   defp reduce_params(query, binding_selector, params)
+#   defp reduce_params(query, selected_binding, params)
 #        when is_map(params) and not is_struct(params) do
-#     reduce_params(query, binding_selector, Map.to_list(params))
+#     reduce_params(query, selected_binding, Map.to_list(params))
 #   end
 
-#   defp reduce_params(query, binding_selector, entries) when is_list(entries) do
+#   defp reduce_params(query, selected_binding, entries) when is_list(entries) do
 #     if Keyword.keyword?(entries) do
 #       {bind_entries, distinct_entries} =
-#         Enum.split_with(entries, fn {k, _} -> k === @binding_selector_key end)
+#         Enum.split_with(entries, fn {k, _} -> k === @selected_binding_key end)
 
 #       query =
 #         if distinct_entries !== [],
-#           do: apply_distinct_expr(query, binding_selector, distinct_entries),
+#           do: apply_distinct_expr(query, selected_binding, distinct_entries),
 #           else: query
 
 #       Enum.reduce(bind_entries, query, fn entry, query_acc ->
-#         reduce_params(query_acc, binding_selector, entry)
+#         reduce_params(query_acc, selected_binding, entry)
 #       end)
 #     else
-#       apply_distinct_expr(query, binding_selector, entries)
+#       apply_distinct_expr(query, selected_binding, entries)
 #     end
 #   end
 
-#   defp reduce_params(query, binding_selector, expr) do
-#     apply_distinct_expr(query, binding_selector, expr)
+#   defp reduce_params(query, selected_binding, expr) do
+#     apply_distinct_expr(query, selected_binding, expr)
 #   end
 
-#   defp reduce_params_bind(query, _binding_selector, bind_params) do
+#   defp reduce_params_bind(query, _selected_binding, bind_params) do
 #     bind_params
 #     |> BindingParams.normalize_bind_params(query)
-#     |> Enum.reduce(query, fn {binding_selector, value}, q ->
-#       reduce_params(q, binding_selector, value)
+#     |> Enum.reduce(query, fn {selected_binding, value}, q ->
+#       reduce_params(q, selected_binding, value)
 #     end)
 #   end
 
@@ -122,7 +122,7 @@
 #       end
 #   end
 
-#   defp apply_distinct_expr(query, _binding_selector, expr) do
+#   defp apply_distinct_expr(query, _selected_binding, expr) do
 #     Logger.warning(
 #       @logger_prefix,
 #       "Expected :distinct value to be a boolean, atom, list, or {direction, field} tuple, got: #{inspect(expr)}"

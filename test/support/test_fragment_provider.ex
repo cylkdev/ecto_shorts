@@ -3,7 +3,7 @@ defmodule EctoShorts.TestQueryProvider do
 
   import Ecto.Query
 
-  def build_fragment_expression(_binding_selector, :active_users, params) do
+  def build_fragment_expression(_selected_binding, :active_users, params) do
     params = normalize_params(params)
 
     with {:ok, min_age} <- fetch_integer(params, :min_age) do
@@ -11,15 +11,15 @@ defmodule EctoShorts.TestQueryProvider do
     end
   end
 
-  def build_fragment_expression(_binding_selector, :for_update, _params) do
+  def build_fragment_expression(_selected_binding, :for_update, _params) do
     {:ok, fn query -> from(q in query, lock: "FOR UPDATE") end}
   end
 
-  def build_fragment_expression(_binding_selector, :for_share, _params) do
+  def build_fragment_expression(_selected_binding, :for_share, _params) do
     {:ok, fn query -> from(q in query, lock: "FOR SHARE") end}
   end
 
-  def build_fragment_expression(_binding_selector, :for_update_with_clause, params) do
+  def build_fragment_expression(_selected_binding, :for_update_with_clause, params) do
     params = normalize_params(params)
 
     with {:ok, clause} <- fetch_string(params, :clause) do
@@ -33,15 +33,15 @@ defmodule EctoShorts.TestQueryProvider do
     end
   end
 
-  def build_fragment_expression(_binding_selector, :post_window, _params) do
+  def build_fragment_expression(_selected_binding, :post_window, _params) do
     {:ok, [partition_by: [:author_id], order_by: [desc: :inserted_at]]}
   end
 
-  def build_fragment_expression(_binding_selector, :error_fragment, _params) do
+  def build_fragment_expression(_selected_binding, :error_fragment, _params) do
     {:error, :forced_error}
   end
 
-  def build_fragment_expression(_binding_selector, _source_key, _params) do
+  def build_fragment_expression(_selected_binding, _source_key, _params) do
     {:error, :unsupported_fragment_key}
   end
 

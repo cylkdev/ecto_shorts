@@ -17,40 +17,40 @@
 #   require Compiler
 
 #   @logger_prefix "EctoShorts.CommonFilters.Windows"
-#   @binding_selector_key :bind
+#   @selected_binding_key :bind
 #   @window_keys [:partition_by, :order_by, :frame]
 
 #   @doc false
-#   def build(_schema_source, :windows, query, binding_selector, params, _opts) do
-#     reduce_windows(query, binding_selector, params)
+#   def build(_schema_source, :windows, query, selected_binding, params, _opts) do
+#     reduce_windows(query, selected_binding, params)
 #   end
 
-#   defp reduce_windows(query, binding_selector, params)
+#   defp reduce_windows(query, selected_binding, params)
 #        when is_map(params) and not is_struct(params) do
-#     reduce_windows(query, binding_selector, Map.to_list(params))
+#     reduce_windows(query, selected_binding, Map.to_list(params))
 #   end
 
-#   defp reduce_windows(query, binding_selector, {@binding_selector_key, bind_params}) do
-#     reduce_windows_bind(query, binding_selector, bind_params)
+#   defp reduce_windows(query, selected_binding, {@selected_binding_key, bind_params}) do
+#     reduce_windows_bind(query, selected_binding, bind_params)
 #   end
 
-#   defp reduce_windows(query, binding_selector, params) when is_list(params) do
+#   defp reduce_windows(query, selected_binding, params) when is_list(params) do
 #     cond do
 #       Keyword.keyword?(params) ->
-#         case Enum.split_with(params, fn {k, _} -> k === @binding_selector_key end) do
+#         case Enum.split_with(params, fn {k, _} -> k === @selected_binding_key end) do
 #           {[], window_entries} ->
-#             reduce_window_entries(query, binding_selector, window_entries)
+#             reduce_window_entries(query, selected_binding, window_entries)
 
 #           {binding_entries, []} ->
 #             Enum.reduce(binding_entries, query, fn entry, query_acc ->
-#               reduce_windows(query_acc, binding_selector, entry)
+#               reduce_windows(query_acc, selected_binding, entry)
 #             end)
 
 #           {binding_entries, window_entries} ->
-#             query_with_windows = reduce_window_entries(query, binding_selector, window_entries)
+#             query_with_windows = reduce_window_entries(query, selected_binding, window_entries)
 
 #             Enum.reduce(binding_entries, query_with_windows, fn entry, query_acc ->
-#               reduce_windows(query_acc, binding_selector, entry)
+#               reduce_windows(query_acc, selected_binding, entry)
 #             end)
 #         end
 
@@ -64,11 +64,11 @@
 #     end
 #   end
 
-#   defp reduce_windows(query, binding_selector, {window_name, window_definition}) do
-#     apply_windows_expr(query, binding_selector, window_name, window_definition)
+#   defp reduce_windows(query, selected_binding, {window_name, window_definition}) do
+#     apply_windows_expr(query, selected_binding, window_name, window_definition)
 #   end
 
-#   defp reduce_windows(query, _binding_selector, value) do
+#   defp reduce_windows(query, _selected_binding, value) do
 #     Logger.warning(
 #       @logger_prefix,
 #       "Expected :windows params to be a keyword list/map of window definitions, got: #{inspect(value)}"
@@ -77,21 +77,21 @@
 #     query
 #   end
 
-#   defp reduce_windows_bind(query, _binding_selector, bind_params) do
+#   defp reduce_windows_bind(query, _selected_binding, bind_params) do
 #     bind_params
 #     |> BindingParams.normalize_bind_params(query)
-#     |> Enum.reduce(query, fn {binding_selector, value}, q ->
-#       reduce_windows(q, binding_selector, value)
+#     |> Enum.reduce(query, fn {selected_binding, value}, q ->
+#       reduce_windows(q, selected_binding, value)
 #     end)
 #   end
 
-#   defp reduce_window_entries(query, binding_selector, entries) do
+#   defp reduce_window_entries(query, selected_binding, entries) do
 #     Enum.reduce(entries, query, fn entry, query_acc ->
-#       reduce_windows(query_acc, binding_selector, entry)
+#       reduce_windows(query_acc, selected_binding, entry)
 #     end)
 #   end
 
-#   defp apply_windows_expr(query, _binding_selector, window_name, _window_definition)
+#   defp apply_windows_expr(query, _selected_binding, window_name, _window_definition)
 #        when not is_atom(window_name) do
 #     Logger.warning(
 #       @logger_prefix,
@@ -101,7 +101,7 @@
 #     query
 #   end
 
-#   defp apply_windows_expr(query, binding_selector, window_name, window_definition) do
+#   defp apply_windows_expr(query, selected_binding, window_name, window_definition) do
 #     case normalize_window_definition(window_definition) do
 #       {:ok, normalized_definition} ->
 #         unknown_keys =
@@ -121,19 +121,19 @@
 #         partition_by =
 #           definition
 #           |> Keyword.get(:partition_by, [])
-#           |> normalize_partition_by(binding_selector)
+#           |> normalize_partition_by(selected_binding)
 
 #         order_by =
 #           definition
 #           |> Keyword.get(:order_by, [])
-#           |> normalize_order_by(binding_selector)
+#           |> normalize_order_by(selected_binding)
 
 #         frame = Keyword.get(definition, :frame)
 
 #         if is_nil(frame) do
-#           compose_window(query, binding_selector, window_name, partition_by, order_by)
+#           compose_window(query, selected_binding, window_name, partition_by, order_by)
 #         else
-#           compose_window(query, binding_selector, window_name, partition_by, order_by, frame)
+#           compose_window(query, selected_binding, window_name, partition_by, order_by, frame)
 #         end
 
 #       :error ->
@@ -155,24 +155,24 @@
 
 #   defp normalize_window_definition(_value), do: :error
 
-#   defp normalize_partition_by(nil, _binding_selector), do: []
+#   defp normalize_partition_by(nil, _selected_binding), do: []
 
-#   defp normalize_partition_by(value, binding_selector) when is_atom(value) do
-#     [compose(binding_selector, value)]
+#   defp normalize_partition_by(value, selected_binding) when is_atom(value) do
+#     [compose(selected_binding, value)]
 #   end
 
-#   defp normalize_partition_by(value, binding_selector)
+#   defp normalize_partition_by(value, selected_binding)
 #        when is_map(value) and not is_struct(value) do
-#     normalize_partition_by(Map.to_list(value), binding_selector)
+#     normalize_partition_by(Map.to_list(value), selected_binding)
 #   end
 
-#   defp normalize_partition_by(values, binding_selector) when is_list(values) do
+#   defp normalize_partition_by(values, selected_binding) when is_list(values) do
 #     if Keyword.keyword?(values) do
 #       values
 #     else
 #       Enum.map(values, fn
 #         value when is_atom(value) ->
-#           compose(binding_selector, value)
+#           compose(selected_binding, value)
 
 #         other ->
 #           other
@@ -180,28 +180,28 @@
 #     end
 #   end
 
-#   defp normalize_partition_by(value, _binding_selector), do: value
+#   defp normalize_partition_by(value, _selected_binding), do: value
 
-#   defp normalize_order_by(nil, _binding_selector), do: []
+#   defp normalize_order_by(nil, _selected_binding), do: []
 
-#   defp normalize_order_by(value, binding_selector) when is_atom(value) do
-#     [compose(binding_selector, value)]
+#   defp normalize_order_by(value, selected_binding) when is_atom(value) do
+#     [compose(selected_binding, value)]
 #   end
 
-#   defp normalize_order_by({direction, field_name}, binding_selector) when is_atom(field_name) do
-#     [{direction, compose(binding_selector, field_name)}]
+#   defp normalize_order_by({direction, field_name}, selected_binding) when is_atom(field_name) do
+#     [{direction, compose(selected_binding, field_name)}]
 #   end
 
-#   defp normalize_order_by(value, binding_selector)
+#   defp normalize_order_by(value, selected_binding)
 #        when is_map(value) and not is_struct(value) do
-#     normalize_order_by(Map.to_list(value), binding_selector)
+#     normalize_order_by(Map.to_list(value), selected_binding)
 #   end
 
-#   defp normalize_order_by(values, binding_selector) when is_list(values) do
+#   defp normalize_order_by(values, selected_binding) when is_list(values) do
 #     if Keyword.keyword?(values) do
 #       Enum.map(values, fn
 #         {direction, field_name} when is_atom(field_name) ->
-#           {direction, compose(binding_selector, field_name)}
+#           {direction, compose(selected_binding, field_name)}
 
 #         other ->
 #           other
@@ -209,7 +209,7 @@
 #     else
 #       Enum.map(values, fn
 #         value when is_atom(value) ->
-#           compose(binding_selector, value)
+#           compose(selected_binding, value)
 
 #         other ->
 #           other
@@ -217,7 +217,7 @@
 #     end
 #   end
 
-#   defp normalize_order_by(value, _binding_selector), do: value
+#   defp normalize_order_by(value, _selected_binding), do: value
 
 #   Compiler.define_clauses do
 #     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->

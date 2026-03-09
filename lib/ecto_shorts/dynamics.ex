@@ -81,7 +81,7 @@
 #   Converts filter params into a single composable dynamic expression.
 
 #   Accepts a source (schema module, `{table_name, schema}` tuple, or
-#   `Ecto.Query`), a `binding_selector` used to resolve the correct query
+#   `Ecto.Query`), a `selected_binding` used to resolve the correct query
 #   binding inside `dynamic/2`, a `params` map or keyword list of
 #   `{field, value}` pairs, and an optional `opts` keyword list.
 
@@ -110,33 +110,33 @@
 #   """
 #   @spec convert_to_dynamic(
 #           source :: term(),
-#           binding_selector :: term(),
+#           selected_binding :: term(),
 #           value :: term(),
 #           opts :: keyword()
 #         ) :: Ecto.Query.dynamic_expr() | nil
-#   def convert_to_dynamic(source, binding_selector, term, opts \\ []) do
+#   def convert_to_dynamic(source, selected_binding, term, opts \\ []) do
 #     adapter = adapter_for_repo!(opts)
 #     source = CommonSchema.normalize_source(source)
-#     append_predicates(adapter, source, nil, binding_selector, term, opts)
+#     append_predicates(adapter, source, nil, selected_binding, term, opts)
 #   end
 
-#   defp append_predicates(adapter, source, dyn_left, binding_selector, {:exists, value}, opts) do
+#   defp append_predicates(adapter, source, dyn_left, selected_binding, {:exists, value}, opts) do
 #     resolved = resolve_exists_payload(source, value, opts)
 
 #     merge_predicate(
 #       dyn_left,
 #       :and,
-#       build_dynamic_or_warn(adapter, source, binding_selector, :exists, resolved)
+#       build_dynamic_or_warn(adapter, source, selected_binding, :exists, resolved)
 #     )
 #   end
 
-#   defp append_predicates(adapter, source, dyn_left, binding_selector, {key, value}, opts) do
+#   defp append_predicates(adapter, source, dyn_left, selected_binding, {key, value}, opts) do
 #     cond do
 #       adapter.operator?(key) ->
-#         merge_predicate(dyn_left, :and, build_dynamic_or_warn(adapter, source, binding_selector, key, value))
+#         merge_predicate(dyn_left, :and, build_dynamic_or_warn(adapter, source, selected_binding, key, value))
 
 #       key in @boolean_operators ->
-#         expand_and_reduce(adapter, source, dyn_left, binding_selector, key, value, opts)
+#         expand_and_reduce(adapter, source, dyn_left, selected_binding, key, value, opts)
 
 #       true ->
 #         resolved_value = resolve_quantifier_payload(source, key, value, opts)
@@ -154,26 +154,26 @@
 #           else
 #             if Keyword.keyword?(resolved_value) do
 #               Enum.reduce(resolved_value, dyn_left, fn entry, dyn_acc ->
-#                 append_predicates(adapter, source, dyn_acc, binding_selector, {key, entry}, opts)
+#                 append_predicates(adapter, source, dyn_acc, selected_binding, {key, entry}, opts)
 #               end)
 #             else
 #               merge_predicate(
 #                 dyn_left,
 #                 :and,
-#                 build_dynamic_or_warn(adapter, source, binding_selector, key, resolved_value)
+#                 build_dynamic_or_warn(adapter, source, selected_binding, key, resolved_value)
 #               )
 #             end
 #           end
 #         else
 #           if Keyword.keyword?(resolved_value) do
 #             Enum.reduce(resolved_value, dyn_left, fn entry, dyn_acc ->
-#               append_predicates(adapter, source, dyn_acc, binding_selector, {key, entry}, opts)
+#               append_predicates(adapter, source, dyn_acc, selected_binding, {key, entry}, opts)
 #             end)
 #           else
 #             merge_predicate(
 #               dyn_left,
 #               :and,
-#               build_dynamic_or_warn(adapter, source, binding_selector, key, resolved_value)
+#               build_dynamic_or_warn(adapter, source, selected_binding, key, resolved_value)
 #             )
 #           end
 #         end
@@ -184,17 +184,17 @@
 #          _adapter,
 #          _source,
 #          dyn_left,
-#          _binding_selector,
+#          _selected_binding,
 #          %Ecto.Query.DynamicExpr{} = dyn,
 #          _opts
 #        ) do
 #     merge_predicate(dyn_left, :and, dyn)
 #   end
 
-#   defp append_predicates(adapter, source, dyn_left, binding_selector, params, opts) do
+#   defp append_predicates(adapter, source, dyn_left, selected_binding, params, opts) do
 #     if (is_map(params) and not is_struct(params)) or Keyword.keyword?(params) do
 #       Enum.reduce(params, dyn_left, fn {k, v}, dyn_acc ->
-#         append_predicates(adapter, source, dyn_acc, binding_selector, {k, v}, opts)
+#         append_predicates(adapter, source, dyn_acc, selected_binding, {k, v}, opts)
 #       end)
 #     else
 #       EctoShorts.Logger.warning(
@@ -206,27 +206,27 @@
 #     end
 #   end
 
-#   defp expand_and_reduce(adapter, source, dyn_left, binding_selector, boolean_op, entries, opts) do
+#   defp expand_and_reduce(adapter, source, dyn_left, selected_binding, boolean_op, entries, opts) do
 #     Enum.reduce(entries, dyn_left, fn
 #       {field, keyword_value}, dyn_acc when is_atom(field) and is_list(keyword_value) ->
 #         if Keyword.keyword?(keyword_value) do
 #           Enum.reduce(keyword_value, dyn_acc, fn {op, val}, inner_acc ->
-#             dyn_right = build_dynamic_or_warn(adapter, source, binding_selector, field, {op, val})
+#             dyn_right = build_dynamic_or_warn(adapter, source, selected_binding, field, {op, val})
 #             merge_predicate(inner_acc, boolean_op, dyn_right)
 #           end)
 #         else
-#           dyn_right = append_predicates(adapter, source, nil, binding_selector, {field, keyword_value}, opts)
+#           dyn_right = append_predicates(adapter, source, nil, selected_binding, {field, keyword_value}, opts)
 #           merge_predicate(dyn_acc, boolean_op, dyn_right)
 #         end
 
 #       entry, dyn_acc ->
-#         dyn_right = append_predicates(adapter, source, nil, binding_selector, entry, opts)
+#         dyn_right = append_predicates(adapter, source, nil, selected_binding, entry, opts)
 #         merge_predicate(dyn_acc, boolean_op, dyn_right)
 #     end)
 #   end
 
-#   defp build_dynamic_or_warn(adapter, source, binding_selector, key, expr) do
-#     case adapter.build_dynamic(source, binding_selector, key, expr) do
+#   defp build_dynamic_or_warn(adapter, source, selected_binding, key, expr) do
+#     case adapter.build_dynamic(source, selected_binding, key, expr) do
 #       nil ->
 #         EctoShorts.Logger.warning(
 #           @logger_prefix,

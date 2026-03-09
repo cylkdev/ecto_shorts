@@ -17,7 +17,7 @@
 #   @logger_prefix "EctoShorts.CommonFilters.WithNamedBinding"
 
 #   @doc false
-#   def build(_schema_source, :with_named_binding, query, _binding_selector, params, opts) do
+#   def build(_schema_source, :with_named_binding, query, _selected_binding, params, opts) do
 #     reduce_entries(query, params, opts)
 #   end
 

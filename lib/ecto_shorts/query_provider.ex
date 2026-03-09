@@ -32,7 +32,7 @@ defmodule EctoShorts.QueryProvider do
   Define your custom provider:
 
       defmodule MyApp.CustomFragments do
-        def build_fragment_expression(binding_selector, expression_key, expression_params) do
+        def build_fragment_expression(selected_binding, expression_key, expression_params) do
           case expression_key do
             :active_users ->
               fragment("SELECT * FROM users WHERE active = true")
@@ -85,14 +85,14 @@ defmodule EctoShorts.QueryProvider do
   A fragment provider module must export `build_fragment_expression/3`:
 
       defmodule MyApp.CustomFragments do
-        def build_fragment_expression(binding_selector, expression_key, expression_params) do
+        def build_fragment_expression(selected_binding, expression_key, expression_params) do
           # Return an Ecto fragment or query expression
         end
       end
 
   ### Parameters
 
-  * `binding_selector` - the binding selector (for example, `{:as, :post}`,
+  * `selected_binding` - the binding selector (for example, `{:as, :post}`,
     `{:at, 1}`, `:first`, `:last`).
   * `expression_key` - an atom identifying which fragment to build (for
     example, `:active_users`, `:for_update`).
@@ -115,11 +115,11 @@ defmodule EctoShorts.QueryProvider do
       defmodule MyApp.CustomFragments do
         import Ecto.Query
 
-        def build_fragment_expression(_binding_selector, :search, %{query: search_query}) do
+        def build_fragment_expression(_selected_binding, :search, %{query: search_query}) do
           fragment("to_tsvector('english', title || ' ' || body) @@ plainto_tsquery(?)", ^search_query)
         end
 
-        def build_fragment_expression(_binding_selector, _key, _params), do: nil
+        def build_fragment_expression(_selected_binding, _key, _params), do: nil
       end
 
   Use in a filter:
@@ -136,11 +136,11 @@ defmodule EctoShorts.QueryProvider do
       defmodule MyApp.CustomFragments do
         import Ecto.Query
 
-        def build_fragment_expression(_binding_selector, :active_users, _params) do
+        def build_fragment_expression(_selected_binding, :active_users, _params) do
           fragment("SELECT * FROM active_users_mv")
         end
 
-        def build_fragment_expression(_binding_selector, _key, _params), do: nil
+        def build_fragment_expression(_selected_binding, _key, _params), do: nil
       end
 
   Use in a join:
@@ -157,15 +157,15 @@ defmodule EctoShorts.QueryProvider do
       defmodule MyApp.CustomFragments do
         import Ecto.Query
 
-        def build_fragment_expression(_binding_selector, :for_update, _params) do
+        def build_fragment_expression(_selected_binding, :for_update, _params) do
           fragment("FOR UPDATE")
         end
 
-        def build_fragment_expression(_binding_selector, :for_share, _params) do
+        def build_fragment_expression(_selected_binding, :for_share, _params) do
           fragment("FOR SHARE")
         end
 
-        def build_fragment_expression(_binding_selector, _key, _params), do: nil
+        def build_fragment_expression(_selected_binding, _key, _params), do: nil
       end
 
   Use in a lock:
@@ -229,7 +229,7 @@ defmodule EctoShorts.QueryProvider do
   @default_adapter EctoShorts.CommonFilters.QueryProviders.NoOp
 
   @doc false
-  def build_fragment_expression(binding_selector, expression_key, expression_params, opts \\ []) do
+  def build_fragment_expression(selected_binding, expression_key, expression_params, opts \\ []) do
     query_provider =
       Keyword.get(opts, :query_provider, Config.query_provider()) ||
         @default_adapter
@@ -240,6 +240,6 @@ defmodule EctoShorts.QueryProvider do
             "Expected expression resolver module to have a build_fragment_expression/3 function, got: #{inspect(query_provider)}"
     end
 
-    query_provider.build_fragment_expression(binding_selector, expression_key, expression_params)
+    query_provider.build_fragment_expression(selected_binding, expression_key, expression_params)
   end
 end

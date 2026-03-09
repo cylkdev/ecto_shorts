@@ -15,7 +15,7 @@ defmodule EctoShorts.CompilerTest do
 
         def keys, do: [unquote(key)]
 
-        def specs_for(spec_key, _binding_selector, _q_var, opts) do
+        def specs_for(spec_key, _selected_binding, _q_var, opts) do
           context = opts[:context]
           label = @label
           value_var = Macro.var(:value, context)
@@ -40,7 +40,7 @@ defmodule EctoShorts.CompilerTest do
 
         def keys, do: unquote(keys)
 
-        def specs_for(spec_key, _binding_selector, _q_var, opts) do
+        def specs_for(spec_key, _selected_binding, _q_var, opts) do
           context = opts[:context]
           value_var = Macro.var(:value, context)
 
@@ -64,7 +64,7 @@ defmodule EctoShorts.CompilerTest do
 
         def keys, do: [unquote(key)]
 
-        def specs_for(spec_key, _binding_selector, _q_var, opts) do
+        def specs_for(spec_key, _selected_binding, _q_var, opts) do
           context = opts[:context]
           value_var = Macro.var(:value, context)
 

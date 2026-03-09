@@ -4,47 +4,47 @@ defmodule EctoShorts.Adapters.Postgres do
   alias EctoShorts.CommonSchema
   alias EctoShorts.Dynamics.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
 
-  def build_dynamic(source, binding_selector, {key, term}, opts \\ []) do
-    expr = apply_expr(source, binding_selector, {key, term}, opts)
+  def build_dynamic(source, selected_binding, {key, term}, opts \\ []) do
+    expr = apply_expr(source, selected_binding, {key, term}, opts)
 
     merge_dynamic(nil, :and, expr)
   end
 
-  defp apply_expr(source, binding_selector, {key, term}, opts) do
+  defp apply_expr(source, selected_binding, {key, term}, opts) do
     cond do
       is_map(term) and not is_struct(term) ->
-        apply_expr(source, binding_selector, {key, Map.to_list(term)}, opts)
+        apply_expr(source, selected_binding, {key, Map.to_list(term)}, opts)
 
       Keyword.keyword?(term) ->
         Enum.reduce(term, nil, fn {inner_key, inner_value}, acc ->
-          dyn = apply_expr(source, binding_selector, {key, {inner_key, inner_value}}, opts)
+          dyn = apply_expr(source, selected_binding, {key, {inner_key, inner_value}}, opts)
           merge_dynamic(acc, :and, dyn)
         end)
 
       true ->
-        build_expr(source, binding_selector, key, term, opts)
+        build_expr(source, selected_binding, key, term, opts)
     end
   end
 
-  defp build_expr(source, binding_selector, key, term, opts) do
-    if binding_selector?(binding_selector) do
+  defp build_expr(source, selected_binding, key, term, opts) do
+    if selected_binding?(selected_binding) do
       cond do
         key in CommonExpr.keys() ->
-          CommonExpr.dynamic_expr(binding_selector, key, term, opts)
+          CommonExpr.dynamic_expr(selected_binding, key, term, opts)
 
         field_type_of_array?(source, key) ->
-          ArrayExpr.dynamic_expr(binding_selector, key, term, opts)
+          ArrayExpr.dynamic_expr(selected_binding, key, term, opts)
 
         true ->
-          ScalarExpr.dynamic_expr(binding_selector, key, term, opts)
+          ScalarExpr.dynamic_expr(selected_binding, key, term, opts)
       end
     end
   end
 
-  defp binding_selector?({:as, nil}), do: true
-  defp binding_selector?({:as, binding_alias}) when is_atom(binding_alias), do: true
-  defp binding_selector?({:at, position}) when is_integer(position) and position >= 1, do: true
-  defp binding_selector?(_), do: false
+  defp selected_binding?({:as, nil}), do: true
+  defp selected_binding?({:as, binding_alias}) when is_atom(binding_alias), do: true
+  defp selected_binding?({:at, position}) when is_integer(position) and position >= 1, do: true
+  defp selected_binding?(_), do: false
 
   defp field_type_of_array?(source, key) do
     case CommonSchema.get_schema_reflection(source, :type, key) do

@@ -15,15 +15,15 @@
 #   require Ecto.Query
 #   require EctoShorts.Generator
 
-#   @binding_selector_key :bind
+#   @selected_binding_key :bind
 
 #   @doc false
-#   def build(_schema_source, :update, query, binding_selector, term, opts)
+#   def build(_schema_source, :update, query, selected_binding, term, opts)
 #       when is_map(term) and not is_struct(term) do
 #     term
 #     |> Map.to_list()
 #     |> Enum.reduce(query, fn entry, query_acc ->
-#       build(nil, :update, query_acc, binding_selector, entry, opts)
+#       build(nil, :update, query_acc, selected_binding, entry, opts)
 #     end)
 #   end
 
@@ -31,39 +31,39 @@
 #         _schema_source,
 #         :update,
 #         query,
-#         binding_selector,
-#         {@binding_selector_key, bind_params},
+#         selected_binding,
+#         {@selected_binding_key, bind_params},
 #         opts
 #       ) do
-#     reduce_update_bind(query, binding_selector, bind_params, opts)
+#     reduce_update_bind(query, selected_binding, bind_params, opts)
 #   end
 
-#   def build(_schema_source, :update, query, binding_selector, term, opts) when is_list(term) do
+#   def build(_schema_source, :update, query, selected_binding, term, opts) when is_list(term) do
 #     if Keyword.keyword?(term) do
-#       case Enum.split_with(term, fn {k, _} -> k === @binding_selector_key end) do
+#       case Enum.split_with(term, fn {k, _} -> k === @selected_binding_key end) do
 #         {[], entries} ->
-#           apply_update_expr(query, binding_selector, normalize_update_entries(entries))
+#           apply_update_expr(query, selected_binding, normalize_update_entries(entries))
 
 #         {bind_entries, []} ->
 #           Enum.reduce(bind_entries, query, fn entry, query_acc ->
-#             build(nil, :update, query_acc, binding_selector, entry, opts)
+#             build(nil, :update, query_acc, selected_binding, entry, opts)
 #           end)
 
 #         {bind_entries, entries} ->
 #           query_with_update =
-#             apply_update_expr(query, binding_selector, normalize_update_entries(entries))
+#             apply_update_expr(query, selected_binding, normalize_update_entries(entries))
 
 #           Enum.reduce(bind_entries, query_with_update, fn entry, query_acc ->
-#             build(nil, :update, query_acc, binding_selector, entry, opts)
+#             build(nil, :update, query_acc, selected_binding, entry, opts)
 #           end)
 #       end
 #     else
-#       apply_update_expr(query, binding_selector, term)
+#       apply_update_expr(query, selected_binding, term)
 #     end
 #   end
 
-#   def build(_schema_source, :update, query, binding_selector, term, _opts) do
-#     apply_update_expr(query, binding_selector, term)
+#   def build(_schema_source, :update, query, selected_binding, term, _opts) do
+#     apply_update_expr(query, selected_binding, term)
 #   end
 
 #   defp normalize_update_entries(entries) when is_list(entries) do
@@ -76,11 +76,11 @@
 #     end)
 #   end
 
-#   defp reduce_update_bind(query, _binding_selector, bind_params, opts) do
+#   defp reduce_update_bind(query, _selected_binding, bind_params, opts) do
 #     bind_params
 #     |> BindingParams.normalize_bind_params(query)
-#     |> Enum.reduce(query, fn {binding_selector, value}, q ->
-#       build(nil, :update, q, binding_selector, value, opts)
+#     |> Enum.reduce(query, fn {selected_binding, value}, q ->
+#       build(nil, :update, q, selected_binding, value, opts)
 #     end)
 #   end
 
