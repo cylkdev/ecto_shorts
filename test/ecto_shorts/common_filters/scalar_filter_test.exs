@@ -6,7 +6,6 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
   alias EctoShorts.Schema.Post
 
   import Ecto.Query
-  import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 comparison operators" do
     test "matches records where the field equals the value using ==" do
@@ -157,20 +156,10 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
-    test "logs a warning and returns the query unchanged for an unsupported nil operator" do
-      q = from(p in Post)
-
-      log =
-        capture_log(fn ->
-          q2 = CommonFilters.convert_params_to_filter(q, %{published_at: %{>: nil}}, [])
-          send(self(), {:q2, q2})
-        end)
-
-      assert log =~
-               "Adapter EctoShorts.Dynamics.Postgres returned nil for field :published_at with expression: {:>, nil}"
-
-      assert_received {:q2, q2}
-      assert q2 === q
+    test "raises for an unsupported nil operator" do
+      assert_raise ArgumentError, fn ->
+        CommonFilters.convert_params_to_filter(Post, %{published_at: %{>: nil}}, [])
+      end
     end
   end
 

@@ -27,7 +27,7 @@ defmodule EctoShorts.Adapters.Postgres do
   end
 
   defp build_expr(source, selected_binding, key, term, opts) do
-    if selected_binding?(selected_binding) do
+    if binding_selector?(selected_binding) do
       cond do
         key in CommonExpr.keys() ->
           CommonExpr.dynamic_expr(selected_binding, key, term, opts)
@@ -41,10 +41,10 @@ defmodule EctoShorts.Adapters.Postgres do
     end
   end
 
-  defp selected_binding?({:as, nil}), do: true
-  defp selected_binding?({:as, binding_alias}) when is_atom(binding_alias), do: true
-  defp selected_binding?({:at, position}) when is_integer(position) and position >= 1, do: true
-  defp selected_binding?(_), do: false
+  defp binding_selector?({:as, nil}), do: true
+  defp binding_selector?({:as, binding_alias}) when is_atom(binding_alias), do: true
+  defp binding_selector?({:at, position}) when is_integer(position) and position >= 1, do: true
+  defp binding_selector?(_), do: false
 
   defp field_type_of_array?(source, key) do
     case CommonSchema.get_schema_reflection(source, :type, key) do

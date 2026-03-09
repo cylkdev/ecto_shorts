@@ -7,7 +7,21 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
   @keys [
     :==,
-    :eq
+    :eq,
+    :!=,
+    :ne,
+    :>,
+    :>=,
+    :<,
+    :<=,
+    :gt,
+    :gte,
+    :lt,
+    :lte,
+    :in,
+    :like,
+    :ilike,
+    :not
   ]
 
   @behaviour EctoShorts.Generator.ClauseSpec
@@ -52,15 +66,51 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   @doc false
-  def expr_for(key, q_var, {key_var, nil}) when key in @keys do
+  def expr_for(key, q_var, {key_var, nil}) when key in [:==, :eq] do
     quote do
       is_nil(field(unquote(q_var), ^unquote(key_var)))
     end
   end
 
-  def expr_for(key, q_var, {key_var, value_var}) when key in @keys do
+  def expr_for(key, q_var, {key_var, nil}) when key in [:!=, :ne] do
+    quote do
+      not is_nil(field(unquote(q_var), ^unquote(key_var)))
+    end
+  end
+
+  def expr_for(key, q_var, {key_var, value_var}) when key in [:==, :eq] do
     quote do
       field(unquote(q_var), ^unquote(key_var)) == ^unquote(value_var)
+    end
+  end
+
+  def expr_for(key, q_var, {key_var, value_var}) when key in [:!=, :ne] do
+    quote do
+      field(unquote(q_var), ^unquote(key_var)) != ^unquote(value_var)
+    end
+  end
+
+  def expr_for(key, q_var, {key_var, value_var}) when key in [:>, :gt] do
+    quote do
+      field(unquote(q_var), ^unquote(key_var)) > ^unquote(value_var)
+    end
+  end
+
+  def expr_for(key, q_var, {key_var, value_var}) when key in [:>=, :gte] do
+    quote do
+      field(unquote(q_var), ^unquote(key_var)) >= ^unquote(value_var)
+    end
+  end
+
+  def expr_for(key, q_var, {key_var, value_var}) when key in [:<, :lt] do
+    quote do
+      field(unquote(q_var), ^unquote(key_var)) < ^unquote(value_var)
+    end
+  end
+
+  def expr_for(key, q_var, {key_var, value_var}) when key in [:<=, :lte] do
+    quote do
+      field(unquote(q_var), ^unquote(key_var)) <= ^unquote(value_var)
     end
   end
 end
