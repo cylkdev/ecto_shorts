@@ -115,7 +115,7 @@ defmodule EctoShorts.CompilerTest do
     caller_module
   end
 
-  test "use EctoShorts.Compiler with one generated module exposes dynamic_expr/3" do
+  test "use EctoShorts.Compiler with one generated module compiles the module without exposing dynamic_expr/3" do
     builder_module = unique_module("SingleBuilder")
     compiled_module = unique_module("SingleCompiled")
 
@@ -125,11 +125,12 @@ defmodule EctoShorts.CompilerTest do
         [builder_definition(builder_module, :id, :single)]
       )
 
-    assert {:single, 1} = caller_module.dynamic_expr({:as, :post}, :id, 1)
-    assert is_nil(caller_module.dynamic_expr({:as, :post}, :missing, 1))
+    refute function_exported?(caller_module, :dynamic_expr, 3)
+    assert {:single, 1} = compiled_module.dynamic_expr({:as, :post}, :id, 1)
+    assert is_nil(compiled_module.dynamic_expr({:as, :post}, :missing, 1))
   end
 
-  test "multiple generated modules are compiled in one pass and dispatch by key" do
+  test "multiple generated modules are compiled in one pass without injecting routing" do
     first_builder = unique_module("FirstBuilder")
     second_builder = unique_module("SecondBuilder")
     first_compiled = unique_module("FirstCompiled")
@@ -147,8 +148,9 @@ defmodule EctoShorts.CompilerTest do
         ]
       )
 
-    assert {:first, 1} = caller_module.dynamic_expr({:as, :post}, :id, 1)
-    assert {:second, "post"} = caller_module.dynamic_expr({:as, :post}, :slug, "post")
+    refute function_exported?(caller_module, :dynamic_expr, 3)
+    assert {:first, 1} = first_compiled.dynamic_expr({:as, :post}, :id, 1)
+    assert {:second, "post"} = second_compiled.dynamic_expr({:as, :post}, :slug, "post")
 
     assert String.starts_with?(
              List.to_string(:code.which(first_compiled)),
@@ -161,13 +163,13 @@ defmodule EctoShorts.CompilerTest do
            )
   end
 
-  test "dispatcher returns nil when every generated module returns nil" do
+  test "compiled modules return nil for missing keys" do
     first_builder = unique_module("NilFirstBuilder")
     second_builder = unique_module("NilSecondBuilder")
     first_compiled = unique_module("NilFirstCompiled")
     second_compiled = unique_module("NilSecondCompiled")
 
-    caller_module =
+    _caller_module =
       compile_with_modules!(
         [
           [builder: first_builder, module: first_compiled],
@@ -179,7 +181,8 @@ defmodule EctoShorts.CompilerTest do
         ]
       )
 
-    assert is_nil(caller_module.dynamic_expr({:as, :post}, :missing, 1))
+    assert is_nil(first_compiled.dynamic_expr({:as, :post}, :missing, 1))
+    assert is_nil(second_compiled.dynamic_expr({:as, :post}, :missing, 1))
   end
 
   test "multiple explicit modules can split one builder into separate compiled modules" do
@@ -187,7 +190,7 @@ defmodule EctoShorts.CompilerTest do
     first_compiled = unique_module("PartitionedCompiledFirst")
     second_compiled = unique_module("PartitionedCompiledSecond")
 
-    caller_module =
+    _caller_module =
       compile_with_modules!(
         [
           [builder: builder_module, module: first_compiled, keys: [:first_key]],
@@ -196,13 +199,13 @@ defmodule EctoShorts.CompilerTest do
         [multi_key_builder_definition(builder_module, [:first_key, :second_key])]
       )
 
-    assert {:second_key, 2} = caller_module.dynamic_expr({:as, :post}, :second_key, 2)
+    assert {:second_key, 2} = second_compiled.dynamic_expr({:as, :post}, :second_key, 2)
   end
 
-  test "omitting :modules defaults dynamic_expr/3 to nil" do
+  test "omitting :modules does not inject dynamic_expr/3" do
     caller_module = compile_use!([])
 
-    assert is_nil(caller_module.dynamic_expr({:as, :post}, :id, 1))
+    refute function_exported?(caller_module, :dynamic_expr, 3)
   end
 
   test "compiler passes flattened path and filename options to the generator" do

@@ -229,35 +229,60 @@ Use this skeleton when you create a new ExecPlan. Keep it complete enough that a
 
     Write the status in bold and follow it with one full sentence that describes the current state in plain language.
 
-    Example:
+    Example:  
 
         **Proposed.** The plan has been written and work has not started.
 
-    ## Current State Snapshot
+    ## Milestones
 
-    Write a short summary of where the plan stands right now.
+    ### Milestone 1: Define the scope, expected behavior, and completion criteria
 
-    State what is already known, what is still undecided, what repository evidence has already been checked, and what a complete beginner should do first if they restart here.
+    Use this milestone to define exactly how email verification must work before you begin implementation. Clarify the expected user experience, the system behavior, and the conditions that will determine whether the work is complete. This matters because you cannot implement backend or frontend changes correctly until the required behavior is fully defined. By the end of this milestone, you should have a clear understanding of how the feature must work and how success will be measured.
 
-    ## Task and Key Files
+    #### Task 1.1: Confirm how the signup flow should work
 
-    Record the concrete task this plan currently owns.
+    - Determine when the verification email must be sent.
+    - Determine whether unverified users are allowed to sign in.
+    - Determine what must happen when a verification link expires.
+    - Determine how resend verification must work.
+    - Complete this task before you begin backend or frontend implementation, because it defines the behavior the system must support.
 
-    List the key repository files, commands, tests, catalogs, or companion documents that matter right now.
+    #### Task 1.2: Identify the technical dependencies
 
-    List every document, catalog, or artifact that must be created or updated in the same change and keep this section current as the task or handoff changes.
+    - Review the authentication code.
+    - Review the email delivery integration.
+    - Review the user model fields related to account state.
+    - Review the routes and pages involved in signup and account activation.
+    - Complete this task before implementation begins, because it identifies the systems, dependencies, and areas of the codebase that will be affected.
 
-    ## Trigger for Using This Document
+    ### Milestone 2: Implement the backend changes
 
-    Record the exact trigger that made this ExecPlan the correct document.
+    Use this milestone to build the backend support required for email verification. This includes the data model, token lifecycle, and delivery of the verification email. This matters because the backend defines the core verification flow and provides the functionality the frontend depends on. By the end of this milestone, you should have a working backend implementation that can generate verification tokens, store the required verification state, and send valid verification emails.
 
-    State the concrete observed conditions from the request, repository, prior artifact, or observed system state that triggered this document choice.
+    #### Task 2.1: Add data model support
 
-    Write the full explicit reasoning path from those facts to this document. Do not skip intermediate decision steps.
+    - Add a field for email verification status.
+    - Add a field for the verification token or token reference.
+    - Add a field for token expiry time.
+    - This task depends on Milestone 1, because the data model must reflect the behavior you defined there.
+    - Complete this task before you implement token handling, verification handling, or resend support.
 
-    Name the nearest competing document types you considered and explain why each one does not own the current unresolved question.
+    #### Task 2.2: Implement token generation and storage
 
-    End with a short replication rule another contributor can follow to reach the same document choice.
+    - Add a secure token generation utility.
+    - Store the token safely.
+    - Set an expiration time.
+    - Connect token generation to the signup flow.
+    - This task depends on Task 2.1, because the data model must exist before tokens can be stored.
+    - Complete this task before you send the verification email or implement verification handling.
+
+    #### Task 2.3: Send the verification email
+
+    - Create the email content.
+    - Add the verification link.
+    - Trigger email sending after successful signup.
+    - Verify delivery in development.
+    - This task depends on Task 2.2, because the email requires a valid verification token and link.
 
     ## Output
 
@@ -303,6 +328,26 @@ Use this skeleton when you create a new ExecPlan. Keep it complete enough that a
     Restate the request so a complete beginner can answer "yes, that is the change" or "no, that is not what I meant."
 
     If more than one interpretation is still possible, state the chosen interpretation and why it is the correct one for this plan.
+
+    ## Task and Key Files
+
+    Record the concrete task this plan currently owns.
+
+    List the key repository files, commands, tests, catalogs, or companion documents that matter right now.
+
+    List every document, catalog, or artifact that must be created or updated in the same change and keep this section current as the task or handoff changes.
+
+    ## Trigger for Using This Document
+
+    Record the exact trigger that made this ExecPlan the correct document.
+
+    State the concrete observed conditions from the request, repository, prior artifact, or observed system state that triggered this document choice.
+
+    Write the full explicit reasoning path from those facts to this document. Do not skip intermediate decision steps.
+
+    Name the nearest competing document types you considered and explain why each one does not own the current unresolved question.
+
+    End with a short replication rule another contributor can follow to reach the same document choice.
 
     ## Scope Boundaries
 
@@ -370,6 +415,12 @@ Use this skeleton when you create a new ExecPlan. Keep it complete enough that a
     Record anything still unknown that could change the implementation sequence or the validation path.
 
     If there are no remaining blockers, say that explicitly.
+
+    ## Current State Snapshot
+
+    Write a short summary of where the plan stands right now.
+
+    State what is already known, what is still undecided, what repository evidence has already been checked, and what a complete beginner should do first if they restart here.
 
     ## Next Handoff
 

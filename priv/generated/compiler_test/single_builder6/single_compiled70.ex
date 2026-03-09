@@ -1,4 +1,4 @@
-defmodule EctoShorts.CompilerTest.CustomPathCompiled7299 do
+defmodule EctoShorts.CompilerTest.SingleCompiled70 do
   @moduledoc false
   import Ecto.Query, only: [dynamic: 2]
 
@@ -9,47 +9,47 @@ defmodule EctoShorts.CompilerTest.CustomPathCompiled7299 do
 
   @doc false
   def dynamic_expr({:as, binding_alias}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 1}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 2}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 3}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 4}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 5}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 6}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 7}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 8}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 9}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr({:at, 10}, :id, value) do
-    {:custom, value}
+    {:single, value}
   end
 
   def dynamic_expr(_, _, _) do

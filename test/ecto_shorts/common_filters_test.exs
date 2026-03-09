@@ -24,6 +24,28 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_sql(expected, actual)
     end
 
+    test "scalar field :id with operator :eq" do
+      id = 1
+      expected = from(p in Post, where: p.id == ^id)
+      actual = CommonFilters.convert_params_to_filter(Post, %{id: %{eq: id}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "scalar field :id with operator :== and nil" do
+      expected = from(p in Post, where: is_nil(p.id))
+      actual = CommonFilters.convert_params_to_filter(Post, %{id: %{==: nil}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "scalar field :id with operator :eq and nil" do
+      expected = from(p in Post, where: is_nil(p.id))
+      actual = CommonFilters.convert_params_to_filter(Post, %{id: %{eq: nil}}, [])
+
+      assert_sql(expected, actual)
+    end
+
     test ":ids" do
       ids = [1, 2, 3]
       expected = from(p in Post, where: p.id in ^ids)
