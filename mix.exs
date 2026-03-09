@@ -12,6 +12,7 @@ defmodule EctoShorts.MixProject do
       description: "Build and compose Ecto queries with a data-driven API",
       docs: docs(),
       package: package(),
+      compilers: Mix.compilers(),
       elixirc_paths: elixirc_paths(Mix.env()),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
@@ -68,7 +69,7 @@ defmodule EctoShorts.MixProject do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/support", "test/examples"]
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp package do
@@ -111,12 +112,12 @@ defmodule EctoShorts.MixProject do
           EctoShorts.SchemaHelpers
         ],
         Compiler: [
-          EctoShorts.Compiler,
-          EctoShorts.Compiler.AST,
-          EctoShorts.Compiler.ClauseBuilder,
-          EctoShorts.Compiler.ClauseSpec,
-          EctoShorts.Compiler.ClauseSpecProvider,
-          EctoShorts.Compiler.QueryBindingBuilder
+          EctoShorts.Generator,
+          EctoShorts.Generator.AST,
+          EctoShorts.Generator.ClauseBuilder,
+          EctoShorts.Generator.Blueprint,
+          EctoShorts.Generator.Builder,
+          EctoShorts.Generator.QueryBindingBuilder
         ],
         "CommonParams API": [
           EctoShorts.CommonParams.Placeholders,

@@ -7,7 +7,7 @@
 - Minimum supported Elixir version is now `~> 1.15` (was `~> 1.13`).
 - `EctoShorts.CommonSchemas` has been removed. Use `EctoShorts.CommonSchema` instead.
 - `EctoShorts.QueryHelpers` has been removed. Use `EctoShorts.CommonQuery` instead.
-- `EctoShorts.QueryBuilder` (and its submodules) has been removed. Use `EctoShorts.Dynamics` and `EctoShorts.Compiler` instead.
+- `EctoShorts.QueryBuilder` (and its submodules) has been removed. Use `EctoShorts.Dynamics` and `EctoShorts.Generator` instead.
 - `EctoShorts.Utils.Logger` has been removed. Use `EctoShorts.Logger` instead.
 - `SchemaHelpers.build_struct/2` has been removed. Use `CommonSchema.build_struct/1` instead.
 - `SchemaHelpers.schema?/1` has been removed. Use `SchemaHelpers.schema_struct?/1` instead.
@@ -24,7 +24,7 @@
 - Added `EctoShorts.CommonQuery` which exposes utilities for inspecting `Ecto.Query` values at runtime. This lets you read the query prefix, source, binding count, and resolve individual binding sources (`get_query_prefix/1`, `get_query_source/1`, `query_binding_count/1`, `get_query_binding_source/2`).
 - Added `EctoShorts.CommonParams` which provides helpers for constructing bulk operation parameters. This simplifies building conflict-handling options and converting data for insert and update operations (`build_on_conflict_options/3`, `convert_to_insert_params/3`, `convert_to_update_params/3`).
 - Added `EctoShorts.Dynamics` which converts filter parameter maps into `Ecto.Query.DynamicExpr` values. Filtering behaviour is customizable through a pluggable adapter.
-- Added `EctoShorts.Compiler` which provides data-driven function clause generation at compile time. This adds support for `Ecto.Query` positional bindings.
+- Added `EctoShorts.Generator` which provides data-driven function clause generation at compile time. This adds support for `Ecto.Query` positional bindings.
 - Added `EctoShorts.Logger` which provides a consistent, prefixed logging interface (`debug/2`, `info/2`, `warning/2`, `error/2`).
 - Added `EctoShorts.Testing` which provides assertion helpers for verifying dynamic expressions and generated SQL. Use `use EctoShorts.Testing` to bring `assert_dynamic/2`, `refute_dynamic/2`, `assert_query/2`, `refute_query/2`, `assert_sql/3-4`, and `refute_sql/3-4` into test modules.
 - Added `EctoShorts.QueryProvider` which resolves expression callbacks for joins and locks. This decouples query construction from execution.
@@ -38,7 +38,7 @@
   - `transact/2` for transactions that automatically roll back on `{:error, _}`.
   - `batch/5` for batch query operations by key.
   - `batch_preload/4` for batch preloading a list of entries.
-- New `Config` accessors: `error_module/0`, `dynamic_adapter/0`, `query_provider/0`, `max_binding_positions/0`.
+- New `Config` accessors: `error_module/0`, `dynamic_adapter/0`, `query_provider/0`, `max_positional_bindings/0`.
 - New `SchemaHelpers` helpers:
   - `get_related_schema/2` to resolve related schemas, including `:through` associations.
   - `schema_field_type/2` to return a field's Ecto type.

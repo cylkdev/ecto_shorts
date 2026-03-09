@@ -45,8 +45,8 @@ Don't do this:
 
 ```elixir
 # BAD EXAMPLE, DO NOT COPY!
-alias EctoShorts.Compiler.AST
-alias EctoShorts.Compiler.ClauseSpec
+alias EctoShorts.Generator.AST
+alias EctoShorts.Generator.Blueprint
 require EctoShorts.Dynamics.Postgres.ExprHelpers
 alias EctoShorts.Dynamics.Postgres.ExprHelpers
 ```
@@ -55,8 +55,8 @@ Do this:
 
 ```elixir
 # GOOD EXAMPLE, COPY THIS!
-alias EctoShorts.Compiler.AST
-alias EctoShorts.Compiler.ClauseSpec
+alias EctoShorts.Generator.AST
+alias EctoShorts.Generator.Blueprint
 alias EctoShorts.Dynamics.Postgres.ExprHelpers
 
 require EctoShorts.Dynamics.Postgres.ExprHelpers

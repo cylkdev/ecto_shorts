@@ -92,7 +92,7 @@ Do not widen one-off wording into this registry unless the same choice is alread
 - `EctoShorts.CommonParams`: The module family for preparing params for bulk operations.
 - `EctoShorts.CommonQuery`: The module family for query inspection helpers.
 - `EctoShorts.Dynamics`: The module family for building `Ecto.Query.dynamic/2` expressions from data.
-- `EctoShorts.Compiler`: The internal module family for compile-time clause generation.
+- `EctoShorts.Generator`: The internal module family for compile-time clause generation.
 - `EctoShorts.Testing`: The module family for test helpers.
 - `EctoShorts.SchemaHelpers`: An actual module that still exists in the codebase.
   Use this exact name only when the text is intentionally about that module or its API. Do not use `SchemaHelpers` as the general label for the main schema utility family when `CommonSchema` is the intended concept.

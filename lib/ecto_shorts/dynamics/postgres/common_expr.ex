@@ -1,7 +1,16 @@
 defmodule EctoShorts.Dynamics.Postgres.CommonExpr do
-  @moduledoc since: "3.0.0"
   @moduledoc false
-
   use EctoShorts.Compiler,
-    specs: [EctoShorts.Dynamics.Postgres.CommonExpr.Specs]
+    modules: [
+      [
+        builder: EctoShorts.Dynamics.Postgres.CommonExpr.Spec,
+        module: EctoShorts.Dynamics.Postgres.CommonExpr.Compiled.NamedBinding,
+        modes: :named
+      ],
+      [
+        builder: EctoShorts.Dynamics.Postgres.CommonExpr.Spec,
+        module: EctoShorts.Dynamics.Postgres.CommonExpr.Compiled.PositionalBinding,
+        modes: :positional
+      ]
+    ]
 end

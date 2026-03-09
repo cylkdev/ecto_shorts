@@ -1,7 +1,7 @@
 defmodule EctoShorts.Dynamics.Postgres.ScalarExprSpecsTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Compiler.ClauseBuilder
+  alias EctoShorts.Generator.ClauseBuilder
   alias EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.Core, as: ScalarExprSpecs
   alias EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.Aggregate, as: AggregateSpecs
   alias EctoShorts.Dynamics.Postgres.ScalarExpr.Specs.Arithmetic, as: ArithmeticSpecs

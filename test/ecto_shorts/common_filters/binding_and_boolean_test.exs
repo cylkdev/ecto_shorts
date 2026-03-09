@@ -291,7 +291,7 @@ defmodule EctoShorts.CommonFilters.BindingAndBooleanTest do
           send(self(), {:q2, q2})
         end)
 
-      assert log =~ "Binding position 1000 exceeds the configured :max_binding_positions"
+      assert log =~ "Binding position 1000 exceeds the configured :max_positional_bindings"
       assert_received {:q2, q2}
       assert q2 === q
     end

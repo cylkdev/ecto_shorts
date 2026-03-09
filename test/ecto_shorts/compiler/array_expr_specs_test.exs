@@ -1,7 +1,7 @@
 defmodule EctoShorts.Dynamics.Postgres.ArrayExprSpecsTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Compiler.ClauseBuilder
+  alias EctoShorts.Generator.ClauseBuilder
   alias EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.Aggregate, as: AggregateSpecs
   alias EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.Core, as: ArrayExprSpecs
   alias EctoShorts.Dynamics.Postgres.ArrayExpr.Specs.LikeIlike, as: LikeIlikeSpecs

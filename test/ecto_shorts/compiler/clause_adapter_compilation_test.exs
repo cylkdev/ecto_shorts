@@ -1,90 +1,223 @@
-defmodule EctoShorts.Compiler.UsingTest do
-  use ExUnit.Case, async: true
+defmodule EctoShorts.CompilerTest do
+  use ExUnit.Case, async: false
 
-  alias EctoShorts.Compiler
-  alias EctoShorts.Compiler.AST
+  alias EctoShorts.Generator
 
-  import Ecto.Query
-  import EctoShorts.Testing, only: [assert_dynamic: 2]
+  defp unique_module(name) do
+    Module.concat([__MODULE__, :"#{name}#{System.unique_integer([:positive])}"])
+  end
 
-  defp compile_compiled_module!(compiler_opts \\ [max_binding_positions: 1]) do
-    unique = System.unique_integer([:positive])
+  defp builder_definition(module, key, label) do
+    quote do
+      defmodule unquote(module) do
+        @behaviour EctoShorts.Generator.ClauseSpec
+        @label unquote(label)
 
-    specs_module = Module.concat([__MODULE__, :"TmpSpecs#{unique}"])
-    compiled_module = Module.concat([__MODULE__, :"TmpCompiled#{unique}"])
-    opts = Keyword.put(compiler_opts, :specs, [specs_module])
+        def keys, do: [unquote(key)]
+
+        def specs_for(spec_key, _binding_selector, _q_var, opts) do
+          context = opts[:context]
+          label = @label
+          value_var = Macro.var(:value, context)
+
+          [
+            %EctoShorts.Generator.Blueprint{
+              guard: nil,
+              key: spec_key,
+              head: value_var,
+              body: quote(do: {unquote(label), unquote(value_var)})
+            }
+          ]
+        end
+      end
+    end
+  end
+
+  defp compile_with_modules!(modules, builder_definitions \\ []) do
+    caller_module = unique_module("Caller")
+    escaped_modules = Macro.escape(modules)
 
     quoted =
       quote do
-        defmodule unquote(specs_module) do
-          @moduledoc false
+        unquote_splicing(builder_definitions)
 
-          def clause_specs(context, binding_head_ast, target_binding_var, binding_body_asts) do
-            key_var = Macro.var(:key, context)
-            v_var = Macro.var(:v, context)
-
-            expr_ast =
-              quote do
-                # credo:disable-for-next-line BlitzCredoChecks.StrictComparison
-                field(unquote(target_binding_var), ^unquote(key_var)) == ^unquote(v_var)
-              end
-
-            [
-              %{
-                binding_head: binding_head_ast,
-                key: key_var,
-                head: quote(do: {:==, unquote(v_var)}),
-                body: unquote(AST).dynamic_ast(binding_body_asts, expr_ast)
-              }
-            ]
-          end
-        end
-
-        defmodule unquote(compiled_module) do
-          @moduledoc false
-
-          use unquote(Compiler), unquote(opts)
+        defmodule unquote(caller_module) do
+          use EctoShorts.Compiler, modules: unquote(escaped_modules)
         end
       end
 
     Code.compile_quoted(quoted)
-    compiled_module
+    caller_module
   end
 
-  test "use Compiler defines compose/3 in the caller module" do
-    compiled_module = compile_compiled_module!()
-    assert {:module, _} = Code.ensure_compiled(compiled_module)
+  defp compile_invalid_use!(opts) do
+    caller_module = unique_module("InvalidCaller")
+    escaped_opts = Macro.escape(opts)
+
+    quoted =
+      quote do
+        defmodule unquote(caller_module) do
+          use EctoShorts.Compiler, unquote(escaped_opts)
+        end
+      end
+
+    Code.compile_quoted(quoted)
   end
 
-  test "generated compose/3 clauses return the expected dynamic" do
-    compiled_module = compile_compiled_module!()
+  test "use EctoShorts.Compiler with one generated module exposes dynamic_expr/3" do
+    builder_module = unique_module("SingleBuilder")
+    compiled_module = unique_module("SingleCompiled")
 
-    expected = dynamic([q], field(q, ^:id) == ^1)
+    caller_module =
+      compile_with_modules!(
+        [[builder: builder_module, module: compiled_module, modes: :named]],
+        [builder_definition(builder_module, :id, :single)]
+      )
 
-    actual = compiled_module.compose({:as, nil}, :id, {:==, 1})
-
-    assert_dynamic(expected, actual)
+    assert {:single, 1} = caller_module.dynamic_expr({:as, :post}, :id, 1)
+    assert is_nil(caller_module.dynamic_expr({:as, :post}, :missing, 1))
   end
 
-  test "max_binding_positions limits generated positional heads" do
-    compiled_module = compile_compiled_module!()
+  test "multiple generated modules are compiled in one pass and dispatch in declaration order" do
+    first_builder = unique_module("FirstBuilder")
+    second_builder = unique_module("SecondBuilder")
+    first_compiled = unique_module("FirstCompiled")
+    second_compiled = unique_module("SecondCompiled")
 
-    assert is_nil(compiled_module.compose({:at, 2}, :id, {:==, 1}))
+    caller_module =
+      compile_with_modules!(
+        [
+          [builder: first_builder, module: first_compiled, modes: :named],
+          [builder: second_builder, module: second_compiled, modes: :named]
+        ],
+        [
+          builder_definition(first_builder, :id, :first),
+          builder_definition(second_builder, :id, :second)
+        ]
+      )
+
+    assert {:first, 1} = caller_module.dynamic_expr({:as, :post}, :id, 1)
+
+    assert String.starts_with?(
+             List.to_string(:code.which(first_compiled)),
+             Mix.Project.compile_path()
+           )
+
+    assert String.starts_with?(
+             List.to_string(:code.which(second_compiled)),
+             Mix.Project.compile_path()
+           )
   end
 
-  test "config_stale?/1 returns true when current max differs from compile-time max" do
-    compiled_module = compile_compiled_module!([])
-    compile_time_max = EctoShorts.Config.max_binding_positions()
+  test "dispatcher returns nil when every generated module returns nil" do
+    first_builder = unique_module("NilFirstBuilder")
+    second_builder = unique_module("NilSecondBuilder")
+    first_compiled = unique_module("NilFirstCompiled")
+    second_compiled = unique_module("NilSecondCompiled")
 
-    refute compiled_module.config_stale?(compile_time_max)
-    assert compiled_module.config_stale?(compile_time_max + 1)
+    caller_module =
+      compile_with_modules!(
+        [
+          [builder: first_builder, module: first_compiled, modes: :named],
+          [builder: second_builder, module: second_compiled, modes: :named]
+        ],
+        [
+          builder_definition(first_builder, :first_key, :first),
+          builder_definition(second_builder, :second_key, :second)
+        ]
+      )
+
+    assert is_nil(caller_module.dynamic_expr({:as, :post}, :missing, 1))
   end
 
-  test "config_stale?/1 always matches compile-time max when module overrides max" do
-    explicit_max = 1
-    compiled_module = compile_compiled_module!(max_binding_positions: explicit_max)
+  test "raises when :modules is missing" do
+    assert_raise ArgumentError, ~r/expected :modules to be a non-empty list/, fn ->
+      compile_invalid_use!([])
+    end
+  end
 
-    refute compiled_module.config_stale?(explicit_max)
-    assert compiled_module.config_stale?(explicit_max + 1)
+  test "raises when :modules is empty" do
+    assert_raise ArgumentError, ~r/expected :modules to be a non-empty list/, fn ->
+      compile_invalid_use!(modules: [])
+    end
+  end
+
+  test "raises when a modules entry is missing :builder" do
+    compiled_module = unique_module("MissingBuilderCompiled")
+
+    assert_raise ArgumentError, ~r/missing :builder/, fn ->
+      compile_invalid_use!(modules: [[module: compiled_module]])
+    end
+  end
+
+  test "raises when a modules entry is missing :module" do
+    builder_module = unique_module("MissingModuleBuilder")
+
+    assert_raise ArgumentError, ~r/missing :module/, fn ->
+      compile_invalid_use!(modules: [[builder: builder_module]])
+    end
+  end
+
+  test "raises when generated modules are duplicated" do
+    builder_one = unique_module("DuplicateModuleBuilderOne")
+    builder_two = unique_module("DuplicateModuleBuilderTwo")
+    compiled_module = unique_module("DuplicateCompiled")
+
+    assert_raise ArgumentError, ~r/duplicate generated modules/, fn ->
+      compile_with_modules!(
+        [
+          [builder: builder_one, module: compiled_module],
+          [builder: builder_two, module: compiled_module]
+        ],
+        [
+          builder_definition(builder_one, :first_key, :first),
+          builder_definition(builder_two, :second_key, :second)
+        ]
+      )
+    end
+  end
+
+  test "raises when resolved generated file paths collide" do
+    builder_one = unique_module("DuplicatePathBuilderOne")
+    builder_two = unique_module("DuplicatePathBuilderTwo")
+    first_compiled = unique_module("DuplicatePathCompiledOne")
+    second_compiled = unique_module("DuplicatePathCompiledTwo")
+    params = %{path: "shared/path", filename: "compiled.ex"}
+
+    assert_raise ArgumentError, ~r/duplicate generated file paths/, fn ->
+      compile_with_modules!(
+        [
+          [builder: builder_one, module: first_compiled, params: params],
+          [builder: builder_two, module: second_compiled, params: params]
+        ],
+        [
+          builder_definition(builder_one, :first_key, :first),
+          builder_definition(builder_two, :second_key, :second)
+        ]
+      )
+    end
+  end
+
+  test "compile failures include the generated module and path" do
+    builder_module = unique_module("BrokenBuilder")
+    compiled_module = unique_module("BrokenCompiled")
+    expected_path = Generator.module_file_path(builder_module, compiled_module, %{})
+
+    error =
+      assert_raise CompileError, fn ->
+        compile_with_modules!(
+          [
+            [
+              builder: builder_module,
+              module: compiled_module,
+              opts: [prologue: "this will not compile"]
+            ]
+          ],
+          [builder_definition(builder_module, :id, :broken)]
+        )
+      end
+
+    assert Exception.message(error) =~ inspect(compiled_module)
+    assert Exception.message(error) =~ expected_path
   end
 end

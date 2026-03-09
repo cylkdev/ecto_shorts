@@ -1,9 +1,9 @@
-defmodule EctoShorts.Compiler.ClauseBuilderTest do
+defmodule EctoShorts.Generator.ClauseBuilderTest do
   use ExUnit.Case, async: true
 
   alias Ecto.Query
-  alias EctoShorts.Compiler.ClauseBuilder
-  alias EctoShorts.Compiler.ClauseSpec
+  alias EctoShorts.Generator.ClauseBuilder
+  alias EctoShorts.Generator.Blueprint
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -34,7 +34,7 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
     v_var = Macro.var(:v, nil)
 
     spec =
-      ClauseSpec.new(%{
+      Blueprint.new(%{
         binding_head: quote(do: {:as, nil}),
         key: key_var,
         head: quote(do: {:==, unquote(v_var)}),
@@ -61,12 +61,12 @@ defmodule EctoShorts.Compiler.ClauseBuilderTest do
   end
 
   test "clause_ast/1 builds a clause with a guard and it compiles" do
-    # ClauseSpec supports an optional `:guard` AST.
+    # Blueprint supports an optional `:guard` AST.
     key_var = Macro.var(:key, nil)
     values_var = Macro.var(:values, nil)
 
     spec =
-      ClauseSpec.new(%{
+      Blueprint.new(%{
         binding_head: quote(do: {:as, nil}),
         key: key_var,
         head: quote(do: {:==, unquote(values_var)}),

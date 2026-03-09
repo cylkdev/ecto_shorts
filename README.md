@@ -30,7 +30,7 @@ EctoShorts is split into the following main components:
 | `EctoShorts.CommonParams`  | You need to prepare parameters for `insert_all`, `update_all`, or `delete_all`.           |
 | `EctoShorts.CommonQuery`   | You need to inspect query bindings, sources, or prefixes.                                 |
 | `EctoShorts.Dynamics`      | You need to build `Ecto.Query.dynamic/2` expressions from data.                           |
-| `EctoShorts.Compiler`      | Internal: generates function clauses at compile time.                                     |
+| `EctoShorts.Generator`      | Internal: generates function clauses at compile time.                                     |
 | `EctoShorts.Testing`       | You need test helpers for asserting on SQL, queries, or dynamic expressions.              |
 
 ## Installation
@@ -512,7 +512,7 @@ This section shows before/after comparisons for common patterns.
       replica: MyApp.Repo.Replica,
       error_module: MyApp.CustomError,
       dynamic_adapter: MyApp.DynamicAdapter,
-      max_binding_positions: 3
+      max_positional_bindings: 3
 
 * `:repo` - the default `Ecto.Repo` for write operations.
 
@@ -525,7 +525,7 @@ This section shows before/after comparisons for common patterns.
 * `:dynamic_adapter` - a module implementing the
   `EctoShorts.Dynamic` behaviour for dynamic expressions.
 
-* `:max_binding_positions` - maximum query bindings before falling
+* `:max_positional_bindings` - maximum query bindings before falling
   back to a subquery strategy. Defaults to `3`.
 
 All keys are optional. Pass `:repo` and `:replica` at call time via

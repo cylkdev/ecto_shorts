@@ -175,7 +175,7 @@ defmodule EctoShorts.CommonQuery do
 
       def check_binding_limit(query) do
         count = EctoShorts.CommonQuery.query_binding_count(query)
-        max = EctoShorts.Config.max_binding_positions()
+        max = EctoShorts.Config.max_positional_bindings()
 
         if count > max do
           raise "Query has \#{count} bindings but max is \#{max}"
@@ -212,7 +212,7 @@ defmodule EctoShorts.CommonQuery do
   be resolved.
 
   See also `EctoShorts.CommonSchema`, `EctoShorts.CommonFilters`, and
-  `EctoShorts.Config.max_binding_positions/0`.
+  `EctoShorts.Config.max_positional_bindings/0`.
   """
 
   alias Ecto.Queryable
@@ -311,7 +311,7 @@ defmodule EctoShorts.CommonQuery do
 
   Counts the root `from` binding as `1`, plus one for each join. Useful
   when building dynamic queries that need to stay within the binding limit
-  configured via `:max_binding_positions`.
+  configured via `:max_positional_bindings`.
 
   ## Examples
 
@@ -330,7 +330,7 @@ defmodule EctoShorts.CommonQuery do
       ...> EctoShorts.CommonQuery.query_binding_count(q)
       3
 
-  See also `get_query_binding_source/2` and `EctoShorts.Config.max_binding_positions/0`.
+  See also `get_query_binding_source/2` and `EctoShorts.Config.max_positional_bindings/0`.
   """
   def query_binding_count(queryable) do
     query = to_query!(queryable)

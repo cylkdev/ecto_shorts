@@ -1,8 +1,8 @@
-defmodule EctoShorts.Dynamics.Postgres.CommonExprSpecsTest do
+defmodule EctoShorts.Dynamics.Postgres.CommonExpr.SpecsTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Compiler.ClauseBuilder
-  alias EctoShorts.Dynamics.Postgres.CommonExpr.Specs, as: CommonExprSpecs
+  alias EctoShorts.Generator.ClauseBuilder
+  alias EctoShorts.Dynamics.Postgres.CommonExpr.Specs, as: CommonExpr.Specs
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
@@ -39,7 +39,7 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprSpecsTest do
     {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
 
     specs =
-      CommonExprSpecs.clause_specs(
+      CommonExpr.Specs.specs_for(
         __MODULE__,
         binding_head_ast,
         target_binding_var,
