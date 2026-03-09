@@ -1123,3 +1123,144 @@ Results:
   The behaviour specification needs to state the ownership rule explicitly so the document remains self-contained for a novice reader following it from scratch.
   Validation:
   Confirmed by rereading the updated `Boundary Contract` section in this document.
+
+- Checkpoint 47:
+  Changed `apply_field_expr/4` in `lib/ecto_shorts/dynamics/postgres.ex`.
+  Exact change:
+  Renamed the third-tuple variable from `value` to `term` throughout that function.
+  Reason:
+  At that boundary the function is still handling arbitrary incoming term shapes, including maps, keyword lists, reduced tuples, and scalar values. `term` is the clearer name until the function narrows the shape and delegates downstream.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 48:
+  Changed `build_field_expr/5` in `lib/ecto_shorts/dynamics/postgres.ex`.
+  Exact change:
+  Renamed the dispatch argument from `value` to `term` and updated the downstream calls to `CommonExpr.dynamic_expr/4`, `ArrayExpr.dynamic_expr/4`, and `ScalarExpr.dynamic_expr/4` to pass `term`.
+  Reason:
+  This keeps the naming consistent across the centralized Postgres dispatch boundary. Even after container reduction, this function still routes a general term into the expression modules, so `term` is the clearer boundary name.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 49:
+  Changed `build_dynamic/4` in `lib/ecto_shorts/dynamics/postgres.ex`.
+  Exact change:
+  Renamed the top-level tuple argument from `value` to `term` and passed `{key, term}` into `apply_field_expr/4`.
+  Reason:
+  This completes the boundary naming cleanup in `Postgres` so the entry point, recursive reducer, and dispatch function all use `term` consistently for still-unresolved input.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 50:
+  Changed `binding_selector?/1` in `lib/ecto_shorts/dynamics/postgres.ex`.
+  Exact change:
+  Renamed the clause variables from the placeholder `t` to `binding_alias` and `position`.
+  Reason:
+  This helper is now the single owned binding-selector validation point, so the names inside it should read literally and be easy for a novice reader to follow.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 51:
+  Changed `dynamic_expr/4` in `lib/ecto_shorts/dynamics/postgres/common_expr.ex`.
+  Exact change:
+  Replaced the `case key do` router with a `cond do` router so the function now checks `key in @core_keys` and `key in @temporal_keys` directly without shadowing `key` in guard clauses.
+  Reason:
+  This is a readability-only cleanup. The routing stays explicit and user-facing, but the function now reads more literally and with less mental overhead.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 52:
+  Changed `dynamic_expr/4` in `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`.
+  Exact change:
+  Replaced the `case term do` router with a `cond do` router that uses `match?/2` for the operator tuple branch and a direct `not is_list(term)` check for the plain scalar branch.
+  Reason:
+  This keeps the same-shape routing logic in one literal `cond do` flow and makes the boundary behavior read more consistently with the other Postgres expression routers.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 53:
+  Changed `build_field_expr/5` in `lib/ecto_shorts/dynamics/postgres.ex`.
+  Exact change:
+  Flattened the nested `if` + `cond` structure into a single `cond do` flow with `not binding_selector?(binding_selector) -> nil` as the first branch.
+  Reason:
+  This keeps the centralized binding-selector check and the expression-module routing in one readable control-flow block, which lowers mental overhead and matches the explicit-routing style used elsewhere in this refactor.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 54:
+  Added `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`.
+  Exact change:
+  Created the first direct `ScalarExpr` module test with one focused case for `dynamic_expr/4` building a root named-binding equality expression from `{:eq, 1}` input.
+  Reason:
+  The old scalar specs file was removed, but there was still no direct module-level proof for `ScalarExpr` itself. This starts replacing that lost proof surface without changing the approved runtime-module structure.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 55:
+  Expanded `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`.
+  Exact change:
+  Added the remaining direct `ScalarExpr` tests for:
+  plain scalar equality,
+  `{:==, value}`,
+  `{:eq, nil}`,
+  `{:==, nil}`,
+  named-binding alias equality,
+  and positional-binding equality.
+  Reason:
+  This fills out the focused direct-module proof surface for the minimal scalar equality behaviour and the binding forms that are in scope, without changing the approved runtime implementation structure.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 56:
+  Ran focused validation for the direct `ScalarExpr` proof surface and the adjacent runtime path.
+  Command:
+  `mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/common_filters_test.exs`
+  Result:
+  Passed with `17 tests, 0 failures`.
+  Notes:
+  The run still emits the expected generated-module redefinition warnings for the compiled expression modules and the unrelated warnings from `lib/ecto_shorts/common_filters.old.ex`.
+
+- Checkpoint 57:
+  Expanded `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` again.
+  Exact change:
+  Added direct `ScalarExpr.dynamic_expr/4` coverage for a plain `nil` term under the root named-binding form.
+  Reason:
+  The wrapper treats plain scalar terms as implicit `:==`, so the direct module proof surface should explicitly show that plain `nil` follows the same path and produces `is_nil(field(...))`.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 58:
+  Expanded `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` again.
+  Exact change:
+  Added direct `ScalarExpr.dynamic_expr/4` coverage for an aliased binding nil expression using `{:as, :post}` and `{:eq, nil}`.
+  Reason:
+  Nil behaviour is in scope across the approved binding forms, so the direct module proof surface should show that the generated scalar path preserves `is_nil(...)` semantics for named alias bindings too.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 59:
+  Expanded `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` again.
+  Exact change:
+  Added direct `ScalarExpr.dynamic_expr/4` coverage for a positional binding nil expression using `{:at, 2}` and `{:eq, nil}`.
+  Reason:
+  This completes the in-scope direct nil coverage across the approved binding forms: root named binding, named alias binding, and positional binding.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 60:
+  Expanded `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` again.
+  Exact change:
+  Added direct `ScalarExpr.dynamic_expr/4` coverage for an aliased binding equality expression from a plain scalar term using `{:as, :post}`.
+  Reason:
+  The wrapper treats plain scalar terms as implicit equality, so the direct module proof surface should show that this holds for named alias bindings too, not only for the root named binding form.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 61:
+  Expanded `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` again.
+  Exact change:
+  Added direct `ScalarExpr.dynamic_expr/4` coverage for a positional binding equality expression from a plain scalar term using `{:at, 2}`.
+  Reason:
+  This completes the in-scope direct plain-scalar equality coverage across the approved binding forms: root named binding, named alias binding, and positional binding.
+  Validation:
+  Not run yet in this checkpoint.

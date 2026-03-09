@@ -19,11 +19,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
       {op, value} when op in @keys ->
         __MODULE__.Compiled.dynamic_expr(binding_selector, key, {op, value})
 
-      value when not is_list(value) ->
+      value ->
         __MODULE__.Compiled.dynamic_expr(binding_selector, key, {:==, value})
-
-      _ ->
-        nil
     end
   end
 end
