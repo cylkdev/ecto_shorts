@@ -4,18 +4,14 @@ defmodule EctoShorts.Generator do
   alias EctoShorts.Generator.AST
 
   @doc """
-  Writes one or more generated module files to disk.
+  Writes one generated module file to disk.
 
-  Returns the full list of written file paths. When `opts[:partitions]` is
-  greater than `1`, the first path belongs to the dispatcher module and the
-  remaining paths belong to partition modules.
+  Returns the written module name and file path.
   """
-  def write_module_files(builder, module_name, opts \\ []) do
+  def write_module_file(builder, module_name, opts \\ []) do
     builder
-    |> generate_modules(module_name, opts)
-    |> Enum.map(fn {compiled_module_name, path, content} ->
-      {compiled_module_name, write_file(path, content)}
-    end)
+    |> generate_module(module_name, opts)
+    |> write_module()
   end
 
   @doc false
@@ -42,6 +38,11 @@ defmodule EctoShorts.Generator do
     final_path
   end
 
+  @doc false
+  def write_module({compiled_module_name, path, content}) do
+    {compiled_module_name, write_file(path, content)}
+  end
+
   defp module_to_path(builder) do
     builder
     |> Module.split()
@@ -55,41 +56,19 @@ defmodule EctoShorts.Generator do
   end
 
   @doc """
-  Generates one or more modules for the given builder.
+  Generates one module for the given builder.
 
-  Returns a list of maps with `:module`, `:path`, and `:content`. When
-  `opts[:partitions]` is greater than `1`, the first entry is the dispatcher
-  module and the remaining entries are partition modules.
+  Returns a `{module, path, content}` tuple.
   """
-  def generate_modules(builder, module_name, opts \\ [])
+  def generate_module(builder, module_name, opts \\ [])
       when is_atom(module_name) do
-    partition_count = opts[:partitions] || 1
-
     clauses = build_clauses(builder, opts)
 
-    if partition_count == 1 do
-      [
-        {
-          module_name,
-          module_file_path(builder, module_name, opts),
-          module_template_string(module_name, clauses)
-        }
-      ]
-    else
-      clauses
-      |> partition_clauses(partition_count)
-      |> Enum.with_index(1)
-      |> Enum.map(fn {partition_clauses, index} ->
-        partition_module = partition_module_name(module_name, index)
-        opts = Keyword.put(opts, :filename, partition_filename(module_name, index, opts))
-
-        {
-          partition_module,
-          module_file_path(builder, partition_module, opts),
-          module_template_string(partition_module, partition_clauses)
-        }
-      end)
-    end
+    {
+      module_name,
+      module_file_path(builder, module_name, opts),
+      module_template_string(module_name, clauses)
+    }
   end
 
   defp build_clauses(builder, opts) do
@@ -116,36 +95,6 @@ defmodule EctoShorts.Generator do
         raise ArgumentError,
               "Expected a positive integer or range, got #{inspect(count_or_range)}"
     end
-  end
-
-  defp partition_clauses([], _count), do: [[]]
-
-  defp partition_clauses(clauses, count) do
-    actual_count =
-      clauses
-      |> length()
-      |> min(count)
-      |> max(1)
-
-    chunk_size =
-      clauses
-      |> length()
-      |> then(&div(&1 + actual_count - 1, actual_count))
-      |> max(1)
-
-    Enum.chunk_every(clauses, chunk_size)
-  end
-
-  defp partition_module_name(module_name, index) when is_integer(index) and index >= 1 do
-    Module.concat(module_name, :"Partition#{index}")
-  end
-
-  defp partition_filename(module_name, index, opts) do
-    filename = opts[:filename] || module_to_filename(module_name)
-    extname = Path.extname(filename)
-    basename = Path.rootname(filename, extname)
-
-    "#{basename}_partition_#{index}#{extname}"
   end
 
   defp module_template_string(module_name, clauses) do

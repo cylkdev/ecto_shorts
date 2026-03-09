@@ -7,11 +7,16 @@ defmodule EctoShorts.Adapters.Postgres do
   alias EctoShorts.Dynamics.Postgres.ScalarExpr
 
   def build_dynamic(source, binding_selector, {key, value}, opts \\ []) do
-    expr = apply_field_expr(source, binding_selector, key, value, opts)
+    expr = apply_field_expr(source, binding_selector, {key, value}, opts)
+
     merge_dynamic(nil, :and, expr)
   end
 
-  defp apply_field_expr(source, binding_selector, key, value, opts) do
+  defp apply_field_expr(source, binding_selector, {key, map}, opts) when is_map(map) and not is_struct(map) do
+    apply_field_expr(source, binding_selector, {key, Map.to_list(map)}, opts)
+  end
+
+  defp apply_field_expr(source, binding_selector, {key, value}, opts) do
     cond do
       field_type_of_array?(source, key) -> ArrayExpr.dynamic_expr(binding_selector, key, value, opts)
       key in CommonExpr.keys() -> CommonExpr.dynamic_expr(binding_selector, key, value, opts)

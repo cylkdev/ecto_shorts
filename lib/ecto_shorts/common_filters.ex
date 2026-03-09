@@ -12,18 +12,6 @@ defmodule EctoShorts.CommonFilters do
     Enum.reduce(params, query, &apply_filters(source, &2, {:as, nil}, &1, opts))
   end
 
-  defp apply_filters(source, query, binding_selector, map, opts) when is_map(map) and not is_struct(map) do
-    apply_filters(source, query, binding_selector, Map.to_list(map), opts)
-  end
-
-  defp apply_filters(source, query, binding_selector, list, opts) when is_list(list) do
-    if Keyword.keyword?(list) do
-      Enum.reduce(list, query, &apply_filters(source, &2, binding_selector, &1, opts))
-    else
-      build_dynamic_query(source, query, binding_selector, list, opts)
-    end
-  end
-
   defp apply_filters(source, query, _binding_selector, {bind_op, params}, opts) when bind_op in [:as, :at] do
     Enum.reduce(params, query, fn {key, value}, query_acc ->
       apply_filters(source, query_acc, {bind_op, key}, value, opts)
@@ -31,10 +19,20 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp apply_filters(source, query, binding_selector, {key, value}, opts) do
-    build_dynamic_query(source, query, binding_selector, {key, value}, opts)
+    build_query(source, query, binding_selector, {key, value}, opts)
   end
 
-  defp build_dynamic_query(source, query, binding_selector, term, opts) do
+  defp apply_filters(source, query, binding_selector, term, opts) do
+    cond do
+      is_map(term) and not is_struct(term) ->
+        apply_filters(source, query, binding_selector, Map.to_list(term), opts)
+
+      true ->
+        Enum.reduce(term, query, &apply_filters(source, &2, binding_selector, &1, opts))
+    end
+  end
+
+  defp build_query(source, query, binding_selector, term, opts) do
     dyn =
       Postgres.build_dynamic(
         source,
