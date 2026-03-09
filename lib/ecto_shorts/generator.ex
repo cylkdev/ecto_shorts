@@ -15,7 +15,9 @@ defmodule EctoShorts.Generator do
   def write_module_files(builder, module_name, modes \\ :all, params \\ %{}, opts \\ []) do
     builder
     |> generate_modules(module_name, modes, params, opts)
-    |> Enum.map(fn {_, path, content} -> write_file(path, content) end)
+    |> Enum.map(fn {compiled_module_name, path, content} ->
+      {compiled_module_name, write_file(path, content)}
+    end)
   end
 
   @doc false
@@ -109,10 +111,9 @@ defmodule EctoShorts.Generator do
 
     positional_clauses =
       if :positional in modes do
-        max(
-          opts[:positional][:count] || opts[:positional][:range] || 1,
-          EctoShorts.Config.max_positional_bindings()
-        )
+        count_or_range = opts[:positions] || 10
+
+        count_or_range
         |> to_range()
         |> Enum.flat_map(fn index -> AST.positional_clause_asts(builder, index, opts) end)
       else

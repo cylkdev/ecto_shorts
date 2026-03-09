@@ -1,5 +1,4 @@
 defmodule EctoShorts.Compiler do
-  @allowed_options [:modules]
   @allowed_module_options [:builder, :module, :modes, :params, :opts]
 
   defmacro __using__(opts) do
@@ -17,7 +16,7 @@ defmodule EctoShorts.Compiler do
       |> Keyword.fetch!(:modules)
       |> Enum.map(&(&1 |> Keyword.take(@allowed_module_options) |> Map.new()))
 
-    paths =
+    generated =
       Enum.flat_map(entries, fn entry ->
         EctoShorts.Generator.write_module_files(
           entry.builder,
@@ -28,6 +27,9 @@ defmodule EctoShorts.Compiler do
         )
       end)
 
+    {compiled_modules, paths} = Enum.unzip(generated)
+
+    unload_generated_modules!(compiled_modules)
     compile_generated_modules!(paths, entries, env)
 
     compiled_modules = Enum.map(entries, & &1.module)
@@ -40,22 +42,36 @@ defmodule EctoShorts.Compiler do
             unquote(compiled_module).dynamic_expr(binding_selector, key, value)
         end
       end)
-      |> Kernel.++([
-        quote do
-          _ -> nil
-        end
-      ])
+      |> Kernel.++([quote(do: (_ -> nil))])
+      |> List.flatten()
 
     quote do
       def dynamic_expr(compiled_module_name, binding_selector, key, value) do
         case compiled_module_name do
-          (unquote_splicing(branches))
+          unquote(branches)
         end
       end
     end
   end
 
+  defp unload_generated_modules!(modules) do
+    Enum.each(modules, fn module ->
+      case :code.which(module) do
+        :non_existing ->
+          :ok
+
+        _path ->
+          :code.delete(module)
+          :code.purge(module)
+      end
+    end)
+  end
+
   defp compile_generated_modules!(paths, entries, env) do
+    # previous = Code.compiler_options()[:ignore_module_conflict]
+    # Code.put_compiler_option(:ignore_module_conflict, true)
+
+    # try do
     case Kernel.ParallelCompiler.compile_to_path(paths, Mix.Project.compile_path()) do
       {:ok, _modules, _warnings} ->
         :ok
@@ -72,5 +88,9 @@ defmodule EctoShorts.Compiler do
           description:
             "failed to compile generated files for #{inspect(env.module)} (#{details}): #{inspect(errors)}"
     end
+
+    # after
+    #   Code.put_compiler_option(:ignore_module_conflict, previous)
+    # end
   end
 end
