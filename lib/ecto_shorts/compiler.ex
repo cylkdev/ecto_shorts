@@ -1,5 +1,5 @@
 defmodule EctoShorts.Compiler do
-  @allowed_module_options [:builder, :module, :modes, :params, :opts]
+  @allowed_module_options [:builder, :module, :params, :opts]
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
@@ -21,8 +21,6 @@ defmodule EctoShorts.Compiler do
         EctoShorts.Generator.write_module_files(
           entry.builder,
           entry.module,
-          entry[:modes] || :all,
-          entry[:params] || %{},
           entry[:opts] || []
         )
       end)
@@ -30,9 +28,7 @@ defmodule EctoShorts.Compiler do
     {compiled_modules, paths} = Enum.unzip(generated)
 
     unload_generated_modules!(compiled_modules)
-    compile_generated_modules!(paths, entries, env)
-
-    compiled_modules = Enum.map(entries, & &1.module)
+    compile_generated_modules!(paths, env)
 
     branches =
       compiled_modules
@@ -56,8 +52,8 @@ defmodule EctoShorts.Compiler do
 
   defp unload_generated_modules!(modules) do
     Enum.each(modules, fn module ->
-      case :code.which(module) do
-        :non_existing ->
+      case :code.is_loaded(module) do
+        false ->
           :ok
 
         _path ->
@@ -67,7 +63,7 @@ defmodule EctoShorts.Compiler do
     end)
   end
 
-  defp compile_generated_modules!(paths, entries, env) do
+  defp compile_generated_modules!(paths, env) do
     # previous = Code.compiler_options()[:ignore_module_conflict]
     # Code.put_compiler_option(:ignore_module_conflict, true)
 
@@ -77,16 +73,10 @@ defmodule EctoShorts.Compiler do
         :ok
 
       {:error, errors, _warnings} ->
-        details =
-          Enum.map_join(entries, ", ", fn entry ->
-            "#{inspect(entry.module)} => #{entry.path}"
-          end)
-
         raise CompileError,
           file: env.file,
           line: env.line,
-          description:
-            "failed to compile generated files for #{inspect(env.module)} (#{details}): #{inspect(errors)}"
+          description: "failed to compile generated files for #{inspect(env.module)}: #{inspect(errors)}"
     end
 
     # after

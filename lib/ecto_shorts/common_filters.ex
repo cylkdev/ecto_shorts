@@ -20,7 +20,7 @@ defmodule EctoShorts.CommonFilters do
     if Keyword.keyword?(list) do
       Enum.reduce(list, query, &apply_filters(source, &2, binding_selector, &1, opts))
     else
-      build_dynamic_query(source, query, binding_selector, {:==, list}, opts)
+      build_dynamic_query(source, query, binding_selector, list, opts)
     end
   end
 

@@ -1,46 +1,21 @@
 defmodule EctoShorts.Dynamics.Postgres.CommonExpr do
-  @moduledoc """
+  alias EctoShorts.Dynamics.Postgres.CommonExpr.Spec
 
-  Example with a named binding:
+  @keys Spec.keys()
+  @compiled_module __MODULE__.Compiled
 
-      EctoShorts.Dynamics.Postgres.CommonExpr.dynamic_expr(
-        EctoShorts.Dynamics.Postgres.CommonExpr.Compiled.NamedBinding,
-        {:as, nil},
-        :start_date,
-        ~U[2026-01-01 00:00:00Z]
-      )
-
-  Example with a positional binding:
-
-      EctoShorts.Dynamics.Postgres.CommonExpr.dynamic_expr(
-        EctoShorts.Dynamics.Postgres.CommonExpr.Compiled.PositionalBinding,
-        {:at, 1},
-        :ids,
-        [1, 2, 3]
-      )
-
-  Example with negation:
-
-      EctoShorts.Dynamics.Postgres.CommonExpr.dynamic_expr(
-        EctoShorts.Dynamics.Postgres.CommonExpr.Compiled.NamedBinding,
-        {:as, nil},
-        :before,
-        {:not, 10}
-      )
-  """
   use EctoShorts.Compiler,
     modules: [
       [
-        builder: EctoShorts.Dynamics.Postgres.CommonExpr.Spec,
-        module: EctoShorts.Dynamics.Postgres.CommonExpr.Compiled.NamedBinding,
-        modes: :named
-      ],
-      [
-        builder: EctoShorts.Dynamics.Postgres.CommonExpr.Spec,
-        module: EctoShorts.Dynamics.Postgres.CommonExpr.Compiled.PositionalBinding,
-        modes: :positional,
-        positions: 10,
-        partitions: 2
+        builder: Spec,
+        module: @compiled_module,
+        opts: [partitions: 2, positions: 10]
       ]
     ]
+
+  def keys, do: @keys
+
+  def dynamic_expr({kind, _} = binding_selector, key, value, _opts) when kind in [:as, :at] do
+    dynamic_expr(@compiled_module, binding_selector, key, value)
+  end
 end

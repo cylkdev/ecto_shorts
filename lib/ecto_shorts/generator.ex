@@ -3,28 +3,26 @@ defmodule EctoShorts.Generator do
 
   alias EctoShorts.Generator.AST
 
-  @modes [:named, :positional]
-
   @doc """
   Writes one or more generated module files to disk.
 
-  Returns the full list of written file paths. When `params[:partitions]` is
+  Returns the full list of written file paths. When `opts[:partitions]` is
   greater than `1`, the first path belongs to the dispatcher module and the
   remaining paths belong to partition modules.
   """
-  def write_module_files(builder, module_name, modes \\ :all, params \\ %{}, opts \\ []) do
+  def write_module_files(builder, module_name, opts \\ []) do
     builder
-    |> generate_modules(module_name, modes, params, opts)
+    |> generate_modules(module_name, opts)
     |> Enum.map(fn {compiled_module_name, path, content} ->
       {compiled_module_name, write_file(path, content)}
     end)
   end
 
   @doc false
-  def module_file_path(builder, module_name, params \\ %{}) do
+  def module_file_path(builder, module_name, opts \\ []) do
     dir = Path.join(priv_dir(), "generated")
-    path = params[:path] || module_to_path(builder)
-    filename = params[:filename] || module_to_filename(module_name)
+    path = opts[:path] || module_to_path(builder)
+    filename = opts[:filename] || module_to_filename(module_name)
 
     Path.join([dir, path, filename])
   end
@@ -60,21 +58,21 @@ defmodule EctoShorts.Generator do
   Generates one or more modules for the given builder.
 
   Returns a list of maps with `:module`, `:path`, and `:content`. When
-  `params[:partitions]` is greater than `1`, the first entry is the dispatcher
+  `opts[:partitions]` is greater than `1`, the first entry is the dispatcher
   module and the remaining entries are partition modules.
   """
-  def generate_modules(builder, module_name, modes \\ :all, params \\ %{}, opts \\ [])
+  def generate_modules(builder, module_name, opts \\ [])
       when is_atom(module_name) do
-    partition_count = params[:partitions] || 1
+    partition_count = opts[:partitions] || 1
 
-    clauses = build_clauses(builder, modes, opts)
+    clauses = build_clauses(builder, opts)
 
     if partition_count == 1 do
       [
         {
           module_name,
-          module_file_path(builder, module_name, params),
-          module_template_string(module_name, clauses, opts)
+          module_file_path(builder, module_name, opts),
+          module_template_string(module_name, clauses)
         }
       ]
     else
@@ -83,42 +81,25 @@ defmodule EctoShorts.Generator do
       |> Enum.with_index(1)
       |> Enum.map(fn {partition_clauses, index} ->
         partition_module = partition_module_name(module_name, index)
-        partition_params = partition_params(params, module_name, index)
+        opts = Keyword.put(opts, :filename, partition_filename(module_name, index, opts))
 
         {
           partition_module,
-          module_file_path(builder, partition_module, partition_params),
-          module_template_string(partition_module, partition_clauses, opts)
+          module_file_path(builder, partition_module, opts),
+          module_template_string(partition_module, partition_clauses)
         }
       end)
     end
   end
 
-  defp build_clauses(builder, modes, opts) do
-    modes =
-      case modes do
-        nil -> @modes
-        :all -> @modes
-        modes -> List.wrap(modes)
-      end
-
-    named_clauses =
-      if :named in modes do
-        AST.named_clause_asts(builder, opts)
-      else
-        []
-      end
+  defp build_clauses(builder, opts) do
+    named_clauses = AST.named_clause_asts(builder, opts)
+    count_or_range = opts[:positions] || 10
 
     positional_clauses =
-      if :positional in modes do
-        count_or_range = opts[:positions] || 10
-
-        count_or_range
-        |> to_range()
-        |> Enum.flat_map(fn index -> AST.positional_clause_asts(builder, index, opts) end)
-      else
-        []
-      end
+      count_or_range
+      |> to_range()
+      |> Enum.flat_map(fn index -> AST.positional_clause_asts(builder, index, opts) end)
 
     named_clauses ++ positional_clauses
   end
@@ -159,21 +140,15 @@ defmodule EctoShorts.Generator do
     Module.concat(module_name, :"Partition#{index}")
   end
 
-  defp partition_params(params, module_name, index) do
-    params
-    |> Map.new()
-    |> Map.put(:filename, partition_filename(module_name, params, index))
-  end
-
-  defp partition_filename(module_name, params, index) do
-    filename = params[:filename] || module_to_filename(module_name)
+  defp partition_filename(module_name, index, opts) do
+    filename = opts[:filename] || module_to_filename(module_name)
     extname = Path.extname(filename)
     basename = Path.rootname(filename, extname)
 
     "#{basename}_partition_#{index}#{extname}"
   end
 
-  defp module_template_string(module_name, clauses, opts) do
+  defp module_template_string(module_name, clauses) do
     formatted =
       clauses
       |> Enum.map(&quote_to_string/1)

@@ -1,30 +1,21 @@
 defmodule EctoShorts.Adapters.Postgres do
   import Ecto.Query, only: [dynamic: 1]
 
-  # alias EctoShorts.CommonSchema
-  # alias EctoShorts.Adapters.Postgres.ArrayExpr
-  # alias EctoShorts.Adapters.Postgres.ScalarExpr
-  # alias EctoShorts.Adapters.Postgres.NamedBinding
-  # alias EctoShorts.Adapters.Postgres.PositionalBinding
+  alias EctoShorts.CommonSchema
+  alias EctoShorts.Dynamics.Postgres.ArrayExpr
+  alias EctoShorts.Dynamics.Postgres.CommonExpr
+  alias EctoShorts.Dynamics.Postgres.ScalarExpr
 
   def build_dynamic(source, binding_selector, {key, value}, opts \\ []) do
-    value
-    |> List.wrap()
-    |> reduce_dynamic(source, binding_selector, opts)
+    expr = apply_field_expr(source, binding_selector, key, value, opts)
+    merge_dynamic(nil, :and, expr)
   end
 
-  defp reduce_dynamic(entries, source, binding_selector, opts) do
-    Enum.reduce(entries, nil, fn {key, value}, dyn_acc ->
-      expr = apply_field_expr(source, binding_selector, key, value, opts)
-      merge_dynamic(dyn_acc, :and, expr)
-    end)
-  end
-
-  defp apply_field_expr(source, binding_selector, key, term, _opts) do
+  defp apply_field_expr(source, binding_selector, key, value, opts) do
     cond do
-      field_type_of_array?(source, key) -> ArrayExpr.dynamic_expr(key, term)
-      key in [:start_date] -> CommonExpr.dynamic_expr(key, term)
-      true -> ScalarExpr.dynamic_expr(key, term)
+      field_type_of_array?(source, key) -> ArrayExpr.dynamic_expr(binding_selector, key, value, opts)
+      key in CommonExpr.keys() -> CommonExpr.dynamic_expr(binding_selector, key, value, opts)
+      true -> ScalarExpr.dynamic_expr(binding_selector, key, value, opts)
     end
   end
 
