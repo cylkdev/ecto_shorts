@@ -28,7 +28,7 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
     context = opts[:context]
 
     value_var = Macro.var(:value, context)
-    field_expr = field_expr(key, q_var, value_var)
+    field_expr = expr_for(key, q_var, value_var)
 
     [
       %Blueprint{
@@ -59,61 +59,61 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
   end
 
   @doc false
-  def field_expr(:ids, q_var, value_var) do
+  def expr_for(:ids, q_var, value_var) do
     quote do
       field(unquote(q_var), :id) in ^unquote(value_var)
     end
   end
 
-  def field_expr(:after, q_var, value_var) do
+  def expr_for(:after, q_var, value_var) do
     quote do
       field(unquote(q_var), :id) > ^unquote(value_var)
     end
   end
 
-  def field_expr(:before, q_var, value_var) do
+  def expr_for(:before, q_var, value_var) do
     quote do
       field(unquote(q_var), :id) < ^unquote(value_var)
     end
   end
 
-  def field_expr(:since, q_var, value_var) do
+  def expr_for(:since, q_var, value_var) do
     quote do
       field(unquote(q_var), :id) >= ^unquote(value_var)
     end
   end
 
-  def field_expr(:until, q_var, value_var) do
+  def expr_for(:until, q_var, value_var) do
     quote do
       field(unquote(q_var), :id) <= ^unquote(value_var)
     end
   end
 
-  def field_expr(key, q_var, value_var) when key in [:start_date, :since_date] do
+  def expr_for(key, q_var, value_var) when key in [:start_date, :since_date] do
     quote do
       field(unquote(q_var), :inserted_at) >= ^unquote(value_var)
     end
   end
 
-  def field_expr(key, q_var, value_var) when key in [:end_date, :until_date] do
+  def expr_for(key, q_var, value_var) when key in [:end_date, :until_date] do
     quote do
       field(unquote(q_var), :inserted_at) <= ^unquote(value_var)
     end
   end
 
-  def field_expr(:after_date, q_var, value_var) do
+  def expr_for(:after_date, q_var, value_var) do
     quote do
       field(unquote(q_var), :inserted_at) > ^unquote(value_var)
     end
   end
 
-  def field_expr(:before_date, q_var, value_var) do
+  def expr_for(:before_date, q_var, value_var) do
     quote do
       field(unquote(q_var), :inserted_at) < ^unquote(value_var)
     end
   end
 
-  def field_expr(:exists, _q_var, value_var) do
+  def expr_for(:exists, _q_var, value_var) do
     quote do
       exists(unquote(value_var))
     end

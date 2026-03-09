@@ -55,6 +55,7 @@ Current understanding:
 - The compiler should only compile the modules it is given. Routing should be literal inside the expression modules themselves, which already know the full compiled module names they need to call.
 - The public expression-module API should expose one arity only. For the current Postgres expression modules, that public arity is `dynamic_expr/4`, because `Postgres` passes `opts` and that is the runtime-facing boundary.
 - The public wrapper argument in the expression modules should be named `term` when it may still represent any incoming term shape before the module evaluates it.
+- Binding-selector validation should happen in one place only: `lib/ecto_shorts/dynamics/postgres.ex`. The expression modules should assume they are called only after that check has already passed.
 - Existing APIs and tests are evidence only. They may be wrong, incomplete, or stale, and must not be treated as automatically correct.
 - Work must proceed incrementally: one function change at a time, with a stop for summary and feedback after each function change.
 
@@ -67,6 +68,8 @@ This specification applies only to the current minimal task.
 - `EctoShorts.Dynamics.Postgres.CommonExpr`, `EctoShorts.Dynamics.Postgres.ArrayExpr`, and `EctoShorts.Dynamics.Postgres.ScalarExpr` must receive resolved tuple inputs only.
 - These modules must not be responsible for resolving maps or keyword lists into tuple forms.
 - These modules must stay dumb. They only match on the tuple input shape they are given and return the corresponding `Ecto.Query.dynamic/2` expression.
+- Binding-selector validation belongs only to `lib/ecto_shorts/dynamics/postgres.ex`.
+- The expression modules must treat `binding_selector` as already-validated input and must not repeat `{:as, ...}` / `{:at, ...}` validity checks locally.
 - Resolution of `%{field: %{operator: value}}` into the tuple shape expected by `ScalarExpr` must happen before `ScalarExpr.dynamic_expr/4` is called.
 - That resolution must follow the keyword-list-first API shape: non-struct maps become keyword lists first, keyword lists are reduced recursively, and the reduced tuple items are what reach `ScalarExpr`.
 
@@ -1098,3 +1101,25 @@ Results:
   Keep the explicit routing user-facing while removing duplication between the generated-module declarations and the runtime router.
   Validation:
   Not run yet in this checkpoint.
+
+- Checkpoint 45:
+  Recorded the design decision that binding-selector validation happens in one place only.
+  Observed code state:
+  `lib/ecto_shorts/dynamics/postgres.ex` now owns `binding_selector?/1` and gates expression dispatch through `build_field_expr/5`.
+  `lib/ecto_shorts/dynamics/postgres/common_expr.ex` and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` both accept `binding_selector` as already-validated input and no longer re-check `{:as, ...}` / `{:at, ...}` validity themselves.
+  Decision:
+  Keep binding-selector validity checks centralized in `Postgres`. Do not duplicate that check inside the expression modules.
+  Reason:
+  This lowers mental overhead and keeps boundary validation in one place instead of scattering equivalent checks across the downstream expression modules.
+  Validation:
+  Recorded from the current file contents after reviewing the updated modules.
+
+- Checkpoint 46:
+  Promoted the same binding-selector ownership rule into the formal behaviour specification.
+  Scope of the rule:
+  `lib/ecto_shorts/dynamics/postgres.ex` is the only place that should validate `binding_selector`.
+  `lib/ecto_shorts/dynamics/postgres/common_expr.ex` and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` should assume that input has already passed the boundary check.
+  Reason:
+  The behaviour specification needs to state the ownership rule explicitly so the document remains self-contained for a novice reader following it from scratch.
+  Validation:
+  Confirmed by rereading the updated `Boundary Contract` section in this document.

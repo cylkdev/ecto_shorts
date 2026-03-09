@@ -21,7 +21,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
     value_var = Macro.var(:value, context)
     key_var = Macro.var(:key, context)
-    field_expr = field_expr(key, q_var, {key_var, value_var})
+    field_expr = expr_for(key, q_var, {key_var, value_var})
 
     [
       %Blueprint{
@@ -32,7 +32,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
           Helpers.dyn_expr(
             {binding_directive, target_var},
             q_var,
-            field_expr(key, q_var, {key_var, nil}),
+            expr_for(key, q_var, {key_var, nil}),
             context
           )
       },
@@ -52,13 +52,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   @doc false
-  def field_expr(key, q_var, {key_var, nil}) when key in @keys do
+  def expr_for(key, q_var, {key_var, nil}) when key in @keys do
     quote do
       is_nil(field(unquote(q_var), ^unquote(key_var)))
     end
   end
 
-  def field_expr(key, q_var, {key_var, value_var}) when key in @keys do
+  def expr_for(key, q_var, {key_var, value_var}) when key in @keys do
     quote do
       field(unquote(q_var), ^unquote(key_var)) == ^unquote(value_var)
     end
