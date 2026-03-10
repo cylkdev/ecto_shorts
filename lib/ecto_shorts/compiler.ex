@@ -1,15 +1,14 @@
 defmodule EctoShorts.Compiler do
-  alias EctoShorts.Generator.ClauseSpec
-
   defmacro __using__(opts) do
-    quote bind_quoted: [opts: opts] do
-      @__ecto_shorts_compiler_options__ opts
+    quote do
+      @__ecto_shorts_compiler_options__ unquote(opts)
       @before_compile EctoShorts.Compiler
     end
   end
 
   defmacro __before_compile__(env) do
     opts = Module.get_attribute(env.module, :__ecto_shorts_compiler_options__) || []
+
     entries = Keyword.get(opts, :modules, [])
 
     generated =

@@ -66,7 +66,7 @@ defmodule EctoShorts.Adapters.Postgres do
       {negated, term} = normalize_negation(term)
 
       cond do
-        key in CommonExpr.keys() ->
+        key in CommonExpr.directives() ->
           CommonExpr.dynamic_expr(selected_binding, key, negated, term, opts)
 
         field_type_of_array?(source, key) ->
