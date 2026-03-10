@@ -12,15 +12,17 @@ defmodule EctoShorts.Compiler do
     entries = Keyword.get(opts, :modules, [])
 
     {paths, meta} =
-      Enum.reduce(entries, {[], %{}}, fn entry, {paths_acc, meta} ->
-        {module, path, _content} =
-          EctoShorts.Generator.write_module_file(
-            entry[:builder],
-            entry[:module],
-            Keyword.drop(entry, [:builder, :module])
-          )
+      Enum.reduce(entries, {[], %{}}, fn entry, {paths, meta} ->
+        builder = entry[:builder]
+        module_name = entry[:module]
+        path = entry[:path] || Path.join(module_to_path(builder), module_to_filename(module_name))
+        opts = Keyword.drop(entry, [:builder, :module])
 
-        {[path | paths_acc], Map.put(meta, module, path)}
+        dest_file = generated_path(builder, path, opts)
+        content = EctoShorts.Generator.generate_module(builder, module_name, opts)
+        :ok = EctoShorts.Generator.write_file(dest_file, path, content)
+
+        {[dest_file | paths], Map.put(meta, module_name, dest_file)}
       end)
 
     paths
@@ -29,6 +31,31 @@ defmodule EctoShorts.Compiler do
 
     quote do
     end
+  end
+
+  defp priv_dir do
+    :ecto_shorts |> :code.priv_dir() |> to_string()
+  end
+
+  defp generated_path(builder, path, opts) do
+    dir = Path.join(priv_dir(), "generated")
+    Path.join(dir, path)
+  end
+
+  defp module_to_path(builder) do
+    builder
+    |> Module.split()
+    |> Enum.drop(1)
+    |> Enum.map(&Macro.underscore/1)
+    |> Enum.join("/")
+  end
+
+  defp module_to_filename(module) do
+    module
+    |> Module.split()
+    |> List.last()
+    |> Macro.underscore()
+    |> Kernel.<>(".ex")
   end
 
   defp compile_modules(paths, meta, env) do

@@ -3,50 +3,10 @@ defmodule EctoShorts.Generator do
 
   alias EctoShorts.Generator.Builder
 
-  @doc """
-  Writes one generated module file to disk.
-
-  Returns the written module name and file path.
-  """
-  def write_module_file(builder, module_name, opts \\ []) do
-    {generated_module_name, path, content} = generate_module(builder, module_name, opts)
-    {generated_module_name, path, write_file(path, content)}
-  end
-
-  @doc false
-  def module_file_path(builder, module_name, opts \\ []) do
-    dir = Path.join(priv_dir(), "generated")
-    path = opts[:path] || module_to_path(builder)
-    filename = opts[:filename] || module_to_filename(module_name)
-
-    Path.join([dir, path, filename])
-  end
-
-  defp module_to_filename(module) do
-    module
-    |> Module.split()
-    |> List.last()
-    |> Macro.underscore()
-    |> Kernel.<>(".ex")
-  end
-
-  defp write_file(final_path, content) do
+  def write_file(final_path, content) do
     parent_dir = Path.dirname(final_path)
     File.mkdir_p!(parent_dir)
     File.write!(final_path, content)
-    final_path
-  end
-
-  defp module_to_path(builder) do
-    builder
-    |> Module.split()
-    |> Enum.drop(1)
-    |> Enum.map(&Macro.underscore/1)
-    |> Enum.join("/")
-  end
-
-  defp priv_dir do
-    :ecto_shorts |> :code.priv_dir() |> to_string()
   end
 
   @doc """
@@ -57,12 +17,7 @@ defmodule EctoShorts.Generator do
   def generate_module(builder, module_name, opts \\ [])
       when is_atom(module_name) do
     clauses = build_clauses(builder, opts)
-
-    {
-      module_name,
-      module_file_path(builder, module_name, opts),
-      module_template_string(module_name, clauses)
-    }
+    module_template_string(module_name, clauses)
   end
 
   defp build_clauses(builder, opts) do
