@@ -1,4 +1,6 @@
 defmodule EctoShorts.Compiler do
+  alias EctoShorts.Generator
+
   defmacro __using__(opts) do
     quote do
       @__ecto_shorts_compiler_options__ unquote(opts)
@@ -18,9 +20,9 @@ defmodule EctoShorts.Compiler do
         path = entry[:path] || Path.join(module_to_path(builder), module_to_filename(module_name))
         opts = Keyword.drop(entry, [:builder, :module])
 
-        dest_file = generated_path(builder, path, opts)
-        content = EctoShorts.Generator.generate_module(builder, module_name, opts)
-        :ok = EctoShorts.Generator.write_file(dest_file, path, content)
+        dest_file = generated_path(path)
+        content = Generator.generate_module(builder, module_name, opts)
+        :ok = Generator.write_file(dest_file, content)
 
         {[dest_file | paths], Map.put(meta, module_name, dest_file)}
       end)
@@ -37,7 +39,7 @@ defmodule EctoShorts.Compiler do
     :ecto_shorts |> :code.priv_dir() |> to_string()
   end
 
-  defp generated_path(builder, path, opts) do
+  defp generated_path(path) do
     dir = Path.join(priv_dir(), "generated")
     Path.join(dir, path)
   end
