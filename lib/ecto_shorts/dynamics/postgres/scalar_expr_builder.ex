@@ -5,7 +5,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   alias EctoShorts.Generator.Blueprint
   alias EctoShorts.Dynamics.Helpers
 
-  @keys [
+  @comparison_operators [
     :==,
     :eq,
     :!=,
@@ -17,11 +17,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     :gt,
     :gte,
     :lt,
-    :lte,
-    :in,
+    :lte
+  ]
+
+  @membership_operators [
+    :in
+  ]
+
+  @string_operators [
     :like,
     :ilike
   ]
+
+  @keys @comparison_operators ++ @membership_operators ++ @string_operators
 
   @behaviour EctoShorts.Generator.ClauseSpec
 
@@ -29,18 +37,80 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   def keys, do: @keys
 
   @impl true
-  def specs_for(directive, {bind_op, bind_to_var}, q_var, opts) do
+  def specs_for(op, {bind_op, bind_to_var}, q_var, opts) do
     context = opts[:context]
 
     key_var = Macro.var(:key, context)
     value_var = Macro.var(:value, context)
-    field_expr = expr_for(directive, q_var, {key_var, value_var})
+    transform_var = Macro.var(:transform, context)
+
+    field_expr = expr_for(op, q_var, nil, {key_var, value_var})
+    field_lower_expr = expr_for(op, q_var, :lower, {key_var, value_var})
+    field_upper_expr = expr_for(op, q_var, :upper, {key_var, value_var})
 
     [
       %Blueprint{
+        guard: quote(do: unquote(transform_var) in [:lower, :upper]),
+        key: key_var,
+        head: {:not, {op, {transform_var, value_var}}},
+        body:
+          quote do
+            case unquote(transform_var) do
+              :lower ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    Helpers.negated_expr(field_lower_expr),
+                    context
+                  )
+                )
+
+              :upper ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    Helpers.negated_expr(field_upper_expr),
+                    context
+                  )
+                )
+            end
+          end
+      },
+      %Blueprint{
+        guard: quote(do: unquote(transform_var) in [:lower, :upper]),
+        key: key_var,
+        head: {op, {transform_var, value_var}},
+        body:
+          quote do
+            case unquote(transform_var) do
+              :lower ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    field_lower_expr,
+                    context
+                  )
+                )
+
+              :upper ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    field_upper_expr,
+                    context
+                  )
+                )
+            end
+          end
+      },
+      %Blueprint{
         guard: nil,
         key: key_var,
-        head: {:not, {directive, value_var}},
+        head: {:not, {op, value_var}},
         body:
           quote do
             unquote(
@@ -56,7 +126,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
       %Blueprint{
         guard: nil,
         key: key_var,
-        head: {directive, value_var},
+        head: {op, value_var},
         body:
           quote do
             unquote(
@@ -73,89 +143,105 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   @doc false
-  def expr_for(key, q_var, {key_var, nil}) when key in [:==, :eq] do
+  def expr_for(op, q_var, _, {key_var, nil}) when op in [:==, :eq] do
     quote do
       is_nil(field(unquote(q_var), ^unquote(key_var)))
     end
   end
 
-  def expr_for(key, q_var, {key_var, nil}) when key in [:!=, :ne] do
+  def expr_for(op, q_var, _, {key_var, nil}) when op in [:!=, :ne] do
     quote do
       not is_nil(field(unquote(q_var), ^unquote(key_var)))
     end
   end
 
-  def expr_for(key, q_var, {key_var, {transform, value_var}})
-      when key in [:==, :eq] and transform in [:lower, :upper] do
-    transform_expr = "#{transform}(?)"
+  def expr_for(op, q_var, meta, {key_var, value_var})
+      when op in @comparison_operators and meta in [:lower, :upper] do
+    content =
+      if meta === :lower do
+        "lower(?)"
+      else
+        "upper(?)"
+      end
+
+    fragment_expr =
+      quote do
+        fragment(unquote(content), field(unquote(q_var), ^unquote(key_var)))
+      end
 
     quote do
-      fragment(unquote(transform_expr), field(unquote(q_var), ^unquote(key_var))) ==
-        ^unquote(value_var)
+      unquote(special_form_ast(fragment_expr, op, pinned_ast(value_var)))
     end
   end
 
-  def expr_for(key, q_var, {key_var, value_var}) when key in [:==, :eq] do
-    quote do
-      field(unquote(q_var), ^unquote(key_var)) == ^unquote(value_var)
-    end
-  end
-
-  def expr_for(key, q_var, {key_var, {transform, value_var}})
-      when key in [:!=, :ne] and transform in [:lower, :upper] do
-    transform_expr = "#{transform}(?)"
-
-    quote do
-      fragment(unquote(transform_expr), field(unquote(q_var), ^unquote(key_var))) !=
-        ^unquote(value_var)
-    end
-  end
-
-  def expr_for(key, q_var, {key_var, value_var}) when key in [:!=, :ne] do
-    quote do
-      field(unquote(q_var), ^unquote(key_var)) != ^unquote(value_var)
-    end
-  end
-
-  def expr_for(key, q_var, {key_var, value_var}) when key in [:>, :gt] do
-    quote do
-      field(unquote(q_var), ^unquote(key_var)) > ^unquote(value_var)
-    end
-  end
-
-  def expr_for(key, q_var, {key_var, value_var}) when key in [:>=, :gte] do
-    quote do
-      field(unquote(q_var), ^unquote(key_var)) >= ^unquote(value_var)
-    end
-  end
-
-  def expr_for(key, q_var, {key_var, value_var}) when key in [:<, :lt] do
-    quote do
-      field(unquote(q_var), ^unquote(key_var)) < ^unquote(value_var)
-    end
-  end
-
-  def expr_for(key, q_var, {key_var, value_var}) when key in [:<=, :lte] do
-    quote do
-      field(unquote(q_var), ^unquote(key_var)) <= ^unquote(value_var)
-    end
-  end
-
-  def expr_for(:in, q_var, {key_var, value_var}) do
-    quote do
-      field(unquote(q_var), ^unquote(key_var)) in ^unquote(value_var)
-    end
-  end
-
-  def expr_for(:like, q_var, {key_var, value_var}) do
+  def expr_for(:like, q_var, _, {key_var, value_var}) do
     quote do
       like(field(unquote(q_var), ^unquote(key_var)), ^"%#{unquote(value_var)}%")
     end
   end
 
-  def expr_for(:ilike, q_var, {key_var, value_var}) do
+  def expr_for(:ilike, q_var, _, {key_var, value_var}) do
     quote do
       ilike(field(unquote(q_var), ^unquote(key_var)), ^"%#{unquote(value_var)}%")
+    end
+  end
+
+  def expr_for(op, q_var, _, {key_var, value_var}) do
+    field_expr =
+      quote do
+        field(unquote(q_var), ^unquote(key_var))
+      end
+
+    quote do
+      unquote(special_form_ast(field_expr, op, pinned_ast(value_var)))
+    end
+  end
+
+  defp special_form_ast(left, :in, right) do
+    quote do
+      unquote(left) in unquote(right)
+    end
+  end
+
+  defp special_form_ast(left, op, right) when op in [:==, :eq] do
+    quote do
+      unquote(left) == unquote(right)
+    end
+  end
+
+  defp special_form_ast(left, op, right) when op in [:!=, :ne] do
+    quote do
+      unquote(left) != unquote(right)
+    end
+  end
+
+  defp special_form_ast(left, op, right) when op in [:>, :gt] do
+    quote do
+      unquote(left) > unquote(right)
+    end
+  end
+
+  defp special_form_ast(left, op, right) when op in [:<, :lt] do
+    quote do
+      unquote(left) < unquote(right)
+    end
+  end
+
+  defp special_form_ast(left, op, right) when op in [:>=, :gte] do
+    quote do
+      unquote(left) >= unquote(right)
+    end
+  end
+
+  defp special_form_ast(left, op, right) when op in [:<=, :lte] do
+    quote do
+      unquote(left) <= unquote(right)
+    end
+  end
+
+  defp pinned_ast(var) do
+    quote do
+      ^unquote(var)
     end
   end
 end
