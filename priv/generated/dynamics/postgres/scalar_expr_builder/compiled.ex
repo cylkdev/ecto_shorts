@@ -24,88 +24,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
           dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
         end
 
-      {:not, {:!=, {:lower, value}}} ->
+      {:!=, nil} ->
         if is_nil(binding_alias) do
-          dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+          dynamic([q], not is_nil(field(q, ^key)))
         else
-          dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) != ^value))
+          dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
         end
 
-      {:!=, {:lower, value}} ->
+      {:ne, nil} ->
         if is_nil(binding_alias) do
-          dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+          dynamic([q], not is_nil(field(q, ^key)))
         else
-          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) != ^value)
-        end
-
-      {:not, {:!=, {:upper, value}}} ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) != ^value))
-        end
-
-      {:!=, {:upper, value}} ->
-        if is_nil(binding_alias) do
-          dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
-        else
-          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) != ^value)
-        end
-
-      {:not, {:!=, value}} ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) != ^value))
-        else
-          dynamic([{^binding_alias, q}], not (field(q, ^key) != ^value))
-        end
-
-      {:!=, value} ->
-        if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != ^value)
-        else
-          dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
-        end
-
-      {:not, {:ne, {:lower, value}}} ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) != ^value))
-        end
-
-      {:ne, {:lower, value}} ->
-        if is_nil(binding_alias) do
-          dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
-        else
-          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) != ^value)
-        end
-
-      {:not, {:ne, {:upper, value}}} ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) != ^value))
-        end
-
-      {:ne, {:upper, value}} ->
-        if is_nil(binding_alias) do
-          dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
-        else
-          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) != ^value)
-        end
-
-      {:not, {:ne, value}} ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) != ^value))
-        else
-          dynamic([{^binding_alias, q}], not (field(q, ^key) != ^value))
-        end
-
-      {:ne, value} ->
-        if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != ^value)
-        else
-          dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
+          dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
         end
 
       {:not, {:>, {:lower, value}}} ->
@@ -492,18 +422,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     case value do
       {:==, nil} -> dynamic([q], is_nil(field(q, ^key)))
       {:eq, nil} -> dynamic([q], is_nil(field(q, ^key)))
-      {:not, {:!=, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      {:!=, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
-      {:not, {:!=, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-      {:!=, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
-      {:not, {:!=, value}} -> dynamic([q], not (field(q, ^key) != ^value))
-      {:!=, value} -> dynamic([q], field(q, ^key) != ^value)
-      {:not, {:ne, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      {:ne, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
-      {:not, {:ne, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-      {:ne, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
-      {:not, {:ne, value}} -> dynamic([q], not (field(q, ^key) != ^value))
-      {:ne, value} -> dynamic([q], field(q, ^key) != ^value)
+      {:!=, nil} -> dynamic([q], not is_nil(field(q, ^key)))
+      {:ne, nil} -> dynamic([q], not is_nil(field(q, ^key)))
       {:not, {:>, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) > ^value))
       {:>, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) > ^value)
       {:not, {:>, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) > ^value))
@@ -565,18 +485,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     case value do
       {:==, nil} -> dynamic([_, q], is_nil(field(q, ^key)))
       {:eq, nil} -> dynamic([_, q], is_nil(field(q, ^key)))
-      {:not, {:!=, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      {:!=, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      {:not, {:!=, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-      {:!=, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
-      {:not, {:!=, value}} -> dynamic([_, q], not (field(q, ^key) != ^value))
-      {:!=, value} -> dynamic([_, q], field(q, ^key) != ^value)
-      {:not, {:ne, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      {:ne, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      {:not, {:ne, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-      {:ne, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
-      {:not, {:ne, value}} -> dynamic([_, q], not (field(q, ^key) != ^value))
-      {:ne, value} -> dynamic([_, q], field(q, ^key) != ^value)
+      {:!=, nil} -> dynamic([_, q], not is_nil(field(q, ^key)))
+      {:ne, nil} -> dynamic([_, q], not is_nil(field(q, ^key)))
       {:not, {:>, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
       {:>, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) > ^value)
       {:not, {:>, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
@@ -642,41 +552,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:eq, nil} ->
         dynamic([_, _, q], is_nil(field(q, ^key)))
 
-      {:not, {:!=, {:lower, value}}} ->
-        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, nil} ->
+        dynamic([_, _, q], not is_nil(field(q, ^key)))
 
-      {:!=, {:lower, value}} ->
-        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, {:upper, value}}} ->
-        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:!=, {:upper, value}} ->
-        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, value}} ->
-        dynamic([_, _, q], not (field(q, ^key) != ^value))
-
-      {:!=, value} ->
-        dynamic([_, _, q], field(q, ^key) != ^value)
-
-      {:not, {:ne, {:lower, value}}} ->
-        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:lower, value}} ->
-        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, {:upper, value}}} ->
-        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:upper, value}} ->
-        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, value}} ->
-        dynamic([_, _, q], not (field(q, ^key) != ^value))
-
-      {:ne, value} ->
-        dynamic([_, _, q], field(q, ^key) != ^value)
+      {:ne, nil} ->
+        dynamic([_, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -850,41 +730,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:eq, nil} ->
         dynamic([_, _, _, q], is_nil(field(q, ^key)))
 
-      {:not, {:!=, {:lower, value}}} ->
-        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, nil} ->
+        dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
-      {:!=, {:lower, value}} ->
-        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, {:upper, value}}} ->
-        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:!=, {:upper, value}} ->
-        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, value}} ->
-        dynamic([_, _, _, q], not (field(q, ^key) != ^value))
-
-      {:!=, value} ->
-        dynamic([_, _, _, q], field(q, ^key) != ^value)
-
-      {:not, {:ne, {:lower, value}}} ->
-        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:lower, value}} ->
-        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, {:upper, value}}} ->
-        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:upper, value}} ->
-        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, value}} ->
-        dynamic([_, _, _, q], not (field(q, ^key) != ^value))
-
-      {:ne, value} ->
-        dynamic([_, _, _, q], field(q, ^key) != ^value)
+      {:ne, nil} ->
+        dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -1058,41 +908,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:eq, nil} ->
         dynamic([_, _, _, _, q], is_nil(field(q, ^key)))
 
-      {:not, {:!=, {:lower, value}}} ->
-        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, nil} ->
+        dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
-      {:!=, {:lower, value}} ->
-        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, {:upper, value}}} ->
-        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:!=, {:upper, value}} ->
-        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, value}} ->
-        dynamic([_, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:!=, value} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != ^value)
-
-      {:not, {:ne, {:lower, value}}} ->
-        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:lower, value}} ->
-        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, {:upper, value}}} ->
-        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:upper, value}} ->
-        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, value}} ->
-        dynamic([_, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:ne, value} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != ^value)
+      {:ne, nil} ->
+        dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -1266,41 +1086,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:eq, nil} ->
         dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)))
 
-      {:not, {:!=, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, nil} ->
+        dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
-      {:!=, {:lower, value}} ->
-        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:!=, {:upper, value}} ->
-        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, value}} ->
-        dynamic([_, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:!=, value} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
-
-      {:not, {:ne, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:lower, value}} ->
-        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:upper, value}} ->
-        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, value}} ->
-        dynamic([_, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:ne, value} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
+      {:ne, nil} ->
+        dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -1474,41 +1264,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
-      {:not, {:!=, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, nil} ->
+        dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
-      {:!=, {:lower, value}} ->
-        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:!=, {:upper, value}} ->
-        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, value}} ->
-        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:!=, value} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
-
-      {:not, {:ne, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:lower, value}} ->
-        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:upper, value}} ->
-        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, value}} ->
-        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:ne, value} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
+      {:ne, nil} ->
+        dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -1682,41 +1442,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
-      {:not, {:!=, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, nil} ->
+        dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
-      {:!=, {:lower, value}} ->
-        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:!=, {:upper, value}} ->
-        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, value}} ->
-        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:!=, value} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
-
-      {:not, {:ne, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:lower, value}} ->
-        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:upper, value}} ->
-        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, value}} ->
-        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:ne, value} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+      {:ne, nil} ->
+        dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -1890,41 +1620,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
-      {:not, {:!=, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, nil} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
-      {:!=, {:lower, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:!=, {:upper, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:!=, value} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
-
-      {:not, {:ne, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:lower, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:upper, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:ne, value} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+      {:ne, nil} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -2098,41 +1798,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
-      {:not, {:!=, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, nil} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
-      {:!=, {:lower, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:!=, {:upper, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:!=, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:!=, value} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
-
-      {:not, {:ne, {:lower, value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:lower, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, {:upper, value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-
-      {:ne, {:upper, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-
-      {:not, {:ne, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-
-      {:ne, value} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+      {:ne, nil} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
