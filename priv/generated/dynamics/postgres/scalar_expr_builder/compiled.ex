@@ -416,6 +416,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
           dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
         end
 
+      {:not, {:like, value}} when is_list(value) ->
+        if is_nil(binding_alias) do
+          dynamic(
+            [q],
+            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          )
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          )
+        end
+
       {:like, value} when is_list(value) ->
         if is_nil(binding_alias) do
           dynamic(
@@ -441,6 +454,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
           dynamic([q], like(field(q, ^key), ^"%#{value}%"))
         else
           dynamic([{^binding_alias, q}], like(field(q, ^key), ^"%#{value}%"))
+        end
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        if is_nil(binding_alias) do
+          dynamic(
+            [q],
+            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          )
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          )
         end
 
       {:ilike, value} when is_list(value) ->
@@ -648,6 +674,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [q],
@@ -659,6 +691,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
@@ -850,6 +888,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([_, q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [_, q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [_, q],
@@ -861,6 +905,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([_, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [_, q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
@@ -1052,6 +1102,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([_, _, q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [_, _, q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, q],
@@ -1063,6 +1119,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([_, _, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [_, _, q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
@@ -1254,6 +1316,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([_, _, _, q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, q],
@@ -1265,6 +1333,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([_, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
@@ -1456,6 +1530,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
@@ -1467,6 +1547,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
@@ -1658,6 +1744,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
@@ -1669,6 +1761,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
@@ -1860,6 +1958,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
@@ -1871,6 +1975,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
@@ -2062,6 +2172,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
@@ -2073,6 +2189,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
@@ -2264,6 +2386,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
@@ -2275,6 +2403,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
@@ -2466,6 +2600,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:in, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
+      {:not, {:like, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
+
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
@@ -2477,6 +2617,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
 
       {:like, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} when is_list(value) ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+        )
 
       {:ilike, value} when is_list(value) ->
         dynamic(

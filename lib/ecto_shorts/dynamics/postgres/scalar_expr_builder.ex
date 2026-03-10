@@ -73,6 +73,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
         string_op when string_op in @string_operators ->
           [
             quote do
+              {:not, {unquote(string_op), unquote(value_var)}} when is_list(unquote(value_var)) ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    Helpers.negated_expr(expr_for(string_op, q_var, :any, {key_var, value_var})),
+                    context
+                  )
+                )
+            end,
+            quote do
               {unquote(string_op), unquote(value_var)} when is_list(unquote(value_var)) ->
                 unquote(
                   Helpers.dyn_expr(
