@@ -35,36 +35,32 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
 
   def keys, do: @keys
 
-  def dynamic_expr(selected_binding, key, term, negated, _opts) do
-    routed_term = normalize_scalar_term(term)
-
-    {module, routed_term} = dispatch(routed_term)
-
-    module.dynamic_expr(selected_binding, key, routed_term, negated)
+  def dynamic_expr(selected_binding, key, negated, term, _opts) do
+    {op, term} = normalize_term(term)
+    module = resolver(op, term)
+    module.dynamic_expr(selected_binding, key, negated, {op, term})
   end
 
-  defp normalize_scalar_term({_op, _value} = tuple_term), do: tuple_term
-  defp normalize_scalar_term(value), do: {:==, value}
+  defp normalize_term({_op, _value} = term), do: term
+  defp normalize_term(value), do: {:==, value}
 
-  defp dispatch({:in, _value} = term) do
-    {__MODULE__.Compiled.Membership, term}
+  defp resolver(:in, _) do
+    __MODULE__.Compiled.Membership
   end
 
-  defp dispatch({op, value} = term) when op in [:==, :eq, :!=, :ne] and is_list(value) do
-    {__MODULE__.Compiled.Membership, term}
+  defp resolver(op, value) when op in [:==, :eq, :!=, :ne] and is_list(value) do
+    __MODULE__.Compiled.Membership
   end
 
-  defp dispatch({op, term}) when op in [:like, :ilike] do
-    case term do
-      {transform, value} when transform in [:lower, :upper] ->
-        {__MODULE__.Compiled.StringUpperLower, value}
-
-      value ->
-        {__MODULE__.Compiled.String, value}
+  defp resolver(op, {transform, _}) when op in [:like, :ilike] do
+    if transform in [:lower, :upper] do
+      __MODULE__.Compiled.StringUpperLower
+    else
+      __MODULE__.Compiled.String
     end
   end
 
-  defp dispatch(term) do
-    {__MODULE__.Compiled.Comparison, term}
+  defp resolver(_) do
+    __MODULE__.Compiled.Comparison
   end
 end
