@@ -5,11 +5,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
   @type selected_binding :: {:as | :at, term()}
   @type key :: atom()
   @type value :: term()
+  @type negated :: :not | nil
   @type compose_res :: Ecto.Query.t() | nil
 
   @doc false
-  def dynamic_expr({:as, binding_alias}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:as, binding_alias},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} ->
         if is_nil(binding_alias) do
           dynamic([q], not is_nil(field(q, ^key)))
@@ -572,8 +584,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 1}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 1},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} -> dynamic([q], not is_nil(field(q, ^key)))
       {:==, nil} -> dynamic([q], is_nil(field(q, ^key)))
       {:not, {:==, {:lower, value}}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
@@ -657,8 +680,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 2}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 2},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} -> dynamic([_, q], not is_nil(field(q, ^key)))
       {:==, nil} -> dynamic([_, q], is_nil(field(q, ^key)))
       {:not, {:==, {:lower, value}}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
@@ -742,8 +776,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 3}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 3},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} ->
         dynamic([_, _, q], not is_nil(field(q, ^key)))
 
@@ -986,8 +1031,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 4}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 4},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} ->
         dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
@@ -1230,8 +1286,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 5}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 5},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} ->
         dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
@@ -1474,8 +1541,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 6}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 6},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} ->
         dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
@@ -1718,8 +1796,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 7}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 7},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} ->
         dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
@@ -1962,8 +2051,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 8}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 8},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} ->
         dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
@@ -2206,8 +2306,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 9}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 9},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
@@ -2450,8 +2561,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 10}, key, value) do
-    case value do
+  def dynamic_expr(
+        {:at, 10},
+        key,
+        negated,
+        value
+      ) do
+    term =
+      case negated do
+        :not -> {:not, value}
+        _ -> value
+      end
+
+    case term do
       {:not, {:==, nil}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
@@ -2694,7 +2816,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(_, _, _) do
+  def dynamic_expr(_, _, _, _) do
     nil
   end
 end

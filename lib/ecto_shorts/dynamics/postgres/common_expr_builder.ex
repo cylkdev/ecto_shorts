@@ -24,7 +24,7 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
   def keys, do: @keys
 
   @impl true
-  def specs_for(directive, {bind_op, target_var}, q_var, opts) do
+  def specs_for(directive, binding_selector_ast, q_var, opts) do
     context = opts[:context]
 
     key_var = Macro.var(:key, context)
@@ -34,23 +34,23 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
     [
       %Blueprint{
         guard: nil,
-        key: key,
+        key: directive,
         head: [negated_var, value_var],
-        body: quote_body(key, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context)
+        body: quote_body(directive, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context)
       }
     ]
   end
 
   @doc false
-  def quote_body(key, {bind_op, bind_to_var}, {q_var, _key_var, negated_var, value_var}, context) do
-    field_expr = field_expr(key, q_var, value_var)
+  def quote_body(directive, binding_selector_ast, {q_var, _key_var, negated_var, value_var}, context) do
+    field_expr = field_expr(directive, q_var, value_var)
 
     quote do
       case unquote(negated_var) do
         :not ->
           unquote(
             Helpers.dyn_expr(
-              {bind_op, bind_to_var},
+              binding_selector_ast,
               q_var,
               Helpers.negated_expr(field_expr),
               context
@@ -60,7 +60,7 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
         _ ->
           unquote(
             Helpers.dyn_expr(
-              {bind_op, bind_to_var},
+              binding_selector_ast,
               q_var,
               field_expr,
               context

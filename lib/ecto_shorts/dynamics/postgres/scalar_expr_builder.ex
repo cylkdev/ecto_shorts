@@ -57,7 +57,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
       |> comparison_conditions(q_var, key_var, value_var, context)
       |> List.flatten()
 
-    body_ast(negated_var, value_var, conditions)
+    case_clause_ast(negated_var, value_var, conditions)
   end
 
   def quote_body(:membership, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context) do
@@ -66,7 +66,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
       |> membership_conditions(q_var, key_var, value_var, context)
       |> List.flatten()
 
-    body_ast(negated_var, value_var, conditions)
+    case_clause_ast(negated_var, value_var, conditions)
   end
 
   def quote_body(:string, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context) do
@@ -75,10 +75,10 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
       |> string_conditions(q_var, key_var, value_var, context)
       |> List.flatten()
 
-    body_ast(negated_var, value_var, conditions)
+    case_clause_ast(negated_var, value_var, conditions)
   end
 
-  defp body_ast(negated_var, value_var, conditions) do
+  defp case_clause_ast(negated_var, value_var, conditions) do
     quote do
       term =
         case unquote(negated_var) do
@@ -86,9 +86,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
           _ -> unquote(value_var)
         end
 
-      case term do
-        (unquote_splicing(conditions))
-      end
+      case term, do: unquote(conditions)
     end
   end
 
