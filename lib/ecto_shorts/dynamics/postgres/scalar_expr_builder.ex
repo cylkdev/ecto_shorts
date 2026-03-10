@@ -25,7 +25,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     :ilike
   ]
 
-  @keys [:comparison, :membership, :string_upper_lower, :string]
+  @keys [:membership, :comparison, :string_comparison, :string]
 
   @behaviour EctoShorts.Generator.ClauseSpec
 
@@ -69,10 +69,10 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     case_clause_ast(negated_var, value_var, conditions)
   end
 
-  def quote_body(:string_upper_lower, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context) do
+  def quote_body(:string_comparison, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context) do
     conditions =
       binding_selector_ast
-      |> string_upper_lower_conditions(q_var, key_var, value_var, context)
+      |> string_comparison_conditions(q_var, key_var, value_var, context)
       |> List.flatten()
 
     case_clause_ast(negated_var, value_var, conditions)
@@ -340,7 +340,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     ]
   end
 
-  defp string_upper_lower_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do
+  defp string_comparison_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do
     Enum.flat_map(@comparison_operators, fn
       op when op in [:==, :eq] ->
         [

@@ -20,7 +20,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.StringUpperLower,
-        keys: [:string_upper_lower],
+        keys: [:string_comparison],
         positions: @max_binding_positions
       ],
       [
@@ -36,13 +36,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
   def keys, do: @keys
 
   def dynamic_expr(selected_binding, key, negated, term, _opts) do
-    {op, term} = normalize_term(term)
+    {op, term} = normalize_input(term)
     module = resolver(op, term)
     module.dynamic_expr(selected_binding, key, negated, {op, term})
   end
 
-  defp normalize_term({_op, _value} = term), do: term
-  defp normalize_term(value), do: {:==, value}
+  defp normalize_input({_op, _value} = term), do: term
+  defp normalize_input(value), do: {:==, value}
 
   defp resolver(:in, _) do
     __MODULE__.Compiled.Membership
