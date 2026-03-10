@@ -8,781 +8,548 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
   @type compose_res :: Ecto.Query.t() | nil
 
   @doc false
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:==, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+  def dynamic_expr({:as, binding_alias}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) == ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) == ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) == ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:==, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) == ^value)
         end
 
-      :upper ->
+      {:not, {:==, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) == ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) == ^value))
+        end
+
+      {:==, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) == ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:==, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) == ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) == ^value))
-    end
-  end
+      {:not, {:==, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) == ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) == ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:==, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) == ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) == ^value)
-    end
-  end
+      {:==, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:eq, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:eq, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) == ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) == ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) == ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:eq, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) == ^value)
         end
 
-      :upper ->
+      {:not, {:eq, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) == ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) == ^value))
+        end
+
+      {:eq, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) == ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:eq, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) == ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) == ^value))
-    end
-  end
+      {:not, {:eq, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) == ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) == ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:eq, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) == ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) == ^value)
-    end
-  end
+      {:eq, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:!=, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:!=, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) != ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) != ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:!=, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) != ^value)
         end
 
-      :upper ->
+      {:not, {:!=, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) != ^value))
+        end
+
+      {:!=, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) != ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:!=, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) != ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) != ^value))
-    end
-  end
+      {:not, {:!=, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) != ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) != ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:!=, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) != ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
-    end
-  end
+      {:!=, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:ne, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:ne, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) != ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) != ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:ne, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) != ^value)
         end
 
-      :upper ->
+      {:not, {:ne, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) != ^value))
+        end
+
+      {:ne, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) != ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:ne, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) != ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) != ^value))
-    end
-  end
+      {:not, {:ne, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) != ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) != ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:ne, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) != ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
-    end
-  end
+      {:ne, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:>, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:>, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) > ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) > ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) > ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:>, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) > ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) > ^value)
         end
 
-      :upper ->
+      {:not, {:>, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) > ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) > ^value))
+        end
+
+      {:>, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) > ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) > ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:>, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) > ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) > ^value))
-    end
-  end
+      {:not, {:>, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:>, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) > ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
-    end
-  end
+      {:>, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:>=, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:>=, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) >= ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:>=, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) >= ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) >= ^value)
         end
 
-      :upper ->
+      {:not, {:>=, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) >= ^value))
+        end
+
+      {:>=, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) >= ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) >= ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:>=, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) >= ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) >= ^value))
-    end
-  end
+      {:not, {:>=, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:>=, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) >= ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
-    end
-  end
+      {:>=, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:<, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:<, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) < ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) < ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) < ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:<, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) < ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) < ^value)
         end
 
-      :upper ->
+      {:not, {:<, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) < ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) < ^value))
+        end
+
+      {:<, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) < ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) < ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:<, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) < ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) < ^value))
-    end
-  end
+      {:not, {:<, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:<, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) < ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
-    end
-  end
+      {:<, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:<=, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:<=, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) <= ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:<=, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) <= ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) <= ^value)
         end
 
-      :upper ->
+      {:not, {:<=, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) <= ^value))
+        end
+
+      {:<=, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) <= ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) <= ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:<=, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) <= ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) <= ^value))
-    end
-  end
+      {:not, {:<=, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:<=, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) <= ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) <= ^value)
-    end
-  end
+      {:<=, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:gt, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:gt, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) > ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) > ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) > ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:gt, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) > ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) > ^value)
         end
 
-      :upper ->
+      {:not, {:gt, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) > ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) > ^value))
+        end
+
+      {:gt, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) > ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) > ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:gt, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) > ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) > ^value))
-    end
-  end
+      {:not, {:gt, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:gt, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) > ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
-    end
-  end
+      {:gt, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:gte, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:gte, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) >= ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:gte, {transform, value}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:gte, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) >= ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) >= ^value)
         end
 
-      :upper ->
+      {:not, {:gte, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) >= ^value))
+        end
+
+      {:gte, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) >= ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) >= ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:gte, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) >= ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) >= ^value))
-    end
-  end
+      {:not, {:gte, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:gte, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) >= ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
-    end
-  end
+      {:gte, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:lt, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:lt, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) < ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) < ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) < ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:lt, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) < ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) < ^value)
         end
 
-      :upper ->
+      {:not, {:lt, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) < ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) < ^value))
+        end
+
+      {:lt, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) < ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) < ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:lt, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) < ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) < ^value))
-    end
-  end
+      {:not, {:lt, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:lt, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) < ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
-    end
-  end
+      {:lt, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:lte, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:lte, {:lower, value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
         else
           dynamic([{^binding_alias, q}], not (fragment("lower(?)", field(q, ^key)) <= ^value))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-        else
-          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:lte, {transform, value}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:lte, {:lower, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("lower(?)", field(q, ^key)) <= ^value)
         else
           dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) <= ^value)
         end
 
-      :upper ->
+      {:not, {:lte, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
+        else
+          dynamic([{^binding_alias, q}], not (fragment("upper(?)", field(q, ^key)) <= ^value))
+        end
+
+      {:lte, {:upper, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], fragment("upper(?)", field(q, ^key)) <= ^value)
         else
           dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) <= ^value)
         end
-    end
-  end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:lte, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not (field(q, ^key) <= ^value))
-    else
-      dynamic([{^binding_alias, q}], not (field(q, ^key) <= ^value))
-    end
-  end
+      {:not, {:lte, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= ^value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= ^value))
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:lte, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) <= ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) <= ^value)
-    end
-  end
+      {:lte, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= ^value)
+        end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:in, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:in, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) not in ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) not in ^value)
-        else
-          dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:in, value} ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) in ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) in ^value)
-        else
-          dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:in, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) not in ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:in, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], field(q, ^key) in ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:like, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:like, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
         else
           dynamic([{^binding_alias, q}], not like(field(q, ^key), ^"%#{value}%"))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
-        else
-          dynamic([{^binding_alias, q}], not like(field(q, ^key), ^"%#{value}%"))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:like, {transform, value}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:like, value} ->
         if is_nil(binding_alias) do
           dynamic([q], like(field(q, ^key), ^"%#{value}%"))
         else
           dynamic([{^binding_alias, q}], like(field(q, ^key), ^"%#{value}%"))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], like(field(q, ^key), ^"%#{value}%"))
-        else
-          dynamic([{^binding_alias, q}], like(field(q, ^key), ^"%#{value}%"))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:like, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
-    else
-      dynamic([{^binding_alias, q}], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:like, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], like(field(q, ^key), ^"%#{value}%"))
-    else
-      dynamic([{^binding_alias, q}], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:ilike, {transform, value}}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
+      {:not, {:ilike, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
         else
           dynamic([{^binding_alias, q}], not ilike(field(q, ^key), ^"%#{value}%"))
         end
 
-      :upper ->
-        if is_nil(binding_alias) do
-          dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
-        else
-          dynamic([{^binding_alias, q}], not ilike(field(q, ^key), ^"%#{value}%"))
-        end
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, key, {:ilike, {transform, value}})
-      when transform in [:lower, :upper] do
-    case transform do
-      :lower ->
-        if is_nil(binding_alias) do
-          dynamic([q], ilike(field(q, ^key), ^"%#{value}%"))
-        else
-          dynamic([{^binding_alias, q}], ilike(field(q, ^key), ^"%#{value}%"))
-        end
-
-      :upper ->
+      {:ilike, value} ->
         if is_nil(binding_alias) do
           dynamic([q], ilike(field(q, ^key), ^"%#{value}%"))
         else
@@ -791,3320 +558,2074 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr({:as, binding_alias}, key, {:not, {:ilike, value}}) do
-    if is_nil(binding_alias) do
-      dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
-    else
-      dynamic([{^binding_alias, q}], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+  def dynamic_expr({:at, 1}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) == ^value))
+      {:==, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+      {:not, {:==, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) == ^value))
+      {:==, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+      {:not, {:==, value}} -> dynamic([q], not (field(q, ^key) == ^value))
+      {:==, value} -> dynamic([q], field(q, ^key) == ^value)
+      {:not, {:eq, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) == ^value))
+      {:eq, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+      {:not, {:eq, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) == ^value))
+      {:eq, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+      {:not, {:eq, value}} -> dynamic([q], not (field(q, ^key) == ^value))
+      {:eq, value} -> dynamic([q], field(q, ^key) == ^value)
+      {:not, {:!=, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+      {:not, {:!=, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
+      {:!=, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+      {:not, {:!=, value}} -> dynamic([q], not (field(q, ^key) != ^value))
+      {:!=, value} -> dynamic([q], field(q, ^key) != ^value)
+      {:not, {:ne, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:ne, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+      {:not, {:ne, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
+      {:ne, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+      {:not, {:ne, value}} -> dynamic([q], not (field(q, ^key) != ^value))
+      {:ne, value} -> dynamic([q], field(q, ^key) != ^value)
+      {:not, {:>, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) > ^value))
+      {:>, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) > ^value)
+      {:not, {:>, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) > ^value))
+      {:>, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) > ^value)
+      {:not, {:>, value}} -> dynamic([q], not (field(q, ^key) > ^value))
+      {:>, value} -> dynamic([q], field(q, ^key) > ^value)
+      {:not, {:>=, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
+      {:>=, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) >= ^value)
+      {:not, {:>=, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
+      {:>=, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) >= ^value)
+      {:not, {:>=, value}} -> dynamic([q], not (field(q, ^key) >= ^value))
+      {:>=, value} -> dynamic([q], field(q, ^key) >= ^value)
+      {:not, {:<, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) < ^value))
+      {:<, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) < ^value)
+      {:not, {:<, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) < ^value))
+      {:<, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) < ^value)
+      {:not, {:<, value}} -> dynamic([q], not (field(q, ^key) < ^value))
+      {:<, value} -> dynamic([q], field(q, ^key) < ^value)
+      {:not, {:<=, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
+      {:<=, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) <= ^value)
+      {:not, {:<=, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
+      {:<=, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) <= ^value)
+      {:not, {:<=, value}} -> dynamic([q], not (field(q, ^key) <= ^value))
+      {:<=, value} -> dynamic([q], field(q, ^key) <= ^value)
+      {:not, {:gt, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) > ^value))
+      {:gt, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) > ^value)
+      {:not, {:gt, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) > ^value))
+      {:gt, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) > ^value)
+      {:not, {:gt, value}} -> dynamic([q], not (field(q, ^key) > ^value))
+      {:gt, value} -> dynamic([q], field(q, ^key) > ^value)
+      {:not, {:gte, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
+      {:gte, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) >= ^value)
+      {:not, {:gte, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
+      {:gte, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) >= ^value)
+      {:not, {:gte, value}} -> dynamic([q], not (field(q, ^key) >= ^value))
+      {:gte, value} -> dynamic([q], field(q, ^key) >= ^value)
+      {:not, {:lt, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) < ^value))
+      {:lt, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) < ^value)
+      {:not, {:lt, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) < ^value))
+      {:lt, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) < ^value)
+      {:not, {:lt, value}} -> dynamic([q], not (field(q, ^key) < ^value))
+      {:lt, value} -> dynamic([q], field(q, ^key) < ^value)
+      {:not, {:lte, {:lower, value}}} -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
+      {:lte, {:lower, value}} -> dynamic([q], fragment("lower(?)", field(q, ^key)) <= ^value)
+      {:not, {:lte, {:upper, value}}} -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
+      {:lte, {:upper, value}} -> dynamic([q], fragment("upper(?)", field(q, ^key)) <= ^value)
+      {:not, {:lte, value}} -> dynamic([q], not (field(q, ^key) <= ^value))
+      {:lte, value} -> dynamic([q], field(q, ^key) <= ^value)
+      {:not, {:in, value}} -> dynamic([q], field(q, ^key) not in ^value)
+      {:in, value} -> dynamic([q], field(q, ^key) in ^value)
+      {:not, {:like, value}} -> dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
+      {:like, value} -> dynamic([q], like(field(q, ^key), ^"%#{value}%"))
+      {:not, {:ilike, value}} -> dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
+      {:ilike, value} -> dynamic([q], ilike(field(q, ^key), ^"%#{value}%"))
+    end
+  end
+
+  def dynamic_expr({:at, 2}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
+      {:==, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) == ^value)
+      {:not, {:==, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
+      {:==, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) == ^value)
+      {:not, {:==, value}} -> dynamic([_, q], not (field(q, ^key) == ^value))
+      {:==, value} -> dynamic([_, q], field(q, ^key) == ^value)
+      {:not, {:eq, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
+      {:eq, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) == ^value)
+      {:not, {:eq, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
+      {:eq, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) == ^value)
+      {:not, {:eq, value}} -> dynamic([_, q], not (field(q, ^key) == ^value))
+      {:eq, value} -> dynamic([_, q], field(q, ^key) == ^value)
+      {:not, {:!=, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:!=, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
+      {:not, {:!=, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
+      {:!=, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
+      {:not, {:!=, value}} -> dynamic([_, q], not (field(q, ^key) != ^value))
+      {:!=, value} -> dynamic([_, q], field(q, ^key) != ^value)
+      {:not, {:ne, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+      {:ne, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
+      {:not, {:ne, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
+      {:ne, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
+      {:not, {:ne, value}} -> dynamic([_, q], not (field(q, ^key) != ^value))
+      {:ne, value} -> dynamic([_, q], field(q, ^key) != ^value)
+      {:not, {:>, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
+      {:>, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) > ^value)
+      {:not, {:>, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
+      {:>, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) > ^value)
+      {:not, {:>, value}} -> dynamic([_, q], not (field(q, ^key) > ^value))
+      {:>, value} -> dynamic([_, q], field(q, ^key) > ^value)
+      {:not, {:>=, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
+      {:>=, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) >= ^value)
+      {:not, {:>=, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
+      {:>=, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) >= ^value)
+      {:not, {:>=, value}} -> dynamic([_, q], not (field(q, ^key) >= ^value))
+      {:>=, value} -> dynamic([_, q], field(q, ^key) >= ^value)
+      {:not, {:<, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
+      {:<, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) < ^value)
+      {:not, {:<, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
+      {:<, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) < ^value)
+      {:not, {:<, value}} -> dynamic([_, q], not (field(q, ^key) < ^value))
+      {:<, value} -> dynamic([_, q], field(q, ^key) < ^value)
+      {:not, {:<=, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
+      {:<=, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) <= ^value)
+      {:not, {:<=, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
+      {:<=, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) <= ^value)
+      {:not, {:<=, value}} -> dynamic([_, q], not (field(q, ^key) <= ^value))
+      {:<=, value} -> dynamic([_, q], field(q, ^key) <= ^value)
+      {:not, {:gt, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
+      {:gt, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) > ^value)
+      {:not, {:gt, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
+      {:gt, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) > ^value)
+      {:not, {:gt, value}} -> dynamic([_, q], not (field(q, ^key) > ^value))
+      {:gt, value} -> dynamic([_, q], field(q, ^key) > ^value)
+      {:not, {:gte, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
+      {:gte, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) >= ^value)
+      {:not, {:gte, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
+      {:gte, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) >= ^value)
+      {:not, {:gte, value}} -> dynamic([_, q], not (field(q, ^key) >= ^value))
+      {:gte, value} -> dynamic([_, q], field(q, ^key) >= ^value)
+      {:not, {:lt, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
+      {:lt, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) < ^value)
+      {:not, {:lt, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
+      {:lt, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) < ^value)
+      {:not, {:lt, value}} -> dynamic([_, q], not (field(q, ^key) < ^value))
+      {:lt, value} -> dynamic([_, q], field(q, ^key) < ^value)
+      {:not, {:lte, {:lower, value}}} -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
+      {:lte, {:lower, value}} -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) <= ^value)
+      {:not, {:lte, {:upper, value}}} -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
+      {:lte, {:upper, value}} -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) <= ^value)
+      {:not, {:lte, value}} -> dynamic([_, q], not (field(q, ^key) <= ^value))
+      {:lte, value} -> dynamic([_, q], field(q, ^key) <= ^value)
+      {:not, {:in, value}} -> dynamic([_, q], field(q, ^key) not in ^value)
+      {:in, value} -> dynamic([_, q], field(q, ^key) in ^value)
+      {:not, {:like, value}} -> dynamic([_, q], not like(field(q, ^key), ^"%#{value}%"))
+      {:like, value} -> dynamic([_, q], like(field(q, ^key), ^"%#{value}%"))
+      {:not, {:ilike, value}} -> dynamic([_, q], not ilike(field(q, ^key), ^"%#{value}%"))
+      {:ilike, value} -> dynamic([_, q], ilike(field(q, ^key), ^"%#{value}%"))
+    end
+  end
+
+  def dynamic_expr({:at, 3}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
+
+      {:==, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
+
+      {:==, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) == ^value))
+
+      {:==, value} ->
+        dynamic([_, _, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) == ^value))
+
+      {:eq, value} ->
+        dynamic([_, _, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) != ^value))
+
+      {:!=, value} ->
+        dynamic([_, _, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:as, binding_alias}, key, {:ilike, value}) do
-    if is_nil(binding_alias) do
-      dynamic([q], ilike(field(q, ^key), ^"%#{value}%"))
-    else
-      dynamic([{^binding_alias, q}], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:ne, value} ->
+        dynamic([_, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:>, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 1}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:>, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:==, value}}) do
-    dynamic([q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:>, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 1}, key, {:==, value}) do
-    dynamic([q], field(q, ^key) == ^value)
-  end
+      {:>, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:>, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 1}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:>, value} ->
+        dynamic([_, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:eq, value}}) do
-    dynamic([q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:>=, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:eq, value}) do
-    dynamic([q], field(q, ^key) == ^value)
-  end
+      {:>=, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:>=, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:>=, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:!=, value}}) do
-    dynamic([q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:>=, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:!=, value}) do
-    dynamic([q], field(q, ^key) != ^value)
-  end
+      {:>=, value} ->
+        dynamic([_, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:<, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 1}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:<, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:ne, value}}) do
-    dynamic([q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:<, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 1}, key, {:ne, value}) do
-    dynamic([q], field(q, ^key) != ^value)
-  end
+      {:<, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:<, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 1}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:<, value} ->
+        dynamic([_, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:>, value}}) do
-    dynamic([q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:<=, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:>, value}) do
-    dynamic([q], field(q, ^key) > ^value)
-  end
+      {:<=, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:<=, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:<=, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:>=, value}}) do
-    dynamic([q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:<=, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:>=, value}) do
-    dynamic([q], field(q, ^key) >= ^value)
-  end
+      {:<=, value} ->
+        dynamic([_, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:gt, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 1}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:gt, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:<, value}}) do
-    dynamic([q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:gt, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 1}, key, {:<, value}) do
-    dynamic([q], field(q, ^key) < ^value)
-  end
+      {:gt, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:gt, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 1}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:gt, value} ->
+        dynamic([_, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:<=, value}}) do
-    dynamic([q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:gte, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:<=, value}) do
-    dynamic([q], field(q, ^key) <= ^value)
-  end
+      {:gte, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:gte, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:gte, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:gt, value}}) do
-    dynamic([q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:gte, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:gt, value}) do
-    dynamic([q], field(q, ^key) > ^value)
-  end
+      {:gte, value} ->
+        dynamic([_, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:lt, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 1}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:lt, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:gte, value}}) do
-    dynamic([q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:lt, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 1}, key, {:gte, value}) do
-    dynamic([q], field(q, ^key) >= ^value)
-  end
+      {:lt, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:lt, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 1}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:lt, value} ->
+        dynamic([_, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:lt, value}}) do
-    dynamic([q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:lte, {:lower, value}}} ->
+        dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:lt, value}) do
-    dynamic([q], field(q, ^key) < ^value)
-  end
+      {:lte, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:lte, {:upper, value}}} ->
+        dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:lte, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:lte, value}}) do
-    dynamic([q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:lte, value}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 1}, key, {:lte, value}) do
-    dynamic([q], field(q, ^key) <= ^value)
-  end
+      {:lte, value} ->
+        dynamic([_, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], field(q, ^key) not in ^value)
-      :upper -> dynamic([q], field(q, ^key) not in ^value)
-    end
-  end
+      {:not, {:in, value}} ->
+        dynamic([_, _, q], field(q, ^key) not in ^value)
 
-  def dynamic_expr({:at, 1}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], field(q, ^key) in ^value)
-      :upper -> dynamic([q], field(q, ^key) in ^value)
-    end
-  end
+      {:in, value} ->
+        dynamic([_, _, q], field(q, ^key) in ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:in, value}}) do
-    dynamic([q], field(q, ^key) not in ^value)
-  end
+      {:not, {:like, value}} ->
+        dynamic([_, _, q], not like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 1}, key, {:in, value}) do
-    dynamic([q], field(q, ^key) in ^value)
-  end
+      {:like, value} ->
+        dynamic([_, _, q], like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 1}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:ilike, value}} ->
+        dynamic([_, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 1}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([q], like(field(q, ^key), ^"%#{value}%"))
+      {:ilike, value} ->
+        dynamic([_, _, q], ilike(field(q, ^key), ^"%#{value}%"))
     end
   end
 
-  def dynamic_expr({:at, 1}, key, {:not, {:like, value}}) do
-    dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
-  end
-
-  def dynamic_expr({:at, 1}, key, {:like, value}) do
-    dynamic([q], like(field(q, ^key), ^"%#{value}%"))
-  end
-
-  def dynamic_expr({:at, 1}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+  def dynamic_expr({:at, 4}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 1}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 1}, key, {:not, {:ilike, value}}) do
-    dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 1}, key, {:ilike, value}) do
-    dynamic([q], ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 2}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:==, value} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:==, value}}) do
-    dynamic([_, q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 2}, key, {:==, value}) do
-    dynamic([_, q], field(q, ^key) == ^value)
-  end
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 2}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:eq, value}}) do
-    dynamic([_, q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 2}, key, {:eq, value}) do
-    dynamic([_, q], field(q, ^key) == ^value)
-  end
+      {:eq, value} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 2}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:!=, value}}) do
-    dynamic([_, q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 2}, key, {:!=, value}) do
-    dynamic([_, q], field(q, ^key) != ^value)
-  end
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 2}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:!=, value} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:ne, value}}) do
-    dynamic([_, q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 2}, key, {:ne, value}) do
-    dynamic([_, q], field(q, ^key) != ^value)
-  end
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 2}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:>, value}}) do
-    dynamic([_, q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 2}, key, {:>, value}) do
-    dynamic([_, q], field(q, ^key) > ^value)
-  end
+      {:ne, value} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:>, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 2}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:>, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:>=, value}}) do
-    dynamic([_, q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:>, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 2}, key, {:>=, value}) do
-    dynamic([_, q], field(q, ^key) >= ^value)
-  end
+      {:>, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:>, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 2}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:>, value} ->
+        dynamic([_, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:<, value}}) do
-    dynamic([_, q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:>=, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 2}, key, {:<, value}) do
-    dynamic([_, q], field(q, ^key) < ^value)
-  end
+      {:>=, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:>=, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 2}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:>=, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:<=, value}}) do
-    dynamic([_, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:>=, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 2}, key, {:<=, value}) do
-    dynamic([_, q], field(q, ^key) <= ^value)
-  end
+      {:>=, value} ->
+        dynamic([_, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:<, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 2}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:<, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:gt, value}}) do
-    dynamic([_, q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:<, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 2}, key, {:gt, value}) do
-    dynamic([_, q], field(q, ^key) > ^value)
-  end
+      {:<, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:<, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 2}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:<, value} ->
+        dynamic([_, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:gte, value}}) do
-    dynamic([_, q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:<=, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 2}, key, {:gte, value}) do
-    dynamic([_, q], field(q, ^key) >= ^value)
-  end
+      {:<=, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:<=, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 2}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:<=, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:lt, value}}) do
-    dynamic([_, q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:<=, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 2}, key, {:lt, value}) do
-    dynamic([_, q], field(q, ^key) < ^value)
-  end
+      {:<=, value} ->
+        dynamic([_, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:gt, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 2}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:gt, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:lte, value}}) do
-    dynamic([_, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:gt, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 2}, key, {:lte, value}) do
-    dynamic([_, q], field(q, ^key) <= ^value)
-  end
+      {:gt, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], field(q, ^key) not in ^value)
-      :upper -> dynamic([_, q], field(q, ^key) not in ^value)
-    end
-  end
+      {:not, {:gt, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 2}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], field(q, ^key) in ^value)
-      :upper -> dynamic([_, q], field(q, ^key) in ^value)
-    end
-  end
+      {:gt, value} ->
+        dynamic([_, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:in, value}}) do
-    dynamic([_, q], field(q, ^key) not in ^value)
-  end
+      {:not, {:gte, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 2}, key, {:in, value}) do
-    dynamic([_, q], field(q, ^key) in ^value)
-  end
+      {:gte, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, q], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:gte, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 2}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, q], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:gte, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:like, value}}) do
-    dynamic([_, q], not like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:gte, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 2}, key, {:like, value}) do
-    dynamic([_, q], like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:gte, value} ->
+        dynamic([_, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:lt, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 2}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:lt, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 2}, key, {:not, {:ilike, value}}) do
-    dynamic([_, q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:lt, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 2}, key, {:ilike, value}) do
-    dynamic([_, q], ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:lt, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:lt, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 3}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:lt, value} ->
+        dynamic([_, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:==, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:lte, {:lower, value}}} ->
+        dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 3}, key, {:==, value}) do
-    dynamic([_, _, q], field(q, ^key) == ^value)
-  end
+      {:lte, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:lte, {:upper, value}}} ->
+        dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 3}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:lte, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:eq, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:lte, value}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 3}, key, {:eq, value}) do
-    dynamic([_, _, q], field(q, ^key) == ^value)
-  end
+      {:lte, value} ->
+        dynamic([_, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, q], field(q, ^key) not in ^value)
 
-  def dynamic_expr({:at, 3}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:in, value} ->
+        dynamic([_, _, _, q], field(q, ^key) in ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:!=, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:like, value}} ->
+        dynamic([_, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 3}, key, {:!=, value}) do
-    dynamic([_, _, q], field(q, ^key) != ^value)
-  end
+      {:like, value} ->
+        dynamic([_, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 3}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:ilike, value}} ->
+        dynamic([_, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 3}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+      {:ilike, value} ->
+        dynamic([_, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
     end
-  end
-
-  def dynamic_expr({:at, 3}, key, {:not, {:ne, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) != ^value))
-  end
-
-  def dynamic_expr({:at, 3}, key, {:ne, value}) do
-    dynamic([_, _, q], field(q, ^key) != ^value)
   end
 
-  def dynamic_expr({:at, 3}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+  def dynamic_expr({:at, 5}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 3}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:>, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 3}, key, {:>, value}) do
-    dynamic([_, _, q], field(q, ^key) > ^value)
-  end
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 3}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:==, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:>=, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 3}, key, {:>=, value}) do
-    dynamic([_, _, q], field(q, ^key) >= ^value)
-  end
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 3}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:<, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 3}, key, {:<, value}) do
-    dynamic([_, _, q], field(q, ^key) < ^value)
-  end
+      {:eq, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 3}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:<=, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 3}, key, {:<=, value}) do
-    dynamic([_, _, q], field(q, ^key) <= ^value)
-  end
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 3}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:!=, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:gt, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 3}, key, {:gt, value}) do
-    dynamic([_, _, q], field(q, ^key) > ^value)
-  end
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 3}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:gte, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 3}, key, {:gte, value}) do
-    dynamic([_, _, q], field(q, ^key) >= ^value)
-  end
+      {:ne, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:>, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 3}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:>, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:lt, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:>, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 3}, key, {:lt, value}) do
-    dynamic([_, _, q], field(q, ^key) < ^value)
-  end
+      {:>, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:>, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 3}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:>, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:lte, value}}) do
-    dynamic([_, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:>=, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 3}, key, {:lte, value}) do
-    dynamic([_, _, q], field(q, ^key) <= ^value)
-  end
+      {:>=, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], field(q, ^key) not in ^value)
-      :upper -> dynamic([_, _, q], field(q, ^key) not in ^value)
-    end
-  end
+      {:not, {:>=, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 3}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], field(q, ^key) in ^value)
-      :upper -> dynamic([_, _, q], field(q, ^key) in ^value)
-    end
-  end
+      {:>=, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:in, value}}) do
-    dynamic([_, _, q], field(q, ^key) not in ^value)
-  end
+      {:not, {:>=, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 3}, key, {:in, value}) do
-    dynamic([_, _, q], field(q, ^key) in ^value)
-  end
+      {:>=, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, q], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:<, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 3}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, q], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:<, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:like, value}}) do
-    dynamic([_, _, q], not like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:<, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 3}, key, {:like, value}) do
-    dynamic([_, _, q], like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:<, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:<, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 3}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:<, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 3}, key, {:not, {:ilike, value}}) do
-    dynamic([_, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:<=, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 3}, key, {:ilike, value}) do
-    dynamic([_, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:<=, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:<=, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 4}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:<=, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:==, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:<=, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 4}, key, {:==, value}) do
-    dynamic([_, _, _, q], field(q, ^key) == ^value)
-  end
+      {:<=, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:gt, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 4}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:gt, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:eq, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:gt, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 4}, key, {:eq, value}) do
-    dynamic([_, _, _, q], field(q, ^key) == ^value)
-  end
+      {:gt, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:gt, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 4}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:gt, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:!=, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:gte, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 4}, key, {:!=, value}) do
-    dynamic([_, _, _, q], field(q, ^key) != ^value)
-  end
+      {:gte, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:gte, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 4}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:gte, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:ne, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:gte, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 4}, key, {:ne, value}) do
-    dynamic([_, _, _, q], field(q, ^key) != ^value)
-  end
+      {:gte, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:lt, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 4}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:lt, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:>, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:lt, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 4}, key, {:>, value}) do
-    dynamic([_, _, _, q], field(q, ^key) > ^value)
-  end
+      {:lt, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:lt, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 4}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:lt, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:>=, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:lte, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 4}, key, {:>=, value}) do
-    dynamic([_, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:lte, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:lte, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 4}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:lte, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:<, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:lte, value}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 4}, key, {:<, value}) do
-    dynamic([_, _, _, q], field(q, ^key) < ^value)
-  end
+      {:lte, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
 
-  def dynamic_expr({:at, 4}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:in, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) in ^value)
 
-  def dynamic_expr({:at, 4}, key, {:not, {:<=, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:like, value}} ->
+        dynamic([_, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 4}, key, {:<=, value}) do
-    dynamic([_, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:like, value} ->
+        dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:ilike, value}} ->
+        dynamic([_, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 4}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
+      {:ilike, value} ->
+        dynamic([_, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
     end
-  end
-
-  def dynamic_expr({:at, 4}, key, {:not, {:gt, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) > ^value))
   end
 
-  def dynamic_expr({:at, 4}, key, {:gt, value}) do
-    dynamic([_, _, _, q], field(q, ^key) > ^value)
-  end
+  def dynamic_expr({:at, 6}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 4}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:gte, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 4}, key, {:gte, value}) do
-    dynamic([_, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:==, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 4}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:lt, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 4}, key, {:lt, value}) do
-    dynamic([_, _, _, q], field(q, ^key) < ^value)
-  end
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 4}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:lte, value}}) do
-    dynamic([_, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 4}, key, {:lte, value}) do
-    dynamic([_, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], field(q, ^key) not in ^value)
-      :upper -> dynamic([_, _, _, q], field(q, ^key) not in ^value)
-    end
-  end
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 4}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], field(q, ^key) in ^value)
-      :upper -> dynamic([_, _, _, q], field(q, ^key) in ^value)
-    end
-  end
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:in, value}}) do
-    dynamic([_, _, _, q], field(q, ^key) not in ^value)
-  end
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 4}, key, {:in, value}) do
-    dynamic([_, _, _, q], field(q, ^key) in ^value)
-  end
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 4}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:like, value}}) do
-    dynamic([_, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 4}, key, {:like, value}) do
-    dynamic([_, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 4}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 4}, key, {:not, {:ilike, value}}) do
-    dynamic([_, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 4}, key, {:ilike, value}) do
-    dynamic([_, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:>, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:>, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 5}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:not, {:>, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:==, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:>, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 5}, key, {:==, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:not, {:>, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:>, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 5}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:not, {:>=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:eq, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:>=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:eq, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:not, {:>=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:>=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:not, {:>=, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:!=, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:>=, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:!=, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:not, {:<, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:<, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 5}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:not, {:<, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:ne, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:<, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 5}, key, {:ne, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:not, {:<, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:<, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 5}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:not, {:<=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:>, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:<=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:>, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:not, {:<=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:<=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:not, {:<=, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:>=, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:<=, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:>=, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:not, {:gt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:gt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 5}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:not, {:gt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:<, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:gt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 5}, key, {:<, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:not, {:gt, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:gt, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 5}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:not, {:gte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:<=, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:gte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:<=, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:not, {:gte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:gte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:not, {:gte, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:gt, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:gte, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:gt, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:not, {:lt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:lt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 5}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:not, {:lt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:gte, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:lt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 5}, key, {:gte, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:not, {:lt, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:lt, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 5}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:not, {:lte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:lt, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:lte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:lt, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:not, {:lte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:lte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:not, {:lte, value}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:lte, value}}) do
-    dynamic([_, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:lte, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 5}, key, {:lte, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
 
-  def dynamic_expr({:at, 5}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
-      :upper -> dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
-    end
-  end
+      {:in, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
 
-  def dynamic_expr({:at, 5}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], field(q, ^key) in ^value)
-      :upper -> dynamic([_, _, _, _, q], field(q, ^key) in ^value)
-    end
-  end
+      {:not, {:like, value}} ->
+        dynamic([_, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:in, value}}) do
-    dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
-  end
+      {:like, value} ->
+        dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 5}, key, {:in, value}) do
-    dynamic([_, _, _, _, q], field(q, ^key) in ^value)
-  end
+      {:not, {:ilike, value}} ->
+        dynamic([_, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
+      {:ilike, value} ->
+        dynamic([_, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
     end
   end
 
-  def dynamic_expr({:at, 5}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+  def dynamic_expr({:at, 7}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:like, value}}) do
-    dynamic([_, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 5}, key, {:like, value}) do
-    dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 5}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 5}, key, {:not, {:ilike, value}}) do
-    dynamic([_, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:==, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 5}, key, {:ilike, value}) do
-    dynamic([_, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 6}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:==, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 6}, key, {:==, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 6}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:eq, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 6}, key, {:eq, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 6}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:!=, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 6}, key, {:!=, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 6}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:ne, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 6}, key, {:ne, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 6}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:not, {:>, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:>, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:>, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 6}, key, {:>, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:not, {:>, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:>, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 6}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:not, {:>, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:>=, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:>, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 6}, key, {:>=, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:not, {:>=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:>=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 6}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:not, {:>=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:<, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:>=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 6}, key, {:<, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:not, {:>=, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:>=, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 6}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:not, {:<, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:<=, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:<, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 6}, key, {:<=, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:not, {:<, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:<, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 6}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:not, {:<, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:gt, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:<, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 6}, key, {:gt, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:not, {:<=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:<=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 6}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:not, {:<=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:gte, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:<=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 6}, key, {:gte, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:not, {:<=, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:<=, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 6}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:not, {:gt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:lt, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:gt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 6}, key, {:lt, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:not, {:gt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:gt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 6}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:not, {:gt, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:lte, value}}) do
-    dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:gt, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 6}, key, {:lte, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:not, {:gte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
-      :upper -> dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
-    end
-  end
+      {:gte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 6}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
-      :upper -> dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
-    end
-  end
+      {:not, {:gte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:in, value}}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
-  end
+      {:gte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 6}, key, {:in, value}) do
-    dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
-  end
+      {:not, {:gte, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:gte, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 6}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:lt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:like, value}}) do
-    dynamic([_, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:lt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 6}, key, {:like, value}) do
-    dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:lt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:lt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 6}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:lt, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 6}, key, {:not, {:ilike, value}}) do
-    dynamic([_, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:lt, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 6}, key, {:ilike, value}) do
-    dynamic([_, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:lte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 7}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:lte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 7}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:not, {:lte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 7}, key, {:not, {:==, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:lte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 7}, key, {:==, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:not, {:lte, value}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 7}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:lte, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 7}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:eq, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:in, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
 
-  def dynamic_expr({:at, 7}, key, {:eq, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:not, {:like, value}} ->
+        dynamic([_, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 7}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:like, value} ->
+        dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+
+      {:not, {:ilike, value}} ->
+        dynamic([_, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 7}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+      {:ilike, value} ->
+        dynamic([_, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
     end
   end
 
-  def dynamic_expr({:at, 7}, key, {:not, {:!=, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+  def dynamic_expr({:at, 8}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 7}, key, {:!=, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 7}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:ne, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 7}, key, {:ne, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:==, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 7}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:>, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 7}, key, {:>, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 7}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:>=, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 7}, key, {:>=, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 7}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:<, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 7}, key, {:<, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 7}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:<=, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 7}, key, {:<=, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 7}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:gt, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:>, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 7}, key, {:gt, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:>, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:>, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 7}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:>, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:gte, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:>, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 7}, key, {:gte, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:>, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:>=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 7}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:>=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:lt, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:>=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 7}, key, {:lt, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:>=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:>=, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 7}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:>=, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:lte, value}}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:<, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 7}, key, {:lte, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:<, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
-    end
-  end
+      {:not, {:<, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 7}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
-      :upper -> dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
-    end
-  end
+      {:<, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:in, value}}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
-  end
+      {:not, {:<, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 7}, key, {:in, value}) do
-    dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
-  end
+      {:<, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:<=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 7}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:<=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:like, value}}) do
-    dynamic([_, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:<=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 7}, key, {:like, value}) do
-    dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:<=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:<=, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 7}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:<=, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 7}, key, {:not, {:ilike, value}}) do
-    dynamic([_, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:gt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 7}, key, {:ilike, value}) do
-    dynamic([_, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:gt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 8}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:gt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 8}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:gt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 8}, key, {:not, {:==, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:gt, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 8}, key, {:==, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:gt, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 8}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:gte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 8}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:gte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
+
+      {:not, {:gte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
+
+      {:gte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
+
+      {:not, {:gte, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:eq, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:gte, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 8}, key, {:eq, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:not, {:lt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:lt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 8}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:not, {:lt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:!=, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:lt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 8}, key, {:!=, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:not, {:lt, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:lt, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 8}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:not, {:lte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:ne, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:lte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 8}, key, {:ne, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:not, {:lte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:lte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 8}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:not, {:lte, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:>, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:lte, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 8}, key, {:>, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
 
-  def dynamic_expr({:at, 8}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:in, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
-  def dynamic_expr({:at, 8}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:not, {:like, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:>=, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:like, value} ->
+        dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 8}, key, {:>=, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:not, {:ilike, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
+      {:ilike, value} ->
+        dynamic([_, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
     end
   end
 
-  def dynamic_expr({:at, 8}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+  def dynamic_expr({:at, 9}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:<, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 8}, key, {:<, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 8}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:<=, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:==, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 8}, key, {:<=, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 8}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:gt, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 8}, key, {:gt, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 8}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:gte, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 8}, key, {:gte, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 8}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:lt, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 8}, key, {:lt, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 8}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:lte, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 8}, key, {:lte, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
-    end
-  end
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 8}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
-    end
-  end
+      {:not, {:>, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:in, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
-  end
+      {:>, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 8}, key, {:in, value}) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
-  end
+      {:not, {:>, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:>, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 8}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:>, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:like, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:>, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 8}, key, {:like, value}) do
-    dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:>=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:>=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 8}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:>=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 8}, key, {:not, {:ilike, value}}) do
-    dynamic([_, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:>=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 8}, key, {:ilike, value}) do
-    dynamic([_, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:>=, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:>=, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:not, {:<, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:==, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:<, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 9}, key, {:==, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:not, {:<, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:<, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 9}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:not, {:<, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:eq, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:<, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 9}, key, {:eq, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:not, {:<=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:<=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:not, {:<=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:!=, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:<=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:!=, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:not, {:<=, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:<=, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:not, {:gt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:ne, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:gt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 9}, key, {:ne, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:not, {:gt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:gt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 9}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:not, {:gt, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:>, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:gt, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 9}, key, {:>, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:not, {:gte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:gte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:not, {:gte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:>=, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:gte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:>=, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:not, {:gte, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:gte, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:not, {:lt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:<, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:lt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 9}, key, {:<, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:not, {:lt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:lt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 9}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:not, {:lt, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:<=, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:lt, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 9}, key, {:<=, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:not, {:lte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:lte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:not, {:lte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:gt, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:lte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:gt, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:not, {:lte, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:lte, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 9}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
 
-  def dynamic_expr({:at, 9}, key, {:not, {:gte, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:in, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
-  def dynamic_expr({:at, 9}, key, {:gte, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:not, {:like, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 9}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:like, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 9}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
+      {:not, {:ilike, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
+
+      {:ilike, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
     end
   end
 
-  def dynamic_expr({:at, 9}, key, {:not, {:lt, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+  def dynamic_expr({:at, 10}, key, value) do
+    case value do
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 9}, key, {:lt, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 9}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 9}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 9}, key, {:not, {:lte, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 9}, key, {:lte, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:==, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 9}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
-    end
-  end
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 9}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
-    end
-  end
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 9}, key, {:not, {:in, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
-  end
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
 
-  def dynamic_expr({:at, 9}, key, {:in, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
-  end
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
 
-  def dynamic_expr({:at, 9}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
 
-  def dynamic_expr({:at, 9}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
-  def dynamic_expr({:at, 9}, key, {:not, {:like, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 9}, key, {:like, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 9}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 9}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 9}, key, {:not, {:ilike, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 9}, key, {:ilike, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:==, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 10}, key, {:==, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:==, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
 
-  def dynamic_expr({:at, 10}, key, {:==, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:eq, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) == ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) == ^value))
-    end
-  end
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
 
-  def dynamic_expr({:at, 10}, key, {:eq, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
-    end
-  end
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:eq, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) == ^value))
-  end
+      {:not, {:>, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 10}, key, {:eq, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
-  end
+      {:>, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:!=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:>, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 10}, key, {:!=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:>, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:!=, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:>, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 10}, key, {:!=, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:>, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:ne, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) != ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) != ^value))
-    end
-  end
+      {:not, {:>=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:ne, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
-    end
-  end
+      {:>=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:ne, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) != ^value))
-  end
+      {:not, {:>=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:ne, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
-  end
+      {:>=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:>, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:>=, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:>, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:>=, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:>, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:<, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 10}, key, {:>, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:<, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:>=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:<, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 10}, key, {:>=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:<, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:>=, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:<, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 10}, key, {:>=, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:<, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:<, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:<=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:<, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:<=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:<, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:<=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:<, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:<=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:<=, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:<=, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:<=, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:<=, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:<=, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:gt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 10}, key, {:<=, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:gt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:gt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
-    end
-  end
+      {:not, {:gt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) > ^value))
 
-  def dynamic_expr({:at, 10}, key, {:gt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) > ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
-    end
-  end
+      {:gt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) > ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:gt, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
-  end
+      {:not, {:gt, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
-  def dynamic_expr({:at, 10}, key, {:gt, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
-  end
+      {:gt, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:gte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
-    end
-  end
+      {:not, {:gte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:gte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
-    end
-  end
+      {:gte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:gte, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
-  end
+      {:not, {:gte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) >= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:gte, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
-  end
+      {:gte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) >= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:lt, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
-    end
-  end
+      {:not, {:gte, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:lt, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
-    end
-  end
+      {:gte, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:lt, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
-  end
+      {:not, {:lt, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 10}, key, {:lt, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
-  end
+      {:lt, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:lte, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
-    end
-  end
+      {:not, {:lt, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) < ^value))
 
-  def dynamic_expr({:at, 10}, key, {:lte, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
-    end
-  end
+      {:lt, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) < ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:lte, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
-  end
+      {:not, {:lt, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
-  def dynamic_expr({:at, 10}, key, {:lte, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
-  end
+      {:lt, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:in, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
-    end
-  end
+      {:not, {:lte, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:in, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
-    end
-  end
+      {:lte, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:in, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
-  end
+      {:not, {:lte, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("upper(?)", field(q, ^key)) <= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:in, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
-  end
+      {:lte, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) <= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:like, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:lte, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
 
-  def dynamic_expr({:at, 10}, key, {:like, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:lte, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:like, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
 
-  def dynamic_expr({:at, 10}, key, {:like, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
-  end
+      {:in, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
-  def dynamic_expr({:at, 10}, key, {:not, {:ilike, {transform, value}}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:not, {:like, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 10}, key, {:ilike, {transform, value}}) when transform in [:lower, :upper] do
-    case transform do
-      :lower -> dynamic([_, _, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-      :upper -> dynamic([_, _, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
-    end
-  end
+      {:like, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 10}, key, {:not, {:ilike, value}}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
-  end
+      {:not, {:ilike, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
 
-  def dynamic_expr({:at, 10}, key, {:ilike, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+      {:ilike, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+    end
   end
 
   def dynamic_expr(_, _, _) do
