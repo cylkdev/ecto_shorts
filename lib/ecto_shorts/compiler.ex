@@ -1,5 +1,9 @@
 defmodule EctoShorts.Compiler do
-  alias EctoShorts.Generator
+  alias EctoShorts.{
+    Config,
+    Compiler.QueryBindingBuilder,
+    Generator
+  }
 
   defmacro __using__(opts) do
     quote do
@@ -83,6 +87,17 @@ defmodule EctoShorts.Compiler do
       module = Map.get(module_by_path, path, :unknown)
       "module=#{inspect(module)} path=#{path} line=#{line} #{description}"
     end)
+  end
+
+  def get_query_binding_contracts(context, opts \\ []) do
+    QueryBindingBuilder.query_binding_contracts(
+      context,
+      max_binding_positions(opts)
+    )
+  end
+
+  def max_binding_positions(opts \\ []) do
+    opts[:max_binding_positions] || opts[:positions] || Config.max_positional_bindings()
   end
 end
 
