@@ -25,7 +25,7 @@ defmodule EctoShorts.Compiler do
 
     {_compiled_modules, paths} = Enum.unzip(written)
 
-    compile_generated_modules!(generated, paths, env)
+    compile_modules(generated, paths, env)
 
     quote do
     end
@@ -41,7 +41,7 @@ defmodule EctoShorts.Compiler do
     end)
   end
 
-  defp compile_generated_modules!(generated, paths, env) do
+  defp compile_modules(generated, paths, env) do
     module_by_path = Map.new(generated, fn {module, path, _content} -> {path, module} end)
 
     if paths === [] do

@@ -10,8 +10,8 @@ defmodule EctoShorts.Generator.AST do
       iex> EctoShorts.Generator.positional_clause_asts(EctoShorts.Dynamics.Postgres.CommonExpr, 3)
   """
   def positional_clause_asts(builder, index, opts \\ []) when is_integer(index) and index >= 1 do
-    binding_directive = :at
-    selected_binding = {binding_directive, index}
+    bind_op = :at
+    selected_binding = {bind_op, index}
 
     specs_to_clauses(builder, selected_binding, opts)
   end
@@ -24,9 +24,9 @@ defmodule EctoShorts.Generator.AST do
       iex> EctoShorts.Generator.named_clause_asts(EctoShorts.Dynamics.Postgres.CommonExpr)
   """
   def named_clause_asts(builder, opts \\ []) do
-    binding_directive = :as
+    bind_op = :as
     binding_alias_var = Macro.var(:binding_alias, opts[:context])
-    selected_binding = {binding_directive, binding_alias_var}
+    selected_binding = {bind_op, binding_alias_var}
 
     specs_to_clauses(builder, selected_binding, opts)
   end

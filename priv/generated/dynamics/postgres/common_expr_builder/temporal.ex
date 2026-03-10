@@ -8,388 +8,388 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExpr.Compiled.Temporal do
   @type compose_res :: Ecto.Query.t() | nil
 
   @doc false
-  def dynamic_expr({:as, binding_alias}, :start_date, {:not, value}) do
-    if is_nil(binding_alias) do
+  def dynamic_expr({:as, binding_alias}, key, {:start_date, value}) do
+    if key === :not do
+      if is_nil(binding_alias) do
+        dynamic([q], not (field(q, :inserted_at) >= ^value))
+      else
+        dynamic([{^binding_alias, q}], not (field(q, :inserted_at) >= ^value))
+      end
+    else
+      if is_nil(binding_alias) do
+        dynamic([q], field(q, :inserted_at) >= ^value)
+      else
+        dynamic([{^binding_alias, q}], field(q, :inserted_at) >= ^value)
+      end
+    end
+  end
+
+  def dynamic_expr({:as, binding_alias}, key, {:end_date, value}) do
+    if key === :not do
+      if is_nil(binding_alias) do
+        dynamic([q], not (field(q, :inserted_at) <= ^value))
+      else
+        dynamic([{^binding_alias, q}], not (field(q, :inserted_at) <= ^value))
+      end
+    else
+      if is_nil(binding_alias) do
+        dynamic([q], field(q, :inserted_at) <= ^value)
+      else
+        dynamic([{^binding_alias, q}], field(q, :inserted_at) <= ^value)
+      end
+    end
+  end
+
+  def dynamic_expr({:as, binding_alias}, key, {:since_date, value}) do
+    if key === :not do
+      if is_nil(binding_alias) do
+        dynamic([q], not (field(q, :inserted_at) >= ^value))
+      else
+        dynamic([{^binding_alias, q}], not (field(q, :inserted_at) >= ^value))
+      end
+    else
+      if is_nil(binding_alias) do
+        dynamic([q], field(q, :inserted_at) >= ^value)
+      else
+        dynamic([{^binding_alias, q}], field(q, :inserted_at) >= ^value)
+      end
+    end
+  end
+
+  def dynamic_expr({:as, binding_alias}, key, {:until_date, value}) do
+    if key === :not do
+      if is_nil(binding_alias) do
+        dynamic([q], not (field(q, :inserted_at) <= ^value))
+      else
+        dynamic([{^binding_alias, q}], not (field(q, :inserted_at) <= ^value))
+      end
+    else
+      if is_nil(binding_alias) do
+        dynamic([q], field(q, :inserted_at) <= ^value)
+      else
+        dynamic([{^binding_alias, q}], field(q, :inserted_at) <= ^value)
+      end
+    end
+  end
+
+  def dynamic_expr({:at, 1}, key, {:start_date, value}) do
+    if key === :not do
       dynamic([q], not (field(q, :inserted_at) >= ^value))
     else
-      dynamic([{^binding_alias, q}], not (field(q, :inserted_at) >= ^value))
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, :start_date, value) do
-    if is_nil(binding_alias) do
       dynamic([q], field(q, :inserted_at) >= ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, :inserted_at) >= ^value)
     end
   end
 
-  def dynamic_expr({:as, binding_alias}, :end_date, {:not, value}) do
-    if is_nil(binding_alias) do
+  def dynamic_expr({:at, 1}, key, {:end_date, value}) do
+    if key === :not do
       dynamic([q], not (field(q, :inserted_at) <= ^value))
     else
-      dynamic([{^binding_alias, q}], not (field(q, :inserted_at) <= ^value))
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, :end_date, value) do
-    if is_nil(binding_alias) do
       dynamic([q], field(q, :inserted_at) <= ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, :inserted_at) <= ^value)
     end
   end
 
-  def dynamic_expr({:as, binding_alias}, :since_date, {:not, value}) do
-    if is_nil(binding_alias) do
+  def dynamic_expr({:at, 1}, key, {:since_date, value}) do
+    if key === :not do
       dynamic([q], not (field(q, :inserted_at) >= ^value))
     else
-      dynamic([{^binding_alias, q}], not (field(q, :inserted_at) >= ^value))
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, :since_date, value) do
-    if is_nil(binding_alias) do
       dynamic([q], field(q, :inserted_at) >= ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, :inserted_at) >= ^value)
     end
   end
 
-  def dynamic_expr({:as, binding_alias}, :until_date, {:not, value}) do
-    if is_nil(binding_alias) do
+  def dynamic_expr({:at, 1}, key, {:until_date, value}) do
+    if key === :not do
       dynamic([q], not (field(q, :inserted_at) <= ^value))
     else
-      dynamic([{^binding_alias, q}], not (field(q, :inserted_at) <= ^value))
-    end
-  end
-
-  def dynamic_expr({:as, binding_alias}, :until_date, value) do
-    if is_nil(binding_alias) do
       dynamic([q], field(q, :inserted_at) <= ^value)
-    else
-      dynamic([{^binding_alias, q}], field(q, :inserted_at) <= ^value)
     end
   end
 
-  def dynamic_expr({:at, 1}, :start_date, {:not, value}) do
-    dynamic([q], not (field(q, :inserted_at) >= ^value))
+  def dynamic_expr({:at, 2}, key, {:start_date, value}) do
+    if key === :not do
+      dynamic([_, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 2}, key, {:end_date, value}) do
+    if key === :not do
+      dynamic([_, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 2}, key, {:since_date, value}) do
+    if key === :not do
+      dynamic([_, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 2}, key, {:until_date, value}) do
+    if key === :not do
+      dynamic([_, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 3}, key, {:start_date, value}) do
+    if key === :not do
+      dynamic([_, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 3}, key, {:end_date, value}) do
+    if key === :not do
+      dynamic([_, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 3}, key, {:since_date, value}) do
+    if key === :not do
+      dynamic([_, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 3}, key, {:until_date, value}) do
+    if key === :not do
+      dynamic([_, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 4}, key, {:start_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 4}, key, {:end_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 4}, key, {:since_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 4}, key, {:until_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 5}, key, {:start_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 1}, :start_date, value) do
-    dynamic([q], field(q, :inserted_at) >= ^value)
+  def dynamic_expr({:at, 5}, key, {:end_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 1}, :end_date, {:not, value}) do
-    dynamic([q], not (field(q, :inserted_at) <= ^value))
+  def dynamic_expr({:at, 5}, key, {:since_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 1}, :end_date, value) do
-    dynamic([q], field(q, :inserted_at) <= ^value)
+  def dynamic_expr({:at, 5}, key, {:until_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 1}, :since_date, {:not, value}) do
-    dynamic([q], not (field(q, :inserted_at) >= ^value))
+  def dynamic_expr({:at, 6}, key, {:start_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 1}, :since_date, value) do
-    dynamic([q], field(q, :inserted_at) >= ^value)
+  def dynamic_expr({:at, 6}, key, {:end_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 1}, :until_date, {:not, value}) do
-    dynamic([q], not (field(q, :inserted_at) <= ^value))
+  def dynamic_expr({:at, 6}, key, {:since_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 1}, :until_date, value) do
-    dynamic([q], field(q, :inserted_at) <= ^value)
+  def dynamic_expr({:at, 6}, key, {:until_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 2}, :start_date, {:not, value}) do
-    dynamic([_, q], not (field(q, :inserted_at) >= ^value))
+  def dynamic_expr({:at, 7}, key, {:start_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 2}, :start_date, value) do
-    dynamic([_, q], field(q, :inserted_at) >= ^value)
+  def dynamic_expr({:at, 7}, key, {:end_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 2}, :end_date, {:not, value}) do
-    dynamic([_, q], not (field(q, :inserted_at) <= ^value))
+  def dynamic_expr({:at, 7}, key, {:since_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
   end
 
-  def dynamic_expr({:at, 2}, :end_date, value) do
-    dynamic([_, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 2}, :since_date, {:not, value}) do
-    dynamic([_, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 2}, :since_date, value) do
-    dynamic([_, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 2}, :until_date, {:not, value}) do
-    dynamic([_, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 2}, :until_date, value) do
-    dynamic([_, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 3}, :start_date, {:not, value}) do
-    dynamic([_, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 3}, :start_date, value) do
-    dynamic([_, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 3}, :end_date, {:not, value}) do
-    dynamic([_, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 3}, :end_date, value) do
-    dynamic([_, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 3}, :since_date, {:not, value}) do
-    dynamic([_, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 3}, :since_date, value) do
-    dynamic([_, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 3}, :until_date, {:not, value}) do
-    dynamic([_, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 3}, :until_date, value) do
-    dynamic([_, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 4}, :start_date, {:not, value}) do
-    dynamic([_, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 4}, :start_date, value) do
-    dynamic([_, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 4}, :end_date, {:not, value}) do
-    dynamic([_, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 4}, :end_date, value) do
-    dynamic([_, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 4}, :since_date, {:not, value}) do
-    dynamic([_, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 4}, :since_date, value) do
-    dynamic([_, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 4}, :until_date, {:not, value}) do
-    dynamic([_, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 4}, :until_date, value) do
-    dynamic([_, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 5}, :start_date, {:not, value}) do
-    dynamic([_, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 5}, :start_date, value) do
-    dynamic([_, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 5}, :end_date, {:not, value}) do
-    dynamic([_, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 5}, :end_date, value) do
-    dynamic([_, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 5}, :since_date, {:not, value}) do
-    dynamic([_, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 5}, :since_date, value) do
-    dynamic([_, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 5}, :until_date, {:not, value}) do
-    dynamic([_, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 5}, :until_date, value) do
-    dynamic([_, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 6}, :start_date, {:not, value}) do
-    dynamic([_, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 6}, :start_date, value) do
-    dynamic([_, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 6}, :end_date, {:not, value}) do
-    dynamic([_, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 6}, :end_date, value) do
-    dynamic([_, _, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 6}, :since_date, {:not, value}) do
-    dynamic([_, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 6}, :since_date, value) do
-    dynamic([_, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 6}, :until_date, {:not, value}) do
-    dynamic([_, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 6}, :until_date, value) do
-    dynamic([_, _, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 7}, :start_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 7}, :start_date, value) do
-    dynamic([_, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 7}, :end_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 7}, :end_date, value) do
-    dynamic([_, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 7}, :since_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 7}, :since_date, value) do
-    dynamic([_, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 7}, :until_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 7}, :until_date, value) do
-    dynamic([_, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 8}, :start_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 8}, :start_date, value) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 8}, :end_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 8}, :end_date, value) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 8}, :since_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 8}, :since_date, value) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 8}, :until_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 8}, :until_date, value) do
-    dynamic([_, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 9}, :start_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 9}, :start_date, value) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 9}, :end_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 9}, :end_date, value) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 9}, :since_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 9}, :since_date, value) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 9}, :until_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 9}, :until_date, value) do
-    dynamic([_, _, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 10}, :start_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 10}, :start_date, value) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 10}, :end_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 10}, :end_date, value) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
-  end
-
-  def dynamic_expr({:at, 10}, :since_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
-  end
-
-  def dynamic_expr({:at, 10}, :since_date, value) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
-  end
-
-  def dynamic_expr({:at, 10}, :until_date, {:not, value}) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
-  end
-
-  def dynamic_expr({:at, 10}, :until_date, value) do
-    dynamic([_, _, _, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+  def dynamic_expr({:at, 7}, key, {:until_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 8}, key, {:start_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 8}, key, {:end_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 8}, key, {:since_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 8}, key, {:until_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 9}, key, {:start_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 9}, key, {:end_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 9}, key, {:since_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 9}, key, {:until_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 10}, key, {:start_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 10}, key, {:end_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 10}, key, {:since_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) >= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, _, _, q], field(q, :inserted_at) >= ^value)
+    end
+  end
+
+  def dynamic_expr({:at, 10}, key, {:until_date, value}) do
+    if key === :not do
+      dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, :inserted_at) <= ^value))
+    else
+      dynamic([_, _, _, _, _, _, _, _, _, q], field(q, :inserted_at) <= ^value)
+    end
   end
 
   def dynamic_expr(_, _, _) do
