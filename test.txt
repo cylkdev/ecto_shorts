@@ -1,0 +1,529 @@
+Compiling 2 files (.ex)
+
+
+  1) test dynamic_expr/4 builds a root named-binding greater-than expression from :gt (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:115
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:gt, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:117: (test)
+
+
+
+  2) test dynamic_expr/4 builds a root named-binding ilike expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:179
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:ilike, "hello"}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/string.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:181: (test)
+
+
+
+  3) test dynamic_expr/4 builds a positional-binding expression from a plain scalar term (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:375
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:at, 2}, :id, id, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:296: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:378: (test)
+
+
+
+  4) test dynamic_expr/4 builds a positional-binding nil expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:398
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:at, 2}, :id, {:eq, nil}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:296: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:400: (test)
+
+
+
+  5) test dynamic_expr/4 builds a root named-binding greater-than-or-equal expression from :gte (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:122
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:gte, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:124: (test)
+
+
+
+  6) test dynamic_expr/4 builds a root named-binding upper transform equality expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:209
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:==, {:upper, "HELLO"}}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:211: (test)
+
+
+
+  7) test dynamic_expr/4 builds a root named-binding not-nil expression from :!= (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:59
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :published_at, {:!=, nil}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:61: (test)
+
+
+
+  8) test dynamic_expr/4 builds a root named-binding negated lower transform expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:273
+     ** (UndefinedFunctionError) function EctoShorts.Dynamics.Postgres.ScalarExpr.dynamic_expr/4 is undefined or private. Did you mean:
+     
+           * dynamic_expr/5
+     
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:not, {:==, {:lower, "hello"}}}, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) EctoShorts.Dynamics.Postgres.ScalarExpr.dynamic_expr({:as, nil}, :title, {:not, {:==, {:lower, "hello"}}}, [])
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:275: (test)
+
+
+
+  9) test dynamic_expr/4 builds a named-binding alias expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:280
+     ** (CaseClauseError) no case clause matching: nil
+     code: where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, {:eq, id}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:287: (test)
+
+
+
+ 10) test dynamic_expr/4 builds a positional-binding nil expression from a plain scalar term (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:391
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:at, 2}, :id, nil, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:296: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:393: (test)
+
+
+
+ 11) test dynamic_expr/4 builds a root named-binding negated like expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:258
+     ** (CaseClauseError) no case clause matching: :not
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:like, "hello"}, :not, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/string.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:260: (test)
+
+
+
+ 12) test dynamic_expr/4 builds a named-binding alias expression from :== (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:306
+     ** (CaseClauseError) no case clause matching: nil
+     code: where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, {:==, id}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:313: (test)
+
+
+
+ 13) test dynamic_expr/4 builds a root named-binding equality expression from a plain scalar term (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:10
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :id, 1, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:12: (test)
+
+
+
+ 14) test dynamic_expr/4 builds a positional-binding membership expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:412
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:at, 2}, :id, {:in, [1, 2, 3]}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/membership.ex:120: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:414: (test)
+
+
+
+ 15) test dynamic_expr/4 builds a root named-binding inequality expression from :ne (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:80
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:ne, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:82: (test)
+
+
+
+ 16) test dynamic_expr/4 builds a root named-binding lower transform equality expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:202
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:==, {:lower, "hello"}}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:204: (test)
+
+
+
+ 17) test dynamic_expr/4 builds a root named-binding nil expression from :== (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:52
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :id, {:==, nil}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:54: (test)
+
+
+
+ 18) test dynamic_expr/4 builds a root named-binding not-nil expression from :ne (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:66
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :published_at, {:ne, nil}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:68: (test)
+
+
+
+ 19) test dynamic_expr/4 builds a positional-binding nil expression from :== (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:405
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:at, 2}, :id, {:==, nil}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:296: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:407: (test)
+
+
+
+ 20) test dynamic_expr/4 builds a root named-binding inequality expression from :!= (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:73
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:!=, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:75: (test)
+
+
+
+ 21) test dynamic_expr/4 builds a named-binding alias expression from a plain scalar term (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:293
+     ** (CaseClauseError) no case clause matching: nil
+     code: where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, id, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:300: (test)
+
+
+
+ 22) test dynamic_expr/4 builds a root named-binding equality expression from :== (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:38
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :id, {:==, 1}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:40: (test)
+
+
+
+ 23) test dynamic_expr/4 builds a root named-binding negated membership expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:230
+     ** (CaseClauseError) no case clause matching: :not
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :published, {:in, [true, false]}, :not, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/membership.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:232: (test)
+
+
+
+ 24) test dynamic_expr/4 builds a root named-binding negated equality expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:244
+     ** (CaseClauseError) no case clause matching: :not
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:==, 10}, :not, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:246: (test)
+
+
+
+ 25) test dynamic_expr/4 builds a root named-binding less-than-or-equal expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:108
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:<=, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:110: (test)
+
+
+
+ 26) test dynamic_expr/4 builds a root named-binding upper transform inequality expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:223
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:!=, {:upper, "HELLO"}}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:225: (test)
+
+
+
+ 27) test dynamic_expr/4 builds a root named-binding less-than expression from :lt (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:129
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:lt, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:131: (test)
+
+
+
+ 28) test dynamic_expr/4 builds a named-binding alias greater-than expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:355
+     ** (CaseClauseError) no case clause matching: nil
+     code: where: ^ScalarExpr.dynamic_expr({:as, :post}, :views, {:>, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:361: (test)
+
+
+
+ 29) test dynamic_expr/4 builds a root named-binding nil expression from a plain scalar term (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:17
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :id, nil, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:19: (test)
+
+
+
+ 30) test dynamic_expr/4 builds a root named-binding like expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:172
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:like, "hello"}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/string.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:174: (test)
+
+
+
+ 31) test dynamic_expr/4 builds a root named-binding double-negated inequality expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:251
+     ** (CaseClauseError) no case clause matching: :not
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:!=, 10}, :not, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:253: (test)
+
+
+
+ 32) test dynamic_expr/4 builds a root named-binding membership expression from :in (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:143
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :id, {:in, [1, 2, 3]}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/membership.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:145: (test)
+
+
+
+ 33) test dynamic_expr/4 builds a named-binding alias nil expression from :== (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:343
+     ** (CaseClauseError) no case clause matching: nil
+     code: where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, {:==, nil}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:349: (test)
+
+
+
+ 34) test dynamic_expr/4 builds a root named-binding like-any expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:186
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:like, ["hello", "world"]}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/string.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:189: (test)
+
+
+
+ 35) test dynamic_expr/4 builds a root named-binding nil expression from :eq (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:45
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :id, {:eq, nil}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:47: (test)
+
+
+
+ 36) test dynamic_expr/4 builds a named-binding alias nil expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:331
+     ** (CaseClauseError) no case clause matching: nil
+     code: where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, {:eq, nil}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:337: (test)
+
+
+
+ 37) test dynamic_expr/4 builds a named-binding alias nil expression from a plain scalar term (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:319
+     ** (CaseClauseError) no case clause matching: nil
+     code: where: ^ScalarExpr.dynamic_expr({:as, :post}, :id, nil, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:325: (test)
+
+
+
+ 38) test dynamic_expr/4 builds a root named-binding greater-than-or-equal expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:94
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:>=, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:96: (test)
+
+
+
+ 39) test dynamic_expr/4 treats a list value with :== as membership (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:150
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :published, {:==, [true, false]}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/membership.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:152: (test)
+
+
+
+ 40) test dynamic_expr/4 builds a root named-binding negated like-any expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:265
+     ** (CaseClauseError) no case clause matching: :not
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:like, ["hello", "world"]}, :not, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/string.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:268: (test)
+
+
+
+ 41) test dynamic_expr/4 builds a root named-binding greater-than expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:87
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:>, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:89: (test)
+
+
+
+ 42) test dynamic_expr/4 treats a list value with :!= as negated membership (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:157
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :published, {:!=, [true, false]}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/membership.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:159: (test)
+
+
+
+ 43) test dynamic_expr/4 builds a root named-binding lower transform inequality expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:216
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:!=, {:lower, "hello"}}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:218: (test)
+
+
+
+ 44) test dynamic_expr/4 preserves struct values like DateTime in comparisons (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:164
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :published_at, {:>=, dt}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:167: (test)
+
+
+
+ 45) test dynamic_expr/4 builds a positional-binding expression from :== (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:383
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:at, 2}, :id, {:==, id}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:296: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:386: (test)
+
+
+
+ 46) test dynamic_expr/4 builds a root named-binding less-than expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:101
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:<, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:103: (test)
+
+
+
+ 47) test dynamic_expr/4 keeps the schema field key dynamic (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:24
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, "hello", nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:26: (test)
+
+
+
+ 48) test dynamic_expr/4 builds a root named-binding ilike-any expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:194
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :title, {:ilike, ["hello", "world"]}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/string.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:197: (test)
+
+
+
+ 49) test dynamic_expr/4 builds a root named-binding less-than-or-equal expression from :lte (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:136
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:lte, 10}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:138: (test)
+
+
+
+ 50) test dynamic_expr/4 builds a root named-binding equality expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:31
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :id, {:eq, 1}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:33: (test)
+
+
+
+ 51) test dynamic_expr/4 builds a positional-binding expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:367
+     ** (CaseClauseError) no case clause matching: nil
+     code: actual = ScalarExpr.dynamic_expr({:at, 2}, :id, {:eq, id}, nil, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:296: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:370: (test)
+
+
+
+ 52) test dynamic_expr/4 builds a root named-binding negated greater-than expression (EctoShorts.Dynamics.Postgres.ScalarExprTest)
+     test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:237
+     ** (CaseClauseError) no case clause matching: :not
+     code: actual = ScalarExpr.dynamic_expr({:as, nil}, :views, {:>, 10}, :not, [])
+     stacktrace:
+       (ecto_shorts 3.0.0) _build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/comparison.ex:19: EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison.dynamic_expr/4
+       test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:239: (test)
+
+
+Finished in 0.1 seconds (0.1s async, 0.00s sync)
+52 tests, 52 failures
+
+Randomized with seed 952755
