@@ -45,37 +45,51 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
         guard: nil,
         key: key_var,
         head: [negated_var, value_var],
-        body: quote_body(directive, binding_selector_ast, q_var, key_var, value_var, context)
+        body: quote_body(directive, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context)
       }
     ]
   end
 
   @doc false
-  def quote_body(:comparison, {bind_op, bind_to_var}, q_var, key_var, value_var, context) do
+  def quote_body(:comparison, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context) do
     conditions =
-      {bind_op, bind_to_var}
+      binding_selector_ast
       |> comparison_conditions(q_var, key_var, value_var, context)
       |> List.flatten()
 
-    {:case, [], [value_var, [do: conditions]]}
+    body_ast(negated_var, value_var, conditions)
   end
 
-  def quote_body(:membership, {bind_op, bind_to_var}, q_var, key_var, value_var, context) do
+  def quote_body(:membership, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context) do
     conditions =
-      {bind_op, bind_to_var}
+      binding_selector_ast
       |> membership_conditions(q_var, key_var, value_var, context)
       |> List.flatten()
 
-    {:case, [], [value_var, [do: conditions]]}
+    body_ast(negated_var, value_var, conditions)
   end
 
-  def quote_body(:string, {bind_op, bind_to_var}, q_var, key_var, value_var, context) do
+  def quote_body(:string, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context) do
     conditions =
-      {bind_op, bind_to_var}
+      binding_selector_ast
       |> string_conditions(q_var, key_var, value_var, context)
       |> List.flatten()
 
-    {:case, [], [value_var, [do: conditions]]}
+    body_ast(negated_var, value_var, conditions)
+  end
+
+  defp body_ast(negated_var, value_var, conditions) do
+    quote do
+      term =
+        case unquote(negated_var) do
+          :not -> {:not, unquote(value_var)}
+          _ -> unquote(value_var)
+        end
+
+      case term do
+        (unquote_splicing(conditions))
+      end
+    end
   end
 
   defp comparison_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do

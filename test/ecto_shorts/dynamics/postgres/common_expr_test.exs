@@ -17,7 +17,9 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprTest do
   test "dynamic_expr/4 builds a named-binding alias expression" do
     date = ~U[2026-03-09 02:04:01.573399Z]
     expected = from(p in Post, as: :post, where: p.inserted_at >= ^date)
-    actual = from(p in Post, as: :post, where: ^CommonExpr.dynamic_expr({:as, :post}, :start_date, date, nil, []))
+
+    actual =
+      from(p in Post, as: :post, where: ^CommonExpr.dynamic_expr({:as, :post}, :start_date, date, nil, []))
 
     assert_sql(expected, actual)
   end

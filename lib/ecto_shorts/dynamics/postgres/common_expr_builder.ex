@@ -24,40 +24,50 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
   def keys, do: @keys
 
   @impl true
-  def specs_for(key, {binding_directive, target_var}, q_var, opts) do
+  def specs_for(directive, {bind_op, target_var}, q_var, opts) do
     context = opts[:context]
 
+    key_var = Macro.var(:key, context)
+    negated_var = Macro.var(:negated, context)
     value_var = Macro.var(:value, context)
-    field_expr = field_expr(key, q_var, value_var)
 
     [
       %Blueprint{
         guard: nil,
         key: key,
-        head: value_var,
-        negated: :not,
-        body:
-          Helpers.dyn_expr(
-            {binding_directive, target_var},
-            q_var,
-            Helpers.negated_expr(field_expr),
-            context
-          )
-      },
-      %Blueprint{
-        guard: nil,
-        key: key,
-        head: value_var,
-        negated: nil,
-        body:
-          Helpers.dyn_expr(
-            {binding_directive, target_var},
-            q_var,
-            field_expr,
-            context
-          )
+        head: [negated_var, value_var],
+        body: quote_body(key, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context)
       }
     ]
+  end
+
+  @doc false
+  def quote_body(key, {bind_op, bind_to_var}, {q_var, _key_var, negated_var, value_var}, context) do
+    field_expr = field_expr(key, q_var, value_var)
+
+    quote do
+      case unquote(negated_var) do
+        :not ->
+          unquote(
+            Helpers.dyn_expr(
+              {bind_op, bind_to_var},
+              q_var,
+              Helpers.negated_expr(field_expr),
+              context
+            )
+          )
+
+        _ ->
+          unquote(
+            Helpers.dyn_expr(
+              {bind_op, bind_to_var},
+              q_var,
+              field_expr,
+              context
+            )
+          )
+      end
+    end
   end
 
   @doc false

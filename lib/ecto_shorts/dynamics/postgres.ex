@@ -63,7 +63,7 @@ defmodule EctoShorts.Adapters.Postgres do
 
   defp build_expr(source, selected_binding, key, term, opts) do
     if binding_selector?(selected_binding) do
-      {negated, term} = split_negation(term)
+      {negated, term} = normalize_negation(term)
 
       cond do
         key in CommonExpr.keys() ->
