@@ -33,18 +33,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   def keys, do: @keys
 
   @impl true
-  def specs_for(kind, {bind_op, bind_to_var}, q_var, opts) do
+  def specs_for(directive, binding_selector_ast, q_var, opts) do
     context = opts[:context]
 
     key_var = Macro.var(:key, context)
+    negated_var = Macro.var(:negated, context)
     value_var = Macro.var(:value, context)
 
     [
       %Blueprint{
         guard: nil,
         key: key_var,
-        head: value_var,
-        body: quote_body(kind, {bind_op, bind_to_var}, q_var, key_var, value_var, context)
+        head: [negated_var, value_var],
+        body: quote_body(directive, binding_selector_ast, q_var, key_var, value_var, context)
       }
     ]
   end

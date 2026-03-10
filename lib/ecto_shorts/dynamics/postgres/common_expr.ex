@@ -24,13 +24,13 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExpr do
 
   def keys, do: @keys
 
-  def dynamic_expr(selected_binding, key, term, _opts) do
+  def dynamic_expr(selected_binding, key, term, negated, _opts) do
     cond do
       key in @core_keys ->
-        __MODULE__.Compiled.Core.dynamic_expr(selected_binding, key, term)
+        __MODULE__.Compiled.Core.dynamic_expr(selected_binding, key, term, negated)
 
       key in @temporal_keys ->
-        __MODULE__.Compiled.Temporal.dynamic_expr(selected_binding, key, term)
+        __MODULE__.Compiled.Temporal.dynamic_expr(selected_binding, key, term, negated)
 
       true ->
         nil

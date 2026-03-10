@@ -34,7 +34,8 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
       %Blueprint{
         guard: nil,
         key: key,
-        head: {:not, quote(do: unquote(value_var))},
+        head: value_var,
+        negated: :not,
         body:
           Helpers.dyn_expr(
             {binding_directive, target_var},
@@ -47,6 +48,7 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
         guard: nil,
         key: key,
         head: value_var,
+        negated: nil,
         body:
           Helpers.dyn_expr(
             {binding_directive, target_var},

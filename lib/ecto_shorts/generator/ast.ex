@@ -59,7 +59,7 @@ defmodule EctoShorts.Generator.AST do
         def dynamic_expr(
               unquote(selected_binding),
               unquote(key_ast),
-              unquote(head_ast)
+              unquote_splicing(head_ast)
             ) do
           unquote(body_ast)
         end
@@ -69,7 +69,7 @@ defmodule EctoShorts.Generator.AST do
         def dynamic_expr(
               unquote(selected_binding),
               unquote(key_ast),
-              unquote(head_ast)
+              unquote_splicing(head_ast)
             )
             when unquote(guard_ast) do
           unquote(body_ast)

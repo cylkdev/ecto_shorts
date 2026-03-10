@@ -2,6 +2,12 @@
 trigger: always_on
 ---
 
+## Scope Creep
+
+Do not expand the scope of a request without explicit user approval. Do not modify additional files, layers, contracts, generators, tests, APIs, architecture, or behavior unless I explicitly tell you to do so. If you think a broader change is necessary, stop, name the exact blocker, name the exact additional scope required, and wait for my approval before making any out-of-scope change.
+
+---
+
 ## Communication Guidelines
 
 ### 1. Think Critically and Collaborate
@@ -30,13 +36,13 @@ trigger: always_on
 
 ### 3. Use Clear, Direct Language
 
-- Write as though you are speaking directly to the reader.
-- Use a calm, direct, imperative tone.
+- Use a calm, direct, imperative, directive tone.
 - Use active voice.
+- Write in second person. Use a reader-facing or direct-address style.
 - Prefer clear commands and plain statements.
 - Avoid jargon unless you define it immediately.
 - Make your intent explicit.
-- State exactly what you will do.
+- Explain clearly exactly what you will do.
 
 ### 4. Write for Beginners
 
@@ -99,7 +105,7 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 ## Planning Phase
 
-Finish planning before you write any code:
+Use the steps to plan before you implement a feature or make changes to code:
 
 1. Break the work into the smallest practical units.
 2. Break large changes into small, sequential milestones.

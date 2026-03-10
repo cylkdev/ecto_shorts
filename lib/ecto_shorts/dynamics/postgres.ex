@@ -63,18 +63,23 @@ defmodule EctoShorts.Adapters.Postgres do
 
   defp build_expr(source, selected_binding, key, term, opts) do
     if binding_selector?(selected_binding) do
+      {negated, term} = split_negation(term)
+
       cond do
         key in CommonExpr.keys() ->
-          CommonExpr.dynamic_expr(selected_binding, key, term, opts)
+          CommonExpr.dynamic_expr(selected_binding, key, negated, term, opts)
 
         field_type_of_array?(source, key) ->
-          ArrayExpr.dynamic_expr(selected_binding, key, term, opts)
+          ArrayExpr.dynamic_expr(selected_binding, key, negated, term, opts)
 
         true ->
-          ScalarExpr.dynamic_expr(selected_binding, key, term, opts)
+          ScalarExpr.dynamic_expr(selected_binding, key, negated, term, opts)
       end
     end
   end
+
+  defp normalize_negation({:not, term}), do: {:not, term}
+  defp normalize_negation(term), do: {nil, term}
 
   defp binding_selector?({:as, nil}), do: true
   defp binding_selector?({:as, name}) when is_atom(name), do: true
