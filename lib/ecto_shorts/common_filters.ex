@@ -5,14 +5,16 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.Adapters.Postgres
   alias EctoShorts.CommonFilters.Where
 
-
   @default_selected_binding {:as, nil}
 
   @filters [:where, :or_where]
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
-    Enum.reduce(params, query, &apply_filters(:where, source, &2, @default_selected_binding, &1, opts))
+
+    params
+    |> sort_filters()
+    |> Enum.reduce(query, &apply_filters(:where, source, &2, @default_selected_binding, &1, opts))
   end
 
   defp apply_filters(filter, source, query, _selected_binding, {bind_op, params}, opts)
@@ -71,5 +73,15 @@ defmodule EctoShorts.CommonFilters do
       dyn,
       opts
     )
+  end
+
+  defp sort_filters(params) do
+    params
+    |> Map.to_list()
+    |> Enum.sort_by(fn
+      {:where, _} -> 0
+      {:or_where, _} -> 2
+      _ -> 1
+    end)
   end
 end
