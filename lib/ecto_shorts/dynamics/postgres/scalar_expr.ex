@@ -8,32 +8,32 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.Comparison,
-        keys: [:comparison],
+        directives: [:comparison],
         positions: @max_binding_positions
       ],
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.Membership,
-        keys: [:membership],
+        directives: [:membership],
         positions: @max_binding_positions
       ],
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.StringUpperLower,
-        keys: [:string_transform],
+        directives: [:string_transform],
         positions: @max_binding_positions
       ],
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.String,
-        keys: [:string],
+        directives: [:string],
         positions: @max_binding_positions
       ]
     ]
 
-  @keys ScalarExprBuilder.keys()
+  @directives ScalarExprBuilder.directives()
 
-  def keys, do: @keys
+  def directives, do: @directives
 
   def dynamic_expr(selected_binding, key, negated, term, _opts) do
     {op, term} = normalize_input(term)
@@ -52,6 +52,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     __MODULE__.Compiled.Membership
   end
 
+  defp resolver(op, {transform, _})
+       when op in [:==, :eq, :!=, :ne, :>, :>=, :<, :<=, :gt, :gte, :lt, :lte] and
+              transform in [:lower, :upper] do
+    __MODULE__.Compiled.StringUpperLower
+  end
+
   defp resolver(op, {transform, _}) when op in [:like, :ilike] do
     if transform in [:lower, :upper] do
       __MODULE__.Compiled.StringUpperLower
@@ -60,7 +66,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     end
   end
 
-  defp resolver(_) do
+  defp resolver(op, _value) when op in [:like, :ilike] do
+    __MODULE__.Compiled.String
+  end
+
+  defp resolver(_op, _term) do
     __MODULE__.Compiled.Comparison
   end
 end

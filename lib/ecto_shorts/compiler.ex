@@ -10,7 +10,7 @@ defmodule EctoShorts.Compiler do
 
   defmacro __before_compile__(env) do
     opts = Module.get_attribute(env.module, :__ecto_shorts_compiler_options__) || []
-    entries = opts |> Keyword.get(:modules, []) |> normalize_entries()
+    entries = Keyword.get(opts, :modules, [])
 
     generated =
       Enum.map(entries, fn entry ->
@@ -31,18 +31,8 @@ defmodule EctoShorts.Compiler do
     end
   end
 
-  defp normalize_entries(entries) do
-    Enum.map(entries, fn entry ->
-      builder = Keyword.fetch!(entry, :builder)
-
-      entry
-      |> Keyword.put_new(:keys, ClauseSpec.keys(builder))
-      |> Keyword.update!(:keys, &List.wrap/1)
-    end)
-  end
-
-  defp compile_modules(generated, paths, env) do
-    module_by_path = Map.new(generated, fn {module, path, _content} -> {path, module} end)
+  defp compile_modules(written_modules, paths, env) do
+    module_by_path = Map.new(written_modules, fn {module, path, _content} -> {path, module} end)
 
     if paths === [] do
       :ok

@@ -5,7 +5,7 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
   alias EctoShorts.Generator.Blueprint
   alias EctoShorts.Dynamics.Helpers
 
-  @keys [
+  @directives [
     :ids,
     :before,
     :after,
@@ -21,7 +21,7 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuilder do
   @behaviour EctoShorts.Generator.ClauseSpec
 
   @impl true
-  def keys, do: @keys
+  def directives, do: @directives
 
   @impl true
   def specs_for(directive, binding_selector_ast, q_var, opts) do

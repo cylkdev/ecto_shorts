@@ -35,7 +35,7 @@ defmodule EctoShorts.Generator.AST do
     q_var = Macro.var(:q, opts[:context])
 
     opts
-    |> Keyword.get(:keys, ClauseSpec.keys(builder))
+    |> Keyword.get(:directives, ClauseSpec.directives(builder))
     |> List.wrap()
     |> Enum.flat_map(fn key ->
       builder

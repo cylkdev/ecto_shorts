@@ -25,12 +25,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     :ilike
   ]
 
-  @keys [:membership, :comparison, :string_transform, :string]
+  @directives [:membership, :comparison, :string_transform, :string]
 
   @behaviour EctoShorts.Generator.ClauseSpec
 
   @impl true
-  def keys, do: @keys
+  def directives, do: @directives
 
   @impl true
   def specs_for(directive, binding_selector_ast, q_var, opts) do
