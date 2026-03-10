@@ -69,7 +69,7 @@ defmodule EctoShorts.Adapters.Postgres do
         key in CommonExpr.directives() ->
           CommonExpr.dynamic_expr(selected_binding, key, negated, term, opts)
 
-        field_type_of_array?(source, key) ->
+        array_field?(source, key) ->
           ArrayExpr.dynamic_expr(selected_binding, key, negated, term, opts)
 
         true ->
@@ -86,7 +86,7 @@ defmodule EctoShorts.Adapters.Postgres do
   defp binding_selector?({:at, position}) when is_integer(position) and position >= 1, do: true
   defp binding_selector?(_), do: false
 
-  defp field_type_of_array?(source, key) do
+  defp array_field?(source, key) do
     case CommonSchema.get_schema_reflection(source, :type, key) do
       {:array, _} -> true
       _ -> false
