@@ -2,40 +2,6 @@
 trigger: always_on
 ---
 
-For each rule below: if the condition applies, perform the action.
-
-- **Root Guide Routing:** If the current unresolved question is which root `.agent` guide owns the task, read only the owning guide; if ownership is unclear, start with `.agent/AGENTS.md`; if the question changes, open the next matching guide; and if the chosen guide produces one of the seven root planning artifacts, include `Trigger for Using This Document` with the exact trigger facts, full reasoning path, rejected nearby document types with reasons, and a replication rule.
-- **Research Context:** If a request or task depends on project research context or project-level constraints, read `research/AGENTS.md` first and follow it exactly.
-- **Code Style:** Before writing or revising code, use `.agent/styles/AGENTS.md` to find the relevant style area, then read only the rule files that apply to the current change and treat them as the source of truth; keep each change aligned with those rules as you make it, and if the correct rule is unclear, follow an existing matching example in the codebase.
-- **Artifact Routing and Sync:** If the current unresolved question is where a document artifact belongs, how to name it, or whether companion documents remain in sync after artifact-related changes, read `.agent/OUTPUTS.md` for artifact destinations and filename patterns and `.agent/AGENTS.md` for document-maintenance requirements; do not duplicate those rules elsewhere, complete the work only when all affected active documents and companion guides are updated in the same change, and move or rename stale artifacts and repair stale references immediately.
-- **Post Change Checks:** If you made a code change or implemented a feature, run workflow `run-checks`.
-- **PDF Export:** If a request or task requires exporting, reading, or extracting readable output from one or more PDFs, run workflow `read-pdfs`.
-
-## Root Guide Routing
-
-- Diagnose one visible problem whose cause is not yet proven: `.agent/INVESTIGATION_LOGS.md`
-- Clarify intended behaviour at one user-observable boundary: `.agent/EXAMPLE_MAPPING.md`
-- Record a proof-ready behaviour specification at one user-observable boundary: `.agent/BEHAVIOURS.md`
-- Plan a behaviour-changing implementation sequence: `.agent/PLANS.md`
-- Plan a behaviour-preserving structural change: `.agent/REFACTOR_PLANS.md`
-- Review system shape, resilience, state ownership, scaling risk, dependency risk, or failure spread: `.agent/ARCHITECTURE_REVIEW.md`
-- Record one lasting architectural or design decision: `.agent/ADRS.md`
-- Create or revise one reusable style rule: `.agent/CODE_STYLE_RULES.md`
-- Choose project-level command guidance: `.agent/PROJECT.md`
-
-## Code Style Rules
-
-* `.agent/styles/code_related_anti_patterns/` — general Elixir modules and functions
-* `.agent/styles/design_related_anti_patterns/` — module interfaces, data structures, and return shapes
-* `.agent/styles/documentation/` — module docs, function docs, and doctests
-* `.agent/styles/ecto/` — Ecto queries, schemas, and changesets
-* `.agent/styles/meta_programming_anti_patterns/` — macros, `use`, and compile-time code
-* `.agent/styles/naming_conventions/` — modules, functions, variables, files, and atoms
-* `.agent/styles/process_related_anti_patterns/` — GenServers, Agents, Tasks, and other process code
-* `.agent/styles/public_api_and_interfaces/` — public and private function interfaces
-* `.agent/styles/struct_anti_patterns/` — `defstruct`
-* `.agent/styles/testing/` — tests and doctests
-
 ## Communication Guidelines
 
 - Write so that a complete beginner with no external context can follow your meaning without guessing.
@@ -49,8 +15,6 @@ For each rule below: if the condition applies, perform the action.
 - Explain how one step leads to the next step when that connection is not obvious.
 - Define any term, command, file, or concept before you use it in an instruction.
 - Include all intermediate actions that a beginner must perform to succeed without guessing.
-
-- When you describe a code implementation or a code change, include exact code examples. Apply this rule in chat explanations. Apply this rule in plans. Apply this rule in any other explanation of intended code work.
 
 - Make your intent explicit.
 - State exactly what you intend to do.
@@ -72,34 +36,44 @@ For each rule below: if the condition applies, perform the action.
 - Treat a change as meaningful if it affects how the reader will use the public interface.
 - Treat a change as meaningful if it changes inputs, outputs, names, behavior, errors, or configuration that the reader must know about.
 
-## Feature Implementation and Code Change Guidelines
+- When you make a decision, explain the reasoning and alternatives considered.
+- When you describe a code implementation or a code change, include exact code examples. Apply this rule in chat explanations. Apply this rule in plans. Apply this rule in any other explanation of intended code work.
+- When you discover conflicting requirements or unclear specifications, document your assumptions and ask clarifying questions before proceeding.
+
+## Feature Implementation and Code Changes
+
+### Requirements
 
 NON-NEGOTIABLE REQUIREMENTS:
+* Review the request methodically before you act. Read all relevant context and documentation, then read them again until the requirements are clear.
+* Do not make decisions without evidence. For every decision, confirm what supports it and consider the alternatives. If evidence is missing, document your assumptions and ask clarifying questions.
+* Assess the blast radius of every decision. Identify gaps, risks, and assumptions before you proceed.
+* State your understanding of the task clearly. Confirm there are no gaps in scope, intent, or expected outcome that could lead to the wrong change.
+* Finish planning before you write any code:
+  1. Break the work into the smallest practical units.
+  2. Break large changes into small, sequential milestones.
+  3. Write only code you can justify line by line. Explain the purpose of each line and the problem it solves. Before implementing the full solution, create a small proof of concept to validate the approach and wait for user approval before proceeding.
+  4. Choose clear, descriptive names for variables, functions, and classes.
+  5. Define milestones for every non-trivial task and sub-task.
+  6. Do not modify code until this plan is complete.
 
-Before implementing a feature or making a code change:
-
-1. Systematically review the request. Read (and re-read) all important context and documentation related to the task thoroughly.
-
-2. For each decision you have made identify evidence to support it and consider if there are alternative approaches. Analyze what the blast radius for all decisions and identify gaps and assumptions in understanding. All the steps you take from beginning to end should be clear before you continue.
-
-2. State what you understand the task to be and confirm that there are no gaps in scope, intent, or expected outcome that could cause you to make the wrong change.
-
-3. Plan the work thoroughly before you begin. Break the task down into the smallest possible units of work. For non-trivial tasks you must have clearly defined milestones at every level of the work: the initial task, each task within it and each supporting sub-task. Structure the plan so that large-scope work is divided into many smaller milestones that can be tracked and completed in sequence. Do not begin changing code until this planning is complete.
-
-### What to do
+### Guidelines
 
 Prioritize accuracy over speed. Make one small change at a time.
 
-Follow these steps for each change:
+Always explain your reasoning and thought process to the user before making changes.
 
-1. Make the change.
+### What to do
 
-2. Present the change to the user and ask for feedback. Verify that the change matches the intended outcome.
+Use these steps for code changes:
 
-3. Stop and wait for the user’s response.
+1. Make one small, deliberate change.
+2. Explain what you changed to the user and show the code change.
+3. Describe the purpose of the change, what problem it solves, and how it moves the task forward.
+4. Ask for feedback and verify that the result matches the intended outcome.
+5. Stop and wait for the user’s response.
+6. Record any corrections, gaps, or refinements to your understanding in a log.
+7. Do not continue until the user has approved the change.
+8. Repeat these steps for every additional change. Do not start the next change until the current one has been reviewed and approved.
 
-4. When feedback arrives, record any gaps, corrections, or refinements to your understanding in a log.
-
-5. Do not proceed with normal execution until the user has approved the change.
-
-6. Repeat these steps for each change. Do not move on to the next change until the current one has been reviewed and approved.
+ 
