@@ -1,7 +1,7 @@
 defmodule EctoShorts.Generator do
   @moduledoc since: "3.0.0"
 
-  alias EctoShorts.Generator.AST
+  alias EctoShorts.Generator.Builder
 
   @doc """
   Writes one generated module file to disk.
@@ -72,12 +72,12 @@ defmodule EctoShorts.Generator do
   end
 
   defp build_clauses(builder, opts) do
-    named_clauses = AST.named_clause_asts(builder, opts)
+    named_clauses = Builder.named_clause_asts(builder, opts)
     count = opts[:positions] || 10
 
     positional_clauses =
       Enum.flat_map(1..count, fn index ->
-        AST.positional_clause_asts(builder, index, opts)
+        Builder.positional_clause_asts(builder, index, opts)
       end)
 
     named_clauses ++ positional_clauses

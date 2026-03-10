@@ -17,6 +17,7 @@ trigger: always_on
 - Consider whether the issue is a third-order effect.
 - Evaluate alternative explanations before you respond.
 - When you provide solutions, include 1–2 options that align with the current request. Also include 1–2 alternative solutions that you considered.
+- Explain the tradeoffs between solutions if you are presenting more than one.
 - Do not propose a solution that prevents the error or warning from appearing without fixing the root cause. The issue should be addressed at its source, not concealed.
 
 ---

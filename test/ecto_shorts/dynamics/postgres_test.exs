@@ -29,7 +29,7 @@ defmodule EctoShorts.Adapters.PostgresTest do
   end
 
   test "build_dynamic/4 resolves nested scalar wrapper terms before routing" do
-    expected = dynamic([q], not (fragment("lower(?)", field(q, :title)) == ^"hello"))
+    expected = dynamic([q], fragment("lower(?)", field(q, :title)) != ^"hello")
 
     actual =
       Postgres.build_dynamic(

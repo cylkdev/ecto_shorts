@@ -1,4 +1,4 @@
-defmodule EctoShorts.Generator.AST do
+defmodule EctoShorts.Generator.Builder do
   alias EctoShorts.Generator.ClauseSpec
   alias EctoShorts.Generator.Blueprint
 
@@ -13,7 +13,7 @@ defmodule EctoShorts.Generator.AST do
     bind_op = :at
     selected_binding = {bind_op, index}
 
-    specs_to_clauses(builder, selected_binding, opts)
+    build_spec_clauses(builder, selected_binding, opts)
   end
 
   @doc """
@@ -28,21 +28,24 @@ defmodule EctoShorts.Generator.AST do
     binding_alias_var = Macro.var(:binding_alias, opts[:context])
     selected_binding = {bind_op, binding_alias_var}
 
-    specs_to_clauses(builder, selected_binding, opts)
+    build_spec_clauses(builder, selected_binding, opts)
   end
 
-  defp specs_to_clauses(builder, selected_binding, opts) do
+  defp build_spec_clauses(builder, selected_binding, opts) do
     q_var = Macro.var(:q, opts[:context])
 
     opts
     |> Keyword.get(:directives, ClauseSpec.directives(builder))
     |> List.wrap()
-    |> Enum.flat_map(fn key ->
-      builder
-      |> ClauseSpec.specs_for(key, selected_binding, q_var, opts)
-      |> List.wrap()
-      |> Enum.map(&quote_def(selected_binding, &1))
+    |> Enum.map(fn key ->
+      Task.async(fn ->
+        builder
+        |> ClauseSpec.specs_for(key, selected_binding, q_var, opts)
+        |> List.wrap()
+        |> Enum.map(&quote_def(selected_binding, &1))
+      end)
     end)
+    |> Enum.flat_map(&Task.await/1)
   end
 
   defp quote_def(
