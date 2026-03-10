@@ -8,17 +8,27 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
   @type compose_res :: Ecto.Query.t() | nil
 
   @doc false
-  def dynamic_expr(
-        {:as, binding_alias},
-        key,
-        value
-      ) do
+  def dynamic_expr({:as, binding_alias}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) not in ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
+        end
+
       {:==, value} when is_list(value) ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) in ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
+        end
+
+      {:not, {:==, nil}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not is_nil(field(q, ^key)))
+        else
+          dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
         end
 
       {:==, nil} ->
@@ -28,11 +38,67 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
           dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
         end
 
+      {:not, {:==, {:lower, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) != ^value)
+        end
+
+      {:==, {:lower, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) == ^value)
+        end
+
+      {:not, {:==, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) != ^value)
+        end
+
+      {:==, {:upper, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) == ^value)
+        end
+
+      {:not, {:==, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
+        end
+
+      {:==, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^value)
+        end
+
+      {:not, {:eq, value}} when is_list(value) ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) not in ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
+        end
+
       {:eq, value} when is_list(value) ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) in ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
+        end
+
+      {:not, {:eq, nil}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not is_nil(field(q, ^key)))
+        else
+          dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
         end
 
       {:eq, nil} ->
@@ -42,11 +108,67 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
           dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
         end
 
+      {:not, {:eq, {:lower, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) != ^value)
+        end
+
+      {:eq, {:lower, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) == ^value)
+        end
+
+      {:not, {:eq, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) != ^value)
+        end
+
+      {:eq, {:upper, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) == ^value)
+        end
+
+      {:not, {:eq, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
+        end
+
+      {:eq, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^value)
+        end
+
+      {:not, {:!=, value}} when is_list(value) ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) in ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
+        end
+
       {:!=, value} when is_list(value) ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) not in ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
+        end
+
+      {:not, {:!=, nil}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], is_nil(field(q, ^key)))
+        else
+          dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
         end
 
       {:!=, nil} ->
@@ -56,6 +178,55 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
           dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
         end
 
+      {:not, {:!=, {:lower, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) == ^value)
+        end
+
+      {:!=, {:lower, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) != ^value)
+        end
+
+      {:not, {:!=, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) == ^value)
+        end
+
+      {:!=, {:upper, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) != ^value)
+        end
+
+      {:not, {:!=, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^value)
+        end
+
+      {:!=, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
+        end
+
+      {:not, {:ne, value}} when is_list(value) ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) in ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
+        end
+
       {:ne, value} when is_list(value) ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) not in ^value)
@@ -63,11 +234,60 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
           dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
         end
 
+      {:not, {:ne, nil}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], is_nil(field(q, ^key)))
+        else
+          dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
+        end
+
       {:ne, nil} ->
         if is_nil(binding_alias) do
           dynamic([q], not is_nil(field(q, ^key)))
         else
           dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
+        end
+
+      {:not, {:ne, {:lower, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) == ^value)
+        end
+
+      {:ne, {:lower, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("lower(?)", field(q, ^key)) != ^value)
+        end
+
+      {:not, {:ne, {:upper, value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) == ^value)
+        end
+
+      {:ne, {:upper, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+        else
+          dynamic([{^binding_alias, q}], fragment("upper(?)", field(q, ^key)) != ^value)
+        end
+
+      {:not, {:ne, value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^value)
+        end
+
+      {:ne, value} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^value)
         end
 
       {:not, {:>, {:lower, value}}} ->
@@ -424,20 +644,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            not fragment(
-              "? LIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            not fragment(
-              "? LIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         end
 
@@ -445,20 +657,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            fragment(
-              "? LIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            fragment(
-              "? LIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         end
 
@@ -480,20 +684,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            not fragment(
-              "? ILIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            not fragment(
-              "? ILIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         end
 
@@ -501,20 +697,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            fragment(
-              "? ILIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            fragment(
-              "? ILIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         end
 
@@ -534,35 +722,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 1},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 1}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -717,21 +997,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -743,21 +1015,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -768,35 +1032,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 2},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 2}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([_, q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([_, q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([_, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([_, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([_, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([_, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([_, q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([_, q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([_, q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([_, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([_, q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([_, q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([_, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([_, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([_, q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([_, q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([_, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([_, q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -951,21 +1307,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -977,21 +1325,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -1002,35 +1342,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 3},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 3}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([_, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([_, _, q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([_, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, _, q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([_, _, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([_, _, q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([_, _, q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([_, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, _, q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([_, _, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([_, _, q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([_, _, q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([_, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, _, q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([_, _, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([_, _, q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([_, _, q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([_, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, _, q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([_, _, q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -1185,21 +1617,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -1211,21 +1635,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -1236,35 +1652,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 4},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 4}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([_, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([_, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([_, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([_, _, _, q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([_, _, _, q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([_, _, _, q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([_, _, _, q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([_, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -1419,21 +1927,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -1445,21 +1945,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -1470,35 +1962,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 5},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 5}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([_, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([_, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([_, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, _, q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([_, _, _, _, q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, _, q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([_, _, _, _, q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -1653,21 +2237,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -1679,21 +2255,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -1704,35 +2272,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 6},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 6}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -1887,21 +2547,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -1913,21 +2565,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -1938,35 +2582,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 7},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 7}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -2121,21 +2857,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -2147,21 +2875,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -2172,35 +2892,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 8},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 8}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -2355,21 +3167,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -2381,21 +3185,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -2406,35 +3202,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 9},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 9}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -2589,21 +3477,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -2615,21 +3495,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -2640,35 +3512,127 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
     end
   end
 
-  def dynamic_expr(
-        {:at, 10},
-        key,
-        value
-      ) do
+  def dynamic_expr({:at, 10}, key, value) do
     case value do
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, nil}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:==, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:==, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:==, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
       {:eq, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:eq, nil}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:eq, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:eq, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:not, {:eq, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:!=, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+
+      {:not, {:!=, nil}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:!=, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:!=, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+
       {:ne, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
 
+      {:not, {:ne, nil}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:lower, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:lower, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("lower(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, {:upper, value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) == ^value)
+
+      {:ne, {:upper, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], fragment("upper(?)", field(q, ^key)) != ^value)
+
+      {:not, {:ne, value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
       {:not, {:>, {:lower, value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (fragment("lower(?)", field(q, ^key)) > ^value))
@@ -2823,21 +3787,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -2849,21 +3805,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
