@@ -16,8 +16,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
 
   def dynamic_expr(selected_binding, key, term, _opts) do
     case term do
-      {op, value} when op in @keys ->
-        __MODULE__.Compiled.dynamic_expr(selected_binding, key, {op, value})
+      {_op, _value} = term ->
+        __MODULE__.Compiled.dynamic_expr(selected_binding, key, term)
 
       value ->
         __MODULE__.Compiled.dynamic_expr(selected_binding, key, {:==, value})

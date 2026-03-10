@@ -5,7 +5,15 @@ defmodule EctoShorts.Adapters.Postgres do
   alias EctoShorts.Dynamics.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
 
   def build_dynamic(source, selected_binding, {key, term}, opts \\ []) do
-    expr = apply_expr(source, selected_binding, {key, term}, opts)
+    expr =
+      term
+      |> normalize_term()
+      |> Enum.reduce(nil, fn entry, acc ->
+        {merge_op, expr_entry} = expr_entry(key, entry)
+        dyn = apply_expr(source, selected_binding, expr_entry, opts)
+
+        merge_dynamic(acc, merge_op, dyn)
+      end)
 
     merge_dynamic(nil, :and, expr)
   end
@@ -26,6 +34,33 @@ defmodule EctoShorts.Adapters.Postgres do
     end
   end
 
+  defp normalize_term(term) when is_map(term) and not is_struct(term) do
+    term
+    |> Map.to_list()
+    |> normalize_term()
+  end
+
+  defp normalize_term(term) when is_list(term) do
+    if Keyword.keyword?(term) do
+      Enum.flat_map(term, fn {key, inner_term} ->
+        normalize_term(inner_term)
+        |> Enum.map(&{key, &1})
+      end)
+    else
+      [term]
+    end
+  end
+
+  defp normalize_term(term), do: [term]
+
+  defp expr_entry(key, {merge_op, term}) when merge_op in [:and, :or] do
+    {merge_op, {key, term}}
+  end
+
+  defp expr_entry(key, term) do
+    {:and, {key, term}}
+  end
+
   defp build_expr(source, selected_binding, key, term, opts) do
     if binding_selector?(selected_binding) do
       cond do
@@ -42,7 +77,7 @@ defmodule EctoShorts.Adapters.Postgres do
   end
 
   defp binding_selector?({:as, nil}), do: true
-  defp binding_selector?({:as, binding_alias}) when is_atom(binding_alias), do: true
+  defp binding_selector?({:as, name}) when is_atom(name), do: true
   defp binding_selector?({:at, position}) when is_integer(position) and position >= 1, do: true
   defp binding_selector?(_), do: false
 

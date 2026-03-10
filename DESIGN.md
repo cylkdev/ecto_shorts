@@ -59,6 +59,8 @@ Current understanding:
 - The scalar runtime shape remains schema-field-first: `dynamic_expr(binding_selector, schema_field_key, term, opts)`.
 - `ScalarExpr` must stay dumb at the expression layer. It should only match scalar term shapes and return the corresponding dynamic expression.
 - Direct `ScalarExpr` tests must use fully resolved expression-layer tuple shapes all the way down. Nested wrappers such as `:not`, `:lower`, and `:upper` must also be normalized before they reach `ScalarExpr`.
+- `CommonExprBuilder` is the current source of truth for how negation should be generated simply: build the positive expression once in `expr_for/3`, then add a generic `{:not, term}` blueprint in `specs_for/4` that wraps the same expression with `Helpers.negated_expr/1`.
+- For the scalar path, `:not` should be treated as a resolved wrapper shape handled in `specs_for/4`, not as a separate base expression family that duplicates operator logic in `expr_for/3`.
 - Binding-selector validation still belongs only in `lib/ecto_shorts/dynamics/postgres.ex`.
 - The current structures of `lib/ecto_shorts/dynamics/postgres.ex`, `lib/ecto_shorts/dynamics/postgres/common_expr.ex`, and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` are user-approved. Do not restructure those files unless the user explicitly asks for it.
 - The current approved helper names in `Postgres` are `build_dynamic/4`, `apply_expr/4`, and `build_expr/5`. Do not rename or reshape them casually.
@@ -72,10 +74,12 @@ Current understanding:
 
 - The user-approved structure of `lib/ecto_shorts/dynamics/postgres.ex`, `lib/ecto_shorts/dynamics/postgres/common_expr.ex`, and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` is the current source of truth. Do not restructure those files unless explicitly asked.
 - `Postgres` owns map and keyword-list handling, recursive container reduction, and binding-selector validation.
+- `Postgres` normalization should expand map and keyword containers into a flat list of resolved `{field_key, term}` entries, not collapse a single-entry keyword into a bare tuple-returning normalizer.
 - `CommonExpr`, `ArrayExpr`, and `ScalarExpr` are dumb expression modules. They should only deal with resolved term shapes and return matching dynamic expressions.
 - `ScalarExpr` is schema-field-first: `dynamic_expr(binding_selector, schema_field_key, term, opts)`, where resolved operator input is carried inside `term` as `{op, value}`.
 - Direct `ScalarExpr` tests must never use partially normalized public API shapes. If a nested value is still a map such as `%{lower: "hello"}` or `%{==: 10}`, the test is still written at the `CommonFilters` / `Postgres` layer, not the `ScalarExpr` layer.
 - `ScalarExprBuilder` is no longer only the minimal equality proof. The active scalar-filter milestone must extend it to support the operator and wrapper families already asserted in `test/ecto_shorts/common_filters/scalar_filter_test.exs`.
+- `ScalarExprBuilder` should follow the `CommonExprBuilder` negation pattern exactly: reuse the same base scalar expression for both the normal and negated blueprints.
 - The current scalar-filter acceptance surface is:
   - `test/ecto_shorts/common_filters/scalar_filter_test.exs`
   - `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
@@ -95,7 +99,7 @@ Current understanding:
 - The current repo-grounded scalar gaps are:
   - comparison operators and aliases beyond equality
   - list semantics and membership checks
-  - negation wrappers
+  - negation wrappers generated through the shared `specs_for/4` pattern
   - string matching with scalar and list payloads
   - lower/upper transforms
 - Unsupported nil comparisons in the scalar milestone should raise, not warn-and-skip.
@@ -129,8 +133,12 @@ Adjacent or later scalar-path files:
 - Binding-selector validation belongs only to `lib/ecto_shorts/dynamics/postgres.ex`.
 - The expression modules must treat `binding_selector` as already-validated input and must not repeat `{:as, ...}` / `{:at, ...}` validity checks locally.
 - Resolution of `%{field: %{operator: value}}` into the tuple shape expected by `ScalarExpr` must happen before `ScalarExpr.dynamic_expr/4` is called.
-- That resolution must follow the keyword-list-first API shape: non-struct maps become keyword lists first, keyword lists are reduced recursively, and the reduced tuple items are what reach `ScalarExpr`.
+- That resolution must follow the keyword-list-first API shape: non-struct maps become keyword lists first, keyword and map containers expand into a flat list of resolved `{field_key, term}` entries, and those reduced tuple items are what reach `ScalarExpr`.
 - That resolved-tuple rule applies recursively. Nested wrappers such as `:not`, `:lower`, and `:upper` must also arrive as tuples at the `ScalarExpr` layer, not as nested maps.
+- Example normalization target:
+  `%{id: %{or: %{>: 2, <: 4}}, title: "hello"}`
+  must resolve to
+  `[{ :id, {:or, {:>, 2}} }, { :id, {:or, {:<, 4}} }, { :title, "hello" }]`.
 
 ### Repo-Grounded Gap List
 
@@ -139,7 +147,7 @@ The current scalar path already passes the direct equality-only proof in `test/e
 The current missing scalar families are the ones already failing in `test/ecto_shorts/common_filters/scalar_filter_test.exs`:
 - comparison operators and aliases beyond `:==` / `:eq`
 - list membership semantics
-- negation
+- negation, implemented through the generic `specs_for/4` wrapper pattern instead of duplicated `expr_for/3` logic
 - string matching
 - lower/upper transforms
 
@@ -163,6 +171,7 @@ For non-array, non-common-expression field filters:
 - `%{field: %{==: %{lower: value}}}` and `%{field: %{==: %{upper: value}}}` must compare against transformed field values.
 - `%{field: %{!=: %{lower: value}}}` and `%{field: %{!=: %{upper: value}}}` must compare transformed field values with inequality.
 - `%{field: %{not: inner}}` must support the negated scalar cases already asserted in `test/ecto_shorts/common_filters/scalar_filter_test.exs`.
+- At the expression layer, negated scalar terms should be represented as `{:not, resolved_term}` and generated by wrapping the already-built positive expression with `Helpers.negated_expr/1`.
 
 ### Binding Forms In Scope
 
@@ -190,6 +199,7 @@ All scalar filter behaviors in this milestone must work for:
 - `ScalarExpr` must use `EctoShorts.Compiler`.
 - `ScalarExprBuilder` must remain the generated-clause implementation surface for the scalar behaviors in scope.
 - The compiler/generator path is required because positional binding support depends on generated function heads that can be compiled ahead of runtime.
+- The builder should follow the `CommonExprBuilder` negation structure: `expr_for/3` defines the positive scalar expression, and `specs_for/4` adds the generic negated blueprint.
 
 ## Instructions
 
@@ -199,16 +209,17 @@ All scalar filter behaviors in this milestone must work for:
 4. Treat `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` as the direct expression-layer proof surface.
 5. Preserve the current structures of `lib/ecto_shorts/dynamics/postgres.ex`, `lib/ecto_shorts/dynamics/postgres/common_expr.ex`, and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` unless the user explicitly reopens them.
 6. Keep all map and keyword-list normalization above the expression-module layer.
-7. Treat maps and keyword lists as containers only. Reduce them recursively and make routing decisions on the reduced item shapes, not on container shapes.
+7. Treat maps and keyword lists as containers only. Expand them recursively into a flat list of resolved `{field_key, term}` entries and make routing decisions on those reduced item shapes, not on container shapes.
 8. Keep `ScalarExpr` dumb. It should receive fully resolved tuple terms and return the matching dynamic expression.
 9. Write direct `ScalarExpr` tests using fully resolved tuple shapes all the way down, including nested wrappers like `:not`, `:lower`, and `:upper`.
-10. Expand one operator or wrapper family at a time and stop after each small change for summary and feedback.
-11. After each change, update `DESIGN.md` with the exact change, the reason, and the smallest relevant validation result.
-12. Use focused validation for this milestone:
+10. Follow `CommonExprBuilder` for negation: build the positive scalar expression in `expr_for/3`, then add the generic `{:not, term}` blueprint in `specs_for/4` using `Helpers.negated_expr/1`.
+11. Expand one operator or wrapper family at a time and stop after each small change for summary and feedback.
+12. After each change, update `DESIGN.md` with the exact change, the reason, and the smallest relevant validation result.
+13. Use focused validation for this milestone:
     `mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
     `mix test test/ecto_shorts/common_filters/scalar_filter_test.exs`
     `mix test test/ecto_shorts/dynamics/postgres_test.exs`
-13. Record unrelated failures or warnings separately from the scalar-path result.
+14. Record unrelated failures or warnings separately from the scalar-path result.
 
 ## Prevention Analysis
 
@@ -298,6 +309,8 @@ Exact replication means:
 - same documentation markers such as `@doc false`
 
 Only deviate if a required behavior cannot be expressed without the deviation.
+
+When the source-of-truth file already shows how a wrapper concern is solved, copy that approach before inventing a new one. For this task, `CommonExprBuilder` already shows that negation belongs in `specs_for/4` as a wrapper around the base expression, not in duplicated `expr_for/3` clauses.
 
 #### Criterion B: Treat every new name as a deviation
 
@@ -419,6 +432,22 @@ Use the right test layer for the right decision:
 - `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` proves only the direct expression-layer behavior after normalization has already happened
 
 If a direct `ScalarExpr` test contains nested maps like `%{lower: "hello"}` or `%{==: 10}`, that is a boundary mistake unless the expression layer is explicitly supposed to normalize that shape.
+
+#### Criterion K: Reuse the source-pattern negation wrapper instead of duplicating operator logic
+
+If the source-of-truth builder solves negation by:
+
+- building the positive expression once
+- adding a generic `{:not, term}` blueprint in `specs_for/4`
+- wrapping that expression with `Helpers.negated_expr/1`
+
+then use that same pattern.
+
+Do not:
+
+- create a separate base `:not` expression family in `expr_for/3`
+- duplicate every operator family with manual negated AST
+- flip operators manually unless the approved source pattern or behavior explicitly requires it
 
 ### Pre-Change Checklist
 
@@ -573,6 +602,15 @@ For the remainder of this refactor:
    Clarified meaning:
    Nested scalar wrappers such as `:not`, `:lower`, and `:upper` must also be normalized to tuples before they reach direct `ScalarExpr` tests.
 
+7. Clarification given:
+   “the normalize_term function should return a list when youre given a keyword. it should give you a list of shapes for each entry in a map or keyword container”
+   Initial uncertainty:
+   The earlier normalization proposal still tried to return a single normalized term for some container shapes, including collapsing single-entry keywords into tuples.
+   Interpretation used:
+   Container normalization in `Postgres` should expand maps and keyword lists into a flat list of resolved `{field_key, term}` entries, which can then be reduced and routed using the existing flow.
+   Clarified meaning:
+   For example, `%{id: %{or: %{>: 2, <: 4}}, title: "hello"}` must normalize to `[{:id, {:or, {:>, 2}}}, {:id, {:or, {:<, 4}}}, {:title, "hello"}]`.
+
 ## Progress
 
 Legend:
@@ -604,6 +642,8 @@ Current boundary review:
 - `EctoShorts.Adapters.Postgres` owns container handling and selected-binding validation, then routes non-array, non-common keys to `EctoShorts.Dynamics.Postgres.ScalarExpr.dynamic_expr/4`.
 - `EctoShorts.Dynamics.Postgres.ScalarExpr` is the direct expression layer and should only receive resolved tuple terms.
 - `ScalarExprBuilder` and the compiler path are already in place; the remaining work is extending the generated scalar clauses to cover the missing scalar families.
+- The next scalar-builder correction is structural as well as behavioral: negation should follow the shared `CommonExprBuilder` `specs_for/4` wrapper pattern instead of being treated as a standalone base expression family.
+- The next `Postgres` correction is to normalize containers into a flat list of resolved `{field_key, term}` entries so nested public scalar shapes are fully expanded before routing.
 
 Current repo-grounded failure surface:
 - `mix test test/ecto_shorts/common_filters/scalar_filter_test.exs` fails for comparison operators and aliases beyond equality, list semantics, negation, string matching, and lower/upper transforms.
@@ -1471,5 +1511,176 @@ This section is a historical log of incremental steps. Older checkpoints may des
   `:!=`, `:ne`, `:>`, `:>=`, `:<`, `:<=`, `:gt`, `:gte`, `:lt`, `:lte`, `:in`, `:like`, `:ilike`, and `:not`.
   Reason:
   The builder was still generating clauses only for `:==` and `:eq`, which meant every other direct scalar operator test either fell through to implicit equality or returned `nil`.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 75:
+  Updated the living design sections after re-reading `lib/ecto_shorts/dynamics/postgres/common_expr_builder.ex`.
+  Exact change:
+  Recorded that the source-of-truth negation pattern is:
+  build the positive expression in `expr_for/3`,
+  add a generic `{:not, term}` blueprint in `specs_for/4`,
+  and wrap the positive expression with `Helpers.negated_expr/1`.
+  Also recorded that `:not` should not be treated as a standalone base expression family in `ScalarExprBuilder`.
+  Reason:
+  The earlier scalar explanation described negation too loosely and did not capture the simpler, non-duplicating pattern already used by `CommonExprBuilder`.
+  Validation:
+  Confirmed by rereading the updated `Understanding Summary`, `Key Information to Remember`, `Behaviour Specification`, `Instructions`, `Prevention Analysis`, and `Pre-Task Validation` sections in `DESIGN.md`.
+
+- Checkpoint 76:
+  Updated the normalization target recorded in `DESIGN.md`.
+  Exact change:
+  Recorded that container normalization in `Postgres` should expand maps and keyword lists into a flat list of resolved `{field_key, term}` entries rather than returning a single normalized term for keyword containers.
+  Added the concrete example:
+  `%{id: %{or: %{>: 2, <: 4}}, title: "hello"}`
+  normalizes to
+  `[{:id, {:or, {:>, 2}}}, {:id, {:or, {:<, 4}}}, {:title, "hello"}]`.
+  Reason:
+  The earlier normalization proposal was still too tuple-centric and did not match the user-approved container-expansion rule.
+  Validation:
+  Confirmed by rereading the updated `Key Information to Remember`, `Behaviour Specification`, `Instructions`, `Interpretation Checks`, and `Pre-Task Validation` sections in `DESIGN.md`.
+
+- Checkpoint 77:
+  Added one direct `Postgres.build_dynamic/4` boundary test in `test/ecto_shorts/dynamics/postgres_test.exs`.
+  Exact change:
+  Added a nested scalar-wrapper test asserting that
+  `{:title, %{not: %{==: %{lower: "hello"}}}}`
+  builds the same dynamic as
+  `not (fragment("lower(?)", field(q, :title)) == ^"hello")`.
+  Reason:
+  This is the first focused proof for the newly approved normalization design:
+  normalize once in `build_dynamic/4`, reduce the normalized entry list there, and route resolved tuple terms into `ScalarExpr`.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 78:
+  Added the container-expansion helper family `normalize_term/1` to `lib/ecto_shorts/dynamics/postgres.ex`.
+  Exact change:
+  Added private `normalize_term/1` clauses that:
+  convert non-struct maps to keyword lists,
+  expand keyword containers recursively into flat entry lists such as `{:not, {:==, {:lower, "hello"}}}`,
+  and preserve non-keyword lists and plain terms as single-item lists.
+  The helper is not wired into `build_dynamic/4` yet.
+  Reason:
+  This makes the approved normalization contract explicit in code before changing the runtime control flow that will use it.
+  Validation:
+  Not run yet in this checkpoint.
+
+- Checkpoint 79:
+  Wired one-time normalization into `build_dynamic/4` in `lib/ecto_shorts/dynamics/postgres.ex`.
+  Exact change:
+  `build_dynamic/4` now normalizes `term` once, reduces the resulting entry list, derives `{merge_op, {key, term}}` through a dedicated `expr_entry/2` helper, and routes each resolved field expression through `apply_expr/4`.
+  Reason:
+  This applies the approved design literally:
+  normalization happens once in `build_dynamic/4`, reduction happens there, and the conditional merge extraction is separated into its own function instead of inline control flow.
+  Validation:
+  `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
+  failed at compile time in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`
+  because `expr_for/3` did not yet define the `:in` operator family.
+
+- Checkpoint 80:
+  Added the base `:in` scalar expression clause to `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`.
+  Exact change:
+  Added `expr_for(:in, q_var, {key_var, value_var})` returning
+  `field(q, ^key_var) in ^value_var`.
+  Reason:
+  The first compile-time blocker after wiring normalization into `Postgres` was the missing `:in` family in the scalar builder.
+  Validation:
+  `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
+  failed at compile time in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`
+  because `expr_for/3` did not yet define the `:like` operator family.
+
+- Checkpoint 81:
+  Added the base string-matching expression clauses to `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`.
+  Exact change:
+  Added `expr_for(:like, q_var, {key_var, value_var})` and
+  `expr_for(:ilike, q_var, {key_var, value_var})` returning wildcard-wrapped
+  `like(...)` and `ilike(...)` expressions for scalar string matching.
+  Reason:
+  The next compile-time blocker after adding `:in` was the missing base string-matching family.
+  Validation:
+  `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
+  failed at compile time in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`
+  because `:not` was still being treated as a base expression key instead of a generic negated wrapper in `specs_for/4`.
+
+- Checkpoint 82:
+  Moved scalar negation generation into `specs_for/4` in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`.
+  Exact change:
+  Removed `:not` from `@keys` and added generic negated blueprints for both `{key, nil}` and `{key, value}` shapes using `Helpers.negated_expr/1`, matching the `CommonExprBuilder` pattern.
+  Reason:
+  The approved scalar negation design is to generate negated wrappers from the positive base expression, not to treat `:not` as a standalone base expression family.
+  Validation:
+  `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
+  compiled, then failed with 18 runtime assertion failures.
+  The first failure group showed that `ScalarExpr.dynamic_expr/4` was still coercing resolved tuple terms like `{:not, ...}` into implicit equality instead of passing them through to the compiled module.
+
+- Checkpoint 83:
+  Relaxed tuple passthrough in `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`.
+  Exact change:
+  `ScalarExpr.dynamic_expr/4` now forwards any two-element tuple term directly to `__MODULE__.Compiled.dynamic_expr/3` instead of only forwarding tuples whose outer key is in `@keys`.
+  Reason:
+  After negation moved out of the builder key set, `ScalarExpr` still needed to treat resolved tuple terms generically so wrapper terms like `{:not, ...}` are not silently rewritten as implicit equality.
+  Validation:
+  `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
+  then ran with 55 tests and 16 failures.
+  The remaining failures split cleanly into:
+  lower/upper transform support,
+  list-based membership semantics,
+  and negated list semantics.
+
+- Checkpoint 84:
+  Added lower/upper transform scalar expression clauses to `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`.
+  Exact change:
+  Added `expr_for/3` clauses for
+  `{:==, {:lower, value}}`,
+  `{:==, {:upper, value}}`,
+  `{:!=, {:lower, value}}`,
+  and `{:!=, {:upper, value}}`
+  using `fragment("lower(?)", ...)` and `fragment("upper(?)", ...)`.
+  Reason:
+  The first remaining runtime failure after tuple passthrough was the nested lower-transform boundary case, which showed that transform tuples were still being treated as literal values instead of field transforms.
+  Validation:
+  `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
+  still ran with 55 tests and 16 failures.
+  The transform failures persisted because the new lower/upper clauses were ordered after the generic equality and inequality clauses, so they were never reached.
+
+- Checkpoint 85:
+  Reordered the lower/upper transform clauses in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`.
+  Exact change:
+  Moved the transform-specific equality and inequality `expr_for/3` clauses above the generic equality and inequality clauses so transform tuple terms can match before the broader value clauses.
+  Reason:
+  The transform logic existed but was unreachable due to clause order.
+  Validation:
+  `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
+  still ran with 55 tests and 16 failures.
+  The transform failures persisted because `specs_for/4` still only emitted the generic `{key, value}` heads, so transform tuples were matching the generic clause before the transform-specific expression path could apply.
+
+- Checkpoint 86:
+  Added transform-specific blueprints to `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`.
+  Exact change:
+  Added `specs_for/4` blueprints for
+  `{key, {:lower, value}}`,
+  `{key, {:upper, value}}`,
+  and their negated `{:not, ...}` forms,
+  guarded by `transform in [:lower, :upper]`.
+  Reason:
+  The lower/upper expression logic needed dedicated clause heads at generation time; expression-only support was not enough because the generic `{key, value}` heads were matching first.
+  Validation:
+  `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
+  still ran with 55 tests and 16 failures.
+  Inspecting `_build/test/lib/ecto_shorts/priv/generated/dynamics/postgres/scalar_expr_builder/compiled.ex`
+  showed that the transform-specific blueprints were still generating generic `field(...) == ^{transform, value}` expressions.
+  The cause was that `expr_for/3` was being called at builder-generation time with AST variables, so the transform guard never matched.
+
+- Checkpoint 87:
+  Replaced variable-based transform blueprints with explicit `:lower` / `:upper` heads in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`.
+  Exact change:
+  `specs_for/4` now emits separate blueprints for
+  `{key, {:lower, value}}`,
+  `{key, {:upper, value}}`,
+  and their negated forms,
+  and each blueprint calls `expr_for/3` with a literal transform atom.
+  Reason:
+  The transform-specific AST must be selected at builder-generation time, so the blueprint heads need literal transform atoms instead of a runtime transform variable.
   Validation:
   Not run yet in this checkpoint.

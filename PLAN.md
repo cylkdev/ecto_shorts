@@ -1,54 +1,55 @@
-## Goals
+# Simplify `ScalarExprBuilder` by Moving Shape Branching into Blueprint Bodies
 
-Each directive and each operator must have full defined behaviours through example mapping.
-Together, the examples must show every valid data shape this API accepts. In other words,
-every possible behaviour that this api has should be covered.
+## Summary
+Refactor `ScalarExprBuilder` so each public scalar operator key generates only the minimum blueprint set and handles term-shape branching inside the quoted blueprint body. Keep the current public operator keys, keep `Postgres` normalization as already approved, and make negation generic with `Helpers.negated_expr/1` semantics.
 
-## Task and Key Files
+## Implementation Changes
+- Rework `ScalarExprBuilder.specs_for/4` to emit only two blueprints per operator key:
+  - normal: `head: {key, value_var}`
+  - negated: `head: {:not, {key, value_var}}`
+- Remove the current extra blueprint heads for:
+  - `nil`
+  - `{:lower, value}`
+  - `{:upper, value}`
+  - their negated variants
+- In each blueprint body, use a quoted `case` on `value_var` and unquote the `Helpers.dyn_expr(...)` result for the matching branch.
+- Keep `keys/0` as the current public operator list:
+  - `:==`, `:eq`, `:!=`, `:ne`, `:>`, `:>=`, `:<`, `:<=`, `:gt`, `:gte`, `:lt`, `:lte`, `:in`, `:like`, `:ilike`
+- Partition the branching logic by operator family inside `specs_for/4`:
+  - equality / inequality:
+    - `nil`
+    - `{:lower, value}`
+    - `{:upper, value}`
+    - list semantics for scalar fields
+    - plain scalar value
+  - comparisons:
+    - plain scalar value
+    - raise on `nil`
+  - `:in`:
+    - list value only
+  - `:like` / `:ilike`:
+    - scalar string
+    - list value as `ANY`
+- Keep `expr_for/3` as the positive-expression builder, but call it from inside the branch bodies with the concrete branch shape.
+- Keep negation generic across all scalar families:
+  - negated blueprint body wraps the positive expression with `Helpers.negated_expr/1`
+  - do not add operator-flip special cases in the builder
+- Preserve the current approved structure of:
+  - [postgres.ex](/Users/kurthogarth/Documents/GitHub/ecto_shorts/lib/ecto_shorts/dynamics/postgres.ex)
+  - [scalar_expr.ex](/Users/kurthogarth/Documents/GitHub/ecto_shorts/lib/ecto_shorts/dynamics/postgres/scalar_expr.ex)
 
-Active task: Refactor `EctoShorts.Dynamics.Postgres.ScalarExpr` onto the compiler/builder path for the minimal scalar equality behaviour, then align focused Postgres and CommonFilters tests with that shape.
+## Test Plan
+- Update direct scalar tests in [scalar_expr_test.exs](/Users/kurthogarth/Documents/GitHub/ecto_shorts/test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs) to match generic negation where needed:
+  - `not (field == value)` instead of `field != value`
+  - `not (field != value)` instead of `field == value`
+  - `not (field in list)` instead of `field not in list`
+- Keep the nested `Postgres.build_dynamic/4` normalization test in [postgres_test.exs](/Users/kurthogarth/Documents/GitHub/ecto_shorts/test/ecto_shorts/dynamics/postgres_test.exs) and expect generic negation there as well.
+- Focused validation after each small implementation step:
+  - `mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
+  - `mix test test/ecto_shorts/dynamics/postgres_test.exs`
+  - then `mix test test/ecto_shorts/common_filters/scalar_filter_test.exs`
 
-Key files:
-- `PLAN.md`
-- `DESIGN.md`
-- `BINDING_REFACTOR_PLAN.md`
-- `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`
-- `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`
-- `lib/ecto_shorts/dynamics/postgres.ex`
-- `test/ecto_shorts/dynamics/postgres_test.exs`
-- `test/ecto_shorts/common_filters_test.exs`
-
-Document updates to track in the same change:
-- Keep `DESIGN.md`, `PLAN.md`, and `BINDING_REFACTOR_PLAN.md` in sync as the task, proof path, or ownership changes.
-
-## Milestones
-
-Keep the Milestones section up to date as you work. Milestones track your larger portions of work, including required document creation and companion-document sync when the task changes shape.
-
-### ScalarExpr Compiler Refactor
-
-Status: Complete
-
-- [x] `ScalarExpr` uses the compiler/builder path for the minimal scalar equality behaviour
-- [x] `Postgres` keeps map and keyword-list handling at the container-routing layer
-- [x] Focused `CommonFilters` and `Postgres` validation proves named and positional binding behaviour
-- [x] The obsolete scalar specs test file is removed after the focused path is proven
-
-Validation:
-
-- [x] The focused refactor plan stays synchronized with `PLAN.md`
-- [x] `mix test test/ecto_shorts/compiler_test.exs` passes
-- [x] `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/dynamics/postgres_test.exs` passes
-
-## Progress
-
-Keep the progress section up to date as you work.
-
-**Legend:**
-[ ] not started
-[~] in progress
-[x] completed
- 
-- [x] Create or refresh the active planning document and keep its `Task and Key Files` section current.
-- [x] Keep `PLAN.md` and every required companion planning document in sync with the current task.
-- [x] Record the next concrete behaviour, example, or proof step here.
+## Assumptions
+- Generic negation applies to all scalar operator families, not just equality / inequality.
+- `ScalarExprBuilder` should stay a single builder with the current public operator keys rather than introducing internal family keys or multiple builders.
+- The current blueprint explosion is a design problem in `specs_for/4`, not a reason to change the compiler, `Postgres`, or the public scalar term shape.
