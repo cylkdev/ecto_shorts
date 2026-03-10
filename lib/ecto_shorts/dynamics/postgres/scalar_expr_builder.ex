@@ -40,28 +40,33 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
       %Blueprint{
         guard: nil,
         key: key_var,
+        head: {:not, {directive, value_var}},
+        body:
+          quote do
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                Helpers.negated_expr(field_expr),
+                context
+              )
+            )
+          end
+      },
+      %Blueprint{
+        guard: nil,
+        key: key_var,
         head: {directive, value_var},
         body:
           quote do
-            if unquote(key_var) === :not do
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  Helpers.negated_expr(field_expr),
-                  context
-                )
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                field_expr,
+                context
               )
-            else
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  field_expr,
-                  context
-                )
-              )
-            end
+            )
           end
       }
     ]

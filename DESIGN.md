@@ -244,6 +244,7 @@ That caused several concrete mistakes:
 - claiming a documentation update had been written when it had not been written
 - hardening behavior with extra guards even when the scoped tests and approved behavior did not require that hardening
 - leaking public container shapes into direct expression-layer tests instead of using fully resolved tuple shapes
+- reasoning from `specs_for/4` argument names instead of from the generator contract that `Blueprint.key` becomes generated argument 2 and `Blueprint.head` becomes generated argument 3
 
 ### Root Causes
 
@@ -289,6 +290,22 @@ At one point, an extra guard was added in `ScalarExpr.dynamic_expr/4` to avoid c
 #### 9. Boundary normalization was applied only at the outermost layer
 
 When direct `ScalarExpr` tests were expanded, some new tests converted only the outermost shape to a tuple and left nested wrapper payloads as maps. That produced partially normalized terms such as `{:not, %{==: %{lower: "hello"}}}` instead of fully resolved expression-layer terms like `{:not, {:==, {:lower, "hello"}}}`.
+
+#### 10. The generator contract was not kept explicit while refactoring the builder
+
+The builder refactor treated the first `specs_for/4` argument name such as `key` or `directive` as if it directly controlled the generated `dynamic_expr/3` argument positions. That was wrong.
+
+The actual contract is in `EctoShorts.Generator.AST.quote_def/2`:
+
+- `Blueprint.key` becomes generated argument 2
+- `Blueprint.head` becomes generated argument 3
+
+For the scalar expression layer, that means:
+
+- generated argument 2 must be the schema field key
+- generated argument 3 must be the resolved scalar term such as `{:eq, value}` or `{:not, {:eq, value}}`
+
+Losing track of that contract caused the generated clause shape to flip into `dynamic_expr(binding, :eq, {key, value})` instead of the required `dynamic_expr(binding, key, {:eq, value})`. It also led to negation checks against the field key variable, which can never correctly represent the scalar wrapper shape.
 
 ### Decision Criteria
 
@@ -448,6 +465,26 @@ Do not:
 - create a separate base `:not` expression family in `expr_for/3`
 - duplicate every operator family with manual negated AST
 - flip operators manually unless the approved source pattern or behavior explicitly requires it
+
+#### Criterion L: Derive generated clause shape from `Blueprint`, not from local builder argument names
+
+Before changing any builder that feeds `EctoShorts.Generator.AST.quote_def/2`, restate the contract explicitly:
+
+- `Blueprint.key` becomes `dynamic_expr/3` argument 2
+- `Blueprint.head` becomes `dynamic_expr/3` argument 3
+
+For this scalar task, the required generated shape is:
+
+- `dynamic_expr(binding, key, {:operator, value})`
+- not `dynamic_expr(binding, :operator, {key, value})`
+
+That means:
+
+- the schema field key belongs in `Blueprint.key`
+- the scalar operator wrapper belongs in `Blueprint.head`
+- negation checks must inspect the resolved scalar term shape, not the field key variable
+
+If a refactor idea cannot preserve those facts, the idea is wrong even if the local builder code looks simpler.
 
 ### Pre-Change Checklist
 
