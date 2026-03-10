@@ -12,17 +12,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     :ne
   ]
 
-  @comparison_directives @equality_directives ++
-                           [
-                             :>,
-                             :>=,
-                             :<,
-                             :<=,
-                             :gt,
-                             :gte,
-                             :lt,
-                             :lte
-                           ]
+  @comparison_directives [:>, :>=, :<, :<=, :gt, :gte, :lt, :lte | @equality_directives]
 
   @membership_directives [
     :in
