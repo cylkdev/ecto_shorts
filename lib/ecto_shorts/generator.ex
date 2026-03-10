@@ -9,9 +9,8 @@ defmodule EctoShorts.Generator do
   Returns the written module name and file path.
   """
   def write_module_file(builder, module_name, opts \\ []) do
-    builder
-    |> generate_module(module_name, opts)
-    |> write_module()
+    {generated_module_name, path, content} = generate_module(builder, module_name, opts)
+    {generated_module_name, path, write_file(path, content)}
   end
 
   @doc false
@@ -36,11 +35,6 @@ defmodule EctoShorts.Generator do
     File.mkdir_p!(parent_dir)
     File.write!(final_path, content)
     final_path
-  end
-
-  @doc false
-  def write_module({compiled_module_name, path, content}) do
-    {compiled_module_name, write_file(path, content)}
   end
 
   defp module_to_path(builder) do
