@@ -20,7 +20,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.StringUpperLower,
-        keys: [:string_comparison],
+        keys: [:string_transform],
         positions: @max_binding_positions
       ],
       [
