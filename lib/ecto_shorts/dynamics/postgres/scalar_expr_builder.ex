@@ -31,10 +31,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
   @operators @comparison_operators ++ @membership_operators ++ @string_operators
 
+  @keys [:comparison, :membership, :string]
+
   @behaviour EctoShorts.Generator.ClauseSpec
 
   @impl true
-  def keys, do: [nil]
+  def keys, do: @keys
 
   @impl true
   def specs_for(_, {bind_op, bind_to_var}, q_var, opts) do
@@ -53,7 +55,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(:in, q_var, nil, {key_var, value_var}),
+                    quote_negated_expr(:in, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -63,7 +65,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(:in, q_var, nil, {key_var, value_var}),
+                    quote_expr(:in, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -78,7 +80,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(string_op, q_var, :any, {key_var, value_var}),
+                    quote_negated_expr({string_op, :any}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -89,7 +91,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(string_op, q_var, :any, {key_var, value_var}),
+                    quote_expr({string_op, :any}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -100,7 +102,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(string_op, q_var, nil, {key_var, value_var}),
+                    quote_negated_expr(string_op, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -111,7 +113,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(string_op, q_var, nil, {key_var, value_var}),
+                    quote_expr(string_op, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -126,7 +128,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(:in, q_var, nil, {key_var, value_var}),
+                    quote_negated_expr(:in, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -137,7 +139,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(:in, q_var, nil, {key_var, value_var}),
+                    quote_expr(:in, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -148,7 +150,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, nil, {key_var, nil}),
+                    quote_negated_expr(op, q_var, {key_var, nil}),
                     context
                   )
                 )
@@ -159,7 +161,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, nil, {key_var, nil}),
+                    quote_expr(op, q_var, {key_var, nil}),
                     context
                   )
                 )
@@ -170,7 +172,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, :lower, {key_var, value_var}),
+                    quote_negated_expr({op, :lower}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -181,7 +183,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, :lower, {key_var, value_var}),
+                    quote_expr({op, :lower}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -192,7 +194,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, :upper, {key_var, value_var}),
+                    quote_negated_expr({op, :upper}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -203,7 +205,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, :upper, {key_var, value_var}),
+                    quote_expr({op, :upper}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -214,7 +216,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, nil, {key_var, value_var}),
+                    quote_negated_expr(op, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -225,7 +227,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, nil, {key_var, value_var}),
+                    quote_expr(op, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -240,7 +242,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(:in, q_var, nil, {key_var, value_var}),
+                    quote_expr(:in, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -251,7 +253,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(:in, q_var, nil, {key_var, value_var}),
+                    quote_negated_expr(:in, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -262,7 +264,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, nil, {key_var, nil}),
+                    quote_negated_expr(op, q_var, {key_var, nil}),
                     context
                   )
                 )
@@ -273,7 +275,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, nil, {key_var, nil}),
+                    quote_expr(op, q_var, {key_var, nil}),
                     context
                   )
                 )
@@ -284,7 +286,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, :lower, {key_var, value_var}),
+                    quote_negated_expr({op, :lower}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -295,7 +297,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, :lower, {key_var, value_var}),
+                    quote_expr({op, :lower}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -306,7 +308,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, :upper, {key_var, value_var}),
+                    quote_negated_expr({op, :upper}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -317,7 +319,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, :upper, {key_var, value_var}),
+                    quote_expr({op, :upper}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -328,7 +330,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, nil, {key_var, value_var}),
+                    quote_negated_expr(op, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -339,7 +341,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, nil, {key_var, value_var}),
+                    quote_expr(op, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -354,7 +356,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, :lower, {key_var, value_var}),
+                    quote_negated_expr({op, :lower}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -365,7 +367,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, :lower, {key_var, value_var}),
+                    quote_expr({op, :lower}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -376,7 +378,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, :upper, {key_var, value_var}),
+                    quote_negated_expr({op, :upper}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -387,7 +389,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, :upper, {key_var, value_var}),
+                    quote_expr({op, :upper}, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -398,7 +400,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    negated_expr_for(op, q_var, nil, {key_var, value_var}),
+                    quote_negated_expr(op, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -409,7 +411,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
                     q_var,
-                    expr_for(op, q_var, nil, {key_var, value_var}),
+                    quote_expr(op, q_var, {key_var, value_var}),
                     context
                   )
                 )
@@ -434,34 +436,49 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     ]
   end
 
-  defp negated_expr_for(op, q_var, meta, {key_var, value_var}) when op in [:==, :eq] do
-    expr_for(:!=, q_var, meta, {key_var, value_var})
+  @doc false
+  def quote_negated_expr({op, meta}, q_var, {key_var, value_var}) when op in [:==, :eq] do
+    quote_expr({:!=, meta}, q_var, {key_var, value_var})
   end
 
-  defp negated_expr_for(op, q_var, meta, {key_var, value_var}) when op in [:!=, :ne] do
-    expr_for(:==, q_var, meta, {key_var, value_var})
+  def quote_negated_expr({op, meta}, q_var, {key_var, value_var}) when op in [:!=, :ne] do
+    quote_expr({:==, meta}, q_var, {key_var, value_var})
   end
 
-  defp negated_expr_for(op, q_var, meta, {key_var, value_var}) do
+  def quote_negated_expr(op, q_var, {key_var, value_var}) when op in [:==, :eq] do
+    quote_expr(:!=, q_var, {key_var, value_var})
+  end
+
+  def quote_negated_expr(op, q_var, {key_var, value_var}) when op in [:!=, :ne] do
+    quote_expr(:==, q_var, {key_var, value_var})
+  end
+
+  def quote_negated_expr({op, meta}, q_var, {key_var, value_var}) do
+    {op, meta}
+    |> quote_expr(q_var, {key_var, value_var})
+    |> Helpers.negated_expr()
+  end
+
+  def quote_negated_expr(op, q_var, {key_var, value_var}) do
     op
-    |> expr_for(q_var, meta, {key_var, value_var})
+    |> quote_expr(q_var, {key_var, value_var})
     |> Helpers.negated_expr()
   end
 
   @doc false
-  def expr_for(op, q_var, _, {key_var, nil}) when op in [:==, :eq] do
+  def quote_expr(op, q_var, {key_var, nil}) when op in [:==, :eq] do
     quote do
       is_nil(field(unquote(q_var), ^unquote(key_var)))
     end
   end
 
-  def expr_for(op, q_var, _, {key_var, nil}) when op in [:!=, :ne] do
+  def quote_expr(op, q_var, {key_var, nil}) when op in [:!=, :ne] do
     quote do
       not is_nil(field(unquote(q_var), ^unquote(key_var)))
     end
   end
 
-  def expr_for(op, q_var, meta, {key_var, value_var})
+  def quote_expr({op, meta}, q_var, {key_var, value_var})
       when op in @comparison_operators and meta in [:lower, :upper] do
     content =
       if meta === :lower do
@@ -480,7 +497,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     end
   end
 
-  def expr_for(op, q_var, :any, {key_var, value_var}) when op in @string_operators do
+  def quote_expr({op, :any}, q_var, {key_var, value_var}) when op in @string_operators do
     content =
       if op === :like do
         "? LIKE ANY(?)"
@@ -502,19 +519,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     end
   end
 
-  def expr_for(:like, q_var, _, {key_var, value_var}) do
+  def quote_expr(:like, q_var, {key_var, value_var}) do
     quote do
       like(field(unquote(q_var), ^unquote(key_var)), ^"%#{unquote(value_var)}%")
     end
   end
 
-  def expr_for(:ilike, q_var, _, {key_var, value_var}) do
+  def quote_expr(:ilike, q_var, {key_var, value_var}) do
     quote do
       ilike(field(unquote(q_var), ^unquote(key_var)), ^"%#{unquote(value_var)}%")
     end
   end
 
-  def expr_for(op, q_var, _, {key_var, value_var}) do
+  def quote_expr(op, q_var, {key_var, value_var}) do
     field_expr =
       quote do
         field(unquote(q_var), ^unquote(key_var))
