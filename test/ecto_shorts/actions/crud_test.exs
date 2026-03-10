@@ -112,6 +112,79 @@ defmodule EctoShorts.Actions.CRUDTest do
 
       assert [%Post{title: "A"}, %Post{title: "B"}] = results
     end
+
+    test "sorts results by a named binding when order_by uses the live :as shape" do
+      author_zoe =
+        %User{}
+        |> User.changeset(%{first_name: "Zoe"})
+        |> Repo.insert!()
+
+      author_amy =
+        %User{}
+        |> User.changeset(%{first_name: "Amy"})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "A Post", author_id: author_zoe.id})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Z Post", author_id: author_amy.id})
+      |> Repo.insert!()
+
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      results =
+        Actions.all(q, %{
+          as: %{
+            author: %{
+              order_by: %{asc: :first_name}
+            }
+          }
+        })
+
+      assert Enum.map(results, & &1.title) === ["Z Post", "A Post"]
+    end
+
+    test "sorts results by a positional binding when order_by uses the live :at shape" do
+      author_zoe =
+        %User{}
+        |> User.changeset(%{first_name: "Zoe"})
+        |> Repo.insert!()
+
+      author_amy =
+        %User{}
+        |> User.changeset(%{first_name: "Amy"})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "A Post", author_id: author_zoe.id})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Z Post", author_id: author_amy.id})
+      |> Repo.insert!()
+
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      results =
+        Actions.all(q, %{
+          at: %{
+            2 => %{
+              order_by: %{asc: :first_name}
+            }
+          }
+        })
+
+      assert Enum.map(results, & &1.title) === ["Z Post", "A Post"]
+    end
   end
 
   describe "all/3 filters" do

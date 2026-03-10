@@ -37,12 +37,26 @@ defmodule EctoShorts.CommonFilters do
     cond do
       key in @filters ->
         Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
-          apply_filters(key, source, query_acc, selected_binding, {inner_key, inner_value}, opts)
+          apply_filters(
+            key,
+            source,
+            query_acc,
+            selected_binding,
+            {inner_key, inner_value},
+            opts
+          )
         end)
 
       Keyword.keyword?(term) ->
         Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
-          build_query(filter, source, query_acc, selected_binding, {inner_key, inner_value}, opts)
+          build_query(
+            filter,
+            source,
+            query_acc,
+            selected_binding,
+            {inner_key, inner_value},
+            opts
+          )
         end)
 
       true ->
