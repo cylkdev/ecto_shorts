@@ -114,3 +114,20 @@
 #       end
 #   end
 # end
+
+defmodule EctoShorts.CommonFilters.Preload do
+  alias Ecto.Query
+
+  require Ecto.Query
+
+  def build_query(:preload, _source, query, _selected_binding, params, _opts) do
+    Query.preload(query, ^normalize_params(params))
+  end
+
+  defp normalize_params(params) when is_map(params) and not is_struct(params) do
+    Map.to_list(params)
+  end
+
+  defp normalize_params(param) when is_atom(param), do: [param]
+  defp normalize_params(params), do: params
+end

@@ -3,13 +3,14 @@ defmodule EctoShorts.CommonFilters do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Adapters.Postgres
-  alias EctoShorts.CommonFilters.{OrderBy, Where}
+  alias EctoShorts.CommonFilters.{OrderBy, Preload, Where}
 
   @default_selected_binding {:as, nil}
 
   @order_by_filters [:order_by]
+  @query_filters @order_by_filters ++ [:preload]
   @where_filters [:where, :or_where]
-  @filters @order_by_filters ++ @where_filters
+  @filters @query_filters ++ @where_filters
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
@@ -35,7 +36,7 @@ defmodule EctoShorts.CommonFilters do
 
   defp apply_filters(filter, source, query, selected_binding, {key, term}, opts) do
     cond do
-      key in @filters ->
+      key in @where_filters and is_list(term) ->
         Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
           apply_filters(
             key,
@@ -47,17 +48,8 @@ defmodule EctoShorts.CommonFilters do
           )
         end)
 
-      Keyword.keyword?(term) ->
-        Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
-          build_query(
-            filter,
-            source,
-            query_acc,
-            selected_binding,
-            {inner_key, inner_value},
-            opts
-          )
-        end)
+      key in @query_filters ->
+        build_query(key, source, query, selected_binding, term, opts)
 
       true ->
         build_query(filter, source, query, selected_binding, {key, term}, opts)
@@ -78,6 +70,16 @@ defmodule EctoShorts.CommonFilters do
     case filter do
       order_by_filter when order_by_filter in @order_by_filters ->
         OrderBy.build_query(
+          filter,
+          source,
+          query,
+          selected_binding,
+          term,
+          opts
+        )
+
+      :preload ->
+        Preload.build_query(
           filter,
           source,
           query,

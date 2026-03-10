@@ -95,6 +95,8 @@ When discussing changes or before implentation:
 - Treat a change as meaningful if it affects what the reader will see or experience.
 - Treat a change as meaningful if it affects how someone uses the public interface.
 - Treat a change as meaningful if it changes inputs, outputs, names, behavior, errors, defaults, or configuration that the reader must know about.
+- Keep your scope limited to what the user-observable evidence supports.
+- If completing the task requires expanding or changing the scope, ask the user for approval first.
 
 ---
 
@@ -151,18 +153,97 @@ Use the steps to plan before you implement a feature or make changes to code:
 
 #### What to do
 
-When making code changes (implementing) you must first complete these steps
-then continue with your usual process:
+When making code changes during implementation, complete the following steps before proceeding with your normal workflow:
+
+1. **Confirm planning is complete** 
+
+Verify that the planning phase is finished and that you have a clear, stable understanding of the task.
+
+2. **Present your implementation plan**  
+
+Explain your intended approach to the user before making changes. Provide a clear step-by-step plan, the reasoning behind each step, and the expected outcome.
+
+3. **Favor accuracy over speed**  
+
+If any implementation detail is still unclear, make only a small, controlled set of changes at a time.
+
+“Clear” means the feature has been reviewed and approved end to end, and the user agrees with your interpretation of how it should work, including details such as:
+- how modules interact
+- how functions are called across modules
+- the signature of each function
+- the specific APIs or patterns to use, such as whether to use `Enum.reduce` or an alternative
+
+The standard is that every meaningful decision has already been thought through and reviewed so thoroughly that, by the time coding begins, the solution is nearly complete and implementation is largely mechanical.
+
+4. **Explain each change after making it**  
+
+Tell the user exactly what you changed and show the code change.
+
+5. **State why the change was made**  
+
+Describe the purpose of the change, the problem it solves, and how it advances the task.
+
+6. **Request review**  
+
+Ask for feedback and confirm whether the result matches the intended outcome.
+
+7. **Pause for user response**  
+
+Stop and wait for the user to respond before making any further changes.
+
+8. **Proceed only after review**
+
+- If the user approves, continue to the next step.
+- If the user gives feedback or requests revisions, incorporate that feedback into your plan and update your understanding to reflect any corrections, gaps, or refinements.
+
+9. **Restart the process for further changes**  
+
+If additional changes are needed, begin the Implementation Phase again from step 1.
+
+10. **Repeat for every incremental change**
+
+Treat each additional change as a separate reviewed unit. Do not make further changes until the current change has been explicitly reviewed and approved, or rejected and reverted.
+
+When making code changes (implementing) you must first complete these steps then continue with your usual process:
 
 1. Verify that the planning phase is complete and you have a clear understanding of the task.
+
 2. Explain your plan of action to the user. Provide a clear, step-by-step outline of what you intend to do, explain your line of reasoning for each step, and state the expected outcome.
-3. Prioritize accuracy over speed. Make one small, deliberate change.
+
+3. Prioritize accuracy over speed. If the implementation details are not fully clear, make only a small number of changes at a time. "Fully clear" means the entire feature has been reviewed and approved by the user from beginning to end.
+
+Before making any code changes, you must be able to answer all of the following accurately:
+
+- What patterns exist already in the code that can be leveraged?
+- What is the goal of the user?
+- What is the architecture of the application?
+- Which boundaries and layers of the codebase are involved?
+- How do the modules interact?
+- How are functions invoked?
+- What is the exact signature of each function?
+- Which function, API, or pattern should be used, such as Enum.reduce or an alternative?
+- What is the responsibility of each function?
+- What are the boundaries of each function?
+- What data structures are being used?
+- What edge cases need to be handled?
+- What existing functionality can be leveraged?
+- What files/modules are you allowed to change?
+- Should this be implemented in a new file or added to an existing one? If it is added to an existing file, how will you avoid breaking working code?
+
+Every key decision should be thought through and reviewed thoroughly so that by the time you begin coding, the work is 90% complete and the 10% left is you writing it.
+
 4. Explain what you changed to the user and show the code change.
+
 5. Describe the purpose of the change, what problem it solves, and how it moves the task forward.
+
 6. Ask for feedback and verify that the result matches the intended outcome.
+
 7. Stop and wait for the user to respond.
+
 8. If the user approves, continue with the next step. If the user provides feedback or requests changes, incorporate their feedback into your plan. Update your plan with any corrections, gaps, or refinements to your understanding.
+
 9. If additional changes are required, re-start the Implementation Phase from step 1.
+
 10. Repeat the Implementation Phase for each additional change. Do not make additional changes until the current one has been reviewed and approved or rejected and reverted.
 
 #### What not to do
