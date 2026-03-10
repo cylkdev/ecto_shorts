@@ -73,6 +73,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
         string_op when string_op in @string_operators ->
           [
             quote do
+              {unquote(string_op), unquote(value_var)} when is_list(unquote(value_var)) ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    expr_for(string_op, q_var, :any, {key_var, value_var}),
+                    context
+                  )
+                )
+            end,
+            quote do
               {:not, {unquote(string_op), unquote(value_var)}} ->
                 unquote(
                   Helpers.dyn_expr(
@@ -99,6 +110,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
         op when op in [:==, :eq] ->
           [
             quote do
+              {unquote(op), unquote(value_var)} when is_list(unquote(value_var)) ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    expr_for(:in, q_var, nil, {key_var, value_var}),
+                    context
+                  )
+                )
+            end,
+            quote do
               {unquote(op), nil} ->
                 unquote(
                   Helpers.dyn_expr(
@@ -113,6 +135,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
         op when op in [:!=, :ne] ->
           [
+            quote do
+              {unquote(op), unquote(value_var)} when is_list(unquote(value_var)) ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    Helpers.negated_expr(expr_for(:in, q_var, nil, {key_var, value_var})),
+                    context
+                  )
+                )
+            end,
             quote do
               {unquote(op), nil} ->
                 unquote(
@@ -243,6 +276,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
     quote do
       unquote(special_form_ast(fragment_expr, op, pinned_ast(value_var)))
+    end
+  end
+
+  def expr_for(op, q_var, :any, {key_var, value_var}) when op in @string_operators do
+    content =
+      if op === :like do
+        "? LIKE ANY(?)"
+      else
+        "? ILIKE ANY(?)"
+      end
+
+    patterns_expr =
+      quote do
+        Enum.map(unquote(value_var), fn value -> "%#{value}%" end)
+      end
+
+    quote do
+      fragment(
+        unquote(content),
+        field(unquote(q_var), ^unquote(key_var)),
+        ^unquote(patterns_expr)
+      )
     end
   end
 
