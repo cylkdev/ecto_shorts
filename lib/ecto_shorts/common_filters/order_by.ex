@@ -14,7 +14,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   ]
 
   {target_binding_var, binding_patterns} =
-    Compiler.get_query_binding_contracts(__MODULE__, positions: 10)
+    Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
   def build_query(:order_by, _source, query, selected_binding, params, _opts) do
     apply_order_by_expr(query, selected_binding, params)

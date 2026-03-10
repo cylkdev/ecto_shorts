@@ -2,6 +2,8 @@
 trigger: always_on
 ---
 
+- Do not act immediately when you receive a request. Take a moment to fully understand the request and its context.
+
 ## Scope Guidelines
 
 - Avoid Scope Creep. Do not expand the scope of a request without explicit user approval. Do not modify additional files, layers, contracts, generators, tests, APIs, architecture, or behavior unless I explicitly tell you to do so. If you think a broader change is necessary, stop, name the exact blocker, name the exact additional scope required, and wait for my approval before making any out-of-scope change.

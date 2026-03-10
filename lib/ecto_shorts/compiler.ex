@@ -89,7 +89,7 @@ defmodule EctoShorts.Compiler do
     end)
   end
 
-  def get_query_binding_contracts(context, opts \\ []) do
+  def query_binding_contracts(context, opts \\ []) do
     QueryBindingBuilder.query_binding_contracts(
       context,
       max_binding_positions(opts)
@@ -481,7 +481,7 @@ end
 #     context = __CALLER__.module
 
 #     {target_binding_var_ast, binding_patterns_ast} =
-#       get_query_binding_contracts(context, opts)
+#       query_binding_contracts(context, opts)
 
 #     quote do
 #       unquote(target_binding_var) = unquote(Macro.escape(target_binding_var_ast))
@@ -524,7 +524,7 @@ end
 #   @doc false
 #   def build_clauses(context, specs_module, opts) do
 #     {target_binding_var, binding_patterns} =
-#       get_query_binding_contracts(context, opts)
+#       query_binding_contracts(context, opts)
 
 #     Enum.flat_map(binding_patterns, fn {binding_head_ast, binding_body_asts} ->
 #       context
@@ -534,7 +534,7 @@ end
 #   end
 
 #   @doc false
-#   def get_query_binding_contracts(context, opts \\ []) do
+#   def query_binding_contracts(context, opts \\ []) do
 #     QueryBindingBuilder.query_binding_contracts(
 #       context,
 #       max_binding_positions(opts)

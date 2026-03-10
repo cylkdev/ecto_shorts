@@ -10,7 +10,6 @@ defmodule EctoShorts.CommonFilters do
   @order_by_filters [:order_by]
   @query_filters @order_by_filters ++ [:preload]
   @where_filters [:where, :or_where]
-  @filters @query_filters ++ @where_filters
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
