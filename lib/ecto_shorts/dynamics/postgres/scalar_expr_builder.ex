@@ -96,6 +96,21 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
             end
           ]
 
+        :== ->
+          [
+            quote do
+              {:==, nil} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    expr_for(:==, q_var, nil, {key_var, nil}),
+                    context
+                  )
+                )
+            end
+          ]
+
         op ->
           [
             quote do
