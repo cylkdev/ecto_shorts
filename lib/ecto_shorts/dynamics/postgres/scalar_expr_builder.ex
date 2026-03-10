@@ -5,22 +5,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   alias EctoShorts.Generator.Blueprint
   alias EctoShorts.Dynamics.Helpers
 
-  @comparison_operators [
+  @equality_directives [
     :==,
     :eq,
     :!=,
-    :ne,
-    :>,
-    :>=,
-    :<,
-    :<=,
-    :gt,
-    :gte,
-    :lt,
-    :lte
+    :ne
   ]
 
-  @string_operators [
+  @comparison_directives @equality_directives ++
+                           [
+                             :>,
+                             :>=,
+                             :<,
+                             :<=,
+                             :gt,
+                             :gte,
+                             :lt,
+                             :lte
+                           ]
+
+  @membership_directives [
+    :in
+  ]
+
+  @string_transform_directives [
+    :lower,
+    :upper
+  ]
+
+  @string_directives [
     :like,
     :ilike
   ]
@@ -31,6 +44,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
   @impl true
   def directives, do: @directives
+
+  def directives(:membership), do: @membership_directives
+  def directives(:equality), do: @equality_directives
+  def directives(:comparison), do: @comparison_directives
+  def directives(:string_transform), do: @string_transform_directives
+  def directives(:string), do: @string_directives
 
   @impl true
   def specs_for(directive, binding_selector_ast, q_var, opts) do
@@ -100,7 +119,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   defp comparison_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do
-    Enum.flat_map(@comparison_operators, fn
+    Enum.flat_map(@comparison_directives, fn
       op when op in [:==, :eq] ->
         [
           quote do
@@ -341,7 +360,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   defp string_transform_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do
-    Enum.flat_map(@comparison_operators, fn
+    Enum.flat_map(@comparison_directives, fn
       op when op in [:==, :eq] ->
         [
           quote do
@@ -489,7 +508,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   defp string_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do
-    Enum.flat_map(@string_operators, fn string_op ->
+    Enum.flat_map(@string_directives, fn string_op ->
       [
         quote do
           {:not, {unquote(string_op), unquote(value_var)}} when is_list(unquote(value_var)) ->
@@ -582,7 +601,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   def quote_expr({op, meta}, q_var, {key_var, value_var})
-      when op in @comparison_operators and meta in [:lower, :upper] do
+      when op in @comparison_directives and meta in [:lower, :upper] do
     content =
       if meta === :lower do
         "lower(?)"
@@ -600,7 +619,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     end
   end
 
-  def quote_expr({op, :any}, q_var, {key_var, value_var}) when op in @string_operators do
+  def quote_expr({op, :any}, q_var, {key_var, value_var}) when op in @string_directives do
     content =
       if op === :like do
         "? LIKE ANY(?)"

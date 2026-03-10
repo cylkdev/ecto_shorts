@@ -10,7 +10,7 @@ trigger: always_on
 
 ## Problem Solving
 
-- Do not decide on your own how to solve a problem, even when the answer seems obvious. First confirm your understanding with the user. Make sure your interpretation matches their intended outcome before you act.
+- Do not decide on your own how to solve a problem, even when the answer seems obvious. First validate your understanding with the user. Make sure your interpretation matches their intended outcome before you act.
 - When there is an issue focus on the root of the problem and not the symptom.
 - Take a systematic approach to every error and warning.
 - Assume the cause may not be immediately obvious.

@@ -32,6 +32,9 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     ]
 
   @directives ScalarExprBuilder.directives()
+  @comparison_directives ScalarExprBuilder.directives(:comparison)
+  @equality_directives ScalarExprBuilder.directives(:equality)
+  @string_directives ScalarExprBuilder.directives(:string)
 
   def directives, do: @directives
 
@@ -48,17 +51,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     __MODULE__.Compiled.Membership
   end
 
-  defp resolver(op, value) when op in [:==, :eq, :!=, :ne] and is_list(value) do
+  defp resolver(op, value) when op in @equality_directives and is_list(value) do
     __MODULE__.Compiled.Membership
   end
 
   defp resolver(op, {transform, _})
-       when op in [:==, :eq, :!=, :ne, :>, :>=, :<, :<=, :gt, :gte, :lt, :lte] and
-              transform in [:lower, :upper] do
+       when op in @comparison_directives and transform in [:lower, :upper] do
     __MODULE__.Compiled.StringUpperLower
   end
 
-  defp resolver(op, {transform, _}) when op in [:like, :ilike] do
+  defp resolver(op, {transform, _}) when op in @string_directives do
     if transform in [:lower, :upper] do
       __MODULE__.Compiled.StringUpperLower
     else
@@ -66,7 +68,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     end
   end
 
-  defp resolver(op, _value) when op in [:like, :ilike] do
+  defp resolver(op, _value) when op in @string_directives do
     __MODULE__.Compiled.String
   end
 
