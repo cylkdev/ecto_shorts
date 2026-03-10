@@ -1,3 +1,12 @@
+defmodule EctoShorts.CommonFilters.OrderBy do
+  alias Ecto.Query
+  require Ecto.Query
+
+  def build_query(_filter, _source, query, _selected_binding, dyn, _opts) do
+    Query.order_by(query, ^dyn)
+  end
+end
+
 # defmodule EctoShorts.CommonFilters.OrderBy do
 #   @moduledoc since: "3.0.0"
 #   @moduledoc """
