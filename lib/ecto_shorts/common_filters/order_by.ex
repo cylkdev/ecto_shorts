@@ -2,8 +2,9 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   alias Ecto.Query
   require Ecto.Query
 
-  def build_query(_filter, _source, query, _selected_binding, dyn, _opts) do
-    Query.order_by(query, ^dyn)
+  def build_query(_filter, _source, query, {:as, nil}, {dir, field_name}, _opts)
+      when dir in [:asc, :desc] and is_atom(field_name) do
+    Query.order_by(query, [q], [{^dir, field(q, ^field_name)}])
   end
 end
 

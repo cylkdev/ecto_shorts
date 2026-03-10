@@ -61,26 +61,26 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp build_query(filter, source, query, selected_binding, term, opts) do
-    dyn =
-      Postgres.build_dynamic(
-        source,
-        selected_binding,
-        term,
-        opts
-      )
-
     case filter do
-      @order_by_filter ->
+      order_by_filter when order_by_filter in @order_by_filters ->
         OrderBy.build_query(
           filter,
           source,
           query,
           selected_binding,
-          dyn,
+          term,
           opts
         )
 
       where_filter when where_filter in @where_filters ->
+        dyn =
+          Postgres.build_dynamic(
+            source,
+            selected_binding,
+            term,
+            opts
+          )
+
         Where.build_query(
           where_filter,
           source,
