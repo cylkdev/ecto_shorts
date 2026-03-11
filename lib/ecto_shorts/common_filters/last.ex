@@ -5,6 +5,8 @@ defmodule EctoShorts.CommonFilters.Last do
   alias Ecto.Query
   require Ecto.Query
 
+  @logger_prefix EctoShorts.CommonFilters.Last
+
   def build_query(:last, source, query, selected_binding, term, opts)
       when (is_map(term) and not is_struct(term)) or is_list(term) do
     term
@@ -35,5 +37,10 @@ defmodule EctoShorts.CommonFilters.Last do
 
   def build_query(:last, source, query, selected_binding, limit, opts) when is_integer(limit) do
     build_query(:last, source, query, selected_binding, {nil, limit}, opts)
+  end
+
+  def build_query(:last, _source, query, _selected_binding, term, _opts) do
+    EctoShorts.Logger.warning(@logger_prefix, "Expected ..., got: #{inspect(term)}")
+    query
   end
 end

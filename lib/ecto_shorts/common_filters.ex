@@ -155,17 +155,6 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  # defp build_query(:first, source, query, selected_binding, term, opts) do
-  #   First.build_query(
-  #     :first,
-  #     source,
-  #     query,
-  #     selected_binding,
-  #     term,
-  #     opts
-  #   )
-  # end
-
   defp build_query(:last, source, query, selected_binding, term, opts) do
     Last.build_query(
       :last,
