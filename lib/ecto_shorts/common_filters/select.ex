@@ -12,7 +12,7 @@ defmodule EctoShorts.CommonFilters.Select do
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
   def build_query(filter, _source, query, selected_binding, term, _opts) do
-    normalized_term = Utils.map_to_list(term)
+    normalized_term = Utils.normalize_input(term)
 
     case filter do
       :select ->

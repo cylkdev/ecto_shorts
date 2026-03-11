@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
   @logger_prefix "EctoShorts.CommonFilters.WithCte"
 
   def build_query(:with_cte, schema_source, query, _selected_binding, params, opts) do
-    normalized_params = Utils.map_to_list(params)
+    normalized_params = Utils.normalize_input(params)
     reduce_entries(schema_source, query, normalized_params, opts)
   end
 

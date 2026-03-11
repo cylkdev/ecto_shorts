@@ -12,11 +12,11 @@ defmodule EctoShorts.CommonFilters.Windows do
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
   def build_query(:windows, _source, query, selected_binding, params, _opts) do
-    normalized_params = Utils.map_to_list(params)
-    reduce_entries(query, selected_binding, normalized_params)
+    normalized_params = Utils.normalize_input(params)
+    reduce_params(query, selected_binding, normalized_params)
   end
 
-  defp reduce_entries(query, selected_binding, params) when is_list(params) do
+  defp reduce_params(query, selected_binding, params) when is_list(params) do
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn {window_name, window_definition}, query_acc ->
         apply_window(query_acc, selected_binding, window_name, window_definition)
@@ -37,7 +37,7 @@ defmodule EctoShorts.CommonFilters.Windows do
     end
   end
 
-  defp reduce_entries(query, _selected_binding, value) do
+  defp reduce_params(query, _selected_binding, value) do
     EctoShorts.Logger.warning(
       @logger_prefix,
       "Expected :windows params to be a map or keyword list, got: #{inspect(value)}"
@@ -89,11 +89,6 @@ defmodule EctoShorts.CommonFilters.Windows do
     [dynamic_field_expr(selected_binding, value)]
   end
 
-  defp normalize_partition_by(value, selected_binding)
-       when is_map(value) and not is_struct(value) do
-    normalize_partition_by(Map.to_list(value), selected_binding)
-  end
-
   defp normalize_partition_by(values, selected_binding) when is_list(values) do
     if Keyword.keyword?(values) do
       values
@@ -118,11 +113,6 @@ defmodule EctoShorts.CommonFilters.Windows do
 
   defp normalize_order_by({direction, field_name}, selected_binding) when is_atom(field_name) do
     [{direction, dynamic_field_expr(selected_binding, field_name)}]
-  end
-
-  defp normalize_order_by(value, selected_binding)
-       when is_map(value) and not is_struct(value) do
-    normalize_order_by(Map.to_list(value), selected_binding)
   end
 
   defp normalize_order_by(values, selected_binding) when is_list(values) do
