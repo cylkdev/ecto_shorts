@@ -7,6 +7,7 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonFilters.{
     Distinct,
     Exclude,
+    First,
     GroupBy,
     Having,
     Limit,
@@ -14,6 +15,7 @@ defmodule EctoShorts.CommonFilters do
     Offset,
     OrderBy,
     Preload,
+    PutQueryPrefix,
     SubQuery,
     Update,
     Where
@@ -22,11 +24,13 @@ defmodule EctoShorts.CommonFilters do
   @default_selected_binding {:as, nil}
 
   @distinct_filters [:distinct]
+  @first_filters [:first]
   @group_by_filters [:group_by]
   @having_filters [:having, :or_having]
   @order_by_filters [:order_by, :prepend_order_by, :reverse_order]
   @where_filters [:where, :or_where]
   @preload_filters [:preload]
+  @put_query_prefix_filters [:put_query_prefix]
   @subquery_filters [:subquery]
   @exclude_filters [:exclude]
   @lock_filters [:lock]
@@ -34,10 +38,12 @@ defmodule EctoShorts.CommonFilters do
   @offset_filters [:offset]
   @update_filters [:update]
   @query_filters @distinct_filters ++
+                   @first_filters ++
                    @group_by_filters ++
                    @having_filters ++
                    @order_by_filters ++
                    @preload_filters ++
+                   @put_query_prefix_filters ++
                    @subquery_filters ++
                    @exclude_filters ++ @lock_filters ++ @limit_filters ++ @offset_filters ++ @update_filters ++ @where_filters
 
@@ -118,6 +124,17 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
+  defp build_query(:first, source, query, selected_binding, term, opts) do
+    First.build_query(
+      :first,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
   defp build_query(filter, source, query, selected_binding, term, opts) when filter in @group_by_filters do
     GroupBy.build_query(
       filter,
@@ -177,6 +194,17 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(:subquery, source, query, selected_binding, term, opts) do
     SubQuery.build_query(
       :subquery,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(:put_query_prefix, source, query, selected_binding, term, opts) do
+    PutQueryPrefix.build_query(
+      :put_query_prefix,
       source,
       query,
       selected_binding,
