@@ -35,11 +35,11 @@ defmodule EctoShorts.CommonFilters.Join do
     params
     |> Utils.map_to_list()
     |> Enum.reduce(query, fn entry, query_acc ->
-      reduce_join_entry(schema_source, query_acc, selected_binding, entry, opts)
+      apply_join_op(schema_source, query_acc, selected_binding, entry, opts)
     end)
   end
 
-  defp reduce_join_entry(schema_source, query, selected_binding, {key, join_options}, opts) do
+  defp apply_join_op(schema_source, query, selected_binding, {key, join_options}, opts) do
     if key in @join_types do
       reduce_join(schema_source, query, selected_binding, {key, join_options}, opts)
     else
@@ -60,23 +60,23 @@ defmodule EctoShorts.CommonFilters.Join do
     end
   end
 
-  defp reduce_join_entry(schema_source, query, selected_binding, nested, opts) when is_list(nested) do
-    if Keyword.keyword?(nested) do
-      build_query(:join, schema_source, query, selected_binding, nested, opts)
+  defp apply_join_op(schema_source, query, selected_binding, nested, opts) do
+    if is_list(nested) do
+      if Keyword.keyword?(nested) do
+        build_query(:join, schema_source, query, selected_binding, nested, opts)
+      else
+        Enum.reduce(nested, query, fn entry, inner_acc ->
+          apply_join_op(schema_source, inner_acc, selected_binding, entry, opts)
+        end)
+      end
     else
-      Enum.reduce(nested, query, fn entry, inner_acc ->
-        reduce_join_entry(schema_source, inner_acc, selected_binding, entry, opts)
-      end)
+      Logger.warning(
+        @logger_prefix,
+        "Expected :join params to be a map or keyword list, got: #{inspect(nested)}"
+      )
+
+      query
     end
-  end
-
-  defp reduce_join_entry(_schema_source, query, _selected_binding, other, _opts) do
-    Logger.warning(
-      @logger_prefix,
-      "Expected :join params to be a map or keyword list, got: #{inspect(other)}"
-    )
-
-    query
   end
 
   defp reduce_join(schema_source, query, selected_binding, {join_type, join_options}, opts)
