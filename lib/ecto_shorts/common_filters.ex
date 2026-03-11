@@ -23,6 +23,7 @@ defmodule EctoShorts.CommonFilters do
     SetOperation,
     SubQuery,
     Update,
+    WithCte,
     WithNamedBinding,
     Where
   }
@@ -48,6 +49,7 @@ defmodule EctoShorts.CommonFilters do
   @limit_filters [:limit]
   @offset_filters [:offset]
   @update_filters [:update]
+  @with_cte_filters [:with_cte]
   @with_named_binding_filters [:with_named_binding]
   @query_filters Enum.concat([
                    @distinct_filters,
@@ -60,6 +62,7 @@ defmodule EctoShorts.CommonFilters do
                    @preload_filters,
                    @put_query_prefix_filters,
                    @recursive_ctes_filters,
+                   @with_cte_filters,
                    @select_filters,
                    @set_operation_filters,
                    @subquery_filters,
@@ -263,6 +266,17 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(:recursive_ctes, source, query, selected_binding, term, opts) do
     RecursiveCtes.build_query(
       :recursive_ctes,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(:with_cte, source, query, selected_binding, term, opts) do
+    WithCte.build_query(
+      :with_cte,
       source,
       query,
       selected_binding,
