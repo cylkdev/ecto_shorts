@@ -17,11 +17,11 @@ defmodule EctoShorts.CommonFilters.OrderBy do
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
   def build_query(:order_by, _source, query, selected_binding, params, _opts) do
-    apply_order_by_expr(query, selected_binding, params)
+    build_order_by(query, selected_binding, params)
   end
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
-    defp apply_order_by_expr(query, unquote(quoted_binding_head), field_name)
+    defp build_order_by(query, unquote(quoted_binding_head), field_name)
          when is_atom(field_name) do
       Query.order_by(
         query,
@@ -30,7 +30,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
       )
     end
 
-    defp apply_order_by_expr(query, unquote(quoted_binding_head), {dir, field_name})
+    defp build_order_by(query, unquote(quoted_binding_head), {dir, field_name})
          when dir in @order_directions and is_atom(field_name) do
       Query.order_by(
         query,
@@ -39,23 +39,26 @@ defmodule EctoShorts.CommonFilters.OrderBy do
       )
     end
 
-    defp apply_order_by_expr(query, unquote(quoted_binding_head), entries)
-         when is_list(entries) do
+    defp build_order_by(query, unquote(quoted_binding_head), entries) when is_list(entries) do
       order_exprs =
         Enum.map(entries, fn
           {dir, field_name} when dir in @order_directions and is_atom(field_name) ->
-            {dir,
-             Query.dynamic(
-               [unquote_splicing(quoted_binding_body)],
-               field(unquote(target_binding_var), ^field_name)
-             )}
+            dyn =
+              Query.dynamic(
+                [unquote_splicing(quoted_binding_body)],
+                field(unquote(target_binding_var), ^field_name)
+              )
+
+            {dir, dyn}
 
           field_name when is_atom(field_name) ->
-            {:desc,
-             Query.dynamic(
-               [unquote_splicing(quoted_binding_body)],
-               field(unquote(target_binding_var), ^field_name)
-             )}
+            dyn =
+              Query.dynamic(
+                [unquote_splicing(quoted_binding_body)],
+                field(unquote(target_binding_var), ^field_name)
+              )
+
+            {:desc, dyn}
 
           %Ecto.Query.DynamicExpr{} = dynamic_expr ->
             dynamic_expr
@@ -68,7 +71,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
     end
   end
 
-  defp apply_order_by_expr(query, _selected_binding, expr) do
+  defp build_order_by(query, _selected_binding, expr) do
     Query.order_by(query, ^expr)
   end
 end
