@@ -5,7 +5,7 @@ defmodule EctoShorts.CommonFilters.Last do
   alias Ecto.Query
   require Ecto.Query
 
-  @logger_prefix EctoShorts.CommonFilters.Last
+  @logger_prefix "EctoShorts.CommonFilters.Last"
 
   def build_query(:last, source, query, selected_binding, term, opts)
       when (is_map(term) and not is_struct(term)) or is_list(term) do

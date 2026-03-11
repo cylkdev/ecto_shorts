@@ -12,9 +12,13 @@ defmodule EctoShorts.CommonFilters.Lock do
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
   def build_query(:lock, _source, query, selected_binding, params, opts) do
-    case params[:name] do
-      nil -> query
-      name -> build_lock(query, selected_binding, name, params[:values] || %{}, opts)
+    if (is_map(params) and not is_struct(params)) or Keyword.keyword?(params) do
+      case params[:name] do
+        nil -> query
+        name -> build_lock(query, selected_binding, name, params[:values] || %{}, opts)
+      end
+    else
+      Logger.warning(@logger_prefix, "Expected lock ..., got: #{inspect(params)}")
     end
   end
 
@@ -33,8 +37,26 @@ defmodule EctoShorts.CommonFilters.Lock do
       nil ->
         query
 
-      {:ok, callback} when is_function(callback, 1) ->
-        callback.(query)
+      {:ok, callback} ->
+        if is_function(callback, 1) do
+          case callback.(query) do
+            next_query when is_struct(next_query, Ecto.Query) ->
+              next_query
+
+            other ->
+              Logger.warning(
+                @logger_prefix,
+                "Expected ..., got: #{inspect(other)}"
+              )
+
+              query
+          end
+        else
+          Logger.warning(
+            @logger_prefix,
+            "Expected ..., got: #{inspect(callback)}"
+          )
+        end
 
       {:error, reason} ->
         Logger.warning(
