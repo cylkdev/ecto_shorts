@@ -396,7 +396,7 @@ defmodule EctoShorts.CommonFiltersTest do
         )
 
       field_name = :first_name
-      expected = distinct(source, [author: a], [desc: field(a, ^field_name)])
+      expected = distinct(source, [author: a], desc: field(a, ^field_name))
 
       actual =
         CommonFilters.convert_params_to_filter(
@@ -446,7 +446,7 @@ defmodule EctoShorts.CommonFiltersTest do
         )
 
       field_name = :first_name
-      expected = distinct(source, [_, a], [desc: field(a, ^field_name)])
+      expected = distinct(source, [_, a], desc: field(a, ^field_name))
 
       actual =
         CommonFilters.convert_params_to_filter(

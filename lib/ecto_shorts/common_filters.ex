@@ -3,15 +3,19 @@ defmodule EctoShorts.CommonFilters do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Adapters.Postgres
-  alias EctoShorts.CommonFilters.{GroupBy, Having, OrderBy, Preload, Where}
+  alias EctoShorts.CommonFilters.{Distinct, GroupBy, Having, OrderBy, Preload, Where}
 
   @default_selected_binding {:as, nil}
 
+  @distinct_filters [:distinct]
   @group_by_filters [:group_by]
   @having_filters [:having, :or_having]
   @order_by_filters [:order_by]
-  @query_filters @group_by_filters ++ @having_filters ++ @order_by_filters ++ [:preload]
   @where_filters [:where, :or_where]
+  @preload_filters [:preload]
+  @query_filters @distinct_filters ++
+                   @group_by_filters ++
+                   @having_filters ++ @order_by_filters ++ @preload_filters ++ @where_filters
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
@@ -77,6 +81,17 @@ defmodule EctoShorts.CommonFilters do
       true ->
         Enum.reduce(term, query, &apply_filters(filter, source, &2, selected_binding, &1, opts))
     end
+  end
+
+  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @distinct_filters do
+    Distinct.build_query(
+      filter,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
   end
 
   defp build_query(filter, source, query, selected_binding, term, opts) when filter in @group_by_filters do
