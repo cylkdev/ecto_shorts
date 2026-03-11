@@ -32,8 +32,8 @@ defmodule EctoShorts.CommonFilters.Lock do
     end
   end
 
-  defp build_lock(query, selected_binding, name, values, opts) do
-    case QueryProvider.resolve_query_expression(selected_binding, name, values, opts) do
+  defp build_lock(query, selected_binding, custom_name, values, opts) do
+    case QueryProvider.resolve_query_expression(selected_binding, custom_name, values, opts) do
       nil ->
         query
 
@@ -61,7 +61,7 @@ defmodule EctoShorts.CommonFilters.Lock do
       {:error, reason} ->
         Logger.warning(
           @logger_prefix,
-          "Lock expression callback returned error for #{inspect(name)}: #{inspect(reason)}"
+          "Lock expression callback returned error for #{inspect(custom_name)}: #{inspect(reason)}"
         )
 
         query
