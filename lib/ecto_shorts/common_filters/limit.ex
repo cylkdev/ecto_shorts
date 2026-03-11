@@ -7,7 +7,7 @@ defmodule EctoShorts.CommonFilters.Limit do
   {_, binding_patterns} =
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
-  def build_query(:limit, _source, query, selected_binding, expr, _opts) do
+  def build_query(filter, _source, query, selected_binding, expr, _opts) when filter in [:first, :limit] do
     apply_limit(query, selected_binding, expr)
   end
 

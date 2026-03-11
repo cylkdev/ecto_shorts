@@ -1871,6 +1871,227 @@ defmodule EctoShorts.CommonFiltersTest do
     end
   end
 
+  describe "convert_params_to_filter/3 windows shapes" do
+    test "matches Ecto.Query for a root windows partition_by atom" do
+      field_name = :author_id
+
+      expected =
+        windows(Post, [p], post_window: [partition_by: [field(p, ^field_name)], order_by: []])
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [partition_by: :author_id]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root windows partition_by list and order_by keyword list" do
+      partition_field = :author_id
+      order_field = :inserted_at
+
+      expected =
+        windows(Post, [p],
+          post_window: [
+            partition_by: [field(p, ^partition_field), field(p, ^:title)],
+            order_by: [desc: field(p, ^order_field)]
+          ]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [partition_by: [:author_id, :title], order_by: [desc: :inserted_at]]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root windows frame dynamic expression" do
+      frame_expr = dynamic([], fragment("ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"))
+
+      expected =
+        windows(Post, [p], post_window: [partition_by: [], order_by: [], frame: ^frame_expr])
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [frame: frame_expr]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for windows nested under a named binding" do
+      source =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      field_name = :first_name
+
+      expected =
+        windows(source, [author: a],
+          author_window: [
+            partition_by: [field(a, ^field_name)],
+            order_by: [desc: field(a, ^field_name)]
+          ]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            as: %{
+              author: %{
+                windows: [author_window: [partition_by: :first_name, order_by: [desc: :first_name]]]
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for windows nested under a positional binding" do
+      source =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      field_name = :first_name
+
+      expected =
+        windows(source, [p, a],
+          author_window: [
+            partition_by: [field(a, ^field_name)],
+            order_by: [desc: field(a, ^field_name)]
+          ]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            at: %{
+              2 => %{
+                windows: [author_window: [partition_by: :first_name, order_by: [desc: :first_name]]]
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for multiple windows in one payload" do
+      author_field = :author_id
+      inserted_at_field = :inserted_at
+
+      expected =
+        Post
+        |> windows([p],
+          post_window: [partition_by: [field(p, ^author_field)], order_by: []]
+        )
+        |> windows([p],
+          recent_window: [partition_by: [], order_by: [desc: field(p, ^inserted_at_field)]]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [
+            windows: [
+              post_window: [partition_by: :author_id],
+              recent_window: [order_by: [desc: :inserted_at]]
+            ]
+          ],
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "keeps the query unchanged when windows params are invalid" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{windows: "invalid"},
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected :windows params to be a map or keyword list"
+    end
+
+    test "keeps the query unchanged when a window definition is invalid" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{windows: [post_window: "invalid"]},
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected window definition for :post_window to be a map or keyword list"
+    end
+
+    test "keeps the query unchanged when a window name is invalid" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              [windows: [{"post_window", [partition_by: :author_id]}]],
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected window name to be an atom"
+    end
+
+    test "keeps the query unchanged when frame is not a dynamic expression" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{windows: [post_window: [frame: "ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"]]},
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected :frame for :post_window to be an Ecto dynamic expression"
+    end
+  end
+
   describe "convert_params_to_filter/3 set operation shapes" do
     test "matches Ecto.Query for union with filter params" do
       other_query = from(p in Post, where: p.published == ^false)

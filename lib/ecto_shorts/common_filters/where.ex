@@ -2,7 +2,15 @@ defmodule EctoShorts.CommonFilters.Where do
   alias Ecto.Query
   require Ecto.Query
 
-  def build_query(filter, _source, query, _selected_binding, dyn, _opts) do
+  def build_query(filter, source, query, selected_binding, term, opts) do
+    dyn =
+      EctoShorts.Adapters.Postgres.build_dynamic(
+        source,
+        selected_binding,
+        term,
+        opts
+      )
+
     case filter do
       :where ->
         Query.where(query, ^dyn)

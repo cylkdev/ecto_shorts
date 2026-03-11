@@ -7,7 +7,6 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonFilters.{
     Distinct,
     Exclude,
-    First,
     GroupBy,
     Having,
     Join,
@@ -23,6 +22,7 @@ defmodule EctoShorts.CommonFilters do
     SetOperation,
     SubQuery,
     Update,
+    Windows,
     WithCte,
     WithNamedBinding,
     Where
@@ -31,7 +31,6 @@ defmodule EctoShorts.CommonFilters do
   @default_selected_binding {:as, nil}
 
   @distinct_filters [:distinct]
-  @first_filters [:first]
   @group_by_filters [:group_by]
   @having_filters [:having, :or_having]
   @join_filters [:join]
@@ -46,14 +45,14 @@ defmodule EctoShorts.CommonFilters do
   @subquery_filters [:subquery]
   @exclude_filters [:exclude]
   @lock_filters [:lock]
-  @limit_filters [:limit]
+  @limit_filters [:limit, :first]
   @offset_filters [:offset]
   @update_filters [:update]
+  @windows_filters [:windows]
   @with_cte_filters [:with_cte]
   @with_named_binding_filters [:with_named_binding]
   @query_filters Enum.concat([
                    @distinct_filters,
-                   @first_filters,
                    @group_by_filters,
                    @having_filters,
                    @join_filters,
@@ -62,6 +61,7 @@ defmodule EctoShorts.CommonFilters do
                    @preload_filters,
                    @put_query_prefix_filters,
                    @recursive_ctes_filters,
+                   @windows_filters,
                    @with_cte_filters,
                    @select_filters,
                    @set_operation_filters,
@@ -152,16 +152,16 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp build_query(:first, source, query, selected_binding, term, opts) do
-    First.build_query(
-      :first,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
+  # defp build_query(:first, source, query, selected_binding, term, opts) do
+  #   First.build_query(
+  #     :first,
+  #     source,
+  #     query,
+  #     selected_binding,
+  #     term,
+  #     opts
+  #   )
+  # end
 
   defp build_query(:last, source, query, selected_binding, term, opts) do
     Last.build_query(
@@ -274,6 +274,17 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
+  defp build_query(:windows, source, query, selected_binding, term, opts) do
+    Windows.build_query(
+      :windows,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
   defp build_query(:with_cte, source, query, selected_binding, term, opts) do
     WithCte.build_query(
       :with_cte,
@@ -330,9 +341,9 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp build_query(:limit, source, query, selected_binding, term, opts) do
+  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @limit_filters do
     Limit.build_query(
-      :limit,
+      filter,
       source,
       query,
       selected_binding,
@@ -375,20 +386,12 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp build_query(filter, source, query, selected_binding, term, opts) when filter in @where_filters do
-    dyn =
-      Postgres.build_dynamic(
-        source,
-        selected_binding,
-        term,
-        opts
-      )
-
     Where.build_query(
       filter,
       source,
       query,
       selected_binding,
-      dyn,
+      term,
       opts
     )
   end
