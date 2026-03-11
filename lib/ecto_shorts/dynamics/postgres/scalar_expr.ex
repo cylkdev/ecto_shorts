@@ -39,13 +39,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
   def directives, do: @directives
 
   def dynamic_expr(selected_binding, key, negated, term, _opts) do
-    {op, term} = normalize_input(term)
+    {op, term} = normalize_term(term)
     module = compiled_module_for(op, term)
     module.dynamic_expr(selected_binding, key, negated, {op, term})
   end
 
-  defp normalize_input({_op, _value} = term), do: term
-  defp normalize_input(value), do: {:==, value}
+  defp normalize_term({_, _} = term), do: term
+  defp normalize_term(value), do: {:==, value}
 
   defp compiled_module_for(:in, _) do
     __MODULE__.Compiled.Membership
