@@ -3,13 +3,14 @@ defmodule EctoShorts.CommonFilters do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Adapters.Postgres
-  alias EctoShorts.CommonFilters.{GroupBy, OrderBy, Preload, Where}
+  alias EctoShorts.CommonFilters.{GroupBy, Having, OrderBy, Preload, Where}
 
   @default_selected_binding {:as, nil}
 
   @group_by_filters [:group_by]
+  @having_filters [:having, :or_having]
   @order_by_filters [:order_by]
-  @query_filters @group_by_filters ++ @order_by_filters ++ [:preload]
+  @query_filters @group_by_filters ++ @having_filters ++ @order_by_filters ++ [:preload]
   @where_filters [:where, :or_where]
 
   def convert_params_to_filter(source, params, opts) do
@@ -48,6 +49,18 @@ defmodule EctoShorts.CommonFilters do
           )
         end)
 
+      key in @having_filters and is_list(term) ->
+        Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
+          apply_filters(
+            key,
+            source,
+            query_acc,
+            selected_binding,
+            {inner_key, inner_value},
+            opts
+          )
+        end)
+
       key in @query_filters ->
         build_query(key, source, query, selected_binding, term, opts)
 
@@ -75,6 +88,30 @@ defmodule EctoShorts.CommonFilters do
           query,
           selected_binding,
           term,
+          opts
+        )
+
+      having_filter when having_filter in @having_filters ->
+        dyn =
+          case term do
+            %Ecto.Query.DynamicExpr{} = dynamic_expr ->
+              dynamic_expr
+
+            _ ->
+              Postgres.build_dynamic(
+                source,
+                selected_binding,
+                term,
+                opts
+              )
+          end
+
+        Having.build_query(
+          having_filter,
+          source,
+          query,
+          selected_binding,
+          dyn,
           opts
         )
 

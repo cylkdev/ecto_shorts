@@ -14,6 +14,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
   @comparison_directives [:>, :>=, :<, :<=, :gt, :gte, :lt, :lte | @equality_directives]
 
+  @aggregate_helpers [
+    :avg,
+    :count,
+    :max,
+    :min,
+    :sum
+  ]
+
   @membership_directives [
     :in
   ]
@@ -109,129 +117,259 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   defp comparison_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do
-    Enum.flat_map(@comparison_directives, fn
-      op when op in [:==, :eq] ->
-        [
-          quote do
-            {:not, {unquote(op), nil}} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_negated_expr(op, q_var, {key_var, nil}),
-                  context
+    plain_conditions =
+      Enum.flat_map(@comparison_directives, fn
+        op when op in [:==, :eq] ->
+          [
+            quote do
+              {:not, {unquote(op), nil}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(op, q_var, {key_var, nil}),
+                    context
+                  )
                 )
-              )
-          end,
-          quote do
-            {unquote(op), nil} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_expr(op, q_var, {key_var, nil}),
-                  context
+            end,
+            quote do
+              {unquote(op), nil} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(op, q_var, {key_var, nil}),
+                    context
+                  )
                 )
-              )
-          end,
-          quote do
-            {:not, {unquote(op), unquote(value_var)}} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_negated_expr(op, q_var, {key_var, value_var}),
-                  context
+            end,
+            quote do
+              {:not, {unquote(op), unquote(value_var)}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(op, q_var, {key_var, value_var}),
+                    context
+                  )
                 )
-              )
-          end,
-          quote do
-            {unquote(op), unquote(value_var)} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_expr(op, q_var, {key_var, value_var}),
-                  context
+            end,
+            quote do
+              {unquote(op), unquote(value_var)} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(op, q_var, {key_var, value_var}),
+                    context
+                  )
                 )
-              )
-          end
-        ]
+            end
+          ]
 
-      op when op in [:!=, :ne] ->
-        [
-          quote do
-            {:not, {unquote(op), nil}} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_negated_expr(op, q_var, {key_var, nil}),
-                  context
+        op when op in [:!=, :ne] ->
+          [
+            quote do
+              {:not, {unquote(op), nil}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(op, q_var, {key_var, nil}),
+                    context
+                  )
                 )
-              )
-          end,
-          quote do
-            {unquote(op), nil} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_expr(op, q_var, {key_var, nil}),
-                  context
+            end,
+            quote do
+              {unquote(op), nil} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(op, q_var, {key_var, nil}),
+                    context
+                  )
                 )
-              )
-          end,
-          quote do
-            {:not, {unquote(op), unquote(value_var)}} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_negated_expr(op, q_var, {key_var, value_var}),
-                  context
+            end,
+            quote do
+              {:not, {unquote(op), unquote(value_var)}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(op, q_var, {key_var, value_var}),
+                    context
+                  )
                 )
-              )
-          end,
-          quote do
-            {unquote(op), unquote(value_var)} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_expr(op, q_var, {key_var, value_var}),
-                  context
+            end,
+            quote do
+              {unquote(op), unquote(value_var)} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(op, q_var, {key_var, value_var}),
+                    context
+                  )
                 )
-              )
-          end
-        ]
+            end
+          ]
 
-      op ->
-        [
-          quote do
-            {:not, {unquote(op), unquote(value_var)}} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_negated_expr(op, q_var, {key_var, value_var}),
-                  context
+        op ->
+          [
+            quote do
+              {:not, {unquote(op), unquote(value_var)}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(op, q_var, {key_var, value_var}),
+                    context
+                  )
                 )
-              )
-          end,
-          quote do
-            {unquote(op), unquote(value_var)} ->
-              unquote(
-                Helpers.dyn_expr(
-                  {bind_op, bind_to_var},
-                  q_var,
-                  quote_expr(op, q_var, {key_var, value_var}),
-                  context
+            end,
+            quote do
+              {unquote(op), unquote(value_var)} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(op, q_var, {key_var, value_var}),
+                    context
+                  )
                 )
-              )
-          end
-        ]
-    end)
+            end
+          ]
+      end)
+
+    aggregate_conditions =
+      Enum.flat_map(@aggregate_helpers, fn helper ->
+        Enum.flat_map(@comparison_directives, fn
+          op when op in [:==, :eq] ->
+            [
+              quote do
+                {:not, {unquote(helper), {unquote(op), nil}}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_negated_expr({op, helper}, q_var, {key_var, nil}),
+                      context
+                    )
+                  )
+              end,
+              quote do
+                {unquote(helper), {unquote(op), nil}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_expr({op, helper}, q_var, {key_var, nil}),
+                      context
+                    )
+                  )
+              end,
+              quote do
+                {:not, {unquote(helper), {unquote(op), unquote(value_var)}}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_negated_expr({op, helper}, q_var, {key_var, value_var}),
+                      context
+                    )
+                  )
+              end,
+              quote do
+                {unquote(helper), {unquote(op), unquote(value_var)}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_expr({op, helper}, q_var, {key_var, value_var}),
+                      context
+                    )
+                  )
+              end
+            ]
+
+          op when op in [:!=, :ne] ->
+            [
+              quote do
+                {:not, {unquote(helper), {unquote(op), nil}}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_negated_expr({op, helper}, q_var, {key_var, nil}),
+                      context
+                    )
+                  )
+              end,
+              quote do
+                {unquote(helper), {unquote(op), nil}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_expr({op, helper}, q_var, {key_var, nil}),
+                      context
+                    )
+                  )
+              end,
+              quote do
+                {:not, {unquote(helper), {unquote(op), unquote(value_var)}}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_negated_expr({op, helper}, q_var, {key_var, value_var}),
+                      context
+                    )
+                  )
+              end,
+              quote do
+                {unquote(helper), {unquote(op), unquote(value_var)}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_expr({op, helper}, q_var, {key_var, value_var}),
+                      context
+                    )
+                  )
+              end
+            ]
+
+          op ->
+            [
+              quote do
+                {:not, {unquote(helper), {unquote(op), unquote(value_var)}}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_negated_expr({op, helper}, q_var, {key_var, value_var}),
+                      context
+                    )
+                  )
+              end,
+              quote do
+                {unquote(helper), {unquote(op), unquote(value_var)}} ->
+                  unquote(
+                    Helpers.dyn_expr(
+                      {bind_op, bind_to_var},
+                      q_var,
+                      quote_expr({op, helper}, q_var, {key_var, value_var}),
+                      context
+                    )
+                  )
+              end
+            ]
+        end)
+      end)
+
+    plain_conditions ++ aggregate_conditions
   end
 
   defp membership_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do
@@ -591,6 +729,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   def quote_expr({op, meta}, q_var, {key_var, value_var})
+      when op in @comparison_directives and meta in @aggregate_helpers do
+    quote do
+      unquote(
+        Helpers.special_form_ast(
+          aggregate_expr(meta, q_var, key_var),
+          op,
+          Helpers.pinned_ast(value_var)
+        )
+      )
+    end
+  end
+
+  def quote_expr({op, meta}, q_var, {key_var, value_var})
       when op in @comparison_directives and meta in [:lower, :upper] do
     content =
       if meta === :lower do
@@ -651,6 +802,36 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
     quote do
       unquote(Helpers.special_form_ast(field_expr, op, Helpers.pinned_ast(value_var)))
+    end
+  end
+
+  defp aggregate_expr(:avg, q_var, key_var) do
+    quote do
+      avg(field(unquote(q_var), ^unquote(key_var)))
+    end
+  end
+
+  defp aggregate_expr(:count, q_var, key_var) do
+    quote do
+      count(field(unquote(q_var), ^unquote(key_var)))
+    end
+  end
+
+  defp aggregate_expr(:max, q_var, key_var) do
+    quote do
+      max(field(unquote(q_var), ^unquote(key_var)))
+    end
+  end
+
+  defp aggregate_expr(:min, q_var, key_var) do
+    quote do
+      min(field(unquote(q_var), ^unquote(key_var)))
+    end
+  end
+
+  defp aggregate_expr(:sum, q_var, key_var) do
+    quote do
+      sum(field(unquote(q_var), ^unquote(key_var)))
     end
   end
 end
