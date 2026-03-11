@@ -79,19 +79,7 @@ defmodule EctoShorts.CommonFilters.Join do
     end
   end
 
-  defp reduce_join(schema_source, query, selected_binding, {join_type, join_options}, opts)
-       when is_map(join_options) and not is_struct(join_options) do
-    reduce_join(
-      schema_source,
-      query,
-      selected_binding,
-      {join_type, Utils.map_to_list(join_options)},
-      opts
-    )
-  end
-
-  defp reduce_join(schema_source, query, selected_binding, {join_type, join_options}, opts)
-       when is_list(join_options) do
+  defp reduce_join(schema_source, query, selected_binding, {join_type, join_options}, opts) do
     {op_source, join_options} = Keyword.pop(join_options, :source)
 
     if op_source !== nil do
@@ -110,15 +98,6 @@ defmodule EctoShorts.CommonFilters.Join do
 
       query
     end
-  end
-
-  defp reduce_join(_schema_source, query, _selected_binding, {_join_type, join_options}, _opts) do
-    Logger.warning(
-      @logger_prefix,
-      "Expected join options to be a map or keyword list, got: #{inspect(join_options)}"
-    )
-
-    query
   end
 
   defp normalize_join_options(join_options) do
