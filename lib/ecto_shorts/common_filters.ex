@@ -3,7 +3,18 @@ defmodule EctoShorts.CommonFilters do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Adapters.Postgres
-  alias EctoShorts.CommonFilters.{Distinct, GroupBy, Having, Limit, OrderBy, Preload, SubQuery, Update, Where}
+  alias EctoShorts.CommonFilters.{
+    Distinct,
+    GroupBy,
+    Having,
+    Limit,
+    Offset,
+    OrderBy,
+    Preload,
+    SubQuery,
+    Update,
+    Where
+  }
 
   @default_selected_binding {:as, nil}
 
@@ -15,13 +26,14 @@ defmodule EctoShorts.CommonFilters do
   @preload_filters [:preload]
   @subquery_filters [:subquery]
   @limit_filters [:limit]
+  @offset_filters [:offset]
   @update_filters [:update]
   @query_filters @distinct_filters ++
                    @group_by_filters ++
                    @having_filters ++
                    @order_by_filters ++
                    @preload_filters ++
-                   @subquery_filters ++ @limit_filters ++ @update_filters ++ @where_filters
+                   @subquery_filters ++ @limit_filters ++ @offset_filters ++ @update_filters ++ @where_filters
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
@@ -170,6 +182,17 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(:limit, source, query, selected_binding, term, opts) do
     Limit.build_query(
       :limit,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(:offset, source, query, selected_binding, term, opts) do
+    Offset.build_query(
+      :offset,
       source,
       query,
       selected_binding,
