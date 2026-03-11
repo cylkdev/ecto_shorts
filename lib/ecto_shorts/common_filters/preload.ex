@@ -43,10 +43,16 @@ defmodule EctoShorts.CommonFilters.Preload do
     end
 
     defp build_preload(query, unquote(quoted_binding_head), assoc_key, nested) do
+      prepared_nested =
+        case normalize_preload(nested) do
+          [{key, value}] -> {key, value}
+          other -> other
+        end
+
       Query.preload(
         query,
         [unquote_splicing(quoted_binding_body)],
-        [{^assoc_key, {unquote(target_binding_var), ^normalize_preload(nested)}}]
+        [{^assoc_key, {unquote(target_binding_var), ^prepared_nested}}]
       )
     end
   end

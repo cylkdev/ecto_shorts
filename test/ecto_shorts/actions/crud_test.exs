@@ -420,6 +420,41 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %User{first_name: "PositionalPreload"} = result.author
     end
 
+    test "loads nested posts from a named binding when preload uses the live :as shape" do
+      author =
+        %User{}
+        |> User.changeset(%{first_name: "NamedPostsPreload"})
+        |> Repo.insert!()
+
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "ParentPost", author_id: author.id})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "NestedPost", author_id: author.id})
+      |> Repo.insert!()
+
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      assert [%Post{title: "ParentPost"} = result] =
+               Actions.all(q, %{
+                 id: post.id,
+                 as: %{
+                   author: %{
+                     preload: [author: [posts: :comments]]
+                   }
+                 }
+               })
+
+      assert %User{first_name: "NamedPostsPreload"} = loaded_author = result.author
+      assert Enum.map(loaded_author.posts, & &1.title) |> Enum.sort() === ["NestedPost", "ParentPost"]
+    end
+
     test "loads nested associations from a named binding when preload uses the live :as shape" do
       author =
         %User{}
@@ -458,10 +493,45 @@ defmodule EctoShorts.Actions.CRUDTest do
 
       assert %User{first_name: "NamedNestedPreload"} = loaded_author = result.author
       assert Enum.map(loaded_author.posts, & &1.title) |> Enum.sort() === ["NestedPost", "ParentPost"]
+
       assert Enum.any?(loaded_author.posts, fn loaded_post ->
                Ecto.assoc_loaded?(loaded_post.comments) and
                  Enum.any?(loaded_post.comments, &(&1.body === "NestedComment"))
              end)
+    end
+
+    test "loads nested posts from a positional binding when preload uses the live :at shape" do
+      author =
+        %User{}
+        |> User.changeset(%{first_name: "PositionalPostsPreload"})
+        |> Repo.insert!()
+
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "ParentPost", author_id: author.id})
+        |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "NestedPost", author_id: author.id})
+      |> Repo.insert!()
+
+      q =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      assert [%Post{title: "ParentPost"} = result] =
+               Actions.all(q, %{
+                 id: post.id,
+                 at: %{
+                   2 => %{
+                     preload: [author: [posts: :comments]]
+                   }
+                 }
+               })
+
+      assert %User{first_name: "PositionalPostsPreload"} = loaded_author = result.author
+      assert Enum.map(loaded_author.posts, & &1.title) |> Enum.sort() === ["NestedPost", "ParentPost"]
     end
 
     test "loads nested associations from a positional binding when preload uses the live :at shape" do
@@ -501,6 +571,7 @@ defmodule EctoShorts.Actions.CRUDTest do
 
       assert %User{first_name: "PositionalNestedPreload"} = loaded_author = result.author
       assert Enum.map(loaded_author.posts, & &1.title) |> Enum.sort() === ["NestedPost", "ParentPost"]
+
       assert Enum.any?(loaded_author.posts, fn loaded_post ->
                Ecto.assoc_loaded?(loaded_post.comments) and
                  Enum.any?(loaded_post.comments, &(&1.body === "NestedComment"))
