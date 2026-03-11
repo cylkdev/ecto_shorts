@@ -47,17 +47,26 @@ defmodule EctoShorts.CommonFilters.Windows do
   end
 
   defp apply_window(query, selected_binding, window_name, window_definition) do
-    definition = Keyword.take(window_definition, @window_keys)
-    partition_by = normalize_partition_by(Keyword.get(definition, :partition_by, []), selected_binding)
-    order_by = normalize_order_by(Keyword.get(definition, :order_by, []), selected_binding)
-    frame = definition[:frame]
+    if Keyword.keyword?(window_definition) do
+      definition = Keyword.take(window_definition, @window_keys)
+      partition_by = normalize_partition_by(definition[:partition_by] || [], selected_binding)
+      order_by = normalize_order_by(definition[:order_by] || [], selected_binding)
+      frame = definition[:frame]
 
-    if is_atom(frame) or is_struct(frame, Ecto.Query.DynamicExpr) do
-      apply_window_definition(query, selected_binding, window_name, partition_by, order_by, frame)
+      if is_atom(frame) or is_struct(frame, Ecto.Query.DynamicExpr) do
+        apply_window_definition(query, selected_binding, window_name, partition_by, order_by, frame)
+      else
+        EctoShorts.Logger.warning(
+          @logger_prefix,
+          "Expected :frame for #{inspect(window_name)} to be an Ecto dynamic expression, got: #{inspect(frame)}"
+        )
+
+        query
+      end
     else
       EctoShorts.Logger.warning(
         @logger_prefix,
-        "Expected :frame for #{inspect(window_name)} to be an Ecto dynamic expression, got: #{inspect(other)}"
+        "Expected window definition for #{inspect(window_name)} to be a map or keyword list, got: #{inspect(window_definition)}"
       )
 
       query
