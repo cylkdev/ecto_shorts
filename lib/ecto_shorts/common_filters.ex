@@ -16,6 +16,7 @@ defmodule EctoShorts.CommonFilters do
     OrderBy,
     Preload,
     PutQueryPrefix,
+    RecursiveCtes,
     SubQuery,
     Update,
     Where
@@ -31,6 +32,7 @@ defmodule EctoShorts.CommonFilters do
   @where_filters [:where, :or_where]
   @preload_filters [:preload]
   @put_query_prefix_filters [:put_query_prefix]
+  @recursive_ctes_filters [:recursive_ctes]
   @subquery_filters [:subquery]
   @exclude_filters [:exclude]
   @lock_filters [:lock]
@@ -44,6 +46,7 @@ defmodule EctoShorts.CommonFilters do
                    @order_by_filters ++
                    @preload_filters ++
                    @put_query_prefix_filters ++
+                   @recursive_ctes_filters ++
                    @subquery_filters ++
                    @exclude_filters ++ @lock_filters ++ @limit_filters ++ @offset_filters ++ @update_filters ++ @where_filters
 
@@ -205,6 +208,17 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(:put_query_prefix, source, query, selected_binding, term, opts) do
     PutQueryPrefix.build_query(
       :put_query_prefix,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(:recursive_ctes, source, query, selected_binding, term, opts) do
+    RecursiveCtes.build_query(
+      :recursive_ctes,
       source,
       query,
       selected_binding,
