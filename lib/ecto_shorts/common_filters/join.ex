@@ -12,24 +12,30 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @logger_prefix "EctoShorts.CommonFilters.Join"
 
-  @hints (case Application.compile_env(:ecto_shorts, :hints) do
-            nil ->
-              []
+  compiled_hints =
+    case Application.compile_env(:ecto_shorts, :hints) do
+      nil ->
+        []
 
-            hints when is_list(hints) ->
-              hints
+      hints when is_list(hints) ->
+        hints
 
-            mod when is_atom(mod) ->
-              mod.hints()
+      mod when is_atom(mod) ->
+        mod.hints()
 
-            term ->
-              raise ArgumentError, "Expected :hints to be a list or module, got: #{inspect(term)}"
-          end)
+      term ->
+        raise ArgumentError, "Expected :hints to be a list or module, got: #{inspect(term)}"
+    end
+
+  @hints compiled_hints
 
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
   {target_binding_var, binding_patterns} =
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
+
+  @doc false
+  def hints, do: @hints
 
   def build_query(:join, schema_source, query, selected_binding, params, opts) do
     reduce_join_entries(schema_source, query, selected_binding, Utils.map_to_list(params), opts)

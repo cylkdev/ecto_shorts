@@ -1,17 +1,16 @@
 defmodule EctoShorts.CommonFilters.Last do
-  alias Ecto.Query
   alias EctoShorts.CommonSchema
+  alias EctoShorts.Utils
 
+  alias Ecto.Query
   require Ecto.Query
 
-  def build_query(:last, source, query, _selected_binding, entries, opts)
-      when is_map(entries) and not is_struct(entries) do
-    build_query(:last, source, query, nil, Map.to_list(entries), opts)
-  end
-
-  def build_query(:last, source, query, _selected_binding, entries, opts) when is_list(entries) do
-    Enum.reduce(entries, query, fn entry, query_acc ->
-      build_query(:last, source, query_acc, nil, entry, opts)
+  def build_query(:last, source, query, selected_binding, term, opts)
+      when (is_map(term) and not is_struct(term)) or is_list(term) do
+    term
+    |> Utils.map_to_list()
+    |> Enum.reduce(query, fn entry, query_acc ->
+      build_query(:last, source, query_acc, selected_binding, entry, opts)
     end)
   end
 
@@ -23,16 +22,18 @@ defmodule EctoShorts.CommonFilters.Last do
         List.wrap(sort_key)
       end
 
+    excluded = Query.exclude(query, :order_by)
+
     subquery =
       sort_keys
-      |> Enum.reduce(Query.exclude(query, :order_by), &Query.order_by(&2, desc: ^&1))
+      |> Enum.reduce(excluded, &Query.order_by(&2, desc: ^&1))
       |> Query.limit(^limit)
       |> Query.subquery()
 
     Enum.reduce(sort_keys, subquery, &Query.order_by(&2, asc: ^&1))
   end
 
-  def build_query(:last, source, query, selected_binding, limit, opts) do
+  def build_query(:last, source, query, selected_binding, limit, opts) when is_integer(limit) do
     build_query(:last, source, query, selected_binding, {nil, limit}, opts)
   end
 end
