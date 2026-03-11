@@ -7,29 +7,16 @@ defmodule EctoShorts.CommonFilters.Lock do
   {_, binding_patterns} =
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
-  def build_query(:lock, _source, query, selected_binding, expr, _opts) do
-    apply_lock(query, selected_binding, normalize_lock_expr(expr))
-  end
-
-  defp normalize_lock_expr(expr) when is_map(expr) and not is_struct(expr) do
-    expr
-    |> Map.to_list()
-    |> normalize_lock_expr()
-  end
-
-  defp normalize_lock_expr(expr) when is_list(expr) do
-    if Keyword.keyword?(expr) do
-      case Keyword.get(expr, :name) do
-        :for_update -> :for_update
-        :for_share -> :for_share
-        _ -> expr
+  def build_query(:lock, _source, query, selected_binding, params, _opts) do
+    lock_name =
+      if Keyword.keyword?(params) and Keyword.has_key?(params, :name) do
+        params[:name]
+      else
+        params
       end
-    else
-      expr
-    end
-  end
 
-  defp normalize_lock_expr(expr), do: expr
+    apply_lock(query, selected_binding, lock_name)
+  end
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp apply_lock(query, unquote(quoted_binding_head), :for_update) do

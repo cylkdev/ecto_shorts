@@ -3,6 +3,7 @@ defmodule EctoShorts.CommonFilters do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Adapters.Postgres
+
   alias EctoShorts.CommonFilters.{
     Distinct,
     GroupBy,
