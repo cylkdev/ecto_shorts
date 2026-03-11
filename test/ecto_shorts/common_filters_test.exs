@@ -139,14 +139,19 @@ defmodule EctoShorts.CommonFiltersTest do
       source = from(p in Post, select: p.title)
       expected = from(p in Post, select: p.id)
 
-      actual =
-        CommonFilters.convert_params_to_filter(
-          source,
-          %{select: :id},
-          []
-        )
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              source,
+              %{select: :id},
+              []
+            )
 
-      assert_query(expected, actual)
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Replacing existing select expression before applying :select filter"
     end
   end
 

@@ -1,9 +1,12 @@
 defmodule EctoShorts.CommonFilters.Select do
   alias Ecto.Query
   alias EctoShorts.Compiler
+  alias EctoShorts.Logger
   alias EctoShorts.Utils
 
   require Ecto.Query
+
+  @logger_prefix "EctoShorts.CommonFilters.Select"
 
   {target_binding_var, binding_patterns} =
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
@@ -12,8 +15,19 @@ defmodule EctoShorts.CommonFilters.Select do
     normalized_term = Utils.map_to_list(term)
 
     case filter do
-      :select -> apply_select_expr(query, selected_binding, normalized_term)
-      :select_merge -> apply_select_merge_expr(query, selected_binding, normalized_term)
+      :select ->
+        query
+        |> drop_existing_select()
+        |> apply_select_expr(selected_binding, normalized_term)
+
+      :select_merge ->
+        apply_select_merge_expr(query, selected_binding, normalized_term)
+    end
+  end
+
+  for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
+    defp initialize_select_map(query, unquote(quoted_binding_head)) do
+      Query.select(query, [unquote_splicing(quoted_binding_body)], %{})
     end
   end
 
@@ -30,13 +44,9 @@ defmodule EctoShorts.CommonFilters.Select do
     defp apply_select_expr(query, unquote(quoted_binding_head), {:map, list})
          when is_list(list) do
       if Keyword.keyword?(list) do
-        select_map = build_select_map(list, unquote(quoted_binding_head))
-
-        Query.select(
-          query,
-          [unquote_splicing(quoted_binding_body)],
-          ^select_map
-        )
+        query
+        |> initialize_select_map(unquote(quoted_binding_head))
+        |> apply_select_merge_entries(unquote(quoted_binding_head), list)
       else
         Query.select(
           query,
@@ -57,13 +67,9 @@ defmodule EctoShorts.CommonFilters.Select do
 
     defp apply_select_expr(query, unquote(quoted_binding_head), term) when is_list(term) do
       if Keyword.keyword?(term) do
-        select_map = build_select_map(term, unquote(quoted_binding_head))
-
-        Query.select(
-          query,
-          [unquote_splicing(quoted_binding_body)],
-          ^select_map
-        )
+        query
+        |> initialize_select_map(unquote(quoted_binding_head))
+        |> apply_select_merge_entries(unquote(quoted_binding_head), term)
       else
         Query.select(
           query,
@@ -81,7 +87,9 @@ defmodule EctoShorts.CommonFilters.Select do
         field(unquote(target_binding_var), ^field_name)
       )
     end
+  end
 
+  for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp apply_select_merge_expr(query, unquote(quoted_binding_head), {:map, params})
          when is_map(params) do
       apply_select_merge_expr(query, unquote(quoted_binding_head), {:map, Map.to_list(params)})
@@ -90,13 +98,7 @@ defmodule EctoShorts.CommonFilters.Select do
     defp apply_select_merge_expr(query, unquote(quoted_binding_head), {:map, list})
          when is_list(list) do
       if Keyword.keyword?(list) do
-        select_map = build_select_map(list, unquote(quoted_binding_head))
-
-        Query.select_merge(
-          query,
-          [unquote_splicing(quoted_binding_body)],
-          ^select_map
-        )
+        apply_select_merge_entries(query, unquote(quoted_binding_head), list)
       else
         Query.select_merge(
           query,
@@ -108,13 +110,7 @@ defmodule EctoShorts.CommonFilters.Select do
 
     defp apply_select_merge_expr(query, unquote(quoted_binding_head), term) when is_list(term) do
       if Keyword.keyword?(term) do
-        select_map = build_select_map(term, unquote(quoted_binding_head))
-
-        Query.select_merge(
-          query,
-          [unquote_splicing(quoted_binding_body)],
-          ^select_map
-        )
+        apply_select_merge_entries(query, unquote(quoted_binding_head), term)
       else
         Query.select_merge(
           query,
@@ -126,24 +122,42 @@ defmodule EctoShorts.CommonFilters.Select do
 
     defp apply_select_merge_expr(query, unquote(quoted_binding_head), {field_alias, field_name})
          when is_atom(field_alias) do
-      select_map = build_select_map([{field_alias, field_name}], unquote(quoted_binding_head))
+      apply_select_merge_entry(query, unquote(quoted_binding_head), field_alias, field_name)
+    end
 
+    defp apply_select_merge_entry(
+           query,
+           unquote(quoted_binding_head),
+           field_alias,
+           field_name
+         )
+         when is_atom(field_name) do
       Query.select_merge(
         query,
         [unquote_splicing(quoted_binding_body)],
-        ^select_map
+        %{^field_alias => field(unquote(target_binding_var), ^field_name)}
       )
     end
 
-    defp compose(unquote(quoted_binding_head), field_name) when is_atom(field_name) do
-      Query.dynamic(
+    defp apply_select_merge_entry(
+           query,
+           unquote(quoted_binding_head),
+           field_alias,
+           %Ecto.Query.DynamicExpr{} = dynamic_expr
+         ) do
+      Query.select_merge(
+        query,
         [unquote_splicing(quoted_binding_body)],
-        field(unquote(target_binding_var), ^field_name)
+        %{^field_alias => ^dynamic_expr}
       )
     end
 
-    defp compose(unquote(quoted_binding_head), %Ecto.Query.DynamicExpr{} = dynamic_expr) do
-      dynamic_expr
+    defp apply_select_merge_entry(query, unquote(quoted_binding_head), field_alias, value) do
+      Query.select_merge(
+        query,
+        [unquote_splicing(quoted_binding_body)],
+        %{^field_alias => ^value}
+      )
     end
   end
 
@@ -155,11 +169,20 @@ defmodule EctoShorts.CommonFilters.Select do
     Query.select_merge(query, ^term)
   end
 
-  defp compose(_selected_binding, term), do: term
+  defp drop_existing_select(%Ecto.Query{select: nil} = query), do: query
 
-  defp build_select_map(enum, selected_binding) do
-    Enum.reduce(enum, %{}, fn {field_alias, field}, acc ->
-      Map.put(acc, field_alias, compose(selected_binding, field))
+  defp drop_existing_select(query) do
+    Logger.warning(
+      @logger_prefix,
+      "Replacing existing select expression before applying :select filter"
+    )
+
+    Query.exclude(query, :select)
+  end
+
+  defp apply_select_merge_entries(query, selected_binding, entries) do
+    Enum.reduce(entries, query, fn {field_alias, field}, query_acc ->
+      apply_select_merge_entry(query_acc, selected_binding, field_alias, field)
     end)
   end
 end
