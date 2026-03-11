@@ -24,6 +24,7 @@ defmodule EctoShorts.CommonFilters do
     Update,
     Windows,
     WithCte,
+    WithTies,
     WithNamedBinding,
     Where
   }
@@ -50,6 +51,7 @@ defmodule EctoShorts.CommonFilters do
   @update_filters [:update]
   @windows_filters [:windows]
   @with_cte_filters [:with_cte]
+  @with_ties_filters [:with_ties]
   @with_named_binding_filters [:with_named_binding]
   @query_filters Enum.concat([
                    @distinct_filters,
@@ -63,6 +65,7 @@ defmodule EctoShorts.CommonFilters do
                    @recursive_ctes_filters,
                    @windows_filters,
                    @with_cte_filters,
+                   @with_ties_filters,
                    @select_filters,
                    @set_operation_filters,
                    @subquery_filters,
@@ -288,6 +291,17 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(:with_cte, source, query, selected_binding, term, opts) do
     WithCte.build_query(
       :with_cte,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(:with_ties, source, query, selected_binding, term, opts) do
+    WithTies.build_query(
+      :with_ties,
       source,
       query,
       selected_binding,
