@@ -40,27 +40,27 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
 
   def dynamic_expr(selected_binding, key, negated, term, _opts) do
     {op, term} = normalize_input(term)
-    module = resolver(op, term)
+    module = compiled_module_for(op, term)
     module.dynamic_expr(selected_binding, key, negated, {op, term})
   end
 
   defp normalize_input({_op, _value} = term), do: term
   defp normalize_input(value), do: {:==, value}
 
-  defp resolver(:in, _) do
+  defp compiled_module_for(:in, _) do
     __MODULE__.Compiled.Membership
   end
 
-  defp resolver(op, value) when op in @equality_directives and is_list(value) do
+  defp compiled_module_for(op, value) when op in @equality_directives and is_list(value) do
     __MODULE__.Compiled.Membership
   end
 
-  defp resolver(op, {transform, _})
+  defp compiled_module_for(op, {transform, _})
        when op in @comparison_directives and transform in [:lower, :upper] do
     __MODULE__.Compiled.StringUpperLower
   end
 
-  defp resolver(op, term) when op in @string_directives do
+  defp compiled_module_for(op, term) when op in @string_directives do
     case term do
       {transform, _} when transform in [:lower, :upper] ->
         __MODULE__.Compiled.StringUpperLower
@@ -70,7 +70,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     end
   end
 
-  defp resolver(_op, _term) do
+  defp compiled_module_for(_op, _term) do
     __MODULE__.Compiled.Comparison
   end
 end
