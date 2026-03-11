@@ -897,6 +897,96 @@ defmodule EctoShorts.CommonFiltersTest do
     end
   end
 
+  describe "convert_params_to_filter/3 lock shapes" do
+    test "matches Ecto.Query for a root string lock" do
+      expected = lock(Post, "FOR UPDATE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: "FOR UPDATE"},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root for_update alias lock" do
+      expected = lock(Post, "FOR UPDATE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :for_update}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root map alias lock" do
+      expected = lock(Post, "FOR SHARE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :for_share}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a named binding lock payload" do
+      source =
+        from(p in Post,
+          join: u in assoc(p, :author),
+          as: :author
+        )
+
+      expected = lock(source, [author: u], "FOR UPDATE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            as: %{
+              author: %{
+                lock: "FOR UPDATE"
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a positional binding lock payload" do
+      source =
+        from(p in Post,
+          join: u in assoc(p, :author)
+        )
+
+      expected = lock(source, [_, u], "FOR UPDATE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            at: %{
+              2 => %{
+                lock: "FOR UPDATE"
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+  end
+
   describe "convert_params_to_filter/3 having shapes" do
     test "matches Ecto.Query for a root aggregate having" do
       source = from p in Post, group_by: p.author_id

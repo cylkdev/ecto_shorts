@@ -8,6 +8,7 @@ defmodule EctoShorts.CommonFilters do
     GroupBy,
     Having,
     Limit,
+    Lock,
     Offset,
     OrderBy,
     Preload,
@@ -25,6 +26,7 @@ defmodule EctoShorts.CommonFilters do
   @where_filters [:where, :or_where]
   @preload_filters [:preload]
   @subquery_filters [:subquery]
+  @lock_filters [:lock]
   @limit_filters [:limit]
   @offset_filters [:offset]
   @update_filters [:update]
@@ -33,7 +35,8 @@ defmodule EctoShorts.CommonFilters do
                    @having_filters ++
                    @order_by_filters ++
                    @preload_filters ++
-                   @subquery_filters ++ @limit_filters ++ @offset_filters ++ @update_filters ++ @where_filters
+                   @subquery_filters ++
+                   @lock_filters ++ @limit_filters ++ @offset_filters ++ @update_filters ++ @where_filters
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
@@ -171,6 +174,17 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(:subquery, source, query, selected_binding, term, opts) do
     SubQuery.build_query(
       :subquery,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(:lock, source, query, selected_binding, term, opts) do
+    Lock.build_query(
+      :lock,
       source,
       query,
       selected_binding,

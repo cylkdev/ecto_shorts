@@ -2,6 +2,8 @@
 trigger: always_on
 ---
 
+- Do not repeat instructions or guidlines you are given. Apply them silently.
+
 ## Writing Guidelines
 
 - Write in plain language and simple words.
