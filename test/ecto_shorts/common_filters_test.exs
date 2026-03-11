@@ -338,7 +338,10 @@ defmodule EctoShorts.CommonFiltersTest do
           %{
             join: [
               fragment: [
-                source: [name: :active_users, values: %{min_age: 18}],
+                source: [
+                  name: :active_users,
+                  values: %{min_age: 18}
+                ],
                 as: :users,
                 on: true
               ]
@@ -361,7 +364,10 @@ defmodule EctoShorts.CommonFiltersTest do
               %{
                 join: [
                   fragment: [
-                    source: [name: :error_fragment, values: %{}],
+                    source: [
+                      name: :error_fragment,
+                      values: %{}
+                    ],
                     as: :users,
                     on: true
                   ]
@@ -1633,6 +1639,81 @@ defmodule EctoShorts.CommonFiltersTest do
         )
 
       assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a provider-backed lock" do
+      expected = lock(Post, "FOR UPDATE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :provider_for_update}},
+          query_provider: EctoShorts.TestQueryProvider
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a provider-backed lock with values" do
+      expected = from(p in Post, lock: fragment("FOR UPDATE SKIP LOCKED"))
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :for_update_with_clause, values: %{clause: "SKIP LOCKED"}}},
+          query_provider: EctoShorts.TestQueryProvider
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "keeps the query unchanged when the lock provider returns nil" do
+      expected = from(p in Post)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :provider_for_update}},
+          query_provider: EctoShorts.CommonFilters.QueryProviders.NoOp
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "keeps the query unchanged when the lock provider returns an error" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: %{name: :error_fragment}},
+              query_provider: EctoShorts.TestQueryProvider
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Lock expression callback returned error for key :error_fragment: :forced_error"
+    end
+
+    test "keeps the query unchanged when the lock provider returns a raw expression" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: %{name: :legacy_for_update}},
+              query_provider: EctoShorts.TestQueryProvider
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected lock expression callback to return {:ok, query_builder_fun} | {:error, reason} | nil"
     end
   end
 

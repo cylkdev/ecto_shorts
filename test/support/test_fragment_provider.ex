@@ -19,6 +19,10 @@ defmodule EctoShorts.TestQueryProvider do
     {:ok, fn query -> from(q in query, lock: "FOR SHARE") end}
   end
 
+  def build_fragment_expression(_selected_binding, :provider_for_update, _params) do
+    {:ok, fn query -> from(q in query, lock: "FOR UPDATE") end}
+  end
+
   def build_fragment_expression(_selected_binding, :for_update_with_clause, params) do
     params = normalize_params(params)
 
@@ -47,6 +51,10 @@ defmodule EctoShorts.TestQueryProvider do
     with {:ok, min_age} <- fetch_integer(params, :min_age) do
       from(u in fragment("SELECT * FROM users WHERE age >= ?", ^min_age), select: u)
     end
+  end
+
+  def build_fragment_expression(_selected_binding, :legacy_for_update, _params) do
+    fn query -> from(q in query, lock: "FOR UPDATE") end
   end
 
   def build_fragment_expression(_selected_binding, _source_key, _params) do

@@ -1,16 +1,16 @@
 defmodule EctoShorts.QueryProvider do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Provides an API for injecting compiled query expressions into runtime expressions.
+  Provides an API for injecting provider-built query expressions into runtime filters.
 
   Use this module when you need to inject custom SQL fragments, database
-  functions, or complex expressions into queries built by
-  `EctoShorts.CommonFilters`. Fragment providers let you extend the filter
+  functions, join sources, or lock expressions into queries built by
+  `EctoShorts.CommonFilters`. Query providers let you extend the filter
   language with database-specific features without modifying the core library.
 
-  ## When to use fragments
+  ## When to use query providers
 
-  Use fragment providers when you need to:
+  Use query providers when you need to:
 
   * **Call database-specific functions** - use PostgreSQL functions like
     `to_tsvector`, MySQL JSON functions, or database-specific operators.
@@ -21,10 +21,10 @@ defmodule EctoShorts.QueryProvider do
   * **Extend the filter language** - add custom filter keys that map to
     database-specific expressions.
 
-  ## Add fragment-backed filters
+  ## Add provider-backed filters
 
-  By default, fragment resolution is disabled. Enable it by configuring a
-  fragment provider:
+  By default, provider-backed expression resolution is disabled. Enable it by
+  configuring a query provider:
 
       config :ecto_shorts,
         query_provider: MyApp.CustomFragments
@@ -48,7 +48,7 @@ defmodule EctoShorts.QueryProvider do
         end
       end
 
-  Use the fragment in a filter:
+  Use the provider in a join:
 
       EctoShorts.CommonFilters.convert_params_to_filter(
         Post,
@@ -84,7 +84,7 @@ defmodule EctoShorts.QueryProvider do
 
   ## Custom provider implementation
 
-  A fragment provider module must export `build_fragment_expression/3`:
+  A query provider module must export `build_fragment_expression/3`:
 
       defmodule MyApp.CustomFragments do
         def build_fragment_expression(selected_binding, expression_key, expression_params) do
@@ -96,15 +96,15 @@ defmodule EctoShorts.QueryProvider do
 
   * `selected_binding` - the binding selector (for example, `{:as, :post}`,
     `{:at, 1}`, `:first`, `:last`).
-  * `expression_key` - an atom identifying which fragment to build (for
+  * `expression_key` - an atom identifying which expression to build (for
     example, `:active_users`, `:for_update`).
-  * `expression_params` - a map or keyword list of parameters for the fragment.
+  * `expression_params` - a map or keyword list of parameters for the expression.
 
   ### Return value
 
   Return one of:
 
-  * `{:ok, source}` for fragment-backed joins, where `source` is a joinable Ecto
+  * `{:ok, source}` for provider-backed joins, where `source` is a joinable Ecto
     source value such as `from(... in fragment(...), select: ...)`.
   * `{:ok, query_builder_fun}` for lock builders that transform an `Ecto.Query.t/0`.
   * `{:ok, other}` for other callers that document their own expected shape.
@@ -185,7 +185,7 @@ defmodule EctoShorts.QueryProvider do
         %{lock: %{name: :for_update_with_clause, values: [clause: "SKIP LOCKED"]}}
       )
 
-  ## Fragment expression examples
+  ## Expression examples
 
   ### Simple fragment
 
@@ -205,23 +205,23 @@ defmodule EctoShorts.QueryProvider do
 
   ## Troubleshooting
 
-  **Problem:** Fragment provider raises "Expected ... to have a build_fragment_expression/3 function".
+  **Problem:** Query provider raises "Expected ... to have a build_fragment_expression/3 function".
 
   **Solution:** Add a `build_fragment_expression/3` function to your provider
   module. The function must accept three arguments and return `{:ok, value}`,
   `{:error, reason}`, or `nil` according to the caller's contract.
 
-  **Problem:** Fragment is not being called.
+  **Problem:** Provider expression is not being called.
 
-  **Solution:** Verify the fragment provider is configured correctly. Check
+  **Solution:** Verify the query provider is configured correctly. Check
   that the `:query_provider` config points to the correct module.
 
-  **Problem:** Fragment returns `nil` but should return an expression.
+  **Problem:** Provider returns `nil` but should return an expression.
 
   **Solution:** Check that the `expression_key` matches the key you are
   handling in your provider. Use `IO.inspect/2` to see what key is being passed.
 
-  **Problem:** Fragment raises at runtime.
+  **Problem:** Provider expression raises at runtime.
 
   **Solution:** Verify the provider returns the correct shape for the caller.
   For join sources, build the fragment inside an Ecto query such as
