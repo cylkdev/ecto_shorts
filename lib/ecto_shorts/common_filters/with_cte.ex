@@ -1,17 +1,15 @@
 defmodule EctoShorts.CommonFilters.WithCte do
-  alias Ecto.Query
   alias EctoShorts.CommonFilters
-  alias EctoShorts.Logger
+  alias EctoShorts.Utils
+
+  alias Ecto.Query
+  require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.WithCte"
 
   def build_query(:with_cte, schema_source, query, _selected_binding, params, opts) do
-    reduce_entries(schema_source, query, params, opts)
-  end
-
-  defp reduce_entries(schema_source, query, params, opts)
-       when is_map(params) and not is_struct(params) do
-    reduce_entries(schema_source, query, Map.to_list(params), opts)
+    normalized_params = Utils.map_to_list(params)
+    reduce_entries(schema_source, query, normalized_params, opts)
   end
 
   defp reduce_entries(schema_source, query, params, opts) when is_list(params) do
@@ -25,7 +23,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
           apply_entry(schema_source, query_acc, cte_name, cte_definition, opts)
 
         other, query_acc ->
-          Logger.warning(
+          EctoShorts.Logger.warning(
             @logger_prefix,
             "Expected :with_cte params to be a map or keyword list, got: #{inspect(other)}"
           )
@@ -36,7 +34,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
   end
 
   defp reduce_entries(_schema_source, query, value, _opts) do
-    Logger.warning(
+    EctoShorts.Logger.warning(
       @logger_prefix,
       "Expected :with_cte params to be a map or keyword list, got: #{inspect(value)}"
     )
@@ -46,10 +44,8 @@ defmodule EctoShorts.CommonFilters.WithCte do
 
   defp apply_entry(schema_source, query, cte_name, cte_definition, opts) do
     with {:ok, normalized_name} <- normalize_cte_name(cte_name),
-         {:ok, normalized_definition} <- normalize_definition(cte_name, cte_definition),
-         {:ok, cte_query} <-
-           build_cte_query(schema_source, normalized_name, normalized_definition, opts),
-         {:ok, materialized} <- fetch_materialized(normalized_name, normalized_definition) do
+         {:ok, cte_query} <- build_cte_query(schema_source, normalized_name, cte_definition, opts),
+         {:ok, materialized} <- fetch_materialized(normalized_name, cte_definition) do
       apply_cte(query, normalized_name, cte_query, materialized)
     else
       :error -> query
@@ -58,37 +54,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
 
   defp normalize_cte_name(cte_name) when is_atom(cte_name), do: {:ok, Atom.to_string(cte_name)}
   defp normalize_cte_name(cte_name) when is_binary(cte_name), do: {:ok, cte_name}
-
-  defp normalize_cte_name(cte_name) do
-    Logger.warning(
-      @logger_prefix,
-      "Expected :with_cte key to be an atom or string, got: #{inspect(cte_name)}"
-    )
-
-    :error
-  end
-
-  defp normalize_definition(cte_name, cte_definition)
-       when is_map(cte_definition) and not is_struct(cte_definition) do
-    normalize_definition(cte_name, Map.to_list(cte_definition))
-  end
-
-  defp normalize_definition(_cte_name, cte_definition) when is_list(cte_definition) do
-    if Keyword.keyword?(cte_definition) do
-      {:ok, cte_definition}
-    else
-      :error
-    end
-  end
-
-  defp normalize_definition(cte_name, cte_definition) do
-    Logger.warning(
-      @logger_prefix,
-      "Expected :with_cte params for #{inspect(cte_name)} to be a map or keyword list, got: #{inspect(cte_definition)}"
-    )
-
-    :error
-  end
+  defp normalize_cte_name(_), do: :error
 
   defp build_cte_query(schema_source, cte_name, cte_definition, opts) do
     case Keyword.fetch(cte_definition, :as) do
@@ -98,14 +64,12 @@ defmodule EctoShorts.CommonFilters.WithCte do
       {:ok, %Ecto.SubQuery{} = query} ->
         {:ok, query}
 
-      {:ok, query_params} when is_map(query_params) and not is_struct(query_params) ->
-        {:ok, params_to_query(schema_source, query_params, opts)}
-
-      {:ok, query_params} when is_list(query_params) ->
-        {:ok, params_to_query(schema_source, query_params, opts)}
+      {:ok, params} when is_list(params) ->
+        {from_source, filter_params} = Keyword.pop(params, :from, schema_source)
+        {:ok, CommonFilters.convert_params_to_filter(from_source, filter_params, opts)}
 
       {:ok, term} ->
-        Logger.warning(
+        EctoShorts.Logger.warning(
           @logger_prefix,
           "Expected CTE :as query params for #{inspect(cte_name)} to be a query, subquery, or keyword/map payload, got: #{inspect(term)}"
         )
@@ -113,7 +77,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
         :error
 
       :error ->
-        Logger.warning(
+        EctoShorts.Logger.warning(
           @logger_prefix,
           "Expected :with_cte params for #{inspect(cte_name)} to include an :as key"
         )
@@ -131,7 +95,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
         {:ok, nil}
 
       {:ok, value} ->
-        Logger.warning(
+        EctoShorts.Logger.warning(
           @logger_prefix,
           "Expected :materialized for #{inspect(cte_name)} to be a boolean, got: #{inspect(value)}"
         )
@@ -149,15 +113,5 @@ defmodule EctoShorts.CommonFilters.WithCte do
 
   defp apply_cte(query, cte_name, cte_query, materialized) do
     Query.with_cte(query, ^cte_name, as: ^cte_query, materialized: materialized)
-  end
-
-  defp params_to_query(schema_source, query_params, opts)
-       when is_map(query_params) and not is_struct(query_params) do
-    params_to_query(schema_source, Map.to_list(query_params), opts)
-  end
-
-  defp params_to_query(schema_source, query_params, opts) do
-    {from_source, filter_params} = Keyword.pop(query_params, :from, schema_source)
-    CommonFilters.convert_params_to_filter(from_source, filter_params, opts)
   end
 end

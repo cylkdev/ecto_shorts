@@ -58,18 +58,10 @@ defmodule EctoShorts.Logger do
       iex> EctoShorts.Logger.warning("MyApp.SomeModule", "hello")
   """
   @spec warning(prefix :: String.t(), message :: String.t()) :: :ok
-  if function_exported?(Logger, :warning, 2) do
-    def warning(prefix, message) do
-      message
-      |> format_message(prefix)
-      |> Logger.warning()
-    end
-  else
-    def warning(prefix, message) do
-      message
-      |> format_message(prefix)
-      |> Logger.warn()
-    end
+  def warning(prefix, message) do
+    message
+    |> format_message(prefix)
+    |> Logger.warning()
   end
 
   defp format_message(message, prefix) do
