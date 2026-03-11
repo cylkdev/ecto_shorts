@@ -7,6 +7,28 @@ defmodule EctoShorts.Utils do
   and keyword lists to existing atoms.
   """
 
+  def map_to_list(map) when is_map(map) and not is_struct(map) do
+    map
+    |> Map.to_list()
+    |> map_to_list()
+  end
+
+  def map_to_list([]) do
+    []
+  end
+
+  def map_to_list([head | tail]) do
+    [map_to_list(head) | map_to_list(tail)]
+  end
+
+  def map_to_list({k, v}) do
+    {k, map_to_list(v)}
+  end
+
+  def map_to_list(term) do
+    term
+  end
+
   def atomize_keys(enum) do
     transform_keys(enum, fn
       {key, value} when is_binary(key) ->

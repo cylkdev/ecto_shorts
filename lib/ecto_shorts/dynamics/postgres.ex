@@ -93,8 +93,8 @@ defmodule EctoShorts.Adapters.Postgres do
     end
   end
 
-  defp merge_dynamic(nil, _, b), do: b
-  defp merge_dynamic(a, _, nil), do: a
-  defp merge_dynamic(a, :and, b), do: dynamic(^a and ^b)
-  defp merge_dynamic(a, :or, b), do: dynamic(^a or ^b)
+  def merge_dynamic(nil, _, b), do: b
+  def merge_dynamic(a, _, nil), do: a
+  def merge_dynamic(a, :and, b), do: dynamic(^a and ^b)
+  def merge_dynamic(a, :or, b), do: dynamic(^a or ^b)
 end
