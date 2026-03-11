@@ -1,21 +1,19 @@
 defmodule EctoShorts.Adapters.Postgres do
-  import Ecto.Query, only: [dynamic: 1]
-
+  alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
   alias EctoShorts.Dynamics.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
 
   def build_dynamic(source, selected_binding, {key, term}, opts \\ []) do
     expr =
       term
-      |> normalize_term()
+      |> normalize_params()
       |> Enum.reduce(nil, fn entry, acc ->
-        {merge_op, expr_entry} = expr_entry(key, entry)
-        dyn = apply_expr(source, selected_binding, expr_entry, opts)
-
-        merge_dynamic(acc, merge_op, dyn)
+        {merge_op, normalize_expr_entry} = normalize_expr_entry(key, entry)
+        dyn = apply_expr(source, selected_binding, normalize_expr_entry, opts)
+        FilterHelpers.merge_dynamic(acc, merge_op, dyn)
       end)
 
-    merge_dynamic(nil, :and, expr)
+    FilterHelpers.merge_dynamic(nil, :and, expr)
   end
 
   defp apply_expr(source, selected_binding, {key, term}, opts) do
@@ -26,7 +24,7 @@ defmodule EctoShorts.Adapters.Postgres do
       Keyword.keyword?(term) ->
         Enum.reduce(term, nil, fn {inner_key, inner_value}, acc ->
           dyn = apply_expr(source, selected_binding, {key, {inner_key, inner_value}}, opts)
-          merge_dynamic(acc, :and, dyn)
+          FilterHelpers.merge_dynamic(acc, :and, dyn)
         end)
 
       true ->
@@ -34,16 +32,17 @@ defmodule EctoShorts.Adapters.Postgres do
     end
   end
 
-  defp normalize_term(term) when is_map(term) and not is_struct(term) do
+  defp normalize_params(term) when is_map(term) and not is_struct(term) do
     term
     |> Map.to_list()
-    |> normalize_term()
+    |> normalize_params()
   end
 
-  defp normalize_term(term) when is_list(term) do
+  defp normalize_params(term) when is_list(term) do
     if Keyword.keyword?(term) do
       Enum.flat_map(term, fn {key, inner_term} ->
-        normalize_term(inner_term)
+        inner_term
+        |> normalize_params()
         |> Enum.map(&{key, &1})
       end)
     else
@@ -51,18 +50,18 @@ defmodule EctoShorts.Adapters.Postgres do
     end
   end
 
-  defp normalize_term(term), do: [term]
+  defp normalize_params(term), do: [term]
 
-  defp expr_entry(key, {merge_op, term}) when merge_op in [:and, :or] do
+  defp normalize_expr_entry(key, {merge_op, term}) when merge_op in [:and, :or] do
     {merge_op, {key, term}}
   end
 
-  defp expr_entry(key, term) do
+  defp normalize_expr_entry(key, term) do
     {:and, {key, term}}
   end
 
   defp build_expr(source, selected_binding, key, term, opts) do
-    if binding_selector?(selected_binding) do
+    if FilterHelpers.binding_selector?(selected_binding) do
       {negated, term} = normalize_negation(term)
 
       cond do
@@ -81,20 +80,10 @@ defmodule EctoShorts.Adapters.Postgres do
   defp normalize_negation({:not, term}), do: {:not, term}
   defp normalize_negation(term), do: {nil, term}
 
-  defp binding_selector?({:as, nil}), do: true
-  defp binding_selector?({:as, name}) when is_atom(name), do: true
-  defp binding_selector?({:at, position}) when is_integer(position) and position >= 1, do: true
-  defp binding_selector?(_), do: false
-
   defp array_field?(source, key) do
     case CommonSchema.get_schema_reflection(source, :type, key) do
       {:array, _} -> true
       _ -> false
     end
   end
-
-  def merge_dynamic(nil, _, b), do: b
-  def merge_dynamic(a, _, nil), do: a
-  def merge_dynamic(a, :and, b), do: dynamic(^a and ^b)
-  def merge_dynamic(a, :or, b), do: dynamic(^a or ^b)
 end

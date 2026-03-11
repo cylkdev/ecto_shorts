@@ -1,6 +1,7 @@
 defmodule EctoShorts.CommonFilters.Join do
   alias EctoShorts.Adapters.Postgres
   alias EctoShorts.CommonFilters
+  alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
   alias EctoShorts.Compiler
   alias EctoShorts.Logger
@@ -257,7 +258,7 @@ defmodule EctoShorts.CommonFilters.Join do
   defp build_on_dynamic(schema_source, selected_binding, entries, opts) when is_list(entries) do
     Enum.reduce(entries, nil, fn {key, value}, acc ->
       dyn = Postgres.build_dynamic(schema_source, selected_binding, {key, value}, opts)
-      Postgres.merge_dynamic(acc, :and, dyn)
+      FilterHelpers.merge_dynamic(acc, :and, dyn)
     end)
   end
 
