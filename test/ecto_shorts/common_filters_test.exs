@@ -683,6 +683,143 @@ defmodule EctoShorts.CommonFiltersTest do
     end
   end
 
+  describe "convert_params_to_filter/3 update shapes" do
+    test "matches Ecto.Query for a root update set payload" do
+      updates = [set: [title: "After"]]
+      expected = update(Post, [], ^updates)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{update: [set: [title: "After"]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root update inc payload" do
+      updates = [inc: [views: 1]]
+      expected = update(Post, [], ^updates)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{update: [inc: [views: 1]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root combined update payload" do
+      updates = [set: [title: "After"], inc: [views: 1]]
+      expected = update(Post, [], ^updates)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{update: [set: [title: "After"], inc: [views: 1]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root update map payload" do
+      updates = [set: [title: "After"]]
+      expected = update(Post, [], ^updates)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{update: %{set: %{title: "After"}}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a named binding update payload" do
+      source =
+        from(p in Post,
+          join: u in assoc(p, :author),
+          as: :author
+        )
+
+      updates = [set: [title: dynamic([author: u], u.first_name)]]
+      expected = update(source, [author: u], ^updates)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            as: %{
+              author: %{
+                update: [set: [title: dynamic([author: u], u.first_name)]]
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a positional binding update payload" do
+      source =
+        from(p in Post,
+          join: u in assoc(p, :author)
+        )
+
+      updates = [set: [title: dynamic([_, u], u.first_name)]]
+      expected = update(source, [_, u], ^updates)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            at: %{
+              2 => %{
+                update: [set: [title: dynamic([_, u], u.first_name)]]
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+  end
+
+  describe "convert_params_to_filter/3 limit shapes" do
+    test "matches Ecto.Query for a root integer limit" do
+      expected = limit(Post, ^10)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{limit: 10},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query when limit overrides a previous limit" do
+      expected = limit(Post, ^10)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{limit: 10},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+  end
+
   describe "convert_params_to_filter/3 having shapes" do
     test "matches Ecto.Query for a root aggregate having" do
       source = from p in Post, group_by: p.author_id

@@ -13,7 +13,7 @@ defmodule EctoShorts.CommonFilters.SubQuery do
     inner_query =
       CommonFilters.convert_params_to_filter(
         query,
-        Map.new(params),
+        params,
         opts
       )
 

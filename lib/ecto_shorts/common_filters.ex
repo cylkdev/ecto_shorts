@@ -1,9 +1,12 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
 
+  alias Ecto.Query
   alias EctoShorts.CommonSchema
   alias EctoShorts.Adapters.Postgres
-  alias EctoShorts.CommonFilters.{Distinct, GroupBy, Having, OrderBy, Preload, SubQuery, Where}
+  alias EctoShorts.CommonFilters.{Distinct, GroupBy, Having, OrderBy, Preload, SubQuery, Update, Where}
+
+  require Ecto.Query
 
   @default_selected_binding {:as, nil}
 
@@ -14,9 +17,14 @@ defmodule EctoShorts.CommonFilters do
   @where_filters [:where, :or_where]
   @preload_filters [:preload]
   @subquery_filters [:subquery]
+  @limit_filters [:limit]
+  @update_filters [:update]
   @query_filters @distinct_filters ++
                    @group_by_filters ++
-                   @having_filters ++ @order_by_filters ++ @preload_filters ++ @subquery_filters ++ @where_filters
+                   @having_filters ++
+                   @order_by_filters ++
+                   @preload_filters ++
+                   @subquery_filters ++ @limit_filters ++ @update_filters ++ @where_filters
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
@@ -162,6 +170,21 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
+  defp build_query(:limit, _source, query, _selected_binding, term, _opts) do
+    Query.limit(query, ^term)
+  end
+
+  defp build_query(:update, source, query, selected_binding, term, opts) do
+    Update.build_query(
+      :update,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
   defp build_query(filter, source, query, selected_binding, term, opts) when filter in @where_filters do
     dyn =
       Postgres.build_dynamic(
@@ -182,9 +205,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp sort_filters(params) do
-    params
-    |> Map.to_list()
-    |> Enum.sort_by(fn
+    Enum.sort_by(params, fn
       {:where, _} -> 0
       {:or_where, _} -> 2
       {:subquery, _} -> 3
