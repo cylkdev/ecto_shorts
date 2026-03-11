@@ -2019,6 +2019,261 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, actual)
     end
 
+    test "matches Ecto.Query for a root window reference by name only" do
+      author_field = :author_id
+
+      expected =
+        Post
+        |> windows([p],
+          base_window: [partition_by: [field(p, ^author_field)], order_by: []]
+        )
+        |> windows([p],
+          child_window: [partition_by: [field(p, ^author_field)], order_by: []]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            windows: [
+              base_window: [partition_by: :author_id],
+              child_window: [window: :base_window]
+            ]
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root window reference with local overrides" do
+      author_field = :author_id
+      inserted_at_field = :inserted_at
+
+      expected =
+        Post
+        |> windows([p],
+          base_window: [partition_by: [field(p, ^author_field)], order_by: []]
+        )
+        |> windows([p],
+          child_window: [
+            partition_by: [field(p, ^author_field)],
+            order_by: [desc: field(p, ^inserted_at_field)]
+          ]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            windows: [
+              base_window: [partition_by: :author_id],
+              child_window: [window: :base_window, order_by: [desc: :inserted_at]]
+            ]
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for chained root window references" do
+      author_field = :author_id
+      inserted_at_field = :inserted_at
+      id_field = :id
+
+      expected =
+        Post
+        |> windows([p],
+          c_window: [
+            partition_by: [field(p, ^author_field)],
+            order_by: [asc: field(p, ^id_field)]
+          ]
+        )
+        |> windows([p],
+          b_window: [
+            partition_by: [field(p, ^author_field)],
+            order_by: [desc: field(p, ^inserted_at_field)]
+          ]
+        )
+        |> windows([p],
+          a_window: [partition_by: [field(p, ^author_field)], order_by: []]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            windows: [
+              c_window: [window: :b_window, order_by: [asc: :id]],
+              b_window: [window: :a_window, order_by: [desc: :inserted_at]],
+              a_window: [partition_by: :author_id]
+            ]
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for window references nested under a named binding" do
+      source =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      field_name = :first_name
+      order_field = :inserted_at
+
+      expected =
+        source
+        |> windows([author: a],
+          base_window: [partition_by: [field(a, ^field_name)], order_by: []]
+        )
+        |> windows([author: a],
+          child_window: [
+            partition_by: [field(a, ^field_name)],
+            order_by: [desc: field(a, ^order_field)]
+          ]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            as: %{
+              author: %{
+                windows: [
+                  base_window: [partition_by: :first_name],
+                  child_window: [window: :base_window, order_by: [desc: :inserted_at]]
+                ]
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for window references nested under a positional binding" do
+      source =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      field_name = :first_name
+      order_field = :inserted_at
+
+      expected =
+        source
+        |> windows([p, a],
+          base_window: [partition_by: [field(a, ^field_name)], order_by: []]
+        )
+        |> windows([p, a],
+          child_window: [
+            partition_by: [field(a, ^field_name)],
+            order_by: [desc: field(a, ^order_field)]
+          ]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            at: %{
+              2 => %{
+                windows: [
+                  base_window: [partition_by: :first_name],
+                  child_window: [window: :base_window, order_by: [desc: :inserted_at]]
+                ]
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "keeps the query unchanged when a referenced window is missing" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{windows: [child_window: [window: :missing_window]]},
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected referenced window :missing_window for :child_window to exist"
+    end
+
+    test "keeps the query unchanged when a window reference target is not an atom" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{windows: [child_window: [window: "base_window"]]},
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected :window for :child_window to be an atom"
+    end
+
+    test "keeps the query unchanged when a window reference cycle exists" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{
+                windows: [
+                  a_window: [window: :b_window],
+                  b_window: [window: :a_window]
+                ]
+              },
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Detected cyclic :windows reference involving :a_window"
+    end
+
+    test "keeps the query unchanged when a window references itself" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{windows: [self_window: [window: :self_window]]},
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Detected cyclic :windows reference involving :self_window"
+    end
+
     test "keeps the query unchanged when windows params are invalid" do
       expected = from(p in Post)
 

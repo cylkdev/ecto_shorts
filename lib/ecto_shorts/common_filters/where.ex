@@ -12,11 +12,8 @@ defmodule EctoShorts.CommonFilters.Where do
       )
 
     case filter do
-      :where ->
-        Query.where(query, ^dyn)
-
-      :or_where ->
-        Query.or_where(query, ^dyn)
+      :where -> Query.where(query, ^dyn)
+      :or_where -> Query.or_where(query, ^dyn)
     end
   end
 end
