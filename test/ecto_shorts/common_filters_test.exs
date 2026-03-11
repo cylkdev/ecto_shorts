@@ -123,6 +123,219 @@ defmodule EctoShorts.CommonFiltersTest do
     end
   end
 
+  describe "convert_params_to_filter/3 join shapes" do
+    test "matches Ecto.Query for an association join payload" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{join: [association: [source: :author, as: :author]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for an association shorthand join payload" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{join: [author: [as: :author]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a schema join payload" do
+      expected =
+        from(p in Post,
+          join: u in EctoShorts.Schema.User,
+          as: :user,
+          on: p.author_id == ^1
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              schema: [
+                source: EctoShorts.Schema.User,
+                as: :user,
+                on: %{author_id: 1}
+              ]
+            ]
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a table join payload" do
+      expected =
+        from(p in Post,
+          join: u in "users",
+          as: :user,
+          on: p.author_id == ^1
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              table: [
+                source: "users",
+                as: :user,
+                on: %{author_id: 1}
+              ]
+            ]
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a query join payload" do
+      user_query = from(u in EctoShorts.Schema.User, where: u.age > ^18)
+
+      expected =
+        from(p in Post,
+          join: u in ^user_query,
+          as: :user,
+          on: p.author_id == ^1
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              query: [
+                source: user_query,
+                as: :user,
+                on: %{author_id: 1}
+              ]
+            ]
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a subquery join payload built from params" do
+      user_query = from(u in EctoShorts.Schema.User, where: u.age > ^18)
+
+      expected =
+        from(p in Post,
+          join: u in subquery(user_query),
+          as: :user,
+          on: p.author_id == ^1
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              subquery: [
+                source: [from: EctoShorts.Schema.User, age: {:>, 18}],
+                as: :user,
+                on: %{author_id: 1}
+              ]
+            ]
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a named binding association join payload" do
+      source =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author,
+          join: ap in assoc(a, :posts),
+          as: :author_posts
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            as: %{
+              author: %{
+                join: [
+                  association: [source: :posts, as: :author_posts]
+                ]
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+  end
+
+  describe "convert_params_to_filter/3 with_named_binding shapes" do
+    test "matches Ecto.Query for the documented with_named_binding workflow" do
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{with_named_binding: [author: %{join: [association: [source: :author, as: :author]]}]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query when with_named_binding no-ops on an existing binding" do
+      source =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{with_named_binding: %{author: %{join: [association: [source: :author, as: :author]]}}},
+          []
+        )
+
+      assert_query(source, actual)
+    end
+  end
+
   describe "convert_params_to_filter/3 group_by shapes" do
     test "matches Ecto.Query for a root group_by atom" do
       expected = from p in Post, group_by: :author_id

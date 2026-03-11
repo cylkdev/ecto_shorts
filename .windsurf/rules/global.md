@@ -18,11 +18,11 @@ trigger: always_on
 
 - When you make a change that results in an unexpected error, do not try to fix it. Ask for clarification on how to proceed.
 
-- Before proposing a solution, you must first review the codebase and all relevant context so your recommendation is grounded in evidence. For example, read the dependency’s documentation before suggesting a fix that depends on it.
+- Before proposing a solution, review the codebase and all relevant context so your recommendation is grounded in evidence. For example, read the dependency’s documentation before suggesting a fix that depends on it.
 
-- Use examples generously when providing an explanation. Your explanations must be easy for a human novice to understand at a glance.
+- Use examples generously when providing an explanation. Your explanations should be easy for a complete beginner to understand at a glance.
 
-- When describing the changes you intend to make to code you must copy snippets and explain the current state then explain from beginning to end with examples of the exact changes you intend to make. You must include enough code to make all the boundaries and layers clear between every module and function.
+- When describing the changes you intend to make to code you must copy snippets and explain the current state then explain from beginning to end with examples of the exact changes you intend to make. Include enough code to make all the boundaries and layers clear between every module and function.
 
 - When describing changes you've made show the before and after states.
 

@@ -10,6 +10,7 @@ defmodule EctoShorts.CommonFilters do
     First,
     GroupBy,
     Having,
+    Join,
     Last,
     Limit,
     Lock,
@@ -21,6 +22,7 @@ defmodule EctoShorts.CommonFilters do
     SetOperation,
     SubQuery,
     Update,
+    WithNamedBinding,
     Where
   }
 
@@ -30,6 +32,7 @@ defmodule EctoShorts.CommonFilters do
   @first_filters [:first]
   @group_by_filters [:group_by]
   @having_filters [:having, :or_having]
+  @join_filters [:join]
   @last_filters [:last]
   @order_by_filters [:order_by, :prepend_order_by, :reverse_order]
   @where_filters [:where, :or_where]
@@ -43,18 +46,28 @@ defmodule EctoShorts.CommonFilters do
   @limit_filters [:limit]
   @offset_filters [:offset]
   @update_filters [:update]
-  @query_filters @distinct_filters ++
-                   @first_filters ++
-                   @group_by_filters ++
-                   @having_filters ++
-                   @last_filters ++
-                   @order_by_filters ++
-                   @preload_filters ++
-                   @put_query_prefix_filters ++
-                   @recursive_ctes_filters ++
-                   @set_operation_filters ++
-                   @subquery_filters ++
-                   @exclude_filters ++ @lock_filters ++ @limit_filters ++ @offset_filters ++ @update_filters ++ @where_filters
+  @with_named_binding_filters [:with_named_binding]
+  @query_filters Enum.concat([
+                   @distinct_filters,
+                   @first_filters,
+                   @group_by_filters,
+                   @having_filters,
+                   @join_filters,
+                   @last_filters,
+                   @order_by_filters,
+                   @preload_filters,
+                   @put_query_prefix_filters,
+                   @recursive_ctes_filters,
+                   @set_operation_filters,
+                   @subquery_filters,
+                   @exclude_filters,
+                   @lock_filters,
+                   @limit_filters,
+                   @offset_filters,
+                   @update_filters,
+                   @with_named_binding_filters,
+                   @where_filters
+                 ])
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
@@ -147,6 +160,17 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(:last, source, query, selected_binding, term, opts) do
     Last.build_query(
       :last,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(:join, source, query, selected_binding, term, opts) do
+    Join.build_query(
+      :join,
       source,
       query,
       selected_binding,
@@ -303,6 +327,17 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(:update, source, query, selected_binding, term, opts) do
     Update.build_query(
       :update,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(:with_named_binding, source, query, selected_binding, term, opts) do
+    WithNamedBinding.build_query(
+      :with_named_binding,
       source,
       query,
       selected_binding,
