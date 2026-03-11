@@ -1,8 +1,8 @@
 defmodule EctoShorts.Compiler do
   alias EctoShorts.Generator
+  alias EctoShorts.Compiler.QueryBindingBuilder
 
-  alias EctoShorts.Compiler.QueryBindingBuilder,
-        defmacro(__using__(opts)) do
+  defmacro __using__(opts) do
     quote do
       @__ecto_shorts_compiler_options__ unquote(opts)
       @before_compile EctoShorts.Compiler
