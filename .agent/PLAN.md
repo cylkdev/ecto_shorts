@@ -161,28 +161,28 @@ Example:
 
     Create a function `add/2` that adds two numbers.
 
-    #### Rules
+    **Rules:**
 
     - Returns the sum of two numbers.
     - Accepts arguments: `add(integer() | float(), integer() | float())`
     - Returns: `integer() | float()`
     - Accept integers or floats for both inputs, and return the numeric sum.
 
-    #### Examples
+    **Examples:**
 
-    AppName.Calculator.add(1, 2)
-    3
+        AppName.Calculator.add(1, 2)
+        3
 
-    AppName.Calculator.add(0, 5)
-    5
+        AppName.Calculator.add(0, 5)
+        5
 
-    AppName.Calculator.add(-1, 1)
-    0
+        AppName.Calculator.add(-1, 1)
+        0
 
-    AppName.Calculator.add(2.5, 1.5)
-    4.0
+        AppName.Calculator.add(2.5, 1.5)
+        4.0
 
-    #### Open questions
+    **Open Questions:**
 
     - **Q:** Should it allow both integers and floats? **A:** ...
     - **Q:** What should happen if someone passes a string like "2"? **A:** ...

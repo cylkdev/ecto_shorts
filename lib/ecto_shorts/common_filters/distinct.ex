@@ -1,133 +1,72 @@
-# defmodule EctoShorts.CommonFilters.Distinct do
-#   @moduledoc since: "3.0.0"
-#   @moduledoc """
-#   Builds `:distinct` expressions from data-driven params.
+defmodule EctoShorts.CommonFilters.Distinct do
+  alias EctoShorts.Compiler
+  alias Ecto.Query
 
-#   Accepts booleans, single field atoms, lists of fields, and
-#   `{direction, field}` tuples. Supports binding-scoped params via the
-#   `:bind` key.
-#   """
+  require Ecto.Query
 
-#   alias Ecto.Query
-#   alias EctoShorts.CommonFilters.BindingParams
-#   alias EctoShorts.Generator
-#   alias EctoShorts.Logger
+  @order_directions [
+    :asc,
+    :asc_nulls_last,
+    :asc_nulls_first,
+    :desc,
+    :desc_nulls_last,
+    :desc_nulls_first
+  ]
 
-#   require Ecto.Query
-#   require EctoShorts.Generator
+  {target_binding_var, binding_patterns} =
+    Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
-#   @logger_prefix "EctoShorts.CommonFilters.Distinct"
-#   @selected_binding_key :bind
+  def build_query(:distinct, _source, query, selected_binding, params, _opts) do
+    build_distinct(query, selected_binding, params)
+  end
 
-#   @order_directions [
-#     :asc,
-#     :asc_nulls_last,
-#     :asc_nulls_first,
-#     :desc,
-#     :desc_nulls_last,
-#     :desc_nulls_first
-#   ]
+  for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
+    defp build_distinct(query, unquote(quoted_binding_head), expr) when is_boolean(expr) do
+      Query.distinct(query, ^expr)
+    end
 
-#   @doc false
-#   def build(_schema_source, :distinct, query, selected_binding, params, _opts) do
-#     reduce_params(query, selected_binding, params)
-#   end
+    defp build_distinct(query, unquote(quoted_binding_head), field_name)
+         when is_atom(field_name) do
+      Query.distinct(
+        query,
+        [unquote_splicing(quoted_binding_body)],
+        field(unquote(target_binding_var), ^field_name)
+      )
+    end
 
-#   defp reduce_params(query, selected_binding, {key, params})
-#        when is_map(params) and not is_struct(params) do
-#     reduce_params(query, selected_binding, {key, Map.to_list(params)})
-#   end
+    defp build_distinct(query, unquote(quoted_binding_head), entries) when is_list(entries) do
+      distinct_exprs =
+        Enum.map(entries, fn
+          {dir, field_name} when dir in @order_directions and is_atom(field_name) ->
+            dyn =
+              Query.dynamic(
+                [unquote_splicing(quoted_binding_body)],
+                field(unquote(target_binding_var), ^field_name)
+              )
 
-#   defp reduce_params(query, selected_binding, {@selected_binding_key, bind_params}) do
-#     reduce_params_bind(query, selected_binding, bind_params)
-#   end
+            {dir, dyn}
 
-#   defp reduce_params(query, selected_binding, {key, value}) do
-#     apply_distinct_expr(query, selected_binding, {key, value})
-#   end
+          field_name when is_atom(field_name) ->
+            dyn =
+              Query.dynamic(
+                [unquote_splicing(quoted_binding_body)],
+                field(unquote(target_binding_var), ^field_name)
+              )
 
-#   defp reduce_params(query, selected_binding, params)
-#        when is_map(params) and not is_struct(params) do
-#     reduce_params(query, selected_binding, Map.to_list(params))
-#   end
+            {:asc, dyn}
 
-#   defp reduce_params(query, selected_binding, entries) when is_list(entries) do
-#     if Keyword.keyword?(entries) do
-#       {bind_entries, distinct_entries} =
-#         Enum.split_with(entries, fn {k, _} -> k === @selected_binding_key end)
+          %Ecto.Query.DynamicExpr{} = dynamic_expr ->
+            dynamic_expr
 
-#       query =
-#         if distinct_entries !== [],
-#           do: apply_distinct_expr(query, selected_binding, distinct_entries),
-#           else: query
+          other ->
+            other
+        end)
 
-#       Enum.reduce(bind_entries, query, fn entry, query_acc ->
-#         reduce_params(query_acc, selected_binding, entry)
-#       end)
-#     else
-#       apply_distinct_expr(query, selected_binding, entries)
-#     end
-#   end
+      Query.distinct(query, ^distinct_exprs)
+    end
+  end
 
-#   defp reduce_params(query, selected_binding, expr) do
-#     apply_distinct_expr(query, selected_binding, expr)
-#   end
-
-#   defp reduce_params_bind(query, _selected_binding, bind_params) do
-#     bind_params
-#     |> BindingParams.normalize_bind_params(query)
-#     |> Enum.reduce(query, fn {selected_binding, value}, q ->
-#       reduce_params(q, selected_binding, value)
-#     end)
-#   end
-
-#   Compiler.define_clauses do
-#     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
-#       defp apply_distinct_expr(query, unquote(quoted_binding_head), expr) when is_boolean(expr) do
-#         Query.distinct(query, ^expr)
-#       end
-
-#       defp apply_distinct_expr(query, unquote(quoted_binding_head), field_name)
-#            when is_atom(field_name) do
-#         Query.distinct(
-#           query,
-#           [unquote_splicing(quoted_binding_body)],
-#           field(unquote(target_binding_var), ^field_name)
-#         )
-#       end
-
-#       defp apply_distinct_expr(query, unquote(quoted_binding_head), entries)
-#            when is_list(entries) do
-#         distinct_exprs =
-#           Enum.map(entries, fn
-#             {dir, field_name} when dir in @order_directions and is_atom(field_name) ->
-#               {dir,
-#                Query.dynamic(
-#                  [unquote_splicing(quoted_binding_body)],
-#                  field(unquote(target_binding_var), ^field_name)
-#                )}
-
-#             field_name when is_atom(field_name) ->
-#               {:asc,
-#                Query.dynamic(
-#                  [unquote_splicing(quoted_binding_body)],
-#                  field(unquote(target_binding_var), ^field_name)
-#                )}
-
-#             other ->
-#               other
-#           end)
-
-#         Query.distinct(query, ^distinct_exprs)
-#       end
-#   end
-
-#   defp apply_distinct_expr(query, _selected_binding, expr) do
-#     Logger.warning(
-#       @logger_prefix,
-#       "Expected :distinct value to be a boolean, atom, list, or {direction, field} tuple, got: #{inspect(expr)}"
-#     )
-
-#     query
-#   end
-# end
+  defp build_distinct(query, _selected_binding, expr) do
+    Query.distinct(query, ^expr)
+  end
+end
