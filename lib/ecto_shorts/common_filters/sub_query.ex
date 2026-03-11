@@ -1,26 +1,27 @@
 defmodule EctoShorts.CommonFilters.SubQuery do
-  alias Ecto.Query
   alias EctoShorts.CommonFilters
+  alias EctoShorts.Utils
 
+  alias Ecto.Query
   require Ecto.Query
 
-  def build_query(:subquery, _source, query, _selected_binding, params, opts)
-      when is_map(params) and not is_struct(params) do
-    build_query(:subquery, nil, query, nil, Map.to_list(params), opts)
-  end
+  @logger_prefix "EctoShorts.CommonFilters.SubQuery"
 
-  def build_query(:subquery, _source, query, _selected_binding, params, opts) when is_list(params) do
-    inner_query =
-      CommonFilters.convert_params_to_filter(
-        query,
-        params,
-        opts
-      )
+  def build_query(:subquery, _source, query, _selected_binding, term, opts) do
+    params = Utils.normalize_input(term)
 
-    Query.subquery(inner_query)
-  end
+    if Keyword.keyword?(params) do
+      inner_query =
+        CommonFilters.convert_params_to_filter(
+          query,
+          params,
+          opts
+        )
 
-  def build_query(:subquery, _source, query, _selected_binding, _params, _opts) do
-    query
+      Query.subquery(inner_query)
+    else
+      EctoShorts.Logger.warning(@logger_prefix, "Expected ..., got: #{inspect(term)}")
+      query
+    end
   end
 end

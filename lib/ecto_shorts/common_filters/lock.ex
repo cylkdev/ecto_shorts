@@ -11,6 +11,14 @@ defmodule EctoShorts.CommonFilters.Lock do
   {_, binding_patterns} =
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
+  @spec build_query(
+          :lock,
+          term(),
+          Ecto.Query.t(),
+          {:as, atom()} | {:at, pos_integer()},
+          map() | keyword(),
+          keyword()
+        ) :: Ecto.Query.t()
   def build_query(:lock, _source, query, selected_binding, params, opts) do
     if (is_map(params) and not is_struct(params)) or Keyword.keyword?(params) do
       case params[:name] do

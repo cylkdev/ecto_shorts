@@ -11,18 +11,18 @@ defmodule EctoShorts.CommonFilters.Select do
   {target_binding_var, binding_patterns} =
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
-  def build_query(filter, _source, query, selected_binding, term, _opts) do
+  def build_query(:select, _source, query, selected_binding, term, _opts) do
     normalized_term = Utils.normalize_input(term)
 
-    case filter do
-      :select ->
-        query
-        |> drop_existing_select()
-        |> apply_select_expr(selected_binding, normalized_term)
+    query
+    |> drop_existing_select()
+    |> apply_select_expr(selected_binding, normalized_term)
+  end
 
-      :select_merge ->
-        apply_select_merge_expr(query, selected_binding, normalized_term)
-    end
+  def build_query(:select_merge, _source, query, selected_binding, term, _opts) do
+    normalized_term = Utils.normalize_input(term)
+
+    apply_select_merge_expr(query, selected_binding, normalized_term)
   end
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
@@ -34,20 +34,14 @@ defmodule EctoShorts.CommonFilters.Select do
       Query.select(query, [unquote_splicing(quoted_binding_body)], unquote(target_binding_var))
     end
 
-    defp apply_select_expr(query, unquote(quoted_binding_head), {:map, params})
-         when is_map(params) do
-      apply_select_expr(query, unquote(quoted_binding_head), {:map, Map.to_list(params)})
-    end
-
-    defp apply_select_expr(query, unquote(quoted_binding_head), {:map, list})
-         when is_list(list) do
-      if Keyword.keyword?(list) do
-        apply_select_alias_entries(query, unquote(quoted_binding_head), list)
+    defp apply_select_expr(query, unquote(quoted_binding_head), {:map, term}) do
+      if Keyword.keyword?(term) do
+        apply_select_alias_entries(query, unquote(quoted_binding_head), term)
       else
         Query.select(
           query,
           [unquote_splicing(quoted_binding_body)],
-          map(unquote(target_binding_var), ^list)
+          map(unquote(target_binding_var), ^term)
         )
       end
     end

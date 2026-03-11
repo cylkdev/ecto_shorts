@@ -4,6 +4,9 @@ defmodule EctoShorts.CommonFilters.Preload do
 
   require Ecto.Query
 
+  {target_binding_var, binding_patterns} =
+    Compiler.query_binding_contracts(__MODULE__, positions: 10)
+
   def build_query(:preload, _source, query, selected_binding, params, _opts) do
     case selected_binding do
       {:as, nil} -> Query.preload(query, ^normalize_preload(params))
@@ -29,9 +32,6 @@ defmodule EctoShorts.CommonFilters.Preload do
   defp apply_preload(query, selected_binding, assoc_key) do
     build_preload(query, selected_binding, assoc_key, nil)
   end
-
-  {target_binding_var, binding_patterns} =
-    Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp build_preload(query, unquote(quoted_binding_head), assoc_key, nil) do
