@@ -1,12 +1,9 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
 
-  alias Ecto.Query
   alias EctoShorts.CommonSchema
   alias EctoShorts.Adapters.Postgres
-  alias EctoShorts.CommonFilters.{Distinct, GroupBy, Having, OrderBy, Preload, SubQuery, Update, Where}
-
-  require Ecto.Query
+  alias EctoShorts.CommonFilters.{Distinct, GroupBy, Having, Limit, OrderBy, Preload, SubQuery, Update, Where}
 
   @default_selected_binding {:as, nil}
 
@@ -170,8 +167,15 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp build_query(:limit, _source, query, _selected_binding, term, _opts) do
-    Query.limit(query, ^term)
+  defp build_query(:limit, source, query, selected_binding, term, opts) do
+    Limit.build_query(
+      :limit,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
   end
 
   defp build_query(:update, source, query, selected_binding, term, opts) do
