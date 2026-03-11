@@ -10,6 +10,7 @@ defmodule EctoShorts.CommonFilters do
     First,
     GroupBy,
     Having,
+    Last,
     Limit,
     Lock,
     Offset,
@@ -29,6 +30,7 @@ defmodule EctoShorts.CommonFilters do
   @first_filters [:first]
   @group_by_filters [:group_by]
   @having_filters [:having, :or_having]
+  @last_filters [:last]
   @order_by_filters [:order_by, :prepend_order_by, :reverse_order]
   @where_filters [:where, :or_where]
   @preload_filters [:preload]
@@ -45,6 +47,7 @@ defmodule EctoShorts.CommonFilters do
                    @first_filters ++
                    @group_by_filters ++
                    @having_filters ++
+                   @last_filters ++
                    @order_by_filters ++
                    @preload_filters ++
                    @put_query_prefix_filters ++
@@ -133,6 +136,17 @@ defmodule EctoShorts.CommonFilters do
   defp build_query(:first, source, query, selected_binding, term, opts) do
     First.build_query(
       :first,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(:last, source, query, selected_binding, term, opts) do
+    Last.build_query(
+      :last,
       source,
       query,
       selected_binding,
@@ -317,11 +331,21 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp sort_filters(params) do
-    Enum.sort_by(params, fn
-      {:where, _} -> 0
-      {:or_where, _} -> 2
-      {:subquery, _} -> 3
-      _ -> 1
-    end)
+    params =
+      if is_map(params) and not is_struct(params) do
+        Map.to_list(params)
+      else
+        params
+      end
+
+    where_filters = Keyword.take(params, [:where])
+    or_where_filters = Keyword.take(params, [:or_where])
+    terminal_filters = Enum.filter(params, fn {key, _val} -> key in [:last, :subquery] end)
+    other_filters = Keyword.drop(params, [:where, :or_where, :last, :subquery])
+
+    where_filters
+    |> Kernel.++(other_filters)
+    |> Kernel.++(or_where_filters)
+    |> Kernel.++(terminal_filters)
   end
 end

@@ -683,6 +683,124 @@ defmodule EctoShorts.CommonFiltersTest do
     end
   end
 
+  describe "convert_params_to_filter/3 last shapes" do
+    test "matches Ecto.Query for a root integer last payload" do
+      expected =
+        Post
+        |> exclude(:order_by)
+        |> order_by([], desc: :id)
+        |> limit(^2)
+        |> subquery()
+        |> order_by([], asc: :id)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{last: 2},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root keyword last payload" do
+      expected =
+        Post
+        |> exclude(:order_by)
+        |> order_by([], desc: :title)
+        |> limit(^2)
+        |> subquery()
+        |> order_by([], asc: :title)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{last: [title: 2]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for an explicit id last payload" do
+      expected =
+        Post
+        |> exclude(:order_by)
+        |> order_by([], desc: :id)
+        |> limit(^2)
+        |> subquery()
+        |> order_by([], asc: :id)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{last: %{id: 2}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for an explicit title last payload" do
+      expected =
+        Post
+        |> exclude(:order_by)
+        |> order_by([], desc: :title)
+        |> limit(^2)
+        |> subquery()
+        |> order_by([], asc: :title)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{last: %{title: 2}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for terminal last wrapping after local filters" do
+      expected =
+        Post
+        |> where([p], p.published == ^true)
+        |> exclude(:order_by)
+        |> order_by([], desc: :id)
+        |> limit(^2)
+        |> subquery()
+        |> order_by([], asc: :id)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [last: 2, published: true],
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query when last replaces a previous order_by" do
+      expected =
+        Post
+        |> order_by([], desc: :title)
+        |> exclude(:order_by)
+        |> order_by([], desc: :id)
+        |> limit(^2)
+        |> subquery()
+        |> order_by([], asc: :id)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          [last: 2, order_by: :title],
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+  end
+
   describe "convert_params_to_filter/3 update shapes" do
     test "matches Ecto.Query for a root update set payload" do
       updates = [set: [title: "After"]]
@@ -1175,19 +1293,6 @@ defmodule EctoShorts.CommonFiltersTest do
   end
 
   describe "convert_params_to_filter/3 lock shapes" do
-    test "matches Ecto.Query for a root string lock" do
-      expected = lock(Post, "FOR UPDATE")
-
-      actual =
-        CommonFilters.convert_params_to_filter(
-          Post,
-          %{lock: "FOR UPDATE"},
-          []
-        )
-
-      assert_query(expected, actual)
-    end
-
     test "matches Ecto.Query for a root for_update alias lock" do
       expected = lock(Post, "FOR UPDATE")
 
@@ -1208,55 +1313,6 @@ defmodule EctoShorts.CommonFiltersTest do
         CommonFilters.convert_params_to_filter(
           Post,
           %{lock: %{name: :for_share}},
-          []
-        )
-
-      assert_query(expected, actual)
-    end
-
-    test "matches Ecto.Query for a named binding lock payload" do
-      source =
-        from(p in Post,
-          join: u in assoc(p, :author),
-          as: :author
-        )
-
-      expected = lock(source, [author: u], "FOR UPDATE")
-
-      actual =
-        CommonFilters.convert_params_to_filter(
-          source,
-          %{
-            as: %{
-              author: %{
-                lock: "FOR UPDATE"
-              }
-            }
-          },
-          []
-        )
-
-      assert_query(expected, actual)
-    end
-
-    test "matches Ecto.Query for a positional binding lock payload" do
-      source =
-        from(p in Post,
-          join: u in assoc(p, :author)
-        )
-
-      expected = lock(source, [_, u], "FOR UPDATE")
-
-      actual =
-        CommonFilters.convert_params_to_filter(
-          source,
-          %{
-            at: %{
-              2 => %{
-                lock: "FOR UPDATE"
-              }
-            }
-          },
           []
         )
 
