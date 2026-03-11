@@ -3,12 +3,13 @@ defmodule EctoShorts.CommonFilters do
 
   alias EctoShorts.CommonSchema
   alias EctoShorts.Adapters.Postgres
-  alias EctoShorts.CommonFilters.{OrderBy, Preload, Where}
+  alias EctoShorts.CommonFilters.{GroupBy, OrderBy, Preload, Where}
 
   @default_selected_binding {:as, nil}
 
+  @group_by_filters [:group_by]
   @order_by_filters [:order_by]
-  @query_filters @order_by_filters ++ [:preload]
+  @query_filters @group_by_filters ++ @order_by_filters ++ [:preload]
   @where_filters [:where, :or_where]
 
   def convert_params_to_filter(source, params, opts) do
@@ -67,6 +68,16 @@ defmodule EctoShorts.CommonFilters do
 
   defp build_query(filter, source, query, selected_binding, term, opts) do
     case filter do
+      group_by_filter when group_by_filter in @group_by_filters ->
+        GroupBy.build_query(
+          filter,
+          source,
+          query,
+          selected_binding,
+          term,
+          opts
+        )
+
       order_by_filter when order_by_filter in @order_by_filters ->
         OrderBy.build_query(
           filter,
