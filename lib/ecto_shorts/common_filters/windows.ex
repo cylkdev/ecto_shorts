@@ -46,64 +46,28 @@ defmodule EctoShorts.CommonFilters.Windows do
     query
   end
 
-  defp apply_window(query, _selected_binding, window_name, _window_definition)
-       when not is_atom(window_name) do
-    EctoShorts.Logger.warning(
-      @logger_prefix,
-      "Expected window name to be an atom, got: #{inspect(window_name)}"
-    )
-
-    query
-  end
-
   defp apply_window(query, selected_binding, window_name, window_definition) do
-    case normalize_window_definition(window_definition) do
-      {:ok, normalized_definition} ->
-        unknown_keys =
-          normalized_definition
-          |> Keyword.keys()
-          |> Enum.reject(&(&1 in @window_keys))
+    definition = Keyword.take(window_definition, @window_keys)
+    partition_by = normalize_partition_by(Keyword.get(definition, :partition_by, []), selected_binding)
+    order_by = normalize_order_by(Keyword.get(definition, :order_by, []), selected_binding)
+    frame = definition[:frame]
 
-        if unknown_keys !== [] do
-          EctoShorts.Logger.warning(
-            @logger_prefix,
-            "Ignoring unsupported window keys #{inspect(unknown_keys)} for #{inspect(window_name)}"
-          )
-        end
+    if is_atom(frame) or is_struct(frame, Ecto.Query.DynamicExpr) do
+      apply_window_definition(query, selected_binding, window_name, partition_by, order_by, frame)
+    else
+      EctoShorts.Logger.warning(
+        @logger_prefix,
+        "Expected :frame for #{inspect(window_name)} to be an Ecto dynamic expression, got: #{inspect(other)}"
+      )
 
-        definition = Keyword.take(normalized_definition, @window_keys)
-        partition_by = normalize_partition_by(Keyword.get(definition, :partition_by, []), selected_binding)
-        order_by = normalize_order_by(Keyword.get(definition, :order_by, []), selected_binding)
-
-        with {:ok, frame} <- normalize_frame(window_name, Keyword.get(definition, :frame)) do
-          apply_window_definition(query, selected_binding, window_name, partition_by, order_by, frame)
-        else
-          :error -> query
-        end
-
-      :error ->
-        EctoShorts.Logger.warning(
-          @logger_prefix,
-          "Expected window definition for #{inspect(window_name)} to be a map or keyword list, got: #{inspect(window_definition)}"
-        )
-
-        query
+      query
     end
   end
-
-  defp normalize_window_definition(value) when is_map(value) and not is_struct(value),
-    do: {:ok, Map.to_list(value)}
-
-  defp normalize_window_definition(value) when is_list(value) do
-    if Keyword.keyword?(value), do: {:ok, value}, else: :error
-  end
-
-  defp normalize_window_definition(_value), do: :error
 
   defp normalize_partition_by(nil, _selected_binding), do: []
 
   defp normalize_partition_by(value, selected_binding) when is_atom(value) do
-    [compose(selected_binding, value)]
+    [dynamic_field_expr(selected_binding, value)]
   end
 
   defp normalize_partition_by(value, selected_binding)
@@ -117,7 +81,7 @@ defmodule EctoShorts.CommonFilters.Windows do
     else
       Enum.map(values, fn
         value when is_atom(value) ->
-          compose(selected_binding, value)
+          dynamic_field_expr(selected_binding, value)
 
         other ->
           other
@@ -130,11 +94,11 @@ defmodule EctoShorts.CommonFilters.Windows do
   defp normalize_order_by(nil, _selected_binding), do: []
 
   defp normalize_order_by(value, selected_binding) when is_atom(value) do
-    [compose(selected_binding, value)]
+    [dynamic_field_expr(selected_binding, value)]
   end
 
   defp normalize_order_by({direction, field_name}, selected_binding) when is_atom(field_name) do
-    [{direction, compose(selected_binding, field_name)}]
+    [{direction, dynamic_field_expr(selected_binding, field_name)}]
   end
 
   defp normalize_order_by(value, selected_binding)
@@ -146,7 +110,7 @@ defmodule EctoShorts.CommonFilters.Windows do
     if Keyword.keyword?(values) do
       Enum.map(values, fn
         {direction, field_name} when is_atom(field_name) ->
-          {direction, compose(selected_binding, field_name)}
+          {direction, dynamic_field_expr(selected_binding, field_name)}
 
         other ->
           other
@@ -154,7 +118,7 @@ defmodule EctoShorts.CommonFilters.Windows do
     else
       Enum.map(values, fn
         value when is_atom(value) ->
-          compose(selected_binding, value)
+          dynamic_field_expr(selected_binding, value)
 
         other ->
           other
@@ -163,18 +127,6 @@ defmodule EctoShorts.CommonFilters.Windows do
   end
 
   defp normalize_order_by(value, _selected_binding), do: value
-
-  defp normalize_frame(_window_name, nil), do: {:ok, nil}
-  defp normalize_frame(_window_name, %Ecto.Query.DynamicExpr{} = frame), do: {:ok, frame}
-
-  defp normalize_frame(window_name, frame) do
-    EctoShorts.Logger.warning(
-      @logger_prefix,
-      "Expected :frame for #{inspect(window_name)} to be an Ecto dynamic expression, got: #{inspect(frame)}"
-    )
-
-    :error
-  end
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp apply_window_definition(
@@ -207,7 +159,7 @@ defmodule EctoShorts.CommonFilters.Windows do
       )
     end
 
-    defp compose(unquote(quoted_binding_head), field_name) do
+    defp dynamic_field_expr(unquote(quoted_binding_head), field_name) do
       Query.dynamic(
         [unquote_splicing(quoted_binding_body)],
         field(unquote(target_binding_var), ^field_name)
