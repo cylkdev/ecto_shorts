@@ -10,7 +10,7 @@ defmodule EctoShorts.CommonFilters do
   @distinct_filters [:distinct]
   @group_by_filters [:group_by]
   @having_filters [:having, :or_having]
-  @order_by_filters [:order_by]
+  @order_by_filters [:order_by, :prepend_order_by, :reverse_order]
   @where_filters [:where, :or_where]
   @preload_filters [:preload]
   @query_filters @distinct_filters ++
