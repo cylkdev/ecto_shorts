@@ -1695,7 +1695,7 @@ defmodule EctoShorts.CommonFiltersTest do
           assert_query(expected, actual)
         end)
 
-      assert log =~ "Lock expression callback returned error for key :error_fragment: :forced_error"
+      assert log =~ "Lock expression callback returned error for :error_fragment: :forced_error"
     end
 
     test "keeps the query unchanged when the lock provider returns a raw expression" do
@@ -1713,7 +1713,8 @@ defmodule EctoShorts.CommonFiltersTest do
           assert_query(expected, actual)
         end)
 
-      assert log =~ "Expected lock expression callback to return {:ok, query_builder_fun} | {:error, reason} | nil"
+      assert log =~
+               "Expected lock expression callback to return {:ok, function} | {:error, reason} | nil"
     end
   end
 
