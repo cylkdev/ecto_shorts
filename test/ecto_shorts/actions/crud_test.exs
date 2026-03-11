@@ -5,6 +5,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   alias EctoShorts.Actions
   alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
+  alias EctoShorts.Schema.PostAuthor
   alias EctoShorts.Schema.PostWithLock
   alias EctoShorts.Schema.User
 
@@ -431,8 +432,17 @@ defmodule EctoShorts.Actions.CRUDTest do
         |> Post.changeset(%{title: "ParentPost", author_id: author.id})
         |> Repo.insert!()
 
-      %Post{}
-      |> Post.changeset(%{title: "NestedPost", author_id: author.id})
+      authored_post =
+        %Post{}
+        |> Post.changeset(%{title: "NestedPost", author_id: author.id})
+        |> Repo.insert!()
+
+      %PostAuthor{}
+      |> PostAuthor.changeset(%{author_id: author.id, post_id: post.id})
+      |> Repo.insert!()
+
+      %PostAuthor{}
+      |> PostAuthor.changeset(%{author_id: author.id, post_id: authored_post.id})
       |> Repo.insert!()
 
       q =
@@ -470,6 +480,14 @@ defmodule EctoShorts.Actions.CRUDTest do
         %Post{}
         |> Post.changeset(%{title: "NestedPost", author_id: author.id})
         |> Repo.insert!()
+
+      %PostAuthor{}
+      |> PostAuthor.changeset(%{author_id: author.id, post_id: post.id})
+      |> Repo.insert!()
+
+      %PostAuthor{}
+      |> PostAuthor.changeset(%{author_id: author.id, post_id: authored_post.id})
+      |> Repo.insert!()
 
       %Comment{}
       |> Comment.changeset(%{body: "NestedComment", post_id: authored_post.id, author_id: author.id})
@@ -511,8 +529,17 @@ defmodule EctoShorts.Actions.CRUDTest do
         |> Post.changeset(%{title: "ParentPost", author_id: author.id})
         |> Repo.insert!()
 
-      %Post{}
-      |> Post.changeset(%{title: "NestedPost", author_id: author.id})
+      authored_post =
+        %Post{}
+        |> Post.changeset(%{title: "NestedPost", author_id: author.id})
+        |> Repo.insert!()
+
+      %PostAuthor{}
+      |> PostAuthor.changeset(%{author_id: author.id, post_id: post.id})
+      |> Repo.insert!()
+
+      %PostAuthor{}
+      |> PostAuthor.changeset(%{author_id: author.id, post_id: authored_post.id})
       |> Repo.insert!()
 
       q =
@@ -549,6 +576,14 @@ defmodule EctoShorts.Actions.CRUDTest do
         %Post{}
         |> Post.changeset(%{title: "NestedPost", author_id: author.id})
         |> Repo.insert!()
+
+      %PostAuthor{}
+      |> PostAuthor.changeset(%{author_id: author.id, post_id: post.id})
+      |> Repo.insert!()
+
+      %PostAuthor{}
+      |> PostAuthor.changeset(%{author_id: author.id, post_id: authored_post.id})
+      |> Repo.insert!()
 
       %Comment{}
       |> Comment.changeset(%{body: "NestedComment", post_id: authored_post.id, author_id: author.id})
