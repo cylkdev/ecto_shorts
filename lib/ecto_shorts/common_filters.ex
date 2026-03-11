@@ -79,80 +79,79 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp build_query(filter, source, query, selected_binding, term, opts) do
-    case filter do
-      group_by_filter when group_by_filter in @group_by_filters ->
-        GroupBy.build_query(
-          filter,
+  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @group_by_filters do
+    GroupBy.build_query(
+      filter,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
+
+  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @having_filters do
+    dyn =
+      if is_struct(term, Ecto.Query.DynamicExpr) do
+        term
+      else
+        Postgres.build_dynamic(
           source,
-          query,
           selected_binding,
           term,
           opts
         )
+      end
 
-      having_filter when having_filter in @having_filters ->
-        dyn =
-          case term do
-            %Ecto.Query.DynamicExpr{} = dynamic_expr ->
-              dynamic_expr
+    Having.build_query(
+      filter,
+      source,
+      query,
+      selected_binding,
+      dyn,
+      opts
+    )
+  end
 
-            _ ->
-              Postgres.build_dynamic(
-                source,
-                selected_binding,
-                term,
-                opts
-              )
-          end
+  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @order_by_filters do
+    OrderBy.build_query(
+      filter,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
 
-        Having.build_query(
-          having_filter,
-          source,
-          query,
-          selected_binding,
-          dyn,
-          opts
-        )
+  defp build_query(:preload, source, query, selected_binding, term, opts) do
+    Preload.build_query(
+      :preload,
+      source,
+      query,
+      selected_binding,
+      term,
+      opts
+    )
+  end
 
-      order_by_filter when order_by_filter in @order_by_filters ->
-        OrderBy.build_query(
-          filter,
-          source,
-          query,
-          selected_binding,
-          term,
-          opts
-        )
+  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @where_filters do
+    dyn =
+      Postgres.build_dynamic(
+        source,
+        selected_binding,
+        term,
+        opts
+      )
 
-      :preload ->
-        Preload.build_query(
-          filter,
-          source,
-          query,
-          selected_binding,
-          term,
-          opts
-        )
-
-      where_filter when where_filter in @where_filters ->
-        dyn =
-          Postgres.build_dynamic(
-            source,
-            selected_binding,
-            term,
-            opts
-          )
-
-        Where.build_query(
-          where_filter,
-          source,
-          query,
-          selected_binding,
-          dyn,
-          opts
-        )
-    end
+    Where.build_query(
+      filter,
+      source,
+      query,
+      selected_binding,
+      dyn,
+      opts
+    )
   end
 
   defp sort_filters(params) do

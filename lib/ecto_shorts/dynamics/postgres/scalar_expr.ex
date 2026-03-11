@@ -60,16 +60,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     __MODULE__.Compiled.StringUpperLower
   end
 
-  defp resolver(op, {transform, _}) when op in @string_directives do
-    if transform in [:lower, :upper] do
-      __MODULE__.Compiled.StringUpperLower
-    else
-      __MODULE__.Compiled.String
-    end
-  end
+  defp resolver(op, term) when op in @string_directives do
+    case term do
+      {transform, _} when transform in [:lower, :upper] ->
+        __MODULE__.Compiled.StringUpperLower
 
-  defp resolver(op, _value) when op in @string_directives do
-    __MODULE__.Compiled.String
+      _ ->
+        __MODULE__.Compiled.String
+    end
   end
 
   defp resolver(_op, _term) do
