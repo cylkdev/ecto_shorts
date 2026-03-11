@@ -8,8 +8,7 @@ defmodule EctoShorts.CommonFilters.Lock do
 
   @logger_prefix "EctoShorts.CommonFilters.Lock"
 
-  {_, binding_patterns} =
-    Compiler.query_binding_contracts(__MODULE__, positions: 10)
+  {_, binding_patterns} = Compiler.query_binding_contracts(10, __MODULE__)
 
   @spec build_query(
           :lock,

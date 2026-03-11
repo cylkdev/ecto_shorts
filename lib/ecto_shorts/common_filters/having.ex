@@ -5,7 +5,7 @@ defmodule EctoShorts.CommonFilters.Having do
   require Ecto.Query
 
   {_, binding_patterns} =
-    Compiler.query_binding_contracts(__MODULE__, positions: 10)
+    Compiler.query_binding_contracts(10, __MODULE__)
 
   def build_query(_filter, _source, query, _selected_binding, nil, _opts), do: query
 

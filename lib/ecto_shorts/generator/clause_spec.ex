@@ -6,7 +6,7 @@ defmodule EctoShorts.Generator.ClauseSpec do
   @callback specs_for(
               key :: atom(),
               selected_binding :: term(),
-              target_binding_var :: Macro.t(),
+              body_ast :: Macro.t(),
               opts :: Keyword.t()
             ) :: term()
 

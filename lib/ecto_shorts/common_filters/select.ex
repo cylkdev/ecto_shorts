@@ -9,7 +9,7 @@ defmodule EctoShorts.CommonFilters.Select do
   @logger_prefix "EctoShorts.CommonFilters.Select"
 
   {target_binding_var, binding_patterns} =
-    Compiler.query_binding_contracts(__MODULE__, positions: 10)
+    Compiler.query_binding_contracts(10, __MODULE__)
 
   def build_query(:select, _source, query, selected_binding, term, _opts) do
     normalized_term = Utils.normalize_input(term)

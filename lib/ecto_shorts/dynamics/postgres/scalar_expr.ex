@@ -1,7 +1,7 @@
 defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
   alias EctoShorts.Dynamics.Postgres.ScalarExprBuilder
 
-  @max_binding_positions 10
+  @max_positional_bindings 10
 
   use EctoShorts.Compiler,
     modules: [
@@ -9,25 +9,25 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.Comparison,
         directives: [:comparison],
-        positions: @max_binding_positions
+        positions: @max_positional_bindings
       ],
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.Membership,
         directives: [:membership],
-        positions: @max_binding_positions
+        positions: @max_positional_bindings
       ],
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.StringUpperLower,
         directives: [:string_transform],
-        positions: @max_binding_positions
+        positions: @max_positional_bindings
       ],
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.String,
         directives: [:string],
-        positions: @max_binding_positions
+        positions: @max_positional_bindings
       ]
     ]
 

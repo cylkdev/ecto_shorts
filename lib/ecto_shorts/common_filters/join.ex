@@ -32,7 +32,7 @@ defmodule EctoShorts.CommonFilters.Join do
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
   {target_binding_var, binding_patterns} =
-    Compiler.query_binding_contracts(__MODULE__, positions: 10)
+    Compiler.query_binding_contracts(10, __MODULE__)
 
   @doc false
   def hints, do: @hints
