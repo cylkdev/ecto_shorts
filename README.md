@@ -61,7 +61,7 @@ Auto-resolved to `EctoShorts.Dynamics.Postgres` when the repo uses
 `Ecto.Adapters.Postgres`. Defaults to resolved from the repo's adapter.
 
 * `:query_provider` - A module that resolves provider-backed join and lock
-expressions. Must export `build_fragment_expression/3` and return shapes
+expressions. Must export `resolve_query_expression/3` and return shapes
 that match the calling filter contract. Defaults to `nil`.
 
 * `:max_positional_bindings` - Controls how many positional query binding clauses

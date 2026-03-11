@@ -190,7 +190,7 @@ defmodule EctoShorts.Config do
 
   Defaults to `nil`. When `nil`, `EctoShorts.QueryProvider` falls back to
   `EctoShorts.CommonFilters.QueryProviders.NoOp`. Set this to a custom module
-  that exports `build_fragment_expression/3` to control how join and lock
+  that exports `resolve_query_expression/3` to control how join and lock
   expressions are resolved at runtime.
 
   ## Examples

@@ -293,7 +293,7 @@
 
 # #       query
 # #     else
-# #       case QueryProvider.build_fragment_expression(selected_binding, lock_name, lock_values, opts) do
+# #       case QueryProvider.resolve_query_expression(selected_binding, lock_name, lock_values, opts) do
 # #         {:ok, lock_builder} when is_function(lock_builder, 1) ->
 # #           lock_builder.(query)
 

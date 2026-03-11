@@ -29,7 +29,7 @@ defmodule EctoShorts.CommonFilters.Lock do
   end
 
   defp build_lock(query, selected_binding, name, values, opts) do
-    case QueryProvider.build_fragment_expression(selected_binding, name, values, opts) do
+    case QueryProvider.resolve_query_expression(selected_binding, name, values, opts) do
       nil ->
         query
 

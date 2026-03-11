@@ -34,7 +34,7 @@ defmodule EctoShorts.QueryProvider do
       defmodule MyApp.CustomFragments do
         import Ecto.Query
 
-        def build_fragment_expression(selected_binding, expression_key, expression_params) do
+        def resolve_query_expression(selected_binding, expression_key, expression_params) do
           case expression_key do
             :active_users ->
               {:ok, from(u in fragment("SELECT * FROM users WHERE active = true"), select: u)}
@@ -84,10 +84,10 @@ defmodule EctoShorts.QueryProvider do
 
   ## Custom provider implementation
 
-  A query provider module must export `build_fragment_expression/3`:
+  A query provider module must export `resolve_query_expression/3`:
 
       defmodule MyApp.CustomFragments do
-        def build_fragment_expression(selected_binding, expression_key, expression_params) do
+        def resolve_query_expression(selected_binding, expression_key, expression_params) do
           # Return a shape that matches the calling filter contract.
         end
       end
@@ -120,18 +120,18 @@ defmodule EctoShorts.QueryProvider do
       defmodule MyApp.CustomFragments do
         import Ecto.Query
 
-        def build_fragment_expression(_selected_binding, :search, %{query: search_query}) do
+        def resolve_query_expression(_selected_binding, :search, %{query: search_query}) do
           fragment("to_tsvector('english', title || ' ' || body) @@ plainto_tsquery(?)", ^search_query)
         end
 
-        def build_fragment_expression(_selected_binding, _key, _params), do: nil
+        def resolve_query_expression(_selected_binding, _key, _params), do: nil
       end
 
   Use in a filter:
 
       EctoShorts.CommonFilters.convert_params_to_filter(
         Post,
-        %{where: %{dynamic: build_fragment_expression(:first, :search, %{query: "elixir"})}}
+        %{where: %{dynamic: resolve_query_expression(:first, :search, %{query: "elixir"})}}
       )
 
   ### Use case 2: Custom join sources
@@ -141,11 +141,11 @@ defmodule EctoShorts.QueryProvider do
       defmodule MyApp.CustomFragments do
         import Ecto.Query
 
-        def build_fragment_expression(_selected_binding, :active_users, _params) do
+        def resolve_query_expression(_selected_binding, :active_users, _params) do
           {:ok, from(u in fragment("SELECT * FROM active_users_mv"), select: u)}
         end
 
-        def build_fragment_expression(_selected_binding, _key, _params), do: nil
+        def resolve_query_expression(_selected_binding, _key, _params), do: nil
       end
 
   Use in a join:
@@ -162,15 +162,15 @@ defmodule EctoShorts.QueryProvider do
       defmodule MyApp.CustomFragments do
         import Ecto.Query
 
-        def build_fragment_expression(_selected_binding, :for_update, _params) do
+        def resolve_query_expression(_selected_binding, :for_update, _params) do
           {:ok, fn query -> from(q in query, lock: "FOR UPDATE") end}
         end
 
-        def build_fragment_expression(_selected_binding, :for_share, _params) do
+        def resolve_query_expression(_selected_binding, :for_share, _params) do
           {:ok, fn query -> from(q in query, lock: "FOR SHARE") end}
         end
 
-        def build_fragment_expression(_selected_binding, _key, _params), do: nil
+        def resolve_query_expression(_selected_binding, _key, _params), do: nil
       end
 
   Use in a lock:
@@ -205,9 +205,9 @@ defmodule EctoShorts.QueryProvider do
 
   ## Troubleshooting
 
-  **Problem:** Query provider raises "Expected ... to have a build_fragment_expression/3 function".
+  **Problem:** Query provider raises "Expected ... to have a resolve_query_expression/3 function".
 
-  **Solution:** Add a `build_fragment_expression/3` function to your provider
+  **Solution:** Add a `resolve_query_expression/3` function to your provider
   module. The function must accept three arguments and return `{:ok, value}`,
   `{:error, reason}`, or `nil` according to the caller's contract.
 
@@ -236,17 +236,17 @@ defmodule EctoShorts.QueryProvider do
   @default_adapter EctoShorts.CommonFilters.QueryProviders.NoOp
 
   @doc false
-  def build_fragment_expression(selected_binding, expression_key, expression_params, opts \\ []) do
+  def resolve_query_expression(selected_binding, expression_key, expression_params, opts \\ []) do
     query_provider =
       Keyword.get(opts, :query_provider, Config.query_provider()) ||
         @default_adapter
 
     unless Code.ensure_loaded?(query_provider) and
-             function_exported?(query_provider, :build_fragment_expression, 3) do
+             function_exported?(query_provider, :resolve_query_expression, 3) do
       raise ArgumentError,
-            "Expected expression resolver module to have a build_fragment_expression/3 function, got: #{inspect(query_provider)}"
+            "Expected expression resolver module to have a resolve_query_expression/3 function, got: #{inspect(query_provider)}"
     end
 
-    query_provider.build_fragment_expression(selected_binding, expression_key, expression_params)
+    query_provider.resolve_query_expression(selected_binding, expression_key, expression_params)
   end
 end
