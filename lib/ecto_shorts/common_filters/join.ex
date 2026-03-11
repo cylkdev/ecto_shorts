@@ -32,9 +32,12 @@ defmodule EctoShorts.CommonFilters.Join do
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
   def build_query(:join, schema_source, query, selected_binding, params, opts) do
-    params
-    |> Utils.map_to_list()
-    |> Enum.reduce(query, fn entry, query_acc ->
+    reduce_join_entries(schema_source, query, selected_binding, Utils.map_to_list(params), opts)
+  end
+
+  defp reduce_join_entries(schema_source, query, selected_binding, entries, opts)
+       when is_list(entries) do
+    Enum.reduce(entries, query, fn entry, query_acc ->
       apply_join_op(schema_source, query_acc, selected_binding, entry, opts)
     end)
   end
@@ -63,7 +66,7 @@ defmodule EctoShorts.CommonFilters.Join do
   defp apply_join_op(schema_source, query, selected_binding, nested, opts) do
     if is_list(nested) do
       if Keyword.keyword?(nested) do
-        build_query(:join, schema_source, query, selected_binding, nested, opts)
+        reduce_join_entries(schema_source, query, selected_binding, nested, opts)
       else
         Enum.reduce(nested, query, fn entry, inner_acc ->
           apply_join_op(schema_source, inner_acc, selected_binding, entry, opts)
