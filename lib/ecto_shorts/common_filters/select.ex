@@ -1,241 +1,165 @@
-# defmodule EctoShorts.CommonFilters.Select do
-#   @moduledoc since: "3.0.0"
-#   @moduledoc """
-#   Builds `:select` and `:select_merge` expressions from data-driven params.
+defmodule EctoShorts.CommonFilters.Select do
+  alias Ecto.Query
+  alias EctoShorts.Compiler
+  alias EctoShorts.Utils
 
-#   Accepts field atoms, `{:map, fields}` tuples, `{:struct, fields}` tuples,
-#   `true` (select entire binding), keyword lists, and maps. Supports
-#   binding-scoped params via the `:bind` key.
-#   """
+  require Ecto.Query
 
-#   alias Ecto.Query
-#   alias EctoShorts.CommonFilters.BindingParams
-#   alias EctoShorts.Generator
+  {target_binding_var, binding_patterns} =
+    Compiler.query_binding_contracts(__MODULE__, positions: 10)
 
-#   require EctoShorts.Generator
-#   require Ecto.Query
+  def build_query(filter, _source, query, selected_binding, term, _opts) do
+    normalized_term = Utils.map_to_list(term)
 
-#   @selected_binding_key :bind
+    case filter do
+      :select -> apply_select_expr(query, selected_binding, normalized_term)
+      :select_merge -> apply_select_merge_expr(query, selected_binding, normalized_term)
+    end
+  end
 
-#   @doc "Builds a select expression for the query."
-#   def build(schema, filter_op, query, selected_binding, term, opts)
-#       when is_map(term) or is_list(term) do
-#     if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
-#       Enum.reduce(term, query, fn entry, updated_query ->
-#         build(schema, filter_op, updated_query, selected_binding, entry, opts)
-#       end)
-#     else
-#       reduce_select(filter_op, schema, query, selected_binding, term)
-#     end
-#   end
+  for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
+    defp apply_select_expr(query, unquote(quoted_binding_head), true) do
+      Query.select(query, [unquote_splicing(quoted_binding_body)], unquote(target_binding_var))
+    end
 
-#   def build(
-#         schema,
-#         filter_op,
-#         query,
-#         selected_binding,
-#         {@selected_binding_key, bind_params},
-#         opts
-#       ) do
-#     reduce_select_bind(schema, filter_op, query, selected_binding, bind_params, opts)
-#   end
+    defp apply_select_expr(query, unquote(quoted_binding_head), {:map, params})
+         when is_map(params) do
+      apply_select_expr(query, unquote(quoted_binding_head), {:map, Map.to_list(params)})
+    end
 
-#   def build(schema, filter_op, query, selected_binding, term, _opts) do
-#     reduce_select(filter_op, schema, query, selected_binding, term)
-#   end
+    defp apply_select_expr(query, unquote(quoted_binding_head), {:map, list})
+         when is_list(list) do
+      if Keyword.keyword?(list) do
+        select_map = build_select_map(list, unquote(quoted_binding_head))
 
-#   defp reduce_select(:select, schema, query, selected_binding, term) do
-#     apply_select_expr(schema, query, selected_binding, term)
-#   end
+        Query.select(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^select_map
+        )
+      else
+        Query.select(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          map(unquote(target_binding_var), ^list)
+        )
+      end
+    end
 
-#   defp reduce_select(:select_merge, schema, query, selected_binding, term) do
-#     apply_select_merge_expr(schema, query, selected_binding, term)
-#   end
+    defp apply_select_expr(query, unquote(quoted_binding_head), {:struct, fields})
+         when is_list(fields) do
+      Query.select(
+        query,
+        [unquote_splicing(quoted_binding_body)],
+        struct(unquote(target_binding_var), ^fields)
+      )
+    end
 
-#   defp reduce_select_bind(schema, filter_op, query, _selected_binding, bind_params, opts) do
-#     bind_params
-#     |> BindingParams.normalize_bind_params(query)
-#     |> Enum.reduce(query, fn {selected_binding, value}, q ->
-#       build(schema, filter_op, q, selected_binding, value, opts)
-#     end)
-#   end
+    defp apply_select_expr(query, unquote(quoted_binding_head), term) when is_list(term) do
+      if Keyword.keyword?(term) do
+        select_map = build_select_map(term, unquote(quoted_binding_head))
 
-#   Compiler.define_clauses do
-#     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
-#       defp apply_select_expr(_schema, query, unquote(quoted_binding_head), true) do
-#         Query.select(query, [unquote_splicing(quoted_binding_body)], unquote(target_binding_var))
-#       end
+        Query.select(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^select_map
+        )
+      else
+        Query.select(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^term
+        )
+      end
+    end
 
-#       defp apply_select_expr(
-#              _schema,
-#              query,
-#              unquote(quoted_binding_head),
-#              {:map, params}
-#            )
-#            when is_map(params) do
-#         select_map = build_select_map(params, unquote(quoted_binding_head))
+    defp apply_select_expr(query, unquote(quoted_binding_head), field_name)
+         when is_atom(field_name) do
+      Query.select(
+        query,
+        [unquote_splicing(quoted_binding_body)],
+        field(unquote(target_binding_var), ^field_name)
+      )
+    end
 
-#         Query.select(
-#           query,
-#           [unquote_splicing(quoted_binding_body)],
-#           ^select_map
-#         )
-#       end
+    defp apply_select_merge_expr(query, unquote(quoted_binding_head), {:map, params})
+         when is_map(params) do
+      apply_select_merge_expr(query, unquote(quoted_binding_head), {:map, Map.to_list(params)})
+    end
 
-#       defp apply_select_expr(
-#              _schema,
-#              query,
-#              unquote(quoted_binding_head),
-#              {:map, list}
-#            )
-#            when is_list(list) do
-#         if Keyword.keyword?(list) do
-#           select_map = build_select_map(list, unquote(quoted_binding_head))
+    defp apply_select_merge_expr(query, unquote(quoted_binding_head), {:map, list})
+         when is_list(list) do
+      if Keyword.keyword?(list) do
+        select_map = build_select_map(list, unquote(quoted_binding_head))
 
-#           Query.select(
-#             query,
-#             [unquote_splicing(quoted_binding_body)],
-#             ^select_map
-#           )
-#         else
-#           Query.select(
-#             query,
-#             [unquote_splicing(quoted_binding_body)],
-#             map(unquote(target_binding_var), ^list)
-#           )
-#         end
-#       end
+        Query.select_merge(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^select_map
+        )
+      else
+        Query.select_merge(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          map(unquote(target_binding_var), ^list)
+        )
+      end
+    end
 
-#       defp apply_select_expr(
-#              _schema,
-#              query,
-#              unquote(quoted_binding_head),
-#              {:struct, fields}
-#            )
-#            when is_list(fields) do
-#         Query.select(
-#           query,
-#           [unquote_splicing(quoted_binding_body)],
-#           struct(unquote(target_binding_var), ^fields)
-#         )
-#       end
+    defp apply_select_merge_expr(query, unquote(quoted_binding_head), term) when is_list(term) do
+      if Keyword.keyword?(term) do
+        select_map = build_select_map(term, unquote(quoted_binding_head))
 
-#       defp apply_select_expr(schema, query, unquote(quoted_binding_head), term)
-#            when is_map(term) or is_list(term) do
-#         if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
-#           Enum.reduce(term, query, fn {key, value}, updated_query ->
-#             apply_select_expr(schema, updated_query, unquote(quoted_binding_head), {key, value})
-#           end)
-#         else
-#           Query.select(query, [unquote_splicing(quoted_binding_body)], ^term)
-#         end
-#       end
+        Query.select_merge(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^select_map
+        )
+      else
+        Query.select_merge(
+          query,
+          [unquote_splicing(quoted_binding_body)],
+          ^term
+        )
+      end
+    end
 
-#       defp apply_select_expr(_schema, query, unquote(quoted_binding_head), key) do
-#         Query.select(
-#           query,
-#           [unquote_splicing(quoted_binding_body)],
-#           field(unquote(target_binding_var), ^key)
-#         )
-#       end
+    defp apply_select_merge_expr(query, unquote(quoted_binding_head), {field_alias, field_name})
+         when is_atom(field_alias) do
+      select_map = build_select_map([{field_alias, field_name}], unquote(quoted_binding_head))
 
-#       defp apply_select_merge_expr(
-#              _schema,
-#              query,
-#              unquote(quoted_binding_head),
-#              {:map, params}
-#            )
-#            when is_map(params) do
-#         select_map = build_select_map(params, unquote(quoted_binding_head))
+      Query.select_merge(
+        query,
+        [unquote_splicing(quoted_binding_body)],
+        ^select_map
+      )
+    end
 
-#         Query.select_merge(
-#           query,
-#           [unquote_splicing(quoted_binding_body)],
-#           ^select_map
-#         )
-#       end
+    defp compose(unquote(quoted_binding_head), field_name) when is_atom(field_name) do
+      Query.dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        field(unquote(target_binding_var), ^field_name)
+      )
+    end
 
-#       defp apply_select_merge_expr(
-#              _schema,
-#              query,
-#              unquote(quoted_binding_head),
-#              {:map, list}
-#            )
-#            when is_list(list) do
-#         if Keyword.keyword?(list) do
-#           select_map = build_select_map(list, unquote(quoted_binding_head))
+    defp compose(unquote(quoted_binding_head), %Ecto.Query.DynamicExpr{} = dynamic_expr) do
+      dynamic_expr
+    end
+  end
 
-#           Query.select_merge(
-#             query,
-#             [unquote_splicing(quoted_binding_body)],
-#             ^select_map
-#           )
-#         else
-#           Query.select_merge(
-#             query,
-#             [unquote_splicing(quoted_binding_body)],
-#             map(unquote(target_binding_var), ^list)
-#           )
-#         end
-#       end
+  defp apply_select_expr(query, _selected_binding, term) do
+    Query.select(query, ^term)
+  end
 
-#       defp apply_select_merge_expr(schema, query, unquote(quoted_binding_head), term)
-#            when is_map(term) or is_list(term) do
-#         if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
-#           Enum.reduce(term, query, fn {key, value}, updated_query ->
-#             apply_select_merge_expr(
-#               schema,
-#               updated_query,
-#               unquote(quoted_binding_head),
-#               {key, value}
-#             )
-#           end)
-#         else
-#           Query.select_merge(
-#             query,
-#             [unquote_splicing(quoted_binding_body)],
-#             ^term
-#           )
-#         end
-#       end
+  defp apply_select_merge_expr(query, _selected_binding, term) do
+    Query.select_merge(query, ^term)
+  end
 
-#       defp apply_select_merge_expr(
-#              _schema,
-#              query,
-#              unquote(quoted_binding_head),
-#              {field_alias, field}
-#            ) do
-#         select_map = build_select_map([{field_alias, field}], unquote(quoted_binding_head))
+  defp compose(_selected_binding, term), do: term
 
-#         Query.select_merge(
-#           query,
-#           [unquote_splicing(quoted_binding_body)],
-#           ^select_map
-#         )
-#       end
-
-#       defp apply_select_merge_expr(_schema, query, unquote(quoted_binding_head), term) do
-#         Query.select_merge(
-#           query,
-#           [unquote_splicing(quoted_binding_body)],
-#           ^term
-#         )
-#       end
-#   end
-
-#   defp build_select_map(enum, selected_binding) do
-#     Enum.reduce(enum, %{}, fn {field_alias, field}, acc ->
-#       Map.put(acc, field_alias, compose(selected_binding, field))
-#     end)
-#   end
-
-#   Compiler.define_clauses do
-#     quoted_binding_head, quoted_binding_body, target_binding_var, _binding_patterns ->
-#       defp compose(unquote(quoted_binding_head), field) do
-#         Query.dynamic(
-#           [unquote_splicing(quoted_binding_body)],
-#           field(unquote(target_binding_var), ^field)
-#         )
-#       end
-#   end
-# end
+  defp build_select_map(enum, selected_binding) do
+    Enum.reduce(enum, %{}, fn {field_alias, field}, acc ->
+      Map.put(acc, field_alias, compose(selected_binding, field))
+    end)
+  end
+end
