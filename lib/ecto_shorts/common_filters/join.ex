@@ -46,7 +46,7 @@ defmodule EctoShorts.CommonFilters.Join do
       associations = CommonSchema.get_schema_reflection(schema_source, :associations) || []
 
       if key in associations do
-        join_expr = {:association, Keyword.put(normalize_join_options(join_options), :source, key)}
+        join_expr = {:association, Keyword.put(join_options, :source, key)}
 
         reduce_join(schema_source, query, selected_binding, join_expr, opts)
       else
@@ -97,16 +97,6 @@ defmodule EctoShorts.CommonFilters.Join do
       )
 
       query
-    end
-  end
-
-  defp normalize_join_options(join_options) do
-    join_options = Utils.map_to_list(join_options)
-
-    if is_list(join_options) do
-      join_options
-    else
-      []
     end
   end
 
@@ -399,9 +389,6 @@ defmodule EctoShorts.CommonFilters.Join do
 
           :error
         end
-
-      on_params when is_map(on_params) and not is_struct(on_params) ->
-        {:ok, build_on_dynamic(schema_source, selected_binding, Map.to_list(on_params), opts)}
 
       %Ecto.Query.DynamicExpr{} = dyn ->
         {:ok, dyn}
