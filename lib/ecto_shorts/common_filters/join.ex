@@ -564,7 +564,7 @@ defmodule EctoShorts.CommonFilters.Join do
               raise ArgumentError, "Expected :hints to be a list or module, got: #{inspect(term)}"
           end)
 
-  @join_types [:association, :schema, :table, :query, :subquery]
+  @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
   {target_binding_var, binding_patterns} =
     Compiler.query_binding_contracts(__MODULE__, positions: 10)
@@ -1041,7 +1041,12 @@ defmodule EctoShorts.CommonFilters.Join do
         :error
 
       other ->
-        {:ok, other}
+        Logger.warning(
+          @logger_prefix,
+          "Expected join source callback to return {:ok, source} | {:error, reason} | nil, got: #{inspect(other)}"
+        )
+
+        :error
     end
   end
 

@@ -41,6 +41,14 @@ defmodule EctoShorts.TestQueryProvider do
     {:error, :forced_error}
   end
 
+  def build_fragment_expression(_selected_binding, :legacy_active_users, params) do
+    params = normalize_params(params)
+
+    with {:ok, min_age} <- fetch_integer(params, :min_age) do
+      from(u in fragment("SELECT * FROM users WHERE age >= ?", ^min_age), select: u)
+    end
+  end
+
   def build_fragment_expression(_selected_binding, _source_key, _params) do
     {:error, :unsupported_fragment_key}
   end

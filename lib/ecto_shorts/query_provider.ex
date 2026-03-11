@@ -32,13 +32,15 @@ defmodule EctoShorts.QueryProvider do
   Define your custom provider:
 
       defmodule MyApp.CustomFragments do
+        import Ecto.Query
+
         def build_fragment_expression(selected_binding, expression_key, expression_params) do
           case expression_key do
             :active_users ->
-              fragment("SELECT * FROM users WHERE active = true")
+              {:ok, from(u in fragment("SELECT * FROM users WHERE active = true"), select: u)}
 
             :for_update ->
-              fragment("FOR UPDATE")
+              {:ok, fn query -> from(q in query, lock: "FOR UPDATE") end}
 
             _ ->
               nil
@@ -50,7 +52,7 @@ defmodule EctoShorts.QueryProvider do
 
       EctoShorts.CommonFilters.convert_params_to_filter(
         Post,
-        %{join: [fragment: [source: %{name: :active_users}, as: :users, on: true]]}
+        %{join: [fragment: [source: %{name: :active_users, values: %{}}, as: :users, on: true]]}
       )
 
   ## Configuration
@@ -86,7 +88,7 @@ defmodule EctoShorts.QueryProvider do
 
       defmodule MyApp.CustomFragments do
         def build_fragment_expression(selected_binding, expression_key, expression_params) do
-          # Return an Ecto fragment or query expression
+          # Return a shape that matches the calling filter contract.
         end
       end
 
@@ -102,8 +104,11 @@ defmodule EctoShorts.QueryProvider do
 
   Return one of:
 
-  * An Ecto fragment (via `fragment/1` or `fragment/2`).
-  * A query expression (for example, a subquery).
+  * `{:ok, source}` for fragment-backed joins, where `source` is a joinable Ecto
+    source value such as `from(... in fragment(...), select: ...)`.
+  * `{:ok, query_builder_fun}` for lock builders that transform an `Ecto.Query.t/0`.
+  * `{:ok, other}` for other callers that document their own expected shape.
+  * `{:error, reason}` when the key is recognized but cannot be built.
   * `nil` when the expression key is not recognized.
 
   ## Common use cases
@@ -131,13 +136,13 @@ defmodule EctoShorts.QueryProvider do
 
   ### Use case 2: Custom join sources
 
-  Join against a materialized view:
+  Join against a fragment-backed source:
 
       defmodule MyApp.CustomFragments do
         import Ecto.Query
 
         def build_fragment_expression(_selected_binding, :active_users, _params) do
-          fragment("SELECT * FROM active_users_mv")
+          {:ok, from(u in fragment("SELECT * FROM active_users_mv"), select: u)}
         end
 
         def build_fragment_expression(_selected_binding, _key, _params), do: nil
@@ -147,7 +152,7 @@ defmodule EctoShorts.QueryProvider do
 
       EctoShorts.CommonFilters.convert_params_to_filter(
         Post,
-        %{join: [fragment: [source: %{name: :active_users}, as: :users, on: true]]}
+        %{join: [fragment: [source: %{name: :active_users, values: %{}}, as: :users, on: true]]}
       )
 
   ### Use case 3: Row-level locking
@@ -158,11 +163,11 @@ defmodule EctoShorts.QueryProvider do
         import Ecto.Query
 
         def build_fragment_expression(_selected_binding, :for_update, _params) do
-          fragment("FOR UPDATE")
+          {:ok, fn query -> from(q in query, lock: "FOR UPDATE") end}
         end
 
         def build_fragment_expression(_selected_binding, :for_share, _params) do
-          fragment("FOR SHARE")
+          {:ok, fn query -> from(q in query, lock: "FOR SHARE") end}
         end
 
         def build_fragment_expression(_selected_binding, _key, _params), do: nil
@@ -203,7 +208,8 @@ defmodule EctoShorts.QueryProvider do
   **Problem:** Fragment provider raises "Expected ... to have a build_fragment_expression/3 function".
 
   **Solution:** Add a `build_fragment_expression/3` function to your provider
-  module. The function must accept three arguments and return a fragment or `nil`.
+  module. The function must accept three arguments and return `{:ok, value}`,
+  `{:error, reason}`, or `nil` according to the caller's contract.
 
   **Problem:** Fragment is not being called.
 
@@ -217,8 +223,9 @@ defmodule EctoShorts.QueryProvider do
 
   **Problem:** Fragment raises at runtime.
 
-  **Solution:** Verify the fragment syntax is correct. Test the fragment
-  directly in an Ecto query to ensure it works.
+  **Solution:** Verify the provider returns the correct shape for the caller.
+  For join sources, build the fragment inside an Ecto query such as
+  `from(... in fragment(...), select: ...)` and return it as `{:ok, source}`.
 
   See also `EctoShorts.Config.query_provider/0`, `EctoShorts.CommonFilters`,
   and `Ecto.Query.API.fragment/1`.

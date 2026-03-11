@@ -44,6 +44,42 @@ Configure a repo:
     # config/config.exs
     config :ecto_shorts, repo: MyApp.Repo
 
+## Configuration
+
+* `:repo` - The primary `Ecto.Repo` module used for write operations.
+Required by most `EctoShorts.Actions` functions. Defaults to `nil`.
+
+* `:replica` - A read-only `Ecto.Repo` module. Falls back to `:repo` when
+not set. Used by read operations in `EctoShorts.Actions`. Defaults to `nil`.
+
+* `:error_module` - A module implementing the `EctoShorts.Actions.Error`
+behaviour. Used to construct error values returned by `EctoShorts.Actions`
+functions. Defaults to `EctoShorts.Actions.Error`.
+
+* `:dynamic_adapter` - A module implementing `EctoShorts.Dynamic`.
+Auto-resolved to `EctoShorts.Dynamics.Postgres` when the repo uses
+`Ecto.Adapters.Postgres`. Defaults to resolved from the repo's adapter.
+
+* `:query_provider` - A module that resolves fragment-based join and lock
+expressions. Must export `build_fragment_expression/3` and return shapes
+that match the calling filter contract. Defaults to `nil`.
+
+* `:max_positional_bindings` - Controls how many positional query binding clauses
+`EctoShorts.Generator` generates. Increase when your queries join more than
+three tables. Defaults to `3`.
+
+Example:
+
+    # config/config.exs
+    import Config
+
+    config :ecto_shorts,
+      repo: MyApp.Repo,
+      replica: MyApp.Repo.Replica,
+      error_module: MyApp.Error,
+      dynamic_adapter: MyApp.DynamicAdapter,
+      max_positional_bindings: 3
+
 ## Run the first examples
 
 ### Prerequisites

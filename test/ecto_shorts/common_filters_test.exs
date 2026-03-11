@@ -2,6 +2,7 @@ defmodule EctoShorts.CommonFiltersTest do
   use ExUnit.Case, async: true
   use EctoShorts.Testing
 
+  import ExUnit.CaptureLog
   alias EctoShorts.CommonFilters
   alias EctoShorts.Schema.Post
 
@@ -297,6 +298,108 @@ defmodule EctoShorts.CommonFiltersTest do
         )
 
       assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a fragment join payload through the provider contract" do
+      active_users =
+        from(u in fragment("SELECT * FROM users WHERE age >= ?", ^18), select: u)
+
+      expected =
+        from(p in Post,
+          join: u in ^active_users,
+          as: :users,
+          on: true
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              fragment: [
+                source: [name: :active_users, values: %{min_age: 18}],
+                as: :users,
+                on: true
+              ]
+            ]
+          },
+          query_provider: EctoShorts.TestQueryProvider
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "keeps the query unchanged when the fragment provider returns nil" do
+      expected = from(p in Post)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              fragment: [
+                source: [name: :active_users, values: %{min_age: 18}],
+                as: :users,
+                on: true
+              ]
+            ]
+          },
+          query_provider: EctoShorts.CommonFilters.QueryProviders.NoOp
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "keeps the query unchanged when the fragment provider returns an error" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{
+                join: [
+                  fragment: [
+                    source: [name: :error_fragment, values: %{}],
+                    as: :users,
+                    on: true
+                  ]
+                ]
+              },
+              query_provider: EctoShorts.TestQueryProvider
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Join source callback returned error for key :error_fragment: :forced_error"
+    end
+
+    test "keeps the query unchanged when the fragment provider returns a raw source" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{
+                join: [
+                  fragment: [
+                    source: [name: :legacy_active_users, values: %{min_age: 18}],
+                    as: :users,
+                    on: true
+                  ]
+                ]
+              },
+              query_provider: EctoShorts.TestQueryProvider
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected join source callback to return {:ok, source} | {:error, reason} | nil"
     end
   end
 
