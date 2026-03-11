@@ -103,6 +103,158 @@ defmodule EctoShorts.CommonFilters.Join do
     end
   end
 
+  defp resolve_expr_source(selected_binding, source_key, source_params, opts) do
+    case QueryProvider.resolve_query_expression(selected_binding, source_key, source_params, opts) do
+      nil ->
+        :error
+
+      {:ok, source} ->
+        {:ok, source}
+
+      {:error, reason} ->
+        Logger.warning(
+          @logger_prefix,
+          "Join source callback returned error for key #{inspect(source_key)}: #{inspect(reason)}"
+        )
+
+        :error
+
+      other ->
+        Logger.warning(
+          @logger_prefix,
+          "Expected join source callback to return {:ok, source} | {:error, reason} | nil, got: #{inspect(other)}"
+        )
+
+        :error
+    end
+  end
+
+  defp resolve_join_operation(schema_source, selected_binding, {join_type, op_source, join_options}, opts) do
+    with {:ok, on_value} <- on_expr(schema_source, selected_binding, join_options[:on], opts),
+         {:ok, source} <-
+           resolve_join_source(schema_source, selected_binding, join_type, op_source, opts) do
+      {:ok,
+       %{
+         qualifier: join_options[:qualifier] || :inner,
+         prefix: join_options[:prefix],
+         as: join_options[:as],
+         hints: join_options[:hints],
+         on: on_value,
+         source: source
+       }}
+    else
+      :error ->
+        :error
+    end
+  end
+
+  defp resolve_join_source(_schema_source, _selected_binding, :association, assoc_key, _opts) do
+    {:ok, {:association, assoc_key}}
+  end
+
+  defp resolve_join_source(_schema_source, _selected_binding, :schema, target_schema, _opts) do
+    source =
+      case target_schema do
+        {table, schema}
+        when is_binary(table) and table !== "" and is_atom(schema) and not is_nil(schema) ->
+          {table, schema}
+
+        schema when is_atom(schema) and not is_nil(schema) ->
+          schema
+
+        _ ->
+          raise ArgumentError,
+                "Expected target schema to be an atom or a tuple of {table, schema}, got: #{inspect(target_schema)}"
+      end
+
+    {:ok, {:source, source}}
+  end
+
+  defp resolve_join_source(_schema_source, _selected_binding, :table, table_name, _opts) do
+    {:ok, {:source, table_name}}
+  end
+
+  defp resolve_join_source(_schema_source, _selected_binding, :query, source_query, _opts) do
+    unless is_struct(source_query, Ecto.Query) do
+      raise ArgumentError, "Expected source query to be a struct, got: #{inspect(source_query)}"
+    end
+
+    {:ok, {:source, source_query}}
+  end
+
+  defp resolve_join_source(schema_source, _selected_binding, :subquery, params, opts) do
+    subquery_source =
+      if is_struct(params, Ecto.Query) or is_struct(params, Ecto.SubQuery) do
+        params
+      else
+        {from_source, filter_params} = Keyword.pop(params, :from, schema_source)
+        CommonFilters.convert_params_to_filter(from_source, filter_params, opts)
+      end
+
+    {:ok, {:subquery, subquery_source}}
+  end
+
+  defp resolve_join_source(_schema_source, selected_binding, :fragment, params, opts) do
+    source_name = params[:name]
+    source_values = params[:values]
+
+    if is_nil(source_name) do
+      raise ArgumentError, "Join source name is required, got: #{inspect(params)}"
+    end
+
+    if is_nil(source_values) do
+      raise ArgumentError, "Join source values are required, got: #{inspect(params)}"
+    end
+
+    case resolve_expr_source(selected_binding, source_name, source_values, opts) do
+      {:ok, source} ->
+        {:ok, {:source, source}}
+
+      :error ->
+        :error
+    end
+  end
+
+  defp on_expr(schema_source, selected_binding, on_param, opts) do
+    case on_param do
+      true ->
+        {:ok, true}
+
+      nil ->
+        {:ok, true}
+
+      list when is_list(list) ->
+        if Keyword.keyword?(list) do
+          {:ok, build_on_dynamic(schema_source, selected_binding, list, opts)}
+        else
+          Logger.warning(
+            @logger_prefix,
+            "Expected :on to be a keyword list, map, or true, got: #{inspect(list)}"
+          )
+
+          :error
+        end
+
+      %Ecto.Query.DynamicExpr{} = dyn ->
+        {:ok, dyn}
+
+      term ->
+        Logger.warning(
+          @logger_prefix,
+          "Expected :on to be a keyword list, map, or true, got: #{inspect(term)}"
+        )
+
+        :error
+    end
+  end
+
+  defp build_on_dynamic(schema_source, selected_binding, entries, opts) when is_list(entries) do
+    Enum.reduce(entries, nil, fn {key, value}, acc ->
+      dyn = Postgres.build_dynamic(schema_source, selected_binding, {key, value}, opts)
+      Postgres.merge_dynamic(acc, :and, dyn)
+    end)
+  end
+
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp apply_join_expr(
            schema_source,
@@ -259,157 +411,5 @@ defmodule EctoShorts.CommonFilters.Join do
         prefix: ^prefix
       )
     end
-  end
-
-  defp resolve_expr_source(selected_binding, source_key, source_params, opts) do
-    case QueryProvider.resolve_query_expression(selected_binding, source_key, source_params, opts) do
-      nil ->
-        :error
-
-      {:ok, source} ->
-        {:ok, source}
-
-      {:error, reason} ->
-        Logger.warning(
-          @logger_prefix,
-          "Join source callback returned error for key #{inspect(source_key)}: #{inspect(reason)}"
-        )
-
-        :error
-
-      other ->
-        Logger.warning(
-          @logger_prefix,
-          "Expected join source callback to return {:ok, source} | {:error, reason} | nil, got: #{inspect(other)}"
-        )
-
-        :error
-    end
-  end
-
-  defp resolve_join_operation(schema_source, selected_binding, {join_type, op_source, join_options}, opts) do
-    with {:ok, on_value} <- on_expr(schema_source, selected_binding, join_options[:on], opts),
-         {:ok, source} <-
-           resolve_join_source(schema_source, selected_binding, join_type, op_source, opts) do
-      {:ok,
-       %{
-         qualifier: join_options[:qualifier] || :inner,
-         prefix: join_options[:prefix],
-         as: join_options[:as],
-         hints: join_options[:hints],
-         on: on_value,
-         source: source
-       }}
-    else
-      :error ->
-        :error
-    end
-  end
-
-  defp resolve_join_source(_schema_source, _selected_binding, :association, assoc_key, _opts) do
-    {:ok, {:association, assoc_key}}
-  end
-
-  defp resolve_join_source(_schema_source, _selected_binding, :schema, target_schema, _opts) do
-    source =
-      case target_schema do
-        {table, schema}
-        when is_binary(table) and table !== "" and is_atom(schema) and not is_nil(schema) ->
-          {table, schema}
-
-        schema when is_atom(schema) and not is_nil(schema) ->
-          schema
-
-        _ ->
-          raise ArgumentError,
-                "Expected target schema to be an atom or a tuple of {table, schema}, got: #{inspect(target_schema)}"
-      end
-
-    {:ok, {:source, source}}
-  end
-
-  defp resolve_join_source(_schema_source, _selected_binding, :table, table_name, _opts) do
-    {:ok, {:source, table_name}}
-  end
-
-  defp resolve_join_source(_schema_source, _selected_binding, :query, source_query, _opts) do
-    unless is_struct(source_query, Ecto.Query) do
-      raise ArgumentError, "Expected source query to be a struct, got: #{inspect(source_query)}"
-    end
-
-    {:ok, {:source, source_query}}
-  end
-
-  defp resolve_join_source(schema_source, _selected_binding, :subquery, params, opts) do
-    subquery_source =
-      if is_struct(params, Ecto.Query) or is_struct(params, Ecto.SubQuery) do
-        params
-      else
-        {from_source, filter_params} = Keyword.pop(params, :from, schema_source)
-        CommonFilters.convert_params_to_filter(from_source, filter_params, opts)
-      end
-
-    {:ok, {:subquery, subquery_source}}
-  end
-
-  defp resolve_join_source(_schema_source, selected_binding, :fragment, params, opts) do
-    source_name = params[:name]
-    source_values = params[:values]
-
-    if is_nil(source_name) do
-      raise ArgumentError, "Join source name is required, got: #{inspect(params)}"
-    end
-
-    if is_nil(source_values) do
-      raise ArgumentError, "Join source values are required, got: #{inspect(params)}"
-    end
-
-    case resolve_expr_source(selected_binding, source_name, source_values, opts) do
-      {:ok, source} ->
-        {:ok, {:source, source}}
-
-      :error ->
-        :error
-    end
-  end
-
-  defp on_expr(schema_source, selected_binding, on_param, opts) do
-    case on_param do
-      true ->
-        {:ok, true}
-
-      nil ->
-        {:ok, true}
-
-      list when is_list(list) ->
-        if Keyword.keyword?(list) do
-          {:ok, build_on_dynamic(schema_source, selected_binding, list, opts)}
-        else
-          Logger.warning(
-            @logger_prefix,
-            "Expected :on to be a keyword list, map, or true, got: #{inspect(list)}"
-          )
-
-          :error
-        end
-
-      %Ecto.Query.DynamicExpr{} = dyn ->
-        {:ok, dyn}
-
-      term ->
-        Logger.warning(
-          @logger_prefix,
-          "Expected :on to be a keyword list, map, or true, got: #{inspect(term)}"
-        )
-
-        :error
-    end
-  end
-
-  defp build_on_dynamic(schema_source, selected_binding, entries, opts) when is_list(entries) do
-    Enum.reduce(entries, nil, fn {key, value}, acc ->
-      dyn = Postgres.build_dynamic(schema_source, selected_binding, {key, value}, opts)
-      Postgres.merge_dynamic(acc, :and, dyn)
-    end)
   end
 end
