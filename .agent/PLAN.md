@@ -139,9 +139,55 @@ If steps can be repeated safely, say so. If a step is risky, provide a safe retr
 
 Include the most important transcripts, diffs, or snippets as indented examples. Keep them concise and focused on what proves success.
 
+## Interfaces and Dependencies
+
+Be explicit and opinionated. Name the Hex packages, OTP applications, modules, and external services to use, and explain why each one is required. Specify the structs, behaviours, callbacks, and function signatures that must exist by the end of the milestone. Prefer stable, descriptive names such as AppName.ModuleName.function/3 or AppName.ModuleName.Behaviour.
+
+For example:
+
+In module `AppName.ModuleName` (at path `lib/app_name/module_name.ex`), define:
+
+    defmodule AppName.ModuleName do
+      @callback plan(observed :: AppName.Observed.t()) :: [AppName.Action.t()]
+    end
+
 ## Example Mappings
 
-...
+Use Example Mapping to quickly define what a feature or change should do, spot missing details, and turn the results into clear next steps: rules become acceptance criteria, examples become test cases, and open questions become follow-up tasks. One story can usually be mapped in minutes.
+
+Example:
+
+    ### Story: <Short action-oriented description>
+
+    Create a function `add/2` that adds two numbers.
+
+    #### Rules
+
+    - Returns the sum of two numbers.
+    - Accepts arguments: `add(integer() | float(), integer() | float())`
+    - Returns: `integer() | float()`
+    - Accept integers or floats for both inputs, and return the numeric sum.
+
+    #### Examples
+
+    AppName.Calculator.add(1, 2)
+    3
+
+    AppName.Calculator.add(0, 5)
+    5
+
+    AppName.Calculator.add(-1, 1)
+    0
+
+    AppName.Calculator.add(2.5, 1.5)
+    4.0
+
+    #### Open questions
+
+    - **Q:** Should it allow both integers and floats? **A:** ...
+    - **Q:** What should happen if someone passes a string like "2"? **A:** ...
+    - **Q:** Should invalid input raise an error or return something else? **A:** ...
+    - **Q:** Do we need to handle very large numbers? **A:** ...
 
 ## Behaviour Specifications
 
