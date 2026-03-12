@@ -27,14 +27,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     :any
   ]
 
-  @datetime_wrappers [
-    :datetime
-  ]
-
-  @datetime_value_operators [
-    :add,
-    :ago,
-    :from_now
+  @datetime_interval_literals [
+    "year",
+    "month",
+    "week",
+    "day",
+    "hour",
+    "minute",
+    "second",
+    "millisecond",
+    "microsecond"
   ]
 
   @membership_operators [
@@ -135,8 +137,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     quantified_value_var = Macro.var(:quantified_value, context)
     wrapped_value_var = Macro.var(:wrapped_value, context)
     arithmetic_op_var = Macro.var(:arithmetic_op, context)
-    datetime_wrapper_var = Macro.var(:datetime_wrapper, context)
-    datetime_value_var = Macro.var(:datetime_value, context)
+    datetime_count_var = Macro.var(:datetime_count, context)
     field_name_var = Macro.var(:field_name, context)
     scalar_value_var = Macro.var(:scalar_value, context)
 
@@ -300,38 +301,15 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   )
                 )
             end,
-            quote do
-              {:not, {unquote(op), {unquote(datetime_wrapper_var), unquote(datetime_value_var)}}}
-              when unquote(datetime_wrapper_var) in @datetime_wrappers ->
-                unquote(
-                  Helpers.dyn_expr(
-                    {bind_op, bind_to_var},
-                    q_var,
-                    quote_negated_expr(
-                      op,
-                      q_var,
-                      {key_var, {datetime_wrapper_var, datetime_value_var}}
-                    ),
-                    context
-                  )
-                )
-            end,
-            quote do
-              {unquote(op), {unquote(datetime_wrapper_var), unquote(datetime_value_var)}}
-              when unquote(datetime_wrapper_var) in @datetime_wrappers ->
-                unquote(
-                  Helpers.dyn_expr(
-                    {bind_op, bind_to_var},
-                    q_var,
-                    quote_expr(
-                      op,
-                      q_var,
-                      {key_var, {datetime_wrapper_var, datetime_value_var}}
-                    ),
-                    context
-                  )
-                )
-            end,
+            datetime_conditions(
+              op,
+              {bind_op, bind_to_var},
+              q_var,
+              key_var,
+              field_name_var,
+              datetime_count_var,
+              context
+            ),
             quote do
               {:not, {unquote(op), unquote(value_var)}} ->
                 unquote(
@@ -594,38 +572,15 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   )
                 )
             end,
-            quote do
-              {:not, {unquote(op), {unquote(datetime_wrapper_var), unquote(datetime_value_var)}}}
-              when unquote(datetime_wrapper_var) in @datetime_wrappers ->
-                unquote(
-                  Helpers.dyn_expr(
-                    {bind_op, bind_to_var},
-                    q_var,
-                    quote_negated_expr(
-                      op,
-                      q_var,
-                      {key_var, {datetime_wrapper_var, datetime_value_var}}
-                    ),
-                    context
-                  )
-                )
-            end,
-            quote do
-              {unquote(op), {unquote(datetime_wrapper_var), unquote(datetime_value_var)}}
-              when unquote(datetime_wrapper_var) in @datetime_wrappers ->
-                unquote(
-                  Helpers.dyn_expr(
-                    {bind_op, bind_to_var},
-                    q_var,
-                    quote_expr(
-                      op,
-                      q_var,
-                      {key_var, {datetime_wrapper_var, datetime_value_var}}
-                    ),
-                    context
-                  )
-                )
-            end,
+            datetime_conditions(
+              op,
+              {bind_op, bind_to_var},
+              q_var,
+              key_var,
+              field_name_var,
+              datetime_count_var,
+              context
+            ),
             quote do
               {:not, {unquote(op), unquote(value_var)}} ->
                 unquote(
@@ -806,38 +761,15 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                   )
                 )
             end,
-            quote do
-              {:not, {unquote(op), {unquote(datetime_wrapper_var), unquote(datetime_value_var)}}}
-              when unquote(datetime_wrapper_var) in @datetime_wrappers ->
-                unquote(
-                  Helpers.dyn_expr(
-                    {bind_op, bind_to_var},
-                    q_var,
-                    quote_negated_expr(
-                      op,
-                      q_var,
-                      {key_var, {datetime_wrapper_var, datetime_value_var}}
-                    ),
-                    context
-                  )
-                )
-            end,
-            quote do
-              {unquote(op), {unquote(datetime_wrapper_var), unquote(datetime_value_var)}}
-              when unquote(datetime_wrapper_var) in @datetime_wrappers ->
-                unquote(
-                  Helpers.dyn_expr(
-                    {bind_op, bind_to_var},
-                    q_var,
-                    quote_expr(
-                      op,
-                      q_var,
-                      {key_var, {datetime_wrapper_var, datetime_value_var}}
-                    ),
-                    context
-                  )
-                )
-            end,
+            datetime_conditions(
+              op,
+              {bind_op, bind_to_var},
+              q_var,
+              key_var,
+              field_name_var,
+              datetime_count_var,
+              context
+            ),
             quote do
               {:not, {unquote(op), unquote(value_var)}} ->
                 unquote(
@@ -991,6 +923,130 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
       end)
 
     plain_conditions ++ aggregate_conditions
+  end
+
+  defp datetime_conditions(
+         op,
+         {bind_op, bind_to_var},
+         q_var,
+         key_var,
+         field_name_var,
+         datetime_count_var,
+         context
+       ) do
+    Enum.flat_map(@datetime_interval_literals, fn interval ->
+      [
+        quote do
+          {:not,
+           {unquote(op),
+            {:datetime,
+             {:add,
+              [
+                field: unquote(field_name_var),
+                count: unquote(datetime_count_var),
+                interval: unquote(interval)
+              ]}}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_negated_expr(
+                  op,
+                  q_var,
+                  {key_var,
+                   {:datetime, {:add, [field: field_name_var, count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {unquote(op),
+           {:datetime,
+            {:add,
+             [field: unquote(field_name_var), count: unquote(datetime_count_var), interval: unquote(interval)]}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_expr(
+                  op,
+                  q_var,
+                  {key_var,
+                   {:datetime, {:add, [field: field_name_var, count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {:not,
+           {unquote(op),
+            {:datetime, {:ago, [count: unquote(datetime_count_var), interval: unquote(interval)]}}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_negated_expr(
+                  op,
+                  q_var,
+                  {key_var, {:datetime, {:ago, [count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {unquote(op),
+           {:datetime, {:ago, [count: unquote(datetime_count_var), interval: unquote(interval)]}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_expr(
+                  op,
+                  q_var,
+                  {key_var, {:datetime, {:ago, [count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {:not,
+           {unquote(op),
+            {:datetime, {:from_now, [count: unquote(datetime_count_var), interval: unquote(interval)]}}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_negated_expr(
+                  op,
+                  q_var,
+                  {key_var, {:datetime, {:from_now, [count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {unquote(op),
+           {:datetime, {:from_now, [count: unquote(datetime_count_var), interval: unquote(interval)]}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_expr(
+                  op,
+                  q_var,
+                  {key_var, {:datetime, {:from_now, [count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end
+      ]
+    end)
   end
 
   defp membership_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do
@@ -1463,14 +1519,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     end
   end
 
-  def quote_expr(op, q_var, {key_var, {wrapper, value_var}}) when wrapper in @datetime_wrappers do
+  def quote_expr(op, q_var, {key_var, {:datetime, value_var}}) do
     field_expr =
       quote do
         field(unquote(q_var), ^unquote(key_var))
       end
 
     quote do
-      unquote(Helpers.special_form_ast(field_expr, op, value_expr_ast(q_var, {wrapper, value_var})))
+      unquote(Helpers.special_form_ast(field_expr, op, value_expr_ast(q_var, {:datetime, value_var})))
     end
   end
 
@@ -1548,7 +1604,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     Helpers.pinned_ast(value)
   end
 
-  defp value_expr_ast(q_var, {wrapper, value}) when wrapper in @datetime_wrappers do
+  defp value_expr_ast(q_var, {:datetime, value}) do
     datetime_value_expr_ast(q_var, value)
   end
 

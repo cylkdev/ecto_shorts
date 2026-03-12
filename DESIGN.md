@@ -1,5 +1,9 @@
 # Design Log: ScalarExpr Scalar-Filter Milestone
 
+## Reminder
+
+- Never destructure composite data in function heads or match patterns; only match stable outer shapes and inspect the contents inside the function body.
+
 ## Task and Key Files
 
 Active task: Complete the scalar filter path end-to-end, starting with the behaviors asserted in `test/ecto_shorts/common_filters_scalar_filter_test.exs`, while preserving the current user-approved structure of `lib/ecto_shorts/dynamics/postgres.ex`, `lib/ecto_shorts/dynamics/postgres/common_expr.ex`, and `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`.
@@ -174,6 +178,10 @@ Current understanding:
   - `EctoShorts.Generator.Builder.quote_def/2` turns that into compiled clauses shaped like `dynamic_expr(selected_binding, key, negated, value)`.
   - `ScalarExprBuilder.case_clause_ast/3` first combines `negated` and `value` into a single local `term`, using `{:not, value}` when the negated flag is `:not`, and only then matches the generated conditions.
   - `ScalarExprBuilder.comparison_conditions/5` already has explicit branches for `{op, {:value, wrapped_value}}` and `{:not, {op, {:value, wrapped_value}}}` before the generic pinned-value branch.
+  - Builder modules run at compile time and emit standalone generated modules under `priv/generated`. Those generated modules do not inherit builder-only module attributes such as `@datetime_wrappers`.
+  - Any generated matcher that needs wrapper-specific routing must match the literal runtime shape directly, or inline compile-time literals into the generated guard. Do not emit runtime guards that depend on builder-only attributes.
+  - User-approved datetime decision: keep the datetime wrapper on Ecto's helper API and support intervals through explicit literal clauses only.
+  - Supported literal interval strings must follow the Ecto.Query.API contract: `"year"`, `"month"`, `"week"`, `"day"`, `"hour"`, `"minute"`, `"second"`, `"millisecond"`, and `"microsecond"`.
   - `ScalarExprBuilder.quote_expr/3` has a dedicated wrapped-value clause `quote_expr(op, q_var, {key_var, {:value, value_var}})`.
   - `value_expr_ast/2` currently supports:
     - `{:field, field_name}` where `field_name` is already an atom

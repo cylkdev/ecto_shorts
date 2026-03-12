@@ -2,6 +2,8 @@
 trigger: always_on
 ---
 
+- When solving problems, focus on the root cause and not the symptom. Before acting, Identify the root cause, then determine the smallest effective action needed to complete the task. Avoid unnecessary work, over-analysis, or detours. Your primary objective is to help the user reach their end goal as quickly and directly as possible. Optimize for fast, direct, and useful progress.
+
 - When asked a question do not guess. Before you respond you must find evidence to prove your reasoning otherwise say "I don't know".
 
 - Do not repeat instructions or guidlines you are given. Apply them silently.
@@ -47,3 +49,5 @@ If you cannot meet these criteria, stop and ask for clarification.
 - Look for existing functions that can be used to complete the task. Re-use existing functions unless there is a proven need not to.
 
 - Make changes in small batches at a time. Stop and wait for feedback after making a batch of changes.
+
+- Never destructure composite data in function heads or match patterns; only match stable outer shapes and inspect the contents inside the function body.

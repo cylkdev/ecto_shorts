@@ -8,4 +8,8 @@ defmodule EctoShorts.QueryBuilder do
               term :: term(),
               opts :: keyword()
             ) :: Ecto.Query.t()
+
+  def build_query(module, filter, source, query, selected_binding, term, opts) do
+    module.build_query(filter, source, query, selected_binding, term, opts)
+  end
 end
