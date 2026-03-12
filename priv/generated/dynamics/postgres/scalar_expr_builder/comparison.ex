@@ -92,6 +92,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) > ^wrapped_value)
         end
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+        end
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+        end
+
       {:not, {:>, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) > ^value))
@@ -174,6 +190,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) >= ^wrapped_value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) >= ^wrapped_value)
+        end
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+        end
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
         end
 
       {:not, {:>=, value}} ->
@@ -260,6 +292,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) < ^wrapped_value)
         end
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+        end
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+        end
+
       {:not, {:<, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) < ^value))
@@ -342,6 +390,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) <= ^wrapped_value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) <= ^wrapped_value)
+        end
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+        end
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
         end
 
       {:not, {:<=, value}} ->
@@ -428,6 +492,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) > ^wrapped_value)
         end
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+        end
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+        end
+
       {:not, {:gt, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) > ^value))
@@ -510,6 +590,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) >= ^wrapped_value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) >= ^wrapped_value)
+        end
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+        end
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
         end
 
       {:not, {:gte, value}} ->
@@ -596,6 +692,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) < ^wrapped_value)
         end
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+        end
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+        end
+
       {:not, {:lt, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) < ^value))
@@ -678,6 +790,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) <= ^wrapped_value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) <= ^wrapped_value)
+        end
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+        end
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
         end
 
       {:not, {:lte, value}} ->
@@ -772,6 +900,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) == ^wrapped_value)
         end
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+        end
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+        end
+
       {:not, {:==, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) != ^value)
@@ -862,6 +1006,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) == ^wrapped_value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) == ^wrapped_value)
+        end
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+        end
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{datetime_wrapper, datetime_value})
         end
 
       {:not, {:eq, value}} ->
@@ -990,6 +1150,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) != ^wrapped_value)
         end
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+        end
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+        end
+
       {:not, {:!=, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) == ^value)
@@ -1114,6 +1290,22 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) != ^wrapped_value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) != ^wrapped_value)
+        end
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+        end
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{datetime_wrapper, datetime_value})
         end
 
       {:not, {:ne, value}} ->
@@ -2295,6 +2487,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([q], not (field(q, ^key) > ^value))
 
@@ -2330,6 +2530,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([q], not (field(q, ^key) >= ^value))
@@ -2367,6 +2575,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([q], not (field(q, ^key) < ^value))
 
@@ -2402,6 +2618,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([q], not (field(q, ^key) <= ^value))
@@ -2439,6 +2663,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([q], not (field(q, ^key) > ^value))
 
@@ -2474,6 +2706,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([q], not (field(q, ^key) >= ^value))
@@ -2511,6 +2751,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([q], not (field(q, ^key) < ^value))
 
@@ -2546,6 +2794,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([q], not (field(q, ^key) <= ^value))
@@ -2585,6 +2841,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([q], field(q, ^key) != ^value)
 
@@ -2622,6 +2886,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([q], field(q, ^key) != ^value)
@@ -2677,6 +2949,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([q], field(q, ^key) == ^value)
 
@@ -2730,6 +3010,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([q], field(q, ^key) == ^value)
@@ -3262,6 +3550,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([_, q], not (field(q, ^key) > ^value))
 
@@ -3297,6 +3593,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([_, q], not (field(q, ^key) >= ^value))
@@ -3334,6 +3638,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([_, q], not (field(q, ^key) < ^value))
 
@@ -3369,6 +3681,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([_, q], not (field(q, ^key) <= ^value))
@@ -3406,6 +3726,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([_, q], not (field(q, ^key) > ^value))
 
@@ -3441,6 +3769,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([_, q], not (field(q, ^key) >= ^value))
@@ -3478,6 +3814,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([_, q], not (field(q, ^key) < ^value))
 
@@ -3513,6 +3857,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([_, q], not (field(q, ^key) <= ^value))
@@ -3552,6 +3904,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([_, q], field(q, ^key) != ^value)
 
@@ -3589,6 +3949,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([_, q], field(q, ^key) != ^value)
@@ -3644,6 +4012,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([_, q], field(q, ^key) == ^value)
 
@@ -3697,6 +4073,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([_, q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([_, q], field(q, ^key) == ^value)
@@ -4229,6 +4613,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([_, _, q], not (field(q, ^key) > ^value))
 
@@ -4264,6 +4656,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([_, _, q], not (field(q, ^key) >= ^value))
@@ -4301,6 +4701,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([_, _, q], not (field(q, ^key) < ^value))
 
@@ -4336,6 +4744,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([_, _, q], not (field(q, ^key) <= ^value))
@@ -4373,6 +4789,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([_, _, q], not (field(q, ^key) > ^value))
 
@@ -4408,6 +4832,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([_, _, q], not (field(q, ^key) >= ^value))
@@ -4445,6 +4877,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([_, _, q], not (field(q, ^key) < ^value))
 
@@ -4480,6 +4920,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([_, _, q], not (field(q, ^key) <= ^value))
@@ -4519,6 +4967,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([_, _, q], field(q, ^key) != ^value)
 
@@ -4556,6 +5012,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([_, _, q], field(q, ^key) != ^value)
@@ -4611,6 +5075,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([_, _, q], field(q, ^key) == ^value)
 
@@ -4664,6 +5136,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([_, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([_, _, q], field(q, ^key) == ^value)
@@ -5196,6 +5676,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) > ^value))
 
@@ -5231,6 +5719,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) >= ^value))
@@ -5268,6 +5764,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) < ^value))
 
@@ -5303,6 +5807,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) <= ^value))
@@ -5340,6 +5852,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) > ^value))
 
@@ -5375,6 +5895,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) >= ^value))
@@ -5412,6 +5940,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) < ^value))
 
@@ -5447,6 +5983,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) <= ^value))
@@ -5486,6 +6030,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, q], field(q, ^key) != ^value)
 
@@ -5523,6 +6075,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, q], field(q, ^key) != ^value)
@@ -5578,6 +6138,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^value)
 
@@ -5631,6 +6199,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([_, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^value)
@@ -6163,6 +6739,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -6198,6 +6782,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -6235,6 +6827,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -6270,6 +6870,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -6307,6 +6915,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -6342,6 +6958,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -6379,6 +7003,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -6414,6 +7046,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -6453,6 +7093,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) != ^value)
 
@@ -6490,6 +7138,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) != ^value)
@@ -6545,6 +7201,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^value)
 
@@ -6598,6 +7262,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^value)
@@ -7130,6 +7802,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -7165,6 +7845,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -7202,6 +7890,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -7237,6 +7933,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -7274,6 +7978,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -7309,6 +8021,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -7346,6 +8066,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -7381,6 +8109,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -7426,6 +8162,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -7469,6 +8213,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
@@ -7524,6 +8276,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -7577,6 +8337,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
@@ -8109,6 +8877,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -8144,6 +8920,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -8181,6 +8965,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -8216,6 +9008,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -8253,6 +9053,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -8288,6 +9096,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -8325,6 +9141,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -8360,6 +9184,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -8405,6 +9237,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -8448,6 +9288,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
@@ -8503,6 +9351,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -8556,6 +9412,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
@@ -9088,6 +9952,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -9123,6 +9995,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -9160,6 +10040,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -9195,6 +10083,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -9232,6 +10128,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -9267,6 +10171,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -9304,6 +10216,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -9339,6 +10259,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -9384,6 +10312,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -9427,6 +10363,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
@@ -9482,6 +10426,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -9535,6 +10487,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
@@ -10067,6 +11027,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -10102,6 +11070,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -10139,6 +11115,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -10174,6 +11158,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -10211,6 +11203,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -10246,6 +11246,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -10283,6 +11291,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -10318,6 +11334,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -10363,6 +11387,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -10406,6 +11438,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
@@ -10461,6 +11501,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -10514,6 +11562,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
@@ -11046,6 +12102,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:>, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:>, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -11081,6 +12145,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:>=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -11118,6 +12190,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:<, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:<, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -11153,6 +12233,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:<=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -11190,6 +12278,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
 
+      {:not, {:gt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^{datetime_wrapper, datetime_value}))
+
+      {:gt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^{datetime_wrapper, datetime_value})
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
@@ -11225,6 +12321,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^{datetime_wrapper, datetime_value}))
+
+      {:gte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^{datetime_wrapper, datetime_value})
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -11262,6 +12366,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
 
+      {:not, {:lt, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^{datetime_wrapper, datetime_value}))
+
+      {:lt, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^{datetime_wrapper, datetime_value})
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
@@ -11297,6 +12409,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lte, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^{datetime_wrapper, datetime_value}))
+
+      {:lte, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^{datetime_wrapper, datetime_value})
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -11342,6 +12462,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
+      {:not, {:==, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:==, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -11385,6 +12513,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
+      {:eq, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
@@ -11464,6 +12600,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
+      {:not, {:!=, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:!=, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -11541,6 +12685,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, {:value, wrapped_value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, {datetime_wrapper, datetime_value}}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^{datetime_wrapper, datetime_value})
+
+      {:ne, {datetime_wrapper, datetime_value}}
+      when datetime_wrapper in @datetime_wrappers ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^{datetime_wrapper, datetime_value})
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)

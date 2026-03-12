@@ -13,6 +13,8 @@ defmodule EctoShorts.Adapters.Postgres do
 
   @quantifier_operators [:all, :any]
   @arithmetic_value_operators [:+, :-, :*, :/]
+  @datetime_wrappers [:datetime]
+  @datetime_value_operators [:add, :ago, :from_now]
 
   @impl true
   def build_dynamic(source, selected_binding, {key, term}, opts \\ []) when is_list(opts) do
@@ -74,6 +76,10 @@ defmodule EctoShorts.Adapters.Postgres do
 
   defp normalize_keyword_params({op, inner_term}, acc) when op in @arithmetic_value_operators do
     [normalize_value_node({op, inner_term}) | acc]
+  end
+
+  defp normalize_keyword_params({wrapper, inner_term}, acc) when wrapper in @datetime_wrappers do
+    [normalize_value_node({wrapper, inner_term}) | acc]
   end
 
   defp normalize_keyword_params({key, inner_term}, acc) do
@@ -150,6 +156,20 @@ defmodule EctoShorts.Adapters.Postgres do
     end
   end
 
+  defp normalize_value_node({wrapper, term}) when wrapper in @datetime_wrappers do
+    case normalize_datetime_wrapper_payload(term) do
+      {datetime_op, datetime_term} when datetime_op in @datetime_value_operators ->
+        {wrapper, {datetime_op, datetime_term}}
+
+      _ ->
+        raise ArgumentError, "Expected datetime wrapper payload, got: #{inspect(term)}"
+    end
+  end
+
+  defp normalize_value_node({op, term}) when op in @datetime_value_operators do
+    {op, normalize_datetime_node(term)}
+  end
+
   defp normalize_value_node(field: field_name) do
     {:field, normalize_field_name(field_name)}
   end
@@ -167,6 +187,49 @@ defmodule EctoShorts.Adapters.Postgres do
   end
 
   defp normalize_value_node(term), do: term
+
+  defp normalize_datetime_wrapper_payload(term) when is_map(term) and not is_struct(term) do
+    term
+    |> Map.to_list()
+    |> normalize_datetime_wrapper_payload()
+  end
+
+  defp normalize_datetime_wrapper_payload(term) when is_list(term) do
+    if Keyword.keyword?(term) do
+      case term do
+        [{datetime_op, datetime_term}] when datetime_op in @datetime_value_operators ->
+          normalize_value_node({datetime_op, datetime_term})
+
+        _ ->
+          raise ArgumentError, "Expected datetime wrapper payload, got: #{inspect(term)}"
+      end
+    else
+      raise ArgumentError, "Expected datetime wrapper payload, got: #{inspect(term)}"
+    end
+  end
+
+  defp normalize_datetime_node(term) when is_map(term) and not is_struct(term) do
+    term
+    |> Map.to_list()
+    |> normalize_datetime_node()
+  end
+
+  defp normalize_datetime_node(term) when is_list(term) do
+    if Keyword.keyword?(term) do
+      field_name = Keyword.get(term, :field)
+      count = Keyword.fetch!(term, :count)
+      interval = Keyword.fetch!(term, :interval)
+
+      []
+      |> maybe_put_datetime_field(field_name)
+      |> Kernel.++(count: count, interval: interval)
+    else
+      raise ArgumentError, "Expected datetime params to be a keyword payload, got: #{inspect(term)}"
+    end
+  end
+
+  defp maybe_put_datetime_field(params, nil), do: params
+  defp maybe_put_datetime_field(params, field_name), do: [{:field, normalize_field_name(field_name)} | params]
 
   defp normalize_field_name(field_name) when is_atom(field_name), do: field_name
   defp normalize_field_name(field_name) when is_binary(field_name), do: String.to_existing_atom(field_name)
