@@ -61,9 +61,25 @@ Write every public function specification as if the reader cannot and should not
 
 In Elixir, a complete function specification is usually spread across three places. Use `@spec` to state the input and output shapes. Use `@doc` to state the behavior in plain language. Use examples, and when possible doctests, to show the contract in action. Do not confuse these responsibilities. `@spec` alone is not a complete specification, because types do not tell the full story of what the function promises.
 
+## Requirements
+
+NON-NEGOTIABLE-REQUIREMENTS:
+* Do not describe private structure in the public contract unless callers are meant to rely on it.
+* Do not write documentation that merely mirrors the function name.
+* Do not leave error behavior implicit.
+* Do not hide failure inside a normal-looking return value when the failure matters to callers.
+* Do not assume examples are optional. They are part of the work.
+* Do not make a caller reverse-engineer the implementation to learn the contract.
+
+## Guidelines
+
+A complete beginner should be able to read the function’s `@doc`, `@spec`, and examples and use the function correctly without opening the function body. That is the standard.
+
+If the documentation tells the caller what they may rely on, if the typespec states the visible shapes, if the examples prove the intended usage, and if the implementation can later change without breaking those promises, then the function is specified correctly.
+
 ## Begin with the promise, not the mechanism
 
-Before you write a single line of `@spec`, decide what the function guarantees. Ask one question: after a caller invokes this function correctly, what result are they entitled to expect. Then ask the paired question: what must already be true before the function is called. Those two answers are the heart of the specification.
+Before you write a single line of `@spec`, decide what the function guarantees. Ask one question: After a caller invokes this function correctly, what result are they entitled to expect? Then ask the paired question: what must already be true before the function is called. Those two answers are the heart of the specification.
 
 Keep the caller’s point of view in focus. A caller needs to know what values are accepted, what value comes back, and what happens at the edges. A caller does not need to know that you traverse a list left to right, that you store state in a map, or that you happen to normalize an option before dispatching to a helper. Those are implementation details. Leave them out unless they are part of the public promise.
 
@@ -171,23 +187,3 @@ Fifth, read the documentation without looking at the implementation. If a reason
     end
 
 This example is worth studying for the division of labor alone. The `@spec` states the visible shapes. The prose states the semantic rules that the type line cannot express by itself. The examples demonstrate the contract at the boundary cases that callers are most likely to get wrong.
-
-## What to avoid
-
-Do not describe private structure in the public contract unless callers are meant to rely on it.
-
-Do not write documentation that merely mirrors the function name.
-
-Do not leave error behavior implicit.
-
-Do not hide failure inside a normal-looking return value when the failure matters to callers.
-
-Do not assume examples are optional. They are part of the work.
-
-Do not make a caller reverse-engineer the implementation to learn the contract.
-
-## The standard to hold yourself to
-
-A complete beginner should be able to read the function’s `@doc`, `@spec`, and examples and use the function correctly without opening the function body. That is the standard.
-
-If the documentation tells the caller what they may rely on, if the typespec states the visible shapes, if the examples prove the intended usage, and if the implementation can later change without breaking those promises, then the function is specified correctly.
