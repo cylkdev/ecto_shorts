@@ -53,6 +53,30 @@ defmodule EctoShorts.Dynamics.Helpers do
     end
   end
 
+  def special_form_ast(left, :+, right) do
+    quote do
+      unquote(left) + unquote(right)
+    end
+  end
+
+  def special_form_ast(left, :-, right) do
+    quote do
+      unquote(left) - unquote(right)
+    end
+  end
+
+  def special_form_ast(left, :*, right) do
+    quote do
+      unquote(left) * unquote(right)
+    end
+  end
+
+  def special_form_ast(left, :/, right) do
+    quote do
+      unquote(left) / unquote(right)
+    end
+  end
+
   @doc """
   ...
   """

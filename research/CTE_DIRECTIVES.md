@@ -22,7 +22,7 @@ Assumed starting query unless otherwise stated: `from(p in EctoShorts.TestPost)`
 
 **Given** filter params: `[recursive_ctes: true]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided CTE directives  
+**Then** it must apply the provided CTE operators  
 **And** it must check whether the query enables recursive CTEs  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost) |> recursive_ctes(true)`
@@ -33,7 +33,7 @@ test name: "Rule Statement 1: recursive_ctes true"
 
 **Given** filter params: `[recursive_ctes: false]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided CTE directives  
+**Then** it must apply the provided CTE operators  
 **And** it must check whether the query remains non-recursive when recursive CTEs are disabled  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost)`
@@ -44,7 +44,7 @@ test name: "Rule Statement 2: recursive_ctes false"
 
 **Given** filter params: `[with_cte: [published_posts: [as: cte_query]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided CTE directives  
+**Then** it must apply the provided CTE operators  
 **And** it must check whether the query defines the `published_posts` CTE from the provided query  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost) |> with_cte("published_posts", as: ^cte_query)`
@@ -55,7 +55,7 @@ test name: "Rule Statement 3: with_cte basic"
 
 **Given** filter params: `[with_cte: [published_posts: [as: cte_query, materialized: false, operation: :all]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided CTE directives  
+**Then** it must apply the provided CTE operators  
 **And** it must check whether the query defines the `published_posts` CTE as not materialized with `operation: :all`  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost) |> with_cte("published_posts", as: ^cte_query, materialized: false, operation: :all)`
@@ -66,7 +66,7 @@ test name: "Rule Statement 4: with_cte not materialized"
 
 **Given** filter params: `[with_cte: [published_posts: [as: [from: [query: Post, published: true]]]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided CTE directives  
+**Then** it must apply the provided CTE operators  
 **And** it must check whether the query builds the `published_posts` CTE from the provided filter params  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `cte_query = from(p in EctoShorts.TestPost, where: p.published == true); from(p in EctoShorts.TestPost) |> with_cte("published_posts", as: ^cte_query)`
@@ -77,7 +77,7 @@ test name: "Rule Statement 5: with_cte from filter params published true"
 
 **Given** filter params: `[with_cte: [target_post: [as: [from: [query: Post, id: 1]]]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided CTE directives  
+**Then** it must apply the provided CTE operators  
 **And** it must check whether the query builds the `target_post` CTE from the provided filter params  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `cte_query = from(p in EctoShorts.TestPost, where: p.id == 1); from(p in EctoShorts.TestPost) |> with_cte("target_post", as: ^cte_query)`
@@ -88,7 +88,7 @@ test name: "Rule Statement 6: with_cte from filter params id"
 
 **Given** filter params: `[recursive_ctes: true, with_cte: [published_posts: [as: cte_query]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided CTE directives  
+**Then** it must apply the provided CTE operators  
 **And** it must check whether the query enables recursive CTEs and defines the `published_posts` CTE from the provided query  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost) |> recursive_ctes(true) |> with_cte("published_posts", as: ^cte_query)`

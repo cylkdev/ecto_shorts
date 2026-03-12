@@ -52,7 +52,7 @@
 
 ## Communication Requirements
 
-- Use a calm, direct, imperative, directive tone.
+- Use a calm, direct, imperative, operator tone.
 - Use active voice.
 - Write in second person. Use a reader-facing or direct-address style.
 - Prefer clear commands and plain statements.

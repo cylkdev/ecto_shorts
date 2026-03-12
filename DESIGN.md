@@ -476,7 +476,7 @@ When direct `ScalarExpr` tests were expanded, some new tests converted only the 
 
 #### 10. The generator contract was not kept explicit while refactoring the builder
 
-The builder refactor treated the first `specs_for/4` argument name such as `key` or `directive` as if it directly controlled the generated `dynamic_expr/3` argument positions. That was wrong.
+The builder refactor treated the first `specs_for/4` argument name such as `key` or `operator` as if it directly controlled the generated `dynamic_expr/3` argument positions. That was wrong.
 
 The actual contract is in `EctoShorts.Generator.Builder.quote_def/2`:
 
@@ -666,7 +666,7 @@ For this task, `scalar_expr.ex` only counts as complete when it matches the curr
   - membership
   - string transform
   - string
-- `directives/0`
+- `operators/0`
 - wrapper `dynamic_expr/5`
 - `normalize_term/1` documented either as current behavior or explicitly removed in the same batch that replaces it upstream
 - `compiled_module_for/2`

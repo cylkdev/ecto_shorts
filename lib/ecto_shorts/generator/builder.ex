@@ -35,7 +35,7 @@ defmodule EctoShorts.Generator.Builder do
     q_var = Macro.var(:q, opts[:context])
 
     opts
-    |> Keyword.get(:directives, ClauseSpec.directives(builder))
+    |> Keyword.get(:operators, ClauseSpec.operators(builder))
     |> List.wrap()
     |> Enum.map(fn key ->
       Task.async(fn ->

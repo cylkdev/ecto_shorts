@@ -8,35 +8,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.Comparison,
-        directives: [:comparison],
+        operators: [:comparison],
         positions: @max_positional_bindings
       ],
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.Membership,
-        directives: [:membership],
+        operators: [:membership],
         positions: @max_positional_bindings
       ],
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.StringUpperLower,
-        directives: [:string_transform],
+        operators: [:string_transform],
         positions: @max_positional_bindings
       ],
       [
         builder: ScalarExprBuilder,
         module: __MODULE__.Compiled.String,
-        directives: [:string],
+        operators: [:string],
         positions: @max_positional_bindings
       ]
     ]
 
-  @directives ScalarExprBuilder.directives()
-  @comparison_directives ScalarExprBuilder.directives(:comparison)
-  @equality_directives ScalarExprBuilder.directives(:equality)
-  @string_directives ScalarExprBuilder.directives(:string)
+  @operators ScalarExprBuilder.operators()
+  @comparison_operators ScalarExprBuilder.operators(:comparison)
+  @equality_operators ScalarExprBuilder.operators(:equality)
+  @string_operators ScalarExprBuilder.operators(:string)
 
-  def directives, do: @directives
+  def operators, do: @operators
 
   def dynamic_expr(selected_binding, key, negated, term, _opts) do
     {op, term} = normalize_term(term)
@@ -51,16 +51,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     __MODULE__.Compiled.Membership
   end
 
-  defp compiled_module_for(op, value) when op in @equality_directives and is_list(value) do
+  defp compiled_module_for(op, value) when op in @equality_operators and is_list(value) do
     __MODULE__.Compiled.Membership
   end
 
   defp compiled_module_for(op, {transform, _})
-       when op in @comparison_directives and transform in [:lower, :upper] do
+       when op in @comparison_operators and transform in [:lower, :upper] do
     __MODULE__.Compiled.StringUpperLower
   end
 
-  defp compiled_module_for(op, term) when op in @string_directives do
+  defp compiled_module_for(op, term) when op in @string_operators do
     case term do
       {transform, _} when transform in [:lower, :upper] ->
         __MODULE__.Compiled.StringUpperLower

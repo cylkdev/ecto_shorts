@@ -17,7 +17,7 @@ Assumed starting query unless otherwise stated: `from(p in EctoShorts.TestPost)`
 
 **Given** filter params: `[with_named_binding: [author: [join: [association: [source: :author]]]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided named binding directives  
+**Then** it must apply the provided named binding operators  
 **And** it must check whether the query adds the `:author` named binding by joining the `:author` association  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author)`
@@ -28,7 +28,7 @@ test name: "Rule Statement 1: with_named_binding single named binding"
 
 **Given** filter params: `[with_named_binding: [author: [join: [association: [source: :author]]], users_table: [join: [table: [source: "users", on: true]]]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided named binding directives  
+**Then** it must apply the provided named binding operators  
 **And** it must check whether the query adds the `:author` and `:users_table` named bindings from the provided join definitions  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author, join: u in "users", as: :users_table, on: true)`

@@ -1,7 +1,7 @@
 defmodule EctoShorts.Generator.ClauseSpec do
   @moduledoc since: "3.0.0"
 
-  @callback directives :: list(atom())
+  @callback operators :: list(atom())
 
   @callback specs_for(
               key :: atom(),
@@ -10,18 +10,18 @@ defmodule EctoShorts.Generator.ClauseSpec do
               opts :: Keyword.t()
             ) :: term()
 
-  @spec directives(module()) :: list(atom())
-  def directives(builder), do: builder.directives()
+  @spec operators(module()) :: list(atom())
+  def operators(builder), do: builder.operators()
 
   def specs_for(
         builder,
-        directive,
+        operator,
         selected_binding,
         binding_body_asts,
         opts
       ) do
     builder.specs_for(
-      directive,
+      operator,
       selected_binding,
       binding_body_asts,
       opts

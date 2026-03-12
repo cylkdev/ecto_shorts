@@ -5,7 +5,7 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonFilters.Builder
   alias EctoShorts.Utils
 
-  @binding_directive [:as, :at]
+  @binding_operator [:as, :at]
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
@@ -20,7 +20,7 @@ defmodule EctoShorts.CommonFilters do
 
   defp apply_filters(filter, source, query, selected_binding, {key, term}, opts) do
     cond do
-      key in @binding_directive ->
+      key in @binding_operator ->
         Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
           apply_filters(
             filter,

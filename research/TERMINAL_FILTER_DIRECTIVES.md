@@ -21,7 +21,7 @@ This section is the authoritative definition of top-level `:subquery`.
 
 **Given** filter params: `[last: 2]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the `:last` terminal directive  
+**Then** it must apply the `:last` terminal operator  
 **And** it must check whether the query returns the last `2` records by reversing the default `:id` order, limiting, then re-ordering ascending  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, order_by: [desc: q.id], limit: 2)), order_by: [asc: p.id])`
@@ -32,7 +32,7 @@ test name: "Rule Statement 1: last 2 records"
 
 **Given** filter params: `[subquery: [title: "Second"]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the `:subquery` terminal directive  
+**Then** it must apply the `:subquery` terminal operator  
 **And** it must check whether the query wraps the `:title == "Second"` filter in a subquery  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, where: q.title == "Second")))`
@@ -43,7 +43,7 @@ test name: "Rule Statement 2: subquery with title filter"
 
 **Given** filter params: `[published: true, subquery: [title: "Match"]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the `:subquery` terminal directive after applying the top-level filter conditions  
+**Then** it must apply the `:subquery` terminal operator after applying the top-level filter conditions  
 **And** it must check whether the query wraps the `:published == true` and `:title == "Match"` filters in a subquery  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, where: q.published == true and q.title == "Match")))`
@@ -54,7 +54,7 @@ test name: "Rule Statement 3: published true and subquery with title filter"
 
 **Given** filter params: `[last: [title: 2]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the `:last` terminal directive using the provided sort field  
+**Then** it must apply the `:last` terminal operator using the provided sort field  
 **And** it must check whether the query returns the last `2` records by reversing the `:title` order, limiting, then re-ordering ascending  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, order_by: [desc: q.title], limit: 2)), order_by: [asc: p.title])`
@@ -65,7 +65,7 @@ test name: "Rule Statement 4: last 2 records by title"
 
 **Given** filter params: `[subquery: [published: true, views: [>: 10]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the `:subquery` terminal directive  
+**Then** it must apply the `:subquery` terminal operator  
 **And** it must check whether the query wraps the `:published == true` and `:views > 10` filters in a subquery  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in subquery(from(q in EctoShorts.TestPost, where: q.published == true and q.views > 10)))`

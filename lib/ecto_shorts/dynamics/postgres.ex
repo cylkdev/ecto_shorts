@@ -11,8 +11,8 @@ defmodule EctoShorts.Adapters.Postgres do
 
   @behaviour EctoShorts.DynamicExprBuilder
 
-  @quantifier_directives [:all, :any]
-  @arithmetic_value_directives [:+, :-, :*, :/]
+  @quantifier_operators [:all, :any]
+  @arithmetic_value_operators [:+, :-, :*, :/]
 
   @impl true
   def build_dynamic(source, selected_binding, {key, term}, opts \\ []) when is_list(opts) do
@@ -68,7 +68,7 @@ defmodule EctoShorts.Adapters.Postgres do
   end
 
   defp normalize_keyword_params({quantifier, payload}, acc)
-       when quantifier in @quantifier_directives do
+       when quantifier in @quantifier_operators do
     [{quantifier, payload} | acc]
   end
 
@@ -97,7 +97,7 @@ defmodule EctoShorts.Adapters.Postgres do
       term = normalize_quantified_term(key, term, opts)
 
       cond do
-        key in CommonExpr.directives() ->
+        key in CommonExpr.operators() ->
           CommonExpr.dynamic_expr(selected_binding, key, negated, term, opts)
 
         array_field?(source, key) ->
@@ -119,7 +119,7 @@ defmodule EctoShorts.Adapters.Postgres do
   defp normalize_negation_term(term), do: {nil, term}
 
   defp normalize_quantified_term(key, {quantifier, payload}, opts)
-       when quantifier in @quantifier_directives do
+       when quantifier in @quantifier_operators do
     {:==, {quantifier, SetComparison.build_quantified_query(key, payload, opts)}}
   end
 
@@ -139,7 +139,7 @@ defmodule EctoShorts.Adapters.Postgres do
     {:value, normalize_value_node(value)}
   end
 
-  defp normalize_value_node({op, operands}) when op in @arithmetic_value_directives and is_list(operands) do
+  defp normalize_value_node({op, operands}) when op in @arithmetic_value_operators and is_list(operands) do
     {op, Enum.map(operands, &normalize_value_node/1)}
   end
 
@@ -152,7 +152,7 @@ defmodule EctoShorts.Adapters.Postgres do
         [value: value] ->
           {:value, normalize_value_node(value)}
 
-        [{op, operands}] when op in @arithmetic_value_directives and is_list(operands) ->
+        [{op, operands}] when op in @arithmetic_value_operators and is_list(operands) ->
           {op, Enum.map(operands, &normalize_value_node/1)}
 
         _ ->

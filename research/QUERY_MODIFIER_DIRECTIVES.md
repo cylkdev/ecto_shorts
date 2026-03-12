@@ -32,7 +32,7 @@ Rules that depend on existing query state include an explicit `Assumed starting 
 
 **Given** filter params: `[with_ties: true]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query enables `with_ties(true)` on a limited descending `:views` query  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, order_by: [desc: p.views], limit: 1) |> with_ties(true)`
@@ -45,7 +45,7 @@ test name: "Rule Statement 1: with_ties true"
 
 **Given** filter params: `[with_ties: false]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query disables `with_ties` on a limited descending `:views` query  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, order_by: [desc: p.views], limit: 1) |> with_ties(false)`
@@ -58,7 +58,7 @@ test name: "Rule Statement 2: with_ties false"
 
 **Given** filter params: `[with_ties: [bind: [as: :post, value: true]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query enables `with_ties(true)` while preserving the named `:post` binding  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, as: :post, order_by: [desc: p.views], limit: 1) |> with_ties(true)`
@@ -71,7 +71,7 @@ test name: "Rule Statement 3: with_ties named binding"
 
 **Given** filter params: `[with_ties: [bind: [at: 1, value: true]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query enables `with_ties(true)` while preserving the positional binding selector  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, order_by: [desc: p.views], limit: 1) |> with_ties(true)`
@@ -84,7 +84,7 @@ test name: "Rule Statement 4: with_ties positional binding"
 
 **Given** filter params: `[update: [set: [title: "After"], inc: [views: 1]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query adds the `set` and `inc` update operations to the assumed update query for `id == 1`  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, where: p.id == 1, update: [set: [title: "After"], inc: [views: 1]])`
@@ -95,7 +95,7 @@ test name: "Rule Statement 5: update set and inc"
 
 **Given** filter params: `[windows: [post_window: [partition_by: :author_id, order_by: [desc: :inserted_at]]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query defines the `post_window` window with the provided partition and ordering fields  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, windows: [post_window: [partition_by: p.author_id, order_by: [desc: p.inserted_at]]])`
@@ -106,7 +106,7 @@ test name: "Rule Statement 6: windows partition_by and order_by"
 
 **Given** filter params: `[preload: :author]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query preloads the `:author` association by name  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, preload: :author)`
@@ -117,7 +117,7 @@ test name: "Rule Statement 7: preload atom"
 
 **Given** filter params: `[preload: [:author]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query preloads the `:author` association from a list payload  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, preload: [:author])`
@@ -128,7 +128,7 @@ test name: "Rule Statement 8: preload list with atom"
 
 **Given** filter params: `[preload: [author: [:posts]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query preloads the `:author` association with nested `:posts`  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, preload: [author: [:posts]])`
@@ -141,7 +141,7 @@ test name: "Rule Statement 9: preload nested associations"
 
 **Given** filter params: `[preload: [bind: [as: :example, value: :author]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query preloads the `:author` association from the named `:example` binding  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :example, preload: [author: a])`
@@ -154,7 +154,7 @@ test name: "Rule Statement 10: preload from named binding"
 
 **Given** filter params: `[preload: [bind: [at: 2, value: :author]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query preloads the `:author` association from the positional binding  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), preload: [author: a])`
@@ -167,7 +167,7 @@ test name: "Rule Statement 11: preload from positional binding"
 
 **Given** filter params: `[preload: [bind: [at: 2, value: :author], posts: [:comments]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query preloads the `:author` association from the positional binding with nested `posts: [:comments]`  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), preload: [author: {a, [posts: [:comments]]}])`
@@ -180,7 +180,7 @@ test name: "Rule Statement 12: preload from binding and nested"
 
 **Given** filter params: `[preload: [bind: [as: :author, value: :author], posts: [:comments]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query preloads the `:author` association from the named `:author` binding with nested `posts: [:comments]`  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author, preload: [author: {a, [posts: [:comments]]}])`
@@ -193,7 +193,7 @@ test name: "Rule Statement 13: preload from named binding and nested"
 
 **Given** filter params: `[preload: [bind: [[as: :author, value: :author], [at: 2, value: :author]], posts: [:comments]]]`  
 **When** the filter params are converted into a query condition  
-**Then** it must apply the provided query modifier directives  
+**Then** it must apply the provided query modifier operators  
 **And** it must check whether the query preloads the `:author` association from the named and positional bindings with shared nested `posts: [:comments]`  
 **And** it must preserve the provided inputs exactly without adding implicit conditions  
 **And** the resulting expression is: `from(p in EctoShorts.TestPost, join: a in assoc(p, :author), as: :author, preload: [author: {a, [posts: [:comments]]}])`

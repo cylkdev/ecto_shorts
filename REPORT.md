@@ -2,19 +2,19 @@
 
 **Date:** March 5, 2026  
 **Audit Scope:** All 21 sections of `research/COMMON_FILTERS.md`  
-**Coverage Criteria:** Representative coverage - each directive should have at least one example per operator category (comparison, negation, special operators)
+**Coverage Criteria:** Representative coverage - each operator should have at least one example per operator category (comparison, negation, special operators)
 
 ---
 
 ## Executive Summary
 
-This report documents a comprehensive audit of `research/COMMON_FILTERS.md` to identify missing operator + directive combinations. The audit examined all 21 sections to ensure representative coverage where each directive demonstrates its behaviour with different operator categories.
+This report documents a comprehensive audit of `research/COMMON_FILTERS.md` to identify missing operator + operator combinations. The audit examined all 21 sections to ensure representative coverage where each operator demonstrates its behaviour with different operator categories.
 
 **Key Findings:**
 - **Total Sections Audited:** 21
 - **Sections with Missing Examples:** 8
 - **Total Missing Examples Identified:** 24
-- **Priority Level:** High (critical gaps in core query-building directives)
+- **Priority Level:** High (critical gaps in core query-building operators)
 
 ---
 
@@ -22,16 +22,16 @@ This report documents a comprehensive audit of `research/COMMON_FILTERS.md` to i
 
 For each section, the following analysis was performed:
 
-1. **Directive Inventory:** Listed all directives mentioned in the section description
+1. **Directive Inventory:** Listed all operators mentioned in the section description
 2. **Operator Categories:** Identified applicable operator categories (comparison, negation, string matching, special operators)
-3. **Coverage Matrix:** Mapped existing examples to directives and operator categories
-4. **Gap Identification:** Flagged directives missing examples for applicable operator categories
+3. **Coverage Matrix:** Mapped existing examples to operators and operator categories
+4. **Gap Identification:** Flagged operators missing examples for applicable operator categories
 
 **Representative Coverage Definition:**
-Each directive should have at least one example demonstrating:
+Each operator should have at least one example demonstrating:
 - A comparison operator (>, >=, <, <=, ==, !=)
 - Negation with `:not` (where applicable)
-- Special operators specific to that directive (e.g., `:like`/`:ilike` for string fields, `:all`/`:any` for set operations)
+- Special operators specific to that operator (e.g., `:like`/`:ilike` for string fields, `:all`/`:any` for set operations)
 
 ---
 
@@ -371,9 +371,9 @@ Each directive should have at least one example demonstrating:
 - `:reverse_order`, `:exclude`, `:put_query_prefix`, `:start_date`, `:end_date`, `:ids`
 - `:dynamic`, `:exists`
 
-**Coverage Status:** ⚠️ Partial - Some directives lack examples
+**Coverage Status:** ⚠️ Partial - Some operators lack examples
 
-**Note:** This section has 23 directives. Many are configuration directives that don't combine with operators in the same way as filter directives. The audit focuses on filter-related directives.
+**Note:** This section has 23 operators. Many are configuration operators that don't combine with operators in the same way as filter operators. The audit focuses on filter-related operators.
 
 **Existing Examples:**
 - `:dynamic` at top level ✓
@@ -412,7 +412,7 @@ Each directive should have at least one example demonstrating:
 - `:union`, `:union_all`
 
 **Coverage Status:** ✅ Complete
-- All 6 set directives demonstrated ✓
+- All 6 set operators demonstrated ✓
 - Set operations with query-builder payloads ✓
 - Multiple set operations chained ✓
 
@@ -601,7 +601,7 @@ The COMMON_FILTERS.md document has **strong overall coverage** with 13 of 21 sec
 - **Low Priority gaps** (6 examples) provide additional reference material but are not critical
 
 **Next Steps:**
-1. Add the 5 high-priority examples for `:any` directive
+1. Add the 5 high-priority examples for `:any` operator
 2. Add the 4 medium-priority examples for `:ne`, `:having`, and `:subquery` join
 3. Consider adding low-priority examples based on user feedback and common questions
 

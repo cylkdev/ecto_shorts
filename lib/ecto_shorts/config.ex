@@ -16,8 +16,6 @@ defmodule EctoShorts.Config do
 
       iex> EctoShorts.Config.error_module()
       EctoShorts.Actions.Error
-
-  See also `EctoShorts.Actions.Error` and `repo!/1`.
   """
   @spec error_module :: module()
   def error_module do
@@ -33,8 +31,6 @@ defmodule EctoShorts.Config do
 
       iex> EctoShorts.Config.repo()
       EctoShorts.Repo
-
-  See also `repo!/1` and `replica/0`.
   """
   @spec repo :: module() | nil
   def repo do
@@ -51,8 +47,6 @@ defmodule EctoShorts.Config do
 
       iex> EctoShorts.Config.replica()
       nil
-
-  See also `replica!/1` and `repo/0`.
   """
   @spec replica :: module() | nil
   def replica do
@@ -184,21 +178,33 @@ defmodule EctoShorts.Config do
     Application.get_env(@app, :dynamic_adapter)
   end
 
+
   @doc since: "3.0.0"
   @doc """
-  Returns the configured `:query_provider` module from the `:ecto_shorts` application environment.
+  Returns the configured module that implements the `EctoShorts.QueryBuilder` behaviour.
 
-  Defaults to `nil`. When `nil`, `EctoShorts.QueryProvider` falls back to
-  `EctoShorts.CommonFilters.QueryProviders.NoOp`. Set this to a custom module
-  that exports `resolve_query_expression/3` to control how join and lock
-  expressions are resolved at runtime.
+  Defaults to `nil`.
+
+  ## Examples
+
+      iex> EctoShorts.Config.query_builder()
+      nil
+  """
+  @spec query_builder :: module() | nil
+  def query_builder do
+    Application.get_env(@app, :query_builder)
+  end
+
+  @doc since: "3.0.0"
+  @doc """
+  Returns the configured module that implements the `EctoShorts.QueryProvider` behaviour.
+
+  Defaults to `nil`.
 
   ## Examples
 
       iex> EctoShorts.Config.query_provider()
       nil
-
-  See also `EctoShorts.QueryProvider` and `dynamic_adapter/0`.
   """
   @spec query_provider :: module() | nil
   def query_provider do
@@ -212,8 +218,6 @@ defmodule EctoShorts.Config do
   Defaults to `5`. Used by `EctoShorts.Generator` to determine how many
   positional binding clauses to generate. Increase when your queries join
   more than ten tables.
-
-  See also `EctoShorts.Generator` and `dynamic_adapter/0`.
   """
   @spec max_positional_bindings :: integer()
   def max_positional_bindings do
