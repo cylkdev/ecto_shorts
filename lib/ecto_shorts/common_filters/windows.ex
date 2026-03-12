@@ -13,7 +13,7 @@ defmodule EctoShorts.CommonFilters.Windows do
     Compiler.query_binding_contracts(10, __MODULE__)
 
   def build_query(:windows, _source, query, selected_binding, params, _opts) do
-    normalized_params = Utils.normalize_params(params)
+    normalized_params = Utils.map_to_keywrod(params)
     reduce_params(query, selected_binding, normalized_params)
   end
 

@@ -20,7 +20,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
   end
 
   defp apply_with_ties(source, query, selected_binding, params, opts) when is_list(params) do
-    normalized_params = Utils.normalize_params(params)
+    normalized_params = Utils.map_to_keywrod(params)
 
     if Keyword.keyword?(normalized_params) do
       unknown_keys =

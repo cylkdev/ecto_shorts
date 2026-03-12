@@ -12,7 +12,7 @@ defmodule EctoShorts.CommonFilters.Select do
     Compiler.query_binding_contracts(10, __MODULE__)
 
   def build_query(:select, _source, query, selected_binding, term, _opts) do
-    normalized_term = Utils.normalize_params(term)
+    normalized_term = Utils.map_to_keywrod(term)
 
     query
     |> drop_existing_select()
@@ -20,7 +20,7 @@ defmodule EctoShorts.CommonFilters.Select do
   end
 
   def build_query(:select_merge, _source, query, selected_binding, term, _opts) do
-    normalized_term = Utils.normalize_params(term)
+    normalized_term = Utils.map_to_keywrod(term)
 
     apply_select_merge_expr(query, selected_binding, normalized_term)
   end

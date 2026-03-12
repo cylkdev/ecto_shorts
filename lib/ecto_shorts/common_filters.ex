@@ -84,7 +84,7 @@ defmodule EctoShorts.CommonFilters do
     query = CommonSchema.to_query(source)
 
     params
-    |> Utils.normalize_params()
+    |> Utils.map_to_keywrod()
     |> sort_filters()
     |> Enum.reduce(query, fn {key, value}, query_acc ->
       apply_filters(:where, source, query_acc, @default_selected_binding, {key, value}, opts)

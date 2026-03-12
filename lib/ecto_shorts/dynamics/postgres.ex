@@ -45,21 +45,20 @@ defmodule EctoShorts.Adapters.Postgres do
     end
   end
 
-  defp normalize_params(term) when is_map(term) and not is_struct(term) do
-    term
-    |> Map.to_list()
-    |> normalize_params()
-  end
+  defp normalize_params(term) do
+    cond do
+      is_map(term) and not is_struct(term) ->
+        term
+        |> Map.to_list()
+        |> normalize_params()
 
-  defp normalize_params(term) when is_list(term) do
-    if Keyword.keyword?(term) do
-      normalize_keyword_params(term, [])
-    else
-      [term]
+      Keyword.keyword?(term) ->
+        normalize_keyword_params(term, [])
+
+      true ->
+        [term]
     end
   end
-
-  defp normalize_params(term), do: [term]
 
   defp normalize_keyword_params([], acc), do: Enum.reverse(acc)
 
@@ -150,12 +149,11 @@ defmodule EctoShorts.Adapters.Postgres do
 
       _ ->
         {key, value}
-
     end
   end
 
   defp normalize_scalar_value_payload(term) do
-    if is_map(term) and not is_struct(term) or Keyword.keyword?(term) do
+    if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
       Enum.map(term, &normalize_scalar_value_payload/1)
     else
       term

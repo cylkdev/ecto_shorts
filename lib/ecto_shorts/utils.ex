@@ -7,25 +7,25 @@ defmodule EctoShorts.Utils do
   and keyword lists to existing atoms.
   """
 
-  def normalize_params(map) when is_map(map) and not is_struct(map) do
+  def map_to_keyword(map) when is_map(map) and not is_struct(map) do
     map
     |> Map.to_list()
-    |> normalize_params()
+    |> map_to_keyword()
   end
 
-  def normalize_params([]) do
+  def map_to_keyword([]) do
     []
   end
 
-  def normalize_params([head | tail]) do
-    [normalize_params(head) | normalize_params(tail)]
+  def map_to_keyword([head | tail]) do
+    [map_to_keyword(head) | map_to_keyword(tail)]
   end
 
-  def normalize_params({k, v}) do
-    {k, normalize_params(v)}
+  def map_to_keyword({k, v}) do
+    {k, map_to_keyword(v)}
   end
 
-  def normalize_params(term) do
+  def map_to_keyword(term) do
     term
   end
 

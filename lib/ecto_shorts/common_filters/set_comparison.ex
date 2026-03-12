@@ -4,7 +4,7 @@ defmodule EctoShorts.CommonFilters.SetComparison do
   alias EctoShorts.Utils
 
   def build_quantified_query(outer_key, term, opts) do
-    params = Utils.normalize_params(term)
+    params = Utils.map_to_keywrod(term)
 
     if Keyword.keyword?(params) do
       source = Keyword.fetch!(params, :from)
