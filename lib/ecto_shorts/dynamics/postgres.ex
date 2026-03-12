@@ -150,11 +150,11 @@ defmodule EctoShorts.Adapters.Postgres do
     end
   end
 
-  defp normalize_value_node([field: field_name]) do
+  defp normalize_value_node(field: field_name) do
     {:field, normalize_field_name(field_name)}
   end
 
-  defp normalize_value_node([value: value]) do
+  defp normalize_value_node(value: value) do
     {:value, normalize_value_node(value)}
   end
 
