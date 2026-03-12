@@ -9,7 +9,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
   @type compose_res :: Ecto.Query.t() | nil
 
   @doc false
-  def dynamic_expr({:as, binding_alias}, key, negated, value) do
+  def dynamic_expr(
+        {:as, binding_alias},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -1475,7 +1480,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 1}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 1},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -1694,7 +1704,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 2}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 2},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -2328,7 +2343,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 3}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 3},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -2962,7 +2982,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 4}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 4},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -3596,7 +3621,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 5}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 5},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -4230,7 +4260,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 6}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 6},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -4864,7 +4899,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 7}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 7},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -5498,7 +5538,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 8}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 8},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -6132,7 +6177,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 9}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 9},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}
@@ -6766,7 +6816,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr({:at, 10}, key, negated, value) do
+  def dynamic_expr(
+        {:at, 10},
+        key,
+        negated,
+        value
+      ) do
     term =
       case negated do
         :not -> {:not, value}

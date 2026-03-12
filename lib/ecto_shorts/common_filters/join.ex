@@ -4,6 +4,7 @@ defmodule EctoShorts.CommonFilters.Join do
   alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
   alias EctoShorts.Compiler
+  alias EctoShorts.Config
   alias EctoShorts.Logger
   alias EctoShorts.QueryProvider
   alias EctoShorts.Utils
@@ -110,8 +111,14 @@ defmodule EctoShorts.CommonFilters.Join do
     end
   end
 
+  defp query_provider(params, opts) do
+    params[:query_provider] || opts[:query_provider] || Config.query_provider()
+  end
+
   defp resolve_expr_source(selected_binding, source_key, source_params, opts) do
-    case QueryProvider.resolve_query_expression(selected_binding, source_key, source_params, opts) do
+    case source_params
+         |> query_provider(opts)
+         |> QueryProvider.resolve_query_expression(selected_binding, source_key, source_params, opts) do
       nil ->
         :error
 

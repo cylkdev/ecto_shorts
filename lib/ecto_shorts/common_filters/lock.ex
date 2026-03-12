@@ -1,9 +1,11 @@
 defmodule EctoShorts.CommonFilters.Lock do
-  alias Ecto.Query
+
   alias EctoShorts.Compiler
+  alias EctoShorts.Config
   alias EctoShorts.Logger
   alias EctoShorts.QueryProvider
 
+   alias Ecto.Query
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.Lock"
@@ -22,7 +24,7 @@ defmodule EctoShorts.CommonFilters.Lock do
     if (is_map(params) and not is_struct(params)) or Keyword.keyword?(params) do
       case params[:name] do
         nil -> query
-        name -> build_lock(query, selected_binding, name, params[:values] || %{}, opts)
+        name -> build_lock(query, selected_binding, name, params, opts)
       end
     else
       Logger.warning(@logger_prefix, "Expected lock ..., got: #{inspect(params)}")
@@ -39,8 +41,16 @@ defmodule EctoShorts.CommonFilters.Lock do
     end
   end
 
-  defp build_lock(query, selected_binding, custom_name, values, opts) do
-    case QueryProvider.resolve_query_expression(selected_binding, custom_name, values, opts) do
+   defp query_provider(params, opts) do
+    params[:query_provider] || opts[:query_provider] || Config.query_provider()
+  end
+
+  defp build_lock(query, selected_binding, custom_name, params, opts) do
+    values = params[:values] || %{}
+
+    case params
+         |> query_provider(opts)
+         |> QueryProvider.resolve_query_expression(selected_binding, custom_name, values, opts) do
       nil ->
         query
 

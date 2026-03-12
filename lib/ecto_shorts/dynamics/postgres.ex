@@ -2,10 +2,18 @@ defmodule EctoShorts.Adapters.Postgres do
   alias EctoShorts.CommonFilters.SetComparison
   alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
-  alias EctoShorts.Dynamics.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
+
+  alias EctoShorts.Dynamics.Postgres.{
+    ArrayExpr,
+    CommonExpr,
+    ScalarExpr
+  }
+
+  @behaviour EctoShorts.DynamicExprBuilder
 
   @quantifier_directives [:all, :any]
 
+  @impl true
   def build_dynamic(source, selected_binding, {key, term}, opts \\ []) when is_list(opts) do
     expr =
       term
@@ -83,7 +91,7 @@ defmodule EctoShorts.Adapters.Postgres do
   end
 
   defp build_expr(source, selected_binding, key, term, opts) do
-    if FilterHelpers.binding_selector?(selected_binding) do
+    if binding_selector?(selected_binding) do
       {negated, term} = normalize_negation(term)
       term = normalize_quantified_term(key, term, opts)
 
@@ -116,4 +124,9 @@ defmodule EctoShorts.Adapters.Postgres do
       _ -> false
     end
   end
+
+  defp binding_selector?({:as, nil}), do: true
+  defp binding_selector?({:as, name}) when is_atom(name), do: true
+  defp binding_selector?({:at, position}) when is_integer(position) and position >= 1, do: true
+  defp binding_selector?(_), do: false
 end
