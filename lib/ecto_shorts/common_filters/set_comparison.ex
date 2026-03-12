@@ -1,4 +1,4 @@
-defmodule EctoShorts.Adapters.Postgres.SetComparison do
+defmodule EctoShorts.CommonFilters.SetComparison do
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonFilters.Select
   alias EctoShorts.Utils

@@ -4,6 +4,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
 
   alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.Dynamics.Postgres.ScalarExpr
+  alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
 
   import Ecto.Query
@@ -166,6 +167,46 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
     dt = ~U[2026-01-01 00:00:00Z]
     expected = dynamic([q], field(q, :published_at) >= ^dt)
     actual = ScalarExpr.dynamic_expr({:as, nil}, :published_at, nil, {:>=, dt}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a root named-binding aggregate comparison expression" do
+    expected = dynamic([q], avg(field(q, :views)) > ^10)
+    actual = ScalarExpr.dynamic_expr({:as, nil}, :views, nil, {:avg, {:>, 10}}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a root named-binding negated aggregate comparison expression" do
+    expected = dynamic([q], not (avg(field(q, :views)) > ^10))
+    actual = ScalarExpr.dynamic_expr({:as, nil}, :views, :not, {:avg, {:>, 10}}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a root named-binding quantified equality expression" do
+    subquery_expr =
+      from(c in Comment,
+        where: c.published == ^true,
+        select: c.id
+      )
+
+    expected = dynamic([q], field(q, :id) == all(subquery_expr))
+    actual = ScalarExpr.dynamic_expr({:as, nil}, :id, nil, {:==, {:all, subquery_expr}}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a root named-binding negated quantified equality expression" do
+    subquery_expr =
+      from(c in Comment,
+        where: c.published == ^true,
+        select: c.id
+      )
+
+    expected = dynamic([q], not (field(q, :id) == all(subquery_expr)))
+    actual = ScalarExpr.dynamic_expr({:as, nil}, :id, :not, {:==, {:all, subquery_expr}}, [])
 
     assert_dynamic(expected, actual)
   end

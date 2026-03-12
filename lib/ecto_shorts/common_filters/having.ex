@@ -1,7 +1,8 @@
 defmodule EctoShorts.CommonFilters.Having do
+  alias EctoShorts.Adapters.Postgres
   alias EctoShorts.Compiler
-  alias Ecto.Query
 
+  alias Ecto.Query
   require Ecto.Query
 
   {_, binding_patterns} =
@@ -9,7 +10,19 @@ defmodule EctoShorts.CommonFilters.Having do
 
   def build_query(_filter, _source, query, _selected_binding, nil, _opts), do: query
 
-  def build_query(filter, _source, query, selected_binding, dyn, _opts) do
+  def build_query(filter, source, query, selected_binding, term, opts) do
+    dyn =
+      if is_struct(term, Ecto.Query.DynamicExpr) do
+        term
+      else
+        Postgres.build_dynamic(
+          source,
+          selected_binding,
+          term,
+          opts
+        )
+      end
+
     build_having(filter, query, selected_binding, dyn)
   end
 

@@ -1,5 +1,5 @@
 defmodule EctoShorts.Adapters.Postgres do
-  alias EctoShorts.Adapters.Postgres.SetComparison
+  alias EctoShorts.CommonFilters.SetComparison
   alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
   alias EctoShorts.Dynamics.Postgres.{ArrayExpr, CommonExpr, ScalarExpr}
@@ -103,7 +103,8 @@ defmodule EctoShorts.Adapters.Postgres do
   defp normalize_negation({:not, term}), do: {:not, term}
   defp normalize_negation(term), do: {nil, term}
 
-  defp normalize_quantified_term(key, {quantifier, payload}, opts) when quantifier in @quantifier_directives do
+  defp normalize_quantified_term(key, {quantifier, payload}, opts)
+       when quantifier in @quantifier_directives do
     {:==, {quantifier, SetComparison.build_quantified_query(key, payload, opts)}}
   end
 

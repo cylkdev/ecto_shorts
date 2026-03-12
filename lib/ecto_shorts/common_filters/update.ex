@@ -9,7 +9,7 @@ defmodule EctoShorts.CommonFilters.Update do
     Compiler.query_binding_contracts(10, __MODULE__)
 
   def build_query(:update, _source, query, selected_binding, term, _opts) do
-    apply_update_expr(query, selected_binding, Utils.normalize_input(term))
+    apply_update_expr(query, selected_binding, Utils.normalize_params(term))
   end
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do

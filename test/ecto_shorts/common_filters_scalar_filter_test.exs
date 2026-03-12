@@ -203,6 +203,19 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
+    test "matches records using the explicit value wrapper for arithmetic expressions" do
+      expected = from(p in Post, where: p.views > p.views + 10)
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{views: %{>: %{value: %{+: [%{field: "views"}, %{value: 10}]}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "raises for an unsupported nil operator" do
       assert_raise ArgumentError, fn ->
         CommonFilters.convert_params_to_filter(Post, %{published_at: %{>: nil}}, [])
@@ -271,15 +284,13 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       expected =
         from(p in Post,
           where:
-            not (
-              p.id ==
-                all(
-                  from(c in Comment,
-                    where: c.published == ^true,
-                    select: c.id
-                  )
-                )
-            )
+            not (p.id ==
+                   all(
+                     from(c in Comment,
+                       where: c.published == ^true,
+                       select: c.id
+                     )
+                   ))
         )
 
       q2 =

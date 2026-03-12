@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonFilters.SubQuery do
   @logger_prefix "EctoShorts.CommonFilters.SubQuery"
 
   def build_query(:subquery, _source, query, _selected_binding, term, opts) do
-    params = Utils.normalize_input(term)
+    params = Utils.normalize_params(term)
 
     if Keyword.keyword?(params) do
       inner_query =

@@ -2,7 +2,7 @@ defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
 
   alias EctoShorts.CommonSchema
-  alias EctoShorts.Adapters.Postgres
+  alias EctoShorts.Utils
 
   alias EctoShorts.CommonFilters.{
     Distinct,
@@ -78,30 +78,33 @@ defmodule EctoShorts.CommonFilters do
                    @where_filters
                  ])
 
+  @binding_directive [:as, :at]
+
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
 
     params
+    |> Utils.normalize_params()
     |> sort_filters()
     |> Enum.reduce(query, fn {key, value}, query_acc ->
       apply_filters(:where, source, query_acc, @default_selected_binding, {key, value}, opts)
     end)
   end
 
-  defp apply_filters(filter, source, query, _selected_binding, {bind_op, params}, opts)
-       when bind_op in [:as, :at] do
-    Enum.reduce(params, query, fn {key, value}, query_acc ->
-      apply_filters(filter, source, query_acc, {bind_op, key}, value, opts)
-    end)
-  end
-
-  defp apply_filters(filter, source, query, selected_binding, {key, params}, opts)
-       when is_map(params) and not is_struct(params) do
-    apply_filters(filter, source, query, selected_binding, {key, Map.to_list(params)}, opts)
-  end
-
   defp apply_filters(filter, source, query, selected_binding, {key, term}, opts) do
     cond do
+      key in @binding_directive ->
+        Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
+          apply_filters(
+            filter,
+            source,
+            query_acc,
+            {key, inner_key},
+            inner_value,
+            opts
+          )
+        end)
+
       key in @where_filters and is_list(term) ->
         Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
           apply_filters(
@@ -135,13 +138,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp apply_filters(filter, source, query, selected_binding, term, opts) do
-    cond do
-      is_map(term) and not is_struct(term) ->
-        apply_filters(filter, source, query, selected_binding, Map.to_list(term), opts)
-
-      true ->
-        Enum.reduce(term, query, &apply_filters(filter, source, &2, selected_binding, &1, opts))
-    end
+    Enum.reduce(term, query, &apply_filters(filter, source, &2, selected_binding, &1, opts))
   end
 
   defp build_query(filter, source, query, selected_binding, term, opts) when filter in @distinct_filters do
@@ -189,24 +186,12 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp build_query(filter, source, query, selected_binding, term, opts) when filter in @having_filters do
-    dyn =
-      if is_struct(term, Ecto.Query.DynamicExpr) do
-        term
-      else
-        Postgres.build_dynamic(
-          source,
-          selected_binding,
-          term,
-          opts
-        )
-      end
-
     Having.build_query(
       filter,
       source,
       query,
       selected_binding,
-      dyn,
+      term,
       opts
     )
   end
@@ -400,13 +385,6 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp sort_filters(params) do
-    params =
-      if is_map(params) and not is_struct(params) do
-        Map.to_list(params)
-      else
-        params
-      end
-
     where_filters = Keyword.take(params, [:where])
     or_where_filters = Keyword.take(params, [:or_where])
     terminal_filters = Enum.filter(params, fn {key, _val} -> key in [:last, :subquery] end)

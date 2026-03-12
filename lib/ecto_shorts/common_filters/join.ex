@@ -39,7 +39,7 @@ defmodule EctoShorts.CommonFilters.Join do
   def hints, do: @hints
 
   def build_query(:join, schema_source, query, selected_binding, params, opts) do
-    reduce_join_entries(schema_source, query, selected_binding, Utils.normalize_input(params), opts)
+    reduce_join_entries(schema_source, query, selected_binding, Utils.normalize_params(params), opts)
   end
 
   defp reduce_join_entries(schema_source, query, selected_binding, entries, opts)
