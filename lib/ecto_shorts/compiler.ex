@@ -2,6 +2,11 @@ defmodule EctoShorts.Compiler do
   alias EctoShorts.Generator
   alias EctoShorts.Compiler.QueryBindingBuilder
 
+  @spec query_binding_contracts(pos_integer(), atom()) :: Macro.t()
+  def query_binding_contracts(positions, context) do
+    QueryBindingBuilder.query_binding_contracts(positions, context)
+  end
+
   defmacro __using__(opts) do
     quote do
       @__ecto_shorts_compiler_options__ unquote(opts)
@@ -34,31 +39,6 @@ defmodule EctoShorts.Compiler do
 
     quote do
     end
-  end
-
-  defp priv_dir do
-    :ecto_shorts |> :code.priv_dir() |> to_string()
-  end
-
-  defp generated_path(path) do
-    dir = Path.join(priv_dir(), "generated")
-    Path.join(dir, path)
-  end
-
-  defp module_to_path(builder) do
-    builder
-    |> Module.split()
-    |> Enum.drop(1)
-    |> Enum.map(&Macro.underscore/1)
-    |> Enum.join("/")
-  end
-
-  defp module_to_filename(module) do
-    module
-    |> Module.split()
-    |> List.last()
-    |> Macro.underscore()
-    |> Kernel.<>(".ex")
   end
 
   defp compile_modules(paths, meta, env) do
@@ -94,8 +74,28 @@ defmodule EctoShorts.Compiler do
     end)
   end
 
-  @spec query_binding_contracts(pos_integer(), atom()) :: Macro.t()
-  def query_binding_contracts(positions, context) do
-    QueryBindingBuilder.query_binding_contracts(positions, context)
+  defp priv_dir do
+    :ecto_shorts |> :code.priv_dir() |> to_string()
+  end
+
+  defp generated_path(path) do
+    dir = Path.join(priv_dir(), "generated")
+    Path.join(dir, path)
+  end
+
+  defp module_to_path(builder) do
+    builder
+    |> Module.split()
+    |> Enum.drop(1)
+    |> Enum.map(&Macro.underscore/1)
+    |> Enum.join("/")
+  end
+
+  defp module_to_filename(module) do
+    module
+    |> Module.split()
+    |> List.last()
+    |> Macro.underscore()
+    |> Kernel.<>(".ex")
   end
 end
