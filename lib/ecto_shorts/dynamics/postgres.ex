@@ -11,7 +11,6 @@ defmodule EctoShorts.Adapters.Postgres do
 
   @behaviour EctoShorts.DynamicExprBuilder
 
-  @comparison_directives [:>, :>=, :<, :<=, :gt, :gte, :lt, :lte, :==, :eq, :!=, :ne]
   @quantifier_directives [:all, :any]
   @arithmetic_value_directives [:+, :-, :*, :/]
 
@@ -56,7 +55,7 @@ defmodule EctoShorts.Adapters.Postgres do
         normalize_keyword_params(term, [])
 
       true ->
-        [term]
+        [normalize_value_node(term)]
     end
   end
 
@@ -109,7 +108,7 @@ defmodule EctoShorts.Adapters.Postgres do
             selected_binding,
             key,
             negated,
-            normalize_scalar_value_term(term),
+            term,
             opts
           )
       end
@@ -126,65 +125,53 @@ defmodule EctoShorts.Adapters.Postgres do
 
   defp normalize_quantified_term(_key, term, _opts), do: term
 
-  defp normalize_scalar_value_term({op, {:value, payload}}) when op in @comparison_directives do
-    {op, {:value, normalize_scalar_value_payload(payload)}}
+  defp normalize_value_node(term) when is_map(term) and not is_struct(term) do
+    term
+    |> Map.to_list()
+    |> normalize_value_node()
   end
 
-  defp normalize_scalar_value_term({op, params}) when op in @comparison_directives do
-    Enum.map(params, &normalize_scalar_value_term({op, &1}))
-  end
+  defp normalize_value_node(term) when is_list(term) and Keyword.keyword?(term) do
+    case term do
+      [field: field_name] ->
+        {:field, normalize_field_name(field_name)}
 
-  defp normalize_scalar_value_term(term), do: term
+      [value: value] ->
+        {:value, normalize_value_node(value)}
 
-  defp normalize_scalar_value_payload({key, value}) do
-    case {key, value} do
-      {:field, field_name} ->
-        {:field, normalize_scalar_field_name(field_name)}
-
-      {:value, value} ->
-        {:value, value}
-
-      {op, operands} when op in @arithmetic_value_directives ->
-        normalize_arithmetic_value_payload(op, operands)
+      [{op, operands}] when op in @arithmetic_value_directives and is_list(operands) ->
+        {op, Enum.map(operands, &normalize_value_node/1)}
 
       _ ->
-        {key, value}
+        term
     end
   end
 
-  defp normalize_scalar_value_payload(term) do
-    if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
-      Enum.map(term, &normalize_scalar_value_payload/1)
-    else
-      term
-    end
+  defp normalize_value_node({:field, field_name}) do
+    {:field, normalize_field_name(field_name)}
   end
 
-  defp normalize_arithmetic_value_payload(op, operands) do
-    operands
-    |> Enum.map(&normalize_scalar_value_payload/1)
-    |> fold_arithmetic_operands(op)
+  defp normalize_value_node({:value, value}) do
+    {:value, normalize_value_node(value)}
   end
 
-  defp fold_arithmetic_operands([left, right | rest], op) do
-    Enum.reduce(rest, {op, [left, right]}, fn operand, acc ->
-      {op, [acc, operand]}
-    end)
+  defp normalize_value_node({op, operands}) when op in @arithmetic_value_directives and is_list(operands) do
+    {op, Enum.map(operands, &normalize_value_node/1)}
   end
 
-  defp fold_arithmetic_operands(_operands, op) do
-    raise ArgumentError,
-          "Expected arithmetic value payload for #{inspect(op)} to contain at least two operands"
+  defp normalize_value_node(term) when is_list(term) do
+    Enum.map(term, &normalize_value_node/1)
   end
 
-  defp normalize_scalar_field_name(field_name) when is_atom(field_name), do: field_name
+  defp normalize_value_node(term), do: term
 
-  defp normalize_scalar_field_name(field_name) when is_binary(field_name),
-    do: String.to_existing_atom(field_name)
+  defp normalize_field_name(field_name) when is_atom(field_name), do: field_name
+  defp normalize_field_name(field_name) when is_binary(field_name), do: String.to_existing_atom(field_name)
 
   defp array_field?(source, key) do
     case CommonSchema.get_schema_reflection(source, :type, key) do
       {:array, _} -> true
+      {:map, _} -> true
       _ -> false
     end
   end

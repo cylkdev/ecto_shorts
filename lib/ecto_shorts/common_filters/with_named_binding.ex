@@ -6,7 +6,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
   @logger_prefix "EctoShorts.CommonFilters.WithNamedBinding"
 
   def build_query(:with_named_binding, _source, query, _selected_binding, term, opts) do
-    params = Utils.map_to_keywrod(term)
+    params = Utils.map_to_keyword(term)
 
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn

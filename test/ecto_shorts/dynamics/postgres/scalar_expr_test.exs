@@ -93,6 +93,21 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
     assert_dynamic(expected, actual)
   end
 
+  test "dynamic_expr/4 builds a root named-binding greater-than expression from an explicit wrapped arithmetic value" do
+    expected = dynamic([q], field(q, :views) > field(q, :views) + ^10)
+
+    actual =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :views,
+        nil,
+        {:>, {:value, {:+, [{:field, :views}, {:value, 10}]}}},
+        []
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
   test "dynamic_expr/4 builds a root named-binding greater-than-or-equal expression" do
     expected = dynamic([q], field(q, :views) >= ^10)
     actual = ScalarExpr.dynamic_expr({:as, nil}, :views, nil, {:>=, 10}, [])

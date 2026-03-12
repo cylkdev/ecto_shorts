@@ -24,6 +24,8 @@ trigger: always_on
 
 - When describing the changes you intend to make to code you must copy snippets and explain the current state then explain from beginning to end with examples of the exact changes you intend to make. Include enough code to make all the boundaries and layers clear between every module and function.
 
+- When explaining a problem start with a clear problem statement. If you cannot write a clear problem statement ask for clarifcation.
+
 - When describing changes you've made show the before and after states.
 
 - Keep your explanations clear, focused and concise.

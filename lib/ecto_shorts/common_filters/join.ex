@@ -1,19 +1,4 @@
 defmodule EctoShorts.CommonFilters.Join do
-  alias EctoShorts.Adapters.Postgres
-  alias EctoShorts.CommonFilters
-  alias EctoShorts.CommonFilters.FilterHelpers
-  alias EctoShorts.CommonSchema
-  alias EctoShorts.Compiler
-  alias EctoShorts.Config
-  alias EctoShorts.Logger
-  alias EctoShorts.QueryProvider
-  alias EctoShorts.Utils
-
-  alias Ecto.Query
-  require Ecto.Query
-
-  @logger_prefix "EctoShorts.CommonFilters.Join"
-
   compiled_hints =
     case Application.compile_env(:ecto_shorts, :hints) do
       nil ->
@@ -33,6 +18,21 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
+  alias EctoShorts.Adapters.Postgres
+  alias EctoShorts.CommonFilters
+  alias EctoShorts.CommonFilters.FilterHelpers
+  alias EctoShorts.CommonSchema
+  alias EctoShorts.Compiler
+  alias EctoShorts.Config
+  alias EctoShorts.Logger
+  alias EctoShorts.QueryProvider
+  alias EctoShorts.Utils
+
+  alias Ecto.Query
+  require Ecto.Query
+
+  @logger_prefix "EctoShorts.CommonFilters.Join"
+
   {target_binding_var, binding_patterns} =
     Compiler.query_binding_contracts(10, __MODULE__)
 
@@ -40,7 +40,7 @@ defmodule EctoShorts.CommonFilters.Join do
   def hints, do: @hints
 
   def build_query(:join, schema_source, query, selected_binding, params, opts) do
-    reduce_join_entries(schema_source, query, selected_binding, Utils.map_to_keywrod(params), opts)
+    reduce_join_entries(schema_source, query, selected_binding, Utils.map_to_keyword(params), opts)
   end
 
   defp reduce_join_entries(schema_source, query, selected_binding, entries, opts)

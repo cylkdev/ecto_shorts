@@ -2,81 +2,8 @@ defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
 
   alias EctoShorts.CommonSchema
+  alias EctoShorts.CommonFilters.Builder
   alias EctoShorts.Utils
-
-  alias EctoShorts.CommonFilters.{
-    Distinct,
-    Exclude,
-    GroupBy,
-    Having,
-    Join,
-    Last,
-    Limit,
-    Lock,
-    Offset,
-    OrderBy,
-    Preload,
-    PutQueryPrefix,
-    RecursiveCtes,
-    Select,
-    SetOperation,
-    SubQuery,
-    Update,
-    Windows,
-    WithCte,
-    WithTies,
-    WithNamedBinding,
-    Where
-  }
-
-  @default_selected_binding {:as, nil}
-
-  @distinct_filters [:distinct]
-  @group_by_filters [:group_by]
-  @having_filters [:having, :or_having]
-  @join_filters [:join]
-  @last_filters [:last]
-  @order_by_filters [:order_by, :prepend_order_by, :reverse_order]
-  @where_filters [:where, :or_where]
-  @preload_filters [:preload]
-  @put_query_prefix_filters [:put_query_prefix]
-  @recursive_ctes_filters [:recursive_ctes]
-  @select_filters [:select, :select_merge]
-  @set_operation_filters [:except, :except_all, :intersect, :intersect_all, :union, :union_all]
-  @subquery_filters [:subquery]
-  @exclude_filters [:exclude]
-  @lock_filters [:lock]
-  @limit_filters [:limit, :first]
-  @offset_filters [:offset]
-  @update_filters [:update]
-  @windows_filters [:windows]
-  @with_cte_filters [:with_cte]
-  @with_ties_filters [:with_ties]
-  @with_named_binding_filters [:with_named_binding]
-  @query_filters Enum.concat([
-                   @distinct_filters,
-                   @group_by_filters,
-                   @having_filters,
-                   @join_filters,
-                   @last_filters,
-                   @order_by_filters,
-                   @preload_filters,
-                   @put_query_prefix_filters,
-                   @recursive_ctes_filters,
-                   @windows_filters,
-                   @with_cte_filters,
-                   @with_ties_filters,
-                   @select_filters,
-                   @set_operation_filters,
-                   @subquery_filters,
-                   @exclude_filters,
-                   @lock_filters,
-                   @limit_filters,
-                   @offset_filters,
-                   @update_filters,
-                   @with_named_binding_filters,
-                   @where_filters
-                 ])
 
   @binding_directive [:as, :at]
 
@@ -84,10 +11,10 @@ defmodule EctoShorts.CommonFilters do
     query = CommonSchema.to_query(source)
 
     params
-    |> Utils.map_to_keywrod()
+    |> Utils.map_to_keyword()
     |> sort_filters()
     |> Enum.reduce(query, fn {key, value}, query_acc ->
-      apply_filters(:where, source, query_acc, @default_selected_binding, {key, value}, opts)
+      apply_filters(:where, source, query_acc, {:as, nil}, {key, value}, opts)
     end)
   end
 
@@ -105,7 +32,7 @@ defmodule EctoShorts.CommonFilters do
           )
         end)
 
-      key in @where_filters and is_list(term) ->
+      key in Builder.filter_group(:predicate) ->
         Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
           apply_filters(
             key,
@@ -117,7 +44,7 @@ defmodule EctoShorts.CommonFilters do
           )
         end)
 
-      key in @having_filters and is_list(term) ->
+      key in Builder.filter_group(:post_aggregate) ->
         Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
           apply_filters(
             key,
@@ -129,7 +56,7 @@ defmodule EctoShorts.CommonFilters do
           )
         end)
 
-      key in @query_filters ->
+      key in Builder.filters() ->
         build_query(key, source, query, selected_binding, term, opts)
 
       true ->
@@ -141,247 +68,9 @@ defmodule EctoShorts.CommonFilters do
     Enum.reduce(term, query, &apply_filters(filter, source, &2, selected_binding, &1, opts))
   end
 
-  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @distinct_filters do
-    Distinct.build_query(
-      filter,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:last, source, query, selected_binding, term, opts) do
-    Last.build_query(
-      :last,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:join, source, query, selected_binding, term, opts) do
-    Join.build_query(
-      :join,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @group_by_filters do
-    GroupBy.build_query(
-      filter,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @having_filters do
-    Having.build_query(
-      filter,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @order_by_filters do
-    OrderBy.build_query(
-      filter,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:preload, source, query, selected_binding, term, opts) do
-    Preload.build_query(
-      :preload,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:subquery, source, query, selected_binding, term, opts) do
-    SubQuery.build_query(
-      :subquery,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:put_query_prefix, source, query, selected_binding, term, opts) do
-    PutQueryPrefix.build_query(
-      :put_query_prefix,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:recursive_ctes, source, query, selected_binding, term, opts) do
-    RecursiveCtes.build_query(
-      :recursive_ctes,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:windows, source, query, selected_binding, term, opts) do
-    Windows.build_query(
-      :windows,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:with_cte, source, query, selected_binding, term, opts) do
-    WithCte.build_query(
-      :with_cte,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:with_ties, source, query, selected_binding, term, opts) do
-    WithTies.build_query(
-      :with_ties,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @select_filters do
-    Select.build_query(
-      filter,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(filter, source, query, selected_binding, term, opts)
-       when filter in @set_operation_filters do
-    SetOperation.build_query(
-      filter,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:exclude, source, query, selected_binding, term, opts) do
-    Exclude.build_query(
-      :exclude,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:lock, source, query, selected_binding, term, opts) do
-    Lock.build_query(
-      :lock,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @limit_filters do
-    Limit.build_query(
-      filter,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:offset, source, query, selected_binding, term, opts) do
-    Offset.build_query(
-      :offset,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:update, source, query, selected_binding, term, opts) do
-    Update.build_query(
-      :update,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(:with_named_binding, source, query, selected_binding, term, opts) do
-    WithNamedBinding.build_query(
-      :with_named_binding,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
-  end
-
-  defp build_query(filter, source, query, selected_binding, term, opts) when filter in @where_filters do
-    Where.build_query(
-      filter,
-      source,
-      query,
-      selected_binding,
-      term,
-      opts
-    )
+  defp build_query(filter, source, query, selected_binding, term, opts) do
+    module = opts[:query_builder] || EctoShorts.Config.query_builder() || EctoShorts.CommonFilters.Builder
+    module.build_query(filter, source, query, selected_binding, term, opts)
   end
 
   defp sort_filters(params) do
