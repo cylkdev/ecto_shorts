@@ -9,12 +9,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
   @type compose_res :: Ecto.Query.t() | nil
 
   @doc false
-  def dynamic_expr(
-        {:as, binding_alias},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:as, binding_alias}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -26,20 +21,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            not fragment(
-              "? LIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            not fragment(
-              "? LIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         end
 
@@ -47,20 +34,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            fragment(
-              "? LIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            fragment(
-              "? LIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         end
 
@@ -82,20 +61,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            not fragment(
-              "? ILIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            not fragment(
-              "? ILIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         end
 
@@ -103,20 +74,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            fragment(
-              "? ILIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            fragment(
-              "? ILIKE ANY(?)",
-              field(q, ^key),
-              ^Enum.map(value, fn value -> "%#{value}%" end)
-            )
+            fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
           )
         end
 
@@ -136,12 +99,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 1},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 1}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -152,21 +110,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -178,21 +128,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -203,12 +145,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 2},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 2}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -219,21 +156,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -245,21 +174,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -270,12 +191,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 3},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 3}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -286,21 +202,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -312,21 +220,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -337,12 +237,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 4},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 4}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -353,21 +248,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -379,21 +266,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -404,12 +283,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 5},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 5}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -420,21 +294,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -446,21 +312,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -471,12 +329,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 6},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 6}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -487,21 +340,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -513,21 +358,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -538,12 +375,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 7},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 7}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -554,21 +386,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -580,21 +404,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -605,12 +421,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 8},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 8}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -621,21 +432,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -647,21 +450,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -672,12 +467,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 9},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 9}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -688,21 +478,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -714,21 +496,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->
@@ -739,12 +513,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 10},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 10}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -755,21 +524,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          not fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          fragment(
-            "? LIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:like, value}} ->
@@ -781,21 +542,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          not fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          fragment(
-            "? ILIKE ANY(?)",
-            field(q, ^key),
-            ^Enum.map(value, fn value -> "%#{value}%" end)
-          )
+          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
         )
 
       {:not, {:ilike, value}} ->

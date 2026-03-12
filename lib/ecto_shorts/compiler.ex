@@ -65,16 +65,24 @@ defmodule EctoShorts.Compiler do
     if paths === [] do
       :ok
     else
-      case Kernel.ParallelCompiler.compile_to_path(paths, Mix.Project.compile_path()) do
-        {:ok, _modules, _warnings} ->
-          :ok
+      previous_ignore_module_conflict = Code.compiler_options()[:ignore_module_conflict]
 
-        {:error, errors, _warnings} ->
-          raise CompileError,
-            file: env.file,
-            line: env.line,
-            description:
-              "failed to compile generated files for #{inspect(env.module)}: #{format_compile_errors(errors, meta)}"
+      try do
+        Code.put_compiler_option(:ignore_module_conflict, true)
+
+        case Kernel.ParallelCompiler.compile_to_path(paths, Mix.Project.compile_path()) do
+          {:ok, _modules, _warnings} ->
+            :ok
+
+          {:error, errors, _warnings} ->
+            raise CompileError,
+              file: env.file,
+              line: env.line,
+              description:
+                "failed to compile generated files for #{inspect(env.module)}: #{format_compile_errors(errors, meta)}"
+        end
+      after
+        Code.put_compiler_option(:ignore_module_conflict, previous_ignore_module_conflict)
       end
     end
   end
