@@ -1044,6 +1044,113 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                 context
               )
             )
+        end,
+        quote do
+          {:not,
+           {unquote(op),
+            {:date,
+             {:add,
+              [
+                field: unquote(field_name_var),
+                count: unquote(datetime_count_var),
+                interval: unquote(interval)
+              ]}}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_negated_expr(
+                  op,
+                  q_var,
+                  {key_var,
+                   {:date, {:add, [field: field_name_var, count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {unquote(op),
+           {:date,
+            {:add,
+             [field: unquote(field_name_var), count: unquote(datetime_count_var), interval: unquote(interval)]}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_expr(
+                  op,
+                  q_var,
+                  {key_var,
+                   {:date, {:add, [field: field_name_var, count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {:not,
+           {unquote(op), {:date, {:ago, [count: unquote(datetime_count_var), interval: unquote(interval)]}}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_negated_expr(
+                  op,
+                  q_var,
+                  {key_var, {:date, {:ago, [count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {unquote(op), {:date, {:ago, [count: unquote(datetime_count_var), interval: unquote(interval)]}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_expr(
+                  op,
+                  q_var,
+                  {key_var, {:date, {:ago, [count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {:not,
+           {unquote(op),
+            {:date, {:from_now, [count: unquote(datetime_count_var), interval: unquote(interval)]}}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_negated_expr(
+                  op,
+                  q_var,
+                  {key_var, {:date, {:from_now, [count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
+        end,
+        quote do
+          {unquote(op),
+           {:date, {:from_now, [count: unquote(datetime_count_var), interval: unquote(interval)]}}} ->
+            unquote(
+              Helpers.dyn_expr(
+                {bind_op, bind_to_var},
+                q_var,
+                quote_expr(
+                  op,
+                  q_var,
+                  {key_var, {:date, {:from_now, [count: datetime_count_var, interval: interval]}}}
+                ),
+                context
+              )
+            )
         end
       ]
     end)
@@ -1053,14 +1160,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     [
       quote do
         {:not, {:in, unquote(value_var)}} ->
-          unquote(
-            Helpers.dyn_expr(
-              {bind_op, bind_to_var},
-              q_var,
-              quote_negated_expr(:in, q_var, {key_var, value_var}),
-              context
-            )
-          )
+          unquote(nil_aware_not_in_expr({bind_op, bind_to_var}, q_var, key_var, value_var, context))
       end,
       quote do
         {:in, unquote(value_var)} ->
@@ -1075,25 +1175,11 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
       end,
       quote do
         {:not, {:==, unquote(value_var)}} when is_list(unquote(value_var)) ->
-          unquote(
-            Helpers.dyn_expr(
-              {bind_op, bind_to_var},
-              q_var,
-              quote_negated_expr(:in, q_var, {key_var, value_var}),
-              context
-            )
-          )
+          unquote(nil_aware_not_in_expr({bind_op, bind_to_var}, q_var, key_var, value_var, context))
       end,
       quote do
         {:not, {:eq, unquote(value_var)}} when is_list(unquote(value_var)) ->
-          unquote(
-            Helpers.dyn_expr(
-              {bind_op, bind_to_var},
-              q_var,
-              quote_negated_expr(:in, q_var, {key_var, value_var}),
-              context
-            )
-          )
+          unquote(nil_aware_not_in_expr({bind_op, bind_to_var}, q_var, key_var, value_var, context))
       end,
       quote do
         {:==, unquote(value_var)} when is_list(unquote(value_var)) ->
@@ -1119,47 +1205,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
       end,
       quote do
         {:not, {:!=, unquote(value_var)}} when is_list(unquote(value_var)) ->
-          unquote(
-            Helpers.dyn_expr(
-              {bind_op, bind_to_var},
-              q_var,
-              quote_expr(:in, q_var, {key_var, value_var}),
-              context
-            )
-          )
+          unquote(nil_aware_in_expr({bind_op, bind_to_var}, q_var, key_var, value_var, context))
       end,
       quote do
         {:not, {:ne, unquote(value_var)}} when is_list(unquote(value_var)) ->
-          unquote(
-            Helpers.dyn_expr(
-              {bind_op, bind_to_var},
-              q_var,
-              quote_expr(:in, q_var, {key_var, value_var}),
-              context
-            )
-          )
+          unquote(nil_aware_in_expr({bind_op, bind_to_var}, q_var, key_var, value_var, context))
       end,
       quote do
         {:!=, unquote(value_var)} when is_list(unquote(value_var)) ->
-          unquote(
-            Helpers.dyn_expr(
-              {bind_op, bind_to_var},
-              q_var,
-              quote_negated_expr(:in, q_var, {key_var, value_var}),
-              context
-            )
-          )
+          unquote(nil_aware_not_in_expr({bind_op, bind_to_var}, q_var, key_var, value_var, context))
       end,
       quote do
         {:ne, unquote(value_var)} when is_list(unquote(value_var)) ->
-          unquote(
-            Helpers.dyn_expr(
-              {bind_op, bind_to_var},
-              q_var,
-              quote_negated_expr(:in, q_var, {key_var, value_var}),
-              context
-            )
-          )
+          unquote(nil_aware_not_in_expr({bind_op, bind_to_var}, q_var, key_var, value_var, context))
       end
     ]
   end
@@ -1530,6 +1588,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     end
   end
 
+  def quote_expr(op, q_var, {key_var, {:date, value_var}}) do
+    field_expr =
+      quote do
+        fragment("date(?)", field(unquote(q_var), ^unquote(key_var)))
+      end
+
+    quote do
+      unquote(Helpers.special_form_ast(field_expr, op, value_expr_ast(q_var, {:date, value_var})))
+    end
+  end
+
   def quote_expr(op, q_var, {key_var, {:value, value_var}}) do
     field_expr =
       quote do
@@ -1608,6 +1677,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     datetime_value_expr_ast(q_var, value)
   end
 
+  defp value_expr_ast(q_var, {:date, value}) do
+    inner = datetime_value_expr_ast(q_var, value)
+
+    quote do
+      fragment("date(?)", unquote(inner))
+    end
+  end
+
   defp value_expr_ast(q_var, {op, {left, right}}) when op in [:+, :-, :*, :/] do
     left_ast = value_expr_ast(q_var, left)
     right_ast = value_expr_ast(q_var, right)
@@ -1669,5 +1746,25 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     quote do
       from_now(^unquote(count), unquote(interval))
     end
+  end
+
+  defp nil_aware_not_in_expr(binding_selector_ast, q_var, key_var, value_var, context) do
+    expr =
+      quote do
+        is_nil(field(unquote(q_var), ^unquote(key_var))) or
+          field(unquote(q_var), ^unquote(key_var)) not in ^unquote(value_var)
+      end
+
+    Helpers.dyn_expr(binding_selector_ast, q_var, expr, context)
+  end
+
+  defp nil_aware_in_expr(binding_selector_ast, q_var, key_var, value_var, context) do
+    expr =
+      quote do
+        not is_nil(field(unquote(q_var), ^unquote(key_var))) and
+          field(unquote(q_var), ^unquote(key_var)) in ^unquote(value_var)
+      end
+
+    Helpers.dyn_expr(binding_selector_ast, q_var, expr, context)
   end
 end

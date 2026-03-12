@@ -318,8 +318,8 @@ defmodule EctoShorts.Testing do
   See also `refute_sql/4` and `assert_query/2`.
   """
   def assert_sql(repo, query_a, query_b, kind \\ :all) do
-    left = Ecto.Adapters.SQL.to_sql(kind, repo, query_a)
-    right = Ecto.Adapters.SQL.to_sql(kind, repo, query_b)
+    {left, _} = Ecto.Adapters.SQL.to_sql(kind, repo, query_a)
+    {right, _} = Ecto.Adapters.SQL.to_sql(kind, repo, query_b)
 
     if left !== right do
       Assertions.flunk(

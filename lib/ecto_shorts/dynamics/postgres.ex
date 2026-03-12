@@ -13,7 +13,7 @@ defmodule EctoShorts.Adapters.Postgres do
 
   @quantifier_operators [:all, :any]
   @arithmetic_value_operators [:+, :-, :*, :/]
-  @datetime_wrappers [:datetime]
+  @datetime_wrappers [:datetime, :date]
   @datetime_value_operators [:add, :ago, :from_now]
 
   @impl true

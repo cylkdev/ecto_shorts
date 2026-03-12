@@ -143,7 +143,7 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
     end
 
     test "treats a list value with != as a NOT IN check" do
-      expected = from p in Post, where: p.published not in ^[true, false]
+      expected = from p in Post, where: is_nil(p.published) or p.published not in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{!=: [true, false]}}, [])
 
       assert_sql(expected, q2)
@@ -225,21 +225,21 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
 
   describe "convert_params_to_filter/3 negation" do
     test "excludes records where the field is in the given list" do
-      expected = from p in Post, where: p.published not in ^[true, false]
+      expected = from p in Post, where: is_nil(p.published) or p.published not in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{not: %{in: [true, false]}}}, [])
 
       assert_sql(expected, q2)
     end
 
     test "excludes records when == with a list is wrapped in not" do
-      expected = from p in Post, where: p.published not in ^[true, false]
+      expected = from p in Post, where: is_nil(p.published) or p.published not in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{not: %{==: [true, false]}}}, [])
 
       assert_sql(expected, q2)
     end
 
     test "includes records when != with a list is wrapped in not" do
-      expected = from p in Post, where: p.published in ^[true, false]
+      expected = from p in Post, where: not is_nil(p.published) and p.published in ^[true, false]
       q2 = CommonFilters.convert_params_to_filter(Post, %{published: %{not: %{!=: [true, false]}}}, [])
 
       assert_sql(expected, q2)
@@ -497,8 +497,6 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
     end
 
     test "matches records using ago before comparison" do
-      expected = from(p in Post, where: p.inserted_at > ago(^1, "day"))
-
       actual =
         CommonFilters.convert_params_to_filter(
           Post,
@@ -506,18 +504,20 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
           []
         )
 
+      expected = from(p in Post, where: p.inserted_at > ago(^1, "day"))
+
       assert_sql(expected, actual)
     end
 
     test "matches records using from_now before comparison" do
-      expected = from(p in Post, where: p.inserted_at > from_now(^1, "day"))
-
       actual =
         CommonFilters.convert_params_to_filter(
           Post,
           %{inserted_at: %{>: %{datetime: %{from_now: %{count: 1, interval: "day"}}}}},
           []
         )
+
+      expected = from(p in Post, where: p.inserted_at > from_now(^1, "day"))
 
       assert_sql(expected, actual)
     end
@@ -535,6 +535,204 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
           },
           []
         )
+
+      assert_sql(expected, actual)
+    end
+  end
+
+  describe "convert_params_to_filter/3 date wrappers" do
+    test "Rule Statement 7: inserted_at equals ago 1 day using date wrapper" do
+      expected =
+        from(p in Post,
+          where: fragment("date(?)", p.inserted_at) == fragment("date(?)", ago(^1, "day"))
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{inserted_at: %{==: %{date: %{ago: %{count: 1, interval: "day"}}}}},
+          []
+        )
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 8: inserted_at not equals from_now 1 day using date wrapper" do
+      expected =
+        from(p in Post,
+          where: fragment("date(?)", p.inserted_at) != fragment("date(?)", from_now(^1, "day"))
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{inserted_at: %{!=: %{date: %{from_now: %{count: 1, interval: "day"}}}}},
+          []
+        )
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 10: inserted_at greater than from_now 1 day negated using date wrapper" do
+      expected =
+        from(p in Post,
+          where: not (fragment("date(?)", p.inserted_at) > fragment("date(?)", from_now(^1, "day")))
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{inserted_at: %{not: %{>: %{date: %{from_now: %{count: 1, interval: "day"}}}}}},
+          []
+        )
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 11: inserted_at >= datetime_add 7 days using date wrapper" do
+      expected =
+        from(p in Post,
+          where:
+            fragment("date(?)", p.inserted_at) >=
+              fragment("date(?)", datetime_add(p.inserted_at, ^7, "day"))
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{inserted_at: %{>=: %{date: %{add: %{field: "inserted_at", count: 7, interval: "day"}}}}},
+          []
+        )
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 12: inserted_at less than ago 1 month using date wrapper" do
+      expected =
+        from(p in Post,
+          where: fragment("date(?)", p.inserted_at) < fragment("date(?)", ago(^1, "month"))
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{inserted_at: %{<: %{date: %{ago: %{count: 1, interval: "month"}}}}},
+          []
+        )
+
+      assert_sql(expected, actual)
+    end
+  end
+
+  describe "convert_params_to_filter/3 aggregate operators" do
+    test "Rule Statement 1: avg views greater than" do
+      expected = from(p in Post, where: avg(p.views) > ^10)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{avg: %{>: 10}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 2: avg views greater than negated" do
+      expected = from(p in Post, where: not (avg(p.views) > ^10))
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{avg: %{>: 10}}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 3: count views greater than zero" do
+      expected = from(p in Post, where: count(p.views) > ^0)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{count: %{>: 0}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 4: max views greater than or equal" do
+      expected = from(p in Post, where: max(p.views) >= ^100)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{max: %{>=: 100}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 5: min views less than" do
+      expected = from(p in Post, where: min(p.views) < ^5)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{min: %{<: 5}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 6: sum views equals" do
+      expected = from(p in Post, where: sum(p.views) == ^1000)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{sum: %{==: 1000}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 7: avg views not equals" do
+      expected = from(p in Post, where: avg(p.views) != ^50)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{avg: %{!=: 50}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 8: count views equals zero" do
+      expected = from(p in Post, where: count(p.views) == ^0)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{count: %{==: 0}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 9: count views greater than zero negated" do
+      expected = from(p in Post, where: not (count(p.views) > ^0))
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{count: %{>: 0}}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 10: max views greater than or equal negated" do
+      expected = from(p in Post, where: not (max(p.views) >= ^100))
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{max: %{>=: 100}}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 11: avg views less than or equal" do
+      expected = from(p in Post, where: avg(p.views) <= ^10)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{avg: %{<=: 10}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 12: sum views greater than" do
+      expected = from(p in Post, where: sum(p.views) > ^500)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{sum: %{>: 500}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 13: min views equals zero" do
+      expected = from(p in Post, where: min(p.views) == ^0)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{min: %{==: 0}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 14: sum views not equals zero" do
+      expected = from(p in Post, where: sum(p.views) != ^0)
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{sum: %{!=: 0}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 15: min views less than negated" do
+      expected = from(p in Post, where: not (min(p.views) < ^5))
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{min: %{<: 5}}}}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test "Rule Statement 16: sum views greater than negated" do
+      expected = from(p in Post, where: not (sum(p.views) > ^500))
+      actual = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{sum: %{>: 500}}}}, [])
 
       assert_sql(expected, actual)
     end

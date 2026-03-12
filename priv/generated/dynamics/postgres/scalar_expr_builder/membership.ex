@@ -24,9 +24,9 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
     case term do
       {:not, {:in, value}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) not in ^value)
+          dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
+          dynamic([{^binding_alias, q}], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         end
 
       {:in, value} ->
@@ -38,16 +38,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
 
       {:not, {:==, value}} when is_list(value) ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) not in ^value)
+          dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
+          dynamic([{^binding_alias, q}], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         end
 
       {:not, {:eq, value}} when is_list(value) ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) not in ^value)
+          dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
+          dynamic([{^binding_alias, q}], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         end
 
       {:==, value} when is_list(value) ->
@@ -66,30 +66,30 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
 
       {:not, {:!=, value}} when is_list(value) ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) in ^value)
+          dynamic([q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
+          dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
         end
 
       {:not, {:ne, value}} when is_list(value) ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) in ^value)
+          dynamic([q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) in ^value)
+          dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
         end
 
       {:!=, value} when is_list(value) ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) not in ^value)
+          dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
+          dynamic([{^binding_alias, q}], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         end
 
       {:ne, value} when is_list(value) ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) not in ^value)
+          dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) not in ^value)
+          dynamic([{^binding_alias, q}], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
         end
     end
   end
@@ -107,16 +107,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
       end
 
     case term do
-      {:not, {:in, value}} -> dynamic([q], field(q, ^key) not in ^value)
-      {:in, value} -> dynamic([q], field(q, ^key) in ^value)
-      {:not, {:==, value}} when is_list(value) -> dynamic([q], field(q, ^key) not in ^value)
-      {:not, {:eq, value}} when is_list(value) -> dynamic([q], field(q, ^key) not in ^value)
-      {:==, value} when is_list(value) -> dynamic([q], field(q, ^key) in ^value)
-      {:eq, value} when is_list(value) -> dynamic([q], field(q, ^key) in ^value)
-      {:not, {:!=, value}} when is_list(value) -> dynamic([q], field(q, ^key) in ^value)
-      {:not, {:ne, value}} when is_list(value) -> dynamic([q], field(q, ^key) in ^value)
-      {:!=, value} when is_list(value) -> dynamic([q], field(q, ^key) not in ^value)
-      {:ne, value} when is_list(value) -> dynamic([q], field(q, ^key) not in ^value)
+      {:not, {:in, value}} ->
+        dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:in, value} ->
+        dynamic([q], field(q, ^key) in ^value)
+
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:==, value} when is_list(value) ->
+        dynamic([q], field(q, ^key) in ^value)
+
+      {:eq, value} when is_list(value) ->
+        dynamic([q], field(q, ^key) in ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:!=, value} when is_list(value) ->
+        dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:ne, value} when is_list(value) ->
+        dynamic([q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
@@ -133,16 +152,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
       end
 
     case term do
-      {:not, {:in, value}} -> dynamic([_, q], field(q, ^key) not in ^value)
-      {:in, value} -> dynamic([_, q], field(q, ^key) in ^value)
-      {:not, {:==, value}} when is_list(value) -> dynamic([_, q], field(q, ^key) not in ^value)
-      {:not, {:eq, value}} when is_list(value) -> dynamic([_, q], field(q, ^key) not in ^value)
-      {:==, value} when is_list(value) -> dynamic([_, q], field(q, ^key) in ^value)
-      {:eq, value} when is_list(value) -> dynamic([_, q], field(q, ^key) in ^value)
-      {:not, {:!=, value}} when is_list(value) -> dynamic([_, q], field(q, ^key) in ^value)
-      {:not, {:ne, value}} when is_list(value) -> dynamic([_, q], field(q, ^key) in ^value)
-      {:!=, value} when is_list(value) -> dynamic([_, q], field(q, ^key) not in ^value)
-      {:ne, value} when is_list(value) -> dynamic([_, q], field(q, ^key) not in ^value)
+      {:not, {:in, value}} ->
+        dynamic([_, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:in, value} ->
+        dynamic([_, q], field(q, ^key) in ^value)
+
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:==, value} when is_list(value) ->
+        dynamic([_, q], field(q, ^key) in ^value)
+
+      {:eq, value} when is_list(value) ->
+        dynamic([_, q], field(q, ^key) in ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:!=, value} when is_list(value) ->
+        dynamic([_, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:ne, value} when is_list(value) ->
+        dynamic([_, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
@@ -159,16 +197,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
       end
 
     case term do
-      {:not, {:in, value}} -> dynamic([_, _, q], field(q, ^key) not in ^value)
-      {:in, value} -> dynamic([_, _, q], field(q, ^key) in ^value)
-      {:not, {:==, value}} when is_list(value) -> dynamic([_, _, q], field(q, ^key) not in ^value)
-      {:not, {:eq, value}} when is_list(value) -> dynamic([_, _, q], field(q, ^key) not in ^value)
-      {:==, value} when is_list(value) -> dynamic([_, _, q], field(q, ^key) in ^value)
-      {:eq, value} when is_list(value) -> dynamic([_, _, q], field(q, ^key) in ^value)
-      {:not, {:!=, value}} when is_list(value) -> dynamic([_, _, q], field(q, ^key) in ^value)
-      {:not, {:ne, value}} when is_list(value) -> dynamic([_, _, q], field(q, ^key) in ^value)
-      {:!=, value} when is_list(value) -> dynamic([_, _, q], field(q, ^key) not in ^value)
-      {:ne, value} when is_list(value) -> dynamic([_, _, q], field(q, ^key) not in ^value)
+      {:not, {:in, value}} ->
+        dynamic([_, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:in, value} ->
+        dynamic([_, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:==, value} when is_list(value) ->
+        dynamic([_, _, q], field(q, ^key) in ^value)
+
+      {:eq, value} when is_list(value) ->
+        dynamic([_, _, q], field(q, ^key) in ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:!=, value} when is_list(value) ->
+        dynamic([_, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:ne, value} when is_list(value) ->
+        dynamic([_, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
@@ -185,16 +242,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
       end
 
     case term do
-      {:not, {:in, value}} -> dynamic([_, _, _, q], field(q, ^key) not in ^value)
-      {:in, value} -> dynamic([_, _, _, q], field(q, ^key) in ^value)
-      {:not, {:==, value}} when is_list(value) -> dynamic([_, _, _, q], field(q, ^key) not in ^value)
-      {:not, {:eq, value}} when is_list(value) -> dynamic([_, _, _, q], field(q, ^key) not in ^value)
-      {:==, value} when is_list(value) -> dynamic([_, _, _, q], field(q, ^key) in ^value)
-      {:eq, value} when is_list(value) -> dynamic([_, _, _, q], field(q, ^key) in ^value)
-      {:not, {:!=, value}} when is_list(value) -> dynamic([_, _, _, q], field(q, ^key) in ^value)
-      {:not, {:ne, value}} when is_list(value) -> dynamic([_, _, _, q], field(q, ^key) in ^value)
-      {:!=, value} when is_list(value) -> dynamic([_, _, _, q], field(q, ^key) not in ^value)
-      {:ne, value} when is_list(value) -> dynamic([_, _, _, q], field(q, ^key) not in ^value)
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:in, value} ->
+        dynamic([_, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:==, value} when is_list(value) ->
+        dynamic([_, _, _, q], field(q, ^key) in ^value)
+
+      {:eq, value} when is_list(value) ->
+        dynamic([_, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:!=, value} when is_list(value) ->
+        dynamic([_, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:ne, value} when is_list(value) ->
+        dynamic([_, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
@@ -211,16 +287,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
       end
 
     case term do
-      {:not, {:in, value}} -> dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
-      {:in, value} -> dynamic([_, _, _, _, q], field(q, ^key) in ^value)
-      {:not, {:==, value}} when is_list(value) -> dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
-      {:not, {:eq, value}} when is_list(value) -> dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
-      {:==, value} when is_list(value) -> dynamic([_, _, _, _, q], field(q, ^key) in ^value)
-      {:eq, value} when is_list(value) -> dynamic([_, _, _, _, q], field(q, ^key) in ^value)
-      {:not, {:!=, value}} when is_list(value) -> dynamic([_, _, _, _, q], field(q, ^key) in ^value)
-      {:not, {:ne, value}} when is_list(value) -> dynamic([_, _, _, _, q], field(q, ^key) in ^value)
-      {:!=, value} when is_list(value) -> dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
-      {:ne, value} when is_list(value) -> dynamic([_, _, _, _, q], field(q, ^key) not in ^value)
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:in, value} ->
+        dynamic([_, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:==, value} when is_list(value) ->
+        dynamic([_, _, _, _, q], field(q, ^key) in ^value)
+
+      {:eq, value} when is_list(value) ->
+        dynamic([_, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:!=, value} when is_list(value) ->
+        dynamic([_, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:ne, value} when is_list(value) ->
+        dynamic([_, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
@@ -237,16 +332,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
       end
 
     case term do
-      {:not, {:in, value}} -> dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
-      {:in, value} -> dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
-      {:not, {:==, value}} when is_list(value) -> dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
-      {:not, {:eq, value}} when is_list(value) -> dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
-      {:==, value} when is_list(value) -> dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
-      {:eq, value} when is_list(value) -> dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
-      {:not, {:!=, value}} when is_list(value) -> dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
-      {:not, {:ne, value}} when is_list(value) -> dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
-      {:!=, value} when is_list(value) -> dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
-      {:ne, value} when is_list(value) -> dynamic([_, _, _, _, _, q], field(q, ^key) not in ^value)
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:in, value} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:==, value} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:eq, value} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:!=, value} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:ne, value} when is_list(value) ->
+        dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
@@ -263,16 +377,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
       end
 
     case term do
-      {:not, {:in, value}} -> dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
-      {:in, value} -> dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
-      {:not, {:==, value}} when is_list(value) -> dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
-      {:not, {:eq, value}} when is_list(value) -> dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
-      {:==, value} when is_list(value) -> dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
-      {:eq, value} when is_list(value) -> dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
-      {:not, {:!=, value}} when is_list(value) -> dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
-      {:not, {:ne, value}} when is_list(value) -> dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
-      {:!=, value} when is_list(value) -> dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
-      {:ne, value} when is_list(value) -> dynamic([_, _, _, _, _, _, q], field(q, ^key) not in ^value)
+      {:not, {:in, value}} ->
+        dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:in, value} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:==, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:not, {:eq, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:==, value} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:eq, value} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) in ^value)
+
+      {:not, {:!=, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:not, {:ne, value}} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
+
+      {:!=, value} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
+
+      {:ne, value} when is_list(value) ->
+        dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
@@ -290,16 +423,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
 
     case term do
       {:not, {:in, value}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:in, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
       {:not, {:==, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:not, {:eq, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
@@ -308,16 +441,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
       {:not, {:!=, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+        dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
 
       {:not, {:ne, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+        dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
 
       {:!=, value} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:ne, value} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
@@ -335,16 +468,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
 
     case term do
       {:not, {:in, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:in, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
       {:not, {:==, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:not, {:eq, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
@@ -353,16 +486,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
       {:not, {:!=, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+        dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
 
       {:not, {:ne, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+        dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
 
       {:!=, value} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:ne, value} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
@@ -380,16 +513,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
 
     case term do
       {:not, {:in, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:in, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
       {:not, {:==, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:not, {:eq, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:==, value} when is_list(value) ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
@@ -398,16 +531,16 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Membership do
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
 
       {:not, {:!=, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+        dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
 
       {:not, {:ne, value}} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) in ^value)
+        dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)) and field(q, ^key) in ^value)
 
       {:!=, value} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
 
       {:ne, value} when is_list(value) ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) not in ^value)
+        dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)) or field(q, ^key) not in ^value)
     end
   end
 
