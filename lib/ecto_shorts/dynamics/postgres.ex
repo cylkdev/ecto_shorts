@@ -72,6 +72,10 @@ defmodule EctoShorts.Adapters.Postgres do
     [{quantifier, payload} | acc]
   end
 
+  defp normalize_keyword_params({op, inner_term}, acc) when op in @arithmetic_value_operators do
+    [normalize_value_node({op, inner_term}) | acc]
+  end
+
   defp normalize_keyword_params({key, inner_term}, acc) do
     prepend_key(key, normalize_params(inner_term), acc)
   end
@@ -139,28 +143,27 @@ defmodule EctoShorts.Adapters.Postgres do
     {:value, normalize_value_node(value)}
   end
 
-  defp normalize_value_node({op, operands}) when op in @arithmetic_value_operators and is_list(operands) do
-    {op, Enum.map(operands, &normalize_value_node/1)}
+  defp normalize_value_node({op, term}) when op in @arithmetic_value_operators do
+    case term do
+      [left, right] -> {op, {normalize_value_node(left), normalize_value_node(right)}}
+      _ -> raise ArgumentError, "Expected ..., got: #{inspect(term)}"
+    end
   end
 
-  defp normalize_value_node(term) when is_list(term) do
-    if Keyword.keyword?(term) do
-      case term do
-        [field: field_name] ->
-          {:field, normalize_field_name(field_name)}
+  defp normalize_value_node([field: field_name]) do
+    {:field, normalize_field_name(field_name)}
+  end
 
-        [value: value] ->
-          {:value, normalize_value_node(value)}
+  defp normalize_value_node([value: value]) do
+    {:value, normalize_value_node(value)}
+  end
 
-        [{op, operands}] when op in @arithmetic_value_operators and is_list(operands) ->
-          {op, Enum.map(operands, &normalize_value_node/1)}
+  defp normalize_value_node([]) do
+    []
+  end
 
-        _ ->
-          term
-      end
-    else
-      Enum.map(term, &normalize_value_node/1)
-    end
+  defp normalize_value_node([head | tail]) do
+    [normalize_value_node(head) | normalize_value_node(tail)]
   end
 
   defp normalize_value_node(term), do: term

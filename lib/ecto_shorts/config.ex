@@ -178,7 +178,6 @@ defmodule EctoShorts.Config do
     Application.get_env(@app, :dynamic_adapter)
   end
 
-
   @doc since: "3.0.0"
   @doc """
   Returns the configured module that implements the `EctoShorts.QueryBuilder` behaviour.

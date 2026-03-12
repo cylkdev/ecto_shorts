@@ -204,7 +204,7 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
     end
 
     test "matches records using the explicit value wrapper for arithmetic expressions" do
-      expected = from(p in Post, where: p.views > p.views + 10)
+      expected = from(p in Post, where: p.views > p.views + ^10)
 
       q2 =
         CommonFilters.convert_params_to_filter(

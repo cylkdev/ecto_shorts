@@ -2,6 +2,8 @@
 trigger: always_on
 ---
 
+- When asked a question do not guess. Before you respond you must find evidence to prove your reasoning otherwise say "I don't know".
+
 - Do not repeat instructions or guidlines you are given. Apply them silently.
 
 ## Writing Guidelines

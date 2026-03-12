@@ -178,7 +178,7 @@ Current understanding:
   - `value_expr_ast/2` currently supports:
     - `{:field, field_name}` where `field_name` is already an atom
     - `{:value, literal}`
-    - binary arithmetic tuples `{op, [left, right]}` for `:+`, `:-`, `:*`, `:/`
+    - binary arithmetic tuples `{op, {left, right}}` for `:+`, `:-`, `:*`, `:/`
     - any other term falls back to a pinned value
 - Current direct scalar proof details that matter:
   - `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` currently proves both plain scalar inputs like `1` and explicit tuple inputs like `{:==, 1}` because `ScalarExpr.normalize_term/1` still exists.
@@ -278,7 +278,7 @@ Adjacent or later scalar-path files:
     - public payload:
       - `%{views: %{>: %{value: %{+: [%{field: "views"}, %{value: 10}]}}}}`
     - resolved scalar term reaching the expression layer:
-      - `{:>, {:value, {:+, [{:field, :views}, {:value, 10}]}}}`
+      - `{:>, {:value, {:+, {{:field, :views}, {:value, 10}}}}}`
   - Conversion of nested public node shapes inside the explicit wrapped arithmetic RHS is part of structural normalization, not arithmetic interpretation. That means:
     - `%{field: "views"}` or `[field: "views"]` must resolve to `{:field, :views}`
     - `%{value: 10}` or `[value: 10]` must resolve to `{:value, 10}`
@@ -288,7 +288,7 @@ Adjacent or later scalar-path files:
     - interpreting operator precedence
     - building AST
     - choosing comparison behavior
-  - Only binary arithmetic node shapes are currently in scope for the wrapped scalar RHS case because `value_expr_ast/2` only renders `{op, [left, right]}` for `:+`, `:-`, `:*`, and `:/`.
+  - Only binary arithmetic node shapes are currently in scope for the wrapped scalar RHS case because `value_expr_ast/2` only renders `{op, {left, right}}` for `:+`, `:-`, `:*`, and `:/`.
   - Wrapped arithmetic RHS support is currently a scalar comparison feature. The comparison-operator scope is:
     - `:==`, `:eq`, `:!=`, `:ne`, `:>`, `:>=`, `:<`, `:<=`, `:gt`, `:gte`, `:lt`, `:lte`
   - Negated wrapped arithmetic comparisons are structurally in scope because the generated comparison builder already handles `{:not, {op, {:value, wrapped_value}}}`. Quantified, transform-composed, or wider arithmetic combinations are not in scope unless a working-tree test or approved behavior spec requires them.
@@ -304,11 +304,12 @@ Adjacent or later scalar-path files:
     - expression-family dispatch
   - Reducer-time preparation must not resolve nested wrapped arithmetic node shapes. That node resolution belongs to the initial normalization pass if the term must reach expr modules as a fully resolved term.
   - The direct expression-layer proof input for the explicit wrapped arithmetic RHS case should be:
-    - `ScalarExpr.dynamic_expr({:as, nil}, :views, nil, {:>, {:value, {:+, [{:field, :views}, {:value, 10}]}}}, [])`
+    - `ScalarExpr.dynamic_expr({:as, nil}, :views, nil, {:>, {:value, {:+, {{:field, :views}, {:value, 10}}}}}, [])`
   - While `ScalarExpr.normalize_term/1` still exists, direct scalar tests may keep plain scalar proof inputs like `1` and `nil` to document current behavior. If equality defaulting moves fully upstream later, those plain-scalar tests should move to the `CommonFilters` / `Postgres` layer or be rewritten to explicit tuple inputs.
   - The authoritative proof surfaces for the explicit wrapped arithmetic RHS case are:
     - direct expression-layer proof at `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` using the fully resolved tuple shape above
     - public acceptance proof at `test/ecto_shorts/common_filters_scalar_filter_test.exs:206`
+  - `assert_sql/4` compares both the SQL text and the params returned by `Ecto.Adapters.SQL.to_sql/3`. For AST-composed arithmetic expectations, the handwritten expected query must use the pinned form Ecto generates in code, for example `from(p in Post, where: p.views > p.views + ^10)`, instead of the inline literal form `from(p in Post, where: p.views > p.views + 10)`.
   - The authoritative scalar acceptance file path in the current working tree is `test/ecto_shorts/common_filters_scalar_filter_test.exs`. Any older `test/ecto_shorts/common_filters/scalar_filter_test.exs` reference in this document is stale and should be treated as historical text, not as the current file path.
 - Example normalization target:
   `%{id: %{or: %{>: 2, <: 4}}, title: "hello"}`
@@ -327,12 +328,14 @@ The current direct scalar proof file `test/ecto_shorts/dynamics/postgres/scalar_
 - string matching
 - lower/upper transforms
 
-The current missing scalar families are the ones already failing in `test/ecto_shorts/common_filters_scalar_filter_test.exs`:
-- comparison operators and aliases beyond `:==` / `:eq`
-- list membership semantics
-- negation, implemented through the generic `specs_for/4` wrapper pattern instead of duplicated `expr_for/3` logic
-- string matching
-- lower/upper transforms
+The current public scalar acceptance file `test/ecto_shorts/common_filters_scalar_filter_test.exs` is now green for the currently implemented scalar scope.
+
+The proved string-list behavior for this milestone is:
+- `%{field: %{like: ["a", "b"]}}` renders through `LIKE ANY(?)`
+- `%{field: %{ilike: ["a", "b"]}}` renders through `ILIKE ANY(?)`
+- negated list string matches render by negating the corresponding `ANY` fragment
+
+The next remaining validation surface to recheck before claiming broader milestone completion is `test/ecto_shorts/dynamics/postgres_test.exs`.
 
 ### Required Scalar Filter Behaviour
 
@@ -914,7 +917,7 @@ Legend:
 - [x] Update the invalid-nil scalar acceptance test to the approved raise behavior.
 - [x] Normalize the explicit wrapped arithmetic RHS payload in `lib/ecto_shorts/dynamics/postgres.ex` into the resolved tuple shape expected by the scalar expression layer.
 - [x] Add the direct wrapped arithmetic scalar proof in `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`.
-- [~] Re-check whether any `ScalarExprBuilder` change is still needed after the `Postgres` normalization batch.
+- [x] Re-check whether any `ScalarExprBuilder` change is still needed after the `Postgres` normalization batch.
 - [ ] Implement the remaining scalar operator and wrapper families in the scalar code path.
 - [ ] Run focused validation for `scalar_expr_test.exs`, `common_filters_scalar_filter_test.exs`, and `postgres_test.exs`.
 - [ ] Record final scalar-filter milestone results and unrelated warnings separately.
