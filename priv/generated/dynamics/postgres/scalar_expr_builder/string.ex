@@ -9,12 +9,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
   @type compose_res :: Ecto.Query.t() | nil
 
   @doc false
-  def dynamic_expr(
-        {:as, binding_alias},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:as, binding_alias}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -114,12 +109,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 1},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 1}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -131,7 +121,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -140,7 +129,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -154,7 +142,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -163,7 +150,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -175,12 +161,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 2},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 2}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -192,7 +173,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -201,7 +181,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -215,7 +194,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -224,7 +202,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -236,12 +213,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 3},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 3}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -253,7 +225,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -262,7 +233,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -276,7 +246,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -285,7 +254,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -297,12 +265,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 4},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 4}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -314,7 +277,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -323,7 +285,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -337,7 +298,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -346,7 +306,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -358,12 +317,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 5},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 5}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -375,7 +329,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -384,7 +337,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -398,7 +350,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -407,7 +358,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -419,12 +369,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 6},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 6}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -436,7 +381,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -445,7 +389,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -459,7 +402,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -468,7 +410,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -480,12 +421,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 7},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 7}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -497,7 +433,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -506,7 +441,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -520,7 +454,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -529,7 +462,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -541,12 +473,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 8},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 8}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -558,7 +485,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -567,7 +493,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -581,7 +506,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -590,7 +514,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -602,12 +525,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 9},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 9}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -619,7 +537,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -628,7 +545,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -642,7 +558,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -651,7 +566,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -663,12 +577,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
     end
   end
 
-  def dynamic_expr(
-        {:at, 10},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 10}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -680,7 +589,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -689,7 +597,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:like, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 
@@ -703,7 +610,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         grouped_dynamic =
           Enum.reduce(value, nil, fn string_value, acc ->
             dyn = dynamic([_, _, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
             EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
           end)
 
@@ -712,7 +618,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:ilike, value} when is_list(value) ->
         Enum.reduce(value, nil, fn string_value, acc ->
           dyn = dynamic([_, _, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
-
           EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
         end)
 

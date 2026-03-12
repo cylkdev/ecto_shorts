@@ -570,9 +570,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
               {:not,
                {unquote(op),
                 {:value,
-                 {unquote(arithmetic_op_var),
-                  [{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}]}}}}
-              when unquote(arithmetic_op_var) in [:+, :-, :*, :/] ->
+                 {:+,
+                  {{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}}}}}} ->
                 unquote(
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
@@ -581,8 +580,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                       op,
                       q_var,
                       {key_var,
-                       {:value,
-                        {arithmetic_op_var, [{:field, field_name_var}, {:value, scalar_value_var}]}}}
+                       {:value, {:+, {{:field, field_name_var}, {:value, scalar_value_var}}}}}
                     ),
                     context
                   )
@@ -591,9 +589,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
             quote do
               {unquote(op),
                {:value,
-                {unquote(arithmetic_op_var),
-                 [{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}]}}}
-              when unquote(arithmetic_op_var) in [:+, :-, :*, :/] ->
+                {:+,
+                 {{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}}}}} ->
                 unquote(
                   Helpers.dyn_expr(
                     {bind_op, bind_to_var},
@@ -602,8 +599,124 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                       op,
                       q_var,
                       {key_var,
-                       {:value,
-                        {arithmetic_op_var, [{:field, field_name_var}, {:value, scalar_value_var}]}}}
+                       {:value, {:+, {{:field, field_name_var}, {:value, scalar_value_var}}}}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {:not,
+               {unquote(op),
+                {:value,
+                 {:-,
+                  {{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}}}}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(
+                      op,
+                      q_var,
+                      {key_var,
+                       {:value, {:-, {{:field, field_name_var}, {:value, scalar_value_var}}}}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {unquote(op),
+               {:value,
+                {:-,
+                 {{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}}}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(
+                      op,
+                      q_var,
+                      {key_var,
+                       {:value, {:-, {{:field, field_name_var}, {:value, scalar_value_var}}}}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {:not,
+               {unquote(op),
+                {:value,
+                 {:*,
+                  {{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}}}}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(
+                      op,
+                      q_var,
+                      {key_var,
+                       {:value, {:*, {{:field, field_name_var}, {:value, scalar_value_var}}}}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {unquote(op),
+               {:value,
+                {:*,
+                 {{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}}}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(
+                      op,
+                      q_var,
+                      {key_var,
+                       {:value, {:*, {{:field, field_name_var}, {:value, scalar_value_var}}}}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {:not,
+               {unquote(op),
+                {:value,
+                 {:/,
+                  {{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}}}}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(
+                      op,
+                      q_var,
+                      {key_var,
+                       {:value, {:/, {{:field, field_name_var}, {:value, scalar_value_var}}}}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {unquote(op),
+               {:value,
+                {:/,
+                 {{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}}}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(
+                      op,
+                      q_var,
+                      {key_var,
+                       {:value, {:/, {{:field, field_name_var}, {:value, scalar_value_var}}}}}
                     ),
                     context
                   )
@@ -1442,7 +1555,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     Helpers.pinned_ast(value)
   end
 
-  defp value_expr_ast(q_var, {op, [left, right]}) when op in [:+, :-, :*, :/] do
+  defp value_expr_ast(q_var, {op, {left, right}}) when op in [:+, :-, :*, :/] do
     left_ast = value_expr_ast(q_var, left)
     right_ast = value_expr_ast(q_var, right)
 

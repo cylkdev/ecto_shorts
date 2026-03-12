@@ -101,7 +101,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
         {:as, nil},
         :views,
         nil,
-        {:>, {:value, {:+, [{:field, :views}, {:value, 10}]}}},
+        {:>, {:value, {:+, {{:field, :views}, {:value, 10}}}}},
         []
       )
 

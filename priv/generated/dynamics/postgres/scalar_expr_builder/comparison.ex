@@ -9,12 +9,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
   @type compose_res :: Ecto.Query.t() | nil
 
   @doc false
-  def dynamic_expr(
-        {:as, binding_alias},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:as, binding_alias}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -22,26 +17,60 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+          dynamic([q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-          )
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
         end
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+          dynamic([q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
         else
-          dynamic(
-            [{^binding_alias, q}],
-            field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-          )
+          dynamic([{^binding_alias, q}], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+        end
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+        end
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+        end
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+        end
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+        end
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+        end
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
         end
 
       {:not, {:>, {:value, wrapped_value}}} ->
@@ -72,26 +101,60 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
         end
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+          dynamic([q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-          )
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
         end
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+          dynamic([q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
         else
-          dynamic(
-            [{^binding_alias, q}],
-            field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-          )
+          dynamic([{^binding_alias, q}], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+        end
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+        end
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+        end
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+        end
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+        end
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+        end
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
         end
 
       {:not, {:>=, {:value, wrapped_value}}} ->
@@ -122,26 +185,60 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
         end
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+          dynamic([q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-          )
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
         end
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+          dynamic([q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
         else
-          dynamic(
-            [{^binding_alias, q}],
-            field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-          )
+          dynamic([{^binding_alias, q}], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+        end
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+        end
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+        end
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+        end
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+        end
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+        end
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
         end
 
       {:not, {:<, {:value, wrapped_value}}} ->
@@ -172,26 +269,60 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
         end
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+          dynamic([q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-          )
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
         end
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+          dynamic([q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
         else
-          dynamic(
-            [{^binding_alias, q}],
-            field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-          )
+          dynamic([{^binding_alias, q}], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+        end
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+        end
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+        end
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+        end
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+        end
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+        end
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
         end
 
       {:not, {:<=, {:value, wrapped_value}}} ->
@@ -222,26 +353,60 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) <= ^value)
         end
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+          dynamic([q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-          )
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
         end
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+          dynamic([q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
         else
-          dynamic(
-            [{^binding_alias, q}],
-            field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-          )
+          dynamic([{^binding_alias, q}], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+        end
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+        end
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+        end
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+        end
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+        end
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+        end
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
         end
 
       {:not, {:gt, {:value, wrapped_value}}} ->
@@ -272,26 +437,60 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
         end
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+          dynamic([q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-          )
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
         end
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+          dynamic([q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
         else
-          dynamic(
-            [{^binding_alias, q}],
-            field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-          )
+          dynamic([{^binding_alias, q}], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+        end
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+        end
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+        end
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+        end
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+        end
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+        end
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
         end
 
       {:not, {:gte, {:value, wrapped_value}}} ->
@@ -322,26 +521,60 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
         end
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+          dynamic([q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-          )
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
         end
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+          dynamic([q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
         else
-          dynamic(
-            [{^binding_alias, q}],
-            field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-          )
+          dynamic([{^binding_alias, q}], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+        end
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+        end
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+        end
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+        end
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+        end
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+        end
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
         end
 
       {:not, {:lt, {:value, wrapped_value}}} ->
@@ -372,26 +605,60 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
         end
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+          dynamic([q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-          )
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
         end
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+          dynamic([q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
         else
-          dynamic(
-            [{^binding_alias, q}],
-            field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-          )
+          dynamic([{^binding_alias, q}], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+        end
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+        end
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+        end
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+        end
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+        end
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+        end
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
         end
 
       {:not, {:lte, {:value, wrapped_value}}} ->
@@ -650,58 +917,58 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+          dynamic([q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
         end
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+          dynamic([q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
         end
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+          dynamic([q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
         end
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+          dynamic([q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
         end
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+          dynamic([q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
         end
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+          dynamic([q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
         end
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+          dynamic([q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
         end
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+          dynamic([q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
         end
 
       {:not, {:!=, {:value, wrapped_value}}} ->
@@ -776,58 +1043,58 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+          dynamic([q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
         end
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+          dynamic([q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
         end
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+          dynamic([q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
         end
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+          dynamic([q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
         end
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+          dynamic([q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
         end
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+          dynamic([q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
         end
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+          dynamic([q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
         end
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
         if is_nil(binding_alias) do
-          dynamic([q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+          dynamic([q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
         else
-          dynamic([{^binding_alias, q}], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
         end
 
       {:not, {:ne, {:value, wrapped_value}}} ->
@@ -1980,12 +2247,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 1},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 1}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -1993,13 +2255,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([q], not (field(q, ^key) > ^wrapped_value))
@@ -2013,13 +2291,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([q], not (field(q, ^key) >= ^wrapped_value))
@@ -2033,13 +2327,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([q], not (field(q, ^key) < ^wrapped_value))
@@ -2053,13 +2363,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([q], not (field(q, ^key) <= ^wrapped_value))
@@ -2073,13 +2399,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([q], not (field(q, ^key) > ^wrapped_value))
@@ -2093,13 +2435,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([q], not (field(q, ^key) >= ^wrapped_value))
@@ -2113,13 +2471,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([q], not (field(q, ^key) < ^wrapped_value))
@@ -2133,13 +2507,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([q], not (field(q, ^key) <= ^wrapped_value))
@@ -2248,28 +2638,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([q], field(q, ^key) == ^wrapped_value)
@@ -2302,28 +2692,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([q], field(q, ^key) == ^wrapped_value)
@@ -2819,12 +3209,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 2},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 2}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -2832,13 +3217,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) > ^wrapped_value))
@@ -2852,13 +3253,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([_, q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) >= ^wrapped_value))
@@ -2872,13 +3289,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) < ^wrapped_value))
@@ -2892,13 +3325,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([_, q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) <= ^wrapped_value))
@@ -2912,13 +3361,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) > ^wrapped_value))
@@ -2932,13 +3397,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([_, q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) >= ^wrapped_value))
@@ -2952,13 +3433,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) < ^wrapped_value))
@@ -2972,13 +3469,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([_, q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) <= ^wrapped_value))
@@ -3087,28 +3600,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, q], field(q, ^key) == ^wrapped_value)
@@ -3141,28 +3654,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, q], field(q, ^key) == ^wrapped_value)
@@ -3658,12 +4171,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 3},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 3}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -3671,13 +4179,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -3691,13 +4215,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([_, _, q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -3711,13 +4251,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -3731,13 +4287,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([_, _, q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -3751,13 +4323,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -3771,13 +4359,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([_, _, q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -3791,13 +4395,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -3811,13 +4431,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([_, _, q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -3926,28 +4562,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
@@ -3980,28 +4616,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
@@ -4497,12 +5133,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 4},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 4}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -4510,13 +5141,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -4530,16 +5177,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([_, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -4553,13 +5213,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -4573,16 +5249,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([_, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -4596,13 +5285,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -4616,16 +5321,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([_, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -4639,13 +5357,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -4659,16 +5393,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([_, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -4777,28 +5524,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -4831,28 +5578,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -5348,12 +6095,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 5},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 5}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -5361,16 +6103,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -5384,16 +6139,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -5407,16 +6175,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -5430,16 +6211,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -5453,16 +6247,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -5476,16 +6283,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -5499,16 +6319,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -5522,16 +6355,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -5640,28 +6486,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -5694,28 +6540,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -6211,12 +7057,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 6},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 6}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -6224,16 +7065,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -6247,19 +7101,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -6273,16 +7137,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -6296,19 +7173,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -6322,16 +7209,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -6345,19 +7245,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -6371,16 +7281,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -6394,19 +7317,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -6527,28 +7460,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -6581,28 +7514,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -7098,12 +8031,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 7},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 7}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -7111,19 +8039,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -7137,19 +8075,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -7163,19 +8111,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -7189,19 +8147,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -7215,19 +8183,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -7241,19 +8219,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -7267,19 +8255,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -7293,19 +8291,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -7426,28 +8434,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -7480,28 +8488,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -7997,12 +9005,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 8},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 8}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -8010,19 +9013,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -8036,19 +9049,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -8062,19 +9085,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -8088,19 +9121,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -8114,19 +9157,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -8140,19 +9193,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -8166,19 +9229,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -8192,19 +9265,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -8325,28 +9408,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -8379,28 +9462,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -8896,12 +9979,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 9},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 9}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -8909,19 +9987,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -8935,19 +10023,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -8961,19 +10059,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -8987,19 +10095,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -9013,19 +10131,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -9039,19 +10167,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -9065,19 +10203,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -9091,19 +10239,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -9224,28 +10382,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -9278,28 +10436,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{:+, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{:+, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{:-, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{:-, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{:*, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{:*, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^{:/, field: field_name, value: scalar_value})
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^{:/, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -9795,12 +10953,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
     end
   end
 
-  def dynamic_expr(
-        {:at, 10},
-        key,
-        negated,
-        value
-      ) do
+  def dynamic_expr({:at, 10}, key, negated, value) do
     term =
       case negated do
         :not -> {:not, value}
@@ -9808,19 +10961,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:>, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:>, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:>, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -9834,19 +10997,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:>=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:>=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:>=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -9860,19 +11033,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:<, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:<, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:<, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -9886,19 +11069,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:<=, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:<=, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:<=, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -9912,19 +11105,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
-      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
-      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:gt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) - ^scalar_value))
+
+      {:gt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) * ^scalar_value))
+
+      {:gt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) / ^scalar_value))
+
+      {:gt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
@@ -9938,19 +11141,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
 
-      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
 
-      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:gte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) - ^scalar_value))
+
+      {:gte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) * ^scalar_value))
+
+      {:gte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) / ^scalar_value))
+
+      {:gte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -9964,19 +11177,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
-      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
-      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:lt, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) - ^scalar_value))
+
+      {:lt, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) * ^scalar_value))
+
+      {:lt, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) / ^scalar_value))
+
+      {:lt, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
@@ -9990,19 +11213,29 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
 
-      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
-        )
+      {:not, {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
 
-      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
-      when arithmetic_op in [:+, :-, :*, :/] ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
-        )
+      {:lte, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) + ^scalar_value)
+
+      {:not, {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) - ^scalar_value))
+
+      {:lte, {:value, {:-, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) - ^scalar_value)
+
+      {:not, {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) * ^scalar_value))
+
+      {:lte, {:value, {:*, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) * ^scalar_value)
+
+      {:not, {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) / ^scalar_value))
+
+      {:lte, {:value, {:/, {{:field, field_name}, {:value, scalar_value}}}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= field(q, ^field_name) / ^scalar_value)
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -10123,28 +11356,52 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:!=, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{:+, field: field_name, value: scalar_value}
+        )
 
       {:!=, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{:+, field: field_name, value: scalar_value}
+        )
 
       {:not, {:!=, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{:-, field: field_name, value: scalar_value}
+        )
 
       {:!=, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{:-, field: field_name, value: scalar_value}
+        )
 
       {:not, {:!=, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{:*, field: field_name, value: scalar_value}
+        )
 
       {:!=, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{:*, field: field_name, value: scalar_value}
+        )
 
       {:not, {:!=, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{:/, field: field_name, value: scalar_value}
+        )
 
       {:!=, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{:/, field: field_name, value: scalar_value}
+        )
 
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -10177,28 +11434,52 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
         dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
       {:not, {:ne, {:value, {:+, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) + ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{:+, field: field_name, value: scalar_value}
+        )
 
       {:ne, {:value, {:+, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) + ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{:+, field: field_name, value: scalar_value}
+        )
 
       {:not, {:ne, {:value, {:-, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) - ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{:-, field: field_name, value: scalar_value}
+        )
 
       {:ne, {:value, {:-, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) - ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{:-, field: field_name, value: scalar_value}
+        )
 
       {:not, {:ne, {:value, {:*, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) * ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{:*, field: field_name, value: scalar_value}
+        )
 
       {:ne, {:value, {:*, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) * ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{:*, field: field_name, value: scalar_value}
+        )
 
       {:not, {:ne, {:value, {:/, field: field_name, value: scalar_value}}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == field(q, ^field_name) / ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{:/, field: field_name, value: scalar_value}
+        )
 
       {:ne, {:value, {:/, field: field_name, value: scalar_value}}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != field(q, ^field_name) / ^scalar_value)
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{:/, field: field_name, value: scalar_value}
+        )
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
