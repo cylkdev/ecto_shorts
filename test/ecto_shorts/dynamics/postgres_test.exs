@@ -2,6 +2,7 @@ defmodule EctoShorts.Adapters.PostgresTest do
   use ExUnit.Case, async: true
 
   alias EctoShorts.Adapters.Postgres
+  alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
 
   import Ecto.Query
@@ -36,6 +37,46 @@ defmodule EctoShorts.Adapters.PostgresTest do
         Post,
         {:as, nil},
         {:title, %{not: %{==: %{lower: "hello"}}}},
+        []
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "build_dynamic/4 resolves quantified payload with default equality shorthand" do
+    subquery_expr =
+      from(c in Comment,
+        where: c.published == ^true,
+        select: c.id
+      )
+
+    expected = dynamic([q], field(q, :id) == all(subquery_expr))
+
+    actual =
+      Postgres.build_dynamic(
+        Post,
+        {:as, nil},
+        {:id, %{all: %{from: Comment, where: %{published: true}}}},
+        []
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "build_dynamic/4 negates quantified equality as a wrapped comparison" do
+    subquery_expr =
+      from(c in Comment,
+        where: c.published == ^true,
+        select: c.id
+      )
+
+    expected = dynamic([q], not (field(q, :id) == all(subquery_expr)))
+
+    actual =
+      Postgres.build_dynamic(
+        Post,
+        {:as, nil},
+        {:id, %{not: %{all: %{from: Comment, where: %{published: true}}}}},
         []
       )
 

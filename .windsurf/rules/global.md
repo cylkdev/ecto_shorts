@@ -41,3 +41,5 @@ If you cannot meet these criteria, stop and ask for clarification.
 - Before writing a function you must have a code style or pattern to follow. Prioritize searching the codebase and following existing coding styles. If you cannot find an existing code style for your task or there are conflicting styles, stop and ask for the user clarification.
 
 - Look for existing functions that can be used to complete the task. Re-use existing functions unless there is a proven need not to.
+
+- Make changes in small batches at a time. Stop and wait for feedback after making a batch of changes.

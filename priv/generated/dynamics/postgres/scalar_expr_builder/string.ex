@@ -18,30 +18,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn =
+              if is_nil(binding_alias) do
+                dynamic([q], like(field(q, ^key), ^"%#{string_value}%"))
+              else
+                dynamic([{^binding_alias, q}], like(field(q, ^key), ^"%#{string_value}%"))
+              end
+
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
         if is_nil(binding_alias) do
-          dynamic(
-            [q],
-            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-          )
+          dynamic([q], not (^grouped_dynamic))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-          )
+          dynamic([{^binding_alias, q}], not (^grouped_dynamic))
         end
 
       {:like, value} when is_list(value) ->
-        if is_nil(binding_alias) do
-          dynamic(
-            [q],
-            fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-          )
-        else
-          dynamic(
-            [{^binding_alias, q}],
-            fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-          )
-        end
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn =
+            if is_nil(binding_alias) do
+              dynamic([q], like(field(q, ^key), ^"%#{string_value}%"))
+            else
+              dynamic([{^binding_alias, q}], like(field(q, ^key), ^"%#{string_value}%"))
+            end
+
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         if is_nil(binding_alias) do
@@ -58,30 +63,35 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         end
 
       {:not, {:ilike, value}} when is_list(value) ->
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn =
+              if is_nil(binding_alias) do
+                dynamic([q], ilike(field(q, ^key), ^"%#{string_value}%"))
+              else
+                dynamic([{^binding_alias, q}], ilike(field(q, ^key), ^"%#{string_value}%"))
+              end
+
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
         if is_nil(binding_alias) do
-          dynamic(
-            [q],
-            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-          )
+          dynamic([q], not (^grouped_dynamic))
         else
-          dynamic(
-            [{^binding_alias, q}],
-            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-          )
+          dynamic([{^binding_alias, q}], not (^grouped_dynamic))
         end
 
       {:ilike, value} when is_list(value) ->
-        if is_nil(binding_alias) do
-          dynamic(
-            [q],
-            fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-          )
-        else
-          dynamic(
-            [{^binding_alias, q}],
-            fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-          )
-        end
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn =
+            if is_nil(binding_alias) do
+              dynamic([q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            else
+              dynamic([{^binding_alias, q}], ilike(field(q, ^key), ^"%#{string_value}%"))
+            end
+
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         if is_nil(binding_alias) do
@@ -108,16 +118,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
@@ -126,16 +139,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
@@ -154,16 +170,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [_, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [_, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([_, q], not like(field(q, ^key), ^"%#{value}%"))
@@ -172,16 +191,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([_, q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [_, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [_, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([_, q], not ilike(field(q, ^key), ^"%#{value}%"))
@@ -200,16 +222,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [_, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [_, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([_, _, q], not like(field(q, ^key), ^"%#{value}%"))
@@ -218,16 +243,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([_, _, q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [_, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [_, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([_, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
@@ -246,16 +274,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([_, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
@@ -264,16 +295,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([_, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([_, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
@@ -292,16 +326,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([_, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
@@ -310,16 +347,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([_, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
@@ -338,16 +378,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([_, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
@@ -356,16 +399,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([_, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
@@ -384,16 +430,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, _, q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([_, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
@@ -402,16 +451,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, _, q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([_, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
@@ -430,16 +482,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, _, _, q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
@@ -448,16 +503,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, _, _, q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
@@ -476,16 +534,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, _, _, _, q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
@@ -494,16 +555,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, _, _, _, q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
@@ -522,16 +586,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
 
     case term do
       {:not, {:like, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (^grouped_dynamic))
 
       {:like, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:like, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
@@ -540,16 +607,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
 
       {:not, {:ilike, value}} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        grouped_dynamic =
+          Enum.reduce(value, nil, fn string_value, acc ->
+            dyn = dynamic([_, _, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+            EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+          end)
+
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (^grouped_dynamic))
 
       {:ilike, value} when is_list(value) ->
-        dynamic(
-          [_, _, _, _, _, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
-        )
+        Enum.reduce(value, nil, fn string_value, acc ->
+          dyn = dynamic([_, _, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{string_value}%"))
+          EctoShorts.CommonFilters.FilterHelpers.merge_dynamic(acc, :or, dyn)
+        end)
 
       {:not, {:ilike, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))

@@ -2,6 +2,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
   use ExUnit.Case, async: true
   use EctoShorts.Testing
 
+  alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.Dynamics.Postgres.ScalarExpr
   alias EctoShorts.Schema.Post
 
@@ -184,16 +185,26 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
   end
 
   test "dynamic_expr/4 builds a root named-binding like-any expression" do
-    patterns = ["%hello%", "%world%"]
-    expected = dynamic([q], fragment("? LIKE ANY(?)", field(q, :title), ^patterns))
+    expected =
+      FilterHelpers.merge_dynamic(
+        dynamic([q], like(field(q, :title), ^"%hello%")),
+        :or,
+        dynamic([q], like(field(q, :title), ^"%world%"))
+      )
+
     actual = ScalarExpr.dynamic_expr({:as, nil}, :title, nil, {:like, ["hello", "world"]}, [])
 
     assert_dynamic(expected, actual)
   end
 
   test "dynamic_expr/4 builds a root named-binding ilike-any expression" do
-    patterns = ["%hello%", "%world%"]
-    expected = dynamic([q], fragment("? ILIKE ANY(?)", field(q, :title), ^patterns))
+    expected =
+      FilterHelpers.merge_dynamic(
+        dynamic([q], ilike(field(q, :title), ^"%hello%")),
+        :or,
+        dynamic([q], ilike(field(q, :title), ^"%world%"))
+      )
+
     actual = ScalarExpr.dynamic_expr({:as, nil}, :title, nil, {:ilike, ["hello", "world"]}, [])
 
     assert_dynamic(expected, actual)
@@ -263,8 +274,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
   end
 
   test "dynamic_expr/4 builds a root named-binding negated like-any expression" do
-    patterns = ["%hello%", "%world%"]
-    expected = dynamic([q], not fragment("? LIKE ANY(?)", field(q, :title), ^patterns))
+    grouped_expected =
+      FilterHelpers.merge_dynamic(
+        dynamic([q], like(field(q, :title), ^"%hello%")),
+        :or,
+        dynamic([q], like(field(q, :title), ^"%world%"))
+      )
+
+    expected = dynamic([q], not (^grouped_expected))
     actual = ScalarExpr.dynamic_expr({:as, nil}, :title, :not, {:like, ["hello", "world"]}, [])
 
     assert_dynamic(expected, actual)

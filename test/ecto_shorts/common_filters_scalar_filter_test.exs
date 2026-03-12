@@ -3,6 +3,7 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
   use EctoShorts.Testing
 
   alias EctoShorts.CommonFilters
+  alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
 
   import Ecto.Query
@@ -156,6 +157,52 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
+    test "matches records using quantified default equality shorthand" do
+      expected =
+        from(p in Post,
+          where:
+            p.id ==
+              all(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{all: %{from: Comment, where: %{published: true}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified select override" do
+      expected =
+        from(p in Post,
+          where:
+            p.id ==
+              all(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.post_id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{all: %{from: Comment, select: %{field: "post_id"}, where: %{published: true}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "raises for an unsupported nil operator" do
       assert_raise ArgumentError, fn ->
         CommonFilters.convert_params_to_filter(Post, %{published_at: %{>: nil}}, [])
@@ -216,6 +263,31 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
     test "excludes records where the field equals the value" do
       expected = from p in Post, where: p.views != ^10
       q2 = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{==: 10}}}, [])
+
+      assert_sql(expected, q2)
+    end
+
+    test "excludes records using negated quantified equality" do
+      expected =
+        from(p in Post,
+          where:
+            not (
+              p.id ==
+                all(
+                  from(c in Comment,
+                    where: c.published == ^true,
+                    select: c.id
+                  )
+                )
+            )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{not: %{all: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
 
       assert_sql(expected, q2)
     end
