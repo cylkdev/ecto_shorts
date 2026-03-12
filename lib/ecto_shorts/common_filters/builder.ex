@@ -105,7 +105,7 @@ defmodule EctoShorts.CommonFilters.Builder do
 
   def filter_group(key) do
     case @filters_by_group do
-      %{key => value} -> value
+      %{^key => value} -> value
       _ -> nil
     end
   end
@@ -270,7 +270,7 @@ defmodule EctoShorts.CommonFilters.Builder do
   end
 
   def build_query(filter, source, query, selected_binding, term, opts)
-      when filter in @set_operation_filters do
+      when filter in @set_composition_filters do
     SetOperation.build_query(
       filter,
       source,

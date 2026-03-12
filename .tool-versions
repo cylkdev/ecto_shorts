@@ -1,2 +1,3 @@
 elixir 1.15.2-otp-25
 erlang 25.3.2
+postgres 13.14

@@ -22,6 +22,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+          )
+        end
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
       {:not, {:>, {:value, wrapped_value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) > ^wrapped_value))
@@ -48,6 +70,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) > ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
+        end
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+          )
+        end
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
         end
 
       {:not, {:>=, {:value, wrapped_value}}} ->
@@ -78,6 +122,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
         end
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+          )
+        end
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
       {:not, {:<, {:value, wrapped_value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) < ^wrapped_value))
@@ -104,6 +170,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) < ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
+        end
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+          )
+        end
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
         end
 
       {:not, {:<=, {:value, wrapped_value}}} ->
@@ -134,6 +222,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) <= ^value)
         end
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+          )
+        end
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) > ^wrapped_value))
@@ -160,6 +270,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) > ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
+        end
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+          )
+        end
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
         end
 
       {:not, {:gte, {:value, wrapped_value}}} ->
@@ -190,6 +322,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
         end
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+          )
+        end
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) < ^wrapped_value))
@@ -216,6 +370,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) < ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
+        end
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+          )
+        end
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
         end
 
       {:not, {:lte, {:value, wrapped_value}}} ->
@@ -288,6 +464,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
         end
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
       {:not, {:==, {:value, wrapped_value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) != ^wrapped_value)
@@ -356,6 +554,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], is_nil(field(q, ^key)))
         else
           dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
+        end
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
         end
 
       {:not, {:eq, {:value, wrapped_value}}} ->
@@ -428,6 +648,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
         end
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) == ^wrapped_value)
@@ -496,6 +738,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], not is_nil(field(q, ^key)))
         else
           dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
+        end
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
+        end
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+        else
+          dynamic(
+            [{^binding_alias, q}],
+            field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+          )
         end
 
       {:not, {:ne, {:value, wrapped_value}}} ->
@@ -1661,238 +1925,797 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
-      {:not, {:>, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) > ^wrapped_value))
-      {:>, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) > ^wrapped_value)
-      {:not, {:>, value}} -> dynamic([q], not (field(q, ^key) > ^value))
-      {:>, value} -> dynamic([q], field(q, ^key) > ^value)
-      {:not, {:>=, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) >= ^wrapped_value))
-      {:>=, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) >= ^wrapped_value)
-      {:not, {:>=, value}} -> dynamic([q], not (field(q, ^key) >= ^value))
-      {:>=, value} -> dynamic([q], field(q, ^key) >= ^value)
-      {:not, {:<, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) < ^wrapped_value))
-      {:<, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) < ^wrapped_value)
-      {:not, {:<, value}} -> dynamic([q], not (field(q, ^key) < ^value))
-      {:<, value} -> dynamic([q], field(q, ^key) < ^value)
-      {:not, {:<=, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) <= ^wrapped_value))
-      {:<=, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) <= ^wrapped_value)
-      {:not, {:<=, value}} -> dynamic([q], not (field(q, ^key) <= ^value))
-      {:<=, value} -> dynamic([q], field(q, ^key) <= ^value)
-      {:not, {:gt, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) > ^wrapped_value))
-      {:gt, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) > ^wrapped_value)
-      {:not, {:gt, value}} -> dynamic([q], not (field(q, ^key) > ^value))
-      {:gt, value} -> dynamic([q], field(q, ^key) > ^value)
-      {:not, {:gte, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) >= ^wrapped_value))
-      {:gte, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) >= ^wrapped_value)
-      {:not, {:gte, value}} -> dynamic([q], not (field(q, ^key) >= ^value))
-      {:gte, value} -> dynamic([q], field(q, ^key) >= ^value)
-      {:not, {:lt, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) < ^wrapped_value))
-      {:lt, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) < ^wrapped_value)
-      {:not, {:lt, value}} -> dynamic([q], not (field(q, ^key) < ^value))
-      {:lt, value} -> dynamic([q], field(q, ^key) < ^value)
-      {:not, {:lte, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) <= ^wrapped_value))
-      {:lte, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) <= ^wrapped_value)
-      {:not, {:lte, value}} -> dynamic([q], not (field(q, ^key) <= ^value))
-      {:lte, value} -> dynamic([q], field(q, ^key) <= ^value)
-      {:not, {:==, {:all, quantified_value}}} -> dynamic([q], not (field(q, ^key) == all(quantified_value)))
-      {:==, {:all, quantified_value}} -> dynamic([q], field(q, ^key) == all(quantified_value))
-      {:not, {:==, {:any, quantified_value}}} -> dynamic([q], not (field(q, ^key) == any(quantified_value)))
-      {:==, {:any, quantified_value}} -> dynamic([q], field(q, ^key) == any(quantified_value))
-      {:not, {:==, nil}} -> dynamic([q], not is_nil(field(q, ^key)))
-      {:==, nil} -> dynamic([q], is_nil(field(q, ^key)))
-      {:not, {:==, {:value, wrapped_value}}} -> dynamic([q], field(q, ^key) != ^wrapped_value)
-      {:==, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) == ^wrapped_value)
-      {:not, {:==, value}} -> dynamic([q], field(q, ^key) != ^value)
-      {:==, value} -> dynamic([q], field(q, ^key) == ^value)
-      {:not, {:eq, {:all, quantified_value}}} -> dynamic([q], not (field(q, ^key) == all(quantified_value)))
-      {:eq, {:all, quantified_value}} -> dynamic([q], field(q, ^key) == all(quantified_value))
-      {:not, {:eq, {:any, quantified_value}}} -> dynamic([q], not (field(q, ^key) == any(quantified_value)))
-      {:eq, {:any, quantified_value}} -> dynamic([q], field(q, ^key) == any(quantified_value))
-      {:not, {:eq, nil}} -> dynamic([q], not is_nil(field(q, ^key)))
-      {:eq, nil} -> dynamic([q], is_nil(field(q, ^key)))
-      {:not, {:eq, {:value, wrapped_value}}} -> dynamic([q], field(q, ^key) != ^wrapped_value)
-      {:eq, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) == ^wrapped_value)
-      {:not, {:eq, value}} -> dynamic([q], field(q, ^key) != ^value)
-      {:eq, value} -> dynamic([q], field(q, ^key) == ^value)
-      {:not, {:!=, {:all, quantified_value}}} -> dynamic([q], not (field(q, ^key) != all(quantified_value)))
-      {:!=, {:all, quantified_value}} -> dynamic([q], field(q, ^key) != all(quantified_value))
-      {:not, {:!=, {:any, quantified_value}}} -> dynamic([q], not (field(q, ^key) != any(quantified_value)))
-      {:!=, {:any, quantified_value}} -> dynamic([q], field(q, ^key) != any(quantified_value))
-      {:not, {:!=, nil}} -> dynamic([q], is_nil(field(q, ^key)))
-      {:!=, nil} -> dynamic([q], not is_nil(field(q, ^key)))
-      {:not, {:!=, {:value, wrapped_value}}} -> dynamic([q], field(q, ^key) == ^wrapped_value)
-      {:!=, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) != ^wrapped_value)
-      {:not, {:!=, value}} -> dynamic([q], field(q, ^key) == ^value)
-      {:!=, value} -> dynamic([q], field(q, ^key) != ^value)
-      {:not, {:ne, {:all, quantified_value}}} -> dynamic([q], not (field(q, ^key) != all(quantified_value)))
-      {:ne, {:all, quantified_value}} -> dynamic([q], field(q, ^key) != all(quantified_value))
-      {:not, {:ne, {:any, quantified_value}}} -> dynamic([q], not (field(q, ^key) != any(quantified_value)))
-      {:ne, {:any, quantified_value}} -> dynamic([q], field(q, ^key) != any(quantified_value))
-      {:not, {:ne, nil}} -> dynamic([q], is_nil(field(q, ^key)))
-      {:ne, nil} -> dynamic([q], not is_nil(field(q, ^key)))
-      {:not, {:ne, {:value, wrapped_value}}} -> dynamic([q], field(q, ^key) == ^wrapped_value)
-      {:ne, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) != ^wrapped_value)
-      {:not, {:ne, value}} -> dynamic([q], field(q, ^key) == ^value)
-      {:ne, value} -> dynamic([q], field(q, ^key) != ^value)
-      {:not, {:avg, {:>, value}}} -> dynamic([q], not (avg(field(q, ^key)) > ^value))
-      {:avg, {:>, value}} -> dynamic([q], avg(field(q, ^key)) > ^value)
-      {:not, {:avg, {:>=, value}}} -> dynamic([q], not (avg(field(q, ^key)) >= ^value))
-      {:avg, {:>=, value}} -> dynamic([q], avg(field(q, ^key)) >= ^value)
-      {:not, {:avg, {:<, value}}} -> dynamic([q], not (avg(field(q, ^key)) < ^value))
-      {:avg, {:<, value}} -> dynamic([q], avg(field(q, ^key)) < ^value)
-      {:not, {:avg, {:<=, value}}} -> dynamic([q], not (avg(field(q, ^key)) <= ^value))
-      {:avg, {:<=, value}} -> dynamic([q], avg(field(q, ^key)) <= ^value)
-      {:not, {:avg, {:gt, value}}} -> dynamic([q], not (avg(field(q, ^key)) > ^value))
-      {:avg, {:gt, value}} -> dynamic([q], avg(field(q, ^key)) > ^value)
-      {:not, {:avg, {:gte, value}}} -> dynamic([q], not (avg(field(q, ^key)) >= ^value))
-      {:avg, {:gte, value}} -> dynamic([q], avg(field(q, ^key)) >= ^value)
-      {:not, {:avg, {:lt, value}}} -> dynamic([q], not (avg(field(q, ^key)) < ^value))
-      {:avg, {:lt, value}} -> dynamic([q], avg(field(q, ^key)) < ^value)
-      {:not, {:avg, {:lte, value}}} -> dynamic([q], not (avg(field(q, ^key)) <= ^value))
-      {:avg, {:lte, value}} -> dynamic([q], avg(field(q, ^key)) <= ^value)
-      {:not, {:avg, {:==, nil}}} -> dynamic([q], avg(field(q, ^key)) != ^nil)
-      {:avg, {:==, nil}} -> dynamic([q], avg(field(q, ^key)) == ^nil)
-      {:not, {:avg, {:==, value}}} -> dynamic([q], avg(field(q, ^key)) != ^value)
-      {:avg, {:==, value}} -> dynamic([q], avg(field(q, ^key)) == ^value)
-      {:not, {:avg, {:eq, nil}}} -> dynamic([q], avg(field(q, ^key)) != ^nil)
-      {:avg, {:eq, nil}} -> dynamic([q], avg(field(q, ^key)) == ^nil)
-      {:not, {:avg, {:eq, value}}} -> dynamic([q], avg(field(q, ^key)) != ^value)
-      {:avg, {:eq, value}} -> dynamic([q], avg(field(q, ^key)) == ^value)
-      {:not, {:avg, {:!=, nil}}} -> dynamic([q], avg(field(q, ^key)) == ^nil)
-      {:avg, {:!=, nil}} -> dynamic([q], avg(field(q, ^key)) != ^nil)
-      {:not, {:avg, {:!=, value}}} -> dynamic([q], avg(field(q, ^key)) == ^value)
-      {:avg, {:!=, value}} -> dynamic([q], avg(field(q, ^key)) != ^value)
-      {:not, {:avg, {:ne, nil}}} -> dynamic([q], avg(field(q, ^key)) == ^nil)
-      {:avg, {:ne, nil}} -> dynamic([q], avg(field(q, ^key)) != ^nil)
-      {:not, {:avg, {:ne, value}}} -> dynamic([q], avg(field(q, ^key)) == ^value)
-      {:avg, {:ne, value}} -> dynamic([q], avg(field(q, ^key)) != ^value)
-      {:not, {:count, {:>, value}}} -> dynamic([q], not (count(field(q, ^key)) > ^value))
-      {:count, {:>, value}} -> dynamic([q], count(field(q, ^key)) > ^value)
-      {:not, {:count, {:>=, value}}} -> dynamic([q], not (count(field(q, ^key)) >= ^value))
-      {:count, {:>=, value}} -> dynamic([q], count(field(q, ^key)) >= ^value)
-      {:not, {:count, {:<, value}}} -> dynamic([q], not (count(field(q, ^key)) < ^value))
-      {:count, {:<, value}} -> dynamic([q], count(field(q, ^key)) < ^value)
-      {:not, {:count, {:<=, value}}} -> dynamic([q], not (count(field(q, ^key)) <= ^value))
-      {:count, {:<=, value}} -> dynamic([q], count(field(q, ^key)) <= ^value)
-      {:not, {:count, {:gt, value}}} -> dynamic([q], not (count(field(q, ^key)) > ^value))
-      {:count, {:gt, value}} -> dynamic([q], count(field(q, ^key)) > ^value)
-      {:not, {:count, {:gte, value}}} -> dynamic([q], not (count(field(q, ^key)) >= ^value))
-      {:count, {:gte, value}} -> dynamic([q], count(field(q, ^key)) >= ^value)
-      {:not, {:count, {:lt, value}}} -> dynamic([q], not (count(field(q, ^key)) < ^value))
-      {:count, {:lt, value}} -> dynamic([q], count(field(q, ^key)) < ^value)
-      {:not, {:count, {:lte, value}}} -> dynamic([q], not (count(field(q, ^key)) <= ^value))
-      {:count, {:lte, value}} -> dynamic([q], count(field(q, ^key)) <= ^value)
-      {:not, {:count, {:==, nil}}} -> dynamic([q], count(field(q, ^key)) != ^nil)
-      {:count, {:==, nil}} -> dynamic([q], count(field(q, ^key)) == ^nil)
-      {:not, {:count, {:==, value}}} -> dynamic([q], count(field(q, ^key)) != ^value)
-      {:count, {:==, value}} -> dynamic([q], count(field(q, ^key)) == ^value)
-      {:not, {:count, {:eq, nil}}} -> dynamic([q], count(field(q, ^key)) != ^nil)
-      {:count, {:eq, nil}} -> dynamic([q], count(field(q, ^key)) == ^nil)
-      {:not, {:count, {:eq, value}}} -> dynamic([q], count(field(q, ^key)) != ^value)
-      {:count, {:eq, value}} -> dynamic([q], count(field(q, ^key)) == ^value)
-      {:not, {:count, {:!=, nil}}} -> dynamic([q], count(field(q, ^key)) == ^nil)
-      {:count, {:!=, nil}} -> dynamic([q], count(field(q, ^key)) != ^nil)
-      {:not, {:count, {:!=, value}}} -> dynamic([q], count(field(q, ^key)) == ^value)
-      {:count, {:!=, value}} -> dynamic([q], count(field(q, ^key)) != ^value)
-      {:not, {:count, {:ne, nil}}} -> dynamic([q], count(field(q, ^key)) == ^nil)
-      {:count, {:ne, nil}} -> dynamic([q], count(field(q, ^key)) != ^nil)
-      {:not, {:count, {:ne, value}}} -> dynamic([q], count(field(q, ^key)) == ^value)
-      {:count, {:ne, value}} -> dynamic([q], count(field(q, ^key)) != ^value)
-      {:not, {:max, {:>, value}}} -> dynamic([q], not (max(field(q, ^key)) > ^value))
-      {:max, {:>, value}} -> dynamic([q], max(field(q, ^key)) > ^value)
-      {:not, {:max, {:>=, value}}} -> dynamic([q], not (max(field(q, ^key)) >= ^value))
-      {:max, {:>=, value}} -> dynamic([q], max(field(q, ^key)) >= ^value)
-      {:not, {:max, {:<, value}}} -> dynamic([q], not (max(field(q, ^key)) < ^value))
-      {:max, {:<, value}} -> dynamic([q], max(field(q, ^key)) < ^value)
-      {:not, {:max, {:<=, value}}} -> dynamic([q], not (max(field(q, ^key)) <= ^value))
-      {:max, {:<=, value}} -> dynamic([q], max(field(q, ^key)) <= ^value)
-      {:not, {:max, {:gt, value}}} -> dynamic([q], not (max(field(q, ^key)) > ^value))
-      {:max, {:gt, value}} -> dynamic([q], max(field(q, ^key)) > ^value)
-      {:not, {:max, {:gte, value}}} -> dynamic([q], not (max(field(q, ^key)) >= ^value))
-      {:max, {:gte, value}} -> dynamic([q], max(field(q, ^key)) >= ^value)
-      {:not, {:max, {:lt, value}}} -> dynamic([q], not (max(field(q, ^key)) < ^value))
-      {:max, {:lt, value}} -> dynamic([q], max(field(q, ^key)) < ^value)
-      {:not, {:max, {:lte, value}}} -> dynamic([q], not (max(field(q, ^key)) <= ^value))
-      {:max, {:lte, value}} -> dynamic([q], max(field(q, ^key)) <= ^value)
-      {:not, {:max, {:==, nil}}} -> dynamic([q], max(field(q, ^key)) != ^nil)
-      {:max, {:==, nil}} -> dynamic([q], max(field(q, ^key)) == ^nil)
-      {:not, {:max, {:==, value}}} -> dynamic([q], max(field(q, ^key)) != ^value)
-      {:max, {:==, value}} -> dynamic([q], max(field(q, ^key)) == ^value)
-      {:not, {:max, {:eq, nil}}} -> dynamic([q], max(field(q, ^key)) != ^nil)
-      {:max, {:eq, nil}} -> dynamic([q], max(field(q, ^key)) == ^nil)
-      {:not, {:max, {:eq, value}}} -> dynamic([q], max(field(q, ^key)) != ^value)
-      {:max, {:eq, value}} -> dynamic([q], max(field(q, ^key)) == ^value)
-      {:not, {:max, {:!=, nil}}} -> dynamic([q], max(field(q, ^key)) == ^nil)
-      {:max, {:!=, nil}} -> dynamic([q], max(field(q, ^key)) != ^nil)
-      {:not, {:max, {:!=, value}}} -> dynamic([q], max(field(q, ^key)) == ^value)
-      {:max, {:!=, value}} -> dynamic([q], max(field(q, ^key)) != ^value)
-      {:not, {:max, {:ne, nil}}} -> dynamic([q], max(field(q, ^key)) == ^nil)
-      {:max, {:ne, nil}} -> dynamic([q], max(field(q, ^key)) != ^nil)
-      {:not, {:max, {:ne, value}}} -> dynamic([q], max(field(q, ^key)) == ^value)
-      {:max, {:ne, value}} -> dynamic([q], max(field(q, ^key)) != ^value)
-      {:not, {:min, {:>, value}}} -> dynamic([q], not (min(field(q, ^key)) > ^value))
-      {:min, {:>, value}} -> dynamic([q], min(field(q, ^key)) > ^value)
-      {:not, {:min, {:>=, value}}} -> dynamic([q], not (min(field(q, ^key)) >= ^value))
-      {:min, {:>=, value}} -> dynamic([q], min(field(q, ^key)) >= ^value)
-      {:not, {:min, {:<, value}}} -> dynamic([q], not (min(field(q, ^key)) < ^value))
-      {:min, {:<, value}} -> dynamic([q], min(field(q, ^key)) < ^value)
-      {:not, {:min, {:<=, value}}} -> dynamic([q], not (min(field(q, ^key)) <= ^value))
-      {:min, {:<=, value}} -> dynamic([q], min(field(q, ^key)) <= ^value)
-      {:not, {:min, {:gt, value}}} -> dynamic([q], not (min(field(q, ^key)) > ^value))
-      {:min, {:gt, value}} -> dynamic([q], min(field(q, ^key)) > ^value)
-      {:not, {:min, {:gte, value}}} -> dynamic([q], not (min(field(q, ^key)) >= ^value))
-      {:min, {:gte, value}} -> dynamic([q], min(field(q, ^key)) >= ^value)
-      {:not, {:min, {:lt, value}}} -> dynamic([q], not (min(field(q, ^key)) < ^value))
-      {:min, {:lt, value}} -> dynamic([q], min(field(q, ^key)) < ^value)
-      {:not, {:min, {:lte, value}}} -> dynamic([q], not (min(field(q, ^key)) <= ^value))
-      {:min, {:lte, value}} -> dynamic([q], min(field(q, ^key)) <= ^value)
-      {:not, {:min, {:==, nil}}} -> dynamic([q], min(field(q, ^key)) != ^nil)
-      {:min, {:==, nil}} -> dynamic([q], min(field(q, ^key)) == ^nil)
-      {:not, {:min, {:==, value}}} -> dynamic([q], min(field(q, ^key)) != ^value)
-      {:min, {:==, value}} -> dynamic([q], min(field(q, ^key)) == ^value)
-      {:not, {:min, {:eq, nil}}} -> dynamic([q], min(field(q, ^key)) != ^nil)
-      {:min, {:eq, nil}} -> dynamic([q], min(field(q, ^key)) == ^nil)
-      {:not, {:min, {:eq, value}}} -> dynamic([q], min(field(q, ^key)) != ^value)
-      {:min, {:eq, value}} -> dynamic([q], min(field(q, ^key)) == ^value)
-      {:not, {:min, {:!=, nil}}} -> dynamic([q], min(field(q, ^key)) == ^nil)
-      {:min, {:!=, nil}} -> dynamic([q], min(field(q, ^key)) != ^nil)
-      {:not, {:min, {:!=, value}}} -> dynamic([q], min(field(q, ^key)) == ^value)
-      {:min, {:!=, value}} -> dynamic([q], min(field(q, ^key)) != ^value)
-      {:not, {:min, {:ne, nil}}} -> dynamic([q], min(field(q, ^key)) == ^nil)
-      {:min, {:ne, nil}} -> dynamic([q], min(field(q, ^key)) != ^nil)
-      {:not, {:min, {:ne, value}}} -> dynamic([q], min(field(q, ^key)) == ^value)
-      {:min, {:ne, value}} -> dynamic([q], min(field(q, ^key)) != ^value)
-      {:not, {:sum, {:>, value}}} -> dynamic([q], not (sum(field(q, ^key)) > ^value))
-      {:sum, {:>, value}} -> dynamic([q], sum(field(q, ^key)) > ^value)
-      {:not, {:sum, {:>=, value}}} -> dynamic([q], not (sum(field(q, ^key)) >= ^value))
-      {:sum, {:>=, value}} -> dynamic([q], sum(field(q, ^key)) >= ^value)
-      {:not, {:sum, {:<, value}}} -> dynamic([q], not (sum(field(q, ^key)) < ^value))
-      {:sum, {:<, value}} -> dynamic([q], sum(field(q, ^key)) < ^value)
-      {:not, {:sum, {:<=, value}}} -> dynamic([q], not (sum(field(q, ^key)) <= ^value))
-      {:sum, {:<=, value}} -> dynamic([q], sum(field(q, ^key)) <= ^value)
-      {:not, {:sum, {:gt, value}}} -> dynamic([q], not (sum(field(q, ^key)) > ^value))
-      {:sum, {:gt, value}} -> dynamic([q], sum(field(q, ^key)) > ^value)
-      {:not, {:sum, {:gte, value}}} -> dynamic([q], not (sum(field(q, ^key)) >= ^value))
-      {:sum, {:gte, value}} -> dynamic([q], sum(field(q, ^key)) >= ^value)
-      {:not, {:sum, {:lt, value}}} -> dynamic([q], not (sum(field(q, ^key)) < ^value))
-      {:sum, {:lt, value}} -> dynamic([q], sum(field(q, ^key)) < ^value)
-      {:not, {:sum, {:lte, value}}} -> dynamic([q], not (sum(field(q, ^key)) <= ^value))
-      {:sum, {:lte, value}} -> dynamic([q], sum(field(q, ^key)) <= ^value)
-      {:not, {:sum, {:==, nil}}} -> dynamic([q], sum(field(q, ^key)) != ^nil)
-      {:sum, {:==, nil}} -> dynamic([q], sum(field(q, ^key)) == ^nil)
-      {:not, {:sum, {:==, value}}} -> dynamic([q], sum(field(q, ^key)) != ^value)
-      {:sum, {:==, value}} -> dynamic([q], sum(field(q, ^key)) == ^value)
-      {:not, {:sum, {:eq, nil}}} -> dynamic([q], sum(field(q, ^key)) != ^nil)
-      {:sum, {:eq, nil}} -> dynamic([q], sum(field(q, ^key)) == ^nil)
-      {:not, {:sum, {:eq, value}}} -> dynamic([q], sum(field(q, ^key)) != ^value)
-      {:sum, {:eq, value}} -> dynamic([q], sum(field(q, ^key)) == ^value)
-      {:not, {:sum, {:!=, nil}}} -> dynamic([q], sum(field(q, ^key)) == ^nil)
-      {:sum, {:!=, nil}} -> dynamic([q], sum(field(q, ^key)) != ^nil)
-      {:not, {:sum, {:!=, value}}} -> dynamic([q], sum(field(q, ^key)) == ^value)
-      {:sum, {:!=, value}} -> dynamic([q], sum(field(q, ^key)) != ^value)
-      {:not, {:sum, {:ne, nil}}} -> dynamic([q], sum(field(q, ^key)) == ^nil)
-      {:sum, {:ne, nil}} -> dynamic([q], sum(field(q, ^key)) != ^nil)
-      {:not, {:sum, {:ne, value}}} -> dynamic([q], sum(field(q, ^key)) == ^value)
-      {:sum, {:ne, value}} -> dynamic([q], sum(field(q, ^key)) != ^value)
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) > ^wrapped_value)
+
+      {:not, {:>, value}} ->
+        dynamic([q], not (field(q, ^key) > ^value))
+
+      {:>, value} ->
+        dynamic([q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:>=, value}} ->
+        dynamic([q], not (field(q, ^key) >= ^value))
+
+      {:>=, value} ->
+        dynamic([q], field(q, ^key) >= ^value)
+
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) < ^wrapped_value)
+
+      {:not, {:<, value}} ->
+        dynamic([q], not (field(q, ^key) < ^value))
+
+      {:<, value} ->
+        dynamic([q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:<=, value}} ->
+        dynamic([q], not (field(q, ^key) <= ^value))
+
+      {:<=, value} ->
+        dynamic([q], field(q, ^key) <= ^value)
+
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) > ^wrapped_value)
+
+      {:not, {:gt, value}} ->
+        dynamic([q], not (field(q, ^key) > ^value))
+
+      {:gt, value} ->
+        dynamic([q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) >= ^wrapped_value)
+
+      {:not, {:gte, value}} ->
+        dynamic([q], not (field(q, ^key) >= ^value))
+
+      {:gte, value} ->
+        dynamic([q], field(q, ^key) >= ^value)
+
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) < ^wrapped_value)
+
+      {:not, {:lt, value}} ->
+        dynamic([q], not (field(q, ^key) < ^value))
+
+      {:lt, value} ->
+        dynamic([q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) <= ^wrapped_value)
+
+      {:not, {:lte, value}} ->
+        dynamic([q], not (field(q, ^key) <= ^value))
+
+      {:lte, value} ->
+        dynamic([q], field(q, ^key) <= ^value)
+
+      {:not, {:==, {:all, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) == all(quantified_value)))
+
+      {:==, {:all, quantified_value}} ->
+        dynamic([q], field(q, ^key) == all(quantified_value))
+
+      {:not, {:==, {:any, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) == any(quantified_value)))
+
+      {:==, {:any, quantified_value}} ->
+        dynamic([q], field(q, ^key) == any(quantified_value))
+
+      {:not, {:==, nil}} ->
+        dynamic([q], not is_nil(field(q, ^key)))
+
+      {:==, nil} ->
+        dynamic([q], is_nil(field(q, ^key)))
+
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:==, value}} ->
+        dynamic([q], field(q, ^key) != ^value)
+
+      {:==, value} ->
+        dynamic([q], field(q, ^key) == ^value)
+
+      {:not, {:eq, {:all, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) == all(quantified_value)))
+
+      {:eq, {:all, quantified_value}} ->
+        dynamic([q], field(q, ^key) == all(quantified_value))
+
+      {:not, {:eq, {:any, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) == any(quantified_value)))
+
+      {:eq, {:any, quantified_value}} ->
+        dynamic([q], field(q, ^key) == any(quantified_value))
+
+      {:not, {:eq, nil}} ->
+        dynamic([q], not is_nil(field(q, ^key)))
+
+      {:eq, nil} ->
+        dynamic([q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) == ^wrapped_value)
+
+      {:not, {:eq, value}} ->
+        dynamic([q], field(q, ^key) != ^value)
+
+      {:eq, value} ->
+        dynamic([q], field(q, ^key) == ^value)
+
+      {:not, {:!=, {:all, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) != all(quantified_value)))
+
+      {:!=, {:all, quantified_value}} ->
+        dynamic([q], field(q, ^key) != all(quantified_value))
+
+      {:not, {:!=, {:any, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) != any(quantified_value)))
+
+      {:!=, {:any, quantified_value}} ->
+        dynamic([q], field(q, ^key) != any(quantified_value))
+
+      {:not, {:!=, nil}} ->
+        dynamic([q], is_nil(field(q, ^key)))
+
+      {:!=, nil} ->
+        dynamic([q], not is_nil(field(q, ^key)))
+
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:!=, value}} ->
+        dynamic([q], field(q, ^key) == ^value)
+
+      {:!=, value} ->
+        dynamic([q], field(q, ^key) != ^value)
+
+      {:not, {:ne, {:all, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) != all(quantified_value)))
+
+      {:ne, {:all, quantified_value}} ->
+        dynamic([q], field(q, ^key) != all(quantified_value))
+
+      {:not, {:ne, {:any, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) != any(quantified_value)))
+
+      {:ne, {:any, quantified_value}} ->
+        dynamic([q], field(q, ^key) != any(quantified_value))
+
+      {:not, {:ne, nil}} ->
+        dynamic([q], is_nil(field(q, ^key)))
+
+      {:ne, nil} ->
+        dynamic([q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([q], field(q, ^key) != ^wrapped_value)
+
+      {:not, {:ne, value}} ->
+        dynamic([q], field(q, ^key) == ^value)
+
+      {:ne, value} ->
+        dynamic([q], field(q, ^key) != ^value)
+
+      {:not, {:avg, {:>, value}}} ->
+        dynamic([q], not (avg(field(q, ^key)) > ^value))
+
+      {:avg, {:>, value}} ->
+        dynamic([q], avg(field(q, ^key)) > ^value)
+
+      {:not, {:avg, {:>=, value}}} ->
+        dynamic([q], not (avg(field(q, ^key)) >= ^value))
+
+      {:avg, {:>=, value}} ->
+        dynamic([q], avg(field(q, ^key)) >= ^value)
+
+      {:not, {:avg, {:<, value}}} ->
+        dynamic([q], not (avg(field(q, ^key)) < ^value))
+
+      {:avg, {:<, value}} ->
+        dynamic([q], avg(field(q, ^key)) < ^value)
+
+      {:not, {:avg, {:<=, value}}} ->
+        dynamic([q], not (avg(field(q, ^key)) <= ^value))
+
+      {:avg, {:<=, value}} ->
+        dynamic([q], avg(field(q, ^key)) <= ^value)
+
+      {:not, {:avg, {:gt, value}}} ->
+        dynamic([q], not (avg(field(q, ^key)) > ^value))
+
+      {:avg, {:gt, value}} ->
+        dynamic([q], avg(field(q, ^key)) > ^value)
+
+      {:not, {:avg, {:gte, value}}} ->
+        dynamic([q], not (avg(field(q, ^key)) >= ^value))
+
+      {:avg, {:gte, value}} ->
+        dynamic([q], avg(field(q, ^key)) >= ^value)
+
+      {:not, {:avg, {:lt, value}}} ->
+        dynamic([q], not (avg(field(q, ^key)) < ^value))
+
+      {:avg, {:lt, value}} ->
+        dynamic([q], avg(field(q, ^key)) < ^value)
+
+      {:not, {:avg, {:lte, value}}} ->
+        dynamic([q], not (avg(field(q, ^key)) <= ^value))
+
+      {:avg, {:lte, value}} ->
+        dynamic([q], avg(field(q, ^key)) <= ^value)
+
+      {:not, {:avg, {:==, nil}}} ->
+        dynamic([q], avg(field(q, ^key)) != ^nil)
+
+      {:avg, {:==, nil}} ->
+        dynamic([q], avg(field(q, ^key)) == ^nil)
+
+      {:not, {:avg, {:==, value}}} ->
+        dynamic([q], avg(field(q, ^key)) != ^value)
+
+      {:avg, {:==, value}} ->
+        dynamic([q], avg(field(q, ^key)) == ^value)
+
+      {:not, {:avg, {:eq, nil}}} ->
+        dynamic([q], avg(field(q, ^key)) != ^nil)
+
+      {:avg, {:eq, nil}} ->
+        dynamic([q], avg(field(q, ^key)) == ^nil)
+
+      {:not, {:avg, {:eq, value}}} ->
+        dynamic([q], avg(field(q, ^key)) != ^value)
+
+      {:avg, {:eq, value}} ->
+        dynamic([q], avg(field(q, ^key)) == ^value)
+
+      {:not, {:avg, {:!=, nil}}} ->
+        dynamic([q], avg(field(q, ^key)) == ^nil)
+
+      {:avg, {:!=, nil}} ->
+        dynamic([q], avg(field(q, ^key)) != ^nil)
+
+      {:not, {:avg, {:!=, value}}} ->
+        dynamic([q], avg(field(q, ^key)) == ^value)
+
+      {:avg, {:!=, value}} ->
+        dynamic([q], avg(field(q, ^key)) != ^value)
+
+      {:not, {:avg, {:ne, nil}}} ->
+        dynamic([q], avg(field(q, ^key)) == ^nil)
+
+      {:avg, {:ne, nil}} ->
+        dynamic([q], avg(field(q, ^key)) != ^nil)
+
+      {:not, {:avg, {:ne, value}}} ->
+        dynamic([q], avg(field(q, ^key)) == ^value)
+
+      {:avg, {:ne, value}} ->
+        dynamic([q], avg(field(q, ^key)) != ^value)
+
+      {:not, {:count, {:>, value}}} ->
+        dynamic([q], not (count(field(q, ^key)) > ^value))
+
+      {:count, {:>, value}} ->
+        dynamic([q], count(field(q, ^key)) > ^value)
+
+      {:not, {:count, {:>=, value}}} ->
+        dynamic([q], not (count(field(q, ^key)) >= ^value))
+
+      {:count, {:>=, value}} ->
+        dynamic([q], count(field(q, ^key)) >= ^value)
+
+      {:not, {:count, {:<, value}}} ->
+        dynamic([q], not (count(field(q, ^key)) < ^value))
+
+      {:count, {:<, value}} ->
+        dynamic([q], count(field(q, ^key)) < ^value)
+
+      {:not, {:count, {:<=, value}}} ->
+        dynamic([q], not (count(field(q, ^key)) <= ^value))
+
+      {:count, {:<=, value}} ->
+        dynamic([q], count(field(q, ^key)) <= ^value)
+
+      {:not, {:count, {:gt, value}}} ->
+        dynamic([q], not (count(field(q, ^key)) > ^value))
+
+      {:count, {:gt, value}} ->
+        dynamic([q], count(field(q, ^key)) > ^value)
+
+      {:not, {:count, {:gte, value}}} ->
+        dynamic([q], not (count(field(q, ^key)) >= ^value))
+
+      {:count, {:gte, value}} ->
+        dynamic([q], count(field(q, ^key)) >= ^value)
+
+      {:not, {:count, {:lt, value}}} ->
+        dynamic([q], not (count(field(q, ^key)) < ^value))
+
+      {:count, {:lt, value}} ->
+        dynamic([q], count(field(q, ^key)) < ^value)
+
+      {:not, {:count, {:lte, value}}} ->
+        dynamic([q], not (count(field(q, ^key)) <= ^value))
+
+      {:count, {:lte, value}} ->
+        dynamic([q], count(field(q, ^key)) <= ^value)
+
+      {:not, {:count, {:==, nil}}} ->
+        dynamic([q], count(field(q, ^key)) != ^nil)
+
+      {:count, {:==, nil}} ->
+        dynamic([q], count(field(q, ^key)) == ^nil)
+
+      {:not, {:count, {:==, value}}} ->
+        dynamic([q], count(field(q, ^key)) != ^value)
+
+      {:count, {:==, value}} ->
+        dynamic([q], count(field(q, ^key)) == ^value)
+
+      {:not, {:count, {:eq, nil}}} ->
+        dynamic([q], count(field(q, ^key)) != ^nil)
+
+      {:count, {:eq, nil}} ->
+        dynamic([q], count(field(q, ^key)) == ^nil)
+
+      {:not, {:count, {:eq, value}}} ->
+        dynamic([q], count(field(q, ^key)) != ^value)
+
+      {:count, {:eq, value}} ->
+        dynamic([q], count(field(q, ^key)) == ^value)
+
+      {:not, {:count, {:!=, nil}}} ->
+        dynamic([q], count(field(q, ^key)) == ^nil)
+
+      {:count, {:!=, nil}} ->
+        dynamic([q], count(field(q, ^key)) != ^nil)
+
+      {:not, {:count, {:!=, value}}} ->
+        dynamic([q], count(field(q, ^key)) == ^value)
+
+      {:count, {:!=, value}} ->
+        dynamic([q], count(field(q, ^key)) != ^value)
+
+      {:not, {:count, {:ne, nil}}} ->
+        dynamic([q], count(field(q, ^key)) == ^nil)
+
+      {:count, {:ne, nil}} ->
+        dynamic([q], count(field(q, ^key)) != ^nil)
+
+      {:not, {:count, {:ne, value}}} ->
+        dynamic([q], count(field(q, ^key)) == ^value)
+
+      {:count, {:ne, value}} ->
+        dynamic([q], count(field(q, ^key)) != ^value)
+
+      {:not, {:max, {:>, value}}} ->
+        dynamic([q], not (max(field(q, ^key)) > ^value))
+
+      {:max, {:>, value}} ->
+        dynamic([q], max(field(q, ^key)) > ^value)
+
+      {:not, {:max, {:>=, value}}} ->
+        dynamic([q], not (max(field(q, ^key)) >= ^value))
+
+      {:max, {:>=, value}} ->
+        dynamic([q], max(field(q, ^key)) >= ^value)
+
+      {:not, {:max, {:<, value}}} ->
+        dynamic([q], not (max(field(q, ^key)) < ^value))
+
+      {:max, {:<, value}} ->
+        dynamic([q], max(field(q, ^key)) < ^value)
+
+      {:not, {:max, {:<=, value}}} ->
+        dynamic([q], not (max(field(q, ^key)) <= ^value))
+
+      {:max, {:<=, value}} ->
+        dynamic([q], max(field(q, ^key)) <= ^value)
+
+      {:not, {:max, {:gt, value}}} ->
+        dynamic([q], not (max(field(q, ^key)) > ^value))
+
+      {:max, {:gt, value}} ->
+        dynamic([q], max(field(q, ^key)) > ^value)
+
+      {:not, {:max, {:gte, value}}} ->
+        dynamic([q], not (max(field(q, ^key)) >= ^value))
+
+      {:max, {:gte, value}} ->
+        dynamic([q], max(field(q, ^key)) >= ^value)
+
+      {:not, {:max, {:lt, value}}} ->
+        dynamic([q], not (max(field(q, ^key)) < ^value))
+
+      {:max, {:lt, value}} ->
+        dynamic([q], max(field(q, ^key)) < ^value)
+
+      {:not, {:max, {:lte, value}}} ->
+        dynamic([q], not (max(field(q, ^key)) <= ^value))
+
+      {:max, {:lte, value}} ->
+        dynamic([q], max(field(q, ^key)) <= ^value)
+
+      {:not, {:max, {:==, nil}}} ->
+        dynamic([q], max(field(q, ^key)) != ^nil)
+
+      {:max, {:==, nil}} ->
+        dynamic([q], max(field(q, ^key)) == ^nil)
+
+      {:not, {:max, {:==, value}}} ->
+        dynamic([q], max(field(q, ^key)) != ^value)
+
+      {:max, {:==, value}} ->
+        dynamic([q], max(field(q, ^key)) == ^value)
+
+      {:not, {:max, {:eq, nil}}} ->
+        dynamic([q], max(field(q, ^key)) != ^nil)
+
+      {:max, {:eq, nil}} ->
+        dynamic([q], max(field(q, ^key)) == ^nil)
+
+      {:not, {:max, {:eq, value}}} ->
+        dynamic([q], max(field(q, ^key)) != ^value)
+
+      {:max, {:eq, value}} ->
+        dynamic([q], max(field(q, ^key)) == ^value)
+
+      {:not, {:max, {:!=, nil}}} ->
+        dynamic([q], max(field(q, ^key)) == ^nil)
+
+      {:max, {:!=, nil}} ->
+        dynamic([q], max(field(q, ^key)) != ^nil)
+
+      {:not, {:max, {:!=, value}}} ->
+        dynamic([q], max(field(q, ^key)) == ^value)
+
+      {:max, {:!=, value}} ->
+        dynamic([q], max(field(q, ^key)) != ^value)
+
+      {:not, {:max, {:ne, nil}}} ->
+        dynamic([q], max(field(q, ^key)) == ^nil)
+
+      {:max, {:ne, nil}} ->
+        dynamic([q], max(field(q, ^key)) != ^nil)
+
+      {:not, {:max, {:ne, value}}} ->
+        dynamic([q], max(field(q, ^key)) == ^value)
+
+      {:max, {:ne, value}} ->
+        dynamic([q], max(field(q, ^key)) != ^value)
+
+      {:not, {:min, {:>, value}}} ->
+        dynamic([q], not (min(field(q, ^key)) > ^value))
+
+      {:min, {:>, value}} ->
+        dynamic([q], min(field(q, ^key)) > ^value)
+
+      {:not, {:min, {:>=, value}}} ->
+        dynamic([q], not (min(field(q, ^key)) >= ^value))
+
+      {:min, {:>=, value}} ->
+        dynamic([q], min(field(q, ^key)) >= ^value)
+
+      {:not, {:min, {:<, value}}} ->
+        dynamic([q], not (min(field(q, ^key)) < ^value))
+
+      {:min, {:<, value}} ->
+        dynamic([q], min(field(q, ^key)) < ^value)
+
+      {:not, {:min, {:<=, value}}} ->
+        dynamic([q], not (min(field(q, ^key)) <= ^value))
+
+      {:min, {:<=, value}} ->
+        dynamic([q], min(field(q, ^key)) <= ^value)
+
+      {:not, {:min, {:gt, value}}} ->
+        dynamic([q], not (min(field(q, ^key)) > ^value))
+
+      {:min, {:gt, value}} ->
+        dynamic([q], min(field(q, ^key)) > ^value)
+
+      {:not, {:min, {:gte, value}}} ->
+        dynamic([q], not (min(field(q, ^key)) >= ^value))
+
+      {:min, {:gte, value}} ->
+        dynamic([q], min(field(q, ^key)) >= ^value)
+
+      {:not, {:min, {:lt, value}}} ->
+        dynamic([q], not (min(field(q, ^key)) < ^value))
+
+      {:min, {:lt, value}} ->
+        dynamic([q], min(field(q, ^key)) < ^value)
+
+      {:not, {:min, {:lte, value}}} ->
+        dynamic([q], not (min(field(q, ^key)) <= ^value))
+
+      {:min, {:lte, value}} ->
+        dynamic([q], min(field(q, ^key)) <= ^value)
+
+      {:not, {:min, {:==, nil}}} ->
+        dynamic([q], min(field(q, ^key)) != ^nil)
+
+      {:min, {:==, nil}} ->
+        dynamic([q], min(field(q, ^key)) == ^nil)
+
+      {:not, {:min, {:==, value}}} ->
+        dynamic([q], min(field(q, ^key)) != ^value)
+
+      {:min, {:==, value}} ->
+        dynamic([q], min(field(q, ^key)) == ^value)
+
+      {:not, {:min, {:eq, nil}}} ->
+        dynamic([q], min(field(q, ^key)) != ^nil)
+
+      {:min, {:eq, nil}} ->
+        dynamic([q], min(field(q, ^key)) == ^nil)
+
+      {:not, {:min, {:eq, value}}} ->
+        dynamic([q], min(field(q, ^key)) != ^value)
+
+      {:min, {:eq, value}} ->
+        dynamic([q], min(field(q, ^key)) == ^value)
+
+      {:not, {:min, {:!=, nil}}} ->
+        dynamic([q], min(field(q, ^key)) == ^nil)
+
+      {:min, {:!=, nil}} ->
+        dynamic([q], min(field(q, ^key)) != ^nil)
+
+      {:not, {:min, {:!=, value}}} ->
+        dynamic([q], min(field(q, ^key)) == ^value)
+
+      {:min, {:!=, value}} ->
+        dynamic([q], min(field(q, ^key)) != ^value)
+
+      {:not, {:min, {:ne, nil}}} ->
+        dynamic([q], min(field(q, ^key)) == ^nil)
+
+      {:min, {:ne, nil}} ->
+        dynamic([q], min(field(q, ^key)) != ^nil)
+
+      {:not, {:min, {:ne, value}}} ->
+        dynamic([q], min(field(q, ^key)) == ^value)
+
+      {:min, {:ne, value}} ->
+        dynamic([q], min(field(q, ^key)) != ^value)
+
+      {:not, {:sum, {:>, value}}} ->
+        dynamic([q], not (sum(field(q, ^key)) > ^value))
+
+      {:sum, {:>, value}} ->
+        dynamic([q], sum(field(q, ^key)) > ^value)
+
+      {:not, {:sum, {:>=, value}}} ->
+        dynamic([q], not (sum(field(q, ^key)) >= ^value))
+
+      {:sum, {:>=, value}} ->
+        dynamic([q], sum(field(q, ^key)) >= ^value)
+
+      {:not, {:sum, {:<, value}}} ->
+        dynamic([q], not (sum(field(q, ^key)) < ^value))
+
+      {:sum, {:<, value}} ->
+        dynamic([q], sum(field(q, ^key)) < ^value)
+
+      {:not, {:sum, {:<=, value}}} ->
+        dynamic([q], not (sum(field(q, ^key)) <= ^value))
+
+      {:sum, {:<=, value}} ->
+        dynamic([q], sum(field(q, ^key)) <= ^value)
+
+      {:not, {:sum, {:gt, value}}} ->
+        dynamic([q], not (sum(field(q, ^key)) > ^value))
+
+      {:sum, {:gt, value}} ->
+        dynamic([q], sum(field(q, ^key)) > ^value)
+
+      {:not, {:sum, {:gte, value}}} ->
+        dynamic([q], not (sum(field(q, ^key)) >= ^value))
+
+      {:sum, {:gte, value}} ->
+        dynamic([q], sum(field(q, ^key)) >= ^value)
+
+      {:not, {:sum, {:lt, value}}} ->
+        dynamic([q], not (sum(field(q, ^key)) < ^value))
+
+      {:sum, {:lt, value}} ->
+        dynamic([q], sum(field(q, ^key)) < ^value)
+
+      {:not, {:sum, {:lte, value}}} ->
+        dynamic([q], not (sum(field(q, ^key)) <= ^value))
+
+      {:sum, {:lte, value}} ->
+        dynamic([q], sum(field(q, ^key)) <= ^value)
+
+      {:not, {:sum, {:==, nil}}} ->
+        dynamic([q], sum(field(q, ^key)) != ^nil)
+
+      {:sum, {:==, nil}} ->
+        dynamic([q], sum(field(q, ^key)) == ^nil)
+
+      {:not, {:sum, {:==, value}}} ->
+        dynamic([q], sum(field(q, ^key)) != ^value)
+
+      {:sum, {:==, value}} ->
+        dynamic([q], sum(field(q, ^key)) == ^value)
+
+      {:not, {:sum, {:eq, nil}}} ->
+        dynamic([q], sum(field(q, ^key)) != ^nil)
+
+      {:sum, {:eq, nil}} ->
+        dynamic([q], sum(field(q, ^key)) == ^nil)
+
+      {:not, {:sum, {:eq, value}}} ->
+        dynamic([q], sum(field(q, ^key)) != ^value)
+
+      {:sum, {:eq, value}} ->
+        dynamic([q], sum(field(q, ^key)) == ^value)
+
+      {:not, {:sum, {:!=, nil}}} ->
+        dynamic([q], sum(field(q, ^key)) == ^nil)
+
+      {:sum, {:!=, nil}} ->
+        dynamic([q], sum(field(q, ^key)) != ^nil)
+
+      {:not, {:sum, {:!=, value}}} ->
+        dynamic([q], sum(field(q, ^key)) == ^value)
+
+      {:sum, {:!=, value}} ->
+        dynamic([q], sum(field(q, ^key)) != ^value)
+
+      {:not, {:sum, {:ne, nil}}} ->
+        dynamic([q], sum(field(q, ^key)) == ^nil)
+
+      {:sum, {:ne, nil}} ->
+        dynamic([q], sum(field(q, ^key)) != ^nil)
+
+      {:not, {:sum, {:ne, value}}} ->
+        dynamic([q], sum(field(q, ^key)) == ^value)
+
+      {:sum, {:ne, value}} ->
+        dynamic([q], sum(field(q, ^key)) != ^value)
     end
   end
 
@@ -1909,6 +2732,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -1920,6 +2751,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) >= ^wrapped_value))
@@ -1933,6 +2772,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -1944,6 +2791,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) <= ^wrapped_value))
@@ -1957,6 +2812,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -1968,6 +2831,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gt, value} ->
         dynamic([_, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) >= ^wrapped_value))
@@ -1981,6 +2852,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -1992,6 +2871,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lt, value} ->
         dynamic([_, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, q], not (field(q, ^key) <= ^wrapped_value))
@@ -2023,6 +2910,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:==, {:value, wrapped_value}}} ->
         dynamic([_, q], field(q, ^key) != ^wrapped_value)
 
@@ -2052,6 +2947,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:eq, {:value, wrapped_value}}} ->
         dynamic([_, q], field(q, ^key) != ^wrapped_value)
@@ -2083,6 +2986,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, q], field(q, ^key) == ^wrapped_value)
 
@@ -2112,6 +3023,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, q], field(q, ^key) == ^wrapped_value)
@@ -2620,6 +3539,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -2631,6 +3558,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -2644,6 +3579,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -2655,6 +3598,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -2668,6 +3619,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -2679,6 +3638,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gt, value} ->
         dynamic([_, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -2692,6 +3659,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -2703,6 +3678,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lt, value} ->
         dynamic([_, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -2734,6 +3717,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:==, {:value, wrapped_value}}} ->
         dynamic([_, _, q], field(q, ^key) != ^wrapped_value)
 
@@ -2763,6 +3754,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:eq, {:value, wrapped_value}}} ->
         dynamic([_, _, q], field(q, ^key) != ^wrapped_value)
@@ -2794,6 +3793,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
 
@@ -2823,6 +3830,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
@@ -3331,6 +4346,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -3342,6 +4365,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -3355,6 +4389,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -3366,6 +4408,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -3379,6 +4432,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -3390,6 +4451,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gt, value} ->
         dynamic([_, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -3403,6 +4475,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}))
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -3414,6 +4494,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lt, value} ->
         dynamic([_, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -3445,6 +4536,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:==, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], field(q, ^key) != ^wrapped_value)
 
@@ -3474,6 +4573,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:eq, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], field(q, ^key) != ^wrapped_value)
@@ -3505,6 +4612,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
 
@@ -3534,6 +4649,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -4042,6 +5165,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -4053,6 +5187,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -4066,6 +5211,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -4077,6 +5233,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -4090,6 +5257,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -4101,6 +5279,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gt, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -4114,6 +5303,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -4125,6 +5325,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lt, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -4156,6 +5367,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:==, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
@@ -4185,6 +5404,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:eq, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], field(q, ^key) != ^wrapped_value)
@@ -4216,6 +5443,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
@@ -4245,6 +5480,14 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value})
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value})
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -4753,6 +5996,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -4764,6 +6018,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -4777,6 +6045,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -4788,6 +6067,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -4801,6 +6094,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -4812,6 +6116,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -4825,6 +6143,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -4836,6 +6165,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -4867,6 +6210,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:==, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
@@ -4896,6 +6253,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:eq, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
@@ -4927,6 +6298,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
@@ -4956,6 +6341,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -5464,6 +6863,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -5475,6 +6888,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -5488,6 +6915,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -5499,6 +6940,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -5512,6 +6967,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -5523,6 +6992,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -5536,6 +7019,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -5547,6 +7044,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -5578,6 +7089,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:==, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
@@ -5607,6 +7132,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:eq, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
@@ -5638,6 +7177,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
@@ -5667,6 +7220,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -6175,6 +7742,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -6186,6 +7767,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -6199,6 +7794,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -6210,6 +7819,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -6223,6 +7846,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -6234,6 +7871,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -6247,6 +7898,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -6258,6 +7923,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -6289,6 +7968,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:==, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
@@ -6318,6 +8011,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:eq, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
@@ -6349,6 +8056,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
@@ -6378,6 +8099,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -6886,6 +8621,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -6897,6 +8646,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -6910,6 +8673,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -6921,6 +8698,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -6934,6 +8725,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -6945,6 +8750,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -6958,6 +8777,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -6969,6 +8802,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -7000,6 +8847,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:==, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
@@ -7029,6 +8890,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:eq, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
@@ -7060,6 +8935,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
@@ -7089,6 +8978,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
@@ -7597,6 +9500,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:>, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -7608,6 +9525,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:>=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:>=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -7621,6 +9552,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:<, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -7632,6 +9577,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:<=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:<=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -7645,6 +9604,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) > ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:gt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
 
@@ -7656,6 +9629,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:gte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) >= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:gte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
@@ -7669,6 +9656,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lt, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) < ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:lt, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
 
@@ -7680,6 +9681,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not (field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value})
+        )
+
+      {:lte, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) <= ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:lte, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
@@ -7711,6 +9726,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:==, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:==, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
@@ -7740,6 +9769,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:eq, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:eq, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
@@ -7771,6 +9814,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:!=, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
       {:not, {:!=, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
@@ -7800,6 +9857,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) == ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
+
+      {:ne, {:value, {arithmetic_op, field: field_name, value: scalar_value}}}
+      when arithmetic_op in [:+, :-, :*, :/] ->
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          field(q, ^key) != ^{arithmetic_op, field: field_name, value: scalar_value}
+        )
 
       {:not, {:ne, {:value, wrapped_value}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)

@@ -131,22 +131,6 @@ defmodule EctoShorts.Adapters.Postgres do
     |> normalize_value_node()
   end
 
-  defp normalize_value_node(term) when is_list(term) and Keyword.keyword?(term) do
-    case term do
-      [field: field_name] ->
-        {:field, normalize_field_name(field_name)}
-
-      [value: value] ->
-        {:value, normalize_value_node(value)}
-
-      [{op, operands}] when op in @arithmetic_value_directives and is_list(operands) ->
-        {op, Enum.map(operands, &normalize_value_node/1)}
-
-      _ ->
-        term
-    end
-  end
-
   defp normalize_value_node({:field, field_name}) do
     {:field, normalize_field_name(field_name)}
   end
@@ -160,7 +144,23 @@ defmodule EctoShorts.Adapters.Postgres do
   end
 
   defp normalize_value_node(term) when is_list(term) do
-    Enum.map(term, &normalize_value_node/1)
+    if Keyword.keyword?(term) do
+      case term do
+        [field: field_name] ->
+          {:field, normalize_field_name(field_name)}
+
+        [value: value] ->
+          {:value, normalize_value_node(value)}
+
+        [{op, operands}] when op in @arithmetic_value_directives and is_list(operands) ->
+          {op, Enum.map(operands, &normalize_value_node/1)}
+
+        _ ->
+          term
+      end
+    else
+      Enum.map(term, &normalize_value_node/1)
+    end
   end
 
   defp normalize_value_node(term), do: term
