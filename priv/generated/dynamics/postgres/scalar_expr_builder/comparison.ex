@@ -22,6 +22,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > ^wrapped_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > ^wrapped_value))
+        end
+
+      {:>, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > ^wrapped_value)
+        end
+
       {:not, {:>, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) > ^value))
@@ -34,6 +48,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) > ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
+        end
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= ^wrapped_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= ^wrapped_value))
+        end
+
+      {:>=, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= ^wrapped_value)
         end
 
       {:not, {:>=, value}} ->
@@ -50,6 +78,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
         end
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < ^wrapped_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < ^wrapped_value))
+        end
+
+      {:<, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < ^wrapped_value)
+        end
+
       {:not, {:<, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) < ^value))
@@ -62,6 +104,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) < ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
+        end
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= ^wrapped_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= ^wrapped_value))
+        end
+
+      {:<=, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= ^wrapped_value)
         end
 
       {:not, {:<=, value}} ->
@@ -78,6 +134,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) <= ^value)
         end
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > ^wrapped_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > ^wrapped_value))
+        end
+
+      {:gt, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > ^wrapped_value)
+        end
+
       {:not, {:gt, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) > ^value))
@@ -90,6 +160,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) > ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
+        end
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= ^wrapped_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= ^wrapped_value))
+        end
+
+      {:gte, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= ^wrapped_value)
         end
 
       {:not, {:gte, value}} ->
@@ -106,6 +190,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
         end
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < ^wrapped_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < ^wrapped_value))
+        end
+
+      {:lt, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < ^wrapped_value)
+        end
+
       {:not, {:lt, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) < ^value))
@@ -118,6 +216,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) < ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
+        end
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= ^wrapped_value))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= ^wrapped_value))
+        end
+
+      {:lte, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= ^wrapped_value)
         end
 
       {:not, {:lte, value}} ->
@@ -176,6 +288,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
         end
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^wrapped_value)
+        end
+
+      {:==, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^wrapped_value)
+        end
+
       {:not, {:==, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) != ^value)
@@ -230,6 +356,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], is_nil(field(q, ^key)))
         else
           dynamic([{^binding_alias, q}], is_nil(field(q, ^key)))
+        end
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^wrapped_value)
+        end
+
+      {:eq, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^wrapped_value)
         end
 
       {:not, {:eq, value}} ->
@@ -288,6 +428,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
         end
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^wrapped_value)
+        end
+
+      {:!=, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^wrapped_value)
+        end
+
       {:not, {:!=, value}} ->
         if is_nil(binding_alias) do
           dynamic([q], field(q, ^key) == ^value)
@@ -342,6 +496,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], not is_nil(field(q, ^key)))
         else
           dynamic([{^binding_alias, q}], not is_nil(field(q, ^key)))
+        end
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) == ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) == ^wrapped_value)
+        end
+
+      {:ne, {:value, wrapped_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) != ^wrapped_value)
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) != ^wrapped_value)
         end
 
       {:not, {:ne, value}} ->
@@ -1493,20 +1661,36 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) > ^wrapped_value))
+      {:>, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) > ^wrapped_value)
       {:not, {:>, value}} -> dynamic([q], not (field(q, ^key) > ^value))
       {:>, value} -> dynamic([q], field(q, ^key) > ^value)
+      {:not, {:>=, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) >= ^wrapped_value))
+      {:>=, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) >= ^wrapped_value)
       {:not, {:>=, value}} -> dynamic([q], not (field(q, ^key) >= ^value))
       {:>=, value} -> dynamic([q], field(q, ^key) >= ^value)
+      {:not, {:<, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) < ^wrapped_value))
+      {:<, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) < ^wrapped_value)
       {:not, {:<, value}} -> dynamic([q], not (field(q, ^key) < ^value))
       {:<, value} -> dynamic([q], field(q, ^key) < ^value)
+      {:not, {:<=, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) <= ^wrapped_value))
+      {:<=, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) <= ^wrapped_value)
       {:not, {:<=, value}} -> dynamic([q], not (field(q, ^key) <= ^value))
       {:<=, value} -> dynamic([q], field(q, ^key) <= ^value)
+      {:not, {:gt, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) > ^wrapped_value))
+      {:gt, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) > ^wrapped_value)
       {:not, {:gt, value}} -> dynamic([q], not (field(q, ^key) > ^value))
       {:gt, value} -> dynamic([q], field(q, ^key) > ^value)
+      {:not, {:gte, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) >= ^wrapped_value))
+      {:gte, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) >= ^wrapped_value)
       {:not, {:gte, value}} -> dynamic([q], not (field(q, ^key) >= ^value))
       {:gte, value} -> dynamic([q], field(q, ^key) >= ^value)
+      {:not, {:lt, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) < ^wrapped_value))
+      {:lt, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) < ^wrapped_value)
       {:not, {:lt, value}} -> dynamic([q], not (field(q, ^key) < ^value))
       {:lt, value} -> dynamic([q], field(q, ^key) < ^value)
+      {:not, {:lte, {:value, wrapped_value}}} -> dynamic([q], not (field(q, ^key) <= ^wrapped_value))
+      {:lte, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) <= ^wrapped_value)
       {:not, {:lte, value}} -> dynamic([q], not (field(q, ^key) <= ^value))
       {:lte, value} -> dynamic([q], field(q, ^key) <= ^value)
       {:not, {:==, {:all, quantified_value}}} -> dynamic([q], not (field(q, ^key) == all(quantified_value)))
@@ -1515,6 +1699,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, {:any, quantified_value}} -> dynamic([q], field(q, ^key) == any(quantified_value))
       {:not, {:==, nil}} -> dynamic([q], not is_nil(field(q, ^key)))
       {:==, nil} -> dynamic([q], is_nil(field(q, ^key)))
+      {:not, {:==, {:value, wrapped_value}}} -> dynamic([q], field(q, ^key) != ^wrapped_value)
+      {:==, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) == ^wrapped_value)
       {:not, {:==, value}} -> dynamic([q], field(q, ^key) != ^value)
       {:==, value} -> dynamic([q], field(q, ^key) == ^value)
       {:not, {:eq, {:all, quantified_value}}} -> dynamic([q], not (field(q, ^key) == all(quantified_value)))
@@ -1523,6 +1709,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:eq, {:any, quantified_value}} -> dynamic([q], field(q, ^key) == any(quantified_value))
       {:not, {:eq, nil}} -> dynamic([q], not is_nil(field(q, ^key)))
       {:eq, nil} -> dynamic([q], is_nil(field(q, ^key)))
+      {:not, {:eq, {:value, wrapped_value}}} -> dynamic([q], field(q, ^key) != ^wrapped_value)
+      {:eq, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) == ^wrapped_value)
       {:not, {:eq, value}} -> dynamic([q], field(q, ^key) != ^value)
       {:eq, value} -> dynamic([q], field(q, ^key) == ^value)
       {:not, {:!=, {:all, quantified_value}}} -> dynamic([q], not (field(q, ^key) != all(quantified_value)))
@@ -1531,6 +1719,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, {:any, quantified_value}} -> dynamic([q], field(q, ^key) != any(quantified_value))
       {:not, {:!=, nil}} -> dynamic([q], is_nil(field(q, ^key)))
       {:!=, nil} -> dynamic([q], not is_nil(field(q, ^key)))
+      {:not, {:!=, {:value, wrapped_value}}} -> dynamic([q], field(q, ^key) == ^wrapped_value)
+      {:!=, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) != ^wrapped_value)
       {:not, {:!=, value}} -> dynamic([q], field(q, ^key) == ^value)
       {:!=, value} -> dynamic([q], field(q, ^key) != ^value)
       {:not, {:ne, {:all, quantified_value}}} -> dynamic([q], not (field(q, ^key) != all(quantified_value)))
@@ -1539,6 +1729,8 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:ne, {:any, quantified_value}} -> dynamic([q], field(q, ^key) != any(quantified_value))
       {:not, {:ne, nil}} -> dynamic([q], is_nil(field(q, ^key)))
       {:ne, nil} -> dynamic([q], not is_nil(field(q, ^key)))
+      {:not, {:ne, {:value, wrapped_value}}} -> dynamic([q], field(q, ^key) == ^wrapped_value)
+      {:ne, {:value, wrapped_value}} -> dynamic([q], field(q, ^key) != ^wrapped_value)
       {:not, {:ne, value}} -> dynamic([q], field(q, ^key) == ^value)
       {:ne, value} -> dynamic([q], field(q, ^key) != ^value)
       {:not, {:avg, {:>, value}}} -> dynamic([q], not (avg(field(q, ^key)) > ^value))
@@ -1717,11 +1909,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([_, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:>, value}} ->
         dynamic([_, q], not (field(q, ^key) > ^value))
 
       {:>, value} ->
         dynamic([_, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([_, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:>=, value}} ->
         dynamic([_, q], not (field(q, ^key) >= ^value))
@@ -1729,11 +1933,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([_, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:<, value}} ->
         dynamic([_, q], not (field(q, ^key) < ^value))
 
       {:<, value} ->
         dynamic([_, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([_, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:<=, value}} ->
         dynamic([_, q], not (field(q, ^key) <= ^value))
@@ -1741,11 +1957,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([_, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:gt, value}} ->
         dynamic([_, q], not (field(q, ^key) > ^value))
 
       {:gt, value} ->
         dynamic([_, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([_, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:gte, value}} ->
         dynamic([_, q], not (field(q, ^key) >= ^value))
@@ -1753,11 +1981,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([_, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:lt, value}} ->
         dynamic([_, q], not (field(q, ^key) < ^value))
 
       {:lt, value} ->
         dynamic([_, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([_, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:lte, value}} ->
         dynamic([_, q], not (field(q, ^key) <= ^value))
@@ -1783,6 +2023,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([_, q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) == ^wrapped_value)
+
       {:not, {:==, value}} ->
         dynamic([_, q], field(q, ^key) != ^value)
 
@@ -1806,6 +2052,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([_, q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) == ^wrapped_value)
 
       {:not, {:eq, value}} ->
         dynamic([_, q], field(q, ^key) != ^value)
@@ -1831,6 +2083,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([_, q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) != ^wrapped_value)
+
       {:not, {:!=, value}} ->
         dynamic([_, q], field(q, ^key) == ^value)
 
@@ -1854,6 +2112,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([_, q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([_, q], field(q, ^key) != ^wrapped_value)
 
       {:not, {:ne, value}} ->
         dynamic([_, q], field(q, ^key) == ^value)
@@ -2356,11 +2620,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:>, value}} ->
         dynamic([_, _, q], not (field(q, ^key) > ^value))
 
       {:>, value} ->
         dynamic([_, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:>=, value}} ->
         dynamic([_, _, q], not (field(q, ^key) >= ^value))
@@ -2368,11 +2644,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:<, value}} ->
         dynamic([_, _, q], not (field(q, ^key) < ^value))
 
       {:<, value} ->
         dynamic([_, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:<=, value}} ->
         dynamic([_, _, q], not (field(q, ^key) <= ^value))
@@ -2380,11 +2668,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:gt, value}} ->
         dynamic([_, _, q], not (field(q, ^key) > ^value))
 
       {:gt, value} ->
         dynamic([_, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:gte, value}} ->
         dynamic([_, _, q], not (field(q, ^key) >= ^value))
@@ -2392,11 +2692,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:lt, value}} ->
         dynamic([_, _, q], not (field(q, ^key) < ^value))
 
       {:lt, value} ->
         dynamic([_, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:lte, value}} ->
         dynamic([_, _, q], not (field(q, ^key) <= ^value))
@@ -2422,6 +2734,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
+
       {:not, {:==, value}} ->
         dynamic([_, _, q], field(q, ^key) != ^value)
 
@@ -2445,6 +2763,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
 
       {:not, {:eq, value}} ->
         dynamic([_, _, q], field(q, ^key) != ^value)
@@ -2470,6 +2794,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) != ^wrapped_value)
+
       {:not, {:!=, value}} ->
         dynamic([_, _, q], field(q, ^key) == ^value)
 
@@ -2493,6 +2823,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([_, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([_, _, q], field(q, ^key) != ^wrapped_value)
 
       {:not, {:ne, value}} ->
         dynamic([_, _, q], field(q, ^key) == ^value)
@@ -2995,11 +3331,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) > ^value))
 
       {:>, value} ->
         dynamic([_, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) >= ^value))
@@ -3007,11 +3355,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) < ^value))
 
       {:<, value} ->
         dynamic([_, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) <= ^value))
@@ -3019,11 +3379,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) > ^value))
 
       {:gt, value} ->
         dynamic([_, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) >= ^value))
@@ -3031,11 +3403,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) < ^value))
 
       {:lt, value} ->
         dynamic([_, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, q], not (field(q, ^key) <= ^value))
@@ -3061,6 +3445,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, q], field(q, ^key) != ^value)
 
@@ -3084,6 +3474,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, q], field(q, ^key) != ^value)
@@ -3109,6 +3505,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^wrapped_value)
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^value)
 
@@ -3132,6 +3534,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) != ^wrapped_value)
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, q], field(q, ^key) == ^value)
@@ -3634,11 +4042,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:>, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -3646,11 +4066,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:<, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -3658,11 +4090,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:gt, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -3670,11 +4114,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:lt, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -3700,6 +4156,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) != ^value)
 
@@ -3723,6 +4185,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) != ^value)
@@ -3748,6 +4216,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^value)
 
@@ -3771,6 +4245,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, q], field(q, ^key) == ^value)
@@ -4273,11 +4753,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:>, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -4285,11 +4777,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:<, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -4297,11 +4801,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -4309,11 +4825,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -4339,6 +4867,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -4362,6 +4896,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) != ^value)
@@ -4387,6 +4927,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -4410,6 +4956,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) == ^value)
@@ -4912,11 +5464,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -4924,11 +5488,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -4936,11 +5512,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -4948,11 +5536,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -4978,6 +5578,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -5001,6 +5607,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^value)
@@ -5026,6 +5638,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -5049,6 +5667,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) == ^value)
@@ -5551,11 +6175,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -5563,11 +6199,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -5575,11 +6223,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -5587,11 +6247,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -5617,6 +6289,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -5640,6 +6318,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^value)
@@ -5665,6 +6349,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -5688,6 +6378,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) == ^value)
@@ -6190,11 +6886,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -6202,11 +6910,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -6214,11 +6934,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -6226,11 +6958,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -6256,6 +7000,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -6279,6 +7029,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
@@ -6304,6 +7060,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -6327,6 +7089,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
@@ -6829,11 +7597,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:>, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:>, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:>=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:>=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -6841,11 +7621,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:<, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:<, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:<=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:<=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -6853,11 +7645,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:<=, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^value)
 
+      {:not, {:gt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^wrapped_value))
+
+      {:gt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^wrapped_value)
+
       {:not, {:gt, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > ^value))
 
       {:gt, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:gte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^wrapped_value))
+
+      {:gte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^wrapped_value)
 
       {:not, {:gte, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= ^value))
@@ -6865,11 +7669,23 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:gte, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:lt, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^wrapped_value))
+
+      {:lt, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^wrapped_value)
+
       {:not, {:lt, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < ^value))
 
       {:lt, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:lte, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^wrapped_value))
+
+      {:lte, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= ^wrapped_value)
 
       {:not, {:lte, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= ^value))
@@ -6895,6 +7711,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:==, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
 
+      {:not, {:==, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:==, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
       {:not, {:==, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
 
@@ -6918,6 +7740,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:eq, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], is_nil(field(q, ^key)))
+
+      {:not, {:eq, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
+      {:eq, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
 
       {:not, {:eq, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^value)
@@ -6943,6 +7771,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:!=, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
 
+      {:not, {:!=, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:!=, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
+
       {:not, {:!=, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)
 
@@ -6966,6 +7800,12 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:ne, nil} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not is_nil(field(q, ^key)))
+
+      {:not, {:ne, {:value, wrapped_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^wrapped_value)
+
+      {:ne, {:value, wrapped_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) != ^wrapped_value)
 
       {:not, {:ne, value}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) == ^value)

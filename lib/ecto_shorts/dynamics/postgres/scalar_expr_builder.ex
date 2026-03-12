@@ -123,6 +123,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
   defp comparison_conditions({bind_op, bind_to_var}, q_var, key_var, value_var, context) do
     quantified_value_var = Macro.var(:quantified_value, context)
+    wrapped_value_var = Macro.var(:wrapped_value, context)
 
     plain_conditions =
       Enum.flat_map(@comparison_directives, fn
@@ -206,6 +207,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                     {bind_op, bind_to_var},
                     q_var,
                     quote_expr(op, q_var, {key_var, nil}),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {:not, {unquote(op), {:value, unquote(wrapped_value_var)}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(op, q_var, {key_var, {:value, wrapped_value_var}}),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {unquote(op), {:value, unquote(wrapped_value_var)}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(op, q_var, {key_var, {:value, wrapped_value_var}}),
                     context
                   )
                 )
@@ -319,6 +342,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
                 )
             end,
             quote do
+              {:not, {unquote(op), {:value, unquote(wrapped_value_var)}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(op, q_var, {key_var, {:value, wrapped_value_var}}),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {unquote(op), {:value, unquote(wrapped_value_var)}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(op, q_var, {key_var, {:value, wrapped_value_var}}),
+                    context
+                  )
+                )
+            end,
+            quote do
               {:not, {unquote(op), unquote(value_var)}} ->
                 unquote(
                   Helpers.dyn_expr(
@@ -344,6 +389,28 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
         op ->
           [
+            quote do
+              {:not, {unquote(op), {:value, unquote(wrapped_value_var)}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(op, q_var, {key_var, {:value, wrapped_value_var}}),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {unquote(op), {:value, unquote(wrapped_value_var)}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(op, q_var, {key_var, {:value, wrapped_value_var}}),
+                    context
+                  )
+                )
+            end,
             quote do
               {:not, {unquote(op), unquote(value_var)}} ->
                 unquote(
@@ -998,6 +1065,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     end
   end
 
+  def quote_expr(op, q_var, {key_var, {:value, value_var}}) do
+    field_expr =
+      quote do
+        field(unquote(q_var), ^unquote(key_var))
+      end
+
+    quote do
+      unquote(Helpers.special_form_ast(field_expr, op, value_expr_ast(q_var, value_var)))
+    end
+  end
+
   def quote_expr(op, q_var, {key_var, value_var}) do
     field_expr =
       quote do
@@ -1048,6 +1126,51 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   defp aggregate_expr(:sum, q_var, key_var) do
     quote do
       sum(field(unquote(q_var), ^unquote(key_var)))
+    end
+  end
+
+  defp value_expr_ast(q_var, {:field, field_name}) when is_atom(field_name) do
+    quote do
+      field(unquote(q_var), ^unquote(field_name))
+    end
+  end
+
+  defp value_expr_ast(_q_var, {:value, value}) do
+    Helpers.pinned_ast(value)
+  end
+
+  defp value_expr_ast(q_var, {op, [left, right]}) when op in [:+, :-, :*, :/] do
+    left_ast = value_expr_ast(q_var, left)
+    right_ast = value_expr_ast(q_var, right)
+
+    arithmetic_expr_ast(op, left_ast, right_ast)
+  end
+
+  defp value_expr_ast(_q_var, value) do
+    Helpers.pinned_ast(value)
+  end
+
+  defp arithmetic_expr_ast(:+, left_ast, right_ast) do
+    quote do
+      unquote(left_ast) + unquote(right_ast)
+    end
+  end
+
+  defp arithmetic_expr_ast(:-, left_ast, right_ast) do
+    quote do
+      unquote(left_ast) - unquote(right_ast)
+    end
+  end
+
+  defp arithmetic_expr_ast(:*, left_ast, right_ast) do
+    quote do
+      unquote(left_ast) * unquote(right_ast)
+    end
+  end
+
+  defp arithmetic_expr_ast(:/, left_ast, right_ast) do
+    quote do
+      unquote(left_ast) / unquote(right_ast)
     end
   end
 end

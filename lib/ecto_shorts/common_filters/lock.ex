@@ -1,11 +1,10 @@
 defmodule EctoShorts.CommonFilters.Lock do
-
   alias EctoShorts.Compiler
   alias EctoShorts.Config
   alias EctoShorts.Logger
   alias EctoShorts.QueryProvider
 
-   alias Ecto.Query
+  alias Ecto.Query
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.Lock"
@@ -41,7 +40,7 @@ defmodule EctoShorts.CommonFilters.Lock do
     end
   end
 
-   defp query_provider(params, opts) do
+  defp query_provider(params, opts) do
     params[:query_provider] || opts[:query_provider] || Config.query_provider()
   end
 
