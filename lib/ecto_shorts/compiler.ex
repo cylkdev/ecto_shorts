@@ -30,7 +30,7 @@ defmodule EctoShorts.Compiler do
         content = Generator.generate_module(builder, module_name, opts)
         :ok = Generator.write_file(dest_file, content)
 
-        {[dest_file | paths], Map.put(meta, module_name, dest_file)}
+        {[dest_file | paths], Map.put(meta, dest_file, module_name)}
       end)
 
     paths

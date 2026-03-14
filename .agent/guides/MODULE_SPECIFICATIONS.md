@@ -20,6 +20,12 @@ Use the module specification to drive review. Read the specification before read
 
 Always keep module specifications current. They remain part of the public interface for as long as the module exists.
 
+## Use Module Specifications In ExecPlans
+
+Before describing implementation steps, the `ExecPlan` should make clear which one module owns the behavior and which nearby modules participate without owning it. The purpose of that section is not to inventory files. It is to let the reader see where the behavior lives, what that module is responsible for, what it is not responsible for, which public entry points matter, which shared rules and failure behavior must continue to hold, and how the surrounding modules hand work to one another.
+
+Naming files to change is not a substitute for that explanation. If the implementer could still ask which module actually owns the behavior, the plan has not established the module boundary clearly enough.
+
 ## Requirements
 
 A public module specification is acceptable only when all of the following are true.
@@ -125,6 +131,14 @@ Write the per-function `@doc`, `@spec`, and examples for each public entry point
 Add at least one module-level example that shows the module in realistic use from start to finish.
 
 Read the `@moduledoc`, public types, public function documentation, and examples without reading the implementation. If a beginner would still need to inspect private functions to decide whether the module fits the problem or how to begin using it, treat the specification as incomplete.
+
+## Compact ExecPlan Module Spec Template
+
+In plans for features, bug fixes, and behavior-preserving refactors that touch a public boundary, the module-level section should usually say enough for the reader to understand the module's responsibility, its boundary, the public entry points that matter, the shared rules or invariants that give the module its shape, the important handoffs to adjacent modules, and the public concepts that matter to the work. A brief module-level example often helps because it shows how the module is meant to be used rather than merely naming its parts.
+
+## Incomplete Module Specifications In Plans
+
+Module-level plan writing becomes weak when it begins with helper flow, file lists, or implementation internals instead of the responsibility the caller relies on. It also becomes weak when it never explains why this module is the right home for the behavior, when it leaves the nearby module boundaries implicit, or when it omits the shared invariants and failure behavior that the implementation is supposed to preserve. A junior implementer should be able to orient themselves from the plan alone.
 
 ## Good Example of a Module Specification
 
@@ -232,4 +246,3 @@ Read the `@moduledoc`, public types, public function documentation, and examples
     end
 
 This example shows the standard this document requires. The `@moduledoc` tells the caller what the module is for, what it is not for, where to start, the public model, and the shared failure rules. The public type names the validated page window. The public functions each keep their own focused contracts. The examples show both the happy path and an invalid-input path. Model new module specifications on this same structure: module role and shared rules in `@moduledoc`, reusable concepts in public types, per-function contracts in `@doc` and `@spec`, and concrete proof in examples.
-

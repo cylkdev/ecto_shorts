@@ -20,6 +20,12 @@ Apply these principles during review as direct checks on the validation record. 
 
 Re-evaluate the validation strategy whenever the code changes, the required claim changes, or the operating conditions change. Strengthen the validation method when the module becomes more critical, more concurrent, harder to reproduce consistently, or harder to reason about than the existing validation record assumes.
 
+## Use Testing Principles In ExecPlans
+
+A plan does not satisfy testing principles by listing test files alone. The validation section of an `ExecPlan` exists to connect each important claim to evidence and to say what that evidence does not settle. For ordinary behavior changes, that means the reader can see which command exercises which case, what claim the check is meant to support, what evidence should come back from it, and what uncertainty remains afterward. When a claim is carried by review instead of by a test, the plan should say so plainly and explain why review is enough for that part.
+
+For benchmark or compile-time work, the same idea still applies. The reader should be able to see what measurement command will be run, where it will be run, which baseline artifact or output matters, how the comparison will be judged, what threshold or decision rule makes the result acceptable, and which environmental assumptions might affect the reading.
+
 ## Requirements
 
 A testing approach is acceptable only when all of the following are true.
@@ -34,9 +40,11 @@ A testing approach is acceptable only when all of the following are true.
 
 - It does not choose testing as the only validation method when the required claim is correctness on all possible inputs.
 
-## How to Validate Changes
+## Operational Validation Workflow
 
-Validate changes in a fixed order. First, state the intended observable behaviour at the boundary you are changing, such as a public function, a returned tagged tuple, a changeset result, a database effect, or a process message. Second, review that behaviour statement and the planned code change to expose misunderstandings, missing cases, and incorrect assumptions. Third, write and run ExUnit tests for representative cases. Do not claim confidence in the change until the behaviour is stated, reviewed, and tested.
+Start validation by stating the observable behavior or claim at the boundary that matters, then name the failure modes or regressions that belong at that same boundary. From there, choose the right form of evidence for each claim, whether that is review, an automated test, a benchmark, or a stronger method. Write boundary-first checks before reaching inward, add narrower checks only when the boundary evidence does not answer the question, and then state plainly what each executed check established and what still remains unproven.
+
+The order matters because it keeps the validation attached to intent rather than to habit. "Run these existing test files" is not enough unless the plan also says what each one is meant to establish.
 
 State test results precisely. A passing ExUnit suite means that the executed cases behaved as expected. It does not establish correctness for inputs, process schedules, mailbox timing, external state, or runtime conditions that were not exercised. Do not describe passing tests as proof of correctness.
 
@@ -51,6 +59,10 @@ Do not count test functions. Count covered claims. A test is justified only if i
 For each test, state the exact claim it proves before keeping it. Write that claim as a specific behaviour or regression, not as a description of implementation steps. If you cannot state the claim precisely, do not keep the test.
 
 Stop adding tests when every listed behaviour, failure mode, and plausible regression introduced by the change is covered either by an ExUnit test or by explicit review. If an item is covered by review instead of a test, name that decision directly rather than leaving the gap implicit.
+
+## Required ExecPlan Validation Matrix
+
+The validation matrix should make it easy to see, for each important rule or claim, the boundary being checked, the proof method being used, the exact command or review step, what that evidence supports, and what it still does not prove. The specific layout may vary, but the reader should not have to guess how a claim connects to evidence or where the remaining uncertainty lives. If an important rule cannot be traced through that chain, the plan is incomplete.
 
 ## Use social methods as part of the test strategy
 
@@ -120,21 +132,9 @@ Record residual risk when it affects the decision to accept the change. Name unt
 
 Keep the distinction between evidence and certainty explicit. Do not let the validation record imply a stronger conclusion than the method supports.
 
-## How to Validate Changes
+## Incomplete Validation Sections In Plans
 
-Validate each change in a fixed order.
-
-State the intended behaviour first. State it clearly enough that another engineer can challenge it and determine whether the claim is complete.
-
-Choose the validation method next. Decide which parts of the change will be checked by review, which parts will be checked by tests, and whether any stronger method is required.
-
-Run review before the implementation is treated as settled. Use review early enough to expose misunderstanding, missing cases, and incorrect assumptions before the code hardens around them.
-
-Write boundary tests for the observable behaviour that matters at the changed boundary. Add narrower tests only when the boundary tests show that a smaller piece of logic must be checked directly.
-
-After the tests run, state exactly what those tests established. Name the remaining uncertainty instead of leaving it implicit.
-
-If the remaining uncertainty is larger than the claim the change needs to support, strengthen the validation method. Do not treat the current tests as sufficient when they do not justify the required conclusion.
+Validation sections in plans become weak when they list files without named claims, speak about proof without naming the executed cases, use benchmarks without a decision rule, or rely on words such as "faster", "safer", or "better covered" without stating the evidence behind them. They are also weak when residual risk is left implicit or when existing coverage is treated as sufficient without saying which behavior it actually covers. A good validation section lets the reader see, at a glance, what has been checked and what still remains uncertain.
 
 ## Good Example of Applying Testing Principles
 

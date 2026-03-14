@@ -14,4 +14,4 @@ For each action include:
 3. why you chose that action over obvious alternatives,
 4. what evidence confirmed or changed your plan.
 
-Reference specific files, commands, outputs, and diffs. Be concise and factual. Focus on user-observable reasons that can be proven, not hidden internal reasoning.
+Reference specific files, commands, outputs, and diffs. Be clear, concise and factual. Focus on user-observable reasons that can be proven, not hidden internal reasoning.

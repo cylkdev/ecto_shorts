@@ -7,12 +7,10 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
   @equality_operators [
     :==,
-    :eq,
-    :!=,
-    :ne
+    :!=
   ]
 
-  @comparison_operators [:>, :>=, :<, :<=, :gt, :gte, :lt, :lte | @equality_operators]
+  @comparison_operators [:>, :>=, :<, :<= | @equality_operators]
 
   @aggregate_helpers [
     :avg,

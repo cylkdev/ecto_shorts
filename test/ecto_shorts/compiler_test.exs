@@ -1,8 +1,6 @@
 defmodule EctoShorts.CompilerTest do
   use ExUnit.Case, async: false
 
-  alias EctoShorts.Generator
-
   defp unique_module(name) do
     Module.concat([__MODULE__, :"#{name}#{System.unique_integer([:positive])}"])
   end
@@ -13,18 +11,19 @@ defmodule EctoShorts.CompilerTest do
         @behaviour EctoShorts.Generator.ClauseSpec
         @label unquote(label)
 
-        def keys, do: [unquote(key)]
+        def operators, do: [unquote(key)]
 
         def specs_for(spec_key, _selected_binding, _q_var, opts) do
           context = opts[:context]
           label = @label
+          negated_var = Macro.var(:negated, context)
           value_var = Macro.var(:value, context)
 
           [
             %EctoShorts.Generator.Blueprint{
               guard: nil,
               key: spec_key,
-              head: value_var,
+              head: [negated_var, value_var],
               body: quote(do: {unquote(label), unquote(value_var)})
             }
           ]
@@ -38,17 +37,18 @@ defmodule EctoShorts.CompilerTest do
       defmodule unquote(module) do
         @behaviour EctoShorts.Generator.ClauseSpec
 
-        def keys, do: unquote(keys)
+        def operators, do: unquote(keys)
 
         def specs_for(spec_key, _selected_binding, _q_var, opts) do
           context = opts[:context]
+          negated_var = Macro.var(:negated, context)
           value_var = Macro.var(:value, context)
 
           [
             %EctoShorts.Generator.Blueprint{
               guard: nil,
               key: spec_key,
-              head: value_var,
+              head: [negated_var, value_var],
               body: quote(do: {unquote(spec_key), unquote(value_var)})
             }
           ]
@@ -62,17 +62,18 @@ defmodule EctoShorts.CompilerTest do
       defmodule unquote(module) do
         @behaviour EctoShorts.Generator.ClauseSpec
 
-        def keys, do: [unquote(key)]
+        def operators, do: [unquote(key)]
 
         def specs_for(spec_key, _selected_binding, _q_var, opts) do
           context = opts[:context]
+          negated_var = Macro.var(:negated, context)
           value_var = Macro.var(:value, context)
 
           [
             %EctoShorts.Generator.Blueprint{
               guard: nil,
               key: spec_key,
-              head: value_var,
+              head: [negated_var, value_var],
               body: quote(do: this_will_not_compile(unquote(value_var)))
             }
           ]
@@ -115,6 +116,39 @@ defmodule EctoShorts.CompilerTest do
     caller_module
   end
 
+  defp generated_root do
+    Path.join(to_string(:code.priv_dir(:ecto_shorts)), "generated")
+  end
+
+  defp expected_generated_path(builder_module, compiled_module, opts \\ []) do
+    relative_path =
+      case Keyword.fetch(opts, :path) do
+        {:ok, path} ->
+          path
+
+        :error ->
+          Path.join(module_to_path(builder_module), module_to_filename(compiled_module))
+      end
+
+    Path.join(generated_root(), relative_path)
+  end
+
+  defp module_to_path(module) do
+    module
+    |> Module.split()
+    |> Enum.drop(1)
+    |> Enum.map(&Macro.underscore/1)
+    |> Enum.join("/")
+  end
+
+  defp module_to_filename(module) do
+    module
+    |> Module.split()
+    |> List.last()
+    |> Macro.underscore()
+    |> Kernel.<>(".ex")
+  end
+
   test "use EctoShorts.Compiler with one generated module compiles the module without exposing dynamic_expr/3" do
     builder_module = unique_module("SingleBuilder")
     compiled_module = unique_module("SingleCompiled")
@@ -126,8 +160,8 @@ defmodule EctoShorts.CompilerTest do
       )
 
     refute function_exported?(caller_module, :dynamic_expr, 3)
-    assert {:single, 1} = compiled_module.dynamic_expr({:as, :post}, :id, 1)
-    assert is_nil(compiled_module.dynamic_expr({:as, :post}, :missing, 1))
+    assert {:single, 1} = compiled_module.dynamic_expr({:as, :post}, :id, nil, 1)
+    assert is_nil(compiled_module.dynamic_expr({:as, :post}, :missing, nil, 1))
   end
 
   test "multiple generated modules are compiled in one pass without injecting routing" do
@@ -149,8 +183,8 @@ defmodule EctoShorts.CompilerTest do
       )
 
     refute function_exported?(caller_module, :dynamic_expr, 3)
-    assert {:first, 1} = first_compiled.dynamic_expr({:as, :post}, :id, 1)
-    assert {:second, "post"} = second_compiled.dynamic_expr({:as, :post}, :slug, "post")
+    assert {:first, 1} = first_compiled.dynamic_expr({:as, :post}, :id, nil, 1)
+    assert {:second, "post"} = second_compiled.dynamic_expr({:as, :post}, :slug, nil, "post")
 
     assert String.starts_with?(
              List.to_string(:code.which(first_compiled)),
@@ -181,8 +215,8 @@ defmodule EctoShorts.CompilerTest do
         ]
       )
 
-    assert is_nil(first_compiled.dynamic_expr({:as, :post}, :missing, 1))
-    assert is_nil(second_compiled.dynamic_expr({:as, :post}, :missing, 1))
+    assert is_nil(first_compiled.dynamic_expr({:as, :post}, :missing, nil, 1))
+    assert is_nil(second_compiled.dynamic_expr({:as, :post}, :missing, nil, 1))
   end
 
   test "multiple explicit modules can split one builder into separate compiled modules" do
@@ -193,13 +227,13 @@ defmodule EctoShorts.CompilerTest do
     _caller_module =
       compile_with_modules!(
         [
-          [builder: builder_module, module: first_compiled, keys: [:first_key]],
-          [builder: builder_module, module: second_compiled, keys: [:second_key]]
+          [builder: builder_module, module: first_compiled, operators: [:first_key]],
+          [builder: builder_module, module: second_compiled, operators: [:second_key]]
         ],
         [multi_key_builder_definition(builder_module, [:first_key, :second_key])]
       )
 
-    assert {:second_key, 2} = second_compiled.dynamic_expr({:as, :post}, :second_key, 2)
+    assert {:second_key, 2} = second_compiled.dynamic_expr({:as, :post}, :second_key, nil, 2)
   end
 
   test "omitting :modules does not inject dynamic_expr/3" do
@@ -208,23 +242,18 @@ defmodule EctoShorts.CompilerTest do
     refute function_exported?(caller_module, :dynamic_expr, 3)
   end
 
-  test "compiler passes flattened path and filename options to the generator" do
+  test "compiler writes generated files to the configured path" do
     builder_module = unique_module("CustomPathBuilder")
     compiled_module = unique_module("CustomPathCompiled")
 
-    expected_path =
-      Generator.module_file_path(builder_module, compiled_module,
-        path: "custom/path",
-        filename: "custom_compiled.ex"
-      )
+    expected_path = expected_generated_path(builder_module, compiled_module, path: "custom/path")
 
     compile_with_modules!(
       [
         [
           builder: builder_module,
           module: compiled_module,
-          path: "custom/path",
-          filename: "custom_compiled.ex"
+          path: "custom/path"
         ]
       ],
       [builder_definition(builder_module, :id, :custom)]
@@ -236,7 +265,7 @@ defmodule EctoShorts.CompilerTest do
   test "compile failures include the generated module and path" do
     builder_module = unique_module("BrokenBuilder")
     compiled_module = unique_module("BrokenCompiled")
-    expected_path = Generator.module_file_path(builder_module, compiled_module)
+    expected_path = expected_generated_path(builder_module, compiled_module)
 
     error =
       assert_raise CompileError, fn ->

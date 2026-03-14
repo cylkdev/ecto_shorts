@@ -20,6 +20,12 @@ Use the specification to drive tests and review. Write tests from the contract, 
 
 Keep function specifications current. When you notice a change in behaviour or contract, update the specification immediately. The specification is the source of truth for the public interface.
 
+## Use Function Specifications In ExecPlans
+
+When a task changes, preserves, or depends on a public function contract, the `ExecPlan` should carry a compact version of that contract so the reader can understand the promise before opening the implementation. The point of the plan-time specification is the same as the point of the final specification: to make the function's accepted inputs, defaults, return shapes, failure behaviour, important omitted-input cases, and preserved guarantees visible while the design is still being settled.
+
+That plan-time version may be shorter than the final code documentation, but it still has to make the public promise legible. If a caller could reasonably ask what happens when an argument is missing, `nil`, empty, invalid, or unsupported, and the plan does not answer, the plan has not made the function contract clear enough yet.
+
 ## Requirements
 
 A public function specification is acceptable only when all of the following are true.
@@ -127,6 +133,14 @@ Third, write the `@doc` that defines behaviour, caller obligations, options, def
 Fourth, add examples. Include at least one success example. Include edge or failure examples when those cases are part of the contract.
 
 Fifth, read the `@doc`, `@spec`, and examples without reading the implementation. If a beginner still has to inspect the function body to use the function correctly, the specification is incomplete.
+
+## Compact ExecPlan Function Spec Template
+
+For complex plans, a compact function specification is usually enough when it names the function, states its caller-facing purpose, shows the accepted inputs and defaults, explains the return shapes and failure model, describes omitted-input behavior where it matters, and gives concrete examples alongside the guarantees that must remain unchanged. The exact layout matters less than whether a reader can understand the public promise without having to infer it from surrounding code.
+
+## Incomplete Function Specifications In Plans
+
+A function specification in a plan becomes weak when it leans on phrases such as "keeps current behavior" or "returns the same result as before" without showing examples or naming the actual result shapes. It is also weak when it treats existing tests as a substitute for stating the contract, when its examples gesture at behavior without showing exact calls and outcomes, or when it names types without making the caller-visible rules clear. The plan should stand on its own for a beginner reader who needs to understand the function promise before implementation begins.
 
 ## Good Example of a Function Specification
 

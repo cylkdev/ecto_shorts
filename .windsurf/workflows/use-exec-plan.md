@@ -1,0 +1,6 @@
+---
+description: When doing work that could change externally observable behavior in this repo, you should create an ExecPlan (per .agent/PLANS.md) before you start coding, and then keep that plan continuously updated as you move from discovery to design to implementation and verification. Use the ExecPlan as the single source of truth; record the user-facing intent and non-goals, identify the authoritative code paths and boundaries, enumerate risks and invariants that must not change, and define concrete proof/verification steps (tests, benchmarks, or targeted checks) that will demonstrate success. As you learn new information or the approach shifts, revise the ExecPlan rather than letting it drift; make sure it always reflects the current chosen design, the remaining work, and the required validation. Prefer small, behavior-preserving steps with explicit checkpoints, and do not consider the task complete until the ExecPlan’s verification criteria have been executed and the plan is marked done with outcomes captured.
+auto_execution_mode: 0
+---
+
+When planning a feature, implementing a feature, or refactoring behavior-bearing code, create and maintain an `ExecPlan` (as defined in `.agent/PLANS.md`). Use that `ExecPlan` as the working source of truth from initial planning through design, implementation, and verification.
