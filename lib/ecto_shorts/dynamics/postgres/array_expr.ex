@@ -1,3 +1,199 @@
 defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
+  alias Ecto.Query
+  alias EctoShorts.Compiler
+
+  require Ecto.Query
+
+  {target_binding_var, binding_patterns} =
+    Compiler.query_binding_contracts(10, __MODULE__)
+
+  for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
+    def dynamic_expr(unquote(quoted_binding_head), key, negated, term, _opts) do
+      expr =
+        case normalize_term(term) do
+          {:==, values} when is_list(values) ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              field(unquote(target_binding_var), ^key) == ^values
+            )
+
+          {:!=, values} when is_list(values) ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              field(unquote(target_binding_var), ^key) != ^values
+            )
+
+          {:==, value} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              ^value in field(unquote(target_binding_var), ^key)
+            )
+
+          {:!=, value} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              ^value not in field(unquote(target_binding_var), ^key)
+            )
+
+          {:in, values} when is_list(values) ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? && ?", field(unquote(target_binding_var), ^key), ^values)
+            )
+
+          {:in, value} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              ^value in field(unquote(target_binding_var), ^key)
+            )
+
+          {:>, value} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? < ANY(?)", ^value, field(unquote(target_binding_var), ^key))
+            )
+
+          {:>=, value} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? <= ANY(?)", ^value, field(unquote(target_binding_var), ^key))
+            )
+
+          {:<, value} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? > ANY(?)", ^value, field(unquote(target_binding_var), ^key))
+            )
+
+          {:<=, value} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? >= ANY(?)", ^value, field(unquote(target_binding_var), ^key))
+            )
+
+          {:lower, value} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE lower(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
+          {:upper, value} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE upper(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
+          {:==, {:lower, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE lower(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
+          {:==, {:upper, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE upper(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
+          {:!=, {:lower, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "NOT EXISTS (SELECT 1 FROM unnest(?) AS t WHERE lower(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
+          {:!=, {:upper, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "NOT EXISTS (SELECT 1 FROM unnest(?) AS t WHERE upper(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
+          {:like, value} ->
+            patterns = normalize_patterns(value)
+
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t LIKE ANY (?))",
+                field(unquote(target_binding_var), ^key),
+                ^patterns
+              )
+            )
+
+          {:ilike, value} ->
+            patterns = normalize_patterns(value)
+
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t ILIKE ANY (?))",
+                field(unquote(target_binding_var), ^key),
+                ^patterns
+              )
+            )
+
+          _ ->
+            nil
+        end
+
+      if negated === :not and not is_nil(expr) do
+        Query.dynamic([unquote_splicing(quoted_binding_body)], not (^expr))
+      else
+        expr
+      end
+    end
+  end
+
   def dynamic_expr(_selected_binding, _key, _negated, _term, _opts), do: nil
+
+  defp normalize_term({op, value}) do
+    {normalize_operator(op), value}
+  end
+
+  defp normalize_term(value) when is_list(value) do
+    {:==, value}
+  end
+
+  defp normalize_term(value) do
+    {:in, value}
+  end
+
+  defp normalize_operator(:eq), do: :==
+  defp normalize_operator(:ne), do: :!=
+  defp normalize_operator(:gt), do: :>
+  defp normalize_operator(:gte), do: :>=
+  defp normalize_operator(:lt), do: :<
+  defp normalize_operator(:lte), do: :<=
+  defp normalize_operator(op), do: op
+
+  defp normalize_patterns(values) when is_list(values) do
+    Enum.map(values, &"%#{&1}%")
+  end
+
+  defp normalize_patterns(value) do
+    ["%#{value}%"]
+  end
 end

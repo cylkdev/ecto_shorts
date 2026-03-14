@@ -1,4 +1,4 @@
-defmodule EctoShorts.CompilerTest.CustomPathCompiled1987 do
+defmodule EctoShorts.CompilerTest.BrokenCompiled1538 do
   @moduledoc false
   import Ecto.Query, only: [dynamic: 2]
 
@@ -10,47 +10,47 @@ defmodule EctoShorts.CompilerTest.CustomPathCompiled1987 do
 
   @doc false
   def dynamic_expr({:as, binding_alias}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 1}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 2}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 3}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 4}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 5}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 6}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 7}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 8}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 9}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr({:at, 10}, :id, negated, value) do
-    {:custom, value}
+    this_will_not_compile(value)
   end
 
   def dynamic_expr(_, _, _, _) do

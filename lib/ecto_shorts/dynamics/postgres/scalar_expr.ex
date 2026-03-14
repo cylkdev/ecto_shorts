@@ -45,6 +45,10 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     module.dynamic_expr(selected_binding, key, negated, {op, term})
   end
 
+  defp normalize_term({transform, value}) when transform in [:lower, :upper] do
+    {:==, {transform, value}}
+  end
+
   defp normalize_term({op, value}) do
     normalized_op = normalize_operator(op)
     {normalized_op, normalize_term_value(normalized_op, value)}
