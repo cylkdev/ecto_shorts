@@ -141,9 +141,6 @@ defmodule EctoShorts.MixProject do
           EctoShorts.CommonFilters.WithTies,
           EctoShorts.CommonFilters.Where
         ],
-        "Fragment Providers": [
-          EctoShorts.CommonFilters.QueryProviders.NoOp
-        ],
         "Configuration & Utilities": [
           EctoShorts.Config,
           EctoShorts.Logger,

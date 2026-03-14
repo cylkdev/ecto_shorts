@@ -756,7 +756,7 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
-          query_provider: EctoShorts.CommonFilters.QueryProviders.NoOp
+          query_provider: EctoShorts.TestNoOpQueryProvider
         )
 
       assert_query(expected, actual)
@@ -3062,7 +3062,7 @@ defmodule EctoShorts.CommonFiltersTest do
         CommonFilters.convert_params_to_filter(
           Post,
           %{lock: %{name: :provider_for_update}},
-          query_provider: EctoShorts.CommonFilters.QueryProviders.NoOp
+          query_provider: EctoShorts.TestNoOpQueryProvider
         )
 
       assert_query(expected, actual)
