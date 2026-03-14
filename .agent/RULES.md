@@ -278,6 +278,11 @@ NON-NEGOTIABLE REQUIREMENTS:
   moving planning authority to a different artifact, and implementing code are each authorized only when the
   user explicitly asks for that action or explicitly approves it after you ask.
 
+* Keep proof work, runtime work, and approval as separate gates. Do not compress "I need stronger proof", "I
+  need approval for the next repo edit", and "I should not make the runtime change yet" into one blocker
+  sentence. State which gate is technical, which gate is approval, and which concrete next action each gate
+  controls. A blocker explanation is wrong if it makes an ordered sequence sound paradoxical or self-blocking.
+
 * Do not infer authorization from vague continuation language. Words such as "retry", "continue", "update
   it", "fix it", or "go again" do not by themselves tell you whether the user wants investigation,
   explanation, a plan update, a new plan artifact, or implementation. If more than one next action is
@@ -289,6 +294,11 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 * If the user's approval is unclear, assume you do not have it. Ask one direct question: "Do you want me to
   start implementing this plan?" Then wait for the answer.
+
+* Ask for the narrowest next approval that matches the real next action. If the next step is proof work such
+  as tightening a test boundary, correcting an ExecPlan, or gathering stronger evidence, ask for approval for
+  that proof work. Do not ask for or imply approval for a runtime behavior change before the proof is
+  trustworthy enough to justify that change.
 
 * If you begin acting without explicit approval, stop immediately. State the mistake plainly, list every file
   you changed, and let the user decide whether those changes should be reverted or kept for review.
@@ -404,6 +414,31 @@ NON-NEGOTIABLE REQUIREMENTS:
   explanation anchored to the goal, make the blocker explicit, and separate the core problem from secondary
   noise. If you cannot clearly connect the error to the task, stop and clarify the problem before you explain
   it.
+
+* When you stop because progress is blocked or approval is missing, report the current state as a concrete
+  snapshot. State separately: what changed, what did not change, what the current owner code says, what the
+  current proof or test surface says, what is still unproven, and what exact next action is needed. If the
+  reader could still ask "what is the current repo state?" or "what do you actually need from me?", the stop
+  report is incomplete.
+
+* When conflicting evidence is the blocker, name the evidence classes separately before you summarize the
+  blocker. If code says one thing, docs say another, and a new test says a third, list each source and the
+  conclusion it supports. Then state the blocker as the unresolved mismatch itself. Do not collapse
+  conflicting evidence into one vague sentence about being blocked.
+
+* Distinguish proof work from runtime work every time you describe a blocked task. Proof work changes what
+  evidence you can trust. Runtime work changes behavior. If the next step is to strengthen proof before
+  deciding whether any runtime edit is needed, say that plainly. Do not describe those two layers as if they
+  were one action.
+
+* If some repo artifacts changed and the runtime owner code did not, say that explicitly. Name the changed
+  plan or test files, name the unchanged owner file or boundary, and explain why that matters for the current
+  state. Do not make the reader infer whether the live behavior actually changed.
+
+* If the user responds to a blocker explanation by asking what the current state is or what action is actually
+  needed, treat that as evidence the explanation is missing layers. Rebuild it from the concrete state:
+  changed artifacts, unchanged owner code, current code truth, current proof truth, and the next requested
+  action. Do not defend or repeat the earlier compressed wording.
 
 * When you finish a task, do not stop at a conclusion or a vague summary. Close the loop by making the change
   legible. Explain what was true before, what is true now, and how the work moved from one state to the other.
@@ -669,6 +704,12 @@ NON-NEGOTIABLE REQUIREMENTS:
   proved, what is still a decision, and why the open question is the right one. If any of that is still
   implied, the explanation is not ready.
 
+* Before sending a blocker, stop-state, or approval-request explanation, verify that it separates current repo
+  state, proof status, runtime-edit status, and approval status. The reader should be able to point to what
+  changed, what stayed unchanged, what is already proved, what is still unproven, what the next technical step
+  is, and what explicit approval is being requested. If the message could still sound paradoxical or
+  self-blocking, rewrite it before sending.
+
 * Before sending a clarification question, explanation, or recommendation, read it as if the reader is a
   complete beginner with only the working tree and this one message. Check five things. Can they see the
   current verified state immediately? Can they tell what the actual decision is? Can they compare the options
@@ -809,6 +850,13 @@ examples, the relevant path through the touched functions or modules, the exact 
 handoffs, what is already proved, and what is still a decision. If the real open question cannot be seen from
 the plan alone, the plan is not ready.
 
+A plan is not complete when a paused slice or blocker depends on proof work that is not distinguished from
+runtime work. If the next step is to strengthen evidence before deciding whether behavior must change, the
+ExecPlan must state what changed, what owner code remains unchanged, what the current code path suggests, what
+the current proof does and does not establish, and what narrower next step follows. If the reader cannot tell
+whether the work is blocked on proof quality, on approval for the next repo edit, or on an actual runtime
+decision, the plan is not ready.
+
 If those things are only implied or pushed off onto existing code and tests, the `ExecPlan` is not ready.
 
 ## Coding Guidelines
@@ -899,28 +947,34 @@ stay current.
   where similar inputs diverge, what current behavior is already proved, and what decision is still open. If
   you cannot explain the fork this concretely, you are not ready to choose an implementation shape.
 
-16. Write behaviour specifications for any replaceable collaborator. If the task touches an adapter, provider,
+16. If the task pauses on conflicting evidence or inadequate proof, write a stop-state snapshot before you
+   choose the next edit. Record what repo files changed, what runtime owner code did not change, what the
+   current code says, what the current proof says, what remains unproven, whether the next step is proof work
+   or runtime work, and whether that next repo edit needs explicit approval. Do not describe proof-tightening
+   and runtime change as the same blocked action.
+
+17. Write behaviour specifications for any replaceable collaborator. If the task touches an adapter, provider,
   callback module, or implementation behind an abstraction, define the contract. State what each callback
   receives, what it must return, what errors look like, and what every implementation must preserve. If two
   implementations could both satisfy your words while behaving differently in production, the behaviour spec
   is too loose.
 
-17. Refresh syntax, idiom, and local style before you write code. Re-open the nearest comparable repo code and
+18. Refresh syntax, idiom, and local style before you write code. Re-open the nearest comparable repo code and
   the current official docs for any language feature, macro, DSL, or library form the change depends on. Treat
   remembered syntax and remembered style as unverified until current evidence confirms them. If the intended
   shape is not supported by the repo or the authoritative docs, do not write it.
 
-18. Generate at least three candidate implementation shapes before you choose one. Compare them for local style
+19. Generate at least three candidate implementation shapes before you choose one. Compare them for local style
   alignment, syntactic validity, doc support, explicitness, and minimality. Choose the simplest valid local
   shape. Record why the other two lose so the final implementation is a deliberate decision, not the first
   remembered idea.
 
-19. Choose the most minimal implementation shape before you write code. Start with the direct, explicit code a
+20. Choose the most minimal implementation shape before you write code. Start with the direct, explicit code a
   complete beginner could understand at a glance, using the public boundary, public examples, and owning
   module already established in the plan. Do not begin with shared helpers, generic infrastructure, implicit
   normalization, reusable abstractions, or optimization.
 
-20. Add abstraction or optimization only after the simpler version proves insufficient. If you introduce a
+21. Add abstraction or optimization only after the simpler version proves insufficient. If you introduce a
   helper, indirection layer, compact transformation, generalized shape handling, or performance-oriented
   path, point to the concrete duplication, conflicting responsibility, or measured pressure that requires it.
   Future reuse, taste, or cleverness is not enough.
@@ -940,30 +994,30 @@ changes while the task boundary, examples, preserved behavior, or required funct
 missing or unresolved. The point of writing them first is to prevent the implementation from becoming the
 place where the meaning of the task is decided.
 
-21. Perform the final pre-execution review immediately before you begin tests or code. Re-read the governing
+22. Perform the final pre-execution review immediately before you begin tests or code. Re-read the governing
     `ExecPlan` from scratch and verify that it is still current, unambiguous, and self-sufficient. Remove or
     correct stale references, stale examples, superseded options, and wording that no longer matches the
     repository, the dependency constraints, or the user's latest decisions. If the document still leaves room
     for multiple interpretations or still depends on chat context, stop and repair the plan before you
     continue.
 
-22. Pick the highest test boundary that proves the observable promise from step 2. Start with the public
+23. Pick the highest test boundary that proves the observable promise from step 2. Start with the public
     function,
     command, request, or workflow the caller actually uses. Do not start with a private helper unless the
     public boundary is impossible to exercise. This is your BDD anchor. The first test must fail because the
     promised behavior does not exist yet.
 
-23. Run the TDD loop in one-rule increments. Write one failing test for one rule. Run it and confirm it fails
+24. Run the TDD loop in one-rule increments. Write one failing test for one rule. Run it and confirm it fails
     for the right reason. Change the code with the smallest possible edit to satisfy that rule. Run the test
     again and make it pass. Refactor only while tests stay green. If you change code without first having a
     failing test for that change, you are guessing.
 
-24. Step inward only when the boundary test exposes a missing inner rule. When the outer test fails because a
+25. Step inward only when the boundary test exposes a missing inner rule. When the outer test fails because a
     specific parser, validator, query builder, or mapper does not yet behave correctly, pause and write a
     focused test for that inner unit. Make that inner test pass, then return immediately to the boundary test.
     Do not stay inside longer than necessary. The outer behavior remains the measure of progress.
 
-25. Measure completeness with a coverage table you can answer yourself:
+26. Measure completeness with a coverage table you can answer yourself:
 
 - Do I have at least one executable test for each rule?
 - Do I have a test for valid input?
@@ -979,7 +1033,7 @@ examples including omitted and invalid input, the ownership and contract section
 and the remaining risk. If the table cannot do that by pointing back to specific parts of the `ExecPlan`, the
 plan is incomplete.
 
-26. Judge design quality with explicit checks, not taste. Ask:
+27. Judge design quality with explicit checks, not taste. Ask:
 
 - Does each public function have one clear responsibility?
 - Does one module clearly own the behavior?
@@ -995,7 +1049,7 @@ plan is incomplete.
 
 Every "no" identifies work to do.
 
-27. Finish with end-to-end verification. Re-run the focused tests for the new behavior. Re-run the broader
+28. Finish with end-to-end verification. Re-run the focused tests for the new behavior. Re-run the broader
   tests that protect neighboring behavior. Compare the results against the examples you wrote in step 7. If
   even one example cannot be pointed to in code, docs, or tests as proven, you are not done.
 
@@ -1073,6 +1127,11 @@ Reject a plan when its explanation of the bug or design fork stays at the level 
 walking the real code path, when it does not show the exact shapes at the important boundaries, when it blurs
 proved current behavior together with unresolved design choice, when it asks a looser implementation question
 instead of the real contract question, or when it proposes fixes before the boundary contract has been made
+legible.
+
+Reject a plan when its blocker or stop-state language collapses proof work, runtime work, and approval into
+one sentence, when it does not say what changed and what did not, when it leaves the current repo state or
+next required action unclear, or when it makes an ordinary ordered dependency sound paradoxical.
 legible.
 
 If the implementer would still have to decide what to build, what must not change, or how to show that the

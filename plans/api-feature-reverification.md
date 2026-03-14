@@ -55,14 +55,16 @@ This plan does not treat every mismatch between `research/` and the live code as
 - [x] (2026-03-14 15:00Z) Finalized the review artifact language so previously answered Q&A sections are recorded as resolved review notes rather than presented as still-open questions.
 - [x] (2026-03-14 15:12Z) Continued the live review in chat and clarified remaining terminology and scope wording in the governing plan. Tightened array references to `ALL(array)`-style behavior, removed the stale join `type:`-alias track, aligned binding-alias examples with the settled future scope, and distinguished settled future-scope items from later optional contract extensions.
 - [x] (2026-03-14 15:43Z) Started implementation from this governing plan after explicit user approval. Began with the proof-only slice for quantified `any`, public join-hint coverage, and stronger direct `ArrayExpr` proof. Confirmed during discovery that `config/config.exs` already exposes live hint key `:test_index`, so public hint proof could target the existing contract without adding new config.
-- [x] (2026-03-14 15:48Z) Completed the first proof-only slice without runtime edits. Added public `CommonFilters` tests for quantified `any`, added public join-hint coverage for the configured `:test_index` hint key, expanded `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` with direct array-expression proof, and ran `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/common_filters_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` plus `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs`, both passing with no reclassification needed.
+- [x] (2026-03-14 15:48Z) Completed the first proof-only slice without runtime edits. Added public `CommonFilters` tests for quantified `any`, added public join-hint coverage for the configured `:test_index` hint key, expanded `test/ecto_shorts/dynamics/postgres/array_expr_test.exs` with direct array-expression proof, and ran `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/common_filters_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs` plus `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs`, both passing with no reclassification needed.
 - [x] (2026-03-14 15:49Z) Completed the additive binding-selector alias slice at the public boundary. Added `at: :first` and `at: :last` resolution in `CommonFilters` only, kept downstream contracts on integer `{:at, position}` selectors, added boundary-visible proof in `test/ecto_shorts/common_filters_test.exs`, and ran `mix test test/ecto_shorts/common_filters_test.exs` plus `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs`, both passing.
 - [x] (2026-03-14 15:58Z) Performed the final pre-execution review required by the current repo rules before starting the first true runtime-gap slice. Found stale planning-only wording that was no longer safe after implementation approval, and found that the older array `all:` example in `examples/ecto_query_dsl.exs` used an inverted comparison fragment relative to the preserved live `ANY` operator semantics. Updated this plan so the next slice is singular in meaning and no longer depends on chat context to resolve those drifts.
 - [x] (2026-03-14 16:18Z) Began the first true runtime-gap slice under TDD. Added and passed boundary-plus-direct proof for array `nil`, then added and passed boundary-plus-direct proof for array `count > 0` and array `count == 0` with the documented coalesced zero-length rule.
 - [x] (2026-03-14 16:24Z) The new boundary test for `%{tags: %{all: %{>: "a"}}}` exposed a routing conflict rather than an `ArrayExpr`-only gap. `Postgres.normalize_quantified_term/3` currently rewrites every top-level `{all, payload}` into quantified-subquery handling, so array-local comparison `all:` payloads never reach `ArrayExpr`. Updated this plan before continuing so the remaining slice is singular in meaning again.
 - [x] (2026-03-14 16:25Z) Completed the remaining comparison-operator array `all:` slice under the chosen payload-shape split. Narrowed `Postgres.normalize_quantified_term/3` so only quantified-query payloads with `:from` are rewritten into quantified-subquery handling, added `ArrayExpr` support for comparison-operator array-local `all:` payloads while preserving the live reversed operator meaning already used by `ANY`, and proved the executed cases at `Postgres.build_dynamic/4`, `ArrayExpr.dynamic_expr/5`, and `Actions.all/3`.
 - [x] (2026-03-14 16:43Z) The user chose Approach 1 for the remaining array `all:` slice: narrow `Postgres.normalize_quantified_term/3` by quantified-query payload shape instead of changing router precedence. Refreshed nearby repo patterns plus current Elixir docs for `Keyword.has_key?/2`, `Map.has_key?/2`, and `is_map/1` before resuming code changes so the split could use plain helper logic rather than an unverified guard form.
-- [x] (2026-03-14 16:52Z) Focused and broader proof passed for the completed array `all:` slice. Focused commands: `mix test test/ecto_shorts/dynamics/postgres_test.exs:86`, `mix test test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs:65`, and `mix test test/ecto_shorts/actions/crud_test.exs:1082`, all passing. Broader neighboring regression: `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs test/ecto_shorts/actions/crud_test.exs`, passing with 153 tests and 0 failures.
+- [x] (2026-03-14 16:52Z) Focused and broader proof passed for the completed array `all:` slice. Focused commands: `mix test test/ecto_shorts/dynamics/postgres_test.exs:86`, `mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs:65`, and `mix test test/ecto_shorts/actions/crud_test.exs:1082`, all passing. Broader neighboring regression: `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs test/ecto_shorts/actions/crud_test.exs`, passing with 153 tests and 0 failures.
+- [x] (2026-03-14 17:53Z) Tightened the `with_cte operation:` boundary proof from `assert_query/2` to `assert_sql/3`. The stronger proof exposed a real owner gap: raw Ecto compiles `operation: :update_all` to an `UPDATE ... RETURNING` CTE, while the `CommonFilters.convert_params_to_filter/3` path still emits a plain `SELECT` CTE. The invalid `operation:` proof also now shows that the current owner treats invalid input like omitted `operation:` instead of rejecting it with an unchanged query.
+- [x] (2026-03-14 18:01Z) Completed the `with_cte operation:` owner slice in `lib/ecto_shorts/common_filters/with_cte.ex`. Added explicit validation for `:all | :update_all | :delete_all`, forwarded valid operations into `Query.with_cte/3` alongside the existing `materialized:` path, preserved omitted-input behavior, restored unchanged-query plus warning behavior for invalid `operation:` payloads, and passed focused validation with `mix test test/ecto_shorts/common_filters_test.exs:1819`, `mix test test/ecto_shorts/common_filters_test.exs:1978`, and neighboring regression with `mix test test/ecto_shorts/common_filters_test.exs`.
 
 ## Milestones
 
@@ -114,7 +116,7 @@ This milestone is complete when every executed slice records its proof, preserve
   Evidence: `config/config.exs` sets `config :ecto_shorts, hints: [test_index: ["USE INDEX(test_index)"]]`; `lib/ecto_shorts/common_filters/join.ex` compiles `@hints` from `Application.compile_env(:ecto_shorts, :hints)` and emits hint-aware `build_join/8` clauses for those keys.
 
 - Observation: The first proof-only slice completed cleanly and did not expose a hidden runtime defect in the supposed proof-gap families.
-  Evidence: `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/common_filters_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` passed with 268 tests and 0 failures; `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs` passed with 391 tests and 0 failures.
+  Evidence: `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/common_filters_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs` passed with 268 tests and 0 failures; `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs` passed with 391 tests and 0 failures.
 
 - Observation: The binding-alias slice could stay entirely at the public boundary because the repo already has a live query-binding count helper.
   Evidence: `lib/ecto_shorts/common_query.ex` exposes `query_binding_count/1`; `lib/ecto_shorts/common_filters.ex` now resolves `at: :first` to positional binding `1` and `at: :last` to `CommonQuery.query_binding_count(query)` before anything reaches the integer-only downstream compiler and dynamic contracts; `mix test test/ecto_shorts/common_filters_test.exs` passed with 180 tests and 0 failures.
@@ -124,6 +126,9 @@ This milestone is complete when every executed slice records its proof, preserve
 
 - Observation: Array-local comparison `all:` payloads currently collide with quantified subquery `all` routing before they can reach the array owner.
   Evidence: `test/ecto_shorts/actions/crud_test.exs:1082` fails for `%{tags: %{all: %{>: "a"}}}` with `** (KeyError) key :from not found in: [>: "a"]`; `lib/ecto_shorts/dynamics/postgres.ex` rewrites every `{all, payload}` through `normalize_quantified_term/3`; `lib/ecto_shorts/common_filters/set_comparison.ex` then requires `:from`, proving that array-local `all:` currently cannot share the same top-level routing path.
+
+- Observation: `assert_query/2` was too weak to prove `with_cte` option handling because the relevant `Ecto.Query` inspect output did not distinguish the CTE operation metadata.
+  Evidence: `test/ecto_shorts/common_filters_test.exs:1819` initially passed while `lib/ecto_shorts/common_filters/with_cte.ex` still ignored `:operation`; after switching the `with_cte operation:` proofs to `assert_sql/3`, the positive case failed with `UPDATE ... RETURNING` SQL on the raw-Ecto side versus `SELECT ...` SQL on the `CommonFilters` side, and the invalid case failed because the current owner still built a default `SELECT` CTE instead of leaving the outer query unchanged.
 
 ## Decision Log
 
@@ -153,6 +158,14 @@ This milestone is complete when every executed slice records its proof, preserve
 
 - Decision: Keep `with_cte operation:` in future implementation scope even though it is not live today.
   Rationale: The live `WithCte` boundary currently supports `as:` and optional `materialized:` only, but upstream `Ecto.Query.with_cte/3` documents `:operation` support and the user chose to keep Ecto-supported `with_cte` options in scope for later completion rather than treat `operation:` as drift.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Implement `with_cte operation:` in the `WithCte` owner with explicit validation and explicit `Query.with_cte/3` option assembly rather than a broader `CommonFilters` rewrite or a generic option passthrough.
+  Rationale: The current public path already routes `with_cte` through `CommonFilters.convert_params_to_filter/3` into `API.build_query(:with_cte, ...)` and then into `WithCte.build_query/6`. The narrowest valid change is to keep that path intact, validate `:operation` beside the existing `:materialized` handling inside `WithCte`, and extend `apply_cte` to emit the doc-backed Ecto options directly. This preserves existing `:as` and `:materialized` behavior while adding only the missing owner-local contract.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Use compiled SQL equality, not `Ecto.Query` inspect equality, as the public proof boundary for `with_cte operation:`.
+  Rationale: The initial `assert_query/2` proof passed even while the owner still ignored `:operation`. Compiled SQL is the nearest stable observable boundary that reveals whether `Query.with_cte/3` received `operation:` as intended and whether invalid input still mutates the outer query.
   Date/Author: 2026-03-14 / Cascade
 
 - Decision: Keep planning and implementation authorization separate.
@@ -215,7 +228,7 @@ Public proof currently lives mainly in these files:
 - `test/ecto_shorts/actions/crud_test.exs`
 - `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
 - `test/ecto_shorts/dynamics/postgres_test.exs`
-- `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs`
+- `test/ecto_shorts/dynamics/postgres/array_expr_test.exs`
 
 ## Module Specifications
 
@@ -650,12 +663,12 @@ For proof gaps:
 
 - Add public tests for quantified `any` in `test/ecto_shorts/common_filters_scalar_filter_test.exs` and, if useful, the lower-level dynamic tests in `test/ecto_shorts/dynamics/postgres_test.exs` or `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`.
 - Add public tests for join hints in `test/ecto_shorts/common_filters_test.exs`.
-- Expand direct array-path proof in `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` so the supported live array contract is proved more explicitly.
+- Expand direct array-path proof in `test/ecto_shorts/dynamics/postgres/array_expr_test.exs` so the supported live array contract is proved more explicitly.
 
 For runtime gaps and compatibility work during the approved implementation:
 
 - Add boundary-visible tests for binding selector aliases in `test/ecto_shorts/common_filters_test.exs` and any lower-level compiler or dynamic tests needed only if the alias normalization touches those boundaries.
-- Add array runtime tests in `test/ecto_shorts/actions/crud_test.exs`, `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs`, and targeted `test/ecto_shorts/dynamics/postgres_test.exs` coverage for router conflicts where needed. Keep containment-style `<@` work separate until it is intentionally implemented.
+- Add array runtime tests in `test/ecto_shorts/actions/crud_test.exs`, `test/ecto_shorts/dynamics/postgres/array_expr_test.exs`, and targeted `test/ecto_shorts/dynamics/postgres_test.exs` coverage for router conflicts where needed. Keep containment-style `<@` work separate until it is intentionally implemented.
 - Add directive tests in `test/ecto_shorts/common_filters_test.exs` for `with_cte operation` support if that feature is implemented.
 - Add scalar and array string-matching tests only if a later explicit decision adds wildcard-preservation compatibility over the current contains-style wrapper contract.
 
@@ -676,7 +689,7 @@ The future validation matrix for implementation work is:
 - Claim: array `nil`, `count`, and comparison-operator `all:` behaviors work without breaking the current live array contract.
   Boundary: `Actions.all/3`, `Postgres.build_dynamic/4`, and `ArrayExpr.dynamic_expr/5`.
   Proof method: boundary integration tests plus targeted router tests plus direct array-expression tests.
-  Evidence command: `mix test test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs`.
+  Evidence command: `mix test test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs`.
   Residual risk: behavior remains Postgres-specific, and containment-style `<@` support still remains separate later work.
 
 - Claim: join hints and quantified `any` are publicly proved.
@@ -714,7 +727,7 @@ For proof-only changes, the expected focused commands are:
     mix test test/ecto_shorts/common_filters_scalar_filter_test.exs
     mix test test/ecto_shorts/common_filters_test.exs
     mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/dynamics/postgres_test.exs
-    mix test test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs
+    mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs
 
 For broader regression after a completed slice, the likely command set is:
 
@@ -768,7 +781,7 @@ Important live-audit evidence used to build this plan includes:
 - `test/ecto_shorts/actions/crud_test.exs`
 - `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
 - `test/ecto_shorts/dynamics/postgres_test.exs`
-- `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs`
+- `test/ecto_shorts/dynamics/postgres/array_expr_test.exs`
 - `Ecto.Query.lock/3` in `Ecto.Query`
 - `Ecto.Query.with_cte/3` in `Ecto.Query`
 - `Ecto.Query.API` entries for `all/1`, `any/1`, `like/2`, and `ilike/2`

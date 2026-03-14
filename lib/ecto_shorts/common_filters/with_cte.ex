@@ -6,6 +6,7 @@ defmodule EctoShorts.CommonFilters.WithCte do
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.WithCte"
+  @cte_operations [:all, :update_all, :delete_all]
 
   def build_query(:with_cte, schema_source, query, _selected_binding, params, opts) do
     normalized_params = Utils.map_to_keyword(params)
@@ -45,8 +46,9 @@ defmodule EctoShorts.CommonFilters.WithCte do
   defp apply_entry(schema_source, query, cte_name, cte_definition, opts) do
     with {:ok, normalized_name} <- normalize_cte_name(cte_name),
          {:ok, cte_query} <- build_cte_query(schema_source, normalized_name, cte_definition, opts),
-         {:ok, materialized} <- fetch_materialized(normalized_name, cte_definition) do
-      apply_cte(query, normalized_name, cte_query, materialized)
+         {:ok, materialized} <- fetch_materialized(normalized_name, cte_definition),
+         {:ok, operation} <- fetch_operation(normalized_name, cte_definition) do
+      apply_cte(query, normalized_name, cte_query, materialized, operation)
     else
       :error -> query
     end
@@ -107,11 +109,43 @@ defmodule EctoShorts.CommonFilters.WithCte do
     end
   end
 
-  defp apply_cte(query, cte_name, cte_query, nil) do
+  defp fetch_operation(cte_name, cte_definition) do
+    case Keyword.fetch(cte_definition, :operation) do
+      {:ok, operation} when operation in @cte_operations ->
+        {:ok, operation}
+
+      {:ok, operation} ->
+        EctoShorts.Logger.warning(
+          @logger_prefix,
+          "Expected :operation for #{inspect(cte_name)} to be one of #{inspect(@cte_operations)}, got: #{inspect(operation)}"
+        )
+
+        :error
+
+      :error ->
+        {:ok, nil}
+    end
+  end
+
+  defp apply_cte(query, cte_name, cte_query, nil, nil) do
     Query.with_cte(query, ^cte_name, as: ^cte_query)
   end
 
-  defp apply_cte(query, cte_name, cte_query, materialized) do
+  defp apply_cte(query, cte_name, cte_query, materialized, nil) do
     Query.with_cte(query, ^cte_name, as: ^cte_query, materialized: materialized)
+  end
+
+  defp apply_cte(query, cte_name, cte_query, nil, operation) do
+    Query.with_cte(query, ^cte_name, as: ^cte_query, operation: operation)
+  end
+
+  defp apply_cte(query, cte_name, cte_query, materialized, operation) do
+    Query.with_cte(
+      query,
+      ^cte_name,
+      as: ^cte_query,
+      materialized: materialized,
+      operation: operation
+    )
   end
 end

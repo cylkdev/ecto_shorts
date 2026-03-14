@@ -1816,6 +1816,25 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, actual)
     end
 
+    test "matches Ecto.Query for with_cte with update_all operation" do
+      cte_query =
+        Post
+        |> where([p], p.published == ^false)
+        |> update([p], set: [published: true])
+        |> select([p], p)
+
+      expected = with_cte(Post, "published_posts", as: ^cte_query, operation: :update_all)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{with_cte: %{published_posts: %{as: cte_query, operation: :update_all}}},
+          []
+        )
+
+      assert_sql(expected, actual)
+    end
+
     test "matches Ecto.Query when recursive_ctes is applied before with_cte" do
       cte_query = from(p in Post, where: p.published == ^true)
       expected = Post |> recursive_ctes(true) |> with_cte("published_posts", as: ^cte_query)
@@ -1954,6 +1973,26 @@ defmodule EctoShorts.CommonFiltersTest do
 
       assert log =~
                "Expected CTE :as query params for \"published_posts\" to be a query, subquery, or keyword/map payload"
+    end
+
+    test "keeps the query unchanged when a with_cte :operation payload is invalid" do
+      cte_query = from(p in Post, where: p.published == ^true)
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{with_cte: [published_posts: [as: cte_query, operation: :invalid]]},
+              []
+            )
+
+          assert_sql(expected, actual)
+        end)
+
+      assert log =~
+               "Expected :operation for \"published_posts\" to be one of [:all, :update_all, :delete_all], got: :invalid"
     end
   end
 

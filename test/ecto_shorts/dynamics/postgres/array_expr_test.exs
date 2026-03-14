@@ -110,10 +110,10 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExprTest do
       dynamic(
         [q],
         not fragment(
-              "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t ILIKE ANY (?))",
-              field(q, :tags),
-              ^patterns
-            )
+          "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t ILIKE ANY (?))",
+          field(q, :tags),
+          ^patterns
+        )
       )
 
     actual = ArrayExpr.dynamic_expr({:as, nil}, :tags, :not, {:ilike, "elixir"}, [])

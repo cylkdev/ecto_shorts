@@ -194,7 +194,7 @@ defmodule EctoShorts.CommonFilters.Select do
 
   defp normalize_select_term({:map, params}), do: {:map, params}
   defp normalize_select_term({:struct, fields}), do: {:struct, fields}
-  defp normalize_select_term([map: params]), do: {:map, params}
-  defp normalize_select_term([struct: fields]), do: {:struct, fields}
+  defp normalize_select_term(map: params), do: {:map, params}
+  defp normalize_select_term(struct: fields), do: {:struct, fields}
   defp normalize_select_term(term), do: term
 end
