@@ -42,16 +42,18 @@ This plan does not treat every mismatch between `research/` and the live code as
 
 - [x] (2026-03-14 12:05Z) Rebased the task so live code and public tests, not `research/`, are the primary evidence for feature completion.
 - [x] (2026-03-14 12:18Z) Closed the binding selector family from live code and tests. Confirmed `{:as, nil}`, `{:as, atom}`, and positive-integer `{:at, n}` support. Did not find `:first` or `:last` aliases.
-- [x] (2026-03-14 12:20Z) Closed the join family from live code and tests. Confirmed association, schema, table, query, subquery, fragment, and association shorthand support. Confirmed `qualifier` in runtime code, no `type` alias in live code, and no public proof for hints.
+- [x] (2026-03-14 12:20Z) Closed the join family from live code and tests. Confirmed association, schema, table, query, subquery, fragment, and association shorthand support. Confirmed source kind is selected by the outer join key, `qualifier:` is used for join mode in runtime code, there is no `type:` join-mode alias in live code, and there is no public proof for hints.
 - [x] (2026-03-14 12:21Z) Closed the lock family from live code and tests. Confirmed built-in lock aliases plus provider-returned callback support. Confirmed no direct raw function payload at the public boundary.
 - [x] (2026-03-14 12:22Z) Closed the `with_cte` family from live code and tests. Confirmed query, subquery, filter-param, `materialized`, nested binding, and `recursive_ctes` interaction support. Confirmed no `operation` support in live code.
-- [x] (2026-03-14 12:24Z) Closed the quantified comparison family from live code and tests. Confirmed runtime support for both `all` and `any`; confirmed public proof for `all`; did not find public proof for `any`.
-- [x] (2026-03-14 12:26Z) Closed the scalar and array string-matching family from live code and tests. Confirmed that the live contract wraps bare string values and list entries as contains-style patterns. Confirmed no explicit wildcard preservation in the live contract.
-- [x] (2026-03-14 12:28Z) Closed the broader array family from live code and tests. Confirmed equality, inequality, membership, overlap, `ANY` comparisons, transforms, and string matching. Did not find active runtime support for array `nil`, `count`, containment with `<@`, or `ALL(...)`-style comparison shapes.
+- [x] (2026-03-14 12:24Z) Closed the quantified comparison family from live code, tests, and authoritative Ecto docs. Confirmed top-level equality-shorthand runtime support for both `all` and `any`; confirmed lower-level scalar runtime branches for quantified comparison operators; confirmed public proof for `all`; did not find public proof for `any` or broader quantified operator shapes at the `CommonFilters` boundary.
+- [x] (2026-03-14 12:26Z) Closed the scalar and array string-matching family from live code, tests, and authoritative Ecto docs. Confirmed that the live contract wraps bare string values and list entries as contains-style patterns even though Ecto `like/2` and `ilike/2` accept raw search patterns. Confirmed no explicit wildcard preservation in the live contract.
+- [x] (2026-03-14 12:28Z) Closed the broader array family from live code, tests, and authoritative PostgreSQL docs. Confirmed equality, inequality, membership, overlap, `ANY` comparisons, transforms, and string matching. Confirmed PostgreSQL supports containment operators and `ALL(array)` semantics, but did not find active runtime support for array `nil`, array `count`, containment with `<@`, or `ALL(...)`-style comparison shapes in the live owner.
 - [x] (2026-03-14 12:34Z) Created the repo-local governing ExecPlan in `plans/api-feature-reverification.md`.
 - [x] (2026-03-14 12:41Z) Reviewed artifact governance with the user and selected `plans/api-feature-reverification.md` as the single governing ExecPlan. The older external megaplan is superseded and no longer authoritative.
 - [x] (2026-03-14 12:43Z) Reviewed binding selector scope with the user. Confirmed that `at: :first` and `at: :last` should remain in future completion scope as additive aliases, while integer positional bindings remain the canonical live contract.
-- [ ] Continue section-by-section review of this governing plan with the user and correct any inaccurate claims before implementation approval.
+- [x] (2026-03-14 14:45Z) Continued the section-by-section review and corrected inaccurate claims before implementation approval. Tightened the quantified, lock, `with_cte`, string-matching, and broader array sections against live code, public tests, and authoritative dependency documentation, and removed stale `:bind` examples from the intended public contract.
+- [x] (2026-03-14 15:00Z) Finalized the review artifact language so previously answered Q&A sections are recorded as resolved review notes rather than presented as still-open questions.
+- [x] (2026-03-14 15:12Z) Continued the live review in chat and clarified remaining terminology and scope wording in the governing plan. Tightened array references to `ALL(array)`-style behavior, removed the stale join `type:`-alias track, aligned binding-alias examples with the settled future scope, and distinguished settled future-scope items from later optional contract extensions.
 
 ## Milestones
 
@@ -63,7 +65,7 @@ This milestone is complete when the module specifications, function specificatio
 
 ### Milestone 2: Separate runtime gaps from proof gaps and future compatibility work
 
-The second milestone is to classify the audit results into three buckets that will drive later implementation. A runtime gap is behavior that the live public path does not implement. A proof gap is behavior that the runtime appears to implement but that the public tests do not prove. Future compatibility work is behavior that is not live today but that may still be desirable because the user wants a broader contract than the current runtime offers.
+The second milestone is to classify the audit results into three buckets that will drive later implementation. A runtime gap is behavior that the live public path does not implement. A proof gap is behavior that the runtime appears to implement but that the public tests do not prove. Future compatibility work is behavior that is not live today but either remains settled future implementation scope or would require a later explicit contract decision before implementation.
 
 This milestone is complete when each audited family is classified that way and the later plan of work names only the work that remains justified after the live audit.
 
@@ -84,14 +86,14 @@ This milestone is complete when the later `Plan of Work`, example mapping, behav
 - Observation: The lock family already supports callback-style customization through the provider path.
   Evidence: `lib/ecto_shorts/common_filters/lock.ex` accepts provider results shaped as `{:ok, fn query -> query end}`; `test/ecto_shorts/common_filters_test.exs` proves provider-backed lock behavior.
 
-- Observation: Quantified `any` is already in the runtime path even though the public tests only prove `all`.
-  Evidence: `lib/ecto_shorts/dynamics/postgres.ex` normalizes both `:all` and `:any`; `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` generates comparison branches for both quantifiers.
+- Observation: The quantified comparison runtime is broader than the publicly proved shorthand surface.
+  Evidence: `Ecto.Query.API` documents `all(subquery)` and `any(subquery)` on the right side of comparison operators `==`, `!=`, `>`, `>=`, `<`, and `<=`; `lib/ecto_shorts/dynamics/postgres.ex` normalizes top-level `:all` and `:any` payloads into equality against a built quantified query; `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` generates quantified branches for both quantifiers across the comparison operator family.
 
-- Observation: The live string-matching contract always wraps patterns for both scalar and array paths.
-  Evidence: `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` wraps scalar `like` and `ilike` values and list entries with `%...%`; `lib/ecto_shorts/dynamics/postgres/array_expr.ex` does the same through `normalize_patterns/1`.
+- Observation: The live string-matching contract is a convenience wrapper over a broader Ecto pattern-matching surface.
+  Evidence: `Ecto.Query.API` documents `like/2` and `ilike/2` as accepting search patterns directly; `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` wraps scalar `like` and `ilike` values and list entries with `%...%`; `lib/ecto_shorts/dynamics/postgres/array_expr.ex` does the same through `normalize_patterns/1`.
 
-- Observation: Some missing array behaviors exist only as example Ecto queries, not as active API support.
-  Evidence: `examples/ecto_query_dsl.exs` contains example queries for array `count`, containment using `<@`, and `ALL(...)`-style comparisons; the active runtime owner `lib/ecto_shorts/dynamics/postgres/array_expr.ex` does not implement those shapes.
+- Observation: Some missing array behaviors are real PostgreSQL-backed possibilities, but they are not active API support in this repo today.
+  Evidence: PostgreSQL documents array containment operators such as `<@` and `@>` plus `ALL(array)` semantics; `examples/ecto_query_dsl.exs` contains example queries for array `count`, containment using `<@`, and `ALL(...)`-style comparisons; the active runtime owner `lib/ecto_shorts/dynamics/postgres/array_expr.ex` does not implement those shapes.
 
 ## Decision Log
 
@@ -113,6 +115,14 @@ This milestone is complete when the later `Plan of Work`, example mapping, behav
 
 - Decision: Keep binding selector aliases `at: :first` and `at: :last` in future completion scope as additive compatibility work.
   Rationale: During plan review, the user chose to keep alias support in scope. The live audit still established that these aliases are not implemented today, so the plan must present them as future additive behavior rather than already-live behavior.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Keep the lock directive on the current symbolic, provider-based public contract.
+  Rationale: The live `Lock` boundary expects `name:` and optional `values:` and resolves custom lock behavior through the query provider. Ecto documents lock clauses as boolean or string expressions that cannot include fields, so provider-owned translation into a valid Ecto lock expression is viable without widening the public boundary to raw function or raw string payloads. During plan review, the user chose to keep that narrower contract.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Keep `with_cte operation:` in future implementation scope even though it is not live today.
+  Rationale: The live `WithCte` boundary currently supports `as:` and optional `materialized:` only, but upstream `Ecto.Query.with_cte/3` documents `:operation` support and the user chose to keep Ecto-supported `with_cte` options in scope for later completion rather than treat `operation:` as drift.
   Date/Author: 2026-03-14 / Cascade
 
 - Decision: Keep planning and implementation authorization separate.
@@ -167,7 +177,7 @@ Start with `build_dynamic/4`. The module guarantees that it will normalize negat
 
 `ArrayExpr` owns Postgres-specific behavior for array and map-backed field predicates once routing has already determined that the field is array-like. It accepts the normalized binding selector, field key, negation flag, and operator/value term, and returns a dynamic expression when the shape is supported.
 
-The live contract currently covers list equality and inequality, scalar membership, overlap via `in` with a list, element-wise comparisons using `ANY`, `lower` and `upper` transforms, and array `like` and `ilike`. The live contract does not currently document or prove array `nil`, `count`, containment with `<@`, or `ALL(...)`-style comparison shapes.
+The live contract currently covers list equality and inequality, scalar membership, overlap via `in` with a list, element-wise comparisons using `ANY`, `lower` and `upper` transforms, and array `like` and `ilike`. PostgreSQL does support broader array operators such as containment and `ALL(array)` semantics, but the live contract here does not currently document or prove array `nil`, `count`, containment with `<@`, or `ALL(...)`-style comparison shapes.
 
 ### `EctoShorts.CommonFilters.Join`
 
@@ -177,9 +187,9 @@ The live contract supports association, schema, table, query, subquery, and frag
 
 ### `EctoShorts.CommonFilters.Lock`
 
-`Lock` owns lock directive payloads after API dispatch. The live contract expects a map or keyword payload with a `name` key. Built-in names `:for_update` and `:for_share` are handled directly. Other names are resolved through the query provider, which must return `{:ok, function}`, `{:error, reason}`, or `nil`.
+`Lock` owns lock directive payloads after API dispatch. The live contract expects a map or keyword payload with a `name` key. Built-in names `:for_update` and `:for_share` are handled directly. Other names are resolved through the query provider, which must return `{:ok, function}`, `{:error, reason}`, or `nil`. Provider-owned `values:` may be translated into a valid Ecto lock expression there without widening the public boundary.
 
-The live contract includes provider-backed callback customization. It does not currently expose a direct raw function payload at the public boundary.
+The live contract includes provider-backed callback customization. It does not currently expose a direct raw function payload or direct raw string lock payload at the public boundary.
 
 ### `EctoShorts.CommonFilters.WithCte`
 
@@ -206,7 +216,7 @@ Return shape:
 Caller-visible rules that matter for this task:
 
 - top-level filters begin at the root binding `{:as, nil}`
-- `bind`, `as`, and `at` change the selected binding for nested filter reduction
+- top-level `as` and `at` maps change the selected binding for nested filter reduction on the intended public path
 - recognized filter keys route through `CommonFilters.API`
 - unknown field keys fall back to field predicate building on the current filter
 - association-shaped entries can trigger named association bindings automatically
@@ -271,8 +281,8 @@ Transformations that do not belong here:
 
 Concrete handoff example:
 
-- Input at the public boundary: `%{bind: %{at: 1, published: true}}`
-- Handoff into `apply_bind_filters/6`: selected binding becomes `{:at, 1}` and remaining entries continue under that binding
+- Input at the public boundary: `%{at: %{1 => %{published: true}}}`
+- Handoff through `apply_filters/6`: selected binding becomes `{:at, 1}` and remaining entries continue under that binding
 - Resulting downstream responsibility: the eventual field predicate for `published` is built against that positional binding
 
 ### Boundary: `CommonFilters.apply_filters/6` to `CommonFilters.API.build_query/6`
@@ -283,7 +293,7 @@ Produced output shape: a next `Ecto.Query`.
 
 Owned transformations:
 
-- choose whether the key is `bind`, a binding operator, a predicate-group member, a post-aggregate-group member, an association traversal, a registered API filter, or a fallback field predicate
+- choose whether the key follows the live-code `bind` branch, an intended public binding operator, a predicate-group member, a post-aggregate-group member, an association traversal, a registered API filter, or a fallback field predicate
 
 Forbidden accidental contract expansion:
 
@@ -314,7 +324,7 @@ Accepted live shapes today:
 - `{:in, list}` for overlap and `{:in, value}` for scalar membership
 - `{:>, value}`, `{:>=, value}`, `{:<, value}`, `{:<=, value}` for `ANY` comparisons
 - `{:==, {:lower, value}}`, `{:!=, {:lower, value}}`, and upper-case counterparts
-- `{:like, value}` and `{:ilike, value}` for scalar or list pattern search after local normalization
+- `{:like, value}` and `{:ilike, value}` for scalar or list pattern search after local contains-style pattern wrapping
 
 Produced output shape: a dynamic expression or `nil`.
 
@@ -322,7 +332,7 @@ Unsupported live shapes that matter for later work:
 
 - `nil`
 - nested `count` payloads
-- nested `all` payloads
+- nested `ALL(array)`-style payloads
 - containment fragments such as `<@`
 
 ### Boundary: `Join.build_query/6`
@@ -339,9 +349,9 @@ Accepted live option keys that matter:
 
 Produced output shape: an `Ecto.Query` with the requested join applied or the unchanged query on invalid input paths.
 
-Unsupported live compatibility shape that matters:
+Unsupported live shape that matters for later work:
 
-- `type:` as an alias for `qualifier:`
+- `type:` used as a join-mode alias for `qualifier:`
 
 ### Boundary: `Lock.build_query/6`
 
@@ -349,11 +359,12 @@ Accepted live shape today:
 
 - map or keyword payload with `name:` and optional `values:`
 
-Produced output shape: an `Ecto.Query` with a lock clause or the unchanged query when the provider path returns `nil`, `{:error, reason}`, or an invalid callback shape.
+Produced output shape: an `Ecto.Query` with a built-in lock clause, a provider-translated lock clause, or the unchanged query when the provider path returns `nil`, `{:error, reason}`, or an invalid callback shape.
 
-Unsupported live compatibility shape that matters:
+Unsupported live shape that matters for later work:
 
 - direct raw function payload without a `name:` indirection
+- direct raw string lock clause without a `name:` indirection
 
 ### Boundary: `WithCte.build_query/6`
 
@@ -363,7 +374,7 @@ Accepted live shape today:
 
 Produced output shape: an `Ecto.Query` with one or more CTEs applied.
 
-Unsupported live compatibility shape that matters:
+Unsupported live shape that matters for later work:
 
 - `operation:` passthrough
 
@@ -371,11 +382,11 @@ Unsupported live compatibility shape that matters:
 
 A typical public integration call begins at `EctoShorts.Actions.all/3`. That action hands filter params to `EctoShorts.CommonFilters.convert_params_to_filter/3`, which starts with `CommonSchema.to_query(source)` and reduces each filter entry from the root selected binding `{:as, nil}`.
 
-For each entry, `apply_filters/6` decides what kind of thing it is looking at. If the key is `bind`, `as`, or `at`, the function changes the selected binding and continues reducing nested entries. If the key belongs to a filter group such as predicate or post-aggregate filters, the reducer either keeps descending or dispatches to the registered filter owner. If the key names an association and the term shape looks reducible, `CommonFilters` first ensures a named association binding through `with_named_binding`, then continues reduction under `{:as, association_name}`. Otherwise, the reducer dispatches directly to `CommonFilters.API.build_query/6`.
+For each entry, `apply_filters/6` decides what kind of thing it is looking at. In the intended public contract, top-level `as` and `at` maps change the selected binding and continue nested reduction. The live code still contains a `bind` branch, but that path is treated elsewhere in this plan as stale runtime drift rather than part of the intended caller-facing contract. If the key belongs to a filter group such as predicate or post-aggregate filters, the reducer either keeps descending or dispatches to the registered filter owner. If the key names an association and the term shape looks reducible, `CommonFilters` first ensures a named association binding through `with_named_binding`, then continues reduction under `{:as, association_name}`. Otherwise, the reducer dispatches directly to `CommonFilters.API.build_query/6`.
 
 When a field predicate reaches the Postgres dynamic path, `EctoShorts.Dynamics.Postgres.build_dynamic/4` normalizes top-level negation, then normalizes top-level quantified forms such as `all` and `any` into equality against a built quantified query. After that, it routes by family. Common operators such as `before` and `after` stay in `CommonExpr`. Array and map-backed fields route to `ArrayExpr`. Everything else routes to `ScalarExpr`.
 
-That routing order matters for later implementation. If array `count` or array `all` support is added, the change belongs in `ArrayExpr.dynamic_expr/5` after the field is already known to be array-like. If a join payload alias or lock payload alias is added, the change belongs in the directive owner after API dispatch, not in `CommonFilters.apply_filters/6`. If a top-level quantified shorthand is extended, the change belongs in `Postgres.normalize_quantified_term/3` or the quantified-query helper, not in the action layer.
+That routing order matters for later implementation. If array `count` or `ALL(array)`-style support is added, the change belongs in `ArrayExpr.dynamic_expr/5` after the field is already known to be array-like. If a join payload alias or lock payload alias is added, the change belongs in the directive owner after API dispatch, not in `CommonFilters.apply_filters/6`. If a top-level quantified shorthand is extended, the change belongs in `Postgres.normalize_quantified_term/3` or the quantified-query helper, not in the action layer.
 
 Invalid-input behavior also differs by boundary. At the top-level reducer, many invalid shapes are still allowed to flow to the owner module. The owner module usually decides whether to log and keep the query unchanged or to raise for impossible internal shapes. That means later proof work must keep the invalid-input behavior visible at the owning boundary instead of hiding it behind broad guards in `CommonFilters`.
 
@@ -397,13 +408,13 @@ The public filter pipeline already supports root binding, named binding, and pos
 `CommonFilters.convert_params_to_filter(Post, %{at: %{2 => %{preload: :author}}}, [])`
 `#=> returns a query whose positional binding 2 is used for the nested preload behavior`
 
-`CommonFilters.convert_params_to_filter(Post, %{bind: %{at: 1, published: true}}, [])`
+`CommonFilters.convert_params_to_filter(Post, %{at: %{1 => %{published: true}}}, [])`
 `#=> returns a query that applies the published predicate against positional binding 1`
 
 `CommonFilters.convert_params_to_filter(Post, %{at: %{first: %{published: true}}}, [])`
-`#=> not part of the live contract today; later implementation would need to define whether this becomes a supported alias or remains unsupported`
+`#=> not part of the live contract today; later implementation would add this additive alias at the public boundary and normalize it to the existing integer-based downstream contract`
 
-#### Open Questions:
+#### Resolved Review Notes:
 
 - **Q:** Is `:first` already live in the current public path? **A:** No. The live validator and compiler contracts accept only positive integers for `{:at, position}`.
 - **Q:** Should alias support remain in future scope? **A:** Yes. The plan keeps `at: :first` and `at: :last` as additive compatibility work.
@@ -416,9 +427,11 @@ The live array path already supports several behaviors, but the audit confirmed 
 #### Rules:
 
 - Existing live array equality, inequality, membership, overlap, `ANY` comparison, transform, and string-matching behavior must remain unchanged.
-- Omitted array-only operators must continue to follow the current normalization rules unless later implementation explicitly changes them.
+- Ecto `like/2` and `ilike/2` accept raw search patterns, but the live repo contract currently adds contains-style wrapping for bare scalar values and list entries on both scalar and array paths.
+- Unsupported array-only shapes must continue to follow the current `ArrayExpr` acceptance/rejection behavior unless later implementation explicitly changes that contract.
 - Invalid or unsupported array payload shapes must not be silently treated as supported behavior.
-- Later implementation may add array `nil`, `count`, and `all` support, but those behaviors are not part of the live contract today.
+- PostgreSQL-backed shapes such as containment with `<@` and `ALL(array)` are technically viable, but they are not part of the live contract today.
+- Later implementation may add array `nil`, `count`, and `ALL(array)`-style support, but those behaviors are not part of the live contract today.
 
 #### Examples:
 
@@ -429,21 +442,23 @@ The live array path already supports several behaviors, but the audit confirmed 
 `#=> returns posts where any array element is greater than "a"`
 
 `Actions.all(Post, %{tags: %{count: %{>: 0}}})`
-`#=> not part of the live contract today; later implementation would need to define and prove it`
+`#=> not part of the live contract today; later implementation would need to define the public array-count contract and prove it`
 
-#### Open Questions:
+#### Resolved Review Notes:
 
 - **Q:** Does the active runtime owner already contain array `count` support? **A:** No. The active `ArrayExpr` implementation does not contain `count` branches.
-- **Q:** Do example queries in `examples/ecto_query_dsl.exs` prove the live API supports those shapes? **A:** No. They show desired Ecto queries, not active `CommonFilters` or `Actions` support.
+- **Q:** Do official docs make containment and `ALL(array)` real options at the database layer? **A:** Yes. PostgreSQL documents both, but the live repo owner does not currently expose them.
+- **Q:** Do example queries in `examples/ecto_query_dsl.exs` prove the live API supports those shapes? **A:** No. They show desired Ecto/PostgreSQL queries, not active `CommonFilters` or `Actions` support.
 
 ### Story: Runtime support versus proof support for quantified comparisons
 
-The quantified comparison family already contains more runtime behavior than the earlier plan assumed. The later work should prove the live path before changing runtime code.
+The quantified comparison family already contains more runtime behavior than the earlier plan assumed, but the live public shorthand is narrower than the full Ecto quantified-comparison contract. Later work should prove the live path before changing runtime code.
 
 #### Rules:
 
-- The live runtime path must continue to support quantified `all`.
-- The live runtime path currently contains `any` support and should not be removed or rewritten unless proof work exposes a real defect.
+- Ecto’s quantified comparison contract requires `all` and `any` on the right-hand side of a comparison against a subquery and allows them with `==`, `!=`, `>`, `>=`, `<`, and `<=`.
+- The live top-level shorthand path currently normalizes bare `all` and `any` payloads into equality against a built quantified query.
+- The lower-level scalar runtime currently contains quantified `all` and `any` branches across the comparison operator family and should not be removed or rewritten unless proof work exposes a real defect.
 - Omitting a select override in quantified query building must continue to default to the outer field.
 - Invalid quantified payload shapes should continue to follow the current helper behavior instead of inventing a new failure model during proof work.
 
@@ -456,22 +471,27 @@ The quantified comparison family already contains more runtime behavior than the
 `#=> returns a query with the quantified equality wrapped in not`
 
 `CommonFilters.convert_params_to_filter(Post, %{id: %{any: %{from: Comment, where: %{published: true}}}}, [])`
-`#=> intended to be live through the quantified runtime path, but public proof still needs to be added`
+`#=> returns a query with equality against any(selected comment ids), but public proof still needs to be added`
 
-#### Open Questions:
+`ScalarExpr.dynamic_expr({:as, nil}, :id, nil, {:>, {:all, subquery_expr}}, [])`
+`#=> lower-level runtime can build a greater-than-all comparison, but that broader operator surface is not yet publicly proved at the CommonFilters boundary`
 
-- **Q:** Is `any` a runtime gap or a proof gap? **A:** A proof gap, unless later targeted tests expose a real defect.
-- **Q:** Should later work change runtime code before the proof gap is tested? **A:** No. Add public proof first and patch runtime only if the proof exposes a defect.
+#### Resolved Review Notes:
+
+- **Q:** What does authoritative Ecto documentation allow here? **A:** `Ecto.Query.API` documents `all(subquery)` and `any(subquery)` on the right side of `==`, `!=`, `>`, `>=`, `<`, and `<=`.
+- **Q:** Is `any` at the public shorthand boundary a runtime gap or a proof gap? **A:** A proof gap, unless later targeted tests expose a real defect.
+- **Q:** Does the current public proof cover broader non-equality quantified operator shapes? **A:** No. The public tests prove only the equality shorthand for `all`; the broader quantified operator surface is present only in lower-level runtime code today.
 
 ### Story: Directive compatibility and preserved live behavior
 
-Later completion work may add compatibility aliases and passthroughs for directives, but the live directive contracts are narrower than the older research-first megaplan assumed.
+Later completion work may add settled future-scope directive support or later explicit compatibility extensions, but the live directive contracts are narrower than the older research-first megaplan assumed.
 
 #### Rules:
 
 - Existing join `qualifier:` behavior must remain canonical internally.
-- Existing provider-backed lock behavior must remain unchanged.
+- Existing name-based provider-backed lock behavior must remain unchanged.
 - Existing `with_cte` support for `as:` and optional `materialized:` must remain unchanged.
+- `with_cte operation:` is not part of the live contract today, but remains future implementation scope.
 - Invalid directive payloads must continue to follow the current owner-specific logging and unchanged-query behavior unless later implementation deliberately changes that contract.
 
 #### Examples:
@@ -485,13 +505,12 @@ Later completion work may add compatibility aliases and passthroughs for directi
 `CommonFilters.convert_params_to_filter(Post, %{with_cte: [published_posts: [as: [published: true], materialized: false]]}, [])`
 `#=> returns a query with the named CTE applied and materialized false`
 
-`CommonFilters.convert_params_to_filter(Post, %{join: [schema: [source: User, type: :left, as: :user, on: %{author_id: 1}]]}, [])`
-`#=> not part of the live contract today; later implementation would need to add a compatibility alias explicitly`
+`CommonFilters.convert_params_to_filter(Post, %{with_cte: [published_posts: [as: [published: true], operation: :all]]}, [])`
+`#=> not part of the live contract today; later implementation would need to add explicit `operation:` support`
 
-#### Open Questions:
+#### Resolved Review Notes:
 
-- **Q:** Is join `type:` already supported under another live key? **A:** No. The live code reads `qualifier:`.
-- **Q:** Does the lock family already support direct raw function payloads? **A:** No. The live contract requires `name:` and uses the provider callback path for custom lock functions.
+- **Q:** What does `type` mean in this family after review? **A:** In the intended terminology, `type` refers to the join source kind selected by the outer key such as `association`, `schema`, `table`, `query`, `subquery`, or `fragment`. Join mode remains under `qualifier:`. The live API does not accept `type:` as a join-mode alias.
 
 ## Behaviour Specifications
 
@@ -519,8 +538,10 @@ Scenario: Directive compatibility work preserves the current owner contracts
   Given the live `Join`, `Lock`, and `WithCte` modules
   When the plan describes future compatibility work
   Then it must preserve `qualifier:` as the canonical live join key
-  And it must preserve provider-backed lock callbacks
+  And it must preserve name-based provider-backed lock callbacks
+  And it must not widen the public lock boundary beyond `name:` payloads without a separate later decision
   And it must preserve `with_cte` support for `as:` and `materialized:`
+  And it must keep `with_cte operation:` in future scope as explicit non-live implementation work
 
 ### Feature: Stop after the revised plan unless the user explicitly approves implementation
 
@@ -543,9 +564,9 @@ For proof gaps:
 For runtime gaps and compatibility work, if the user later approves implementation:
 
 - Add boundary-visible tests for binding selector aliases in `test/ecto_shorts/common_filters_test.exs` and any lower-level compiler or dynamic tests needed only if the alias normalization touches those boundaries.
-- Add array runtime tests in `test/ecto_shorts/actions/crud_test.exs` and `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` for `nil`, `count`, and `all` once those behaviors exist.
-- Add directive tests in `test/ecto_shorts/common_filters_test.exs` for join `type:` alias support, direct raw lock function payload support, and `with_cte operation` support if those features are implemented.
-- Add scalar and array string-matching tests only if the user still wants explicit wildcard preservation as a future compatibility change.
+- Add array runtime tests in `test/ecto_shorts/actions/crud_test.exs` and `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` for `nil`, `count`, and `ALL(array)`-style behavior once those behaviors exist.
+- Add directive tests in `test/ecto_shorts/common_filters_test.exs` for `with_cte operation` support if that feature is implemented.
+- Add scalar and array string-matching tests only if a later explicit decision adds wildcard-preservation compatibility over the current contains-style wrapper contract.
 
 Each later test must prove one caller-visible claim. Passing tests should be described as evidence for the executed cases only, not as proof of correctness for all possible inputs.
 
@@ -561,7 +582,7 @@ The future validation matrix for implementation work is:
   Evidence command: `mix test test/ecto_shorts/common_filters_test.exs` and any smaller focused test files added for the touched compiler or dynamic boundary.
   Residual risk: if alias support depends on query-shape-specific last-binding detection, edge cases across unusual join counts may still need broader coverage.
 
-- Claim: array `nil`, `count`, and `all` behaviors work without breaking the current live array contract.
+- Claim: array `nil`, `count`, and `ALL(array)`-style behaviors work without breaking the current live array contract.
   Boundary: `Actions.all/3` and `ArrayExpr.dynamic_expr/5`.
   Proof method: boundary integration tests plus direct array-expression tests.
   Evidence command: `mix test test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs`.
@@ -585,11 +606,11 @@ If the user approves implementation later, perform the work in this order.
 
 First, add proof-only changes before runtime changes wherever the live audit suggests that runtime behavior already exists. That means quantified `any`, join hints, and stronger direct array-expression proof come before runtime edits. If any proof-only test exposes a real defect, update this plan’s `Progress`, `Decision Log`, and the affected contracts before changing code.
 
-Second, implement small compatibility shims where the desired future behavior is additive and can normalize back to the existing canonical live contract. Binding selector aliases belong in this category. Join `type:` alias support also belongs here if the user later keeps that item in scope. The key safety rule is that the public boundary may accept a broader input shape, but the downstream internal boundary should stay on the existing canonical representation whenever possible.
+Second, implement small compatibility shims where the desired future behavior is additive and can normalize back to the existing canonical live contract. Binding selector aliases belong in this category. The key safety rule is that the public boundary may accept a broader input shape, but the downstream internal boundary should stay on the existing canonical representation whenever possible.
 
-Third, implement the true runtime gaps in the smallest owner modules possible. Array `nil`, array `count`, and array `all` belong in `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. Direct raw lock function payload support belongs in `lib/ecto_shorts/common_filters/lock.ex`. `with_cte operation` belongs in `lib/ecto_shorts/common_filters/with_cte.ex`. These changes must preserve the current live behaviors already proved by tests.
+Third, implement the true runtime gaps in the smallest owner modules possible. Array `nil`, array `count`, and `ALL(array)`-style behavior belong in `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. `with_cte operation` belongs in `lib/ecto_shorts/common_filters/with_cte.ex`. These changes must preserve the current live behaviors already proved by tests.
 
-Fourth, handle the string-matching contract only if the user still wants that behavior change after the live audit. If implemented, the work belongs in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` and `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. The preserved behavior is that bare strings keep the current contains-style convenience. The new compatibility behavior would be explicit wildcard preservation for callers who pass patterns that already include wildcards.
+Fourth, handle the string-matching contract only if a later explicit decision extends the current live behavior. If implemented, the work belongs in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` and `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. The preserved behavior is that bare strings keep the current contains-style convenience even though Ecto itself accepts raw patterns. The optional compatibility extension would be explicit wildcard preservation for callers who pass patterns that already include wildcards.
 
 After each implementation slice, update this plan, run the named focused tests, and record the result precisely as evidence for the executed cases.
 
@@ -657,6 +678,10 @@ Important live-audit evidence used to build this plan includes:
 - `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`
 - `test/ecto_shorts/dynamics/postgres_test.exs`
 - `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs`
+- `Ecto.Query.lock/3` in `Ecto.Query`
+- `Ecto.Query.with_cte/3` in `Ecto.Query`
+- `Ecto.Query.API` entries for `all/1`, `any/1`, `like/2`, and `ilike/2`
+- PostgreSQL documentation for row and array comparisons (`ANY` / `ALL`) and array operators such as `<@`, `@>`, and `&&`
 
 Revision note (2026-03-14 12:34Z): created this repo-local governing ExecPlan because the earlier megaplan lived outside the repository and no longer matched the current planning rules. Rebased the plan on the live-first audit and narrowed the later implementation scope to true runtime gaps, proof gaps, and explicit compatibility choices.
 
