@@ -65,6 +65,8 @@ This plan does not treat every mismatch between `research/` and the live code as
 - [x] (2026-03-14 16:52Z) Focused and broader proof passed for the completed array `all:` slice. Focused commands: `mix test test/ecto_shorts/dynamics/postgres_test.exs:86`, `mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs:65`, and `mix test test/ecto_shorts/actions/crud_test.exs:1082`, all passing. Broader neighboring regression: `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs test/ecto_shorts/actions/crud_test.exs`, passing with 153 tests and 0 failures.
 - [x] (2026-03-14 17:53Z) Tightened the `with_cte operation:` boundary proof from `assert_query/2` to `assert_sql/3`. The stronger proof exposed a real owner gap: raw Ecto compiles `operation: :update_all` to an `UPDATE ... RETURNING` CTE, while the `CommonFilters.convert_params_to_filter/3` path still emits a plain `SELECT` CTE. The invalid `operation:` proof also now shows that the current owner treats invalid input like omitted `operation:` instead of rejecting it with an unchanged query.
 - [x] (2026-03-14 18:01Z) Completed the `with_cte operation:` owner slice in `lib/ecto_shorts/common_filters/with_cte.ex`. Added explicit validation for `:all | :update_all | :delete_all`, forwarded valid operations into `Query.with_cte/3` alongside the existing `materialized:` path, preserved omitted-input behavior, restored unchanged-query plus warning behavior for invalid `operation:` payloads, and passed focused validation with `mix test test/ecto_shorts/common_filters_test.exs:1819`, `mix test test/ecto_shorts/common_filters_test.exs:1978`, and neighboring regression with `mix test test/ecto_shorts/common_filters_test.exs`.
+- [x] (2026-03-14 18:24Z) Completed the containment-style array `all: [in: list]` slice. Refreshed stale plan wording after the completed `with_cte operation:` work, added failing proof at `ArrayExpr.dynamic_expr/5`, `Postgres.build_dynamic/4`, and `Actions.all/3`, confirmed the gap was owner-local in `ArrayExpr`, added the minimal `{:all, {:in, values}}` `<@` branch, and passed focused validation with `mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs:72`, `mix test test/ecto_shorts/dynamics/postgres_test.exs:100`, `mix test test/ecto_shorts/actions/crud_test.exs:1096`, plus neighboring regression with `mix test test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs` under the locally working OTP 27 toolchain.
+- [x] (2026-03-14 18:19Z) Added focused failing proof for containment-style array `all: [in: list]` at `ArrayExpr.dynamic_expr/5`, `Postgres.build_dynamic/4`, and `Actions.all/3`. Under the working local OTP 27 toolchain, the direct and router proofs both returned `nil`, and the public boundary then failed with `expected a keyword list or dynamic expression in where, got: nil`, confirming the gap is owner-local in `ArrayExpr` rather than another Postgres routing conflict.
 
 ## Milestones
 
@@ -130,6 +132,12 @@ This milestone is complete when every executed slice records its proof, preserve
 - Observation: `assert_query/2` was too weak to prove `with_cte` option handling because the relevant `Ecto.Query` inspect output did not distinguish the CTE operation metadata.
   Evidence: `test/ecto_shorts/common_filters_test.exs:1819` initially passed while `lib/ecto_shorts/common_filters/with_cte.ex` still ignored `:operation`; after switching the `with_cte operation:` proofs to `assert_sql/3`, the positive case failed with `UPDATE ... RETURNING` SQL on the raw-Ecto side versus `SELECT ...` SQL on the `CommonFilters` side, and the invalid case failed because the current owner still built a default `SELECT` CTE instead of leaving the outer query unchanged.
 
+- Observation: After the `with_cte operation:` slice landed, the governing plan still described that directive option as future scope, so the next broader completion slice must start with plan repair before implementation continues.
+  Evidence: `plans/api-feature-reverification.md` still said `` `with_cte operation:` is not part of the live contract today `` in the directive compatibility rules and examples even after `lib/ecto_shorts/common_filters/with_cte.ex` and `test/ecto_shorts/common_filters_test.exs` were updated and the focused proofs passed.
+
+- Observation: The containment-style `all: [in: list]` slice does not need another Postgres routing change after the earlier quantified-payload split; the live router already preserves the array-local payload and the missing behavior is only in `ArrayExpr`.
+  Evidence: `test/ecto_shorts/dynamics/postgres_test.exs:100` failed with `right: nil` rather than a quantified-subquery crash, and `test/ecto_shorts/actions/crud_test.exs:1096` then failed because `Actions.all/3` received `nil` from `where`. `test/ecto_shorts/dynamics/postgres/array_expr_test.exs:72` showed the direct owner result is also `nil`, proving the missing branch is local to `ArrayExpr.dynamic_expr/5`.
+
 ## Decision Log
 
 - Decision: Treat the live public API and public tests as the primary source of truth for feature completion.
@@ -156,8 +164,8 @@ This milestone is complete when every executed slice records its proof, preserve
   Rationale: The live `Lock` boundary expects `name:` and optional `values:` and resolves custom lock behavior through the query provider. Ecto documents lock clauses as boolean or string expressions that cannot include fields, so provider-owned translation into a valid Ecto lock expression is viable without widening the public boundary to raw function or raw string payloads. During plan review, the user chose to keep that narrower contract.
   Date/Author: 2026-03-14 / Cascade
 
-- Decision: Keep `with_cte operation:` in future implementation scope even though it is not live today.
-  Rationale: The live `WithCte` boundary currently supports `as:` and optional `materialized:` only, but upstream `Ecto.Query.with_cte/3` documents `:operation` support and the user chose to keep Ecto-supported `with_cte` options in scope for later completion rather than treat `operation:` as drift.
+- Decision: Treat `with_cte operation:` as part of the live directive contract after the completed owner slice.
+  Rationale: The `WithCte` owner now validates and forwards `:operation`, and the focused SQL-based proofs confirm both valid-operation behavior and invalid-operation rejection at the public boundary. The governing plan must now describe that behavior as live so later work does not re-open it as future scope.
   Date/Author: 2026-03-14 / Cascade
 
 - Decision: Implement `with_cte operation:` in the `WithCte` owner with explicit validation and explicit `Query.with_cte/3` option assembly rather than a broader `CommonFilters` rewrite or a generic option passthrough.
@@ -166,6 +174,10 @@ This milestone is complete when every executed slice records its proof, preserve
 
 - Decision: Use compiled SQL equality, not `Ecto.Query` inspect equality, as the public proof boundary for `with_cte operation:`.
   Rationale: The initial `assert_query/2` proof passed even while the owner still ignored `:operation`. Compiled SQL is the nearest stable observable boundary that reveals whether `Query.with_cte/3` received `operation:` as intended and whether invalid input still mutates the outer query.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Implement containment-style array `all: [in: list]` directly in `ArrayExpr` without another `Postgres.normalize_quantified_term/3` change.
+  Rationale: The earlier quantified-payload split already leaves array-local `all` payloads in place unless they contain `:from`. The new failing proofs show the router now passes containment payloads through unchanged and the owner simply lacks a containment branch. The narrowest valid fix is therefore an owner-local `{:all, {:in, values}}` branch that maps to PostgreSQL `<@` while preserving the existing router and quantified-subquery behavior.
   Date/Author: 2026-03-14 / Cascade
 
 - Decision: Keep planning and implementation authorization separate.
@@ -507,9 +519,9 @@ The live array path already supports several behaviors, but the audit confirmed 
 - Ecto `like/2` and `ilike/2` accept raw search patterns, but the live repo contract currently adds contains-style wrapping for bare scalar values and list entries on both scalar and array paths.
 - Unsupported array-only shapes must continue to follow the current `ArrayExpr` acceptance/rejection behavior unless this plan explicitly changes that contract.
 - Invalid or unsupported array payload shapes must not be silently treated as supported behavior.
-- PostgreSQL-backed shapes such as containment with `<@` and `ALL(array)` are technically viable, but they are not part of the live contract today.
-- The current remaining slice adds array-local comparison `all:` payloads only after the Postgres router distinguishes them from quantified subquery `all`.
-- Containment-style `all: [in: list]` with `<@` remains later work and is not part of the current execution slice.
+- PostgreSQL-backed shapes such as containment with `<@` and `ALL(array)` are technically viable, but only the completed comparison-operator `ALL(array)` slice is part of the live contract today.
+- The completed comparison-operator `all:` slice preserved quantified-subquery routing while enabling array-local `ALL(array)` comparisons.
+- Containment-style `all: [in: list]` with `<@` is now the next active array completion slice.
 
 #### Examples:
 
@@ -529,17 +541,17 @@ The live array path already supports several behaviors, but the audit confirmed 
 `#=> current next slice should return posts whose coalesced array length is 0, following the documented example contract for empty-array zero checks`
 
 `Actions.all(Post, %{tags: %{all: %{>: "a"}}})`
-`#=> current remaining slice should return posts where every array element is greater than "a", preserving the same caller-facing operator meaning as the existing `ANY` array path`
+`#=> returns posts where every array element is greater than "a", preserving the same caller-facing operator meaning as the existing `ANY` array path`
 
 `Actions.all(Post, %{tags: %{all: %{in: ["elixir", "erlang"]}}})`
-`#=> not part of the current execution slice; containment-style `<@` support remains later work`
+`#=> next slice should return posts where every array element is contained in the given list, mapping to PostgreSQL `<@` semantics`
 
 #### Resolved Review Notes:
 
 - **Q:** Does the active runtime owner already contain array `count` support? **A:** No. The active `ArrayExpr` implementation does not contain `count` branches.
 - **Q:** Do official docs make containment and `ALL(array)` real options at the database layer? **A:** Yes. PostgreSQL documents both, but the live repo owner does not currently expose them.
 - **Q:** Does every old example query map cleanly onto the preserved current operator meaning? **A:** No. The older `all: [>: value]` example query is inverted relative to the preserved live `ANY` comparison semantics, so this plan defines the `ALL` implementation by preserving the current caller-facing operator meaning instead of copying that stale example literally.
-- **Q:** Are containment-style `all: [in: list]` and comparison-operator `all:` part of the same implementation slice? **A:** No. This slice implements only the comparison-operator `all:` family. Containment remains later work.
+- **Q:** Are containment-style `all: [in: list]` and comparison-operator `all:` part of the same implementation slice? **A:** No. The completed slice implemented only the comparison-operator `all:` family. Containment is the next separate slice.
 - **Q:** Can comparison-operator `all:` be implemented in `ArrayExpr` alone? **A:** No. The failing live boundary test showed that `Postgres.normalize_quantified_term/3` currently intercepts top-level `all:` first, so the remaining slice must start by distinguishing array-local `all:` from quantified subquery `all` at the Postgres routing boundary.
 
 ### Story: Runtime support versus proof support for quantified comparisons
@@ -582,8 +594,7 @@ Later completion work may add settled future-scope directive support or later ex
 
 - Existing join `qualifier:` behavior must remain canonical internally.
 - Existing name-based provider-backed lock behavior must remain unchanged.
-- Existing `with_cte` support for `as:` and optional `materialized:` must remain unchanged.
-- `with_cte operation:` is not part of the live contract today, but remains future implementation scope.
+- Existing `with_cte` support for `as:`, optional `materialized:`, and `operation:` must remain unchanged.
 - Invalid directive payloads must continue to follow the current owner-specific logging and unchanged-query behavior unless later implementation deliberately changes that contract.
 
 #### Examples:
@@ -598,7 +609,7 @@ Later completion work may add settled future-scope directive support or later ex
 `#=> returns a query with the named CTE applied and materialized false`
 
 `CommonFilters.convert_params_to_filter(Post, %{with_cte: [published_posts: [as: [published: true], operation: :all]]}, [])`
-`#=> not part of the live contract today; later implementation would need to add explicit `operation:` support`
+`#=> returns a query with the named CTE applied using the `:all` operation`
 
 #### Resolved Review Notes:
 

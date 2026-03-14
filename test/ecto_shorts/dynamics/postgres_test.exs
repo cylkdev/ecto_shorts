@@ -96,4 +96,18 @@ defmodule EctoShorts.Adapters.PostgresTest do
 
     assert_dynamic(expected, actual)
   end
+
+  test "build_dynamic/4 routes array-local all in payloads without using quantified subquery handling" do
+    expected = dynamic([q], fragment("? <@ ?", field(q, :tags), ^["elixir", "erlang"]))
+
+    actual =
+      Postgres.build_dynamic(
+        Post,
+        {:as, nil},
+        {:tags, %{all: %{in: ["elixir", "erlang"]}}},
+        []
+      )
+
+    assert_dynamic(expected, actual)
+  end
 end

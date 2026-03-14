@@ -69,6 +69,13 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExprTest do
     assert_dynamic(expected, actual)
   end
 
+  test "dynamic_expr/5 builds array containment for array-local all in payloads" do
+    expected = dynamic([q], fragment("? <@ ?", field(q, :tags), ^["elixir", "erlang"]))
+    actual = ArrayExpr.dynamic_expr({:as, nil}, :tags, nil, {:all, %{in: ["elixir", "erlang"]}}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
   test "dynamic_expr/5 builds lower transform equality for arrays" do
     expected =
       dynamic(

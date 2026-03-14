@@ -129,6 +129,12 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
               fragment("? >= ALL(?)", ^value, field(unquote(target_binding_var), ^key))
             )
 
+          {:all, {:in, values}} when is_list(values) ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? <@ ?", field(unquote(target_binding_var), ^key), ^values)
+            )
+
           {:>, value} ->
             Query.dynamic(
               [unquote_splicing(quoted_binding_body)],

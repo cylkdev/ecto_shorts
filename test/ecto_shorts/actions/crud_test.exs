@@ -1093,6 +1093,20 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "AllGreater"} = result
     end
 
+    test "returns records where every array element is contained in the given list" do
+      %Post{}
+      |> Post.changeset(%{title: "AllContained", tags: ["elixir"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NotContained", tags: ["elixir", "ruby"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{all: %{in: ["elixir", "erlang"]}}})
+      assert %Post{title: "AllContained"} = result
+    end
+
     test "returns records where any array element matches the pattern" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["elixir"]})
