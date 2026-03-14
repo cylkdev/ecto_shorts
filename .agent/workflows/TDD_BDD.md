@@ -2,10 +2,6 @@
 
 This document describes the workflow for delivering a feature or system change using a combination of Test-Driven Development (TDD) and Behaviour-Driven Development (BDD). Treat the reader as a complete beginner to this repository. They have only the current working tree and this document. There is no memory of prior work and no external context. A novice following this document will take any request, clarify what it means, prove the behaviour with a test before writing any code, and grow the implementation in small, safe steps.
 
-## Definitions
-
-Use `.agent/DEFINITIONS.md` as the source of truth for definitions used in this repository's standalone documentation system. If a reusable term is missing, add it there instead of defining it locally in this document.
-
 ## Why TDD + BDD
 
 Test-driven development is not primarily about writing tests. It is an approach to problem-solving that begins with the end in mind. Writing a test first describes the desired behaviour before the implementation is decided. That single discipline change has three effects that compound over time.

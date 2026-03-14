@@ -180,6 +180,29 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
+    test "matches records using quantified any default equality shorthand" do
+      expected =
+        from(p in Post,
+          where:
+            p.id ==
+              any(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{any: %{from: Comment, where: %{published: true}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "matches records using quantified select override" do
       expected =
         from(p in Post,
@@ -197,6 +220,29 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
         CommonFilters.convert_params_to_filter(
           Post,
           %{id: %{all: %{from: Comment, select: %{field: "post_id"}, where: %{published: true}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified any select override" do
+      expected =
+        from(p in Post,
+          where:
+            p.id ==
+              any(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.post_id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{any: %{from: Comment, select: %{field: "post_id"}, where: %{published: true}}}},
           []
         )
 
@@ -297,6 +343,29 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
         CommonFilters.convert_params_to_filter(
           Post,
           %{id: %{not: %{all: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "excludes records using negated quantified any equality" do
+      expected =
+        from(p in Post,
+          where:
+            not (p.id ==
+                   any(
+                     from(c in Comment,
+                       where: c.published == ^true,
+                       select: c.id
+                     )
+                   ))
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{not: %{any: %{from: Comment, where: %{published: true}}}}},
           []
         )
 

@@ -1037,6 +1037,62 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Match"} = result
     end
 
+    test "returns records where the array field is nil" do
+      %Post{}
+      |> Post.changeset(%{title: "NoTags", tags: nil})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "HasTags", tags: ["elixir"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: nil})
+      assert %Post{title: "NoTags", tags: nil} = result
+    end
+
+    test "returns records where the array field count is greater than zero" do
+      %Post{}
+      |> Post.changeset(%{title: "HasTags", tags: ["elixir"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "EmptyTags", tags: []})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{count: %{>: 0}}})
+      assert %Post{title: "HasTags"} = result
+    end
+
+    test "returns records where the array field count equals zero" do
+      %Post{}
+      |> Post.changeset(%{title: "EmptyTags", tags: []})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "HasTags", tags: ["elixir"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{count: %{==: 0}}})
+      assert %Post{title: "EmptyTags"} = result
+    end
+
+    test "returns records where every array element is greater than the value" do
+      %Post{}
+      |> Post.changeset(%{title: "AllGreater", tags: ["b", "c"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "HasLower", tags: ["a", "c"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{all: %{>: "a"}}})
+      assert %Post{title: "AllGreater"} = result
+    end
+
     test "returns records where any array element matches the pattern" do
       %Post{}
       |> Post.changeset(%{title: "Match", tags: ["elixir"]})

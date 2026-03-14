@@ -11,6 +11,12 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
     def dynamic_expr(unquote(quoted_binding_head), key, negated, term, _opts) do
       expr =
         case normalize_term(term) do
+          {:==, nil} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              is_nil(field(unquote(target_binding_var), ^key))
+            )
+
           {:==, values} when is_list(values) ->
             Query.dynamic(
               [unquote_splicing(quoted_binding_body)],
@@ -85,6 +91,42 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
             Query.dynamic(
               [unquote_splicing(quoted_binding_body)],
               ^value in field(unquote(target_binding_var), ^key)
+            )
+
+          {:count, {:>, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("array_length(?, 1)", field(unquote(target_binding_var), ^key)) > ^value
+            )
+
+          {:count, {:==, 0}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("coalesce(array_length(?, 1), 0)", field(unquote(target_binding_var), ^key)) == ^0
+            )
+
+          {:all, {:>, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? < ALL(?)", ^value, field(unquote(target_binding_var), ^key))
+            )
+
+          {:all, {:>=, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? <= ALL(?)", ^value, field(unquote(target_binding_var), ^key))
+            )
+
+          {:all, {:<, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? > ALL(?)", ^value, field(unquote(target_binding_var), ^key))
+            )
+
+          {:all, {:<=, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment("? >= ALL(?)", ^value, field(unquote(target_binding_var), ^key))
             )
 
           {:>, value} ->
@@ -169,8 +211,16 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
 
   def dynamic_expr(_selected_binding, _key, _negated, _term, _opts), do: nil
 
+  defp normalize_term({:all, payload}) do
+    {:all, normalize_all_payload(payload)}
+  end
+
   defp normalize_term({op, value}) do
     {normalize_operator(op), value}
+  end
+
+  defp normalize_term(nil) do
+    {:==, nil}
   end
 
   defp normalize_term(value) when is_list(value) do
@@ -188,6 +238,29 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
   defp normalize_operator(:lt), do: :<
   defp normalize_operator(:lte), do: :<=
   defp normalize_operator(op), do: op
+
+  defp normalize_all_payload(payload) when is_map(payload) and not is_struct(payload) do
+    payload
+    |> Map.to_list()
+    |> normalize_all_payload()
+  end
+
+  defp normalize_all_payload(payload) when is_list(payload) do
+    if Keyword.keyword?(payload) do
+      case payload do
+        [{op, value}] -> {normalize_operator(op), value}
+        _ -> payload
+      end
+    else
+      payload
+    end
+  end
+
+  defp normalize_all_payload({op, value}) do
+    {normalize_operator(op), value}
+  end
+
+  defp normalize_all_payload(payload), do: payload
 
   defp normalize_patterns(values) when is_list(values) do
     Enum.map(values, &"%#{&1}%")

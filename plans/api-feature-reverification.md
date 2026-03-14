@@ -6,9 +6,9 @@ This document must be maintained in accordance with `.agent/PLANS.md`.
 
 ## Purpose / Big Picture
 
-This task exists to prevent the next round of API completion work from being driven by stale assumptions. After this plan is complete, a contributor should be able to tell which parts of the `ecto_shorts` filter API are already live, which parts are live but weakly proved, which parts are truly missing at runtime, and which future behavior changes would be intentional compatibility work rather than rediscovery. The immediate user-visible outcome of this planning work is a trustworthy, repo-local governing plan that can drive later implementation without re-opening settled feature-family questions.
+This task exists to prevent API completion work from being driven by stale assumptions. A contributor using this plan should be able to tell which parts of the `ecto_shorts` filter API are already live, which parts were only weakly proved and are now re-proved, which parts are truly missing at runtime, and which future behavior changes would be intentional compatibility work rather than rediscovery. The immediate user-visible outcome is a trustworthy, repo-local governing plan that continues to drive the approved implementation slices without re-opening settled feature-family questions.
 
-A novice should be able to follow this plan and see the same conclusions by reading the named source files and tests. No implementation should happen from this plan until the user explicitly approves it.
+A novice should be able to follow this plan and see the same conclusions by reading the named source files and tests. Implementation began only after explicit user approval on 2026-03-14 15:43Z, and every later slice must still be executed from this document rather than from chat context.
 
 ## In Scope
 
@@ -30,7 +30,7 @@ It also includes the proof plan for later implementation, because the missing wo
 
 ## Out of Scope
 
-This plan does not authorize any code changes, test changes, or behavior-changing terminal commands.
+This plan does not authorize work outside the approved feature slices and preserved contracts recorded here.
 
 This plan does not update `research/` documents, repository documentation, or examples as a standalone task.
 
@@ -54,6 +54,15 @@ This plan does not treat every mismatch between `research/` and the live code as
 - [x] (2026-03-14 14:45Z) Continued the section-by-section review and corrected inaccurate claims before implementation approval. Tightened the quantified, lock, `with_cte`, string-matching, and broader array sections against live code, public tests, and authoritative dependency documentation, and removed stale `:bind` examples from the intended public contract.
 - [x] (2026-03-14 15:00Z) Finalized the review artifact language so previously answered Q&A sections are recorded as resolved review notes rather than presented as still-open questions.
 - [x] (2026-03-14 15:12Z) Continued the live review in chat and clarified remaining terminology and scope wording in the governing plan. Tightened array references to `ALL(array)`-style behavior, removed the stale join `type:`-alias track, aligned binding-alias examples with the settled future scope, and distinguished settled future-scope items from later optional contract extensions.
+- [x] (2026-03-14 15:43Z) Started implementation from this governing plan after explicit user approval. Began with the proof-only slice for quantified `any`, public join-hint coverage, and stronger direct `ArrayExpr` proof. Confirmed during discovery that `config/config.exs` already exposes live hint key `:test_index`, so public hint proof could target the existing contract without adding new config.
+- [x] (2026-03-14 15:48Z) Completed the first proof-only slice without runtime edits. Added public `CommonFilters` tests for quantified `any`, added public join-hint coverage for the configured `:test_index` hint key, expanded `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` with direct array-expression proof, and ran `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/common_filters_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` plus `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs`, both passing with no reclassification needed.
+- [x] (2026-03-14 15:49Z) Completed the additive binding-selector alias slice at the public boundary. Added `at: :first` and `at: :last` resolution in `CommonFilters` only, kept downstream contracts on integer `{:at, position}` selectors, added boundary-visible proof in `test/ecto_shorts/common_filters_test.exs`, and ran `mix test test/ecto_shorts/common_filters_test.exs` plus `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs`, both passing.
+- [x] (2026-03-14 15:58Z) Performed the final pre-execution review required by the current repo rules before starting the first true runtime-gap slice. Found stale planning-only wording that was no longer safe after implementation approval, and found that the older array `all:` example in `examples/ecto_query_dsl.exs` used an inverted comparison fragment relative to the preserved live `ANY` operator semantics. Updated this plan so the next slice is singular in meaning and no longer depends on chat context to resolve those drifts.
+- [x] (2026-03-14 16:18Z) Began the first true runtime-gap slice under TDD. Added and passed boundary-plus-direct proof for array `nil`, then added and passed boundary-plus-direct proof for array `count > 0` and array `count == 0` with the documented coalesced zero-length rule.
+- [x] (2026-03-14 16:24Z) The new boundary test for `%{tags: %{all: %{>: "a"}}}` exposed a routing conflict rather than an `ArrayExpr`-only gap. `Postgres.normalize_quantified_term/3` currently rewrites every top-level `{all, payload}` into quantified-subquery handling, so array-local comparison `all:` payloads never reach `ArrayExpr`. Updated this plan before continuing so the remaining slice is singular in meaning again.
+- [x] (2026-03-14 16:25Z) Completed the remaining comparison-operator array `all:` slice under the chosen payload-shape split. Narrowed `Postgres.normalize_quantified_term/3` so only quantified-query payloads with `:from` are rewritten into quantified-subquery handling, added `ArrayExpr` support for comparison-operator array-local `all:` payloads while preserving the live reversed operator meaning already used by `ANY`, and proved the executed cases at `Postgres.build_dynamic/4`, `ArrayExpr.dynamic_expr/5`, and `Actions.all/3`.
+- [x] (2026-03-14 16:43Z) The user chose Approach 1 for the remaining array `all:` slice: narrow `Postgres.normalize_quantified_term/3` by quantified-query payload shape instead of changing router precedence. Refreshed nearby repo patterns plus current Elixir docs for `Keyword.has_key?/2`, `Map.has_key?/2`, and `is_map/1` before resuming code changes so the split could use plain helper logic rather than an unverified guard form.
+- [x] (2026-03-14 16:52Z) Focused and broader proof passed for the completed array `all:` slice. Focused commands: `mix test test/ecto_shorts/dynamics/postgres_test.exs:86`, `mix test test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs:65`, and `mix test test/ecto_shorts/actions/crud_test.exs:1082`, all passing. Broader neighboring regression: `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs test/ecto_shorts/actions/crud_test.exs`, passing with 153 tests and 0 failures.
 
 ## Milestones
 
@@ -71,9 +80,15 @@ This milestone is complete when each audited family is classified that way and t
 
 ### Milestone 3: Prepare a safe implementation plan and stop
 
-The third milestone is to make later implementation safe without starting it. At the end of this milestone, a contributor should know which files will be touched, which public behaviors must remain unchanged, which examples define the missing behavior, and which validation steps will be required after implementation. Then work stops until the user explicitly authorizes implementation.
+The third milestone was to make later implementation safe before it started. At the end of this milestone, a contributor knew which files would be touched, which public behaviors had to remain unchanged, which examples defined the missing behavior, and which validation steps would be required after implementation. Work then stopped until the user explicitly authorized implementation, which has now happened.
 
 This milestone is complete when the later `Plan of Work`, example mapping, behaviour specifications, executable tests, and validation matrix are specific enough to guide implementation directly.
+
+### Milestone 4: Execute approved implementation slices without plan drift
+
+The fourth milestone is the current execution stage. Each approved slice must begin with a fresh plan review, follow the smallest owner-module path that satisfies the documented contract, and leave the governing plan more current than it was before the slice started.
+
+This milestone is complete when every executed slice records its proof, preserves the stated unchanged behavior, and leaves no stale planning-only language or ambiguous next-step wording in the governing plan.
 
 ## Surprises & Discoveries
 
@@ -92,8 +107,23 @@ This milestone is complete when the later `Plan of Work`, example mapping, behav
 - Observation: The live string-matching contract is a convenience wrapper over a broader Ecto pattern-matching surface.
   Evidence: `Ecto.Query.API` documents `like/2` and `ilike/2` as accepting search patterns directly; `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` wraps scalar `like` and `ilike` values and list entries with `%...%`; `lib/ecto_shorts/dynamics/postgres/array_expr.ex` does the same through `normalize_patterns/1`.
 
-- Observation: Some missing array behaviors are real PostgreSQL-backed possibilities, but they are not active API support in this repo today.
-  Evidence: PostgreSQL documents array containment operators such as `<@` and `@>` plus `ALL(array)` semantics; `examples/ecto_query_dsl.exs` contains example queries for array `count`, containment using `<@`, and `ALL(...)`-style comparisons; the active runtime owner `lib/ecto_shorts/dynamics/postgres/array_expr.ex` does not implement those shapes.
+- Observation: Some missing array behaviors are real PostgreSQL-backed possibilities, but the examples actually describe two distinct non-live families that must not be collapsed.
+  Evidence: PostgreSQL documents array containment operators such as `<@` and `@>` plus `ALL(array)` semantics; `examples/ecto_query_dsl.exs` contains separate example queries for array `count`, containment using `all: [in: ...]` with `<@`, and comparison-operator `all:` payloads such as `all: [>: "a"]`; the active runtime owner `lib/ecto_shorts/dynamics/postgres/array_expr.ex` does not implement any of those shapes.
+
+- Observation: Public join-hint proof can target an already configured live hint key instead of introducing test-only configuration.
+  Evidence: `config/config.exs` sets `config :ecto_shorts, hints: [test_index: ["USE INDEX(test_index)"]]`; `lib/ecto_shorts/common_filters/join.ex` compiles `@hints` from `Application.compile_env(:ecto_shorts, :hints)` and emits hint-aware `build_join/8` clauses for those keys.
+
+- Observation: The first proof-only slice completed cleanly and did not expose a hidden runtime defect in the supposed proof-gap families.
+  Evidence: `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/common_filters_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` passed with 268 tests and 0 failures; `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs` passed with 391 tests and 0 failures.
+
+- Observation: The binding-alias slice could stay entirely at the public boundary because the repo already has a live query-binding count helper.
+  Evidence: `lib/ecto_shorts/common_query.ex` exposes `query_binding_count/1`; `lib/ecto_shorts/common_filters.ex` now resolves `at: :first` to positional binding `1` and `at: :last` to `CommonQuery.query_binding_count(query)` before anything reaches the integer-only downstream compiler and dynamic contracts; `mix test test/ecto_shorts/common_filters_test.exs` passed with 180 tests and 0 failures.
+
+- Observation: The old array `all:` example query is inverted relative to the preserved operator meaning already used on the live `ANY` array path.
+  Evidence: `lib/ecto_shorts/dynamics/postgres/array_expr.ex` currently treats `{:>, value}` as “some array element is greater than value” by compiling `fragment("? < ANY(?)", ^value, field(...))`; the older example block in `examples/ecto_query_dsl.exs` labeled `tags: [all: [>: "a"]]` shows `fragment("? > ALL(?)", ^"a", p.tags)`, which instead means every array element is less than `"a"`. The next runtime slice must preserve the live caller-visible operator meaning and therefore use the analogous reversed comparison for `ALL`.
+
+- Observation: Array-local comparison `all:` payloads currently collide with quantified subquery `all` routing before they can reach the array owner.
+  Evidence: `test/ecto_shorts/actions/crud_test.exs:1082` fails for `%{tags: %{all: %{>: "a"}}}` with `** (KeyError) key :from not found in: [>: "a"]`; `lib/ecto_shorts/dynamics/postgres.ex` rewrites every `{all, payload}` through `normalize_quantified_term/3`; `lib/ecto_shorts/common_filters/set_comparison.ex` then requires `:from`, proving that array-local `all:` currently cannot share the same top-level routing path.
 
 ## Decision Log
 
@@ -129,11 +159,39 @@ This milestone is complete when the later `Plan of Work`, example mapping, behav
   Rationale: The current task is still planning-only. Even though the next implementation steps are now better defined, later code work still requires explicit user approval.
   Date/Author: 2026-03-14 / Cascade
 
+- Decision: Execute the proof-only slice before any compatibility or runtime edits and reclassify only if the new proof exposes a real defect.
+  Rationale: The governing plan already identified quantified `any`, join hints, and direct array-expression proof as the safest first slice because live code suggested those behaviors already existed. The new tests passed without runtime edits, so those items remain proof gaps now closed rather than reclassified runtime defects.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Implement `at: :first` and `at: :last` only by resolving them to integer positions inside `CommonFilters`.
+  Rationale: `lib/ecto_shorts/compiler/query_binding_builder.ex`, `lib/ecto_shorts/dynamics/helpers.ex`, and `lib/ecto_shorts/dynamics/postgres.ex` still accept only integer positional `{:at, position}` contracts. `CommonQuery.query_binding_count/1` provides the last-binding calculation needed for the public alias without widening downstream internal contracts or reviving stale `:bind` work.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Split the remaining array work into two contracts instead of treating every nested `all:` payload as one thing.
+  Rationale: Repo evidence shows two distinct non-live shapes: containment-style `all: [in: list]` mapped to `<@`, and comparison-operator `all:` payloads such as `all: [>: value]` mapped to `ALL(array)` comparisons. The current next slice will implement only array `nil`, array `count`, and comparison-operator `all:` payloads. Containment-style `all: [in: list]` remains later work so this slice stays singular in meaning.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Preserve the current caller-visible operator meaning from the live `ANY` array path when adding comparison-operator `all:` support.
+  Rationale: The live `ANY` path already interprets `{:>, value}` as “an element of the array is greater than value,” which is implemented by reversing the SQL comparison around `ANY`. The new `ALL` path must preserve that same caller-facing meaning, so `{:>, value}` will compile to the analogous reversed `ALL` comparison rather than copying the older inverted example query literally.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Add a routing distinction in `Postgres` so quantified subquery `all` handling remains intact while array-local comparison `all:` payloads can reach `ArrayExpr`.
+  Rationale: The failing `%{tags: %{all: %{>: "a"}}}` boundary test showed that the current unconditional `normalize_quantified_term/3` interception is too broad for the newly approved array-local `all:` contract. The safest minimal fix is to distinguish subquery-shaped quantified payloads from array-local comparison payloads at the Postgres routing boundary before expression ownership is finalized.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Implement the routing distinction by checking quantified-query payload shape inside `normalize_quantified_term/3` with ordinary function logic instead of a guard or a broader routing-order change.
+  Rationale: Current repo patterns already use plain `Keyword.keyword?/1`, `Keyword.has_key?/2`, and `Map.has_key?/2` checks in function bodies. Current Elixir docs confirm those helpers are valid ordinary runtime checks, while the rejected guard attempt relied on invalid guard-only syntax. This keeps the fix local to the collision point, preserves current quantified-subquery behavior, and lets unsupported array-local `all:` payloads continue following `ArrayExpr` ownership without widening the public contract.
+  Date/Author: 2026-03-14 / Cascade
+
 ## Outcomes & Retrospective
 
 The old research-first megaplan overstated the amount of missing runtime behavior. The live-first audit reduced the true runtime work to a smaller set of gaps and turned several earlier “missing” items into proof work instead.
 
-At this stage, the task has not produced code changes. The concrete outcome so far is a better-governed planning state: `plans/api-feature-reverification.md` is the single governing ExecPlan for this task, the older external megaplan is superseded, and the later implementation work can be limited to real runtime gaps plus a small number of explicit compatibility choices.
+Implementation has now started under this governing plan. The first executed slice stayed intentionally narrow: it added proof-only tests for quantified `any`, public join hints, and direct `ArrayExpr` coverage. Those tests passed without runtime edits, which confirms that the earlier classification was accurate for that slice.
+
+The second executed slice added the settled `at: :first` and `at: :last` aliases at the public `CommonFilters` boundary without widening the downstream integer-only positional contracts. Focused and broader regressions passed.
+
+The next slice began as the first true array runtime-gap slice. Array `nil`, array `count > 0`, and array `count == 0` are now implemented with focused direct and boundary proof. The remaining work in that slice narrowed further once live tests exposed a routing conflict for array-local comparison `all:` payloads: the remaining implementation must first distinguish array-local `all:` from quantified subquery `all` at the Postgres routing boundary, then add the matching `ArrayExpr` behavior, while containment-style `<@` work remains explicitly deferred.
 
 ## Context and Orientation
 
@@ -308,12 +366,13 @@ Produced output shape: an `Ecto.Query.DynamicExpr` or `nil` when the selected bi
 Owned transformations:
 
 - normalize top-level negation from `{:not, term}` into `{negated, term}`
-- normalize top-level quantified forms `{:all, payload}` and `{:any, payload}` into equality against a built quantified query
+- normalize top-level quantified subquery forms `{:all, payload}` and `{:any, payload}` into equality against a built quantified query when the payload is on the quantified-query contract
 - route by operator family or array-field detection
 
 Forbidden accidental contract expansion:
 
 - array-only enhancements such as `count` or `all` must not be added here as incidental intermediate shapes; they belong in `ArrayExpr` once the term reaches the array boundary
+- the Postgres router must not eagerly rewrite array-local comparison `all:` payloads into quantified-subquery handling, because doing so prevents the array owner from seeing the approved array-local contract
 
 ### Boundary: `ArrayExpr.dynamic_expr/5`
 
@@ -334,6 +393,12 @@ Unsupported live shapes that matter for later work:
 - nested `count` payloads
 - nested `ALL(array)`-style payloads
 - containment fragments such as `<@`
+
+Current in-flight execution notes:
+
+- array `nil` is now implemented and proved
+- nested `count` with `{:>, value}` and `{:==, 0}` is now implemented and proved
+- comparison-operator `all:` still cannot reach this boundary until the Postgres routing conflict is resolved
 
 ### Boundary: `Join.build_query/6`
 
@@ -386,22 +451,22 @@ For each entry, `apply_filters/6` decides what kind of thing it is looking at. I
 
 When a field predicate reaches the Postgres dynamic path, `EctoShorts.Dynamics.Postgres.build_dynamic/4` normalizes top-level negation, then normalizes top-level quantified forms such as `all` and `any` into equality against a built quantified query. After that, it routes by family. Common operators such as `before` and `after` stay in `CommonExpr`. Array and map-backed fields route to `ArrayExpr`. Everything else routes to `ScalarExpr`.
 
-That routing order matters for later implementation. If array `count` or `ALL(array)`-style support is added, the change belongs in `ArrayExpr.dynamic_expr/5` after the field is already known to be array-like. If a join payload alias or lock payload alias is added, the change belongs in the directive owner after API dispatch, not in `CommonFilters.apply_filters/6`. If a top-level quantified shorthand is extended, the change belongs in `Postgres.normalize_quantified_term/3` or the quantified-query helper, not in the action layer.
+That routing order matters for later implementation. Array `count` support did belong in `ArrayExpr.dynamic_expr/5` once the field was already known to be array-like. The new failing array-local `all:` boundary test shows that comparison-operator `all:` cannot be completed in `ArrayExpr` alone, because the current Postgres router intercepts it first as quantified-subquery work. The next remaining change therefore starts in `Postgres.normalize_quantified_term/3` or a nearby router guard so the array-local contract can reach `ArrayExpr` without breaking quantified subquery `all`. If a join payload alias or lock payload alias is added, the change belongs in the directive owner after API dispatch, not in `CommonFilters.apply_filters/6`.
 
 Invalid-input behavior also differs by boundary. At the top-level reducer, many invalid shapes are still allowed to flow to the owner module. The owner module usually decides whether to log and keep the query unchanged or to raise for impossible internal shapes. That means later proof work must keep the invalid-input behavior visible at the owning boundary instead of hiding it behind broad guards in `CommonFilters`.
 
 ## Example Mappings
 
-### Story: Binding selector aliases as future additive support over the current integer-only contract
+### Story: Binding selector aliases as completed additive support over the current integer-only downstream contract
 
-The public filter pipeline already supports root binding, named binding, and positive-integer positional binding. Later completion work should add `:first` and `:last` as additive aliases without disturbing the current integer-based contract.
+The public filter pipeline now supports root binding, named binding, positive-integer positional binding, and the additive aliases `:first` and `:last`. The implemented alias support normalizes back to the current integer-based downstream contract instead of changing the compiler or dynamic builders.
 
 #### Rules:
 
 - The live public path must continue to accept `as: alias_name`, `as: nil`, and `at: positive_integer`.
 - Omitting binding selection must continue to mean “use the current binding context.”
-- `at: :first` and `at: :last` are not part of the live contract today, but they remain in future completion scope as additive aliases.
-- Later alias support must normalize to the existing integer-based downstream contract instead of changing the compiler and dynamic builders to accept multiple internal positional representations.
+- `at: :first` and `at: :last` are now part of the live public contract.
+- Alias support must continue to normalize to the existing integer-based downstream contract instead of changing the compiler and dynamic builders to accept multiple internal positional representations.
 
 #### Examples:
 
@@ -412,13 +477,12 @@ The public filter pipeline already supports root binding, named binding, and pos
 `#=> returns a query that applies the published predicate against positional binding 1`
 
 `CommonFilters.convert_params_to_filter(Post, %{at: %{first: %{published: true}}}, [])`
-`#=> not part of the live contract today; later implementation would add this additive alias at the public boundary and normalize it to the existing integer-based downstream contract`
+`#=> returns a query that applies the published predicate against positional binding 1 after public-boundary alias resolution`
 
 #### Resolved Review Notes:
 
-- **Q:** Is `:first` already live in the current public path? **A:** No. The live validator and compiler contracts accept only positive integers for `{:at, position}`.
-- **Q:** Should alias support remain in future scope? **A:** Yes. The plan keeps `at: :first` and `at: :last` as additive compatibility work.
-- **Q:** Where should alias normalization happen? **A:** At the public filter boundary before the integer-based downstream binding contracts are used.
+- **Q:** Is `:first` live in the current public path now? **A:** Yes. `CommonFilters` resolves `:first` and `:last` at the public boundary while downstream contracts stay integer-only.
+- **Q:** Where does alias normalization happen? **A:** At the public filter boundary before the integer-based downstream binding contracts are used.
 
 ### Story: Array feature completion after the live audit
 
@@ -428,10 +492,11 @@ The live array path already supports several behaviors, but the audit confirmed 
 
 - Existing live array equality, inequality, membership, overlap, `ANY` comparison, transform, and string-matching behavior must remain unchanged.
 - Ecto `like/2` and `ilike/2` accept raw search patterns, but the live repo contract currently adds contains-style wrapping for bare scalar values and list entries on both scalar and array paths.
-- Unsupported array-only shapes must continue to follow the current `ArrayExpr` acceptance/rejection behavior unless later implementation explicitly changes that contract.
+- Unsupported array-only shapes must continue to follow the current `ArrayExpr` acceptance/rejection behavior unless this plan explicitly changes that contract.
 - Invalid or unsupported array payload shapes must not be silently treated as supported behavior.
 - PostgreSQL-backed shapes such as containment with `<@` and `ALL(array)` are technically viable, but they are not part of the live contract today.
-- Later implementation may add array `nil`, `count`, and `ALL(array)`-style support, but those behaviors are not part of the live contract today.
+- The current remaining slice adds array-local comparison `all:` payloads only after the Postgres router distinguishes them from quantified subquery `all`.
+- Containment-style `all: [in: list]` with `<@` remains later work and is not part of the current execution slice.
 
 #### Examples:
 
@@ -441,14 +506,28 @@ The live array path already supports several behaviors, but the audit confirmed 
 `Actions.all(Post, %{tags: %{>: "a"}})`
 `#=> returns posts where any array element is greater than "a"`
 
+`Actions.all(Post, %{tags: nil})`
+`#=> returns posts whose tags field is null`
+
 `Actions.all(Post, %{tags: %{count: %{>: 0}}})`
-`#=> not part of the live contract today; later implementation would need to define the public array-count contract and prove it`
+`#=> current next slice should return posts whose array_length(tags, 1) is greater than 0`
+
+`Actions.all(Post, %{tags: %{count: %{==: 0}}})`
+`#=> current next slice should return posts whose coalesced array length is 0, following the documented example contract for empty-array zero checks`
+
+`Actions.all(Post, %{tags: %{all: %{>: "a"}}})`
+`#=> current remaining slice should return posts where every array element is greater than "a", preserving the same caller-facing operator meaning as the existing `ANY` array path`
+
+`Actions.all(Post, %{tags: %{all: %{in: ["elixir", "erlang"]}}})`
+`#=> not part of the current execution slice; containment-style `<@` support remains later work`
 
 #### Resolved Review Notes:
 
 - **Q:** Does the active runtime owner already contain array `count` support? **A:** No. The active `ArrayExpr` implementation does not contain `count` branches.
 - **Q:** Do official docs make containment and `ALL(array)` real options at the database layer? **A:** Yes. PostgreSQL documents both, but the live repo owner does not currently expose them.
-- **Q:** Do example queries in `examples/ecto_query_dsl.exs` prove the live API supports those shapes? **A:** No. They show desired Ecto/PostgreSQL queries, not active `CommonFilters` or `Actions` support.
+- **Q:** Does every old example query map cleanly onto the preserved current operator meaning? **A:** No. The older `all: [>: value]` example query is inverted relative to the preserved live `ANY` comparison semantics, so this plan defines the `ALL` implementation by preserving the current caller-facing operator meaning instead of copying that stale example literally.
+- **Q:** Are containment-style `all: [in: list]` and comparison-operator `all:` part of the same implementation slice? **A:** No. This slice implements only the comparison-operator `all:` family. Containment remains later work.
+- **Q:** Can comparison-operator `all:` be implemented in `ArrayExpr` alone? **A:** No. The failing live boundary test showed that `Postgres.normalize_quantified_term/3` currently intercepts top-level `all:` first, so the remaining slice must start by distinguishing array-local `all:` from quantified subquery `all` at the Postgres routing boundary.
 
 ### Story: Runtime support versus proof support for quantified comparisons
 
@@ -520,7 +599,7 @@ Scenario: Binding selectors remain on the verified live contract
   Given the current filter pipeline
   When a caller uses root binding, named binding, or positive-integer positional binding
   Then the plan must treat that behavior as already implemented
-  And the plan must not classify `:first` or `:last` aliases as already live
+  And the implemented alias support must remain normalized back to the integer-only downstream contract
 
 Scenario: Quantified `any` is treated as live until disproved
   Given the current Postgres quantified routing code
@@ -528,11 +607,23 @@ Scenario: Quantified `any` is treated as live until disproved
   Then `any` must be listed as implemented in runtime
   And it must be listed as needing public proof rather than immediate runtime implementation
 
-Scenario: Array `count` is treated as missing runtime behavior
+Scenario: Array `count` is treated as missing runtime behavior until this slice lands
   Given the active `ArrayExpr` owner
   When the plan classifies array-family work
   Then array `count` must be listed as a runtime gap
   And existing array equality, membership, comparison, transform, and string-matching behavior must be listed as preserved
+
+Scenario: The current array runtime slice excludes containment-style `all: [in: list]`
+  Given the remaining array-family work
+  When the next slice is executed
+  Then comparison-operator `all:` payloads belong in the slice
+  And containment-style `all: [in: list]` must remain deferred instead of being folded in implicitly
+
+Scenario: Comparison-operator array `all:` must not break quantified subquery `all`
+  Given the existing quantified subquery support in `Postgres`
+  When array-local comparison `all:` support is added
+  Then quantified subquery `all` must still route through `SetComparison`
+  And array-local comparison `all:` must reach `ArrayExpr` instead of raising on missing `:from`
 
 Scenario: Directive compatibility work preserves the current owner contracts
   Given the live `Join`, `Lock`, and `WithCte` modules
@@ -543,13 +634,13 @@ Scenario: Directive compatibility work preserves the current owner contracts
   And it must preserve `with_cte` support for `as:` and `materialized:`
   And it must keep `with_cte operation:` in future scope as explicit non-live implementation work
 
-### Feature: Stop after the revised plan unless the user explicitly approves implementation
+### Feature: Execute approved slices only from the current governing plan
 
-Scenario: Planning work ends at the plan artifact
-  Given the revised governing ExecPlan
-  When the planning milestone is complete
-  Then the next action is to present the plan to the user
-  And no code or test changes are authorized until the user explicitly approves implementation
+Scenario: Execution still begins from the current ExecPlan instead of chat context
+  Given an already approved implementation task
+  When a new slice is about to start
+  Then the implementer must re-read the governing ExecPlan fresh
+  And the plan must be updated first if stale wording or conflicting examples are found
 
 ## Executable Tests
 
@@ -561,10 +652,10 @@ For proof gaps:
 - Add public tests for join hints in `test/ecto_shorts/common_filters_test.exs`.
 - Expand direct array-path proof in `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` so the supported live array contract is proved more explicitly.
 
-For runtime gaps and compatibility work, if the user later approves implementation:
+For runtime gaps and compatibility work during the approved implementation:
 
 - Add boundary-visible tests for binding selector aliases in `test/ecto_shorts/common_filters_test.exs` and any lower-level compiler or dynamic tests needed only if the alias normalization touches those boundaries.
-- Add array runtime tests in `test/ecto_shorts/actions/crud_test.exs` and `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs` for `nil`, `count`, and `ALL(array)`-style behavior once those behaviors exist.
+- Add array runtime tests in `test/ecto_shorts/actions/crud_test.exs`, `test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs`, and targeted `test/ecto_shorts/dynamics/postgres_test.exs` coverage for router conflicts where needed. Keep containment-style `<@` work separate until it is intentionally implemented.
 - Add directive tests in `test/ecto_shorts/common_filters_test.exs` for `with_cte operation` support if that feature is implemented.
 - Add scalar and array string-matching tests only if a later explicit decision adds wildcard-preservation compatibility over the current contains-style wrapper contract.
 
@@ -582,11 +673,11 @@ The future validation matrix for implementation work is:
   Evidence command: `mix test test/ecto_shorts/common_filters_test.exs` and any smaller focused test files added for the touched compiler or dynamic boundary.
   Residual risk: if alias support depends on query-shape-specific last-binding detection, edge cases across unusual join counts may still need broader coverage.
 
-- Claim: array `nil`, `count`, and `ALL(array)`-style behaviors work without breaking the current live array contract.
-  Boundary: `Actions.all/3` and `ArrayExpr.dynamic_expr/5`.
-  Proof method: boundary integration tests plus direct array-expression tests.
-  Evidence command: `mix test test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs`.
-  Residual risk: behavior remains Postgres-specific and should not be overclaimed as adapter-agnostic.
+- Claim: array `nil`, `count`, and comparison-operator `all:` behaviors work without breaking the current live array contract.
+  Boundary: `Actions.all/3`, `Postgres.build_dynamic/4`, and `ArrayExpr.dynamic_expr/5`.
+  Proof method: boundary integration tests plus targeted router tests plus direct array-expression tests.
+  Evidence command: `mix test test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr/specs_test.exs`.
+  Residual risk: behavior remains Postgres-specific, and containment-style `<@` support still remains separate later work.
 
 - Claim: join hints and quantified `any` are publicly proved.
   Boundary: `CommonFilters.convert_params_to_filter/3` and the existing Postgres dynamic path.
@@ -602,13 +693,13 @@ The future validation matrix for implementation work is:
 
 ## Plan of Work
 
-If the user approves implementation later, perform the work in this order.
+Perform the approved implementation work in this order.
 
 First, add proof-only changes before runtime changes wherever the live audit suggests that runtime behavior already exists. That means quantified `any`, join hints, and stronger direct array-expression proof come before runtime edits. If any proof-only test exposes a real defect, update this plan’s `Progress`, `Decision Log`, and the affected contracts before changing code.
 
 Second, implement small compatibility shims where the desired future behavior is additive and can normalize back to the existing canonical live contract. Binding selector aliases belong in this category. The key safety rule is that the public boundary may accept a broader input shape, but the downstream internal boundary should stay on the existing canonical representation whenever possible.
 
-Third, implement the true runtime gaps in the smallest owner modules possible. Array `nil`, array `count`, and `ALL(array)`-style behavior belong in `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. `with_cte operation` belongs in `lib/ecto_shorts/common_filters/with_cte.ex`. These changes must preserve the current live behaviors already proved by tests.
+Third, implement the true runtime gaps in the smallest owner modules possible. The current array slice first fixes Postgres routing so array-local comparison `all:` can reach the array owner without breaking quantified subquery `all`, then completes the remaining array-owner work in `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. Containment-style `all: [in: list]` with `<@` remains separate later work. `with_cte operation` belongs in `lib/ecto_shorts/common_filters/with_cte.ex`. These changes must preserve the current live behaviors already proved by tests.
 
 Fourth, handle the string-matching contract only if a later explicit decision extends the current live behavior. If implemented, the work belongs in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` and `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. The preserved behavior is that bare strings keep the current contains-style convenience even though Ecto itself accepts raw patterns. The optional compatibility extension would be explicit wildcard preservation for callers who pass patterns that already include wildcards.
 
@@ -616,7 +707,7 @@ After each implementation slice, update this plan, run the named focused tests, 
 
 ## Concrete Steps
 
-When later implementation is authorized, work from the repository root `/Users/kurthogarth/Documents/GitHub/ecto_shorts`.
+Work from the repository root `/Users/kurthogarth/Documents/GitHub/ecto_shorts`.
 
 For proof-only changes, the expected focused commands are:
 
@@ -688,3 +779,7 @@ Revision note (2026-03-14 12:34Z): created this repo-local governing ExecPlan be
 Revision note (2026-03-14 12:41Z): reviewed artifact governance with the user and kept `plans/api-feature-reverification.md` as the single governing ExecPlan. The older external megaplan is superseded and no longer authoritative.
 
 Revision note (2026-03-14 12:43Z): reviewed binding selector scope with the user and kept `at: :first` and `at: :last` in future completion scope as additive compatibility aliases. The plan now treats that as settled future scope rather than an open preference question.
+
+Revision note (2026-03-14 15:49Z): implementation began after explicit user approval. Recorded the completed proof-only slice for quantified `any`, join hints, and direct array-expression coverage, captured the passing focused and broader test evidence, and advanced the next slice to additive binding-selector alias work.
+
+Revision note (2026-03-14 15:53Z): completed the additive binding-selector alias slice by resolving `at: :first` and `at: :last` to integer positions in `CommonFilters`, recorded the passing focused and broader validation evidence, and advanced the next slice to the true array runtime gaps.

@@ -56,6 +56,13 @@ NON-NEGOTIABLE REQUIREMENTS:
   decision, exercise judgment, explain why that path is justified, and identify the main alternatives
   considered so the reasoning remains explicit, deliberate, and open to correction.
 
+* For every consequential request, run an interpretation search before you act. State the most concrete
+  plausible reading of the request in terms of observable outcome, scope, preserved behavior, and authorized
+  action. Then actively test that reading against the request text, the governing rules, the repository, the
+  current `ExecPlan`, and the nearest plausible alternative readings. Do not act on the first interpretation
+  that seems to fit. Try to disprove it. If more than one reading still survives, the request is ambiguous and
+  you must clarify before proceeding.
+
 * Treat work in progress as governed by the current instructions, not by the instructions that were in force
   when the work began. When the standard changes, re-evaluate the existing work against that standard before
   continuing. Do not treat prior progress, earlier assumptions, or workflow state as an exception. If the
@@ -82,6 +89,17 @@ NON-NEGOTIABLE REQUIREMENTS:
   semantic or tradeoff question, and record both layers in the ExecPlan before you plan changes around them. A
   clarification question is defective if it mixes unresolved code truth, unresolved dependency constraints,
   unresolved meaning, and future-scope choices into one question.
+
+* Treat language syntax, framework usage, and local coding idiom as discoverable fact, not as memory. Before
+  you write code that depends on a language form, macro shape, DSL clause, library call pattern, or
+  style-sensitive convention, refresh your understanding from the current repository and the current
+  authoritative documentation for the versions in use. If you cannot point to a nearby repo example or an
+  official source that makes the intended shape valid, the shape is unverified and must not drive the edit.
+
+* Before you settle on an implementation shape for consequential code work, consider at least three plausible
+  approaches. Compare them for syntactic validity, support in current official docs, alignment with the
+  repository's established style, explicitness, and minimality. Do not let the first remembered approach become
+  the plan by default. Choose the simplest valid local shape and record why the rejected approaches lost.
 
 * Separate current truth, semantic meaning, and future scope in that order. First state what is live today.
   Then state what each relevant caller-facing term or shape means, including which meanings are proven by the
@@ -114,6 +132,11 @@ NON-NEGOTIABLE REQUIREMENTS:
   and ask the user rather than guessing. When that uncertainty affects the plan, update the plan to reflect
   the clarified understanding before continuing. It is better to pause, confirm, and revise than to continue
   from a guess that makes the work wrong.
+
+* Treat alternative interpretations as search targets, not as footnotes. For a consequential request, identify
+  the nearest wrong reading a reasonable engineer could adopt and check what evidence rules it out. The goal
+  is not just to find support for your preferred interpretation. The goal is to show why the competing reading
+  fails. If you cannot do that from the available evidence, the interpretation is not settled.
 
 * Do not plan code work in freehand form. If the task involves repo-tracked code, move the planning into the
   `ExecPlan` immediately and reason from there. Boundaries, examples, function specifications, behaviour
@@ -294,12 +317,29 @@ NON-NEGOTIABLE REQUIREMENTS:
   progress and resolve it immediately. Confirm agreement on meaning, not merely on wording, and do not proceed
   until the intended result is specific enough that both sides would recognize the same work when it appears.
 
+* Make the interpretation check visible when the risk is material. If the request is ambiguous,
+  behavior-bearing, scope-sensitive, artifact-shaping, or otherwise consequential, state the concrete
+  interpretation you intend to act on, the nearest plausible alternative you ruled out, and the evidence that
+  settled the choice. Do not force the user to discover the hidden fork after action has already started.
+
 * Apply the self-contained standard to every explanation, clarification, and recommendation. Self-contained
   means that, in its current form, the message gives a complete beginner with only the working tree enough
   context to understand what part of the system is under discussion, what is true now, what decision remains
   open, and what each answer would change or preserve. If the reader would need prior chat context, unstated
   repository lore, or a follow-up explanation to respond correctly, the message is incomplete. Rewrite it
   before you send it.
+
+* When explaining a bug, conflict, or design fork in code, walk the real boundary path from start to finish.
+  Begin with the caller-visible input, then name the actual functions or modules the value passes through, in
+  order, until the decision point or failure point is reached. Do not substitute abstract labels such as
+  "routing", "normalization", or "handling" when the real code path can be named. A beginner should be able to
+  see where the issue happens, not just hear a category name for it.
+
+* Show the exact shape at each important step when the explanation depends on how data is transformed. State
+  what the caller writes, what each relevant boundary receives, what shape the next boundary sees, and which
+  shape the deciding function actually operates on. If the explanation depends on a mismatch between two
+  similar-looking inputs, show both concrete shapes and where they diverge. Do not leave shape changes
+  implicit.
 
 * Separate task interpretation from action authorization. Understanding what probably needs to happen next does
   not tell you what the user has authorized you to do next. Interpret the request first, then identify the
@@ -326,6 +366,11 @@ NON-NEGOTIABLE REQUIREMENTS:
   glance. If one option is shown concretely and the other is described only in labels or abstractions, the
   comparison is incomplete.
 
+* When two inputs, paths, or behaviors are easy to confuse, put them side by side and show the divergence point
+  explicitly. Mirrored examples are not enough on their own if the reader still cannot see where the code
+  starts treating them differently. Name the exact boundary or function where the paths split, and show what
+  each side means in practical terms.
+
 * Do not ask the user to choose among options that have not been proven technically plausible. Before you frame
   a decision, rule out the options that fail repository evidence or authoritative dependency constraints.
   Clarification exists to choose among viable paths, not to outsource feasibility checking. If viability is
@@ -337,6 +382,21 @@ NON-NEGOTIABLE REQUIREMENTS:
   cases, or extensions. A smaller question is premature when its answer could still be invalid under more than
   one unresolved larger interpretation. After you explain the options, name the real choice in one short
   plain-language contrast so the reader can see immediately what they are choosing between.
+
+* Name the real open question at the contract boundary, not a looser implementation question downstream. Do not
+  ask "how should we implement X?" when the actual fork is about which meaning, split point, preserved
+  behavior, or boundary contract should govern the work. State the real question in the narrowest concrete form
+  that would let a beginner understand what must be decided before implementation shape can be discussed.
+
+* Separate proved current facts from unresolved design choices before you discuss solutions. State what is
+  already established by code, tests, docs, or direct inspection, and state separately what is still a
+  decision. If a bug is proved but the repair shape is still open, say so directly. Do not blur "this is
+  broken" together with "therefore we should fix it this way."
+
+* Do not propose a fix before the boundary contract is legible enough to support the fix. If the reader cannot
+  yet see what the public input means, what path it follows, what exact shape reaches the deciding boundary,
+  what behavior must be preserved, and what the real open question is, then solution talk is premature.
+  Explain the contract first, then the choice, then the repair options.
 
 * Describe a problem from the task, not from the error. Start with the outcome you were trying to achieve,
   state what should have happened, identify where progress stopped, and then present the error or unexpected
@@ -438,6 +498,11 @@ NON-NEGOTIABLE REQUIREMENTS:
   work unless the task has explicitly been split. Planning is incomplete whenever the live reasoning for the
   current code decision has drifted into a different artifact.
 
+* For consequential code tasks, record the chosen task interpretation in the governing `ExecPlan` before you
+  plan the implementation. State the observable request you are acting on, the nearest plausible alternative
+  readings you ruled out, and the evidence that resolved them. If the plan begins from a silent interpretation
+  leap, it is not ready.
+
 * Start each new review section or subproblem with a fresh verification pass. Re-state the live caller-facing
   shapes, the owning boundaries, the examples that prove them, the terms whose meaning is still user-owned,
   the relevant external framework or library constraints, and the remaining future-scope choices. Do not
@@ -471,6 +536,16 @@ NON-NEGOTIABLE REQUIREMENTS:
   infrastructure, or optimization, name the exact duplication, conflicting responsibility, or measured
   pressure that makes the simpler version insufficient. "It might be useful later" is not a reason.
 
+* Before you lock the implementation shape, refresh the nearest current examples. Re-open the touched module,
+  adjacent tests, and any comparable code paths so the plan reflects how this repository actually expresses the
+  behavior today. If the change depends on external syntax or library forms, re-open the current official docs
+  at the same time. Do not plan from remembered snippets.
+
+* For consequential code tasks, search at least three implementation approaches before you choose one. Record
+  the simplest local approach, the strongest more general or abstract alternative, and at least one other
+  plausible path. Then state why the chosen shape wins on validity, repo fit, explicitness, and minimality. If
+  the rejected approaches are not named, the choice is not yet deliberate enough.
+
 * Use the available engineering resources as your source of discipline. Function specifications tell you what a
   unit promises. Module specifications tell you the larger role and constraints. Executable tests tell you what
   the system already proves. Example mappings tell you how inputs should translate into outcomes. Behaviour
@@ -493,6 +568,11 @@ NON-NEGOTIABLE REQUIREMENTS:
 * The habit to build is not just "plan first." It is "interrogate the plan until it cannot hide confusion."
   That is what makes someone systematic, methodical, and precise. Speed comes later. Clear reasoning comes
   first.
+
+* Treat plan presentation and execution readiness as separate gates. A plan can be well-formed enough to
+  present and still fail the last review needed to begin work safely. Right before execution starts, re-read
+  the governing `ExecPlan` fresh as if you have no prior chat context and no memory beyond that document. If
+  the task cannot be completed correctly from that artifact alone, execution must not begin.
 
 #### Required Self-Review Before Presenting A Plan
 
@@ -524,11 +604,25 @@ NON-NEGOTIABLE REQUIREMENTS:
   exists, the plan is incomplete. Add the internal boundary contracts and the internal structure walkthrough
   until those questions are answered directly.
 
+* Before presenting a code plan, verify that the intended code shape is grounded in current repo patterns and
+  current official docs, not in memory. A reader should be able to point to the local style it follows or the
+  authoritative source that justifies the difference. If the proposed syntax, idiom, or library form is not
+  yet grounded, the plan is not ready.
+
+* Before presenting a code plan, verify that at least three implementation approaches were considered and that
+  the plan records why the chosen approach is the simplest valid fit. If the plan jumps from the first
+  remembered idea straight to execution, the plan is not ready.
+
 * Before presenting a code plan, verify that the proposed implementation starts from the most minimal explicit
   code that can satisfy the requirement. If the plan would make a beginner work to infer behavior from helper
   layers, compressed expressions, speculative reuse, or implicit transformations, the plan is not ready.
   Simplify the code shape until the behavior is visible at a glance, or state the concrete constraint that
   makes the added structure necessary.
+
+* Before presenting a plan, verify that the task interpretation itself has been searched, not guessed. A
+  reader should be able to see what request meaning was chosen, what adjacent reading was rejected, and what
+  evidence settled the choice. If the plan could still be read under a different plausible interpretation, the
+  plan is not ready.
 
 * Before presenting the plan, proofread it against the user's actual instruction and the verified code
   evidence. Remove anything you introduced that is not clearly supported by one or the other. Do not add
@@ -569,14 +663,57 @@ NON-NEGOTIABLE REQUIREMENTS:
   concrete example or one favored path is still standing in for the whole public surface, the plan is
   incomplete.
 
+* Before sending an explanation of a bug, conflict, or design fork, verify that a beginner could trace the real
+  code path and the important shapes without doing inference work. They should be able to point to the
+  caller-visible input, the path through the relevant functions, the exact divergence point, what is already
+  proved, what is still a decision, and why the open question is the right one. If any of that is still
+  implied, the explanation is not ready.
+
 * Before sending a clarification question, explanation, or recommendation, read it as if the reader is a
   complete beginner with only the working tree and this one message. Check five things. Can they see the
   current verified state immediately? Can they tell what the actual decision is? Can they compare the options
   through concrete examples? Can they see the practical tradeoff for each option in plain language? Can they
   answer without asking for another explanation? If any answer is no, the message is not ready.
 
+* Do not treat plan approval or plan presentation as the last check. The final pre-execution review still has
+  to happen later, immediately before you start the task. Its purpose is to catch stale references, hidden
+  ambiguity, drifted wording, or missing context that survived earlier planning passes. A plan that was once
+  good enough to present is not automatically safe to execute unchanged.
+
 * The standard is simple: no important sentence in the plan may still invite the question "what does this
   mean in practice?"
+
+#### Final Pre-Execution Review
+
+* Perform a final pre-execution review immediately before you start any repo-tracked task from an `ExecPlan`.
+  This review happens last. It is not optional, and it is not satisfied by the earlier planning review.
+
+* Read the governing `ExecPlan` from top to bottom as if you are a new engineer seeing it for the first time.
+  Use the document alone as the source of truth. Do not rely on prior chat, memory, or unstated background
+  knowledge to fill gaps.
+
+* Refresh the implementation vocabulary immediately before execution. Re-open the nearest relevant repository
+  code and the current authoritative documentation for any language, DSL, macro, or library form the task
+  depends on. Treat this as a memory refresh, not an optional comfort step. If the shape you were about to
+  write is not supported by the current repo patterns or current docs, stop and correct the plan before you
+  code.
+
+* Check that the plan still names the current task boundary, the owning modules and functions, the
+  caller-visible examples, the preserved behavior, the proof strategy, and the remaining risks without
+  contradiction or drift. Remove or update stale references, stale examples, outdated paths, superseded
+  decisions, obsolete alternative branches, and any wording that still reflects an earlier version of the
+  task.
+
+* Check that every instruction is singular in meaning. If a reader could reasonably implement two different
+  behaviors from the same sentence, the plan is still ambiguous. Clarify it before execution begins.
+
+* Check that the plan still matches the current repository state, the current authoritative dependency
+  constraints, and the latest user decisions. If any of those disagree with the plan, execution must stop
+  until the `ExecPlan` is corrected.
+
+* If the final review reveals a missing decision, unresolved ambiguity, stale reference, or conflict you cannot
+  close from the repository and primary sources alone, stop and ask for clarification before you execute. The
+  fail-safe is to pause before the mistake, not explain it after.
 
 #### Vague Planning Language Is A Defect
 
@@ -647,6 +784,31 @@ current code relies on it, and make clear which options it rules out. If reposit
 and user intent still do not reconcile, the unresolved conflict belongs in the ExecPlan and implementation
 must stop until it is clarified.
 
+A plan is not execution-ready until it passes the final pre-execution review immediately before the task
+starts. The governing `ExecPlan` must still be current, singular in meaning, free of stale references, and
+sufficient for a reader with no prior context to carry the task through correctly. If the last review would
+still require chat history, remembered discussion, or guesswork to bridge the gaps, the plan is not ready.
+
+A plan is not complete when it starts from an interpretation that exists only in the author's head. If acting
+on the request depends on choosing among multiple plausible readings, the `ExecPlan` must state the chosen
+interpretation, the nearest alternatives that were ruled out, and the evidence that settled them. If the
+remaining interpretations cannot be eliminated from the request, the repository, the governing rules, and
+primary sources, the unresolved fork belongs in the `ExecPlan` and execution must stop until it is clarified.
+
+A plan is not complete when it names an implementation shape that has not been checked against the current
+repository style or the current syntax and semantics of the language and framework versions in use. If the
+plan relies on a non-local idiom or unfamiliar form, it must point to the nearby repo example it follows or
+cite the authoritative source that makes the departure valid and necessary. A plan is also not complete when
+it chooses an implementation shape without recording at least three plausible approaches and why the chosen
+one is the simplest valid fit.
+
+A plan is not complete when a design fork or bug explanation still depends on abstract labels instead of the
+real path through the code. If the task turns on where two meanings split, which shape reaches a deciding
+boundary, or what must be preserved while a bug is fixed, the `ExecPlan` must show the caller-visible
+examples, the relevant path through the touched functions or modules, the exact shapes at the important
+handoffs, what is already proved, and what is still a decision. If the real open question cannot be seen from
+the plan alone, the plan is not ready.
+
 If those things are only implied or pushed off onto existing code and tests, the `ExecPlan` is not ready.
 
 ## Coding Guidelines
@@ -659,87 +821,109 @@ examples, and identify the implicated function, module, and behaviour specificat
 these steps only in chat and plan to transfer them later. The `ExecPlan` is where this planning must exist and
 stay current.
 
-1. Define the task as a single observable promise. Write one sentence in this form: "When `<caller>` uses
+1. Search the request interpretation before you define the task. Write the most concrete plausible reading of
+   what the caller wants in terms of observable outcome, scope, preserved behavior, and authorized action.
+   Then name the nearest plausible alternative readings and what evidence rules them out. If you cannot rule
+   them out from the request, the repository, the governing `ExecPlan`, and primary sources, stop and clarify
+   before writing the observable promise.
+
+2. Define the task as a single observable promise. Write one sentence in this form: "When `<caller>` uses
    `<entry point>` with `<input>`, the system returns or does `<observable result>`." If you cannot name the
    caller, the entry point, the input, and the result, you do not understand the task yet.
 
-2. Write the task boundary in four lines. State what you will change, what you will not change, what must stay
+3. Write the task boundary in four lines. State what you will change, what you will not change, what must stay
    compatible, and what would count as failure. Keep each line concrete. "Improve query handling" is too
    vague. "Accept `nil` for `filters` without raising and keep existing list behavior unchanged" is specific
    enough to test.
 
-3. Inventory the live design surface before you build examples. Enumerate every live caller-facing entry shape
+4. Inventory the live design surface before you build examples. Enumerate every live caller-facing entry shape
    that reaches the task boundary, name the module or function that owns each one, and note which fields,
    terms, or selectors carry user-facing meaning. Keep structurally similar shapes separate until the code or
    the specifications prove they share one contract.
 
-4. Separate current truth, semantic meaning, and future scope. Write what the repository proves is live today.
+5. Separate current truth, semantic meaning, and future scope. Write what the repository proves is live today.
    Then write what each relevant term or data shape means, including which meanings are explicit in the
    repository and which still require the user. Only after that may you write future-scope questions or
    proposed extensions. If the meaning is not recoverable from the repository, record the question in the
    ExecPlan before you derive examples or design decisions from it.
 
-5. Check external constraints before you design options. For every framework, library, macro, DSL, adapter, or
+6. Check external constraints before you design options. For every framework, library, macro, DSL, adapter, or
    API that shapes the task boundary, record what the official documentation says it supports, forbids, or
    requires. If documentation is not enough, inspect the official source or another primary source until you
    can state the constraint precisely. Separate what the repository currently does from what the dependency
    contract actually permits. Remove impossible or externally unsupported options before you write examples,
    ask clarification questions, or propose scope.
 
-6. Build an example map before you design anything. Write at least four examples: one success case, one
-   omitted-input case, one invalid-input case, and one unchanged-existing-behavior case. For each example,
-   write the exact call, the exact input data, and the exact output, error, or side effect. If you cannot
-   write the expected result without words like "correctly", "properly", or "as expected", the example is not
-   measurable yet.
+7. Build an example map before you design anything. Write at least four examples: one success case, one
+  omitted-input case, one invalid-input case, and one unchanged-existing-behavior case. For each example,
+  write the exact call, the exact input data, and the exact output, error, or side effect. If you cannot
+  write the expected result without words like "correctly", "properly", or "as expected", the example is not
+  measurable yet.
 
-7. Derive rules from the examples. For each example, write the rule it proves. A rule must be binary. Either
-   it is true or false. "The function is easy to use" is not a rule. "The function returns `{:ok, term()}`
-   when given a schema and a valid filter map" is a rule.
+8. Derive rules from the examples. For each example, write the rule it proves. A rule must be binary. Either
+  it is true or false. "The function is easy to use" is not a rule. "The function returns `{:ok, term()}`
+  when given a schema and a valid filter map" is a rule.
 
-8. Write the behaviour specification from the outside. Describe the feature as scenarios a caller can observe.
-   Use success, omitted input, invalid input, and unchanged behavior. Each outcome must be something you can
-   prove with a single assertion, a returned tuple, a raised exception, a persisted record, or a visible
-   command result. If you cannot imagine the assertion, rewrite the scenario.
+9. Write the behaviour specification from the outside. Describe the feature as scenarios a caller can observe.
+  Use success, omitted input, invalid input, and unchanged behavior. Each outcome must be something you can
+  prove with a single assertion, a returned tuple, a raised exception, a persisted record, or a visible
+  command result. If you cannot imagine the assertion, rewrite the scenario.
 
-9. Choose the owning module. Name the one module that should own the behavior. If you think two modules own
-   it, you have not decided clearly enough. Then write the module specification in plain language: what the
-   module is for, what it is not for, what data or invariants it protects, and which public functions are its
-   entry points. If any sentence describes internal steps instead of responsibility, rewrite it.
+10. Choose the owning module. Name the one module that should own the behavior. If you think two modules own
+  it, you have not decided clearly enough. Then write the module specification in plain language: what the
+  module is for, what it is not for, what data or invariants it protects, and which public functions are its
+  entry points. If any sentence describes internal steps instead of responsibility, rewrite it.
 
-10. Before writing code, restate the requested edit in two parts: what will change and what must remain
+11. Before writing code, restate the requested edit in two parts: what will change and what must remain
    unchanged. If either part is still vague, the task is not ready to implement.
 
-11. Write the function specifications before you write code. Do this for every function boundary the work adds,
-    changes, preserves, wraps, routes through, depends on, or interprets. State the exact inputs, accepted
-    shapes, defaults, return values, preserved behavior, and failure modes. If a caller could reasonably ask
-    what must remain the same at this boundary and the specification does not answer, the specification is
-    incomplete.
+12. Write the function specifications before you write code. Do this for every function boundary the work adds,
+  changes, preserves, wraps, routes through, depends on, or interprets. State the exact inputs, accepted
+  shapes, defaults, return values, preserved behavior, and failure modes. If a caller could reasonably ask
+  what must remain the same at this boundary and the specification does not answer, the specification is
+  incomplete.
 
-12. Write the internal boundary contracts before you write code. Do this for every private function boundary,
-   helper handoff, or internal module interaction the work adds, changes, preserves, or depends on. State the
-   upstream caller, the downstream callee, the accepted input shape, the produced output shape, the invariants
-   preserved, the transformations owned there, and the shapes that are explicitly not accepted there.
+13. Write the internal boundary contracts before you write code. Do this for every private function boundary,
+  helper handoff, or internal module interaction the work adds, changes, preserves, or depends on. State the
+  upstream caller, the downstream callee, the accepted input shape, the produced output shape, the invariants
+  preserved, the transformations owned there, and the shapes that are explicitly not accepted there.
 
-13. Write the internal structure walkthrough. Show the end-to-end path through the touched code in execution
-    order. Name each function or module in the path, what it receives, what it changes, what it leaves alone,
-    and what it passes onward. Include concrete examples for the important paths, especially the ones where a
-    careless change could hard-code an incidental intermediate shape.
+14. Write the internal structure walkthrough. Show the end-to-end path through the touched code in execution
+  order. Name each function or module in the path, what it receives, what it changes, what it leaves alone,
+  and what it passes onward. Include concrete examples for the important paths, especially the ones where a
+  careless change could hard-code an incidental intermediate shape.
 
-14. Write behaviour specifications for any replaceable collaborator. If the task touches an adapter, provider,
-    callback module, or implementation behind an abstraction, define the contract. State what each callback
-    receives, what it must return, what errors look like, and what every implementation must preserve. If two
-    implementations could both satisfy your words while behaving differently in production, the behaviour spec
-    is too loose.
+15. When the task involves a bug, conflict, or design fork, write the explanation path before you choose the
+  fix. Start with the caller-visible input. Then trace the actual path through the touched functions or modules
+  in execution order. At each important boundary, write the exact shape received, the exact shape forwarded,
+  where similar inputs diverge, what current behavior is already proved, and what decision is still open. If
+  you cannot explain the fork this concretely, you are not ready to choose an implementation shape.
 
-15. Choose the most minimal implementation shape before you write code. Start with the direct, explicit code a
-    complete beginner could understand at a glance, using the public boundary, public examples, and owning
-    module already established in the plan. Do not begin with shared helpers, generic infrastructure, implicit
-    normalization, reusable abstractions, or optimization.
+16. Write behaviour specifications for any replaceable collaborator. If the task touches an adapter, provider,
+  callback module, or implementation behind an abstraction, define the contract. State what each callback
+  receives, what it must return, what errors look like, and what every implementation must preserve. If two
+  implementations could both satisfy your words while behaving differently in production, the behaviour spec
+  is too loose.
 
-16. Add abstraction or optimization only after the simpler version proves insufficient. If you introduce a
-    helper, indirection layer, compact transformation, generalized shape handling, or performance-oriented
-    path, point to the concrete duplication, conflicting responsibility, or measured pressure that requires it.
-    Future reuse, taste, or cleverness is not enough.
+17. Refresh syntax, idiom, and local style before you write code. Re-open the nearest comparable repo code and
+  the current official docs for any language feature, macro, DSL, or library form the change depends on. Treat
+  remembered syntax and remembered style as unverified until current evidence confirms them. If the intended
+  shape is not supported by the repo or the authoritative docs, do not write it.
+
+18. Generate at least three candidate implementation shapes before you choose one. Compare them for local style
+  alignment, syntactic validity, doc support, explicitness, and minimality. Choose the simplest valid local
+  shape. Record why the other two lose so the final implementation is a deliberate decision, not the first
+  remembered idea.
+
+19. Choose the most minimal implementation shape before you write code. Start with the direct, explicit code a
+  complete beginner could understand at a glance, using the public boundary, public examples, and owning
+  module already established in the plan. Do not begin with shared helpers, generic infrastructure, implicit
+  normalization, reusable abstractions, or optimization.
+
+20. Add abstraction or optimization only after the simpler version proves insufficient. If you introduce a
+  helper, indirection layer, compact transformation, generalized shape handling, or performance-oriented
+  path, point to the concrete duplication, conflicting responsibility, or measured pressure that requires it.
+  Future reuse, taste, or cleverness is not enough.
 
 Write these artifacts into the `ExecPlan` itself. Module specifications, function specifications, examples,
 behaviour specifications, and validation are not present in any useful sense if they only exist in your head
@@ -756,22 +940,31 @@ changes while the task boundary, examples, preserved behavior, or required funct
 missing or unresolved. The point of writing them first is to prevent the implementation from becoming the
 place where the meaning of the task is decided.
 
-17. Pick the highest test boundary that proves the promise from step 1. Start with the public function,
+21. Perform the final pre-execution review immediately before you begin tests or code. Re-read the governing
+    `ExecPlan` from scratch and verify that it is still current, unambiguous, and self-sufficient. Remove or
+    correct stale references, stale examples, superseded options, and wording that no longer matches the
+    repository, the dependency constraints, or the user's latest decisions. If the document still leaves room
+    for multiple interpretations or still depends on chat context, stop and repair the plan before you
+    continue.
+
+22. Pick the highest test boundary that proves the observable promise from step 2. Start with the public
+    function,
     command, request, or workflow the caller actually uses. Do not start with a private helper unless the
     public boundary is impossible to exercise. This is your BDD anchor. The first test must fail because the
     promised behavior does not exist yet.
 
-18. Run the TDD loop in one-rule increments. Write one failing test for one rule. Run it and confirm it fails
+23. Run the TDD loop in one-rule increments. Write one failing test for one rule. Run it and confirm it fails
     for the right reason. Change the code with the smallest possible edit to satisfy that rule. Run the test
     again and make it pass. Refactor only while tests stay green. If you change code without first having a
     failing test for that change, you are guessing.
 
-19. Step inward only when the boundary test exposes a missing inner rule. When the outer test fails because a
+24. Step inward only when the boundary test exposes a missing inner rule. When the outer test fails because a
     specific parser, validator, query builder, or mapper does not yet behave correctly, pause and write a
     focused test for that inner unit. Make that inner test pass, then return immediately to the boundary test.
     Do not stay inside longer than necessary. The outer behavior remains the measure of progress.
 
-20. Measure completeness with a coverage table you can answer yourself:
+25. Measure completeness with a coverage table you can answer yourself:
+
 - Do I have at least one executable test for each rule?
 - Do I have a test for valid input?
 - Do I have a test for omitted input?
@@ -786,7 +979,8 @@ examples including omitted and invalid input, the ownership and contract section
 and the remaining risk. If the table cannot do that by pointing back to specific parts of the `ExecPlan`, the
 plan is incomplete.
 
-21. Judge design quality with explicit checks, not taste. Ask:
+26. Judge design quality with explicit checks, not taste. Ask:
+
 - Does each public function have one clear responsibility?
 - Does one module clearly own the behavior?
 - Are error shapes consistent across the public API?
@@ -801,9 +995,9 @@ plan is incomplete.
 
 Every "no" identifies work to do.
 
-22. Finish with end-to-end verification. Re-run the focused tests for the new behavior. Re-run the broader
-    tests that protect neighboring behavior. Compare the results against the examples you wrote in step 6. If
-    even one example cannot be pointed to in code, docs, or tests as proven, you are not done.
+27. Finish with end-to-end verification. Re-run the focused tests for the new behavior. Re-run the broader
+  tests that protect neighboring behavior. Compare the results against the examples you wrote in step 7. If
+  even one example cannot be pointed to in code, docs, or tests as proven, you are not done.
 
 Use this decision rule throughout the task: do not trust your intuition when you can write a specification, an
 example, or a test instead. Specifications tell you what to build. Example mapping tells you what the words
@@ -858,6 +1052,28 @@ Reject a plan when it starts from generalized, optimized, or implicit code inste
 explicit implementation that satisfies the stated contract, when it adds helpers, indirection, reusable
 structure, or hidden transformations before a concrete need is proven, or when the proposed code shape is
 harder to understand than the public behavior it implements.
+
+Reject a plan when it has not been re-read immediately before execution, when stale references or superseded
+decisions still remain in the governing `ExecPlan`, when the implementer would need prior chat context to
+disambiguate the current task, or when the plan could still drive more than one reasonable implementation at
+the moment execution begins.
+
+Reject a plan when it acts from a silent interpretation leap, when it does not record the chosen request
+meaning and the nearest ruled-out alternatives, when it presents one reading as settled without showing the
+evidence that eliminated the others, or when the user could still reasonably say "that is not what I meant"
+before work even begins.
+
+Reject a plan when it relies on remembered syntax, remembered framework usage, or a code style that has not
+been refreshed against the current repo and current official docs, when it proposes a non-local idiom without
+explaining why the existing repo style is insufficient, when it chooses an implementation shape without
+considering at least three plausible approaches, or when it risks writing code that is not valid for the
+language or library version in use.
+
+Reject a plan when its explanation of the bug or design fork stays at the level of abstract labels instead of
+walking the real code path, when it does not show the exact shapes at the important boundaries, when it blurs
+proved current behavior together with unresolved design choice, when it asks a looser implementation question
+instead of the real contract question, or when it proposes fixes before the boundary contract has been made
+legible.
 
 If the implementer would still have to decide what to build, what must not change, or how to show that the
 work is correct, the plan is incomplete.

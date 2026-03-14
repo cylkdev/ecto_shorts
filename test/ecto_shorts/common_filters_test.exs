@@ -135,6 +135,64 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, actual)
     end
 
+    test "matches Ecto.Query for a first positional binding select alias mapping" do
+      source =
+        from(p in Post,
+          join: a in assoc(p, :author)
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          select: p.title
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            at: %{
+              first: %{
+                select: :title
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a last positional binding select alias mapping" do
+      source =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          join: c in assoc(p, :comments)
+        )
+
+      expected =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          join: c in assoc(p, :comments),
+          select: c.body
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            at: %{
+              last: %{
+                select: :body
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
     test "matches Ecto.Query when select overwrites an existing select" do
       source = from(p in Post, select: p.title)
       expected = from(p in Post, select: p.id)
@@ -489,6 +547,34 @@ defmodule EctoShorts.CommonFiltersTest do
                 source: "users",
                 as: :user,
                 on: %{author_id: 1}
+              ]
+            ]
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a table join payload with configured hints" do
+      expected =
+        from(p in Post,
+          join: u in "users",
+          as: :user,
+          on: p.author_id == ^1,
+          hints: ["USE INDEX(test_index)"]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{
+            join: [
+              table: [
+                source: "users",
+                as: :user,
+                on: %{author_id: 1},
+                hints: :test_index
               ]
             ]
           },

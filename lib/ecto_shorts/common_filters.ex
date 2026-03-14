@@ -1,6 +1,7 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
 
+  alias EctoShorts.CommonQuery
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
   alias EctoShorts.CommonFilters.API
@@ -37,7 +38,7 @@ defmodule EctoShorts.CommonFilters do
             filter,
             source,
             query_acc,
-            {key, inner_key},
+            resolve_binding_selector(query_acc, key, inner_key),
             inner_value,
             opts
           )
@@ -106,6 +107,10 @@ defmodule EctoShorts.CommonFilters do
       query
     end
   end
+
+  defp resolve_binding_selector(_query, :at, :first), do: {:at, 1}
+  defp resolve_binding_selector(query, :at, :last), do: {:at, CommonQuery.query_binding_count(query)}
+  defp resolve_binding_selector(_query, key, inner_key), do: {key, inner_key}
 
   defp reduce_association_filters(query, filter, source, key, term, opts) do
     Enum.reduce(Utils.map_to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
