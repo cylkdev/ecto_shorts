@@ -12,11 +12,11 @@ defmodule EctoShorts.CommonFilters.Select do
     Compiler.query_binding_contracts(10, __MODULE__)
 
   def build_query(:select, _source, query, selected_binding, term, _opts) do
-    normalized_term = Utils.map_to_keyword(term)
+    reduced_term = normalize_select_term(term)
 
     query
     |> drop_existing_select()
-    |> apply_select_expr(selected_binding, normalized_term)
+    |> apply_select_expr(selected_binding, reduced_term)
   end
 
   def build_query(:select_merge, _source, query, selected_binding, term, _opts) do
@@ -28,6 +28,11 @@ defmodule EctoShorts.CommonFilters.Select do
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp initialize_select_map(query, unquote(quoted_binding_head)) do
       Query.select(query, [unquote_splicing(quoted_binding_body)], %{})
+    end
+
+    defp apply_select_expr(query, unquote(quoted_binding_head), {:map, params})
+         when is_map(params) do
+      apply_select_expr(query, unquote(quoted_binding_head), {:map, Map.to_list(params)})
     end
 
     defp apply_select_expr(query, unquote(quoted_binding_head), true) do
@@ -53,6 +58,11 @@ defmodule EctoShorts.CommonFilters.Select do
         [unquote_splicing(quoted_binding_body)],
         struct(unquote(target_binding_var), ^fields)
       )
+    end
+
+    defp apply_select_expr(query, unquote(quoted_binding_head), term)
+         when is_map(term) and not is_struct(term) do
+      apply_select_expr(query, unquote(quoted_binding_head), Map.to_list(term))
     end
 
     defp apply_select_expr(query, unquote(quoted_binding_head), term) when is_list(term) do
@@ -181,4 +191,10 @@ defmodule EctoShorts.CommonFilters.Select do
 
     Query.exclude(query, :select)
   end
+
+  defp normalize_select_term({:map, params}), do: {:map, params}
+  defp normalize_select_term({:struct, fields}), do: {:struct, fields}
+  defp normalize_select_term([map: params]), do: {:map, params}
+  defp normalize_select_term([struct: fields]), do: {:struct, fields}
+  defp normalize_select_term(term), do: term
 end

@@ -23,6 +23,46 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
               field(unquote(target_binding_var), ^key) != ^values
             )
 
+          {:==, {:lower, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE lower(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
+          {:==, {:upper, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE upper(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
+          {:!=, {:lower, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "NOT EXISTS (SELECT 1 FROM unnest(?) AS t WHERE lower(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
+          {:!=, {:upper, value}} ->
+            Query.dynamic(
+              [unquote_splicing(quoted_binding_body)],
+              fragment(
+                "NOT EXISTS (SELECT 1 FROM unnest(?) AS t WHERE upper(t) = ?)",
+                field(unquote(target_binding_var), ^key),
+                ^value
+              )
+            )
+
           {:==, value} ->
             Query.dynamic(
               [unquote_splicing(quoted_binding_body)],
@@ -86,46 +126,6 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
               [unquote_splicing(quoted_binding_body)],
               fragment(
                 "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE upper(t) = ?)",
-                field(unquote(target_binding_var), ^key),
-                ^value
-              )
-            )
-
-          {:==, {:lower, value}} ->
-            Query.dynamic(
-              [unquote_splicing(quoted_binding_body)],
-              fragment(
-                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE lower(t) = ?)",
-                field(unquote(target_binding_var), ^key),
-                ^value
-              )
-            )
-
-          {:==, {:upper, value}} ->
-            Query.dynamic(
-              [unquote_splicing(quoted_binding_body)],
-              fragment(
-                "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE upper(t) = ?)",
-                field(unquote(target_binding_var), ^key),
-                ^value
-              )
-            )
-
-          {:!=, {:lower, value}} ->
-            Query.dynamic(
-              [unquote_splicing(quoted_binding_body)],
-              fragment(
-                "NOT EXISTS (SELECT 1 FROM unnest(?) AS t WHERE lower(t) = ?)",
-                field(unquote(target_binding_var), ^key),
-                ^value
-              )
-            )
-
-          {:!=, {:upper, value}} ->
-            Query.dynamic(
-              [unquote_splicing(quoted_binding_body)],
-              fragment(
-                "NOT EXISTS (SELECT 1 FROM unnest(?) AS t WHERE upper(t) = ?)",
                 field(unquote(target_binding_var), ^key),
                 ^value
               )

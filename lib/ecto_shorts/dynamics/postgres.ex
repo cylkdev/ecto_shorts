@@ -19,13 +19,22 @@ defmodule EctoShorts.Adapters.Postgres do
   @impl true
   def build_dynamic(source, selected_binding, {key, term}, opts \\ []) when is_list(opts) do
     expr =
-      term
-      |> normalize_params()
-      |> Enum.reduce(nil, fn entry, acc ->
-        {merge_op, expr_entry} = expr_entry(key, entry)
-        dyn = apply_expr(source, selected_binding, expr_entry, opts)
-        FilterHelpers.merge_dynamic(acc, merge_op, dyn)
-      end)
+      if key in [:and, :or] do
+        term
+        |> normalize_params()
+        |> Enum.reduce(nil, fn entry, acc ->
+          dyn = apply_expr(source, selected_binding, entry, opts)
+          FilterHelpers.merge_dynamic(acc, key, dyn)
+        end)
+      else
+        term
+        |> normalize_params()
+        |> Enum.reduce(nil, fn entry, acc ->
+          {merge_op, expr_entry} = expr_entry(key, entry)
+          dyn = apply_expr(source, selected_binding, expr_entry, opts)
+          FilterHelpers.merge_dynamic(acc, merge_op, dyn)
+        end)
+      end
 
     FilterHelpers.merge_dynamic(nil, :and, expr)
   end

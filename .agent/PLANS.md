@@ -40,6 +40,8 @@ Self-containment and plain language are paramount. If you introduce a phrase tha
 
 Avoid common failure modes. Do not rely on undefined jargon. Do not describe the letter of a feature so narrowly that the resulting code compiles but does nothing meaningful. Do not outsource key decisions to the reader. When ambiguity exists, resolve it in the plan itself and explain why you chose that path. Err on the side of over-explaining user-visible effects and under-specifying incidental implementation details.
 
+When correctness depends on internal flow, do not stop at the public story. Add the internal boundary contracts and the internal structure walkthrough that govern the touched private functions and modules. State which internal boundary owns each transformation, what each private handoff accepts and returns, which intermediate shapes are allowed, which are forbidden, and how the touched code works end to end. Use concrete examples so a reader can follow the internal path without reverse-engineering the implementation.
+
 Anchor the plan with observable outcomes. State what the user can do after implementation, the commands to run, and the outputs they should see. Acceptance should be phrased as behavior a human can verify rather than internal attributes. If a change is internal, explain how its impact can still be demonstrated, for example by running tests that fail before and pass after, or by showing a small interactive example that uses the new behavior.
 
 Specify repository context explicitly. Name files with full repository-relative paths, name functions and modules precisely, and describe where new files should be created. If touching multiple areas, include a short orientation paragraph that explains how those parts fit together so a novice can navigate confidently. When running commands, show the working directory and exact command line. When outcomes depend on environment, state the assumptions and provide alternatives when reasonable.
@@ -137,6 +139,14 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     Describe, in prose, the sequence of edits and additions. For each edit, name the file and location (function, module) and what to insert or change. Keep it concrete and minimal.
 
+    ## Internal Boundary Contracts
+
+    Use this section when the work changes, preserves, or depends on private helper boundaries, private module handoffs, staged normalization, decomposition, translation, or other internal data-shape flow. For each touched boundary, name the upstream caller, the boundary itself, the accepted input shape, the produced output shape, the invariants preserved, the transformations owned there, and the transformations that do not belong there. If a boundary must not accept an incidental intermediate shape, say that directly. Include concrete examples at each important handoff. Show the value or structure as it arrives, what the boundary may do to it, and what leaves the boundary.
+
+    ## Internal Structure Walkthrough
+
+    Use this section when the work depends on how private pieces collaborate. Walk through the touched code path end to end in execution order. Name each function or module in the path, what it receives, what it changes, what it leaves alone, and why that step exists. Show the main success path and any important omitted-input, invalid-input, or preserved-behavior path where internal ownership matters. Make clear which structure is stable and which intermediate forms are incidental and must not become de facto contracts.
+
     ## Example Mappings
 
     Use an Example Mapping when the work includes at least one observable rule, example, or unresolved decision that can be written before implementation. If the feature or change defines required behavior, behavior when input is omitted, behavior for invalid input, concrete call-and-result examples, or questions that still need an answer, capture it in an Example Mapping.
@@ -144,12 +154,14 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
     Produce exactly four sections in this order and keep the headings in this format: `### Story: <short title>`, a one or two sentence description of the requested behavior; `#### Rules:`, a bullet list of required behaviors, unchanged behavior when input is omitted, and explicit handling of invalid input; `#### Examples:`, concrete input/output pairs where each example shows the function call first and the exact expected result immediately after it, including at least one valid case, one omitted-input case, and one invalid-input case; and #### Open Questions:, a bullet list written as `**Q:** ... **A:** ...`, answering known decisions directly and using `...` only when the answer is still unknown.
 
     Rules are the acceptance criteria, examples are the executable expectations, and open questions are follow-up tasks. The mapping is complete only if a reader with no additional context can identify the public entry point, the accepted inputs, the exact expected outputs or errors, and any remaining decisions from the mapping alone.
+    Use this section for caller-visible behavior. Do not use it as a substitute for internal handoff examples. Put private-boundary examples in `Internal Boundary Contracts` and `Internal Structure Walkthrough`.
 
     ## Behaviour Specifications
 
     Use Behaviour Specifications when the work includes at least one observable outcome at a public interface. If the change affects accepted input, returned values, persisted data, rendered output, error handling, or preservation of existing behavior, capture it here and treat it as a source of truth for completion.
 
     Write each specification from the caller's perspective, not in terms of internal modules, implementation steps, or query mechanics. Start each feature with `### Feature: <short title>`, then describe behavior with `Scenario` or `Scenario Outline` blocks using `Given`, `When`, and `Then`. Use `Scenario Outline` with an `Examples` table when the same rule must hold across multiple inputs. Include the success path, behavior when optional input is omitted, invalid-input behavior, and any required unchanged behavior.
+    Do not carry private helper contracts, internal module handoffs, or code-shape walkthroughs in this section. Keep caller-visible behavior here and put internal collaboration rules in the internal sections.
 
     Each Then must describe an exact outcome that can be verified by an ExUnit assertion, command output, or direct observation. If a statement cannot be checked that way, rewrite it until it can.
 
