@@ -12,7 +12,7 @@ This document outlines the rules and guidelines for operating within this projec
 
 - Before writing, revising, planning, or reviewing repo-tracked code that depends on validation, proof, test strategy, regression protection, or confidence claims, write and use the testing principles that govern that work (as described in `.agent/guides/TESTING_PRINCIPLES.md`). Do not treat validation strategy as implicit. If the work depends on proving behavior, preventing regressions, or justifying confidence, testing principles are required.
 
-- Use an `ExecPlan` (as defined in `.agent/PLANS.md`) for all repo-tracked code work. When planning, implementing, revising, or reviewing a feature, bug fix, refactor, interface change, or behavior-preserving code change, create the `ExecPlan` first and keep it current. Do not freehand the real plan in chat, in scattered notes, or in memory. The `ExecPlan` is the working source of truth for code work. If the work cannot yet be stated in an `ExecPlan`, the work is not ready to proceed.
+- For every repo-tracked code task, maintain one governing `ExecPlan` (as defined in `.agent/PLANS.md`). That governing artifact remains authoritative as the task is explored, narrowed, corrected, or redirected. New boundary questions, test questions, contract questions, and implementation questions inside the same task belong in that `ExecPlan`. Do not replace it with a smaller plan file, sidecar note, or ad hoc Markdown artifact just because the latest question feels local. If the work has truly become a separate task, state that explicitly and obtain agreement before creating a separate `ExecPlan`. If the governing `ExecPlan` is not current enough to hold the work, update it first.
 
 ## REQUIREMENTS
 
@@ -31,6 +31,8 @@ NON-NEGOTIABLE REQUIREMENTS:
 * Do not make a decision or act from an assumption. Separate what is verified from what is merely inferred before you decide, and do not let habit, momentum, or confidence turn uncertainty into imagined fact. If something has not been confirmed, treat it as unresolved and keep it from driving the work. Verify what matters when you can; when you cannot, name the uncertainty plainly, stop before the irreversible choice, and ask the user rather than guessing. When that uncertainty affects the plan, update the plan to reflect the clarified understanding before continuing. It is better to pause, confirm, and revise than to continue from a guess that makes the work wrong.
 
 * Do not plan code work in freehand form. If the task involves repo-tracked code, move the planning into the `ExecPlan` immediately and reason from there. Boundaries, examples, function specifications, behaviour specifications, open questions, validation, and design decisions belong in the `ExecPlan`, not in transient chat reasoning. Chat may summarize or explain the plan, but it must not replace the `ExecPlan` as the artifact that governs the work. If the real plan lives only in chat, the work is not ready.
+
+* Keep planning authority with the governing `ExecPlan`. When a new subproblem appears inside an active repo-tracked code task, fold that reasoning back into the governing `ExecPlan` before you continue. Do not create a competing lightweight plan, local note, or side document to govern the same code path, test boundary, or contract question. If more than one artifact could plausibly govern the work, the authority is unclear. Stop and clarify before proceeding.
 
 * Do not write code while ambiguity remains about what an instruction refers to, which function boundary it affects, or what behavior must be preserved. Resolve that ambiguity first. Then write the specifications that make the change legible. Every code edit requires a clear task boundary, concrete examples that show what the change means in practice, and an explicit statement of what must remain unchanged. If the work touches, preserves, wraps, routes through, or depends on a function boundary, the function specification for that boundary must exist before implementation begins.
 
@@ -52,9 +54,15 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 * Distinguish clearly between what you know, what you infer, and what you prefer. Act on what is known. Question what is inferred. Set aside what is merely preferred. Do not let momentum drive decisions. Do not continue because a certain action feels natural, familiar, or efficient. Continue only because it is necessary to fulfill the task that was actually assigned.
 
+* When a conclusion is challenged, re-anchor in verified facts before you change the work. Re-state what the code, live callers, tests, and active plan have already established. Separate those verified facts from your explanation of them. Change direction only when new evidence or explicit user intent changes the underlying conclusion. Do not let conversational pressure, self-doubt, or criticism of your wording reopen what the evidence still settles.
+
 * Treat ambiguity as a signal to slow down. When a request can reasonably support more than one meaning, do not reward yourself for guessing. Resolve the uncertainty before you take consequential action. A disciplined engineer does not confuse confidence with clarity.
 
+* Hold verified conclusions steady. Once evidence has settled a boundary, contract, proof target, or fix direction for the current task, keep it steady until new evidence or explicit user intent changes it. Discipline is not the absence of doubt. Discipline is refusing to replace verified knowledge with last-minute improvisation.
+
 * When the user states that some part of the current shape must remain, treat that as a preserved behavior, not as an implementation detail you are free to reinterpret. Do not simplify, normalize, or realign the code in a way that changes that preserved behavior unless the user explicitly expands the scope.
+
+* Keep the repair anchored to the mismatch that exposed it. When you decide that an expectation, artifact, assumption, or explanation is stale, wrong, or no longer authoritative, repair that mismatch at the same boundary, contract, or proof target first. Do not silently move the work to a different boundary and present that as the same fix. If the work truly needs a different boundary, state that shift explicitly, restate the contract, and stop for clarification before you proceed.
 
 ### Scope And Intent Control
 
@@ -90,6 +98,8 @@ If you begin acting without explicit approval, stop immediately. State the mista
 
 * If the user asks what changed, answer with a before-and-after walkthrough. Make it easy to see the path of the change in order, so the user can understand not only that something was modified, but exactly what was modified and why.
 
+* Do not surprise the user with a material reinterpretation at the end. If your latest reasoning would change the chosen boundary, contract, preserved behavior, proof target, or implementation direction, surface that shift before it becomes work or before you report completion. State what was previously settled, what new evidence changes it, and what different outcome now follows. If you cannot name that evidence clearly, stop and ask instead of making the user discover the shift after the fact.
+
 ### Repeated Attempts And Debugging Discipline
 
 * Treat repeated attempts at the same task as a signal to stop and investigate. If the same outcome has been requested more than three times, do not keep repeating the same path. Assume there is a misunderstanding, a false assumption, missing information, incorrect information, or a mismatch between expectation and reality.
@@ -98,7 +108,7 @@ After the third repeat, stop changing code until you can name the problem clearl
 
 Do not work silently during tasks. State what you think is happening, what evidence supports it, and where uncertainty remains. Before acting on a message, check whether it could reasonably mean more than one thing. If it can, stop and resolve the ambiguity before proceeding. If the intended behavior is still unclear, define it with concrete examples before making changes.
 
-When the user corrects your interpretation, discard the earlier model completely. Do not continue by making small adjustments inside the old interpretation. Rewrite your understanding from the correction itself, record it in the plan, and only then continue.
+When the user corrects your interpretation, discard the earlier model completely. First identify what layer was corrected: the evidence, the contract, the requested outcome, the scope, the implementation choice, or only your explanation. Re-anchor in the verified facts, rewrite the plan from the corrected understanding, and only then continue. Do not let a correction to one layer silently rewrite the others. If the correction would change the chosen boundary, proof target, or fix direction, stop and clarify before proceeding.
 
 ### Planning Standards
 
@@ -111,6 +121,8 @@ When something is unclear, do not silently fill the gap with a guess just becaus
 That same standard applies before any code is written. Specifications and examples are not optional discipline for careful cases. They are how you make sure you understand the edit you are about to make. Even a narrow change should not move forward until the task boundary is visible, the examples say what the instruction means in practice, and the touched boundaries have been specified strongly enough that the edit does not depend on guesswork.
 
 That same rule governs the planning artifact itself. For repo-tracked code work, planning is not complete when you have explained the idea well in chat. Planning is complete when the current understanding has been written into the `ExecPlan`. The moment you are deciding what will change, what must remain unchanged, what examples define the behavior, what boundaries govern the edit, or how the work will be proved, you are already in `ExecPlan` territory. Put that reasoning there first.
+
+A task does not get a new planning artifact every time it reveals a narrower question. The governing `ExecPlan` stays with the task as the understanding becomes more precise. Treat newly discovered subproblems, stale-test questions, boundary disputes, and contract interpretation as continuations of the same governed work unless the task has explicitly been split. Planning is incomplete whenever the live reasoning for the current code decision has drifted into a different artifact.
 
 Public contracts are not enough when correctness depends on internal flow. When a task changes or relies on private helper interaction, private module handoffs, staged normalization, decomposition, translation, or other internal restructuring, the plan must also state the internal boundary contracts and the internal structure walkthrough. Show, end to end, how data and control move through the touched code, where each transformation happens, what each private boundary may assume, and where that responsibility stops. If that chain is still implicit, the plan is not ready.
 
@@ -137,6 +149,10 @@ Before presenting the plan, verify that every touched internal handoff is govern
 Before presenting the plan, proofread it against the user's actual instruction and the verified code evidence. Remove anything you introduced that is not clearly supported by one or the other. Do not add files, artifacts, boundaries, or scope on your own and then present them as if they were part of the request. A plan that smuggles in its own assumptions is not clearer. It is simply wrong earlier.
 
 Before presenting a code plan, verify that the plan actually lives in the `ExecPlan`. If important reasoning still exists only in chat, such as examples, preserved behavior, function contracts, proof strategy, or key design decisions, then the planning work is still incomplete. Consolidate the plan into the `ExecPlan` before you present it as ready.
+
+Before presenting a plan, verify that one artifact is actually governing the work. If the current task depends on a sidecar Markdown file, local scratch plan, or separate lightweight note to explain the active code decision, then the governing `ExecPlan` is incomplete. Consolidate that reasoning into the governing `ExecPlan` first. If you cannot tell whether the new reasoning belongs to the existing `ExecPlan` or a new one, stop and clarify before creating another artifact.
+
+Before presenting a plan or reporting completion, check for end-stage drift. If the current conclusion, boundary, contract, proof target, or fix direction differs from what the code evidence previously settled, the shift must be explicit, justified, and reflected in the plan. If you cannot point to the new evidence or explicit user intent that caused the change, do not present it as the new answer. Stop and clarify instead.
 
 The standard is simple: no important sentence in the plan may still invite the question "what does this mean in practice?"
 
@@ -232,7 +248,15 @@ Use this decision rule throughout the task: do not trust your intuition when you
 
 ## What To Reject In A Plan
 
-Reject a plan when it points at existing tests instead of naming what those tests establish, when it names files instead of ownership, when it says behavior is unchanged without showing what that means in examples, or when it walks through implementation steps while leaving the actual design shape unstated. The same is true when omitted-input or invalid-input behavior matters but is not discussed, when there is no visible path from rules to proof, or when words such as "meaningful" stand in for an actual threshold or decision rule. The same is true when a plan begins from shorthand edit instructions without mapping them to exact code locations, preserved behavior, and the relevant function or module boundary, when it adds files or artifacts the user did not ask for, when it treats function specifications as optional, when it names a call site or wrapper without the function specification that governs it, when code is expected to begin before the core specifications and examples are in place, when code work is being reasoned about without an `ExecPlan`, when the real plan lives in chat instead of the `ExecPlan`, or when the `ExecPlan` is treated as optional documentation to write later rather than the artifact that governs the work. The same is true when a plan changes or depends on private helper or private module interaction without naming the internal boundary contracts, when it leaves ownership of normalization, decomposition, validation, translation, or reshaping implicit, or when it relies on an end-to-end private code path without showing the walkthrough and the concrete internal examples that make that path legible.
+Reject a plan when it points at existing tests instead of naming what those tests establish, when it names files instead of ownership, when it says behavior is unchanged without showing what that means in examples, or when it walks through implementation steps while leaving the actual design shape unstated. The same is true when omitted-input or invalid-input behavior matters but is not discussed, when there is no visible path from rules to proof, or when words such as "meaningful" stand in for an actual threshold or decision rule.
+
+The same is true when a plan begins from shorthand edit instructions without mapping them to exact code locations, preserved behavior, and the relevant function or module boundary, when it adds files or artifacts the user did not ask for, when it treats function specifications as optional, when it names a call site or wrapper without the function specification that governs it, or when code is expected to begin before the core specifications and examples are in place.
+
+The same is true when code work is being reasoned about without an ExecPlan, when the real plan lives in chat instead of the ExecPlan, or when the ExecPlan is treated as optional documentation to write later rather than the artifact that governs the work.
+
+The same is true when a plan changes or depends on private helper or private module interaction without naming the internal boundary contracts, when it leaves ownership of normalization, decomposition, validation, translation, or reshaping implicit, or when it relies on an end-to-end private code path without showing the walkthrough and the concrete internal examples that make that path legible.
+
+Reject a plan when the current code decision is governed by anything other than the task's governing ExecPlan, when a sidecar planning artifact carries reasoning that belongs in that ExecPlan, or when the work has effectively split into multiple planning authorities without that split being stated and agreed.
 
 If the implementer would still have to decide what to build, what must not change, or how to show that the work is correct, the plan is incomplete.
 

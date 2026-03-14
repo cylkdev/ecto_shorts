@@ -1,12 +1,70 @@
 defmodule EctoShorts.Generator.ClauseBuilderTest do
   use ExUnit.Case, async: true
 
-  alias Ecto.Query
-  alias EctoShorts.Generator.ClauseBuilder
-  alias EctoShorts.Generator.Blueprint
+  alias EctoShorts.Generator.Builder
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
+
+  defmodule EqualityBuilder do
+    @behaviour EctoShorts.Generator.ClauseSpec
+
+    alias Ecto.Query
+    alias EctoShorts.Generator.Blueprint
+
+    def operators, do: [:title]
+
+    def specs_for(key, _selected_binding, q_var, opts) do
+      context = opts[:context]
+      negated_var = Macro.var(:_negated, context)
+      value_var = Macro.var(:v, context)
+
+      [
+        %Blueprint{
+          key: key,
+          head: [negated_var, value_var],
+          guard: nil,
+          body:
+            quote do
+              unquote(Query).dynamic(
+                [unquote(q_var)],
+                field(unquote(q_var), :title) == ^unquote(value_var)
+              )
+            end
+        }
+      ]
+    end
+  end
+
+  defmodule ListGuardBuilder do
+    @behaviour EctoShorts.Generator.ClauseSpec
+
+    alias Ecto.Query
+    alias EctoShorts.Generator.Blueprint
+
+    def operators, do: [:id]
+
+    def specs_for(key, _selected_binding, q_var, opts) do
+      context = opts[:context]
+      negated_var = Macro.var(:_negated, context)
+      values_var = Macro.var(:values, context)
+
+      [
+        %Blueprint{
+          key: key,
+          head: [negated_var, values_var],
+          guard: quote(do: is_list(unquote(values_var))),
+          body:
+            quote do
+              unquote(Query).dynamic(
+                [unquote(q_var)],
+                field(unquote(q_var), :id) in ^unquote(values_var)
+              )
+            end
+        }
+      ]
+    end
+  end
 
   defp compile_clause_module!(clause_ast) do
     # Generate a unique module name to avoid conflicts across async tests.
@@ -24,28 +82,15 @@ defmodule EctoShorts.Generator.ClauseBuilderTest do
       end
 
     # Compile the quoted module into the VM and return its module name so the
-    # test can call the generated function via `apply/3`.
     Code.compile_quoted(quoted)
     module
   end
 
-  test "clause_ast/1 builds a scalar equality clause and it compiles" do
-    key_var = Macro.var(:key, nil)
-    v_var = Macro.var(:v, nil)
-
-    spec =
-      Blueprint.new(%{
-        binding_head: quote(do: {:as, nil}),
-        key: key_var,
-        head: quote(do: {:==, unquote(v_var)}),
-        body:
-          quote do
-            # credo:disable-for-next-line BlitzCredoChecks.StrictComparison
-            unquote(Query).dynamic([q], field(q, ^unquote(key_var)) == ^unquote(v_var))
-          end
-      })
-
-    clause_ast = ClauseBuilder.clause_ast(spec)
+  test "positional_clause_asts/3 builds a scalar equality clause and it compiles" do
+    clause_ast =
+      EqualityBuilder
+      |> Builder.positional_clause_asts(1, context: __MODULE__)
+      |> List.first()
 
     module = compile_clause_module!(clause_ast)
 
@@ -56,28 +101,16 @@ defmodule EctoShorts.Generator.ClauseBuilderTest do
     expected_dyn = dynamic([q], field(q, ^:title) == ^"hello")
 
     # Call the generated function clause and compare to the expected dynamic.
-    actual_dyn = module.compose({:as, nil}, :title, {:==, "hello"})
+    actual_dyn = module.dynamic_expr({:at, 1}, :title, nil, "hello")
     assert_dynamic(expected_dyn, actual_dyn)
   end
 
-  test "clause_ast/1 builds a clause with a guard and it compiles" do
+  test "positional_clause_asts/3 builds a clause with a guard and it compiles" do
     # Blueprint supports an optional `:guard` AST.
-    key_var = Macro.var(:key, nil)
-    values_var = Macro.var(:values, nil)
-
-    spec =
-      Blueprint.new(%{
-        binding_head: quote(do: {:as, nil}),
-        key: key_var,
-        head: quote(do: {:==, unquote(values_var)}),
-        guard: quote(do: is_list(unquote(values_var))),
-        body:
-          quote do
-            unquote(Query).dynamic([q], field(q, ^unquote(key_var)) in ^unquote(values_var))
-          end
-      })
-
-    clause_ast = ClauseBuilder.clause_ast(spec)
+    clause_ast =
+      ListGuardBuilder
+      |> Builder.positional_clause_asts(1, context: __MODULE__)
+      |> List.first()
 
     # Sanity check the emitted source includes the guard.
     clause_source = Macro.to_string(clause_ast)
@@ -85,11 +118,13 @@ defmodule EctoShorts.Generator.ClauseBuilderTest do
 
     module = compile_clause_module!(clause_ast)
     expected_dyn = dynamic([q], field(q, ^:id) in ^[1, 2])
-    actual_dyn = module.compose({:as, nil}, :id, {:==, [1, 2]})
+    actual_dyn = module.dynamic_expr({:at, 1}, :id, nil, [1, 2])
     assert_dynamic(expected_dyn, actual_dyn)
   end
 
-  test "clause_ast/1 raises for missing keys" do
-    assert_raise ArgumentError, fn -> ClauseBuilder.clause_ast(%{key: :id}) end
+  test "positional_clause_asts/3 raises for invalid positions" do
+    assert_raise FunctionClauseError, fn ->
+      Builder.positional_clause_asts(EqualityBuilder, 0, context: __MODULE__)
+    end
   end
 end

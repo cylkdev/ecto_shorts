@@ -13,10 +13,10 @@ defmodule EctoShorts.CompilerTest do
 
         def operators, do: [unquote(key)]
 
-        def specs_for(spec_key, _selected_binding, _q_var, opts) do
+        def specs_for(spec_key, selected_binding, _q_var, opts) do
           context = opts[:context]
           label = @label
-          negated_var = Macro.var(:negated, context)
+          negated_var = Macro.var(:_negated, context)
           value_var = Macro.var(:value, context)
 
           [
@@ -24,7 +24,12 @@ defmodule EctoShorts.CompilerTest do
               guard: nil,
               key: spec_key,
               head: [negated_var, value_var],
-              body: quote(do: {unquote(label), unquote(value_var)})
+              body:
+                quote do
+                  _selected_binding = unquote(selected_binding)
+                  dynamic([], true)
+                  {unquote(label), unquote(value_var)}
+                end
             }
           ]
         end
@@ -39,9 +44,9 @@ defmodule EctoShorts.CompilerTest do
 
         def operators, do: unquote(keys)
 
-        def specs_for(spec_key, _selected_binding, _q_var, opts) do
+        def specs_for(spec_key, selected_binding, _q_var, opts) do
           context = opts[:context]
-          negated_var = Macro.var(:negated, context)
+          negated_var = Macro.var(:_negated, context)
           value_var = Macro.var(:value, context)
 
           [
@@ -49,7 +54,12 @@ defmodule EctoShorts.CompilerTest do
               guard: nil,
               key: spec_key,
               head: [negated_var, value_var],
-              body: quote(do: {unquote(spec_key), unquote(value_var)})
+              body:
+                quote do
+                  _selected_binding = unquote(selected_binding)
+                  dynamic([], true)
+                  {unquote(spec_key), unquote(value_var)}
+                end
             }
           ]
         end
@@ -64,9 +74,9 @@ defmodule EctoShorts.CompilerTest do
 
         def operators, do: [unquote(key)]
 
-        def specs_for(spec_key, _selected_binding, _q_var, opts) do
+        def specs_for(spec_key, selected_binding, _q_var, opts) do
           context = opts[:context]
-          negated_var = Macro.var(:negated, context)
+          negated_var = Macro.var(:_negated, context)
           value_var = Macro.var(:value, context)
 
           [
@@ -74,7 +84,12 @@ defmodule EctoShorts.CompilerTest do
               guard: nil,
               key: spec_key,
               head: [negated_var, value_var],
-              body: quote(do: this_will_not_compile(unquote(value_var)))
+              body:
+                quote do
+                  _selected_binding = unquote(selected_binding)
+                  dynamic([], true)
+                  this_will_not_compile(unquote(value_var))
+                end
             }
           ]
         end

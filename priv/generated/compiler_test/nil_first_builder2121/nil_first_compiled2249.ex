@@ -1,4 +1,4 @@
-defmodule EctoShorts.CompilerTest.CustomPathCompiled1290 do
+defmodule EctoShorts.CompilerTest.NilFirstCompiled2249 do
   @moduledoc false
   import Ecto.Query, only: [dynamic: 2]
 
@@ -9,70 +9,70 @@ defmodule EctoShorts.CompilerTest.CustomPathCompiled1290 do
   @type compose_res :: Ecto.Query.t() | nil
 
   @doc false
-  def dynamic_expr({:as, binding_alias}, :id, _negated, value) do
+  def dynamic_expr({:as, binding_alias}, :first_key, _negated, value) do
     _selected_binding = {:as, binding_alias}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 1}, :id, _negated, value) do
+  def dynamic_expr({:at, 1}, :first_key, _negated, value) do
     _selected_binding = {:at, 1}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 2}, :id, _negated, value) do
+  def dynamic_expr({:at, 2}, :first_key, _negated, value) do
     _selected_binding = {:at, 2}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 3}, :id, _negated, value) do
+  def dynamic_expr({:at, 3}, :first_key, _negated, value) do
     _selected_binding = {:at, 3}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 4}, :id, _negated, value) do
+  def dynamic_expr({:at, 4}, :first_key, _negated, value) do
     _selected_binding = {:at, 4}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 5}, :id, _negated, value) do
+  def dynamic_expr({:at, 5}, :first_key, _negated, value) do
     _selected_binding = {:at, 5}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 6}, :id, _negated, value) do
+  def dynamic_expr({:at, 6}, :first_key, _negated, value) do
     _selected_binding = {:at, 6}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 7}, :id, _negated, value) do
+  def dynamic_expr({:at, 7}, :first_key, _negated, value) do
     _selected_binding = {:at, 7}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 8}, :id, _negated, value) do
+  def dynamic_expr({:at, 8}, :first_key, _negated, value) do
     _selected_binding = {:at, 8}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 9}, :id, _negated, value) do
+  def dynamic_expr({:at, 9}, :first_key, _negated, value) do
     _selected_binding = {:at, 9}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
-  def dynamic_expr({:at, 10}, :id, _negated, value) do
+  def dynamic_expr({:at, 10}, :first_key, _negated, value) do
     _selected_binding = {:at, 10}
     dynamic([], true)
-    {:custom, value}
+    {:first, value}
   end
 
   def dynamic_expr(_, _, _, _) do

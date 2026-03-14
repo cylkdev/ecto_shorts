@@ -1,15 +1,13 @@
 defmodule EctoShorts.Dynamics.Postgres.CommonExprBuildersTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Generator.ClauseBuilder
-  alias EctoShorts.Dynamics.Postgres.CommonExprBuilders, as: CommonExprBuilders
+  alias EctoShorts.Generator.Builder
+  alias EctoShorts.Dynamics.Postgres.CommonExprBuilder
 
   import Ecto.Query
   import EctoShorts.Testing, only: [assert_dynamic: 2]
 
-  defp compile_specs_module!(specs) do
-    clause_asts = Enum.map(specs, &ClauseBuilder.clause_ast/1)
-
+  defp compile_specs_module!(clause_asts) do
     module =
       Module.concat([__MODULE__, :"Tmp#{System.unique_integer([:positive])}"])
 
@@ -27,32 +25,20 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExprBuildersTest do
     module
   end
 
-  defp binding_setup(context) do
-    binding_head_ast = quote(do: {:as, nil})
-    target_binding_var = Macro.var(:q, context)
-    binding_body_asts = [quote(do: unquote(target_binding_var))]
-
-    {binding_head_ast, target_binding_var, binding_body_asts}
-  end
-
-  test "clause_specs/4 builds operator clauses" do
-    {binding_head_ast, target_binding_var, binding_body_asts} = binding_setup(__MODULE__)
-
-    specs =
-      CommonExprBuilders.specs_for(
-        __MODULE__,
-        binding_head_ast,
-        target_binding_var,
-        binding_body_asts
+  test "named_clause_asts/2 builds operator clauses" do
+    clause_asts =
+      Builder.named_clause_asts(CommonExprBuilder,
+        context: __MODULE__,
+        operators: [:ids]
       )
 
-    module = compile_specs_module!(specs)
+    module = compile_specs_module!(clause_asts)
 
     expected_ids = dynamic([q], field(q, :id) in ^[1, 2])
 
     assert_dynamic(
       expected_ids,
-      module.compose({:as, nil}, :ids, [1, 2])
+      module.dynamic_expr({:as, nil}, :ids, nil, [1, 2])
     )
   end
 end

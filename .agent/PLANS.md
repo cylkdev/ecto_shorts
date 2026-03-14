@@ -61,6 +61,7 @@ Each milestone must be independently verifiable and incrementally implement the 
 ## Living plans and design decisions
 
 * ExecPlans are living documents. As you make key design decisions, update the plan to record both the decision and the thinking behind it. Record all decisions in the `Decision Log` section.
+* Each repo-tracked code task has one governing ExecPlan. As the task reveals narrower questions, corrections, discoveries, or subproblems, update that governing ExecPlan instead of creating a competing planning artifact. Create a separate ExecPlan only when the work has explicitly become a separate task with a separate scope.
 * ExecPlans must contain and maintain a `Progress` section, a `Surprises & Discoveries` section, a `Decision Log`, and an `Outcomes & Retrospective` section. These are not optional.
 * When you discover optimizer behavior, performance tradeoffs, unexpected bugs, or semantics that shape your approach, capture those observations in the `Surprises & Discoveries` section with short evidence snippets. Test output is ideal.
 * If you change course mid-implementation, document why in the `Decision Log` and reflect the implications in `Progress`. Plans are guides for the next contributor as much as checklists for you.
@@ -76,7 +77,7 @@ Prefer additive code changes followed by subtractions that keep tests passing. P
 
     # <Short, action-oriented description>
 
-    This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
+    This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds. This document is the governing artifact for the task it describes. If the task later narrows to a specific boundary, test, or contract question, that later reasoning must still be recorded here unless the task is explicitly split into a separate ExecPlan.
 
     If PLANS.md file is checked into the repo, reference the path to that file here from the repository root and note that this document must be maintained in accordance with PLANS.md.
 

@@ -3,49 +3,49 @@ defmodule EctoShorts.Generator.BlueprintTest do
 
   alias EctoShorts.Generator.Blueprint
 
-  test "new/1 validates required keys and returns a struct" do
+  test "struct!/2 validates required keys and returns a struct" do
     key_var = Macro.var(:key, nil)
     v_var = Macro.var(:v, nil)
 
     spec =
-      Blueprint.new(%{
-        binding_head: quote(do: {:as, nil}),
+      struct!(Blueprint, %{
         key: key_var,
-        head: quote(do: {:==, unquote(v_var)}),
-        body: quote(do: :ok)
+        head: [v_var],
+        body: quote(do: :ok),
+        guard: nil
       })
 
     assert %Blueprint{} = spec
     assert spec.guard === nil
   end
 
-  test "new/1 raises when required keys are absent" do
+  test "struct!/2 raises when required keys are absent" do
     assert_raise ArgumentError, fn ->
-      Blueprint.new(%{key: :id})
+      struct!(Blueprint, %{key: :id})
     end
   end
 
-  test "new/1 raises for unknown keys" do
+  test "struct!/2 raises for unknown keys" do
     assert_raise KeyError, fn ->
-      Blueprint.new(%{
-        binding_head: quote(do: {:as, nil}),
+      struct!(Blueprint, %{
         key: Macro.var(:key, nil),
-        head: quote(do: :anything),
+        head: [quote(do: :anything)],
         body: quote(do: :ok),
+        guard: nil,
         unknown: :nope
       })
     end
   end
 
-  test "new/1 accepts a Blueprint struct" do
+  test "struct!/2 accepts a Blueprint struct" do
     spec =
-      Blueprint.new(%{
-        binding_head: quote(do: {:as, nil}),
+      struct!(Blueprint, %{
         key: Macro.var(:key, nil),
-        head: quote(do: :anything),
-        body: quote(do: :ok)
+        head: [quote(do: :anything)],
+        body: quote(do: :ok),
+        guard: nil
       })
 
-    assert %Blueprint{} = Blueprint.new(spec)
+    assert %Blueprint{} = struct!(Blueprint, Map.from_struct(spec))
   end
 end

@@ -3,7 +3,7 @@ defmodule EctoShorts.Compiler.QueryBindingBuilderTest do
 
   test "query_binding_contracts/2 exposes root, named, and positional binding contracts" do
     {target_binding_var, binding_patterns} =
-      EctoShorts.Compiler.query_binding_contracts(__MODULE__, max_positional_bindings: 2)
+      EctoShorts.Compiler.query_binding_contracts(2, __MODULE__)
 
     assert Macro.to_string(target_binding_var) === "q"
 
