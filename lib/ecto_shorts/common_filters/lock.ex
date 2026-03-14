@@ -16,9 +16,29 @@ defmodule EctoShorts.CommonFilters.Lock do
           term(),
           Ecto.Query.t(),
           {:as, atom()} | {:at, pos_integer()},
-          map() | keyword(),
+          term(),
           keyword()
         ) :: Ecto.Query.t()
+  def build_query(:lock, _source, query, selected_binding, params, _opts) when is_binary(params) do
+    build_raw_lock(query, selected_binding, params)
+  end
+
+  def build_query(:lock, _source, query, _selected_binding, params, _opts)
+      when is_function(params, 1) do
+    case params.(query) do
+      next_query when is_struct(next_query, Ecto.Query) ->
+        next_query
+
+      other ->
+        Logger.warning(
+          @logger_prefix,
+          "Expected lock callback to return an Ecto.Query, got: #{inspect(other)}"
+        )
+
+        query
+    end
+  end
+
   def build_query(:lock, _source, query, selected_binding, params, opts) do
     if (is_map(params) and not is_struct(params)) or Keyword.keyword?(params) do
       case params[:name] do
@@ -27,7 +47,12 @@ defmodule EctoShorts.CommonFilters.Lock do
       end
     else
       Logger.warning(@logger_prefix, "Expected lock ..., got: #{inspect(params)}")
+      query
     end
+  end
+
+  defp build_raw_lock(query, _selected_binding, expr) do
+    Ecto.Query.Builder.Lock.apply(query, expr)
   end
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
@@ -72,6 +97,8 @@ defmodule EctoShorts.CommonFilters.Lock do
             @logger_prefix,
             "Expected ..., got: #{inspect(callback)}"
           )
+
+          query
         end
 
       {:error, reason} ->
