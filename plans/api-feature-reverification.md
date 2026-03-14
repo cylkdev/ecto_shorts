@@ -71,6 +71,8 @@ This plan does not treat every mismatch between `research/` and the live code as
 - [ ] (2026-03-14 19:05Z) Began the newly approved deferred follow-on scope under the same governing plan. Re-read the current rules, re-checked the governing artifact against the current standard, and traced the remaining deferred candidates through live code, current tests, old examples, and authoritative Ecto docs. Confirmed the remaining deferred work is now three concrete slices: broader quantified comparison support at the `CommonFilters` boundary, explicit join-payload `type:` source-family support replacing the earlier planned `kind:` name while preserving outer-key joins and `qualifier:` join mode, and deliberate lock-boundary widening for direct raw function and direct raw string payloads at `Lock.build_query/6`.
 - [x] (2026-03-14 20:21Z) Completed the explicit join-payload `type:` source-family slice. Repaired the earlier `type:`-as-`qualifier:` drift, restored association shorthand to its separate outer-key association path, added explicit `type: :association` and `type: :schema` proof in `test/ecto_shorts/common_filters_test.exs`, and passed focused validation with `mix test test/ecto_shorts/common_filters_test.exs:507`, `mix test test/ecto_shorts/common_filters_test.exs:551`, plus nearby existing join proofs at `:473`, `:490`, and `:525`. A broader `mix test test/ecto_shorts/common_filters_test.exs` run still fails only on the already-pending direct raw lock proofs, which remains evidence for the separate lock slice rather than a join regression.
 - [x] (2026-03-14 20:32Z) Completed the broader quantified comparison slice. Extended `Postgres.normalize_quantified_term/3` to normalize operator-wrapped quantified-query payloads and extended the generic scalar comparison builder branch so `>`, `>=`, `<`, and `<=` emit quantified `all(...)` / `any(...)` expressions instead of pinning quantified tuples as literal values. Focused and neighboring validation passed with `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs` and `mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs`.
+- [x] (2026-03-14 20:40Z) Completed the direct raw lock payload widening slice. Extended `Lock.build_query/6` to accept direct raw string lock clauses and direct unary function payloads while preserving the existing `name:` + provider path unchanged. The raw string path uses the same runtime builder callback Ecto applies after `lock/3` macro expansion so the clause can remain a runtime string without violating the macro’s literal-string restriction. Focused validation passed with `mix test test/ecto_shorts/common_filters_test.exs:3021` and `mix test test/ecto_shorts/common_filters_test.exs:3034`, and neighboring regression passed with `mix test test/ecto_shorts/common_filters_test.exs`.
+- [x] (2026-03-14 20:43Z) Final targeted regression for the deferred follow-on scope passed with `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`, covering the completed join `type:` source-family correction, the completed quantified comparison expansion, and the completed direct raw lock payload widening together.
 
 ## Milestones
 
@@ -160,6 +162,9 @@ This milestone is complete when every executed slice records its proof, preserve
 - Observation: Broader quantified comparison support required a second owner-local change in the scalar comparison builder after the router patch landed.
   Evidence: After extending `lib/ecto_shorts/dynamics/postgres.ex` to rewrite operator-wrapped quantified-query payloads, the first focused proof still failed with `Ecto.Query.CastError` because the generated scalar comparison module emitted `field(q, ^key) > ^{:all, query}`-style clauses. Extending the generic comparison branch in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` to match `{:all, query}` and `{:any, query}` for non-equality operators resolved that remaining owner-local gap, and the focused plus neighboring quantified tests then passed.
 
+- Observation: Direct raw string lock widening could not use `Ecto.Query.lock/3` with a pinned runtime string because Ecto’s macro layer requires a literal string or a fragment at compile time.
+  Evidence: The first lock-slice attempt failed with `Ecto.Query.CompileError` at `lib/ecto_shorts/common_filters/lock.ex:56`: `` `^expr` is not a valid lock. For security reasons, a lock must always be a literal string or a fragment ``. Inspecting `deps/ecto/lib/ecto/query/builder/lock.ex` then showed that the runtime callback `Ecto.Query.Builder.Lock.apply/2` sets `%{query | lock: value}` after macro expansion. Switching the direct raw string path to that runtime callback resolved the boundary-local gap, and the focused plus neighboring lock tests then passed.
+
 ## Decision Log
 
 - Decision: Treat the live public API and public tests as the primary source of truth for feature completion.
@@ -234,6 +239,10 @@ This milestone is complete when every executed slice records its proof, preserve
   Rationale: Extending `Postgres.normalize_quantified_term/3` was still the correct public-routing fix for shapes like `%{id: %{>: %{all: %{from: Comment}}}}`, but the first focused failure showed that the generic comparison branch in `ScalarExprBuilder.comparison_conditions/5` still treated quantified tuples as ordinary pinned values for `>`, `>=`, `<`, and `<=`. The narrowest correct repair is therefore split across those two existing owners: the router builds quantified subqueries, and the scalar comparison builder emits quantified comparison expressions for the non-equality operator family.
   Date/Author: 2026-03-14 / Cascade
 
+- Decision: Implement direct raw string lock widening through `Ecto.Query.Builder.Lock.apply/2` and direct raw function widening by applying the callback to the current query, while leaving the `name:` provider path unchanged.
+  Rationale: Ecto’s public `lock/3` macro rejects pinned runtime strings even though the approved compatibility slice intentionally widens the public boundary to accept direct raw string values. The narrowest correct repair is to keep built-in symbolic locks on `Query.lock/3`, keep provider-backed locks on the existing `name:` path, and route only the new direct raw string payload through the same runtime builder callback Ecto uses after macro expansion. Direct raw unary functions already express “take the current query and return the desired locked query,” so applying them directly preserves the approved boundary without broadening the provider contract.
+  Date/Author: 2026-03-14 / Cascade
+
 - Decision: Widen the lock boundary only to direct raw string payloads and direct unary function payloads, while preserving the existing `name:` + provider path unchanged.
   Rationale: Authoritative Ecto docs confirm direct raw string lock expressions are valid, and the old repo examples show direct unary function payloads that return a query with the desired lock applied. These two additions cover the deferred lock shapes already evidenced in repo artifacts without broadening the boundary to arbitrary new payload types or weakening the existing provider-backed path.
   Date/Author: 2026-03-14 / Cascade
@@ -272,13 +281,15 @@ The second executed slice added the settled `at: :first` and `at: :last` aliases
 
 The next slice began as the first true array runtime-gap slice. Array `nil`, array `count > 0`, array `count == 0`, comparison-operator `all:`, and containment-style `all: [in: list]` are now implemented with focused direct, router, and boundary evidence. The later wildcard-preservation compatibility extension for string matching is also now implemented and proved.
 
-With those originally approved slices complete, the user has now expanded the task to consume the previously deferred follow-on items instead of stopping at the earlier feature-complete checkpoint. That follow-on scope is narrower than reopening the whole audit: it is limited to broader quantified comparisons at the public boundary plus the two deferred directive compatibility slices for join `type:` and direct raw lock payloads.
+With those originally approved slices complete, the user expanded the task to consume the previously deferred follow-on items instead of stopping at the earlier feature-complete checkpoint. That follow-on scope has now been fully executed: broader quantified comparisons at the public boundary, the join `type:` source-family correction, and direct raw lock payload widening are all complete.
 
 The explicit join-payload `type:` source-family slice is now complete. `Join.build_query/6` accepts the new explicit single-join payload such as `%{join: [type: :association, source: :author, as: :author, qualifier: :left, on: true]}` by normalizing it to the existing outer-key join path, `qualifier:` remains the canonical join-mode key, and association shorthand remains on its separate outer-key association surface. Focused and nearby join proofs passed.
 
 Broader quantified comparisons are also now complete. The public/router boundary in `lib/ecto_shorts/dynamics/postgres.ex` now rewrites operator-wrapped quantified-query payloads into the same quantified-query contract already used by equality shorthand, and the scalar comparison owner in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` now emits quantified comparison expressions for `>`, `>=`, `<`, and `<=` instead of treating quantified tuples as pinned literal values. Focused and neighboring quantified tests passed.
 
-The remaining deferred follow-on work is now only the direct raw lock payload widening in `Lock.build_query/6`.
+Direct raw lock payload widening is now complete as well. `lib/ecto_shorts/common_filters/lock.ex` accepts direct raw string clauses and direct unary function payloads while preserving built-in symbolic locks and the existing `name:` + provider path. Focused lock proofs and the full nearby `common_filters_test.exs` regression passed.
+
+All three deferred follow-on slices are now complete under this governing plan.
 
 ## Context and Orientation
 
@@ -338,9 +349,9 @@ The live contract supports association, schema, table, query, subquery, and frag
 
 ### `EctoShorts.CommonFilters.Lock`
 
-`Lock` owns lock directive payloads after API dispatch. The live contract expects a map or keyword payload with a `name` key. Built-in names `:for_update` and `:for_share` are handled directly. Other names are resolved through the query provider, which must return `{:ok, function}`, `{:error, reason}`, or `nil`. Provider-owned `values:` may be translated into a valid Ecto lock expression there without widening the public boundary.
+`Lock` owns lock directive payloads after API dispatch. The live contract accepts either a map or keyword payload with a `name` key, a direct raw string lock clause, or a direct unary function that receives the current query and returns the desired locked query. Built-in names `:for_update` and `:for_share` are handled directly. Other names are resolved through the query provider, which must return `{:ok, function}`, `{:error, reason}`, or `nil`. Provider-owned `values:` may be translated into a valid Ecto lock expression there without changing the direct raw payload contract.
 
-The live contract includes provider-backed callback customization. It does not currently expose a direct raw function payload or direct raw string lock payload at the public boundary.
+The live contract now includes provider-backed callback customization plus direct raw string and direct raw unary function payloads at the public boundary.
 
 ### `EctoShorts.CommonFilters.WithCte`
 
@@ -526,13 +537,10 @@ Unsupported live shape that matters for later work:
 Accepted live shape today:
 
 - map or keyword payload with `name:` and optional `values:`
+- direct raw string lock clause
+- direct unary function payload that receives the current query and returns an `Ecto.Query`
 
-Produced output shape: an `Ecto.Query` with a built-in lock clause, a provider-translated lock clause, or the unchanged query when the provider path returns `nil`, `{:error, reason}`, or an invalid callback shape.
-
-Unsupported live shape that matters for later work:
-
-- direct raw function payload without a `name:` indirection
-- direct raw string lock clause without a `name:` indirection
+Produced output shape: an `Ecto.Query` with a built-in lock clause, a provider-translated lock clause, a direct raw string lock clause, a direct unary-function-applied lock clause, or the unchanged query when the provider path returns `nil`, `{:error, reason}`, or an invalid callback shape.
 
 ### Boundary: `WithCte.build_query/6`
 
@@ -942,3 +950,7 @@ Revision note (2026-03-14 15:53Z): completed the additive binding-selector alias
 Revision note (2026-03-14 20:21Z): corrected the earlier join-contract drift before continuing implementation. The plan now records `type:` only as the explicit join-payload source-family selector replacing the earlier planned `kind:` name, not as a join-mode alias. Synced the completed `Join.build_query/6` implementation and focused validation evidence, and recorded that the remaining broader-file failures belong to the still-pending direct-lock slice.
 
 Revision note (2026-03-14 20:32Z): completed the broader quantified comparison slice. Recorded that the runtime repair required both the Postgres router update and a second owner-local change in the generic scalar comparison builder branch for non-equality quantified expressions, then synced the passing focused and neighboring quantified validation evidence.
+
+Revision note (2026-03-14 20:40Z): completed the direct raw lock payload widening slice. Recorded the Ecto macro restriction on pinned runtime lock strings, documented the chosen `Ecto.Query.Builder.Lock.apply/2` runtime path for direct raw string clauses, and synced the passing focused plus neighboring lock validation evidence.
+
+Revision note (2026-03-14 20:43Z): final targeted regression for the full deferred follow-on scope passed. Recorded the combined evidence that `common_filters_test.exs`, `common_filters_scalar_filter_test.exs`, `dynamics/postgres_test.exs`, and `dynamics/postgres/scalar_expr_test.exs` all pass together after the completed join, quantified-comparison, and lock slices.
