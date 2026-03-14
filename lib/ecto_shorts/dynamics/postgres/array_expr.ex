@@ -252,14 +252,10 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
   end
 
   defp normalize_all_payload(payload) when is_list(payload) do
-    if Keyword.keyword?(payload) do
-      case payload do
-        [{op, value}] -> {normalize_operator(op), value}
-        _ -> payload
-      end
-    else
-      payload
-    end
+    payload
+    |> Enum.reduce([], &normalize_all_payload_entry/2)
+    |> Enum.reverse()
+    |> collapse_all_payload()
   end
 
   defp normalize_all_payload({op, value}) do
@@ -267,6 +263,17 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
   end
 
   defp normalize_all_payload(payload), do: payload
+
+  defp normalize_all_payload_entry({op, value}, payload) do
+    [{normalize_operator(op), value} | payload]
+  end
+
+  defp normalize_all_payload_entry(value, payload) do
+    [value | payload]
+  end
+
+  defp collapse_all_payload([payload]), do: payload
+  defp collapse_all_payload(payload), do: payload
 
   defp normalize_patterns(values) when is_list(values) do
     Enum.map(values, &preserve_or_wrap_pattern/1)

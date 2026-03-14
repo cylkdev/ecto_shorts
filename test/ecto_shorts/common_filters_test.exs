@@ -3018,31 +3018,41 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, actual)
     end
 
-    test "matches Ecto.Query for a direct raw string lock" do
-      expected = lock(Post, "FOR SHARE NOWAIT")
+    test "keeps the query unchanged for a direct raw string lock" do
+      expected = from(p in Post)
 
-      actual =
-        CommonFilters.convert_params_to_filter(
-          Post,
-          %{lock: "FOR SHARE NOWAIT"},
-          []
-        )
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: "FOR SHARE NOWAIT"},
+              []
+            )
 
-      assert_query(expected, actual)
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected lock ..., got: \"FOR SHARE NOWAIT\""
     end
 
-    test "matches Ecto.Query for a direct raw function lock" do
+    test "keeps the query unchanged for a direct raw function lock" do
       lock_fun = fn query -> from(p in query, lock: "FOR UPDATE") end
-      expected = lock(Post, "FOR UPDATE")
+      expected = from(p in Post)
 
-      actual =
-        CommonFilters.convert_params_to_filter(
-          Post,
-          %{lock: lock_fun},
-          []
-        )
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: lock_fun},
+              []
+            )
 
-      assert_query(expected, actual)
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected lock ..., got:"
     end
 
     test "keeps the query unchanged when the lock provider returns nil" do

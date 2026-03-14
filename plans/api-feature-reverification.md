@@ -73,6 +73,8 @@ This plan does not treat every mismatch between `research/` and the live code as
 - [x] (2026-03-14 20:32Z) Completed the broader quantified comparison slice. Extended `Postgres.normalize_quantified_term/3` to normalize operator-wrapped quantified-query payloads and extended the generic scalar comparison builder branch so `>`, `>=`, `<`, and `<=` emit quantified `all(...)` / `any(...)` expressions instead of pinning quantified tuples as literal values. Focused and neighboring validation passed with `mix test test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs` and `mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs`.
 - [x] (2026-03-14 20:40Z) Completed the direct raw lock payload widening slice. Extended `Lock.build_query/6` to accept direct raw string lock clauses and direct unary function payloads while preserving the existing `name:` + provider path unchanged. The raw string path uses the same runtime builder callback Ecto applies after `lock/3` macro expansion so the clause can remain a runtime string without violating the macro’s literal-string restriction. Focused validation passed with `mix test test/ecto_shorts/common_filters_test.exs:3021` and `mix test test/ecto_shorts/common_filters_test.exs:3034`, and neighboring regression passed with `mix test test/ecto_shorts/common_filters_test.exs`.
 - [x] (2026-03-14 20:43Z) Final targeted regression for the deferred follow-on scope passed with `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`, covering the completed join `type:` source-family correction, the completed quantified comparison expansion, and the completed direct raw lock payload widening together.
+- [x] (2026-03-14 21:02Z) Re-opened the governing plan for the approved array/scalar/lock refactor slice after the user redirected the task. Re-read the current project rules and specification guides, confirmed that this existing repo-local plan remains the single governing artifact, and identified the stale contracts that must be corrected here before code changes continue: `ScalarExpr` still describes generated-module ownership, `Lock` still describes the reverted direct raw string and raw function surface, and the validation matrix does not yet name the structural array-normalization and scalar-owner refactor proofs.
+- [x] (2026-03-14 22:18Z) Completed the approved array/scalar/lock refactor slice. Updated the governing specs first, rewrote `ArrayExpr.normalize_all_payload/1` as a reducer-friendly structural traversal that preserves empty, singleton, and multi-entry behavior, replaced the scalar compiled-module dispatch with direct binding-contract clauses in `ScalarExpr` using `Compiler.query_binding_contracts/2`, removed the unused `ClauseSpec` / blueprint compiler surface from `ScalarExprBuilder`, restored `Lock.build_query/6` to the provider-owned custom-lock contract by removing the direct raw string and direct raw unary-function paths, updated the lock proofs to unchanged-query invalid-shape coverage, and passed focused plus combined validation with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`, `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/common_filters_test.exs`, and `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/common_filters_test.exs`, all passing.
 
 ## Milestones
 
@@ -333,13 +335,13 @@ Start with `build_dynamic/4`. The module guarantees that it will normalize negat
 
 `ArrayExpr` owns Postgres-specific behavior for array and map-backed field predicates once routing has already determined that the field is array-like. It accepts the normalized binding selector, field key, negation flag, and operator/value term, and returns a dynamic expression when the shape is supported.
 
-The live contract currently covers list equality and inequality, scalar membership, overlap via `in` with a list, array `nil`, array `count`, element-wise comparisons using `ANY`, array-local comparison `all:` using `ALL(array)`, containment-style `all: [in: list]` using `<@`, `lower` and `upper` transforms, and array `like` and `ilike`. The next approved compatibility work here is narrower: preserve caller-supplied wildcard patterns for `like` and `ilike` while keeping contains-style wrapping for bare values.
+The live contract currently covers list equality and inequality, scalar membership, overlap via `in` with a list, array `nil`, array `count`, element-wise comparisons using `ANY`, array-local comparison `all:` using `ALL(array)`, containment-style `all: [in: list]` using `<@`, `lower` and `upper` transforms, and array `like` and `ilike` with wildcard preservation for caller-supplied `%` and `_`. This refactor preserves that runtime surface while making array-local `all` payload normalization follow data shape directly inside `ArrayExpr`.
 
 ### `EctoShorts.Dynamics.Postgres.ScalarExpr`
 
 `ScalarExpr` owns non-array Postgres field predicates after routing has already decided the field is not array-like and does not belong to `CommonExpr`. Use it when the public filter pipeline has already selected a scalar field predicate and the work is about how that predicate becomes a dynamic expression on the Postgres path.
 
-Start with `dynamic_expr/5`. The module guarantees that it will normalize the incoming term into the operator family expected by the compiled scalar builders and dispatch string operators to the string-specific compiled module. It does not own public filter reduction or array-field behavior.
+Start with `dynamic_expr/5`. The preserved scalar contract includes equality and inequality, nil checks, membership, quantified comparisons, aggregate comparisons, string transforms, string matching with wildcard preservation, arithmetic value wrappers, datetime/date wrappers, named bindings, positional bindings, and negation. This refactor makes `ScalarExpr` the direct behavioral owner by using `EctoShorts.Compiler.query_binding_contracts/2` inside the module itself instead of delegating the contract to generated compiled modules.
 
 ### `EctoShorts.CommonFilters.Join`
 
@@ -349,9 +351,9 @@ The live contract supports association, schema, table, query, subquery, and frag
 
 ### `EctoShorts.CommonFilters.Lock`
 
-`Lock` owns lock directive payloads after API dispatch. The live contract accepts either a map or keyword payload with a `name` key, a direct raw string lock clause, or a direct unary function that receives the current query and returns the desired locked query. Built-in names `:for_update` and `:for_share` are handled directly. Other names are resolved through the query provider, which must return `{:ok, function}`, `{:error, reason}`, or `nil`. Provider-owned `values:` may be translated into a valid Ecto lock expression there without changing the direct raw payload contract.
+`Lock` owns lock directive payloads after API dispatch. For this slice, the intended contract is the narrower one already supported by the query-provider boundary: a map or keyword payload with a `name` key and optional `values:`. Built-in names `:for_update` and `:for_share` are handled directly. Other names are resolved through the query provider, which must return `{:ok, function}`, `{:error, reason}`, or `nil`.
 
-The live contract now includes provider-backed callback customization plus direct raw string and direct raw unary function payloads at the public boundary.
+Direct raw runtime string and direct raw unary-function payloads are treated here as stale drift from the earlier widening slice because they require either an internal Ecto lock builder path or a second customization surface outside the provider boundary. This refactor removes that drift and restores the provider-owned custom-lock contract.
 
 ### `EctoShorts.CommonFilters.WithCte`
 
@@ -418,6 +420,115 @@ Important omitted-input behavior:
 Important invalid-input behavior:
 
 - invalid filter shapes are generally handled by lower-level filter owners, which may keep the query unchanged and log a warning instead of raising
+
+### `EctoShorts.Dynamics.Postgres.build_dynamic/4`
+
+Purpose: route one field predicate on the Postgres adapter path to the correct owner module and return the resulting dynamic expression.
+
+Accepted inputs:
+
+- `source`: the current schema or query source
+- `selected_binding`: `{:as, nil | atom}` or `{:at, pos_integer}`
+- `{key, term}`: one field key plus its filter term
+- `opts`: keyword options for adapter collaborators
+
+Return shape:
+
+- returns an `Ecto.Query.DynamicExpr`
+- returns `nil` when the routed owner does not support the selected binding or reduced term shape
+
+Caller-visible rules that matter for this task:
+
+- top-level `{:not, term}` is normalized before owner dispatch
+- top-level quantified-query `all` and `any` payloads keep their existing router contract
+- array-field terms must continue to reach `ArrayExpr`
+- non-array scalar terms must continue to reach `ScalarExpr`
+
+Important invalid-input behavior:
+
+- unsupported downstream shapes are exposed as `nil` from the owner boundary rather than being silently reclassified at the router
+
+### `EctoShorts.Dynamics.Postgres.ArrayExpr.dynamic_expr/5`
+
+Purpose: turn one already-routed array-field predicate into a Postgres dynamic expression.
+
+Accepted inputs:
+
+- `selected_binding`
+- `key`
+- `negated` as `:not` or `nil`
+- one supported array operator/value term
+- `opts`
+
+Return shape:
+
+- returns an `Ecto.Query.DynamicExpr` for supported array shapes
+- returns `nil` for unsupported shapes
+
+Caller-visible rules that matter for this task:
+
+- the supported array runtime surface listed in the `ArrayExpr` module specification must remain unchanged
+- wildcard preservation for `like` and `ilike` must remain owner-local behavior
+- `all` payload normalization must follow data shape directly instead of broad list inspection
+
+Important invalid-input behavior:
+
+- unsupported nested array payload shapes continue to return `nil` rather than being treated as supported behavior
+
+### `EctoShorts.Dynamics.Postgres.ScalarExpr.dynamic_expr/5`
+
+Purpose: turn one already-routed scalar-field predicate into a Postgres dynamic expression.
+
+Accepted inputs:
+
+- `selected_binding`
+- `key`
+- `negated` as `:not` or `nil`
+- one supported scalar operator/value term
+- `opts`
+
+Return shape:
+
+- returns an `Ecto.Query.DynamicExpr` for supported scalar shapes
+- returns `nil` when the binding selector or reduced scalar term is unsupported
+
+Caller-visible rules that matter for this task:
+
+- the full live scalar surface must remain unchanged while ownership moves into `ScalarExpr`
+- wildcard preservation for string operators must remain unchanged
+- direct binding-pattern clauses must be generated from `query_binding_contracts/2` instead of generated compiled-module dispatch
+
+Important invalid-input behavior:
+
+- unsupported scalar shapes must continue to return `nil` instead of raising at this owner boundary
+
+### `EctoShorts.CommonFilters.Lock.build_query/6`
+
+Purpose: apply a lock directive to the current query through built-in lock names or provider-backed custom lock names.
+
+Accepted inputs:
+
+- `:lock` as the filter key
+- `source`
+- `query`
+- `selected_binding`
+- `params` as a map or keyword list with `name:` and optional `values:`
+- `opts` with optional `:query_provider`
+
+Return shape:
+
+- returns an `Ecto.Query` with the requested built-in or provider-backed lock applied
+- returns the unchanged query when `name:` is omitted or the provider path returns `nil`, `{:error, reason}`, or an invalid callback shape
+
+Caller-visible rules that matter for this task:
+
+- built-in `:for_update` and `:for_share` remain direct owner behavior
+- custom lock behavior remains provider-owned through `QueryProvider.resolve_query_expression/5`
+- the public contract no longer includes direct raw runtime strings or direct raw unary functions
+
+Important invalid-input behavior:
+
+- invalid lock payload shapes keep the current logging plus unchanged-query behavior
 
 ## Internal Boundary Contracts
 
@@ -500,9 +611,10 @@ Unsupported live shapes that matter for later work:
 Current in-flight execution notes:
 
 - array `nil`, proved `count`, comparison-operator `all:`, and containment-style `all: [in: list]` are now implemented and proved
-- the next approved compatibility change at this boundary is wildcard preservation for `like` and `ilike`
+- wildcard preservation for `like` and `ilike` is part of the proved live contract
+- this refactor must keep the same accepted `all` payload surface while moving `normalize_all_payload/1` to structural clauses that mirror map, tuple, empty-list, and recursive-list shapes directly
 
-### Boundary: `ScalarExpr.dynamic_expr/5` to `ScalarExprBuilder.quote_expr/3`
+### Boundary: `ScalarExpr.dynamic_expr/5` to direct owner-local scalar reduction
 
 Accepted input shape: a normalized binding selector, scalar field key, negation flag, and operator/value term already routed away from `CommonExpr` and `ArrayExpr`.
 
@@ -510,14 +622,16 @@ Produced output shape: an `Ecto.Query.DynamicExpr`.
 
 Owned transformations:
 
-- normalize shorthand terms into operator/value tuples before compiled-module dispatch
-- dispatch string operators to the compiled string module
-- construct scalar LIKE/ILIKE pattern expressions at the compiled-builder boundary
+- normalize shorthand terms into operator/value tuples
+- select the correct scalar expression family inside `ScalarExpr` itself
+- construct scalar LIKE/ILIKE pattern expressions at the direct owner boundary
+- emit named-binding and positional-binding dynamic expressions from `query_binding_contracts/2`
 
 Forbidden accidental contract expansion:
 
 - string-pattern heuristics must not move up into `CommonFilters` or `Postgres.build_dynamic/4`
-- this boundary must preserve the current contains-style convenience for bare values even if wildcard preservation is added
+- this boundary must preserve the current contains-style convenience for bare values alongside wildcard preservation
+- this boundary must not keep a second hidden behavior owner in generated scalar modules or `ScalarExprBuilder`
 
 ### Boundary: `Join.build_query/6`
 
@@ -537,10 +651,13 @@ Unsupported live shape that matters for later work:
 Accepted live shape today:
 
 - map or keyword payload with `name:` and optional `values:`
-- direct raw string lock clause
-- direct unary function payload that receives the current query and returns an `Ecto.Query`
 
-Produced output shape: an `Ecto.Query` with a built-in lock clause, a provider-translated lock clause, a direct raw string lock clause, a direct unary-function-applied lock clause, or the unchanged query when the provider path returns `nil`, `{:error, reason}`, or an invalid callback shape.
+Produced output shape: an `Ecto.Query` with a built-in lock clause, a provider-translated lock clause, or the unchanged query when the provider path returns `nil`, `{:error, reason}`, or an invalid callback shape.
+
+Forbidden accidental contract expansion:
+
+- `Lock` must not bypass Ecto’s public lock validation through internal builder APIs
+- custom lock strings and lock callbacks must not become a second public customization surface beside the query provider
 
 ### Boundary: `WithCte.build_query/6`
 
@@ -562,9 +679,9 @@ For each entry, `apply_filters/6` decides what kind of thing it is looking at. I
 
 When a field predicate reaches the Postgres dynamic path, `EctoShorts.Dynamics.Postgres.build_dynamic/4` normalizes top-level negation, then normalizes top-level quantified forms such as `all` and `any` into equality against a built quantified query only when the payload is on the quantified-query contract. After that, it routes by family. Common operators such as `before` and `after` stay in `CommonExpr`. Array and map-backed fields route to `ArrayExpr`. Everything else routes to `ScalarExpr`.
 
-That routing order still matters for the current wildcard slice, but for a different reason than the completed array work. String-pattern construction already belongs in the owners after routing, not in the public reducer or Postgres router. Scalar-field string predicates travel from `CommonFilters.convert_params_to_filter/3` into `Postgres.build_dynamic/4`, then into `ScalarExpr.dynamic_expr/5`, which dispatches string operators to the compiled scalar string builder where LIKE/ILIKE patterns are assembled. Array-field string predicates travel through the same public and router boundaries but finish in `ArrayExpr.dynamic_expr/5`, where `normalize_patterns/1` currently wraps all values. The wildcard-preservation slice therefore belongs at those two owner-local pattern-construction points. If a join payload alias or lock payload alias is added, the change still belongs in the directive owner after API dispatch, not in `CommonFilters.apply_filters/6`.
+That routing order still matters for the current refactor slice. String-pattern construction belongs in the owners after routing, not in the public reducer or Postgres router. Scalar-field string predicates travel from `CommonFilters.convert_params_to_filter/3` into `Postgres.build_dynamic/4`, then into `ScalarExpr.dynamic_expr/5`, where this refactor moves the full scalar contract into direct owner-local helpers and binding-pattern clauses. Array-field `all` payloads travel through the same public and router boundaries but finish in `ArrayExpr.dynamic_expr/5`, where `normalize_all_payload/1` must now express map, tuple, empty-list, and recursive-list behavior structurally. Lock directives travel from `CommonFilters.convert_params_to_filter/3` into `Lock.build_query/6`, where this refactor restores provider-owned customization and removes the direct raw runtime lock surfaces.
 
-Invalid-input behavior also differs by boundary. At the top-level reducer, many invalid shapes are still allowed to flow to the owner module. The owner module usually decides whether to log and keep the query unchanged or to raise for impossible internal shapes. That means later proof work must keep the invalid-input behavior visible at the owning boundary instead of hiding it behind broad guards in `CommonFilters`.
+Invalid-input behavior also differs by boundary. At the top-level reducer, many invalid shapes are still allowed to flow to the owner module. The owner module usually decides whether to log and keep the query unchanged or to raise for impossible internal shapes. That means this refactor must keep the invalid-input behavior visible at the owning boundary instead of hiding it behind broad guards in `CommonFilters`.
 
 ## Example Mappings
 

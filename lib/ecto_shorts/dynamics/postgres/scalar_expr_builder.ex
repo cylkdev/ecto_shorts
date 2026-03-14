@@ -2,7 +2,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   @moduledoc since: "3.0.0"
   @moduledoc false
 
-  alias EctoShorts.Generator.Blueprint
   alias EctoShorts.Dynamics.Helpers
 
   @equality_operators [
@@ -53,9 +52,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
   @operators [:membership, :comparison, :string_transform, :string]
 
-  @behaviour EctoShorts.Generator.ClauseSpec
-
-  @impl true
   def operators, do: @operators
 
   def operators(:membership), do: @membership_operators
@@ -63,24 +59,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   def operators(:comparison), do: @comparison_operators
   def operators(:string_transform), do: @string_transform_operators
   def operators(:string), do: @string_operators
-
-  @impl true
-  def specs_for(operator, binding_selector_ast, q_var, opts) do
-    context = opts[:context]
-
-    key_var = Macro.var(:key, context)
-    negated_var = Macro.var(:negated, context)
-    value_var = Macro.var(:value, context)
-
-    [
-      %Blueprint{
-        guard: nil,
-        key: key_var,
-        head: [negated_var, value_var],
-        body: quote_body(operator, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context)
-      }
-    ]
-  end
 
   @doc false
   def quote_body(:comparison, binding_selector_ast, {q_var, key_var, negated_var, value_var}, context) do

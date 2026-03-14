@@ -578,6 +578,10 @@ NON-NEGOTIABLE REQUIREMENTS:
   transformation happens, what each private boundary may assume, and where that responsibility stops. If that
   chain is still implicit, the plan is not ready.
 
+* When a function operates at a reducer, traversal, or enum-processing boundary, specify and preserve the
+  behavior for empty input, singleton input, and multi-entry input explicitly. Do not decompose the input into
+  an exact-cardinality pattern unless “exactly one element” is the documented contract of that boundary.
+
 * Function specifications are not optional whenever code work involves a function boundary. Do not wait until
   after implementation to discover what the function was supposed to accept, return, preserve, or leave alone.
   State that contract first. If the work cannot be explained through the relevant function specification, the
