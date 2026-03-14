@@ -249,6 +249,282 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
+    test "matches records using quantified greater-than all comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id >
+              all(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{>: %{all: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified greater-than-or-equal all comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id >=
+              all(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{>=: %{all: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified less-than all comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id <
+              all(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{<: %{all: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified less-than-or-equal all comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id <=
+              all(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{<=: %{all: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified explicit equality against all comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id ==
+              all(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{==: %{all: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified explicit inequality against all comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id !=
+              all(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{!=: %{all: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified greater-than any comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id >
+              any(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{>: %{any: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified greater-than-or-equal any comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id >=
+              any(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{>=: %{any: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified less-than any comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id <
+              any(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{<: %{any: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified less-than-or-equal any comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id <=
+              any(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{<=: %{any: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified explicit equality against any comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id ==
+              any(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{==: %{any: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
+    test "matches records using quantified explicit inequality against any comparison" do
+      expected =
+        from(p in Post,
+          where:
+            p.id !=
+              any(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      q2 =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{id: %{!=: %{any: %{from: Comment, where: %{published: true}}}}},
+          []
+        )
+
+      assert_sql(expected, q2)
+    end
+
     test "matches records using the explicit value wrapper for arithmetic expressions" do
       expected = from(p in Post, where: p.views > p.views + ^10)
 

@@ -11,7 +11,6 @@ defmodule EctoShorts.CommonFilters do
   @logger_prefix "EctoShorts.CommonFilters"
 
   @binding_operator [:as, :at]
-
   @behaviour EctoShorts.QueryBuilder
 
   def convert_params_to_filter(source, params, opts) do

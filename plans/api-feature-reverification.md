@@ -68,6 +68,8 @@ This plan does not treat every mismatch between `research/` and the live code as
 - [x] (2026-03-14 18:24Z) Completed the containment-style array `all: [in: list]` slice. Refreshed stale plan wording after the completed `with_cte operation:` work, added failing proof at `ArrayExpr.dynamic_expr/5`, `Postgres.build_dynamic/4`, and `Actions.all/3`, confirmed the gap was owner-local in `ArrayExpr`, added the minimal `{:all, {:in, values}}` `<@` branch, and passed focused validation with `mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs:72`, `mix test test/ecto_shorts/dynamics/postgres_test.exs:100`, `mix test test/ecto_shorts/actions/crud_test.exs:1096`, plus neighboring regression with `mix test test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs` under the locally working OTP 27 toolchain.
 - [x] (2026-03-14 18:19Z) Added focused failing proof for containment-style array `all: [in: list]` at `ArrayExpr.dynamic_expr/5`, `Postgres.build_dynamic/4`, and `Actions.all/3`. Under the working local OTP 27 toolchain, the direct and router proofs both returned `nil`, and the public boundary then failed with `expected a keyword list or dynamic expression in where, got: nil`, confirming the gap is owner-local in `ArrayExpr` rather than another Postgres routing conflict.
 - [x] (2026-03-14 18:33Z) Completed the approved wildcard-preservation compatibility slice. Re-read the current rules and governing plan, refreshed authoritative Ecto `like/2` and `ilike/2` docs plus current Elixir `String.contains?/2` docs, traced the live public and owner boundaries through `CommonFilters.convert_params_to_filter/3`, `Postgres.build_dynamic/4`, `ScalarExpr.dynamic_expr/5`, `ScalarExprBuilder.quote_expr/3`, and `ArrayExpr.dynamic_expr/5`, added failing proof at the public SQL boundary, direct scalar owner, direct array owner, and `Actions.all/3` integration boundary, confirmed the gap was owner-local in scalar and array pattern construction, implemented `preserve_or_wrap_pattern/1` in `ScalarExprBuilder` and `ArrayExpr`, and passed focused validation with `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs:426 test/ecto_shorts/common_filters_scalar_filter_test.exs:467 test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:235 test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:271 test/ecto_shorts/dynamics/postgres/array_expr_test.exs:113 test/ecto_shorts/dynamics/postgres/array_expr_test.exs:149 test/ecto_shorts/actions/crud_test.exs:915 test/ecto_shorts/actions/crud_test.exs:1138`, plus neighboring regression with `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs test/ecto_shorts/actions/crud_test.exs` under the locally working OTP 27 toolchain.
+- [ ] (2026-03-14 19:05Z) Began the newly approved deferred follow-on scope under the same governing plan. Re-read the current rules, re-checked the governing artifact against the current standard, and traced the remaining deferred candidates through live code, current tests, old examples, and authoritative Ecto docs. Confirmed the remaining deferred work is now three concrete slices: broader quantified comparison support at the `CommonFilters` boundary, explicit join-payload `type:` source-family support replacing the earlier planned `kind:` name while preserving outer-key joins and `qualifier:` join mode, and deliberate lock-boundary widening for direct raw function and direct raw string payloads at `Lock.build_query/6`.
+- [x] (2026-03-14 20:21Z) Completed the explicit join-payload `type:` source-family slice. Repaired the earlier `type:`-as-`qualifier:` drift, restored association shorthand to its separate outer-key association path, added explicit `type: :association` and `type: :schema` proof in `test/ecto_shorts/common_filters_test.exs`, and passed focused validation with `mix test test/ecto_shorts/common_filters_test.exs:507`, `mix test test/ecto_shorts/common_filters_test.exs:551`, plus nearby existing join proofs at `:473`, `:490`, and `:525`. A broader `mix test test/ecto_shorts/common_filters_test.exs` run still fails only on the already-pending direct raw lock proofs, which remains evidence for the separate lock slice rather than a join regression.
 
 ## Milestones
 
@@ -142,6 +144,18 @@ This milestone is complete when every executed slice records its proof, preserve
 - Observation: Wildcard-preservation compatibility required a stronger public proof boundary than `assert_sql/3`, and the resulting failures showed the runtime gap was owner-local in scalar and array pattern construction.
   Evidence: `lib/ecto_shorts/testing.ex:320` through `:330` shows `assert_sql/3` compares only the generated SQL string, so the stronger `CommonFilters` wildcard proofs switched to full `Ecto.Adapters.SQL.to_sql/3` tuple equality to expose `["hello%"]` versus `["%hello%%"]`; `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:235` and `:271` plus `test/ecto_shorts/dynamics/postgres/array_expr_test.exs:113` and `:149` failed directly on wrapped patterns; after the owner-local helpers landed, those boundaries and the public `Actions.all/3` wildcard tests passed without router or reducer changes.
 
+- Observation: Broader quantified comparison shapes from the older examples are still a real public-boundary gap, not just an unproved lower-level capability.
+  Evidence: `examples/ecto_query_dsl.exs:1853` through `:2149` still express public shapes such as `%{id: %{>: %{all: %{from: Comment, body: "Hello"}}}}`; `lib/ecto_shorts/dynamics/postgres.ex:140` through `:149` currently rewrites only top-level `{:all, payload}` and `{:any, payload}` into quantified-query handling; `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex:42` through `:57` then forwards comparison payloads like `{:>, %{all: %{from: ...}}}` unchanged into the scalar compiled comparison path, so those broader public forms do not yet reach the existing lower-level quantified branches.
+
+- Observation: The remaining deferred directive work is still local to the directive owners, but the join slice is a contract correction, not a `type:`-as-`qualifier:` alias.
+  Evidence: `lib/ecto_shorts/common_filters/join.ex:53` through `:71` currently selects join source family from the outer join key and `:146` through `:158` uses `qualifier:` for join mode; the governing plan at `:713` already records that `type` refers to source family in the intended terminology, not join mode; there are no live repo uses of `:kind`; `lib/ecto_shorts/common_filters/lock.ex:22` through `:31` still accepts only map/keyword `name:` payloads, while authoritative Ecto docs for `lock/3` confirm direct raw string lock expressions are technically viable.
+
+- Observation: Association shorthand is a separate public surface from explicit join payloads and should not be used to overload the new `type:` source-family selector.
+  Evidence: `lib/ecto_shorts/common_filters.ex:54` through `:59` routes top-level association keys through `ensure_association_binding/5` before nested reduction, so shorthand already fixes the source family to association. The approved `type:` change therefore belongs on the explicit `join:` payload surface, while shorthand should continue to derive association source from the outer key and preserve `qualifier:` as the join-mode key if join control keys are allowed there.
+
+- Observation: The explicit join-payload `type:` slice validates cleanly in focused and nearby join proofs, and the only broader-file failures remain the known direct-lock proofs.
+  Evidence: `mix test test/ecto_shorts/common_filters_test.exs:507`, `:551`, `:473`, `:490`, and `:525` all passed after the runtime and test updates. `mix test test/ecto_shorts/common_filters_test.exs` still fails only at `test/ecto_shorts/common_filters_test.exs:3021` and `:3034`, where the existing direct raw string and direct raw function lock proofs continue to fail with `Expected lock ..., got: ...`, showing the remaining blocker is still the separate `Lock.build_query/6` slice.
+
 ## Decision Log
 
 - Decision: Treat the live public API and public tests as the primary source of truth for feature completion.
@@ -196,6 +210,26 @@ This milestone is complete when every executed slice records its proof, preserve
   Rationale: Even while implementation is active, each new behavior-bearing slice still requires explicit user approval before repo changes. The wildcard-preservation work in this slice proceeded only after that explicit approval and remained governed by the refreshed ExecPlan throughout proof, implementation, and validation.
   Date/Author: 2026-03-14 / Cascade
 
+- Decision: Continue the same governing ExecPlan for the newly approved deferred follow-on scope instead of creating a second plan.
+  Rationale: The user explicitly asked to pick up the previously deferred items, and those items remain inside the same audited public feature families already governed here: quantified scalar comparisons plus join and lock directives. Updating the existing governing artifact keeps planning authority singular and preserves the earlier audit and implementation evidence as context for the follow-on slices.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Execute the remaining deferred work in this order: broader quantified comparisons first, then explicit join-payload `type:` source-family support, then direct raw lock payload compatibility.
+  Rationale: Broader quantified comparisons are the only remaining deferred item that current code and examples show as a real public-boundary runtime gap; the join and lock slices are additive owner-local compatibility work that can safely follow once the quantified runtime/public proof boundary is settled.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Implement broader quantified comparison support in `Postgres.build_dynamic/4` by extending quantified normalization to comparison payloads whose right-hand side is a quantified-query payload.
+  Rationale: The existing lower-level scalar compiled builders already support comparison operators with quantified right-hand sides once the term reaches them as `{op, {quantifier, query}}`. The missing piece is the public/router normalization for shapes like `%{id: %{>: %{all: %{from: Comment}}}}`. Extending quantified normalization at the Postgres routing boundary is the narrowest place that already owns quantified-query construction through `SetComparison.build_quantified_query/3`, and it avoids pushing quantified-query awareness down into the compiled scalar builders.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Implement `type:` only as the explicit join-payload source-family selector, replacing the earlier planned `kind:` name while preserving the existing outer-key join shapes and keeping `qualifier:` as the join-mode key.
+  Rationale: The governing plan already settled that `type` refers to join source family in this feature family. There are no live repo uses of `:kind`, so this slice is not a runtime rename but a new explicit-join payload shape. The narrowest correct change is to add a single explicit payload form such as `%{join: [type: :association, source: :author, as: :author]}` at the `Join` boundary, remove the mistaken `type:`-as-`qualifier:` drift, and leave association shorthand on its existing outer-key association path.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Widen the lock boundary only to direct raw string payloads and direct unary function payloads, while preserving the existing `name:` + provider path unchanged.
+  Rationale: Authoritative Ecto docs confirm direct raw string lock expressions are valid, and the old repo examples show direct unary function payloads that return a query with the desired lock applied. These two additions cover the deferred lock shapes already evidenced in repo artifacts without broadening the boundary to arbitrary new payload types or weakening the existing provider-backed path.
+  Date/Author: 2026-03-14 / Cascade
+
 - Decision: Execute the proof-only slice before any compatibility or runtime edits and reclassify only if the new proof exposes a real defect.
   Rationale: The governing plan already identified quantified `any`, join hints, and direct array-expression proof as the safest first slice because live code suggested those behaviors already existed. The new tests passed without runtime edits, so those items remain proof gaps now closed rather than reclassified runtime defects.
   Date/Author: 2026-03-14 / Cascade
@@ -228,7 +262,11 @@ Implementation has now started under this governing plan. The first executed sli
 
 The second executed slice added the settled `at: :first` and `at: :last` aliases at the public `CommonFilters` boundary without widening the downstream integer-only positional contracts. Focused and broader regressions passed.
 
-The next slice began as the first true array runtime-gap slice. Array `nil`, array `count > 0`, array `count == 0`, comparison-operator `all:`, and containment-style `all: [in: list]` are now implemented with focused direct, router, and boundary evidence. The old array-family runtime gaps have therefore closed, and the next approved slice is the additive wildcard-preservation compatibility extension for string matching.
+The next slice began as the first true array runtime-gap slice. Array `nil`, array `count > 0`, array `count == 0`, comparison-operator `all:`, and containment-style `all: [in: list]` are now implemented with focused direct, router, and boundary evidence. The later wildcard-preservation compatibility extension for string matching is also now implemented and proved.
+
+With those originally approved slices complete, the user has now expanded the task to consume the previously deferred follow-on items instead of stopping at the earlier feature-complete checkpoint. That follow-on scope is narrower than reopening the whole audit: it is limited to broader quantified comparisons at the public boundary plus the two deferred directive compatibility slices for join `type:` and direct raw lock payloads.
+
+The explicit join-payload `type:` source-family slice is now complete. `Join.build_query/6` accepts the new explicit single-join payload such as `%{join: [type: :association, source: :author, as: :author, qualifier: :left, on: true]}` by normalizing it to the existing outer-key join path, `qualifier:` remains the canonical join-mode key, and association shorthand remains on its separate outer-key association surface. Focused and nearby join proofs passed. The remaining deferred follow-on work is now narrower again: broader quantified comparisons plus direct raw lock payload widening.
 
 ## Context and Orientation
 
@@ -284,7 +322,7 @@ Start with `dynamic_expr/5`. The module guarantees that it will normalize the in
 
 `Join` owns join directive payloads after `CommonFilters.API` dispatches to it. It accepts join params, resolves source kinds, builds the `on` expression, and applies the join to the query.
 
-The live contract supports association, schema, table, query, subquery, and fragment sources. It uses `qualifier` as the runtime key for join type. It also contains hint-aware runtime branches. The live contract does not currently include a `type` compatibility alias.
+The live contract supports association, schema, table, query, subquery, and fragment sources through the existing outer-key shapes. It uses `qualifier` as the runtime key for join mode. It also contains hint-aware runtime branches. The approved follow-on join slice adds an explicit single-join payload that uses `type:` for the source family in place of the earlier planned `kind:` name; it does not repurpose `type:` as a join-mode alias.
 
 ### `EctoShorts.CommonFilters.Lock`
 
@@ -460,15 +498,10 @@ Forbidden accidental contract expansion:
 
 ### Boundary: `Join.build_query/6`
 
-Accepted live option keys that matter:
+Accepted shapes that matter:
 
-- source-kind key such as `association`, `schema`, `table`, `query`, `subquery`, or `fragment`
-- `source`
-- `as`
-- `on`
-- `qualifier`
-- `prefix`
-- `hints`
+- outer-key join entries such as `association: [source: :author, ...]`, `schema: [source: User, ...]`, `table: [source: "users", ...]`, `query: [source: queryable, ...]`, `subquery: [source: params_or_queryable, ...]`, and `fragment: [source: ..., ...]`
+- the approved explicit single-join payload shape `type: :association | :schema | :table | :query | :subquery | :fragment` plus `source`, `as`, `on`, `qualifier`, `prefix`, and `hints`
 
 Produced output shape: an `Ecto.Query` with the requested join applied or the unchanged query on invalid input paths.
 
@@ -667,6 +700,9 @@ Later completion work may add settled future-scope directive support or later ex
 `CommonFilters.convert_params_to_filter(Post, %{join: [schema: [source: User, as: :user, on: %{author_id: 1}]]}, [])`
 `#=> returns a query with the schema join applied`
 
+`CommonFilters.convert_params_to_filter(Post, %{join: [type: :schema, source: User, as: :user, on: %{author_id: 1}]}, [])`
+`#=> returns a query with the same schema join applied through the explicit source-family payload`
+
 `CommonFilters.convert_params_to_filter(Post, %{lock: %{name: :provider_for_update}}, query_provider: EctoShorts.TestQueryProvider)`
 `#=> returns a query with a provider-backed FOR UPDATE lock`
 
@@ -678,7 +714,7 @@ Later completion work may add settled future-scope directive support or later ex
 
 #### Resolved Review Notes:
 
-- **Q:** What does `type` mean in this family after review? **A:** In the intended terminology, `type` refers to the join source kind selected by the outer key such as `association`, `schema`, `table`, `query`, `subquery`, or `fragment`. Join mode remains under `qualifier:`. The live API does not accept `type:` as a join-mode alias.
+- **Q:** What does `type` mean in this family after review? **A:** `type` is the approved name for the explicit join-payload source-family selector and replaces the earlier planned `kind:` name. Outer-key joins such as `association: [...]` and `schema: [...]` remain live. Join mode remains under `qualifier:`. The API must not accept `type:` as a join-mode alias.
 
 ## Behaviour Specifications
 
@@ -718,6 +754,7 @@ Scenario: Directive compatibility work preserves the current owner contracts
   Given the live `Join`, `Lock`, and `WithCte` modules
   When the plan describes future compatibility work
   Then it must preserve `qualifier:` as the canonical live join key
+  And explicit join payloads may use `type:` only for source family selection
   And it must preserve name-based provider-backed lock callbacks
   And it must not widen the public lock boundary beyond `name:` payloads without a separate later decision
   And it must preserve `with_cte` support for `as:`, `materialized:`, and `operation:`
@@ -756,6 +793,7 @@ For runtime gaps and compatibility work during the approved implementation:
 - Add boundary-visible tests for binding selector aliases in `test/ecto_shorts/common_filters_test.exs` and any lower-level compiler or dynamic tests needed only if the alias normalization touches those boundaries.
 - Add array runtime tests in `test/ecto_shorts/actions/crud_test.exs`, `test/ecto_shorts/dynamics/postgres/array_expr_test.exs`, and targeted `test/ecto_shorts/dynamics/postgres_test.exs` coverage for router conflicts where needed. Keep containment-style `<@` work separate until it is intentionally implemented.
 - Add directive tests in `test/ecto_shorts/common_filters_test.exs` for `with_cte operation` support if that feature is implemented.
+- Add join directive tests in `test/ecto_shorts/common_filters_test.exs` proving that explicit join payloads can use `type:` as the source-family selector while `qualifier:` remains the join-mode key and the outer-key join shapes keep working.
 - Add scalar and array string-matching tests for wildcard-preservation compatibility in `test/ecto_shorts/common_filters_scalar_filter_test.exs`, `test/ecto_shorts/actions/crud_test.exs`, `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`, and `test/ecto_shorts/dynamics/postgres/array_expr_test.exs`.
 
 Each later test must prove one caller-visible claim. Passing tests should be described as evidence for the executed cases only, not as proof of correctness for all possible inputs.
@@ -888,3 +926,5 @@ Revision note (2026-03-14 12:43Z): reviewed binding selector scope with the user
 Revision note (2026-03-14 15:49Z): implementation began after explicit user approval. Recorded the completed proof-only slice for quantified `any`, join hints, and direct array-expression coverage, captured the passing focused and broader test evidence, and advanced the next slice to additive binding-selector alias work.
 
 Revision note (2026-03-14 15:53Z): completed the additive binding-selector alias slice by resolving `at: :first` and `at: :last` to integer positions in `CommonFilters`, recorded the passing focused and broader validation evidence, and advanced the next slice to the true array runtime gaps.
+
+Revision note (2026-03-14 20:21Z): corrected the earlier join-contract drift before continuing implementation. The plan now records `type:` only as the explicit join-payload source-family selector replacing the earlier planned `kind:` name, not as a join-mode alias. Synced the completed `Join.build_query/6` implementation and focused validation evidence, and recorded that the remaining broader-file failures belong to the still-pending direct-lock slice.

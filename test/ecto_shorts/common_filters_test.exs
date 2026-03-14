@@ -504,6 +504,24 @@ defmodule EctoShorts.CommonFiltersTest do
       assert_query(expected, actual)
     end
 
+    test "matches Ecto.Query for an explicit association join payload using the type source selector" do
+      expected =
+        from(p in Post,
+          left_join: a in assoc(p, :author),
+          as: :author,
+          on: true
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{join: [type: :association, source: :author, as: :author, qualifier: :left, on: true]},
+          []
+        )
+
+      assert_sql(expected, actual)
+    end
+
     test "matches Ecto.Query for a schema join payload" do
       expected =
         from(p in Post,
@@ -524,6 +542,24 @@ defmodule EctoShorts.CommonFiltersTest do
               ]
             ]
           },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for an explicit schema join payload using the type source selector" do
+      expected =
+        from(p in Post,
+          join: u in EctoShorts.Schema.User,
+          as: :user,
+          on: p.author_id == ^1
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{join: [type: :schema, source: EctoShorts.Schema.User, as: :user, on: %{author_id: 1}]},
           []
         )
 
@@ -2977,6 +3013,33 @@ defmodule EctoShorts.CommonFiltersTest do
           Post,
           %{lock: %{name: :for_update_with_clause, values: %{clause: "SKIP LOCKED"}}},
           query_provider: EctoShorts.TestQueryProvider
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a direct raw string lock" do
+      expected = lock(Post, "FOR SHARE NOWAIT")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: "FOR SHARE NOWAIT"},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a direct raw function lock" do
+      lock_fun = fn query -> from(p in query, lock: "FOR UPDATE") end
+      expected = lock(Post, "FOR UPDATE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: lock_fun},
+          []
         )
 
       assert_query(expected, actual)

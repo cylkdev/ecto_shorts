@@ -150,6 +150,12 @@ NON-NEGOTIABLE REQUIREMENTS:
   boundary, or contract question. If more than one artifact could plausibly govern the work, the authority is
   unclear. Stop and clarify before proceeding.
 
+* Classify every artifact by authority before it influences a code decision. The governing `ExecPlan` and the
+  settled live contract it records are authoritative for the active task. Research notes, deferred example
+  files, spikes, superseded plans, historical examples, and exploratory docs are supporting evidence only
+  unless the governing `ExecPlan` explicitly promotes them. Supporting artifacts may reveal a conflict, but
+  they may not silently redefine the active contract during implementation.
+
 * Do not write code while ambiguity remains about what an instruction refers to, which function boundary it
   affects, or what behavior must be preserved. Resolve that ambiguity first. Then write the specifications
   that make the change legible. Every code edit requires a clear task boundary, concrete examples that show
@@ -191,6 +197,18 @@ NON-NEGOTIABLE REQUIREMENTS:
   artifact against current code paths, real callers, execution evidence, and task scope before deciding what
   actually needs to change. The goal is not to explain the conflict quickly. The goal is to rule out the wrong
   explanations before the plan or fix commits to one.
+
+* Do not let a lower-authority artifact resolve a contract conflict by momentum. If current owner code, the
+  governing `ExecPlan`, and a research or example artifact point in different directions, stop and name that
+  disagreement as unresolved. Do not choose the research or example meaning just because it explains a failure
+  or makes a patch look locally consistent. Reconcile the conflict in the governing `ExecPlan` before you
+  write runtime code.
+
+* A failing proof or runtime example may show that current behavior is wrong, but it does not by itself decide
+  what a conflicting term or shape should mean. First state exactly what the failure proves. Then state
+  separately what competing contract readings remain alive. If the meaning is still split across the governing
+  `ExecPlan`, current code, and supporting artifacts, the correct next action is contract reconciliation, not
+  implementation.
 
 * When repository evidence and authoritative dependency documentation do not line up, treat the disagreement as
   unresolved. State exactly what the repository suggests, what the official documentation says, and what each
@@ -520,6 +538,13 @@ NON-NEGOTIABLE REQUIREMENTS:
   examples define the behavior, what boundaries govern the edit, or how the work will be proved, you are
   already in `ExecPlan` territory. Put that reasoning there first.
 
+* Record artifact authority inside the governing `ExecPlan` whenever supporting materials are in play. If
+  research notes, deferred example docs, old tests, superseded plans, or external megaplans are consulted,
+  the `ExecPlan` must say which artifact governs the current contract and which artifacts are supporting,
+  deferred, historical, or superseded only. If a supporting artifact still contains examples that conflict
+  with the settled contract, either reconcile that conflict explicitly in the `ExecPlan` or mark the artifact
+  non-authoritative for the current slice before implementation begins.
+
 * The same standard applies to open questions inside the ExecPlan. Write them so they can be answered in
   isolation and understood at a glance. State the verified current behavior, the unresolved decision, the
   concrete options, and the tradeoffs in plain language. Use examples where behavior is part of the choice,
@@ -664,6 +689,10 @@ NON-NEGOTIABLE REQUIREMENTS:
   files, artifacts, boundaries, or scope on your own and then present them as if they were part of the
   request. A plan that smuggles in its own assumptions is not clearer. It is simply wrong earlier.
 
+* Before presenting a code plan, verify that no draft, research, deferred, or superseded artifact is still
+  carrying a live contract decision that the governing `ExecPlan` has not absorbed. If a reader could reopen
+  the meaning of a settled term or behavior by consulting a side document, the plan is not ready.
+
 * Before presenting a code plan, verify that the plan actually lives in the `ExecPlan`. If important reasoning
   still exists only in chat, such as examples, preserved behavior, function contracts, proof strategy, or key
   design decisions, then the planning work is still incomplete. Consolidate the plan into the `ExecPlan`
@@ -733,6 +762,12 @@ NON-NEGOTIABLE REQUIREMENTS:
   Use the document alone as the source of truth. Do not rely on prior chat, memory, or unstated background
   knowledge to fill gaps.
 
+* Re-check that the next code decision still comes from the governing `ExecPlan` rather than from supporting
+  materials. If you reopen a research file, deferred example doc, old note, or superseded plan during
+  implementation, compare it against the governing `ExecPlan` before you let it influence code. When it
+  conflicts, treat it as evidence of drift or unresolved history, not as permission to change the contract.
+  Stop, record the conflict, and resolve it in the `ExecPlan` before you proceed.
+
 * Refresh the implementation vocabulary immediately before execution. Re-open the nearest relevant repository
   code and the current authoritative documentation for any language, DSL, macro, or library form the task
   depends on. Treat this as a memory refresh, not an optional comfort step. If the shape you were about to
@@ -791,6 +826,12 @@ A plan becomes ready for execution only when it also shows how the work will be 
 remains. The validation for each important rule must be visible, the remaining risk must be named plainly, and
 the least-obvious or highest-risk part of the implementation must have enough design shape that the intent can
 be carried forward without rediscovering it during execution.
+
+A plan is not complete when supporting research or deferred examples can still reopen a settled meaning during
+implementation. If such artifacts exist, the governing `ExecPlan` must state which artifact is authoritative
+for the current contract, which artifacts are supporting only, and how conflicting supporting examples should
+be treated. If the implementer could still reasonably choose the opposite behavior by reading a research file
+or draft example document, the plan is not ready.
 
 This applies even when the edit is small. A narrow change still needs to show what is being changed, what is
 intentionally left alone, and what examples make that distinction visible. A plan is not complete merely
@@ -947,34 +988,40 @@ stay current.
   where similar inputs diverge, what current behavior is already proved, and what decision is still open. If
   you cannot explain the fork this concretely, you are not ready to choose an implementation shape.
 
-16. If the task pauses on conflicting evidence or inadequate proof, write a stop-state snapshot before you
+16. Classify every consulted artifact before you let it shape behavior. The governing `ExecPlan` is
+   authoritative. Research notes, deferred example docs, superseded plans, spikes, and historical tests are
+   supporting evidence only unless the `ExecPlan` explicitly promotes them. If a supporting artifact conflicts
+   with the settled contract, stop and resolve that conflict in the `ExecPlan` before you interpret the
+   failure or write code.
+
+17. If the task pauses on conflicting evidence or inadequate proof, write a stop-state snapshot before you
    choose the next edit. Record what repo files changed, what runtime owner code did not change, what the
    current code says, what the current proof says, what remains unproven, whether the next step is proof work
    or runtime work, and whether that next repo edit needs explicit approval. Do not describe proof-tightening
    and runtime change as the same blocked action.
 
-17. Write behaviour specifications for any replaceable collaborator. If the task touches an adapter, provider,
+18. Write behaviour specifications for any replaceable collaborator. If the task touches an adapter, provider,
   callback module, or implementation behind an abstraction, define the contract. State what each callback
   receives, what it must return, what errors look like, and what every implementation must preserve. If two
   implementations could both satisfy your words while behaving differently in production, the behaviour spec
   is too loose.
 
-18. Refresh syntax, idiom, and local style before you write code. Re-open the nearest comparable repo code and
+19. Refresh syntax, idiom, and local style before you write code. Re-open the nearest comparable repo code and
   the current official docs for any language feature, macro, DSL, or library form the change depends on. Treat
   remembered syntax and remembered style as unverified until current evidence confirms them. If the intended
   shape is not supported by the repo or the authoritative docs, do not write it.
 
-19. Generate at least three candidate implementation shapes before you choose one. Compare them for local style
+20. Generate at least three candidate implementation shapes before you choose one. Compare them for local style
   alignment, syntactic validity, doc support, explicitness, and minimality. Choose the simplest valid local
   shape. Record why the other two lose so the final implementation is a deliberate decision, not the first
   remembered idea.
 
-20. Choose the most minimal implementation shape before you write code. Start with the direct, explicit code a
+21. Choose the most minimal implementation shape before you write code. Start with the direct, explicit code a
   complete beginner could understand at a glance, using the public boundary, public examples, and owning
   module already established in the plan. Do not begin with shared helpers, generic infrastructure, implicit
   normalization, reusable abstractions, or optimization.
 
-21. Add abstraction or optimization only after the simpler version proves insufficient. If you introduce a
+22. Add abstraction or optimization only after the simpler version proves insufficient. If you introduce a
   helper, indirection layer, compact transformation, generalized shape handling, or performance-oriented
   path, point to the concrete duplication, conflicting responsibility, or measured pressure that requires it.
   Future reuse, taste, or cleverness is not enough.
@@ -994,30 +1041,30 @@ changes while the task boundary, examples, preserved behavior, or required funct
 missing or unresolved. The point of writing them first is to prevent the implementation from becoming the
 place where the meaning of the task is decided.
 
-22. Perform the final pre-execution review immediately before you begin tests or code. Re-read the governing
+23. Perform the final pre-execution review immediately before you begin tests or code. Re-read the governing
     `ExecPlan` from scratch and verify that it is still current, unambiguous, and self-sufficient. Remove or
     correct stale references, stale examples, superseded options, and wording that no longer matches the
     repository, the dependency constraints, or the user's latest decisions. If the document still leaves room
     for multiple interpretations or still depends on chat context, stop and repair the plan before you
     continue.
 
-23. Pick the highest test boundary that proves the observable promise from step 2. Start with the public
+24. Pick the highest test boundary that proves the observable promise from step 2. Start with the public
     function,
     command, request, or workflow the caller actually uses. Do not start with a private helper unless the
     public boundary is impossible to exercise. This is your BDD anchor. The first test must fail because the
     promised behavior does not exist yet.
 
-24. Run the TDD loop in one-rule increments. Write one failing test for one rule. Run it and confirm it fails
+25. Run the TDD loop in one-rule increments. Write one failing test for one rule. Run it and confirm it fails
     for the right reason. Change the code with the smallest possible edit to satisfy that rule. Run the test
     again and make it pass. Refactor only while tests stay green. If you change code without first having a
     failing test for that change, you are guessing.
 
-25. Step inward only when the boundary test exposes a missing inner rule. When the outer test fails because a
+26. Step inward only when the boundary test exposes a missing inner rule. When the outer test fails because a
     specific parser, validator, query builder, or mapper does not yet behave correctly, pause and write a
     focused test for that inner unit. Make that inner test pass, then return immediately to the boundary test.
     Do not stay inside longer than necessary. The outer behavior remains the measure of progress.
 
-26. Measure completeness with a coverage table you can answer yourself:
+27. Measure completeness with a coverage table you can answer yourself:
 
 - Do I have at least one executable test for each rule?
 - Do I have a test for valid input?
@@ -1033,7 +1080,7 @@ examples including omitted and invalid input, the ownership and contract section
 and the remaining risk. If the table cannot do that by pointing back to specific parts of the `ExecPlan`, the
 plan is incomplete.
 
-27. Judge design quality with explicit checks, not taste. Ask:
+28. Judge design quality with explicit checks, not taste. Ask:
 
 - Does each public function have one clear responsibility?
 - Does one module clearly own the behavior?
@@ -1049,7 +1096,7 @@ plan is incomplete.
 
 Every "no" identifies work to do.
 
-28. Finish with end-to-end verification. Re-run the focused tests for the new behavior. Re-run the broader
+29. Finish with end-to-end verification. Re-run the focused tests for the new behavior. Re-run the broader
   tests that protect neighboring behavior. Compare the results against the examples you wrote in step 7. If
   even one example cannot be pointed to in code, docs, or tests as proven, you are not done.
 
@@ -1132,7 +1179,10 @@ legible.
 Reject a plan when its blocker or stop-state language collapses proof work, runtime work, and approval into
 one sentence, when it does not say what changed and what did not, when it leaves the current repo state or
 next required action unclear, or when it makes an ordinary ordered dependency sound paradoxical.
-legible.
+
+Reject a plan when it lets research notes, deferred examples, superseded plans, or other draft artifacts
+silently overrule the governing `ExecPlan`, when it does not classify artifact authority, or when it treats a
+failing example as permission to reinterpret a settled contract instead of stopping to reconcile the conflict.
 
 If the implementer would still have to decide what to build, what must not change, or how to show that the
 work is correct, the plan is incomplete.

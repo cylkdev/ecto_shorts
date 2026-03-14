@@ -83,6 +83,46 @@ defmodule EctoShorts.Adapters.PostgresTest do
     assert_dynamic(expected, actual)
   end
 
+  test "build_dynamic/4 resolves quantified greater-than all comparison payloads" do
+    subquery_expr =
+      from(c in Comment,
+        where: c.published == ^true,
+        select: c.id
+      )
+
+    expected = dynamic([q], field(q, :id) > all(subquery_expr))
+
+    actual =
+      Postgres.build_dynamic(
+        Post,
+        {:as, nil},
+        {:id, %{>: %{all: %{from: Comment, where: %{published: true}}}}},
+        []
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "build_dynamic/4 resolves quantified less-than-or-equal any comparison payloads" do
+    subquery_expr =
+      from(c in Comment,
+        where: c.published == ^true,
+        select: c.id
+      )
+
+    expected = dynamic([q], field(q, :id) <= any(subquery_expr))
+
+    actual =
+      Postgres.build_dynamic(
+        Post,
+        {:as, nil},
+        {:id, %{<=: %{any: %{from: Comment, where: %{published: true}}}}},
+        []
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
   test "build_dynamic/4 routes array-local all comparison payloads without using quantified subquery handling" do
     expected = dynamic([q], fragment("? < ALL(?)", ^"a", field(q, :tags)))
 
