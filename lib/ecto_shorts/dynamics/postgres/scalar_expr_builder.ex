@@ -606,6 +606,66 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
         op ->
           [
             quote do
+              {:not, {unquote(op), {:all, unquote(quantified_value_var)}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(
+                      op,
+                      q_var,
+                      {key_var, {:all, quantified_value_var}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {unquote(op), {:all, unquote(quantified_value_var)}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(
+                      op,
+                      q_var,
+                      {key_var, {:all, quantified_value_var}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {:not, {unquote(op), {:any, unquote(quantified_value_var)}}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_negated_expr(
+                      op,
+                      q_var,
+                      {key_var, {:any, quantified_value_var}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
+              {unquote(op), {:any, unquote(quantified_value_var)}} ->
+                unquote(
+                  Helpers.dyn_expr(
+                    {bind_op, bind_to_var},
+                    q_var,
+                    quote_expr(
+                      op,
+                      q_var,
+                      {key_var, {:any, quantified_value_var}}
+                    ),
+                    context
+                  )
+                )
+            end,
+            quote do
               {:not,
                {unquote(op),
                 {:value, {:+, {{:field, unquote(field_name_var)}, {:value, unquote(scalar_value_var)}}}}}} ->
@@ -1498,7 +1558,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
   end
 
   def quote_expr(op, q_var, {key_var, {quantifier, value_var}})
-      when op in @equality_operators and quantifier in @quantifier_operators do
+      when op in @comparison_operators and quantifier in @quantifier_operators do
     field_expr =
       quote do
         field(unquote(q_var), ^unquote(key_var))

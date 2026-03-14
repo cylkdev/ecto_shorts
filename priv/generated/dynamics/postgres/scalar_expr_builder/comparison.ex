@@ -17,6 +17,34 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > all(quantified_value)))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > all(quantified_value)))
+        end
+
+      {:>, {:all, quantified_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > all(quantified_value))
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > all(quantified_value))
+        end
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) > any(quantified_value)))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) > any(quantified_value)))
+        end
+
+      {:>, {:any, quantified_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) > any(quantified_value))
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) > any(quantified_value))
+        end
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
@@ -1288,6 +1316,34 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) > ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) > ^value)
+        end
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= all(quantified_value)))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= all(quantified_value)))
+        end
+
+      {:>=, {:all, quantified_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= all(quantified_value))
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= all(quantified_value))
+        end
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) >= any(quantified_value)))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) >= any(quantified_value)))
+        end
+
+      {:>=, {:any, quantified_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) >= any(quantified_value))
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) >= any(quantified_value))
         end
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
@@ -2568,6 +2624,34 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([{^binding_alias, q}], field(q, ^key) >= ^value)
         end
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < all(quantified_value)))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < all(quantified_value)))
+        end
+
+      {:<, {:all, quantified_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < all(quantified_value))
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < all(quantified_value))
+        end
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) < any(quantified_value)))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) < any(quantified_value)))
+        end
+
+      {:<, {:any, quantified_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) < any(quantified_value))
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) < any(quantified_value))
+        end
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         if is_nil(binding_alias) do
           dynamic([q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
@@ -3839,6 +3923,34 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
           dynamic([q], field(q, ^key) < ^value)
         else
           dynamic([{^binding_alias, q}], field(q, ^key) < ^value)
+        end
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= all(quantified_value)))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= all(quantified_value)))
+        end
+
+      {:<=, {:all, quantified_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= all(quantified_value))
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= all(quantified_value))
+        end
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], not (field(q, ^key) <= any(quantified_value)))
+        else
+          dynamic([{^binding_alias, q}], not (field(q, ^key) <= any(quantified_value)))
+        end
+
+      {:<=, {:any, quantified_value}} ->
+        if is_nil(binding_alias) do
+          dynamic([q], field(q, ^key) <= any(quantified_value))
+        else
+          dynamic([{^binding_alias, q}], field(q, ^key) <= any(quantified_value))
         end
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
@@ -8263,6 +8375,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -8795,6 +8919,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -9332,6 +9468,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -9864,6 +10012,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
@@ -11703,6 +11863,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([_, q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([_, q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([_, q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([_, q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -12250,6 +12422,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([_, q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([_, q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([_, q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([_, q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -12805,6 +12989,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([_, q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([_, q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([_, q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([_, q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -13352,6 +13548,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([_, q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([_, q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([_, q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([_, q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
@@ -15257,6 +15465,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([_, _, q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([_, _, q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -15828,6 +16048,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([_, _, q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([_, _, q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -16404,6 +16636,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([_, _, q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([_, _, q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -16975,6 +17219,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([_, _, q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([_, _, q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([_, _, q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
@@ -18925,6 +19181,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -19499,6 +19767,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -20081,6 +20361,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -20655,6 +20947,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([_, _, _, q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
@@ -22635,6 +22939,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -23227,6 +23543,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -23824,6 +24152,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -24416,6 +24756,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
@@ -26471,6 +26823,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -27066,6 +27430,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -27663,6 +28039,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -28258,6 +28646,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
@@ -30319,6 +30719,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -30914,6 +31326,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -31511,6 +31935,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -32106,6 +32542,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
@@ -34167,6 +34615,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -34762,6 +35222,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -35359,6 +35831,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -35954,6 +36438,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
@@ -38015,6 +38511,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -38610,6 +39118,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -39207,6 +39727,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -39802,6 +40334,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))
@@ -41863,6 +42407,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       end
 
     case term do
+      {:not, {:>, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > all(quantified_value)))
+
+      {:>, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > all(quantified_value))
+
+      {:not, {:>, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > any(quantified_value)))
+
+      {:>, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > any(quantified_value))
+
       {:not, {:>, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) > field(q, ^field_name) + ^scalar_value))
 
@@ -42464,6 +43020,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:>, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) > ^value)
+
+      {:not, {:>=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= all(quantified_value)))
+
+      {:>=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= all(quantified_value))
+
+      {:not, {:>=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= any(quantified_value)))
+
+      {:>=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= any(quantified_value))
 
       {:not, {:>=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) >= field(q, ^field_name) + ^scalar_value))
@@ -43067,6 +43635,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
       {:>=, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) >= ^value)
 
+      {:not, {:<, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < all(quantified_value)))
+
+      {:<, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < all(quantified_value))
+
+      {:not, {:<, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < any(quantified_value)))
+
+      {:<, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < any(quantified_value))
+
       {:not, {:<, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) < field(q, ^field_name) + ^scalar_value))
 
@@ -43668,6 +44248,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.Comparison do
 
       {:<, value} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) < ^value)
+
+      {:not, {:<=, {:all, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= all(quantified_value)))
+
+      {:<=, {:all, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= all(quantified_value))
+
+      {:not, {:<=, {:any, quantified_value}}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= any(quantified_value)))
+
+      {:<=, {:any, quantified_value}} ->
+        dynamic([_, _, _, _, _, _, _, _, _, q], field(q, ^key) <= any(quantified_value))
 
       {:not, {:<=, {:value, {:+, {{:field, field_name}, {:value, scalar_value}}}}}} ->
         dynamic([_, _, _, _, _, _, _, _, _, q], not (field(q, ^key) <= field(q, ^field_name) + ^scalar_value))

@@ -146,6 +146,15 @@ defmodule EctoShorts.Adapters.Postgres do
     end
   end
 
+  defp normalize_quantified_term(key, {op, {quantifier, payload}}, opts)
+       when quantifier in @quantifier_operators do
+    if quantified_query_payload?(payload) do
+      {op, {quantifier, SetComparison.build_quantified_query(key, payload, opts)}}
+    else
+      {op, {quantifier, payload}}
+    end
+  end
+
   defp normalize_quantified_term(_key, term, _opts), do: term
 
   defp quantified_query_payload?(payload) when is_map(payload) and not is_struct(payload) do
