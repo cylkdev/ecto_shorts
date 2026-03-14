@@ -423,6 +423,14 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       assert_sql(expected, q2)
     end
 
+    test "preserves caller-supplied wildcard patterns using like" do
+      expected = from p in Post, where: like(p.title, ^"hello%")
+      q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{like: "hello%"}}, [])
+
+      assert Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Config.repo(), expected) ===
+               Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Config.repo(), q2)
+    end
+
     test "matches records where the field contains the text case-insensitively using ilike" do
       expected = from p in Post, where: ilike(p.title, ^"%hello%")
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{ilike: "hello"}}, [])
@@ -454,6 +462,20 @@ defmodule EctoShorts.CommonFilters.ScalarFilterTest do
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{ilike: ["hello", "world"]}}, [])
 
       assert_sql(expected, q2)
+    end
+
+    test "preserves caller-supplied wildcard patterns in the ilike list" do
+      patterns = ["hello%", "%world"]
+
+      expected =
+        from(p in Post,
+          where: fragment("? ILIKE ANY(?)", p.title, ^patterns)
+        )
+
+      q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{ilike: ["hello%", "%world"]}}, [])
+
+      assert Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Config.repo(), expected) ===
+               Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Config.repo(), q2)
     end
 
     test "excludes records where the field contains the text using negated like" do

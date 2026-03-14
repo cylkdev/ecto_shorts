@@ -1551,7 +1551,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
     patterns_expr =
       quote do
-        Enum.map(unquote(value_var), fn value -> "%#{value}%" end)
+        Enum.map(unquote(value_var), &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
       end
 
     quote do
@@ -1565,13 +1565,19 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
 
   def quote_expr(:like, q_var, {key_var, value_var}) do
     quote do
-      like(field(unquote(q_var), ^unquote(key_var)), ^"%#{unquote(value_var)}%")
+      like(
+        field(unquote(q_var), ^unquote(key_var)),
+        ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(unquote(value_var))
+      )
     end
   end
 
   def quote_expr(:ilike, q_var, {key_var, value_var}) do
     quote do
-      ilike(field(unquote(q_var), ^unquote(key_var)), ^"%#{unquote(value_var)}%")
+      ilike(
+        field(unquote(q_var), ^unquote(key_var)),
+        ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(unquote(value_var))
+      )
     end
   end
 
@@ -1659,6 +1665,18 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprBuilder do
     quote do
       sum(field(unquote(q_var), ^unquote(key_var)))
     end
+  end
+
+  def preserve_or_wrap_pattern(value) when is_binary(value) do
+    if String.contains?(value, ["%", "_"]) do
+      value
+    else
+      "%#{value}%"
+    end
+  end
+
+  def preserve_or_wrap_pattern(value) do
+    "%#{value}%"
   end
 
   defp value_expr_ast(q_var, {:field, field_name}) do

@@ -912,6 +912,20 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert %Post{title: "Hello world"} = result
     end
 
+    test "returns records where the field matches the caller-supplied wildcard pattern" do
+      %Post{}
+      |> Post.changeset(%{title: "Hello world"})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "Say Hello"})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{title: %{like: "Hello%"}})
+      assert %Post{title: "Hello world"} = result
+    end
+
     test "returns records where the field matches any pattern in the list" do
       %Post{}
       |> Post.changeset(%{title: "Hello"})
@@ -1118,6 +1132,20 @@ defmodule EctoShorts.Actions.CRUDTest do
         |> Repo.insert!()
 
       assert [result] = Actions.all(Post, %{tags: %{like: "elixir"}})
+      assert %Post{title: "Match"} = result
+    end
+
+    test "returns records where an array element matches the caller-supplied wildcard pattern" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", tags: ["elixir-lang"]})
+      |> Repo.insert!()
+
+      _no_match =
+        %Post{}
+        |> Post.changeset(%{title: "NoMatch", tags: ["my-elixir-lang"]})
+        |> Repo.insert!()
+
+      assert [result] = Actions.all(Post, %{tags: %{like: "elixir%"}})
       assert %Post{title: "Match"} = result
     end
 

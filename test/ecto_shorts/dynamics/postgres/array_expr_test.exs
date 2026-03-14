@@ -110,6 +110,24 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExprTest do
     assert_dynamic(expected, actual)
   end
 
+  test "dynamic_expr/5 preserves caller-supplied like-any wildcard patterns for arrays" do
+    patterns = ["elixir%", "%lang"]
+
+    expected =
+      dynamic(
+        [q],
+        fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t LIKE ANY (?))",
+          field(q, :tags),
+          ^patterns
+        )
+      )
+
+    actual = ArrayExpr.dynamic_expr({:as, nil}, :tags, nil, {:like, ["elixir%", "%lang"]}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
   test "dynamic_expr/5 builds negated ilike-any pattern matching for arrays" do
     patterns = ["%elixir%"]
 
@@ -124,6 +142,24 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExprTest do
       )
 
     actual = ArrayExpr.dynamic_expr({:as, nil}, :tags, :not, {:ilike, "elixir"}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/5 preserves caller-supplied negated ilike wildcard patterns for arrays" do
+    patterns = ["elixir%"]
+
+    expected =
+      dynamic(
+        [q],
+        not fragment(
+          "EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t ILIKE ANY (?))",
+          field(q, :tags),
+          ^patterns
+        )
+      )
+
+    actual = ArrayExpr.dynamic_expr({:as, nil}, :tags, :not, {:ilike, "elixir%"}, [])
 
     assert_dynamic(expected, actual)
   end

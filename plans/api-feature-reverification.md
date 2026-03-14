@@ -67,6 +67,7 @@ This plan does not treat every mismatch between `research/` and the live code as
 - [x] (2026-03-14 18:01Z) Completed the `with_cte operation:` owner slice in `lib/ecto_shorts/common_filters/with_cte.ex`. Added explicit validation for `:all | :update_all | :delete_all`, forwarded valid operations into `Query.with_cte/3` alongside the existing `materialized:` path, preserved omitted-input behavior, restored unchanged-query plus warning behavior for invalid `operation:` payloads, and passed focused validation with `mix test test/ecto_shorts/common_filters_test.exs:1819`, `mix test test/ecto_shorts/common_filters_test.exs:1978`, and neighboring regression with `mix test test/ecto_shorts/common_filters_test.exs`.
 - [x] (2026-03-14 18:24Z) Completed the containment-style array `all: [in: list]` slice. Refreshed stale plan wording after the completed `with_cte operation:` work, added failing proof at `ArrayExpr.dynamic_expr/5`, `Postgres.build_dynamic/4`, and `Actions.all/3`, confirmed the gap was owner-local in `ArrayExpr`, added the minimal `{:all, {:in, values}}` `<@` branch, and passed focused validation with `mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs:72`, `mix test test/ecto_shorts/dynamics/postgres_test.exs:100`, `mix test test/ecto_shorts/actions/crud_test.exs:1096`, plus neighboring regression with `mix test test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs` under the locally working OTP 27 toolchain.
 - [x] (2026-03-14 18:19Z) Added focused failing proof for containment-style array `all: [in: list]` at `ArrayExpr.dynamic_expr/5`, `Postgres.build_dynamic/4`, and `Actions.all/3`. Under the working local OTP 27 toolchain, the direct and router proofs both returned `nil`, and the public boundary then failed with `expected a keyword list or dynamic expression in where, got: nil`, confirming the gap is owner-local in `ArrayExpr` rather than another Postgres routing conflict.
+- [x] (2026-03-14 18:33Z) Completed the approved wildcard-preservation compatibility slice. Re-read the current rules and governing plan, refreshed authoritative Ecto `like/2` and `ilike/2` docs plus current Elixir `String.contains?/2` docs, traced the live public and owner boundaries through `CommonFilters.convert_params_to_filter/3`, `Postgres.build_dynamic/4`, `ScalarExpr.dynamic_expr/5`, `ScalarExprBuilder.quote_expr/3`, and `ArrayExpr.dynamic_expr/5`, added failing proof at the public SQL boundary, direct scalar owner, direct array owner, and `Actions.all/3` integration boundary, confirmed the gap was owner-local in scalar and array pattern construction, implemented `preserve_or_wrap_pattern/1` in `ScalarExprBuilder` and `ArrayExpr`, and passed focused validation with `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs:426 test/ecto_shorts/common_filters_scalar_filter_test.exs:467 test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:235 test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:271 test/ecto_shorts/dynamics/postgres/array_expr_test.exs:113 test/ecto_shorts/dynamics/postgres/array_expr_test.exs:149 test/ecto_shorts/actions/crud_test.exs:915 test/ecto_shorts/actions/crud_test.exs:1138`, plus neighboring regression with `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs test/ecto_shorts/actions/crud_test.exs` under the locally working OTP 27 toolchain.
 
 ## Milestones
 
@@ -138,6 +139,9 @@ This milestone is complete when every executed slice records its proof, preserve
 - Observation: The containment-style `all: [in: list]` slice does not need another Postgres routing change after the earlier quantified-payload split; the live router already preserves the array-local payload and the missing behavior is only in `ArrayExpr`.
   Evidence: `test/ecto_shorts/dynamics/postgres_test.exs:100` failed with `right: nil` rather than a quantified-subquery crash, and `test/ecto_shorts/actions/crud_test.exs:1096` then failed because `Actions.all/3` received `nil` from `where`. `test/ecto_shorts/dynamics/postgres/array_expr_test.exs:72` showed the direct owner result is also `nil`, proving the missing branch is local to `ArrayExpr.dynamic_expr/5`.
 
+- Observation: Wildcard-preservation compatibility required a stronger public proof boundary than `assert_sql/3`, and the resulting failures showed the runtime gap was owner-local in scalar and array pattern construction.
+  Evidence: `lib/ecto_shorts/testing.ex:320` through `:330` shows `assert_sql/3` compares only the generated SQL string, so the stronger `CommonFilters` wildcard proofs switched to full `Ecto.Adapters.SQL.to_sql/3` tuple equality to expose `["hello%"]` versus `["%hello%%"]`; `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs:235` and `:271` plus `test/ecto_shorts/dynamics/postgres/array_expr_test.exs:113` and `:149` failed directly on wrapped patterns; after the owner-local helpers landed, those boundaries and the public `Actions.all/3` wildcard tests passed without router or reducer changes.
+
 ## Decision Log
 
 - Decision: Treat the live public API and public tests as the primary source of truth for feature completion.
@@ -180,8 +184,16 @@ This milestone is complete when every executed slice records its proof, preserve
   Rationale: The earlier quantified-payload split already leaves array-local `all` payloads in place unless they contain `:from`. The new failing proofs show the router now passes containment payloads through unchanged and the owner simply lacks a containment branch. The narrowest valid fix is therefore an owner-local `{:all, {:in, values}}` branch that maps to PostgreSQL `<@` while preserving the existing router and quantified-subquery behavior.
   Date/Author: 2026-03-14 / Cascade
 
+- Decision: Extend the string-matching contract additively by preserving caller-supplied `%` and `_` wildcard patterns while keeping the current contains-style wrapping for bare strings and bare list entries.
+  Rationale: Ecto `like/2` and `ilike/2` already accept raw search patterns, and the user explicitly approved this compatibility extension. Always preserving raw input would break the current live convenience contract for non-pattern values, while adding a new public flag or payload shape would widen the API unnecessarily. The approved contract therefore remains: bare values still become `%value%`, but values that already include wildcard markers pass through unchanged.
+  Date/Author: 2026-03-14 / Cascade
+
+- Decision: Implement wildcard preservation at the owner-local pattern-construction points in `ScalarExprBuilder` and `ArrayExpr`, not in `CommonFilters` or the Postgres router.
+  Rationale: The public reducer and dynamic router should stay unaware of string-pattern heuristics. The current wrapping already lives in `ScalarExprBuilder.quote_expr/3` for scalar strings and in `ArrayExpr.normalize_patterns/1` for array strings. A small owner-local helper at those exact points is the narrowest valid change and keeps the rest of the filter pipeline unchanged.
+  Date/Author: 2026-03-14 / Cascade
+
 - Decision: Keep planning and implementation authorization separate.
-  Rationale: The current task is still planning-only. Even though the next implementation steps are now better defined, later code work still requires explicit user approval.
+  Rationale: Even while implementation is active, each new behavior-bearing slice still requires explicit user approval before repo changes. The wildcard-preservation work in this slice proceeded only after that explicit approval and remained governed by the refreshed ExecPlan throughout proof, implementation, and validation.
   Date/Author: 2026-03-14 / Cascade
 
 - Decision: Execute the proof-only slice before any compatibility or runtime edits and reclassify only if the new proof exposes a real defect.
@@ -216,7 +228,7 @@ Implementation has now started under this governing plan. The first executed sli
 
 The second executed slice added the settled `at: :first` and `at: :last` aliases at the public `CommonFilters` boundary without widening the downstream integer-only positional contracts. Focused and broader regressions passed.
 
-The next slice began as the first true array runtime-gap slice. Array `nil`, array `count > 0`, and array `count == 0` are now implemented with focused direct and boundary proof. The remaining work in that slice narrowed further once live tests exposed a routing conflict for array-local comparison `all:` payloads: the remaining implementation must first distinguish array-local `all:` from quantified subquery `all` at the Postgres routing boundary, then add the matching `ArrayExpr` behavior, while containment-style `<@` work remains explicitly deferred.
+The next slice began as the first true array runtime-gap slice. Array `nil`, array `count > 0`, array `count == 0`, comparison-operator `all:`, and containment-style `all: [in: list]` are now implemented with focused direct, router, and boundary evidence. The old array-family runtime gaps have therefore closed, and the next approved slice is the additive wildcard-preservation compatibility extension for string matching.
 
 ## Context and Orientation
 
@@ -260,7 +272,13 @@ Start with `build_dynamic/4`. The module guarantees that it will normalize negat
 
 `ArrayExpr` owns Postgres-specific behavior for array and map-backed field predicates once routing has already determined that the field is array-like. It accepts the normalized binding selector, field key, negation flag, and operator/value term, and returns a dynamic expression when the shape is supported.
 
-The live contract currently covers list equality and inequality, scalar membership, overlap via `in` with a list, element-wise comparisons using `ANY`, `lower` and `upper` transforms, and array `like` and `ilike`. PostgreSQL does support broader array operators such as containment and `ALL(array)` semantics, but the live contract here does not currently document or prove array `nil`, `count`, containment with `<@`, or `ALL(...)`-style comparison shapes.
+The live contract currently covers list equality and inequality, scalar membership, overlap via `in` with a list, array `nil`, array `count`, element-wise comparisons using `ANY`, array-local comparison `all:` using `ALL(array)`, containment-style `all: [in: list]` using `<@`, `lower` and `upper` transforms, and array `like` and `ilike`. The next approved compatibility work here is narrower: preserve caller-supplied wildcard patterns for `like` and `ilike` while keeping contains-style wrapping for bare values.
+
+### `EctoShorts.Dynamics.Postgres.ScalarExpr`
+
+`ScalarExpr` owns non-array Postgres field predicates after routing has already decided the field is not array-like and does not belong to `CommonExpr`. Use it when the public filter pipeline has already selected a scalar field predicate and the work is about how that predicate becomes a dynamic expression on the Postgres path.
+
+Start with `dynamic_expr/5`. The module guarantees that it will normalize the incoming term into the operator family expected by the compiled scalar builders and dispatch string operators to the string-specific compiled module. It does not own public filter reduction or array-field behavior.
 
 ### `EctoShorts.CommonFilters.Join`
 
@@ -278,7 +296,7 @@ The live contract includes provider-backed callback customization. It does not c
 
 `WithCte` owns `with_cte` payloads after API dispatch. It accepts a map or keyword list of named CTE definitions, each of which must include `as:` as either a query, subquery, or filter-param payload. It also accepts `materialized:` when that option is boolean or `nil`.
 
-The live contract includes nested use under named and positional bindings and works alongside `recursive_ctes`. The live contract does not currently expose an `operation:` option.
+The live contract includes nested use under named and positional bindings, works alongside `recursive_ctes`, and includes validated `operation:` support for `:all | :update_all | :delete_all` with unchanged-query behavior on invalid `operation:` input.
 
 ## Function Specifications
 
@@ -408,22 +426,37 @@ Accepted live shapes today:
 - `{:in, list}` for overlap and `{:in, value}` for scalar membership
 - `{:>, value}`, `{:>=, value}`, `{:<, value}`, `{:<=, value}` for `ANY` comparisons
 - `{:==, {:lower, value}}`, `{:!=, {:lower, value}}`, and upper-case counterparts
-- `{:like, value}` and `{:ilike, value}` for scalar or list pattern search after local contains-style pattern wrapping
+- `{:all, {:>, value}}`, `{:all, {:>=, value}}`, `{:all, {:<, value}}`, `{:all, {:<=, value}}` for array-local `ALL(array)` comparisons
+- `{:all, {:in, list}}` for containment using `<@`
+- `{:like, value}` and `{:ilike, value}` for scalar or list pattern search after owner-local pattern construction
 
 Produced output shape: a dynamic expression or `nil`.
 
 Unsupported live shapes that matter for later work:
 
-- `nil`
-- nested `count` payloads
-- nested `ALL(array)`-style payloads
-- containment fragments such as `<@`
+- unsupported nested payload shapes outside the proved `count`, `all`, and string-matching contracts
 
 Current in-flight execution notes:
 
-- array `nil` is now implemented and proved
-- nested `count` with `{:>, value}` and `{:==, 0}` is now implemented and proved
-- comparison-operator `all:` still cannot reach this boundary until the Postgres routing conflict is resolved
+- array `nil`, proved `count`, comparison-operator `all:`, and containment-style `all: [in: list]` are now implemented and proved
+- the next approved compatibility change at this boundary is wildcard preservation for `like` and `ilike`
+
+### Boundary: `ScalarExpr.dynamic_expr/5` to `ScalarExprBuilder.quote_expr/3`
+
+Accepted input shape: a normalized binding selector, scalar field key, negation flag, and operator/value term already routed away from `CommonExpr` and `ArrayExpr`.
+
+Produced output shape: an `Ecto.Query.DynamicExpr`.
+
+Owned transformations:
+
+- normalize shorthand terms into operator/value tuples before compiled-module dispatch
+- dispatch string operators to the compiled string module
+- construct scalar LIKE/ILIKE pattern expressions at the compiled-builder boundary
+
+Forbidden accidental contract expansion:
+
+- string-pattern heuristics must not move up into `CommonFilters` or `Postgres.build_dynamic/4`
+- this boundary must preserve the current contains-style convenience for bare values even if wildcard preservation is added
 
 ### Boundary: `Join.build_query/6`
 
@@ -460,13 +493,13 @@ Unsupported live shape that matters for later work:
 
 Accepted live shape today:
 
-- `with_cte: [cte_name: [as: query_or_subquery_or_filter_params, materialized: boolean_or_nil]]`
+- `with_cte: [cte_name: [as: query_or_subquery_or_filter_params, materialized: boolean_or_nil, operation: :all | :update_all | :delete_all]]`
 
 Produced output shape: an `Ecto.Query` with one or more CTEs applied.
 
 Unsupported live shape that matters for later work:
 
-- `operation:` passthrough
+- invalid `operation:` values beyond the validated owner contract
 
 ## Internal Structure Walkthrough
 
@@ -474,9 +507,9 @@ A typical public integration call begins at `EctoShorts.Actions.all/3`. That act
 
 For each entry, `apply_filters/6` decides what kind of thing it is looking at. In the intended public contract, top-level `as` and `at` maps change the selected binding and continue nested reduction. The live code still contains a `bind` branch, but that path is treated elsewhere in this plan as stale runtime drift rather than part of the intended caller-facing contract. If the key belongs to a filter group such as predicate or post-aggregate filters, the reducer either keeps descending or dispatches to the registered filter owner. If the key names an association and the term shape looks reducible, `CommonFilters` first ensures a named association binding through `with_named_binding`, then continues reduction under `{:as, association_name}`. Otherwise, the reducer dispatches directly to `CommonFilters.API.build_query/6`.
 
-When a field predicate reaches the Postgres dynamic path, `EctoShorts.Dynamics.Postgres.build_dynamic/4` normalizes top-level negation, then normalizes top-level quantified forms such as `all` and `any` into equality against a built quantified query. After that, it routes by family. Common operators such as `before` and `after` stay in `CommonExpr`. Array and map-backed fields route to `ArrayExpr`. Everything else routes to `ScalarExpr`.
+When a field predicate reaches the Postgres dynamic path, `EctoShorts.Dynamics.Postgres.build_dynamic/4` normalizes top-level negation, then normalizes top-level quantified forms such as `all` and `any` into equality against a built quantified query only when the payload is on the quantified-query contract. After that, it routes by family. Common operators such as `before` and `after` stay in `CommonExpr`. Array and map-backed fields route to `ArrayExpr`. Everything else routes to `ScalarExpr`.
 
-That routing order matters for later implementation. Array `count` support did belong in `ArrayExpr.dynamic_expr/5` once the field was already known to be array-like. The new failing array-local `all:` boundary test shows that comparison-operator `all:` cannot be completed in `ArrayExpr` alone, because the current Postgres router intercepts it first as quantified-subquery work. The next remaining change therefore starts in `Postgres.normalize_quantified_term/3` or a nearby router guard so the array-local contract can reach `ArrayExpr` without breaking quantified subquery `all`. If a join payload alias or lock payload alias is added, the change belongs in the directive owner after API dispatch, not in `CommonFilters.apply_filters/6`.
+That routing order still matters for the current wildcard slice, but for a different reason than the completed array work. String-pattern construction already belongs in the owners after routing, not in the public reducer or Postgres router. Scalar-field string predicates travel from `CommonFilters.convert_params_to_filter/3` into `Postgres.build_dynamic/4`, then into `ScalarExpr.dynamic_expr/5`, which dispatches string operators to the compiled scalar string builder where LIKE/ILIKE patterns are assembled. Array-field string predicates travel through the same public and router boundaries but finish in `ArrayExpr.dynamic_expr/5`, where `normalize_patterns/1` currently wraps all values. The wildcard-preservation slice therefore belongs at those two owner-local pattern-construction points. If a join payload alias or lock payload alias is added, the change still belongs in the directive owner after API dispatch, not in `CommonFilters.apply_filters/6`.
 
 Invalid-input behavior also differs by boundary. At the top-level reducer, many invalid shapes are still allowed to flow to the owner module. The owner module usually decides whether to log and keep the query unchanged or to raise for impossible internal shapes. That means later proof work must keep the invalid-input behavior visible at the owning boundary instead of hiding it behind broad guards in `CommonFilters`.
 
@@ -511,17 +544,17 @@ The public filter pipeline now supports root binding, named binding, positive-in
 
 ### Story: Array feature completion after the live audit
 
-The live array path already supports several behaviors, but the audit confirmed that some research-era array features are not active runtime behavior today. Later implementation must add only the missing shapes while preserving the live ones.
+The live array path now includes the previously missing `nil`, `count`, comparison-operator `all:`, and containment-style `all: [in: list]` shapes that were closed during this execution. Later work should preserve those live shapes while limiting further compatibility changes to explicitly approved slices.
 
 #### Rules:
 
 - Existing live array equality, inequality, membership, overlap, `ANY` comparison, transform, and string-matching behavior must remain unchanged.
-- Ecto `like/2` and `ilike/2` accept raw search patterns, but the live repo contract currently adds contains-style wrapping for bare scalar values and list entries on both scalar and array paths.
+- Ecto `like/2` and `ilike/2` accept raw search patterns, and the approved compatibility extension now targets wildcard preservation while keeping contains-style wrapping for bare scalar values and list entries.
 - Unsupported array-only shapes must continue to follow the current `ArrayExpr` acceptance/rejection behavior unless this plan explicitly changes that contract.
 - Invalid or unsupported array payload shapes must not be silently treated as supported behavior.
-- PostgreSQL-backed shapes such as containment with `<@` and `ALL(array)` are technically viable, but only the completed comparison-operator `ALL(array)` slice is part of the live contract today.
+- PostgreSQL-backed shapes such as containment with `<@` and `ALL(array)` are now part of the proved live contract at the approved array-local shapes.
 - The completed comparison-operator `all:` slice preserved quantified-subquery routing while enabling array-local `ALL(array)` comparisons.
-- Containment-style `all: [in: list]` with `<@` is now the next active array completion slice.
+- Containment-style `all: [in: list]` with `<@` is now part of the live contract.
 
 #### Examples:
 
@@ -535,24 +568,56 @@ The live array path already supports several behaviors, but the audit confirmed 
 `#=> returns posts whose tags field is null`
 
 `Actions.all(Post, %{tags: %{count: %{>: 0}}})`
-`#=> current next slice should return posts whose array_length(tags, 1) is greater than 0`
+`#=> returns posts whose array_length(tags, 1) is greater than 0`
 
 `Actions.all(Post, %{tags: %{count: %{==: 0}}})`
-`#=> current next slice should return posts whose coalesced array length is 0, following the documented example contract for empty-array zero checks`
+`#=> returns posts whose coalesced array length is 0, following the documented example contract for empty-array zero checks`
 
 `Actions.all(Post, %{tags: %{all: %{>: "a"}}})`
 `#=> returns posts where every array element is greater than "a", preserving the same caller-facing operator meaning as the existing `ANY` array path`
 
 `Actions.all(Post, %{tags: %{all: %{in: ["elixir", "erlang"]}}})`
-`#=> next slice should return posts where every array element is contained in the given list, mapping to PostgreSQL `<@` semantics`
+`#=> returns posts where every array element is contained in the given list, mapping to PostgreSQL `<@` semantics`
 
 #### Resolved Review Notes:
 
 - **Q:** Does the active runtime owner already contain array `count` support? **A:** No. The active `ArrayExpr` implementation does not contain `count` branches.
 - **Q:** Do official docs make containment and `ALL(array)` real options at the database layer? **A:** Yes. PostgreSQL documents both, but the live repo owner does not currently expose them.
 - **Q:** Does every old example query map cleanly onto the preserved current operator meaning? **A:** No. The older `all: [>: value]` example query is inverted relative to the preserved live `ANY` comparison semantics, so this plan defines the `ALL` implementation by preserving the current caller-facing operator meaning instead of copying that stale example literally.
-- **Q:** Are containment-style `all: [in: list]` and comparison-operator `all:` part of the same implementation slice? **A:** No. The completed slice implemented only the comparison-operator `all:` family. Containment is the next separate slice.
-- **Q:** Can comparison-operator `all:` be implemented in `ArrayExpr` alone? **A:** No. The failing live boundary test showed that `Postgres.normalize_quantified_term/3` currently intercepts top-level `all:` first, so the remaining slice must start by distinguishing array-local `all:` from quantified subquery `all` at the Postgres routing boundary.
+- **Q:** Are containment-style `all: [in: list]` and comparison-operator `all:` both live now? **A:** Yes. Both array-local `ALL(array)` comparisons and containment-style `<@` support are now implemented and publicly proved.
+- **Q:** Did comparison-operator `all:` require a Postgres routing change before `ArrayExpr` could own it? **A:** Yes. The completed slice first narrowed quantified-query interception in `Postgres.normalize_quantified_term/3`, then added the matching owner behavior in `ArrayExpr`.
+
+### Story: String-matching compatibility over the current contains-style contract
+
+The live string-matching path already wraps bare values as contains-style patterns for scalar and array fields. The newly approved compatibility extension is narrower than a contract rewrite: preserve caller-supplied `%` and `_` wildcard patterns while keeping the current contains-style convenience for values that do not already contain wildcard markers.
+
+#### Rules:
+
+- Bare scalar `like` and `ilike` values must continue to behave as contains-style search input.
+- Bare list entries for scalar and array string matching must continue to behave as contains-style search input.
+- Caller-supplied `%` and `_` wildcard markers must be preserved instead of being wrapped again.
+- The wildcard-preservation heuristic belongs only in the string owners, not in `CommonFilters` or `Postgres.build_dynamic/4`.
+- Negated `like` and `ilike` behavior must continue to wrap or preserve patterns using the same rule as the non-negated forms.
+
+#### Examples:
+
+`CommonFilters.convert_params_to_filter(Post, %{title: %{like: "Hello"}}, [])`
+`#=> returns a query that searches using "%Hello%"`
+
+`CommonFilters.convert_params_to_filter(Post, %{title: %{like: "Hello%"}}, [])`
+`#=> returns a query that preserves the caller-supplied "Hello%" pattern`
+
+`Actions.all(Post, %{title: %{not: %{ilike: "%world"}}})`
+`#=> returns posts whose title does not case-insensitively match the caller-supplied "%world" pattern`
+
+`ArrayExpr.dynamic_expr({:as, nil}, :tags, nil, {:like, ["elixir%", "%lang"]}, [])`
+`#=> returns a dynamic expression that preserves those caller-supplied array patterns without adding extra outer wildcards`
+
+#### Resolved Review Notes:
+
+- **Q:** Does upstream Ecto already support raw LIKE and ILIKE patterns? **A:** Yes. `Ecto.Query.API` documents raw search-pattern inputs such as `"Chapter%"` for both `like/2` and `ilike/2`.
+- **Q:** Does the current repo already preserve wildcard patterns? **A:** No. The current owners still wrap all bare values and list entries with `%...%`.
+- **Q:** Why not implement this in `CommonFilters` or the Postgres router? **A:** Because the existing pattern construction already lives in `ScalarExprBuilder` and `ArrayExpr`, and moving that logic outward would widen responsibilities without changing the public contract.
 
 ### Story: Runtime support versus proof support for quantified comparisons
 
@@ -640,8 +705,8 @@ Scenario: Array `count` is treated as missing runtime behavior until this slice 
 Scenario: The current array runtime slice excludes containment-style `all: [in: list]`
   Given the remaining array-family work
   When the next slice is executed
-  Then comparison-operator `all:` payloads belong in the slice
-  And containment-style `all: [in: list]` must remain deferred instead of being folded in implicitly
+  Then comparison-operator `all:` payloads must preserve the live caller-facing operator meaning
+  And containment-style `all: [in: list]` must compile to PostgreSQL `<@`
 
 Scenario: Comparison-operator array `all:` must not break quantified subquery `all`
   Given the existing quantified subquery support in `Postgres`
@@ -655,8 +720,18 @@ Scenario: Directive compatibility work preserves the current owner contracts
   Then it must preserve `qualifier:` as the canonical live join key
   And it must preserve name-based provider-backed lock callbacks
   And it must not widen the public lock boundary beyond `name:` payloads without a separate later decision
-  And it must preserve `with_cte` support for `as:` and `materialized:`
-  And it must keep `with_cte operation:` in future scope as explicit non-live implementation work
+  And it must preserve `with_cte` support for `as:`, `materialized:`, and `operation:`
+
+Scenario: Wildcard-preservation compatibility keeps contains-style behavior for bare values
+  Given the live scalar and array string-matching owners
+  When a caller passes a bare string or a bare list entry without `%` or `_`
+  Then the resulting LIKE or ILIKE pattern must still use contains-style wrapping
+
+Scenario: Wildcard-preservation compatibility preserves explicit patterns
+  Given the approved wildcard-preservation extension
+  When a caller passes a scalar or array string-matching value that already contains `%` or `_`
+  Then the owner must preserve that caller-supplied pattern
+  And it must not add extra outer wildcards around it
 
 ### Feature: Execute approved slices only from the current governing plan
 
@@ -681,7 +756,7 @@ For runtime gaps and compatibility work during the approved implementation:
 - Add boundary-visible tests for binding selector aliases in `test/ecto_shorts/common_filters_test.exs` and any lower-level compiler or dynamic tests needed only if the alias normalization touches those boundaries.
 - Add array runtime tests in `test/ecto_shorts/actions/crud_test.exs`, `test/ecto_shorts/dynamics/postgres/array_expr_test.exs`, and targeted `test/ecto_shorts/dynamics/postgres_test.exs` coverage for router conflicts where needed. Keep containment-style `<@` work separate until it is intentionally implemented.
 - Add directive tests in `test/ecto_shorts/common_filters_test.exs` for `with_cte operation` support if that feature is implemented.
-- Add scalar and array string-matching tests only if a later explicit decision adds wildcard-preservation compatibility over the current contains-style wrapper contract.
+- Add scalar and array string-matching tests for wildcard-preservation compatibility in `test/ecto_shorts/common_filters_scalar_filter_test.exs`, `test/ecto_shorts/actions/crud_test.exs`, `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`, and `test/ecto_shorts/dynamics/postgres/array_expr_test.exs`.
 
 Each later test must prove one caller-visible claim. Passing tests should be described as evidence for the executed cases only, not as proof of correctness for all possible inputs.
 
@@ -697,11 +772,11 @@ The future validation matrix for implementation work is:
   Evidence command: `mix test test/ecto_shorts/common_filters_test.exs` and any smaller focused test files added for the touched compiler or dynamic boundary.
   Residual risk: if alias support depends on query-shape-specific last-binding detection, edge cases across unusual join counts may still need broader coverage.
 
-- Claim: array `nil`, `count`, and comparison-operator `all:` behaviors work without breaking the current live array contract.
+- Claim: array `nil`, `count`, comparison-operator `all:`, and containment-style `all: [in: list]` behaviors work without breaking the current live array contract.
   Boundary: `Actions.all/3`, `Postgres.build_dynamic/4`, and `ArrayExpr.dynamic_expr/5`.
   Proof method: boundary integration tests plus targeted router tests plus direct array-expression tests.
   Evidence command: `mix test test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs`.
-  Residual risk: behavior remains Postgres-specific, and containment-style `<@` support still remains separate later work.
+  Residual risk: behavior remains Postgres-specific, and the executed cases establish the approved array-local shapes only.
 
 - Claim: join hints and quantified `any` are publicly proved.
   Boundary: `CommonFilters.convert_params_to_filter/3` and the existing Postgres dynamic path.
@@ -715,6 +790,12 @@ The future validation matrix for implementation work is:
   Evidence command: `mix test test/ecto_shorts/common_filters_test.exs`.
   Residual risk: any new aliasing must be checked carefully so it does not weaken invalid-input behavior or change the canonical internal option keys unexpectedly.
 
+- Claim: wildcard-preservation compatibility preserves caller-supplied `%` and `_` patterns without breaking the current contains-style convenience for bare scalar and array values.
+  Boundary: `CommonFilters.convert_params_to_filter/3`, `Actions.all/3`, `ScalarExpr.dynamic_expr/5`, and `ArrayExpr.dynamic_expr/5`.
+  Proof method: boundary SQL tests, boundary integration tests, targeted scalar direct tests, and targeted array direct tests.
+  Evidence command: `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs`.
+  Residual risk: the executed cases will establish the chosen `%` and `_` preservation rules for the tested scalar and array forms only.
+
 ## Plan of Work
 
 Perform the approved implementation work in this order.
@@ -723,9 +804,9 @@ First, add proof-only changes before runtime changes wherever the live audit sug
 
 Second, implement small compatibility shims where the desired future behavior is additive and can normalize back to the existing canonical live contract. Binding selector aliases belong in this category. The key safety rule is that the public boundary may accept a broader input shape, but the downstream internal boundary should stay on the existing canonical representation whenever possible.
 
-Third, implement the true runtime gaps in the smallest owner modules possible. The current array slice first fixes Postgres routing so array-local comparison `all:` can reach the array owner without breaking quantified subquery `all`, then completes the remaining array-owner work in `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. Containment-style `all: [in: list]` with `<@` remains separate later work. `with_cte operation` belongs in `lib/ecto_shorts/common_filters/with_cte.ex`. These changes must preserve the current live behaviors already proved by tests.
+Third, implement the true runtime gaps in the smallest owner modules possible. The completed array slice first fixed Postgres routing so array-local comparison `all:` could reach the array owner without breaking quantified subquery `all`, then completed the remaining array-owner work in `lib/ecto_shorts/dynamics/postgres/array_expr.ex`, including containment-style `all: [in: list]` with `<@`. The completed directive slice implemented `with_cte operation` in `lib/ecto_shorts/common_filters/with_cte.ex`. These completed changes now become preserved live behavior.
 
-Fourth, handle the string-matching contract only if a later explicit decision extends the current live behavior. If implemented, the work belongs in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` and `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. The preserved behavior is that bare strings keep the current contains-style convenience even though Ecto itself accepts raw patterns. The optional compatibility extension would be explicit wildcard preservation for callers who pass patterns that already include wildcards.
+Fourth, execute the approved wildcard-preservation compatibility extension at the smallest owner-local pattern-construction points. The work belongs in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` and `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. The preserved behavior is that bare strings keep the current contains-style convenience even though Ecto itself accepts raw patterns. The new compatibility behavior is explicit wildcard preservation for callers who pass patterns that already include `%` or `_`.
 
 After each implementation slice, update this plan, run the named focused tests, and record the result precisely as evidence for the executed cases.
 

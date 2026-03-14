@@ -269,10 +269,22 @@ defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
   defp normalize_all_payload(payload), do: payload
 
   defp normalize_patterns(values) when is_list(values) do
-    Enum.map(values, &"%#{&1}%")
+    Enum.map(values, &preserve_or_wrap_pattern/1)
   end
 
   defp normalize_patterns(value) do
-    ["%#{value}%"]
+    [preserve_or_wrap_pattern(value)]
+  end
+
+  defp preserve_or_wrap_pattern(value) when is_binary(value) do
+    if String.contains?(value, ["%", "_"]) do
+      value
+    else
+      "%#{value}%"
+    end
+  end
+
+  defp preserve_or_wrap_pattern(value) do
+    "%#{value}%"
   end
 end

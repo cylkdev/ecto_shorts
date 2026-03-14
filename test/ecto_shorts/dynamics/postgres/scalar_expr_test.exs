@@ -232,6 +232,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
     assert_dynamic(expected, actual)
   end
 
+  test "dynamic_expr/4 preserves a caller-supplied like wildcard pattern" do
+    expected = dynamic([q], like(field(q, :title), ^"hello%"))
+    actual = ScalarExpr.dynamic_expr({:as, nil}, :title, nil, {:like, "hello%"}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
   test "dynamic_expr/4 builds a root named-binding ilike expression" do
     expected = dynamic([q], ilike(field(q, :title), ^"%hello%"))
     actual = ScalarExpr.dynamic_expr({:as, nil}, :title, nil, {:ilike, "hello"}, [])
@@ -257,6 +264,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
       dynamic([q], fragment("? ILIKE ANY(?)", field(q, :title), ^patterns))
 
     actual = ScalarExpr.dynamic_expr({:as, nil}, :title, nil, {:ilike, ["hello", "world"]}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 preserves caller-supplied ilike-any wildcard patterns" do
+    patterns = ["hello%", "%world"]
+
+    expected =
+      dynamic([q], fragment("? ILIKE ANY(?)", field(q, :title), ^patterns))
+
+    actual = ScalarExpr.dynamic_expr({:as, nil}, :title, nil, {:ilike, ["hello%", "%world"]}, [])
 
     assert_dynamic(expected, actual)
   end

@@ -21,12 +21,20 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+            not fragment(
+              "? LIKE ANY(?)",
+              field(q, ^key),
+              ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+            )
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+            not fragment(
+              "? LIKE ANY(?)",
+              field(q, ^key),
+              ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+            )
           )
         end
 
@@ -34,39 +42,79 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+            fragment(
+              "? LIKE ANY(?)",
+              field(q, ^key),
+              ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+            )
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+            fragment(
+              "? LIKE ANY(?)",
+              field(q, ^key),
+              ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+            )
           )
         end
 
       {:not, {:like, value}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
+          dynamic(
+            [q],
+            not like(
+              field(q, ^key),
+              ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+            )
+          )
         else
-          dynamic([{^binding_alias, q}], not like(field(q, ^key), ^"%#{value}%"))
+          dynamic(
+            [{^binding_alias, q}],
+            not like(
+              field(q, ^key),
+              ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+            )
+          )
         end
 
       {:like, value} ->
         if is_nil(binding_alias) do
-          dynamic([q], like(field(q, ^key), ^"%#{value}%"))
+          dynamic(
+            [q],
+            like(
+              field(q, ^key),
+              ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+            )
+          )
         else
-          dynamic([{^binding_alias, q}], like(field(q, ^key), ^"%#{value}%"))
+          dynamic(
+            [{^binding_alias, q}],
+            like(
+              field(q, ^key),
+              ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+            )
+          )
         end
 
       {:not, {:ilike, value}} when is_list(value) ->
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+            not fragment(
+              "? ILIKE ANY(?)",
+              field(q, ^key),
+              ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+            )
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+            not fragment(
+              "? ILIKE ANY(?)",
+              field(q, ^key),
+              ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+            )
           )
         end
 
@@ -74,27 +122,59 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
         if is_nil(binding_alias) do
           dynamic(
             [q],
-            fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+            fragment(
+              "? ILIKE ANY(?)",
+              field(q, ^key),
+              ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+            )
           )
         else
           dynamic(
             [{^binding_alias, q}],
-            fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+            fragment(
+              "? ILIKE ANY(?)",
+              field(q, ^key),
+              ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+            )
           )
         end
 
       {:not, {:ilike, value}} ->
         if is_nil(binding_alias) do
-          dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
+          dynamic(
+            [q],
+            not ilike(
+              field(q, ^key),
+              ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+            )
+          )
         else
-          dynamic([{^binding_alias, q}], not ilike(field(q, ^key), ^"%#{value}%"))
+          dynamic(
+            [{^binding_alias, q}],
+            not ilike(
+              field(q, ^key),
+              ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+            )
+          )
         end
 
       {:ilike, value} ->
         if is_nil(binding_alias) do
-          dynamic([q], ilike(field(q, ^key), ^"%#{value}%"))
+          dynamic(
+            [q],
+            ilike(
+              field(q, ^key),
+              ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+            )
+          )
         else
-          dynamic([{^binding_alias, q}], ilike(field(q, ^key), ^"%#{value}%"))
+          dynamic(
+            [{^binding_alias, q}],
+            ilike(
+              field(q, ^key),
+              ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+            )
+          )
         end
     end
   end
@@ -110,38 +190,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
@@ -156,38 +276,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([_, q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([_, q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([_, q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([_, q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
@@ -202,38 +362,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([_, _, q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([_, _, q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([_, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([_, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
@@ -248,38 +448,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([_, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([_, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([_, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([_, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
@@ -294,38 +534,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([_, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([_, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([_, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([_, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
@@ -340,38 +620,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([_, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([_, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([_, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([_, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
@@ -386,38 +706,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([_, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([_, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([_, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([_, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
@@ -432,38 +792,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([_, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([_, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([_, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([_, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
@@ -478,38 +878,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([_, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([_, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, _, q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
@@ -524,38 +964,78 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr.Compiled.String do
       {:not, {:like, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          not fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:like, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          fragment("? LIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? LIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:like, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], not like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:like, value} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], like(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          like(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:not, {:ilike, value}} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          not fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          not fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:ilike, value} when is_list(value) ->
         dynamic(
           [_, _, _, _, _, _, _, _, _, q],
-          fragment("? ILIKE ANY(?)", field(q, ^key), ^Enum.map(value, fn value -> "%#{value}%" end))
+          fragment(
+            "? ILIKE ANY(?)",
+            field(q, ^key),
+            ^Enum.map(value, &EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern/1)
+          )
         )
 
       {:not, {:ilike, value}} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], not ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          not ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
 
       {:ilike, value} ->
-        dynamic([_, _, _, _, _, _, _, _, _, q], ilike(field(q, ^key), ^"%#{value}%"))
+        dynamic(
+          [_, _, _, _, _, _, _, _, _, q],
+          ilike(
+            field(q, ^key),
+            ^EctoShorts.Dynamics.Postgres.ScalarExprBuilder.preserve_or_wrap_pattern(value)
+          )
+        )
     end
   end
 
