@@ -199,6 +199,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
     assert_dynamic(expected, actual)
   end
 
+  test "dynamic_expr/4 builds a root named-binding count equals nil aggregate comparison expression" do
+    expected = dynamic([q], is_nil(count(field(q, :views))))
+    actual = ScalarExpr.dynamic_expr({:as, nil}, :views, nil, {:count, {:==, nil}}, [])
+
+    assert_dynamic(expected, actual)
+  end
+
   test "dynamic_expr/4 builds a root named-binding quantified equality expression" do
     subquery_expr =
       from(c in Comment,
@@ -571,6 +578,182 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
       )
 
     assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 preserves datetime wrapper extraction when add params arrive in a different keyword order" do
+    expected =
+      dynamic(
+        [q],
+        field(q, :inserted_at) >= datetime_add(field(q, :inserted_at), ^1, "day")
+      )
+
+    actual =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :inserted_at,
+        nil,
+        {:>=, {:datetime, {:add, [interval: "day", field: :inserted_at, count: 1]}}},
+        []
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a datetime greater-than expression using ago" do
+    expected =
+      from(p in Post,
+        where: p.inserted_at > ago(^1, "day")
+      )
+
+    actual_dynamic =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :inserted_at,
+        nil,
+        {:>, {:datetime, {:ago, [count: 1, interval: "day"]}}},
+        []
+      )
+
+    actual = from(p in Post, where: ^actual_dynamic)
+
+    assert_sql(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a datetime greater-than expression using from_now" do
+    expected =
+      from(p in Post,
+        where: p.inserted_at > from_now(^1, "day")
+      )
+
+    actual_dynamic =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :inserted_at,
+        nil,
+        {:>, {:datetime, {:from_now, [count: 1, interval: "day"]}}},
+        []
+      )
+
+    actual = from(p in Post, where: ^actual_dynamic)
+
+    assert_sql(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a negated datetime >= expression using datetime_add" do
+    expected =
+      dynamic(
+        [q],
+        not (field(q, :inserted_at) >= datetime_add(field(q, :inserted_at), ^1, "day"))
+      )
+
+    actual =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :inserted_at,
+        nil,
+        {:not, {:>=, {:datetime, {:add, [field: :inserted_at, count: 1, interval: "day"]}}}},
+        []
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a datetime less-than expression using ago" do
+    expected =
+      from(p in Post,
+        where: p.inserted_at < ago(^7, "day")
+      )
+
+    actual_dynamic =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :inserted_at,
+        nil,
+        {:<, {:datetime, {:ago, [count: 7, interval: "day"]}}},
+        []
+      )
+
+    actual = from(p in Post, where: ^actual_dynamic)
+
+    assert_sql(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a datetime less-than-or-equal expression using from_now" do
+    expected =
+      from(p in Post,
+        where: p.inserted_at <= from_now(^30, "day")
+      )
+
+    actual_dynamic =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :inserted_at,
+        nil,
+        {:<=, {:datetime, {:from_now, [count: 30, interval: "day"]}}},
+        []
+      )
+
+    actual = from(p in Post, where: ^actual_dynamic)
+
+    assert_sql(expected, actual)
+  end
+
+  test "dynamic_expr/4 builds a negated datetime less-than expression using ago" do
+    expected =
+      from(p in Post,
+        where: not (p.inserted_at < ago(^7, "day"))
+      )
+
+    actual_dynamic =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :inserted_at,
+        nil,
+        {:not, {:<, {:datetime, {:ago, [count: 7, interval: "day"]}}}},
+        []
+      )
+
+    actual = from(p in Post, where: ^actual_dynamic)
+
+    assert_sql(expected, actual)
+  end
+
+  test "dynamic_expr/4 preserves date wrapper extraction when add params arrive in a different keyword order" do
+    expected =
+      dynamic(
+        [q],
+        fragment("date(?)", field(q, :inserted_at)) >=
+          fragment("date(?)", datetime_add(field(q, :inserted_at), ^7, "day"))
+      )
+
+    actual =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :inserted_at,
+        nil,
+        {:>=, {:date, {:add, [interval: "day", field: :inserted_at, count: 7]}}},
+        []
+      )
+
+    assert_dynamic(expected, actual)
+  end
+
+  test "dynamic_expr/4 preserves date wrapper extraction when ago params arrive in a different keyword order" do
+    expected =
+      from(p in Post, where: fragment("date(?)", p.inserted_at) < fragment("date(?)", ago(^1, "month")))
+
+    actual_dynamic =
+      ScalarExpr.dynamic_expr(
+        {:as, nil},
+        :inserted_at,
+        nil,
+        {:<, {:date, {:ago, [interval: "month", count: 1]}}},
+        []
+      )
+
+    actual = from(p in Post, where: ^actual_dynamic)
+
+    assert_sql(expected, actual)
   end
 
   test "dynamic_expr/4 builds a date less-than expression using date wrapper with ago and month interval" do

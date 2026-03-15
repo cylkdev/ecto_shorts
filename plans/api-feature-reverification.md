@@ -75,6 +75,13 @@ This plan does not treat every mismatch between `research/` and the live code as
 - [x] (2026-03-14 20:43Z) Final targeted regression for the deferred follow-on scope passed with `mix test test/ecto_shorts/common_filters_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`, covering the completed join `type:` source-family correction, the completed quantified comparison expansion, and the completed direct raw lock payload widening together.
 - [x] (2026-03-14 21:02Z) Re-opened the governing plan for the approved array/scalar/lock refactor slice after the user redirected the task. Re-read the current project rules and specification guides, confirmed that this existing repo-local plan remains the single governing artifact, and identified the stale contracts that must be corrected here before code changes continue: `ScalarExpr` still describes generated-module ownership, `Lock` still describes the reverted direct raw string and raw function surface, and the validation matrix does not yet name the structural array-normalization and scalar-owner refactor proofs.
 - [x] (2026-03-14 22:18Z) Completed the approved array/scalar/lock refactor slice. Updated the governing specs first, rewrote `ArrayExpr.normalize_all_payload/1` as a reducer-friendly structural traversal that preserves empty, singleton, and multi-entry behavior, replaced the scalar compiled-module dispatch with direct binding-contract clauses in `ScalarExpr` using `Compiler.query_binding_contracts/2`, removed the unused `ClauseSpec` / blueprint compiler surface from `ScalarExprBuilder`, restored `Lock.build_query/6` to the provider-owned custom-lock contract by removing the direct raw string and direct raw unary-function paths, updated the lock proofs to unchanged-query invalid-shape coverage, and passed focused plus combined validation with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`, `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/common_filters_test.exs`, and `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs test/ecto_shorts/common_filters_test.exs`, all passing.
+- [x] (2026-03-14 22:29Z) The user rejected the intermediate scalar end state as still too complex even though the proof surface was green. Re-read the live `ArrayExpr`, `ScalarExpr`, `ScalarExprBuilder`, and scalar proof files and confirmed the remaining drift precisely: `ScalarExpr` still acts as a family dispatcher over hidden quoted behavior bodies in `ScalarExprBuilder` instead of following the direct owner-local `ArrayExpr` pattern. Narrowed the active work to a scalar-only follow-on under this same governing plan. Array and lock stay as already landed unless the scalar rewrite requires only tiny mechanical cleanup.
+- [x] (2026-03-14 23:31Z) Closed the missing scalar wrapper boundary proof before resuming the owner rewrite. Added direct reordered-keyword-order proofs in `test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` for `:datetime/:add`, `:date/:add`, and `:date/:ago`, then repaired the still-live datetime/date wrapper branch so it matches only tuple wrapper/operator shapes and extracts keyword params inside the generated body instead of exact keyword-list heads. Focused validation passed with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`.
+- [x] (2026-03-14 23:58Z) Landed a safe intermediate owner-local reduction inside `ScalarExpr`. Moved the `membership`, `string_transform`, and `string` families out of `ScalarExprBuilder.quote_body/4` into direct owner-local bodies in `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`, preserving wildcard handling through a local `preserve_or_wrap_pattern/1`. Focused scalar proof stayed green with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`, and neighboring scalar proof also stayed green with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs`. The remaining live builder surface is now narrowed to the `:comparison` family only.
+- [x] (2026-03-15 00:07Z) Narrowed the remaining comparison builder surface without reopening the proved boundary. Moved plain scalar and `nil` comparison cases into direct owner-local `ScalarExpr` bodies while leaving only the tuple-heavy comparison shapes on the builder fallback. Focused scalar proof stayed green with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs`, and neighboring scalar proof stayed green with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs`.
+- [x] (2026-03-15 00:14Z) Moved quantified comparison cases into direct owner-local `ScalarExpr` handling and re-proved the slice. `all(...)` and `any(...)` comparison terms now bypass `ScalarExprBuilder.quote_body/4`, while focused and neighboring proof stayed green with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` and `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs`. The remaining builder-backed comparison surface is now limited to aggregate helpers plus tuple value/datetime/date wrapper shapes.
+- [x] (2026-03-15 00:21Z) Moved the proved `avg > value` aggregate slice and the proved wrapped arithmetic `{:>, {:value, {:+, {{:field, field}, {:value, value}}}}}` slice into direct owner-local `ScalarExpr` handling, then re-ran focused and neighboring scalar proofs. Both stayed green with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` and `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs`. The remaining builder-backed comparison surface is now centered on date/datetime wrappers plus still-unproved aggregate and value-wrapper variants.
+- [x] (2026-03-15 01:29Z) Completed the approved scalar-only single-owner simplification slice. Finished the remaining proved date/datetime wrapper moves in `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`, extracted the residual comparison quote generation into `lib/ecto_shorts/dynamics/postgres/scalar_expr_comparison_quote.ex` so the live `ScalarExpr` fallback no longer depends on `ScalarExprBuilder`, corrected aggregate-`nil` comparison handling so aggregate `== nil` / `!= nil` still compile to `is_nil(...)` / `not is_nil(...)`, deleted `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex`, and passed focused proof with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs` plus neighboring proof with `PATH="$(asdf where erlang)/bin:$PATH" asdf exec mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs`.
 
 ## Milestones
 
@@ -217,6 +224,10 @@ This milestone is complete when every executed slice records its proof, preserve
   Rationale: The public reducer and dynamic router should stay unaware of string-pattern heuristics. The current wrapping already lives in `ScalarExprBuilder.quote_expr/3` for scalar strings and in `ArrayExpr.normalize_patterns/1` for array strings. A small owner-local helper at those exact points is the narrowest valid change and keeps the rest of the filter pipeline unchanged.
   Date/Author: 2026-03-14 / Cascade
 
+- Decision: Treat the green but still indirect scalar rewrite as incomplete and continue with a narrower scalar-only follow-on that makes `ScalarExpr` the single behavior owner in the same structural pattern as `ArrayExpr`.
+  Rationale: The user explicitly rejected the intermediate end state because `ScalarExpr` still delegated caller-visible behavior to hidden quoted family bodies in `ScalarExprBuilder`. The live code confirms that critique: the public scalar contract is still split across a dispatcher and a second owner file even though the proof surface passes. The narrowest corrective follow-on is to keep array and lock as already landed, move the remaining scalar behavior directly into `ScalarExpr`, and remove `ScalarExprBuilder` as a live runtime dependency rather than reopening the completed non-scalar slices.
+  Date/Author: 2026-03-14 / Cascade
+
 - Decision: Keep planning and implementation authorization separate.
   Rationale: Even while implementation is active, each new behavior-bearing slice still requires explicit user approval before repo changes. The wildcard-preservation work in this slice proceeded only after that explicit approval and remained governed by the refreshed ExecPlan throughout proof, implementation, and validation.
   Date/Author: 2026-03-14 / Cascade
@@ -273,6 +284,10 @@ This milestone is complete when every executed slice records its proof, preserve
   Rationale: Current repo patterns already use plain `Keyword.keyword?/1`, `Keyword.has_key?/2`, and `Map.has_key?/2` checks in function bodies. Current Elixir docs confirm those helpers are valid ordinary runtime checks, while the rejected guard attempt relied on invalid guard-only syntax. This keeps the fix local to the collision point, preserves current quantified-subquery behavior, and lets unsupported array-local `all:` payloads continue following `ArrayExpr` ownership without widening the public contract.
   Date/Author: 2026-03-14 / Cascade
 
+- Decision: Finish the scalar single-owner end state by extracting the residual comparison quote generation into `ScalarExprComparisonQuote` and deleting `ScalarExprBuilder`, instead of continuing to hand-inline every remaining comparison variant directly inside `ScalarExpr.comparison_expr/4`.
+  Rationale: The remaining live dependency was no longer a runtime dispatch problem but a compile-time quote-generation problem for residual aggregate, wrapped-value, quantified, and datetime/date comparison shapes. A narrow comparison-only quote helper preserves the fully owner-local runtime path in `ScalarExpr`, removes the last live dependency on `ScalarExprBuilder`, avoids reintroducing fragile macro-expansion order issues in `ScalarExpr`, and keeps the preserved tuple-only and aggregate-`nil` contracts explicit and proved.
+  Date/Author: 2026-03-15 / Cascade
+
 ## Outcomes & Retrospective
 
 The old research-first megaplan overstated the amount of missing runtime behavior. The live-first audit reduced the true runtime work to a smaller set of gaps and turned several earlier “missing” items into proof work instead.
@@ -287,11 +302,13 @@ With those originally approved slices complete, the user expanded the task to co
 
 The explicit join-payload `type:` source-family slice is now complete. `Join.build_query/6` accepts the new explicit single-join payload such as `%{join: [type: :association, source: :author, as: :author, qualifier: :left, on: true]}` by normalizing it to the existing outer-key join path, `qualifier:` remains the canonical join-mode key, and association shorthand remains on its separate outer-key association surface. Focused and nearby join proofs passed.
 
-Broader quantified comparisons are also now complete. The public/router boundary in `lib/ecto_shorts/dynamics/postgres.ex` now rewrites operator-wrapped quantified-query payloads into the same quantified-query contract already used by equality shorthand, and the scalar comparison owner in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` now emits quantified comparison expressions for `>`, `>=`, `<`, and `<=` instead of treating quantified tuples as pinned literal values. Focused and neighboring quantified tests passed.
+Broader quantified comparisons are also now complete. The public/router boundary in `lib/ecto_shorts/dynamics/postgres.ex` now rewrites operator-wrapped quantified-query payloads into the same quantified-query contract already used by equality shorthand, and the scalar comparison owner now emits quantified comparison expressions for `>`, `>=`, `<`, and `<=` instead of treating quantified tuples as pinned literal values. Focused and neighboring quantified tests passed.
 
 Direct raw lock payload widening is now complete as well. `lib/ecto_shorts/common_filters/lock.ex` accepts direct raw string clauses and direct unary function payloads while preserving built-in symbolic locks and the existing `name:` + provider path. Focused lock proofs and the full nearby `common_filters_test.exs` regression passed.
 
 All three deferred follow-on slices are now complete under this governing plan.
+
+The later scalar-only follow-on is now complete as well. `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` remains the runtime owner of scalar behavior, the last live comparison fallback now expands through `lib/ecto_shorts/dynamics/postgres/scalar_expr_comparison_quote.ex` instead of `ScalarExprBuilder`, aggregate `nil` comparisons preserve their `is_nil(...)` / `not is_nil(...)` behavior, and `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` has been removed from the live codebase. Focused scalar proof and neighboring scalar regression both passed after the deletion.
 
 ## Context and Orientation
 
@@ -616,22 +633,25 @@ Current in-flight execution notes:
 
 ### Boundary: `ScalarExpr.dynamic_expr/5` to direct owner-local scalar reduction
 
-Accepted input shape: a normalized binding selector, scalar field key, negation flag, and operator/value term already routed away from `CommonExpr` and `ArrayExpr`.
+Accepted input shape: a normalized binding selector, scalar field key, negation flag, and operator/value term already routed away from `CommonExpr` and `ArrayExpr`. Once the term reaches `ScalarExpr`, owner-local matching must stay on tuple-only internal shapes; upstream list/map source forms are not part of this boundary.
 
-Produced output shape: an `Ecto.Query.DynamicExpr`.
+Produced output shape: an `Ecto.Query.DynamicExpr` or `nil` for unsupported scalar shapes.
 
 Owned transformations:
 
 - normalize shorthand terms into operator/value tuples
-- select the correct scalar expression family inside `ScalarExpr` itself
+- build the scalar expression directly inside `ScalarExpr` from the normalized term shape, not by dispatching to a second behavior owner
 - construct scalar LIKE/ILIKE pattern expressions at the direct owner boundary
+- interpret scalar datetime/date wrapper terms through tuple-only owner-local helpers rather than pattern matching on keyword-list or map payload shapes in clause heads
 - emit named-binding and positional-binding dynamic expressions from `query_binding_contracts/2`
+- apply the final negation wrap after the owner-local expression has been built, mirroring the `ArrayExpr` structure
 
 Forbidden accidental contract expansion:
 
 - string-pattern heuristics must not move up into `CommonFilters` or `Postgres.build_dynamic/4`
 - this boundary must preserve the current contains-style convenience for bare values alongside wildcard preservation
-- this boundary must not keep a second hidden behavior owner in generated scalar modules or `ScalarExprBuilder`
+- this boundary must not keep family-level behavior hidden behind helper dispatch or `ScalarExprBuilder`
+- this boundary must not match list or map shapes in `ScalarExpr` function heads or case heads; tuple-only internal shapes are the contract here
 
 ### Boundary: `Join.build_query/6`
 
@@ -679,7 +699,7 @@ For each entry, `apply_filters/6` decides what kind of thing it is looking at. I
 
 When a field predicate reaches the Postgres dynamic path, `EctoShorts.Dynamics.Postgres.build_dynamic/4` normalizes top-level negation, then normalizes top-level quantified forms such as `all` and `any` into equality against a built quantified query only when the payload is on the quantified-query contract. After that, it routes by family. Common operators such as `before` and `after` stay in `CommonExpr`. Array and map-backed fields route to `ArrayExpr`. Everything else routes to `ScalarExpr`.
 
-That routing order still matters for the current refactor slice. String-pattern construction belongs in the owners after routing, not in the public reducer or Postgres router. Scalar-field string predicates travel from `CommonFilters.convert_params_to_filter/3` into `Postgres.build_dynamic/4`, then into `ScalarExpr.dynamic_expr/5`, where this refactor moves the full scalar contract into direct owner-local helpers and binding-pattern clauses. Array-field `all` payloads travel through the same public and router boundaries but finish in `ArrayExpr.dynamic_expr/5`, where `normalize_all_payload/1` must now express map, tuple, empty-list, and recursive-list behavior structurally. Lock directives travel from `CommonFilters.convert_params_to_filter/3` into `Lock.build_query/6`, where this refactor restores provider-owned customization and removes the direct raw runtime lock surfaces.
+That routing order still matters for the current refactor slice. String-pattern construction belongs in the owners after routing, not in the public reducer or Postgres router. Scalar-field string predicates travel from `CommonFilters.convert_params_to_filter/3` into `Postgres.build_dynamic/4`, then into `ScalarExpr.dynamic_expr/5`, where this follow-on rewrite must express the full scalar contract in one owner-local `case normalize_term(term)` structure that mirrors `ArrayExpr` and applies negation only once at the end. Array-field `all` payloads travel through the same public and router boundaries but finish in `ArrayExpr.dynamic_expr/5`, where `normalize_all_payload/1` now expresses map, tuple, empty-list, and recursive-list behavior structurally. Lock directives travel from `CommonFilters.convert_params_to_filter/3` into `Lock.build_query/6`, where provider-owned customization remains the only custom lock surface after the completed lock slice.
 
 Invalid-input behavior also differs by boundary. At the top-level reducer, many invalid shapes are still allowed to flow to the owner module. The owner module usually decides whether to log and keep the query unchanged or to raise for impossible internal shapes. That means this refactor must keep the invalid-input behavior visible at the owning boundary instead of hiding it behind broad guards in `CommonFilters`.
 
@@ -971,6 +991,12 @@ The future validation matrix for implementation work is:
   Evidence command: `mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/actions/crud_test.exs test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/dynamics/postgres/array_expr_test.exs`.
   Residual risk: the executed cases will establish the chosen `%` and `_` preservation rules for the tested scalar and array forms only.
 
+- Claim: `ScalarExpr` is the single scalar runtime owner and now follows the same structural pattern as `ArrayExpr` without changing the proved scalar behavior.
+  Boundary: `Postgres.build_dynamic/4`, `ScalarExpr.dynamic_expr/5`, and the direct scalar proof surface.
+  Proof method: focused direct scalar tests plus neighboring Postgres-router and `CommonFilters` scalar tests, with exact AST checks where the current proof uses `assert_dynamic/2`.
+  Evidence command: `mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs`.
+  Residual risk: the proof establishes the executed scalar shapes only, so any deleted generated scalar artifacts must also be checked for lingering live references.
+
 ## Plan of Work
 
 Perform the approved implementation work in this order.
@@ -981,7 +1007,9 @@ Second, implement small compatibility shims where the desired future behavior is
 
 Third, implement the true runtime gaps in the smallest owner modules possible. The completed array slice first fixed Postgres routing so array-local comparison `all:` could reach the array owner without breaking quantified subquery `all`, then completed the remaining array-owner work in `lib/ecto_shorts/dynamics/postgres/array_expr.ex`, including containment-style `all: [in: list]` with `<@`. The completed directive slice implemented `with_cte operation` in `lib/ecto_shorts/common_filters/with_cte.ex`. These completed changes now become preserved live behavior.
 
-Fourth, execute the approved wildcard-preservation compatibility extension at the smallest owner-local pattern-construction points. The work belongs in `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` and `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. The preserved behavior is that bare strings keep the current contains-style convenience even though Ecto itself accepts raw patterns. The new compatibility behavior is explicit wildcard preservation for callers who pass patterns that already include `%` or `_`.
+Fourth, preserve the completed wildcard-preservation compatibility extension at the smallest owner-local pattern-construction points. After the approved scalar-only follow-on, that means `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` and `lib/ecto_shorts/dynamics/postgres/array_expr.ex`. The preserved behavior is that bare strings keep the current contains-style convenience even though Ecto itself accepts raw patterns. The compatibility behavior remains explicit wildcard preservation for callers who pass patterns that already include `%` or `_`.
+
+Fifth, execute the approved scalar-only follow-on. Rewrite `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex` so it becomes the sole scalar runtime owner in the same structural pattern as `ArrayExpr`: one binding-pattern loop, one owner-local `dynamic_expr/5`, one direct `case normalize_term(term)`, one final negation wrap, and only small local helpers for normalization and repeated fragment construction. Remove `lib/ecto_shorts/dynamics/postgres/scalar_expr_builder.ex` as a live runtime dependency and clean up any remaining scalar references to it that still imply a second owner path.
 
 After each implementation slice, update this plan, run the named focused tests, and record the result precisely as evidence for the executed cases.
 
@@ -995,6 +1023,12 @@ For proof-only changes, the expected focused commands are:
     mix test test/ecto_shorts/common_filters_test.exs
     mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/dynamics/postgres_test.exs
     mix test test/ecto_shorts/dynamics/postgres/array_expr_test.exs
+
+For the approved scalar-only follow-on, the expected focused commands are:
+
+    mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs
+    mix test test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs
+    mix test test/ecto_shorts/dynamics/postgres/scalar_expr_test.exs test/ecto_shorts/common_filters_scalar_filter_test.exs test/ecto_shorts/dynamics/postgres_test.exs
 
 For broader regression after a completed slice, the likely command set is:
 

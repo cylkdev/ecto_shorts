@@ -277,6 +277,16 @@ NON-NEGOTIABLE REQUIREMENTS:
   that as the same fix. If the work truly needs a different boundary, state that shift explicitly, restate the
   contract, and stop for clarification before you proceed.
 
+* Treat structural shape as part of the contract. The exact representation a boundary matches, the level of specificity in that match, and the point at which details are extracted, validated, or interpreted are behavior-bearing facts, not interchangeable implementation details. Do not rewrite a boundary around a different structural assumption unless that change is first proved from the current repository and recorded explicitly.
+
+* Before you simplify, consolidate, or relocate pattern-matching code, inventory the exact shapes the current owner code accepts and rejects. Preserve not only which values are handled, but also where matching stops, where extraction begins, and which details are intentionally left outside the boundary. If the proposed rewrite would make acceptance narrower, broader, more order-sensitive, more exact, or more dependent on incidental representation details, treat that as a contract change rather than a refactor.
+
+* Do not let a convenient local representation silently replace the representation the current code actually uses. When more than one structural reading could plausibly support the same visible behavior, verify which one is live from the current owner code, proof surface, and governing plan before you implement. If the repository does not settle that choice, stop and clarify before committing to one.
+
+* When preserving behavior across a refactor, compare the current structure and the proposed structure side by side before you write runtime code. State what shape the boundary receives, which part of that shape is matched directly, which part is extracted later, and which details are not part of the boundary contract. If that comparison is not explicit, the refactor is not ready.
+
+* Do not silently move responsibility for interpreting structure from one boundary to another. If a proposed simplification changes where a shape is classified, unpacked, or made authoritative, name that shift explicitly, restate the affected contract, and stop for clarification before proceeding.
+
 ### Scope And Intent Control
 
 * Remain within the boundaries of the task. Do not follow tangents, pursue adjacent ideas, or expand the work
