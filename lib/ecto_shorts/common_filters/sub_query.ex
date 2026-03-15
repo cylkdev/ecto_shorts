@@ -20,7 +20,11 @@ defmodule EctoShorts.CommonFilters.SubQuery do
 
       Query.subquery(inner_query)
     else
-      EctoShorts.Logger.warning(@logger_prefix, "Expected ..., got: #{inspect(term)}")
+      EctoShorts.Logger.warning(
+        @logger_prefix,
+        "Expected :subquery value to be a keyword list or map of filter params, got: #{inspect(term)}"
+      )
+
       query
     end
   end

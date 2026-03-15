@@ -600,7 +600,7 @@ defmodule EctoShorts.Actions do
     `changeset/2`. Can be 1-arity (receives params), 2-arity (receives
     struct and params), or 3-arity (receives struct, params, and opts).
 
-  * `:dynamic_adapter` - a module implementing `EctoShorts.Dynamic`.
+  * `:dynamic_adapter` - a module implementing `EctoShorts.Dynamics.Adapter`.
     Defaults to `EctoShorts.Config.dynamic_adapter/0`.
 
   * `:error_module` - a module implementing `EctoShorts.Actions.Error`.

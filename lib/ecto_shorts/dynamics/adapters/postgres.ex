@@ -6,35 +6,39 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   alias EctoShorts.Dynamics.Adapters.Postgres.{
     ArrayExpr,
     CommonExpr,
+    Normalizer,
     ScalarExpr
   }
 
   @behaviour EctoShorts.Dynamics.Adapter
 
   @quantifier_operators [:all, :any]
-  @arithmetic_value_operators [:+, :-, :*, :/]
-  @datetime_wrappers [:datetime, :date]
-  @datetime_value_operators [:add, :ago, :from_now]
 
   @impl true
-  def build_dynamic(source, selected_binding, {key, term}, opts \\ []) when is_list(opts) do
+  def build_dynamic(source, selected_binding, args, opts \\ [])
+
+  def build_dynamic(source, selected_binding, {quantifier_op, params}, opts)
+      when quantifier_op in @quantifier_operators do
     expr =
-      if key in [:and, :or] do
-        term
-        |> normalize_params()
-        |> Enum.reduce(nil, fn entry, acc ->
-          dyn = apply_expr(source, selected_binding, entry, opts)
-          FilterHelpers.merge_dynamic(acc, key, dyn)
-        end)
-      else
-        term
-        |> normalize_params()
-        |> Enum.reduce(nil, fn entry, acc ->
-          {merge_op, expr_entry} = expr_entry(key, entry)
-          dyn = apply_expr(source, selected_binding, expr_entry, opts)
-          FilterHelpers.merge_dynamic(acc, merge_op, dyn)
-        end)
-      end
+      params
+      |> Normalizer.normalize_params()
+      |> Enum.reduce(nil, fn entry, acc ->
+        dyn = apply_expr(source, selected_binding, entry, opts)
+        FilterHelpers.merge_dynamic(acc, quantifier_op, dyn)
+      end)
+
+    FilterHelpers.merge_dynamic(nil, :and, expr)
+  end
+
+  def build_dynamic(source, selected_binding, {key, params}, opts) do
+    expr =
+      params
+      |> Normalizer.normalize_params()
+      |> Enum.reduce(nil, fn entry, acc ->
+        {merge_op, expr_entry} = expr_entry(key, entry)
+        dyn = apply_expr(source, selected_binding, expr_entry, opts)
+        FilterHelpers.merge_dynamic(acc, merge_op, dyn)
+      end)
 
     FilterHelpers.merge_dynamic(nil, :and, expr)
   end
@@ -53,52 +57,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
       true ->
         build_expr(source, selected_binding, key, term, opts)
     end
-  end
-
-  defp normalize_params(term) do
-    cond do
-      is_map(term) and not is_struct(term) ->
-        term
-        |> Map.to_list()
-        |> normalize_params()
-
-      Keyword.keyword?(term) ->
-        normalize_keyword_params(term, [])
-
-      true ->
-        [normalize_value_node(term)]
-    end
-  end
-
-  defp normalize_keyword_params([], acc), do: Enum.reverse(acc)
-
-  defp normalize_keyword_params([head | tail], acc) do
-    with acc2 <- normalize_keyword_params(head, acc) do
-      normalize_keyword_params(tail, acc2)
-    end
-  end
-
-  defp normalize_keyword_params({quantifier, payload}, acc)
-       when quantifier in @quantifier_operators do
-    [{quantifier, payload} | acc]
-  end
-
-  defp normalize_keyword_params({op, inner_term}, acc) when op in @arithmetic_value_operators do
-    [normalize_value_node({op, inner_term}) | acc]
-  end
-
-  defp normalize_keyword_params({wrapper, inner_term}, acc) when wrapper in @datetime_wrappers do
-    [normalize_value_node({wrapper, inner_term}) | acc]
-  end
-
-  defp normalize_keyword_params({key, inner_term}, acc) do
-    prepend_key(key, normalize_params(inner_term), acc)
-  end
-
-  defp prepend_key(_key, [], acc), do: acc
-
-  defp prepend_key(key, [normalized_term | rest], acc) do
-    prepend_key(key, rest, [{key, normalized_term} | acc])
   end
 
   defp expr_entry(key, {merge_op, term}) when merge_op in [:and, :or] do
@@ -166,105 +124,6 @@ defmodule EctoShorts.Dynamics.Adapters.Postgres do
   end
 
   defp quantified_query_payload?(_payload), do: false
-
-  defp normalize_value_node(term) when is_map(term) and not is_struct(term) do
-    term
-    |> Map.to_list()
-    |> normalize_value_node()
-  end
-
-  defp normalize_value_node({:field, field_name}) do
-    {:field, normalize_field_name(field_name)}
-  end
-
-  defp normalize_value_node({:value, value}) do
-    {:value, normalize_value_node(value)}
-  end
-
-  defp normalize_value_node({op, term}) when op in @arithmetic_value_operators do
-    case term do
-      [left, right] -> {op, {normalize_value_node(left), normalize_value_node(right)}}
-      _ -> raise ArgumentError, "Expected ..., got: #{inspect(term)}"
-    end
-  end
-
-  defp normalize_value_node({wrapper, term}) when wrapper in @datetime_wrappers do
-    case normalize_datetime_wrapper_payload(term) do
-      {datetime_op, datetime_term} when datetime_op in @datetime_value_operators ->
-        {wrapper, {datetime_op, datetime_term}}
-
-      _ ->
-        raise ArgumentError, "Expected datetime wrapper payload, got: #{inspect(term)}"
-    end
-  end
-
-  defp normalize_value_node({op, term}) when op in @datetime_value_operators do
-    {op, normalize_datetime_node(term)}
-  end
-
-  defp normalize_value_node(field: field_name) do
-    {:field, normalize_field_name(field_name)}
-  end
-
-  defp normalize_value_node(value: value) do
-    {:value, normalize_value_node(value)}
-  end
-
-  defp normalize_value_node([]) do
-    []
-  end
-
-  defp normalize_value_node([head | tail]) do
-    [normalize_value_node(head) | normalize_value_node(tail)]
-  end
-
-  defp normalize_value_node(term), do: term
-
-  defp normalize_datetime_wrapper_payload(term) when is_map(term) and not is_struct(term) do
-    term
-    |> Map.to_list()
-    |> normalize_datetime_wrapper_payload()
-  end
-
-  defp normalize_datetime_wrapper_payload(term) when is_list(term) do
-    if Keyword.keyword?(term) do
-      case term do
-        [{datetime_op, datetime_term}] when datetime_op in @datetime_value_operators ->
-          normalize_value_node({datetime_op, datetime_term})
-
-        _ ->
-          raise ArgumentError, "Expected datetime wrapper payload, got: #{inspect(term)}"
-      end
-    else
-      raise ArgumentError, "Expected datetime wrapper payload, got: #{inspect(term)}"
-    end
-  end
-
-  defp normalize_datetime_node(term) when is_map(term) and not is_struct(term) do
-    term
-    |> Map.to_list()
-    |> normalize_datetime_node()
-  end
-
-  defp normalize_datetime_node(term) when is_list(term) do
-    if Keyword.keyword?(term) do
-      field_name = Keyword.get(term, :field)
-      count = Keyword.fetch!(term, :count)
-      interval = Keyword.fetch!(term, :interval)
-
-      []
-      |> maybe_put_datetime_field(field_name)
-      |> Kernel.++(count: count, interval: interval)
-    else
-      raise ArgumentError, "Expected datetime params to be a keyword payload, got: #{inspect(term)}"
-    end
-  end
-
-  defp maybe_put_datetime_field(params, nil), do: params
-  defp maybe_put_datetime_field(params, field_name), do: [{:field, normalize_field_name(field_name)} | params]
-
-  defp normalize_field_name(field_name) when is_atom(field_name), do: field_name
-  defp normalize_field_name(field_name) when is_binary(field_name), do: String.to_existing_atom(field_name)
 
   defp array_field?(source, key) do
     case CommonSchema.get_schema_reflection(source, :type, key) do

@@ -40,7 +40,11 @@ defmodule EctoShorts.CommonFilters.Last do
   end
 
   def build_query(:last, _source, query, _selected_binding, term, _opts) do
-    EctoShorts.Logger.warning(@logger_prefix, "Expected ..., got: #{inspect(term)}")
+    EctoShorts.Logger.warning(
+      @logger_prefix,
+      "Expected :last value to be an integer, a {sort_key, limit} tuple, or a map/keyword list of such pairs, got: #{inspect(term)}"
+    )
+
     query
   end
 end

@@ -210,7 +210,7 @@ defmodule EctoShorts.CommonFiltersTest do
           assert_query(expected, actual)
         end)
 
-      assert log =~ "Replacing existing select expression before applying :select filter"
+      assert log =~ "Query already has a :select expression"
     end
   end
 
@@ -3034,7 +3034,7 @@ defmodule EctoShorts.CommonFiltersTest do
           assert_query(expected, actual)
         end)
 
-      assert log =~ "Expected lock ..., got: \"FOR SHARE NOWAIT\""
+      assert log =~ "Expected :lock value to be a map or keyword list with a :name key"
     end
 
     test "keeps the query unchanged for a direct raw function lock" do
@@ -3053,7 +3053,7 @@ defmodule EctoShorts.CommonFiltersTest do
           assert_query(expected, actual)
         end)
 
-      assert log =~ "Expected lock ..., got:"
+      assert log =~ "Expected :lock value to be a map or keyword list with a :name key"
     end
 
     test "keeps the query unchanged when the lock provider returns nil" do
@@ -3103,7 +3103,7 @@ defmodule EctoShorts.CommonFiltersTest do
         end)
 
       assert log =~
-               "Expected lock expression callback to return {:ok, function} | {:error, reason} | nil"
+               "Expected lock expression resolved from QueryProvider to return {:ok, function} | {:error, reason} | nil"
     end
   end
 
