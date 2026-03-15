@@ -1650,7 +1650,7 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - atom or list of atoms. Batch-preloads matching
+    * `:batch_preload` - atom or list of atoms. Batch-preloads matching
       records before insertion using `batch_preload/4`.
     * `:validate` - set to `false` to skip changeset validation.
     * `:on_conflict_replace` - controls conflict resolution:
@@ -1671,8 +1671,8 @@ defmodule EctoShorts.Actions do
           {:ok, {non_neg_integer(), nil | list(term())}} | {:error, term()}
   def insert_all(source, params_list, opts \\ []) do
     params_list =
-      if Keyword.has_key?(opts, :preload) do
-        batch_preload(source, params_list, opts[:preload], opts)
+      if Keyword.has_key?(opts, :batch_preload) do
+        batch_preload(source, params_list, opts[:batch_preload], opts)
       else
         params_list
       end
@@ -1944,6 +1944,19 @@ defmodule EctoShorts.Actions do
        )}
     end
   end
+
+  defp maybe_preload(nil, _opts), do: nil
+
+  defp maybe_preload(data, opts) do
+    case opts[:preload] do
+      nil -> data
+      [] -> data
+      preloads -> preload(data, preloads, opts)
+    end
+  end
+
+  defp maybe_preload_ok({:ok, value}, opts), do: {:ok, maybe_preload(value, opts)}
+  defp maybe_preload_ok(other, _opts), do: other
 
   defp put_param(enum, opts, key) do
     case Keyword.get(opts, key) do
