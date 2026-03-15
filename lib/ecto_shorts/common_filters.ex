@@ -1,5 +1,93 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
+  @moduledoc """
+  Converts a map or keyword list of filter params into an `Ecto.Query`.
+
+  `CommonFilters` is the central dispatch layer between the public filter
+  params API and the individual query-builder modules. It normalises the
+  input, sorts the entries into evaluation order, and routes each key to
+  the appropriate builder.
+
+  ## Top-level filter keys
+
+  The following keys receive special routing treatment before the generic
+  per-field dispatch:
+
+  ### Binding selectors
+
+  * `:as` — selects a named binding for the subsequent filter expressions.
+
+        %{as: %{post: %{published: true}}}
+
+  * `:at` — selects a positional binding (1-based integer, or the aliases
+    `:first` / `:last`) for the subsequent filter expressions.
+
+        %{at: %{1 => %{published: true}}}
+        %{at: %{first: %{published: true}}}
+
+  ### Boolean group operators
+
+  These are transparency wrappers; they do not add a new nesting level —
+  they expand their contents into individual `WHERE` or `OR WHERE` clauses
+  on the query directly.
+
+  * `:and` — applies each condition inside the value as a `WHERE` clause
+    (AND-joined with any existing clauses). Accepts a map, keyword list,
+    or list of maps / keyword lists.
+
+        %{and: %{views: 5, published: true}}
+        %{and: [%{views: 5}, %{published: true}]}
+
+  * `:or` — applies each condition inside the value as a separate
+    `OR WHERE` clause. Accepts the same shapes as `:and`. A range value
+    on a single field (`[>: 1, <: 10]`) AND-merges the range operators
+    inside one `OR WHERE` expression.
+
+        %{or: %{views: 5}}
+        %{or: [%{views: 5}, %{published: true}]}
+
+  ### Predicate filters
+
+  * `:where` — adds a `WHERE` clause. Multiple `:where` entries in a
+    keyword list are AND-joined in order.
+
+        %{where: %{published: true}}
+        [where: %{published: true}, where: %{views: 5}]
+
+  * `:or_where` — adds an `OR WHERE` clause. Multiple `:or_where` entries
+    in a keyword list are OR-joined in order.
+
+        %{or_where: %{published: false}}
+        [or_where: %{title: "A"}, or_where: %{title: "B"}]
+
+  Both `:where` and `:or_where` also accept a list of maps or keyword
+  lists; each element is applied as a separate clause.
+
+        %{where: [%{published: true}, %{views: 5}]}
+        %{or_where: [%{title: "A"}, %{title: "B"}]}
+
+  ### Evaluation order
+
+  When params are given as a keyword list, entries are reordered before
+  evaluation:
+
+  1. `:where` filters
+  2. All other filters (field filters, `:and`, `:or`, joins, etc.)
+  3. `:or_where` filters
+  4. Terminal filters (`:last`, `:subquery`)
+
+  This ensures plain field conditions always precede `OR WHERE` clauses,
+  which is the most predictable SQL shape.
+
+  ## All other keys
+
+  Any key that is a known schema association routes through the join /
+  association binding pipeline. Any other key is treated as a direct
+  field filter (equivalent to `WHERE field = value`).
+
+  See `EctoShorts.CommonFilters.API` for the full list of supported
+  filter keys.
+  """
 
   alias EctoShorts.CommonQuery
   alias EctoShorts.CommonSchema
@@ -12,6 +100,45 @@ defmodule EctoShorts.CommonFilters do
 
   @behaviour EctoShorts.Adapter.QueryBuilder
 
+  @doc """
+  Builds an `Ecto.Query` from `source` by applying each entry in `params`.
+
+  ## Arguments
+
+    * `source` — a schema module, `{source, schema}` tuple, or an
+      existing `Ecto.Query`.
+    * `params` — a map or keyword list of filter params. Keyword lists
+      preserve duplicate keys (e.g. multiple `where:` entries), which is
+      required for composing several independent `WHERE` or `OR WHERE`
+      clauses. See the module doc for the full key reference.
+    * `opts` — keyword list of options.
+
+  ## Options
+
+    * `:sorter` — a unary function that receives the normalised keyword
+      list and returns a reordered keyword list. Defaults to the built-in
+      sort that places `:where` first, then other filters, then
+      `:or_where`, then terminal filters (`:last`, `:subquery`).
+    * `:query_builder` — a module that implements
+      `EctoShorts.Adapter.QueryBuilder`. When set, all `build_query/6`
+      calls are delegated to that module instead of the default
+      `EctoShorts.CommonFilters.API`.
+
+  ## Examples
+
+      iex> CommonFilters.convert_params_to_filter(Post, %{published: true}, [])
+      #Ecto.Query<from p0 in Post, where: p0.published == ^true>
+
+      iex> CommonFilters.convert_params_to_filter(Post, %{and: %{views: 5, published: true}}, [])
+      #Ecto.Query<from p0 in Post, where: p0.published == ^true, where: p0.views == ^5>
+
+      iex> CommonFilters.convert_params_to_filter(
+      ...>   Post,
+      ...>   [where: %{published: true}, or_where: %{title: "Draft"}],
+      ...>   []
+      ...> )
+      #Ecto.Query<from p0 in Post, where: p0.published == ^true, or_where: p0.title == ^"Draft">
+  """
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
     sorter = opts[:sorter] || (&sort_filter_params/1)
