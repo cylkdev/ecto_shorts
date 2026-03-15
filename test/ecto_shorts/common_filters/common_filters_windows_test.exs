@@ -490,4 +490,48 @@ defmodule EctoShorts.CommonFilters.WindowsTest do
       assert log =~ "Expected :frame for :post_window to be an Ecto dynamic expression"
     end
   end
+
+  describe "convert_params_to_filter/3 windows order_by extended paths" do
+    test "matches Ecto.Query for windows with order_by as a keyword list" do
+      order_field = :inserted_at
+
+      expected =
+        windows(Post, [p],
+          post_window: [
+            partition_by: [],
+            order_by: [{:desc, field(p, ^order_field)}]
+          ]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [order_by: [desc: :inserted_at]]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for windows with partition_by as nil (empty list result)" do
+      order_field = :inserted_at
+
+      expected =
+        windows(Post, [p],
+          post_window: [
+            partition_by: [],
+            order_by: [{:desc, field(p, ^order_field)}]
+          ]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{windows: [post_window: [order_by: [desc: :inserted_at], partition_by: nil]]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+  end
 end

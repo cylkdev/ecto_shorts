@@ -1,136 +1,146 @@
 defmodule EctoShorts.CommonFilters do
   @moduledoc since: "3.0.0"
   @moduledoc """
-  Converts a map or keyword list of filter params into an `Ecto.Query`.
+  Converts public filter params into an `Ecto.Query`.
 
-  `CommonFilters` is the central dispatch layer between the public filter
-  params API and the individual query-builder modules. It normalises the
-  input, sorts the entries into evaluation order, and routes each key to
-  the appropriate builder.
+  `EctoShorts.CommonFilters` is the caller-facing query language for the
+  library. Ordinary callers usually enter through `convert_params_to_filter/3`.
+  Advanced integrations can also use `build_query/6`, which is the public
+  query-builder callback boundary used by the dispatcher.
 
-  ## Top-level filter keys
+  The module accepts a source plus a map or keyword list of params, sorts the
+  entries into a predictable evaluation order, and routes each key to the
+  appropriate builder.
 
-  The following keys receive special routing treatment before the generic
-  per-field dispatch:
+  ## Accepted sources and param containers
 
-  ### Binding selectors
+  `convert_params_to_filter/3` accepts:
 
-  * `:as` - selects a named binding for the subsequent filter expressions.
+  * a schema module
+  * an `{source, schema}` tuple
+  * a prebuilt `Ecto.Query`
 
-        %{as: %{post: %{published: true}}}
+  Params can be either a map or a keyword list.
 
-  * `:at` - selects a positional binding (1-based integer, or the aliases
-    `:first` / `:last`) for the subsequent filter expressions.
+  Use a **keyword list** when duplicate keys matter, for example when you want
+  multiple `where:`, `or_where:`, `join:`, or `with_cte:` entries and need to
+  preserve their order.
 
-        %{at: %{1 => %{published: true}}}
-        %{at: %{first: %{published: true}}}
+  ## Binding selectors
 
-  ### Boolean group operators
+  Two top-level shapes retarget the subsequent filters to a specific binding:
 
-  These are transparency wrappers; they do not add a new nesting level -
-  they expand their contents into individual `WHERE` or `OR WHERE` clauses
-  on the query directly.
+  * `:as` selects a named binding already present in the query.
 
-  * `:and` - applies each condition inside the value as a `WHERE` clause
-    (AND-joined with any existing clauses). Accepts a map, keyword list,
-    or list of maps / keyword lists.
+        %{as: %{author: %{select: :first_name}}}
 
-        %{and: %{views: 5, published: true}}
-        %{and: [%{views: 5}, %{published: true}]}
+  * `:at` selects a positional binding. Positions are 1-based, and `:first`
+    and `:last` are accepted aliases inside the `at:` map.
 
-  * `:or` - applies each condition inside the value as a separate
-    `OR WHERE` clause. Accepts the same shapes as `:and`. A range value
-    on a single field (`[>: 1, <: 10]`) AND-merges the range operators
-    inside one `OR WHERE` expression.
+        %{at: %{2 => %{select: :first_name}}}
+        %{at: %{first: %{select: :title}}}
+        %{at: %{last: %{select: :body}}}
 
-        %{or: %{views: 5}}
-        %{or: [%{views: 5}, %{published: true}]}
+  These selectors are first-class public shapes. They are not wrapped in a
+  separate `:bind` layer.
 
-  ### Predicate filters
+  ## Boolean and predicate groups
 
-  * `:where` - adds a `WHERE` clause. Multiple `:where` entries in a
-    keyword list are AND-joined in order.
+  The top-level boolean and predicate keys are transparent grouping operators:
 
-        %{where: %{published: true}}
-        [where: %{published: true}, where: %{views: 5}]
+  * `:where` / `:or_where` add explicit predicate clauses
+  * `:and` expands its contents as `WHERE` conditions
+  * `:or` expands its contents as `OR WHERE` conditions
 
-  * `:or_where` - adds an `OR WHERE` clause. Multiple `:or_where` entries
-    in a keyword list are OR-joined in order.
+  Supported value shapes include maps, keyword lists, and lists of maps or
+  keyword lists.
 
-        %{or_where: %{published: false}}
-        [or_where: %{title: "A"}, or_where: %{title: "B"}]
+  ## Evaluation order
 
-  Both `:where` and `:or_where` also accept a list of maps or keyword
-  lists; each element is applied as a separate clause.
-
-        %{where: [%{published: true}, %{views: 5}]}
-        %{or_where: [%{title: "A"}, %{title: "B"}]}
-
-  ### Evaluation order
-
-  When params are given as a keyword list, entries are reordered before
+  When params are provided as a keyword list, entries are reordered before
   evaluation:
 
-  1. `:where` filters
-  2. All other filters (field filters, `:and`, `:or`, joins, etc.)
-  3. `:or_where` filters
-  4. Terminal filters (`:last`, `:subquery`)
+  1. `:where`
+  2. all other filters
+  3. `:or_where`
+  4. terminal filters such as `:last` and `:subquery`
 
-  This ensures plain field conditions always precede `OR WHERE` clauses,
-  which is the most predictable SQL shape.
+  This keeps ordinary predicates ahead of `OR WHERE` clauses and makes the
+  generated query shape more predictable.
+
+  ## Major supported filter families
+
+  The live public filter language includes all of the following families:
+
+  * field equality and comparison operators
+  * aggregate operators and aggregate nil checks
+  * arithmetic expressions
+  * string matching and string transformations
+  * negation wrappers
+  * date and datetime wrappers
+  * join construction and association shorthand
+  * ordering, grouping, having, distinct, limits, offsets, and first/last
+  * projection through `:select` and `:select_merge`
+  * eager loading through `:preload`
+  * query mutation via `:update`
+  * exclusion and query-prefix helpers
+  * subqueries, set operations, recursive CTEs, `with_cte`, windows, and
+    `with_ties`
+  * named-binding support and explicit binding creation with
+    `:with_named_binding`
+
+  The module docs focus on caller-visible language. They do not attempt to
+  restate every internal builder implementation detail.
 
   ## Filter key reference
 
-  Every key accepted by `convert_params_to_filter/3` is listed below.
-  Keys that are not in this table (and are not schema associations) are
-  treated as direct field equality filters (`WHERE field = value`).
+  Keys not listed below, and not recognized as schema associations, are treated
+  as direct field filters.
 
   | Key | Group | Description |
-  |---|---|---|
-  | `:where` | predicate | AND `WHERE` clause |
-  | `:or_where` | predicate | OR `WHERE` clause |
-  | `:and` | boolean group | expand contents as AND `WHERE` clauses |
-  | `:or` | boolean group | expand contents as `OR WHERE` clauses |
-  | `:as` | binding selector | target a named binding for subsequent filters |
-  | `:at` | binding selector | target a positional binding (1-based, or `:first`/`:last`) |
-  | `:join` | association | add a join (named, anonymous, schema, table, fragment, subquery) |
-  | `:order_by` | sorting | `ORDER BY` clause |
-  | `:prepend_order_by` | sorting | prepend to existing `ORDER BY` |
-  | `:reverse_order` | sorting | reverse the current `ORDER BY` |
-  | `:group_by` | grouping | `GROUP BY` clause |
-  | `:having` | post-aggregate | `HAVING` clause (post-aggregate filter) |
-  | `:or_having` | post-aggregate | `OR HAVING` clause |
-  | `:distinct` | uniqueness | `DISTINCT` clause |
-  | `:limit` | cardinality | `LIMIT` clause |
-  | `:first` | cardinality | alias for `limit: 1` |
-  | `:last` | terminal result | reverse-order then `LIMIT 1` |
-  | `:offset` | pagination | `OFFSET` clause |
-  | `:select` | projection | `SELECT` clause |
-  | `:select_merge` | projection | merge into an existing `SELECT` |
-  | `:preload` | eager load | `Ecto.Query.preload/3` - atom, list, keyword list, or `{assoc, query}` tuple |
+  | --- | --- | --- |
+  | `:where` | predicate | add an AND `WHERE` clause |
+  | `:or_where` | predicate | add an `OR WHERE` clause |
+  | `:and` | boolean group | expand contents as AND predicates |
+  | `:or` | boolean group | expand contents as OR predicates |
+  | `:as` | binding selector | target a named binding |
+  | `:at` | binding selector | target a positional binding (`1`, `2`, `:first`, `:last`) |
+  | `:join` | join | add joins for associations, schemas, tables, queries, subqueries, or provider-backed fragments |
+  | `:order_by` / `:prepend_order_by` / `:reverse_order` | sorting | control ordering |
+  | `:group_by` / `:having` / `:or_having` | grouping | aggregate grouping and post-aggregate predicates |
+  | `:distinct` | uniqueness | apply `DISTINCT` |
+  | `:limit` / `:offset` / `:first` / `:last` | cardinality | control result count and position |
+  | `:select` / `:select_merge` | projection | control the selected shape |
+  | `:preload` | eager load | preload associations |
   | `:subquery` | nested query | wrap the current query in a subquery |
-  | `:lock` | concurrency | `LOCK` clause - name atom, raw string, or unary function |
-  | `:exclude` | removal | drop a clause from the query (e.g. `:order_by`) |
-  | `:update` | mutation | `UPDATE SET` operations for `update_all` |
-  | `:put_query_prefix` | namespace | set the query prefix (PostgreSQL schema) |
-  | `:recursive_ctes` | recursive CTE | enable recursive CTE support |
-  | `:with_cte` | CTE | add a CTE (`WITH` clause) |
-  | `:windows` | window function | define window expressions |
-  | `:with_ties` | tie handling | `FETCH FIRST … WITH TIES` |
-  | `:with_named_binding` | binding | ensure a named binding exists |
-  | `:union` / `:union_all` | set composition | `UNION` / `UNION ALL` |
-  | `:except` / `:except_all` | set composition | `EXCEPT` / `EXCEPT ALL` |
-  | `:intersect` / `:intersect_all` | set composition | `INTERSECT` / `INTERSECT ALL` |
+  | `:lock` | concurrency | apply a lock by `%{name: atom}` or `[name: atom]`, with optional provider-backed `values:` |
+  | `:exclude` | removal | remove a query clause such as `:order_by` |
+  | `:update` | mutation | build `update_all` update expressions |
+  | `:put_query_prefix` | namespace | set the query prefix |
+  | `:recursive_ctes` / `:with_cte` | CTE | enable recursive CTEs and add `WITH` entries |
+  | `:windows` / `:with_ties` | windowing | configure windows and tie-handling |
+  | `:with_named_binding` | binding | ensure a named binding exists before subsequent filters |
+  | `:union`, `:union_all`, `:except`, `:except_all`, `:intersect`, `:intersect_all` | set composition | combine the current query with another query |
 
-  ## Association shorthand
+  ## Join forms and association shorthand
 
-  Any key that matches a declared association on the schema is
-  automatically treated as a join filter. The value must be a map or
-  keyword list of filter params to apply on the joined binding:
+  `:join` supports multiple public outer-key forms:
+
+  * explicit source-family keys such as `association:`, `schema:`, `table:`,
+    `query:`, `subquery:`, and `fragment:`
+  * an explicit `type:` source-family selector
+  * association shorthand, where the outer key is the association name itself
+
+  In explicit join payloads, `type:` selects the source family and
+  `qualifier:` selects the join mode such as `:left` or `:inner`.
+
+  Any key that matches a declared association on the schema is also treated as
+  association shorthand:
 
       %{comments: %{approved: true}}
 
-  This is equivalent to using `:join` explicitly with the association name.
+  That shape ensures the association binding exists and then applies the nested
+  filters to that binding.
   """
 
   alias EctoShorts.CommonQuery
@@ -167,6 +177,9 @@ defmodule EctoShorts.CommonFilters do
       `EctoShorts.Adapter.QueryBuilder`. When set, all `build_query/6`
       calls are delegated to that module instead of the default
       `EctoShorts.CommonFilters.API`.
+    * `:query_provider` - provider module used by filter families that
+      resolve callback-driven query fragments such as provider-backed joins
+      and locks.
 
   ## Examples
 
@@ -182,6 +195,13 @@ defmodule EctoShorts.CommonFilters do
       ...>   []
       ...> )
       #Ecto.Query<from p0 in Post, where: p0.published == ^true, or_where: p0.title == ^"Draft">
+
+      iex> CommonFilters.convert_params_to_filter(
+      ...>   source,
+      ...>   %{as: %{author: %{select: :first_name}}},
+      ...>   []
+      ...> )
+      #Ecto.Query<...>
   """
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
@@ -362,6 +382,11 @@ defmodule EctoShorts.CommonFilters do
           EctoShorts.CommonFilters.build_query(filter, source, query, selected_binding, term, opts)
         end
       end
+
+  If `opts[:query_builder]` points to a module that does not export
+  `build_query/6`, the function logs a warning and returns the query
+  unchanged. If `:query_builder` is present but is not a module, it raises
+  `ArgumentError`.
   """
   def build_query(filter, source, query, selected_binding, term, opts) do
     case opts[:query_builder] || Config.query_builder() do

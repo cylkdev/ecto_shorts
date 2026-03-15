@@ -1,4 +1,48 @@
 defmodule EctoShorts.Dynamics.Postgres do
+  @moduledoc """
+  Build Postgres-specific dynamic filter expressions.
+
+  Use this module when you want to call the Postgres dynamic adapter
+  directly. If you want adapter resolution or adapter-agnostic dynamic
+  building, start with `EctoShorts.Dynamics.build_dynamic/4` instead.
+
+  `build_dynamic/4` is the only public entry point. It accepts a queryable
+  `source`, a binding selector, and one filter entry, and returns a dynamic
+  expression value for use in Ecto query macros.
+
+  ## Binding selectors
+
+  The accepted binding selectors are:
+
+    * `{:as, nil}` - the default binding
+    * `{:as, name}` - a named binding
+    * `{:at, position}` - a one-based positional binding
+
+  ## Filter entry families
+
+  `build_dynamic/4` accepts two high-level entry families:
+
+    * `{key, term}` - an ordinary field or operator entry
+    * `{:all, params}` and `{:any, params}` - top-level quantified groups
+
+  The module handles Postgres-specific translation for common operators,
+  scalar comparisons, array and map-backed fields, negation, and quantified
+  subquery forms. Callers should rely on the public entry point and returned
+  dynamic expression rather than the current private helper layout.
+
+  ## Examples
+
+      iex> EctoShorts.Dynamics.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
+      #Ecto.Query.DynamicExpr<...>
+
+      iex> EctoShorts.Dynamics.Postgres.build_dynamic(
+      ...>   Post,
+      ...>   {:as, nil},
+      ...>   {:any, [published: true, archived: false]}
+      ...> )
+      #Ecto.Query.DynamicExpr<...>
+  """
+
   alias EctoShorts.{
     CommonSchema,
     CommonFilters.FilterHelpers,
@@ -14,6 +58,62 @@ defmodule EctoShorts.Dynamics.Postgres do
   @quantifier_operators [:all, :any]
 
   @impl true
+  @doc """
+  Builds a Postgres dynamic expression for one filter entry and selected
+  binding.
+
+  ## Arguments
+
+    * `source` - the schema module, queryable source, or query used for
+      field reflection and quantified-query construction
+    * `selected_binding` - one of `{:as, nil}`, `{:as, atom()}`, or
+      `{:at, pos_integer()}`
+    * `args` - either `{key, term}` for an ordinary field or operator
+      entry, or a top-level quantified group `{:all, params}` or
+      `{:any, params}`
+    * `opts` - keyword options forwarded through the dynamic-building
+      pipeline. Defaults to `[]`
+
+  When `args` is `{key, params}`, the function normalizes nested map and
+  keyword operator forms and builds the corresponding Postgres expression
+  for that key.
+
+  When `args` is `{:all, params}` or `{:any, params}`, the function
+  normalizes `params`, builds each child predicate, and merges the
+  resulting expressions with the selected quantifier.
+
+  ## Preconditions
+
+  This function documents the valid call contract. Invalid binding
+  selectors and unsupported entry shapes are outside the documented
+  guarantee.
+
+  ## Returns
+
+  A dynamic expression suitable for `Ecto.Query.where/3`,
+  `Ecto.Query.or_where/3`, `Ecto.Query.having/3`, and related macros.
+
+  ## Examples
+
+      iex> EctoShorts.Dynamics.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
+      #Ecto.Query.DynamicExpr<...>
+
+      iex> EctoShorts.Dynamics.Postgres.build_dynamic(
+      ...>   Post,
+      ...>   {:as, nil},
+      ...>   {:views, [>: 1, <: 10]}
+      ...> )
+      #Ecto.Query.DynamicExpr<...>
+
+      iex> EctoShorts.Dynamics.Postgres.build_dynamic(
+      ...>   Post,
+      ...>   {:as, nil},
+      ...>   {:all, [published: true, archived: false]}
+      ...> )
+      #Ecto.Query.DynamicExpr<...>
+  """
+  @spec build_dynamic(term(), {:as, nil | atom()} | {:at, pos_integer()}, term(), keyword()) ::
+          %Ecto.Query.DynamicExpr{}
   def build_dynamic(source, selected_binding, args, opts \\ [])
 
   def build_dynamic(source, selected_binding, {quantifier_op, params}, opts)
