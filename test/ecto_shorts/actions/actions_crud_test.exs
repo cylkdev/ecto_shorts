@@ -679,7 +679,7 @@ defmodule EctoShorts.Actions.CRUDTest do
           join: a in assoc(p, :author)
         )
 
-      assert [result] = Actions.all(q, %{bind: %{at: 1, published: true}})
+      assert [result] = Actions.all(q, %{at: %{1 => %{published: true}}})
       assert %Post{title: "Published", published: true} = result
     end
 
@@ -695,7 +695,7 @@ defmodule EctoShorts.Actions.CRUDTest do
 
       q = from(p in Post, as: :post)
 
-      assert [result] = Actions.all(q, %{bind: %{as: :post, published: true}})
+      assert [result] = Actions.all(q, %{as: %{post: %{published: true}}})
       assert %Post{title: "Published", published: true} = result
     end
 

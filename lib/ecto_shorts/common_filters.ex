@@ -27,9 +27,6 @@ defmodule EctoShorts.CommonFilters do
 
   defp apply_filters(filter, source, query, selected_binding, {key, term}, opts) do
     cond do
-      key == :bind ->
-        apply_bind_filters(filter, source, query, selected_binding, term, opts)
-
       key in @binding_operator ->
         Enum.reduce(term, query, fn {inner_key, inner_value}, query_acc ->
           apply_filters(
@@ -82,30 +79,6 @@ defmodule EctoShorts.CommonFilters do
     end
   end
 
-  defp apply_bind_filters(filter, source, query, selected_binding, term, opts) do
-    params = Utils.map_to_keyword(term)
-
-    if Keyword.keyword?(params) do
-      {next_binding, params} =
-        cond do
-          Keyword.has_key?(params, :as) ->
-            {{:as, Keyword.fetch!(params, :as)}, Keyword.delete(params, :as)}
-
-          Keyword.has_key?(params, :at) ->
-            {{:at, Keyword.fetch!(params, :at)}, Keyword.delete(params, :at)}
-
-          true ->
-            {selected_binding, params}
-        end
-
-      Enum.reduce(params, query, fn {inner_key, inner_value}, query_acc ->
-        apply_filters(filter, source, query_acc, next_binding, {inner_key, inner_value}, opts)
-      end)
-    else
-      query
-    end
-  end
-
   defp resolve_binding_selector(_query, :at, :first), do: {:at, 1}
   defp resolve_binding_selector(query, :at, :last), do: {:at, CommonQuery.query_binding_count(query)}
   defp resolve_binding_selector(_query, key, inner_key), do: {key, inner_key}
@@ -137,6 +110,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   @impl EctoShorts.QueryBuilder
+  @doc false
   def build_query(filter, source, query, selected_binding, term, opts) do
     case opts[:query_builder] || Config.query_builder() do
       nil ->
