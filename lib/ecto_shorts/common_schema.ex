@@ -450,6 +450,12 @@ defmodule EctoShorts.CommonSchema do
       iex> EctoShorts.CommonSchema.get_schema_source(EctoShorts.Schema.Post)
       {"posts", EctoShorts.Schema.Post}
 
+      iex> EctoShorts.CommonSchema.get_schema_source("posts")
+      nil
+
+  Returns `nil` for bare table name strings and any value that cannot be
+  resolved to a `{source, schema}` pair.
+
   See also `normalize_source/1` and `get_schema/1`.
   """
   @spec get_schema_source(source) :: {binary(), module()} | nil
@@ -592,10 +598,22 @@ defmodule EctoShorts.CommonSchema do
 
   @doc group: "Schema introspection"
   @doc """
-  Returns the query fields for the given source.
+  Returns the list of fields to use when building insert or update maps.
 
-  Checks `:query_fields` in `opts` first, then falls back to
-  `schema.__schema__(:query_fields)`.
+  Checks the `:query_fields` option in `opts` first. When absent, falls back
+  to `schema.__schema__(:query_fields)`, which is the list of fields that Ecto
+  considers writable (all fields except virtual and read-only ones).
+
+  This is the field list used internally by `EctoShorts.CommonParams` when
+  converting params for `insert_all` and `update_all`.
+
+  ## Examples
+
+      iex> EctoShorts.CommonSchema.get_query_fields([], EctoShorts.Schema.Post)
+      [:id, :title, :body, :published, :views, :inserted_at, :updated_at]
+
+      iex> EctoShorts.CommonSchema.get_query_fields([query_fields: [:title, :body]], EctoShorts.Schema.Post)
+      [:title, :body]
 
   See also `get_schema_reflection/2`.
   """
@@ -618,6 +636,18 @@ defmodule EctoShorts.CommonSchema do
     * `:prefix` - the database prefix.
     * `:source` - the table name.
     * `:state` - the Ecto state (`:built`, `:loaded`, etc.).
+
+  ## Examples
+
+      iex> post = %EctoShorts.Schema.Post{}
+      ...> updated = EctoShorts.CommonSchema.put_schema_metadata(post, state: :loaded, source: "archived_posts")
+      ...> updated.__meta__.state
+      :loaded
+
+      iex> post = %EctoShorts.Schema.Post{}
+      ...> updated = EctoShorts.CommonSchema.put_schema_metadata(post, prefix: "tenant_1")
+      ...> updated.__meta__.prefix
+      "tenant_1"
 
   See also `get_schema_metadata/1` and `create_schema_struct/1`.
   """

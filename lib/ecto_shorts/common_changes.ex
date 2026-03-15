@@ -598,14 +598,14 @@ defmodule EctoShorts.CommonChanges do
 
   ## Examples
 
-      iex> cs = Ecto.Changeset.change(%EctoShorts.Schema.Post{title: nil})
-      ...> EctoShorts.CommonChanges.apply_when(
-      ...>   cs,
+      iex> changeset = Ecto.Changeset.change(%EctoShorts.Schema.Post{title: nil})
+      ...> changeset = EctoShorts.CommonChanges.apply_when(
+      ...>   changeset,
       ...>   &EctoShorts.CommonChanges.changeset_field_nil?(&1, :title),
       ...>   &Ecto.Changeset.put_change(&1, :title, "Fallback")
       ...> )
-      ...> |> Ecto.Changeset.get_change(:title)
-      "Fallback"
+      ...> Ecto.Changeset.get_change(changeset, :title)
+      ...> "Fallback"
 
   See also `put_new_change/3`, `put_new_value/3`, and `has_nil_change?/2`.
   """
@@ -677,6 +677,16 @@ defmodule EctoShorts.CommonChanges do
   it preloads the existing data so `cast_assoc/3` can diff correctly.
   When absent, falls back to `Ecto.Changeset.cast_assoc/3`.
 
+  Internally this function calls `preload_changeset_assoc/3` followed by
+  `put_or_cast_assoc/3` when the association is present in params. For most
+  use cases this is the only function you need:
+
+  1. `preload_change_assoc/3` — **use this in your `changeset/2`** for full
+     association management.
+  2. `preload_changeset_assoc/3` — lower-level: only preloads the data.
+  3. `put_or_cast_assoc/3` — lower-level: only selects and applies
+     `put_assoc` vs `cast_assoc`.
+
   ## Options
 
   * `:required_when_missing` - sets `:required` to `true` when the given
@@ -729,6 +739,23 @@ defmodule EctoShorts.CommonChanges do
 
   Returns the changeset with the association preloaded in `changeset.data`.
 
+  You typically do not call this directly — use `preload_change_assoc/3`
+  which calls this then `put_or_cast_assoc/3` in one step.
+
+  ## Options
+
+    * `:ids` — a list of IDs. When given, queries for those records and sets
+      the association directly instead of using `Repo.preload/3`.
+    * `:repo` — the `Ecto.Repo` to use. Defaults to `EctoShorts.Config.repo/0`.
+
+  ## Examples
+
+      iex> EctoShorts.CommonChanges.preload_changeset_assoc(changeset, :comments)
+      # changeset with changeset.data.comments preloaded from the database
+
+      iex> EctoShorts.CommonChanges.preload_changeset_assoc(changeset, :comments, ids: [1, 2, 3])
+      # changeset with changeset.data.comments set to the records with those IDs
+
   See also `preload_change_assoc/3` and `put_or_cast_assoc/3`.
   """
   @spec preload_changeset_assoc(Changeset.t(), atom) :: Changeset.t()
@@ -774,13 +801,22 @@ defmodule EctoShorts.CommonChanges do
     records and calls `cast_assoc`.
   * Otherwise - `cast_assoc`.
 
+  You typically do not call this directly — use `preload_change_assoc/3`
+  which calls `preload_changeset_assoc/3` then this function in one step.
+
   ## Examples
 
-      # Member update: replace all user fruits with ids 1 and 3
-      EctoShorts.CommonChanges.put_or_cast_assoc(
-        Ecto.Changeset.change(user, fruits: [%{id: 1}, %{id: 3}]),
-        :fruits
-      )
+      # Params contain plain maps → cast_assoc
+      changeset = Ecto.Changeset.cast(user, %{"comments" => [%{"body" => "hi"}]}, [])
+      EctoShorts.CommonChanges.put_or_cast_assoc(changeset, :comments)
+
+      # Params contain schema structs → put_assoc
+      changeset = Ecto.Changeset.change(user, %{"comments" => [%Comment{id: 1, body: "hi"}]})
+      EctoShorts.CommonChanges.put_or_cast_assoc(changeset, :comments)
+
+      # Params contain only %{id: id} maps → queries records and put_assoc
+      changeset = Ecto.Changeset.change(user, %{"fruits" => [%{"id" => 1}, %{"id" => 3}]})
+      EctoShorts.CommonChanges.put_or_cast_assoc(changeset, :fruits)
 
   See also `preload_change_assoc/3` and `preload_changeset_assoc/3`.
   """

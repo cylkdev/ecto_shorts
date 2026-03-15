@@ -731,18 +731,35 @@ defmodule EctoShorts.Actions do
   Preloads associations on the given struct or list of structs.
 
   Delegates to `c:Ecto.Repo.preload/3` on the configured replica repo.
+  All options are forwarded directly to `c:Ecto.Repo.preload/3`.
 
   ## Arguments
 
     * `data` - a struct or list of structs to preload.
-    * `preloads` - an atom, list, or keyword list of associations.
-    * `opts` - forwarded to `c:Ecto.Repo.preload/3`.
+    * `preloads` - the associations to preload. Accepts the same shapes as
+      `c:Ecto.Repo.preload/3`:
+      * an atom — `:author`
+      * a list of atoms — `[:author, :comments]`
+      * a keyword list for nested preloads — `[author: :profile]`
+      * an `{assoc, query}` tuple to preload with a custom query —
+        `{:comments, from(c in Comment, where: c.approved == true)}`
+    * `opts` - forwarded to `c:Ecto.Repo.preload/3`. Common options:
+      * `:force` — reload even if already loaded.
+      * `:in_parallel` — whether to run preloads in parallel.
+      * `:prefix` — the query prefix.
 
   ## Examples
 
       post_with_author = EctoShorts.Actions.preload(post, :author)
       posts_with_tags  = EctoShorts.Actions.preload(posts, [:author, :comments])
 
+      # Nested preload
+      post = EctoShorts.Actions.preload(post, author: :profile)
+
+      # Preload with a custom query
+      post = EctoShorts.Actions.preload(post, {:comments, from(c in Comment, where: c.approved == true)})
+
+  See `c:Ecto.Repo.preload/3` for the full list of supported options.
   See also `all/3` and `EctoShorts.CommonChanges.preload_change_assoc/3`.
   """
   @spec preload(struct() | list(term()), term(), opts) :: struct() | list(term())
@@ -799,21 +816,29 @@ defmodule EctoShorts.Actions do
   @doc """
   Fetches all records matching `params` or `opts`.
 
-  When the second argument is a map it is used as filter params. When
-  it is a keyword list, filter keys are extracted and `:repo`,
-  `:replica`, and `:dynamic_adapter` are forwarded as options.
+  When the second argument is a map it is used as filter params and
+  forwarded to `all/3` with an empty opts list.
+
+  When it is a keyword list, `:repo`, `:replica`, and
+  `:dynamic_adapter` are extracted as options; every other key is
+  treated as a filter param and passed to `all/3`.
+
+  Raises `ArgumentError` when the second argument is neither a map
+  nor a keyword list.
 
   ## Arguments
 
     * `queryable` - a schema module, `{source, schema}` tuple, or
       `Ecto.Query`.
-    * `params` - a map of filter params, or a keyword list of mixed
-      filter params and options.
+    * `params` - a map of filter params, or a keyword list where
+      `:repo`, `:replica`, and `:dynamic_adapter` are options and all
+      other keys are filter params.
 
   ## Examples
 
       posts = EctoShorts.Actions.all(EctoShorts.Schema.Post, %{published: true})
       posts = EctoShorts.Actions.all(EctoShorts.Schema.Post, replica: MyApp.Repo)
+      posts = EctoShorts.Actions.all(EctoShorts.Schema.Post, [published: true, limit: 10])
 
   See also `all/1`, `all/3`, and `find/3`.
   """
@@ -846,8 +871,11 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:order_by` - merged into `params` before query building.
-    * `:group_by` - merged into `params` before query building.
+  The following options are consumed before query building and are
+  **not** forwarded to `c:Ecto.Repo.all/2`:
+
+    * `:order_by` - merged into `params` before building the query.
+    * `:group_by` - merged into `params` before building the query.
 
   All other options are forwarded to `c:Ecto.Repo.all/2`.
 
@@ -1050,6 +1078,7 @@ defmodule EctoShorts.Actions do
 
   See also `find_and_update/4`, `create/3`, and `EctoShorts.CommonChanges`.
   """
+  @spec update(module(), id | struct(), params, opts) :: {:ok, struct()} | {:error, term()}
   def update(queryable, id_or_schema_struct, params, opts \\ [])
 
   def update(queryable, id, params, opts) when is_integer(id) or is_binary(id) do
@@ -1495,6 +1524,25 @@ defmodule EctoShorts.Actions do
     * `batch_keys` - an atom or list of atoms. Defaults to `:id`.
     * `cardinality` - `:one` or `:many`. Defaults to `:many`.
     * `opts` - shared options.
+
+  ## Examples
+
+      # Group posts by author_id (many per key)
+      EctoShorts.Actions.batch(
+        Post,
+        [%{author_id: 1}, %{author_id: 2}],
+        :author_id,
+        :many
+      )
+      # %{1 => [%Post{...}], 2 => [%Post{...}]}
+
+      # Fetch one post per id
+      EctoShorts.Actions.batch(Post, [%{id: 1}, %{id: 2}], :id, :one)
+      # %{1 => %Post{...}, 2 => %Post{...}}
+
+      # Composite key batch
+      EctoShorts.Actions.batch(PostTag, [%{post_id: 1, tag_id: 5}], [:post_id, :tag_id], :one)
+      # %{%{post_id: 1, tag_id: 5} => %PostTag{...}}
   """
   @spec batch(module(), list(params()), atom() | list(atom()), cardinality, opts) :: map()
   def batch(schema, params, batch_keys \\ :id, cardinality \\ :many, opts \\ [])
@@ -1553,6 +1601,13 @@ defmodule EctoShorts.Actions do
     * `entries` - a list of maps or keyword lists.
     * `keys` - an atom or list of atoms identifying the lookup fields.
     * `opts` - shared options.
+
+  ## Examples
+
+      # Merge each post's author into a list of post param maps
+      entries = [%{author_id: 1, title: "Hello"}, %{author_id: 2, title: "World"}]
+      EctoShorts.Actions.batch_preload(User, entries, :id)
+      # [%{author_id: 1, title: "Hello", id: 1, ...}, ...]
   """
   @spec batch_preload(module(), [map()], atom() | list(atom()), opts) :: [map()]
   def batch_preload(schema, entries, keys, opts \\ []) do
@@ -1595,14 +1650,22 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - atom or list of atoms for batch-preloading.
-    * `:validate` - `false` to skip changeset validation.
-    * `:on_conflict_replace` - `:none`, `:insert_keys` (default), or a list of field atoms.
-    * `:placeholders` - a map of `{field, match_value}`.
-    * `:on_placeholder_conflict` - `:nothing` (default), `:replace_all`, or `{:replace, [fields]}`.
+    * `:preload` - atom or list of atoms. Batch-preloads matching
+      records before insertion using `batch_preload/4`.
+    * `:validate` - set to `false` to skip changeset validation.
+    * `:on_conflict_replace` - controls conflict resolution:
+      `:none` (insert or do nothing), `:insert_keys` (default, replace
+      all non-primary-key fields), or a list of field atoms to replace.
+    * `:on_conflict` - Ecto-native conflict action, forwarded directly
+      to `c:Ecto.Repo.insert_all/3`. Overrides `:on_conflict_replace`
+      when both are set.
+    * `:conflict_target` - Ecto-native conflict target, forwarded
+      directly to `c:Ecto.Repo.insert_all/3`.
 
   See `EctoShorts.CommonParams.convert_to_insert_params/3` for
-  timestamp options.
+  timestamp and validation options, and
+  `EctoShorts.CommonParams.build_on_conflict_options/3` for conflict
+  resolution details.
   """
   @spec insert_all(module() | {binary(), module()}, list(term()), opts()) ::
           {:ok, {non_neg_integer(), nil | list(term())}} | {:error, term()}
@@ -1629,8 +1692,20 @@ defmodule EctoShorts.Actions do
 
     * `source` - the Ecto schema module.
     * `find_params` - filter params for the query.
-    * `update_params` - a map of update operations.
+    * `update_params` - a map of update operations. Each value can be a plain
+      value (`:set` implied), or a tagged tuple: `{:inc, n}`, `{:push, v}`,
+      `{:pull, v}`. See `EctoShorts.CommonParams.convert_to_update_params/3`.
     * `opts` - forwarded to `c:Ecto.Repo.update_all/3`.
+
+  ## Examples
+
+      # Set title for all drafts
+      EctoShorts.Actions.update_all(Post, %{published: false}, %{title: "Draft"})
+      # {5, nil}
+
+      # Increment views for a specific post
+      EctoShorts.Actions.update_all(Post, %{id: 1}, %{views: {:inc, 1}})
+      # {1, nil}
 
   See also `EctoShorts.CommonParams.convert_to_update_params/3`
   and `update_many/3`.
@@ -1653,6 +1728,16 @@ defmodule EctoShorts.Actions do
     * `params` - filter params (see `EctoShorts.CommonFilters`).
       Defaults to `%{}`.
     * `opts` - forwarded to `c:Ecto.Repo.delete_all/2`.
+
+  ## Examples
+
+      # Delete all unpublished posts
+      EctoShorts.Actions.delete_all(Post, %{published: false})
+      # {3, nil}
+
+      # Delete all records
+      EctoShorts.Actions.delete_all(Post)
+      # {42, nil}
 
   See also `delete_many/3` and `EctoShorts.CommonFilters`.
   """

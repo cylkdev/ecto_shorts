@@ -299,6 +299,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   See also `get_related_schema/2` and `EctoShorts.CommonSchema.get_schema_reflection/3`.
   """
+  @spec schema_field_type(module(), atom()) :: atom() | {:array, atom()} | nil
   def schema_field_type(schema, key), do: schema.__schema__(:type, key)
 
   @doc since: "3.0.0"
@@ -321,6 +322,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   See also `schema_struct?/1` and `EctoShorts.CommonChanges.preload_change_assoc/3`.
   """
+  @spec association_not_loaded?(struct(), atom()) :: boolean()
   def association_not_loaded?(schema_struct, key) do
     schema_struct
     |> Map.get(key)
@@ -346,6 +348,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   See also `any_schema_struct?/1` and `schema_struct?/1`.
   """
+  @spec all_schema_struct?(list() | map()) :: boolean()
   def all_schema_struct?([]), do: false
   def all_schema_struct?(map) when map === %{}, do: false
   def all_schema_struct?(enum), do: Enum.all?(enum, &schema_struct?/1)
@@ -367,6 +370,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   See also `all_schema_struct?/1` and `schema_struct?/1`.
   """
+  @spec any_schema_struct?(list()) :: boolean()
   def any_schema_struct?(values), do: Enum.any?(values, &schema_struct?/1)
 
   @doc since: "3.0.0"
@@ -416,6 +420,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   def schema_module?(_), do: false
 
+  @doc since: "3.0.0"
   @doc """
   Returns `true` if the given map or struct has a non-nil `:id` (or `"id"`) key,
   indicating the record has been persisted.
@@ -436,6 +441,7 @@ defmodule EctoShorts.SchemaHelpers do
 
   See also `schema_struct?/1`.
   """
+  @spec any_created?(map() | struct()) :: boolean()
   def any_created?(%{id: id}), do: id !== nil
   def any_created?(%{"id" => id}), do: id !== nil
   def any_created?(_), do: false

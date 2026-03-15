@@ -330,7 +330,8 @@ defmodule EctoShorts.CommonParams do
   * `:on_conflict_replace` - controls which fields are replaced on conflict.
     Defaults to `:insert_keys`.
     * `:insert_keys` - replaces all non-primary-key fields present in the inserts.
-    * `:none` - no fields are replaced (insert-or-nothing).
+    * `:none` - no fields are replaced (insert-or-nothing). The returned list
+      will contain only `conflict_target:` with **no** `on_conflict:` key.
     * a list of atoms - only the listed fields are replaced.
 
   ## Examples
@@ -340,6 +341,13 @@ defmodule EctoShorts.CommonParams do
       ...>   EctoShorts.Schema.Post, inserts, []
       ...> )
       iex> Keyword.has_key?(opts, :conflict_target)
+      true
+
+      iex> inserts = [%{id: 1, title: "Hello"}]
+      iex> opts = EctoShorts.CommonParams.build_on_conflict_options(
+      ...>   EctoShorts.Schema.Post, inserts, on_conflict_replace: :none
+      ...> )
+      iex> Keyword.has_key?(opts, :conflict_target) and not Keyword.has_key?(opts, :on_conflict)
       true
 
       iex> EctoShorts.CommonParams.build_on_conflict_options(EctoShorts.Schema.Post, [], [])
@@ -676,9 +684,19 @@ defmodule EctoShorts.CommonParams do
   `c:Ecto.Repo.update_all/3`.
 
   `source` is a schema module or `{source, schema}` tuple (or `nil` for
-  schemaless updates). `params` is a map of `{field, value}` pairs, where
-  the value can be a plain value (`:set` is implied), or a tagged tuple
-  such as `{:inc, 1}`, `{:push, "tag"}`, or `{:pull, "tag"}`.
+  schemaless updates). `params` is a map of `{field, value}` pairs.
+
+  The value for each field can be:
+
+  * A plain value — equivalent to `{:set, value}`.
+  * `{:set, value}` — explicit set.
+  * `{:inc, integer}` — increment a field of type `:integer`.
+  * `{:push, value}` — append to a field of type `{:array, _}`.
+  * `{:pull, value}` — remove from a field of type `{:array, _}`.
+  * A list of the above tagged tuples — applies each operation in sequence.
+
+  Raises `ArgumentError` when `:inc` is used on a non-integer field, or when
+  `:push`/`:pull` is used on a non-array field.
 
   Returns a keyword list of update operations (e.g.
   `[set: [title: "New"], inc: [views: 1]]`) ready to be passed as the

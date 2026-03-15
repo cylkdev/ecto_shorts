@@ -2,6 +2,35 @@ defmodule EctoShorts.Config do
   @moduledoc """
   Provides helper functions for reading the EctoShorts configuration from
   the application environment.
+
+  ## Configuration
+
+  All EctoShorts options are set under the `:ecto_shorts` application key in
+  your config files:
+
+      # config/config.exs
+      config :ecto_shorts,
+        repo: MyApp.Repo,
+        replica: MyApp.Repo.Replica,
+        dynamic_adapter: EctoShorts.Dynamics.Postgres,
+        query_builder: MyApp.CustomQueryBuilder,
+        query_provider: MyApp.QueryProvider,
+        error_module: EctoShorts.Actions.Error,
+        max_positional_bindings: 10
+
+  | Key | Type | Default | Description |
+  |---|---|---|---|
+  | `:repo` | `module()` | `nil` | Primary `Ecto.Repo` for write operations |
+  | `:replica` | `module()` | `nil` | Read replica repo; falls back to `:repo` when absent |
+  | `:dynamic_adapter` | `module()` | auto-detected | `EctoShorts.Adapter.Dynamic` implementation; auto-detected from the repo's database adapter when not set |
+  | `:query_builder` | `module()` | `nil` | `EctoShorts.Adapter.QueryBuilder` implementation used by `EctoShorts.CommonFilters` |
+  | `:query_provider` | `module()` | `nil` | `EctoShorts.Adapter.QueryProvider` implementation for named query expressions |
+  | `:error_module` | `module()` | `EctoShorts.Actions.Error` | Module used by `EctoShorts.Actions` to build error responses |
+  | `:max_positional_bindings` | `integer()` | `nil` | Maximum positional bindings allowed before EctoShorts raises |
+
+  All options can also be overridden at runtime by passing the corresponding
+  keyword option to any `EctoShorts.Actions` or `EctoShorts.CommonFilters`
+  call. Runtime options take precedence over the application config.
   """
 
   @app :ecto_shorts
@@ -22,6 +51,7 @@ defmodule EctoShorts.Config do
     Application.get_env(@app, :error_module) || EctoShorts.Actions.Error
   end
 
+  @doc since: "3.0.0"
   @doc """
   Returns the configured `:repo` value from the `:ecto_shorts` application environment.
 

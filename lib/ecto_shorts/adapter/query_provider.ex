@@ -50,14 +50,73 @@ defmodule EctoShorts.Adapter.QueryProvider do
     * `{:ok, keyword()}` — a keyword list of query options (e.g. for window definitions).
     * `{:error, reason}` — an error tuple; the filter layer will log a warning and skip the expression.
     * `nil` — treated as "no expression"; the filter layer skips the expression silently.
+
+  ## Implementing this behaviour
+
+  To gain compile-time verification that your provider implements the required
+  callback, declare the behaviour on your module:
+
+      defmodule MyApp.QueryProvider do
+        @behaviour EctoShorts.Adapter.QueryProvider
+
+        @impl true
+        def resolve_query_expression(selected_binding, expression_key, expression_params, opts) do
+          case expression_key do
+            :active_users -> {:ok, from(u in "users", where: u.active == true)}
+            _ -> {:error, :unsupported_fragment_key}
+          end
+        end
+      end
   """
+
+  @type selected_binding :: {:as, atom()} | {:at, pos_integer()}
+  @type expression_key :: atom()
+  @type expression_params :: term()
+  @type opts :: keyword()
+  @type expression_result ::
+          {:ok, Ecto.Query.t()}
+          | {:ok, (Ecto.Query.t() -> Ecto.Query.t())}
+          | {:ok, keyword()}
+          | {:error, term()}
+          | nil
 
   @doc """
-  Delegates `resolve_query_expression/4` to the given provider `module`.
+  Resolves a named query expression from this provider.
 
-  This is the dispatch entry point used internally by filter modules such as
-  `EctoShorts.CommonFilters.Join` and `EctoShorts.CommonFilters.Lock`.
+  Called by filter modules such as `EctoShorts.CommonFilters.Join` and
+  `EctoShorts.CommonFilters.Lock` when a provider-backed expression key is
+  encountered.
+
+    * `selected_binding` — the active binding selector: `{:as, atom()}` or
+      `{:at, pos_integer()}`.
+    * `expression_key` — the atom key identifying which expression to resolve.
+    * `expression_params` — the value associated with the expression key in the
+      filter params.
+    * `opts` — keyword options forwarded from the call site.
+
+  Must return one of the shapes described in the module doc.
   """
+  @callback resolve_query_expression(
+              selected_binding(),
+              expression_key(),
+              expression_params(),
+              opts()
+            ) :: expression_result()
+
+  @doc """
+  Dispatches `resolve_query_expression/4` to the given provider `module`.
+
+  This is the internal dispatch entry point used by filter modules such as
+  `EctoShorts.CommonFilters.Join` and `EctoShorts.CommonFilters.Lock`.
+  `module` must implement the `EctoShorts.Adapter.QueryProvider` behaviour.
+  """
+  @spec resolve_query_expression(
+          module :: module(),
+          selected_binding(),
+          expression_key(),
+          expression_params(),
+          opts()
+        ) :: expression_result()
   def resolve_query_expression(module, selected_binding, expression_key, expression_params, opts) do
     module.resolve_query_expression(selected_binding, expression_key, expression_params, opts)
   end

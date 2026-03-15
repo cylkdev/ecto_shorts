@@ -79,14 +79,58 @@ defmodule EctoShorts.CommonFilters do
   This ensures plain field conditions always precede `OR WHERE` clauses,
   which is the most predictable SQL shape.
 
-  ## All other keys
+  ## Filter key reference
 
-  Any key that is a known schema association routes through the join /
-  association binding pipeline. Any other key is treated as a direct
-  field filter (equivalent to `WHERE field = value`).
+  Every key accepted by `convert_params_to_filter/3` is listed below.
+  Keys that are not in this table (and are not schema associations) are
+  treated as direct field equality filters (`WHERE field = value`).
 
-  See `EctoShorts.CommonFilters.API` for the full list of supported
-  filter keys.
+  | Key | Group | Description |
+  |---|---|---|
+  | `:where` | predicate | AND `WHERE` clause |
+  | `:or_where` | predicate | OR `WHERE` clause |
+  | `:and` | boolean group | expand contents as AND `WHERE` clauses |
+  | `:or` | boolean group | expand contents as `OR WHERE` clauses |
+  | `:as` | binding selector | target a named binding for subsequent filters |
+  | `:at` | binding selector | target a positional binding (1-based, or `:first`/`:last`) |
+  | `:join` | association | add a join (named, anonymous, schema, table, fragment, subquery) |
+  | `:order_by` | sorting | `ORDER BY` clause |
+  | `:prepend_order_by` | sorting | prepend to existing `ORDER BY` |
+  | `:reverse_order` | sorting | reverse the current `ORDER BY` |
+  | `:group_by` | grouping | `GROUP BY` clause |
+  | `:having` | post-aggregate | `HAVING` clause (post-aggregate filter) |
+  | `:or_having` | post-aggregate | `OR HAVING` clause |
+  | `:distinct` | uniqueness | `DISTINCT` clause |
+  | `:limit` | cardinality | `LIMIT` clause |
+  | `:first` | cardinality | alias for `limit: 1` |
+  | `:last` | terminal result | reverse-order then `LIMIT 1` |
+  | `:offset` | pagination | `OFFSET` clause |
+  | `:select` | projection | `SELECT` clause |
+  | `:select_merge` | projection | merge into an existing `SELECT` |
+  | `:preload` | eager load | `Ecto.Query.preload/3` — atom, list, keyword list, or `{assoc, query}` tuple |
+  | `:subquery` | nested query | wrap the current query in a subquery |
+  | `:lock` | concurrency | `LOCK` clause — name atom, raw string, or unary function |
+  | `:exclude` | removal | drop a clause from the query (e.g. `:order_by`) |
+  | `:update` | mutation | `UPDATE SET` operations for `update_all` |
+  | `:put_query_prefix` | namespace | set the query prefix (PostgreSQL schema) |
+  | `:recursive_ctes` | recursive CTE | enable recursive CTE support |
+  | `:with_cte` | CTE | add a CTE (`WITH` clause) |
+  | `:windows` | window function | define window expressions |
+  | `:with_ties` | tie handling | `FETCH FIRST … WITH TIES` |
+  | `:with_named_binding` | binding | ensure a named binding exists |
+  | `:union` / `:union_all` | set composition | `UNION` / `UNION ALL` |
+  | `:except` / `:except_all` | set composition | `EXCEPT` / `EXCEPT ALL` |
+  | `:intersect` / `:intersect_all` | set composition | `INTERSECT` / `INTERSECT ALL` |
+
+  ## Association shorthand
+
+  Any key that matches a declared association on the schema is
+  automatically treated as a join filter. The value must be a map or
+  keyword list of filter params to apply on the joined binding:
+
+      %{comments: %{approved: true}}
+
+  This is equivalent to using `:join` explicitly with the association name.
   """
 
   alias EctoShorts.CommonQuery
@@ -259,21 +303,19 @@ defmodule EctoShorts.CommonFilters do
     )
   end
 
-  defp to_keyword(map) when is_map(map) and not is_struct(map) do
-    map |> Map.to_list() |> to_keyword()
-  end
-
+  defp to_keyword(map) when is_map(map) and not is_struct(map), do: map |> Map.to_list() |> to_keyword()
   defp to_keyword([]), do: []
-
   defp to_keyword([head | tail]), do: [to_keyword(head) | to_keyword(tail)]
-
   defp to_keyword({k, v}), do: {k, to_keyword(v)}
-
   defp to_keyword(term), do: term
 
   defp reducible_filter_entries?(term) do
     (is_map(term) and not is_struct(term)) or Keyword.keyword?(term)
   end
+
+  # defp filter_group_list?([]), do: true
+  # defp filter_group_list?([head | _]) when (is_map(head) and not is_struct(head)) or Keyword.keyword?(head), do: true
+  # defp filter_group_list?(_), do: false
 
   defp filter_group_list?(term) do
     is_list(term) and not Keyword.keyword?(term) and
@@ -286,7 +328,38 @@ defmodule EctoShorts.CommonFilters do
   end
 
   @impl EctoShorts.Adapter.QueryBuilder
-  @doc false
+  @doc """
+  Applies a single filter entry to the query.
+
+  This is the `EctoShorts.Adapter.QueryBuilder` implementation for
+  `EctoShorts.CommonFilters`. It dispatches `{filter, term}` to the
+  appropriate internal builder module via `EctoShorts.CommonFilters.API`,
+  or delegates to a custom `:query_builder` module when one is configured.
+
+  ## Arguments
+
+    * `filter` — the filter group atom (e.g. `:where`, `:order_by`, `:join`).
+    * `source` — the queryable source.
+    * `query` — the current `Ecto.Query.t()` being built.
+    * `selected_binding` — the active binding selector: `{:as, atom()}` or
+      `{:at, pos_integer()}`.
+    * `term` — the filter value (a `{field, value}` tuple for field filters,
+      or the raw value for structural filters like `:limit`).
+    * `opts` — keyword options forwarded from the call site. When `:query_builder`
+      is set, all dispatching is delegated to that module.
+
+  Custom query builder implementations can call this function to fall
+  through to the default dispatch after applying their own logic:
+
+      defmodule MyApp.CustomQueryBuilder do
+        @behaviour EctoShorts.Adapter.QueryBuilder
+
+        @impl true
+        def build_query(filter, source, query, selected_binding, term, opts) do
+          EctoShorts.CommonFilters.build_query(filter, source, query, selected_binding, term, opts)
+        end
+      end
+  """
   def build_query(filter, source, query, selected_binding, term, opts) do
     case opts[:query_builder] || Config.query_builder() do
       nil ->

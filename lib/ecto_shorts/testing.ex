@@ -299,10 +299,12 @@ defmodule EctoShorts.Testing do
   end
 
   @doc """
-  Asserts that two queries generate identical SQL using the given repo.
+  Asserts that two queries generate identical SQL strings using the given repo.
 
   Uses `Ecto.Adapters.SQL.to_sql/3` to compile each query and compares
-  the resulting `{sql_string, params}` tuples.
+  **only the SQL string** — bound parameter values are ignored. To also
+  assert parameter values, use `Ecto.Adapters.SQL.to_sql/3` directly and
+  compare the full `{sql, params}` tuple.
 
   `kind` is the SQL operation type (`:all`, `:update_all`, `:delete_all`);
   defaults to `:all`.
@@ -331,10 +333,15 @@ defmodule EctoShorts.Testing do
   end
 
   @doc """
-  Refutes that two queries generate identical SQL using the given repo.
+  Refutes that two queries generate identical SQL strings using the given repo.
 
-  Calls `ExUnit.Assertions.flunk/1` when the SQL output of both queries
-  matches. Returns `:ok` when they differ.
+  Uses `Ecto.Adapters.SQL.to_sql/3` to compile each query and compares the
+  full `{sql_string, params}` tuples (SQL string **and** bound parameters).
+  Calls `ExUnit.Assertions.flunk/1` when both tuples match. Returns `:ok`
+  when they differ.
+
+  Note: unlike `assert_sql/4` which compares only the SQL string,
+  `refute_sql/4` compares the full tuple including params.
 
   ## Examples
 
@@ -413,7 +420,41 @@ defmodule EctoShorts.Testing do
     :ok
   end
 
-  @doc false
+  @doc """
+  Injects repo-bound assertion helpers into the calling module.
+
+  When you add `use EctoShorts.Testing, repo: MyApp.Repo` to a test module,
+  the following 2-3 argument helpers are injected, with the repo bound at
+  compile time:
+
+  * `assert_dynamic/2` — delegates to `EctoShorts.Testing.assert_dynamic/2`.
+  * `refute_dynamic/2` — delegates to `EctoShorts.Testing.refute_dynamic/2`.
+  * `assert_query/2` — delegates to `EctoShorts.Testing.assert_query/2`.
+  * `refute_query/2` — delegates to `EctoShorts.Testing.refute_query/2`.
+  * `assert_sql/2-3` — delegates to `EctoShorts.Testing.assert_sql/4` with
+    the bound repo. Signature: `assert_sql(query_a, query_b, kind \\\\ :all)`.
+  * `refute_sql/2-3` — delegates to `EctoShorts.Testing.refute_sql/4` with
+    the bound repo. Signature: `refute_sql(query_a, query_b, kind \\\\ :all)`.
+
+  ## Options
+
+    * `:repo` — the `Ecto.Repo` module to use. Defaults to
+      `EctoShorts.Config.repo/0`.
+
+  ## Example
+
+      defmodule MyApp.QueryTest do
+        use ExUnit.Case
+        use EctoShorts.Testing, repo: MyApp.Repo
+
+        test "filters by published" do
+          q1 = from p in Post, where: p.published == ^true
+          q2 = EctoShorts.CommonFilters.convert_params_to_filter(Post, %{published: true})
+          assert_query(q1, q2)
+          assert_sql(q1, q2)
+        end
+      end
+  """
   defmacro __using__(opts) do
     quote do
       opts = unquote(opts)

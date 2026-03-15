@@ -356,7 +356,7 @@ defmodule EctoShorts.CommonQuery do
       {"users", nil}
 
       iex> import Ecto.Query
-      ...> q = from u in EctoShorts.Schema.User, as :user
+      ...> q = from u in EctoShorts.Schema.User, as: :user
       ...> EctoShorts.CommonQuery.get_query_binding_source(q, :user)
       {"users", EctoShorts.Schema.User}
 
@@ -384,6 +384,10 @@ defmodule EctoShorts.CommonQuery do
       ...> q = from u in EctoShorts.Schema.User
       ...> EctoShorts.CommonQuery.get_query_binding_source(q, :nonexistent)
       nil
+
+  Position `0` is not a valid binding position and returns `nil`. Positions
+  are 1-based: `1` is the root `from`, `2` is the first join, and so on.
+  Negative positions index from the end of the join list (`-1` is the last join).
 
   See also `query_binding_count/1` and `get_query_source/1`.
   """
