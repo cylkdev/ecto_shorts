@@ -6,7 +6,7 @@ defmodule EctoShorts.CommonFilters.Update do
   require Ecto.Query
 
   {_, binding_patterns} =
-    Compiler.query_binding_contracts(10, __MODULE__)
+    Compiler.query_binding_contracts(__MODULE__)
 
   def build_query(:update, _source, query, selected_binding, term, _opts) do
     apply_update_expr(query, selected_binding, Utils.map_to_keyword(term))

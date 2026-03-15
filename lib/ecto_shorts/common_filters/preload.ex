@@ -5,11 +5,11 @@ defmodule EctoShorts.CommonFilters.Preload do
   require Ecto.Query
 
   {target_binding_var, binding_patterns} =
-    Compiler.query_binding_contracts(10, __MODULE__)
+    Compiler.query_binding_contracts(__MODULE__)
 
   def build_query(:preload, _source, query, selected_binding, params, _opts) do
     case selected_binding do
-      {:as, nil} -> Query.preload(query, ^normalize_preload(params))
+      {:as, nil} -> build_preload(query, params)
       _ -> apply_preload(query, selected_binding, params)
     end
   end
@@ -55,6 +55,10 @@ defmodule EctoShorts.CommonFilters.Preload do
         [{^assoc_key, {unquote(target_binding_var), ^prepared_nested}}]
       )
     end
+  end
+
+  defp build_preload(query, expr) do
+    Query.preload(query, ^normalize_preload(expr))
   end
 
   defp normalize_preload(params) when is_map(params) and not is_struct(params) do

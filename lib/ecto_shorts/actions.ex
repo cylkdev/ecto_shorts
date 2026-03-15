@@ -1874,6 +1874,106 @@ defmodule EctoShorts.Actions do
     end
   end
 
+  @doc since: "3.0.0"
+  @doc """
+  Returns the `Ecto.Repo` module to use.
+
+  Looks for the `:repo` option first, falling back to the configured value in the
+  `:ecto_shorts` application environment.
+
+  Raises if no repo is found.
+
+  ## Examples
+
+      iex> EctoShorts.Config.repo!()
+      EctoShorts.Repo
+
+      iex> EctoShorts.Config.repo!(repo: MyApp.Repo)
+      MyApp.Repo
+  """
+  defp repo!(opts) do
+    with nil <- Keyword.get(opts, :repo, Config.repo()) do
+      raise """
+      EctoShorts repo not configured!
+
+      Expected one of the following:
+
+        * Pass the `:repo` option at runtime:
+
+          ```
+          EctoShorts.Actions.all(MyApp.Schema, %{id: [1, 2, 3]}, repo: MyApp.Repo)
+          ```
+
+        * Configure a default repo in your application config:
+
+          ```
+          # config/config.exs
+          import Config
+
+          config :ecto_shorts, :repo, MyApp.Repo
+          ```
+      """
+    end
+  end
+
+  @doc since: "3.0.0"
+  @doc """
+  Returns the `Ecto.Repo` module to use for read (replica) operations.
+
+  Checks the `:replica` option first, then falls back to the `:replica`
+  or `:repo` key in the `:ecto_shorts` application configuration.
+
+  Raises if no suitable repo is found.
+
+  ## Examples
+
+      iex> EctoShorts.Config.replica!()
+      EctoShorts.Repo
+
+      iex> EctoShorts.Config.replica!(replica: MyApp.Repo.Replica)
+      MyApp.Repo.Replica
+  """
+  defp replica!(opts) do
+    with nil <- Keyword.get(opts, :replica, Config.replica()),
+         nil <- Keyword.get(opts, :repo, Config.repo()) do
+      raise """
+      EctoShorts replica and repo not configured!
+
+      Expected one of the following to be set:
+
+        * Pass the `:replica` option at runtime:
+
+          ```
+          EctoShorts.Actions.all(MyApp.Schema, %{id: [1, 2, 3]}, replica: MyApp.Repo.Replica)
+          ```
+
+        * Configure a replica in your application config:
+
+          ```
+          # config/config.exs
+          import Config
+
+          config :ecto_shorts, :replica, MyApp.Repo.Replica
+          ```
+
+        * Pass the `:repo` option at runtime (used as a fallback if no replica is set):
+
+          ```
+          EctoShorts.Actions.all(MyApp.Schema, %{id: [1, 2, 3]}, repo: MyApp.Repo)
+          ```
+
+        * Configure a default repo in your application config:
+
+          ```
+          # config/config.exs
+          import Config
+
+          config :ecto_shorts, :repo, MyApp.Repo
+          ```
+      """
+    end
+  end
+
   defp maybe_apply_optimistic_lock(changeset, queryable, opts) do
     case resolve_optimistic_lock(queryable, opts) do
       false ->

@@ -34,7 +34,7 @@ defmodule EctoShorts.CommonFilters.Join do
   @logger_prefix "EctoShorts.CommonFilters.Join"
 
   {target_binding_var, binding_patterns} =
-    Compiler.query_binding_contracts(10, __MODULE__)
+    Compiler.query_binding_contracts(__MODULE__)
 
   @doc false
   def hints, do: @hints
