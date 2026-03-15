@@ -12,7 +12,7 @@ A naming conflict also existed: `insert_all/3` previously used `:preload` to mea
 
 ## In Scope
 
-1. ~~Rename the `:preload` option in `insert_all/3` to `:batch_preload`~~ — **superseded**: the option is now `:batch_find` and the function is now `batch_find/4`. See `plans/batch-find-rename-and-preload-81133f.md`.
+1. ~~Rename the `:preload` option in `insert_all/3` to `:batch_preload`~~ - **superseded**: the option is now `:batch_find` and the function is now `batch_find/4`. See `plans/batch-find-rename-and-preload-81133f.md`.
 2. Add two private helpers in `lib/ecto_shorts/actions.ex`:
    - `maybe_preload(data, opts)` - calls `preload/3` when `opts[:preload]` is set and non-empty; no-ops on `nil` input.
    - `maybe_preload_ok(result, opts)` - unwraps `{:ok, value}`, preloads, re-wraps; passes `{:error, _}` through unchanged.
@@ -35,7 +35,7 @@ A naming conflict also existed: `insert_all/3` previously used `:preload` to mea
 ## Progress
 
 - [x] (2026-03-15) ExecPlan written.
-- [~] ~~Rename `:preload` → `:batch_preload` in `insert_all/3`~~ — **superseded** by `plans/batch-find-rename-and-preload-81133f.md`: `batch_preload/4` was renamed to `batch_find/4` and the option is `:batch_find` (2026-03-15).
+- [~] ~~Rename `:preload` → `:batch_preload` in `insert_all/3`~~ - **superseded** by `plans/batch-find-rename-and-preload-81133f.md`: `batch_preload/4` was renamed to `batch_find/4` and the option is `:batch_find` (2026-03-15).
 - [x] Add `maybe_preload/2` and `maybe_preload_ok/2` private helpers.
 - [x] Wire CRUD functions.
 - [x] Wire Multi functions.

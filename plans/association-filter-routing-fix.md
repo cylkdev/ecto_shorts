@@ -12,7 +12,7 @@ After this change, the routing clause dispatches on key identity alone (`associa
 
 ## In Scope
 
-- Create `test/ecto_shorts/common_filters/common_filters_association_filter_test.exs` with tests proving the current happy-path behavior AND the new invalid-input behavior — written before the code change
+- Create `test/ecto_shorts/common_filters/common_filters_association_filter_test.exs` with tests proving the current happy-path behavior AND the new invalid-input behavior - written before the code change
 - Fix the association routing clause in `apply_filters/6` in `lib/ecto_shorts/common_filters.ex`
 - Audit all files in `lib/ecto_shorts/common_filters/` for routing+validation mixing and fix any found instances
 - Add four new rules to `.agent/RULES.md`
@@ -48,7 +48,7 @@ Acceptance: happy-path tests pass; invalid-input test is present and fails with 
 
 Edit lines 218–221 of `lib/ecto_shorts/common_filters.ex`.
 
-Current (wrong — routing mixed with validation):
+Current (wrong - routing mixed with validation):
 
     container?(term) and association_key?(source, key) ->
       query
@@ -85,7 +85,7 @@ Acceptance: no regressions in the broader common_filters suite.
 
 Read each file in `lib/ecto_shorts/common_filters/` and inspect every `cond` block or multi-clause function dispatch. Identify any clause where a key-identity check AND a term-shape check are combined in a single routing condition. Fix any found instance using the same pattern: route on key identity, validate term inside the branch, emit Logger.warning on failure.
 
-From initial reading: `join.ex` (`apply_join_op/5`) checks `key in @join_types` then `key in associations` — both are key-identity checks, not term-shape checks. Clean. `windows.ex`, `with_named_binding.ex`, `order_by.ex` all validate term shape inside the handler. Clean. Remaining files not yet read: `distinct.ex`, `exclude.ex`, `filter_helpers.ex`, `group_by.ex`, `having.ex`, `last.ex`, `limit.ex`, `lock.ex`, `offset.ex`, `preload.ex`, `put_query_prefix.ex`, `recursive_ctes.ex`, `select.ex`, `set_comparison.ex`, `set_operation.ex`, `sub_query.ex`, `update.ex`, `where.ex`, `with_cte.ex`, `with_ties.ex`.
+From initial reading: `join.ex` (`apply_join_op/5`) checks `key in @join_types` then `key in associations` - both are key-identity checks, not term-shape checks. Clean. `windows.ex`, `with_named_binding.ex`, `order_by.ex` all validate term shape inside the handler. Clean. Remaining files not yet read: `distinct.ex`, `exclude.ex`, `filter_helpers.ex`, `group_by.ex`, `having.ex`, `last.ex`, `limit.ex`, `lock.ex`, `offset.ex`, `preload.ex`, `put_query_prefix.ex`, `recursive_ctes.ex`, `select.ex`, `set_comparison.ex`, `set_operation.ex`, `sub_query.ex`, `update.ex`, `where.ex`, `with_cte.ex`, `with_ties.ex`.
 
 Run: `mix test` (full suite)
 
@@ -95,19 +95,19 @@ Acceptance: no regressions; any newly identified instances are fixed and covered
 
 Add four new rules to `.agent/RULES.md`.
 
-**Rule 1 — Dispatch and validation are separate layers** (add under `Critical Evaluation And Verification`, after the existing "When splitting a multi-subject predicate..." rule):
+**Rule 1 - Dispatch and validation are separate layers** (add under `Critical Evaluation And Verification`, after the existing "When splitting a multi-subject predicate..." rule):
 
-> Before writing a condition that determines which code path executes, identify which layer of responsibility that condition belongs to. Dispatch answers "which path owns this input?" — it depends on the input's identity, type, or membership. Validation answers "is this input acceptable for that path?" — it depends on the input's shape or content. These are different questions about different things and they belong at different layers. When a single dispatch condition spans both layers, a valid-dispatch/invalid-value input is silently absorbed into the dispatch result: the system cannot distinguish between "this input doesn't belong here" and "this input belongs here but is malformed," and the caller receives no signal about which situation occurred.
+> Before writing a condition that determines which code path executes, identify which layer of responsibility that condition belongs to. Dispatch answers "which path owns this input?" - it depends on the input's identity, type, or membership. Validation answers "is this input acceptable for that path?" - it depends on the input's shape or content. These are different questions about different things and they belong at different layers. When a single dispatch condition spans both layers, a valid-dispatch/invalid-value input is silently absorbed into the dispatch result: the system cannot distinguish between "this input doesn't belong here" and "this input belongs here but is malformed," and the caller receives no signal about which situation occurred.
 
-**Rule 2 — Every code path has a failure contract, not just a success contract** (add immediately after Rule 1):
+**Rule 2 - Every code path has a failure contract, not just a success contract** (add immediately after Rule 1):
 
 > Every code path has both a success contract and a failure contract. The success contract is naturally defined because the path must implement it to do anything useful. The failure contract is commonly left undesigned because the author stops thinking once the success path is complete. An undesigned failure contract is not neutral: the input goes to the wrong path, produces a silent wrong result, or disappears without trace. Before considering any code path complete, ask: for each way the input can be wrong, what does the caller observe? If the answer is not explicit and intentional, the path is incomplete. Define both contracts.
 
-**Rule 3 — A test written before a change is a specification; a test written after is a description** (add under `Coding Guidelines`, before the TDD loop step 25):
+**Rule 3 - A test written before a change is a specification; a test written after is a description** (add under `Coding Guidelines`, before the TDD loop step 25):
 
-> A test written after a code change describes what the code does. A test written before a change specifies what the code should do. If you cannot write the test before the change, it means the behavior you are about to implement is not yet specified clearly enough — that is the signal the inability is sending. Do not treat the inability to write the test first as a reason to skip it. Treat it as a sign that the task boundary, the expected behavior, or the failure modes are still unresolved, and resolve them before writing code.
+> A test written after a code change describes what the code does. A test written before a change specifies what the code should do. If you cannot write the test before the change, it means the behavior you are about to implement is not yet specified clearly enough - that is the signal the inability is sending. Do not treat the inability to write the test first as a reason to skip it. Treat it as a sign that the task boundary, the expected behavior, or the failure modes are still unresolved, and resolve them before writing code.
 
-**Rule 4 — Both contracts must be designed** (add to the step 28 design quality checklist after the existing "Can I delete this function..." checklist item):
+**Rule 4 - Both contracts must be designed** (add to the step 28 design quality checklist after the existing "Can I delete this function..." checklist item):
 
 > - Does each code path have both a success contract and a failure contract? For each way an input can be wrong, can the caller observe that something went wrong and why? If the failure contract is undefined, implicit, or silent, the path is incomplete regardless of whether the success path works.
 
@@ -133,14 +133,14 @@ The established invalid-input pattern throughout the codebase (see `with_named_b
 
 ## Internal Boundary Contracts
 
-**`apply_filters/6` cond — association branch**
+**`apply_filters/6` cond - association branch**
 
 Upstream caller: `apply_filters/6` reduce loop (called for each `{key, term}` pair).
 This boundary: `association_key?(source, key)` routing clause.
 Accepted input: any `{key, term}` where `key` is in the source schema's associations list.
 Valid-term path (`container?(term)` true): delegates to `ensure_association_binding/4` then `reduce_association_filters/6`.
 Invalid-term path (`container?(term)` false): logs warning, returns query unchanged.
-Not the routing clause's concern: whether the term is a valid shape — that is checked inside after routing.
+Not the routing clause's concern: whether the term is a valid shape - that is checked inside after routing.
 
 **`reduce_association_filters/6`**
 
@@ -148,7 +148,7 @@ Accepts `(query, filter, source, key, term, opts)` where `term` is guaranteed by
 
 ## Internal Structure Walkthrough
 
-Happy path — `convert_params_to_filter(Post, %{author: %{age: 25}}, [])`:
+Happy path - `convert_params_to_filter(Post, %{author: %{age: 25}}, [])`:
 
 1. `convert_params_to_filter/3` normalizes to `[{:author, %{age: 25}}]`, sorts, reduces.
 2. `apply_filters(:where, Post, query, {:as, nil}, {:author, %{age: 25}}, [])` called.
@@ -158,7 +158,7 @@ Happy path — `convert_params_to_filter(Post, %{author: %{age: 25}}, [])`:
 6. `ensure_association_binding` creates `join: a in assoc(p, :author), as: :author` if not already present.
 7. `reduce_association_filters` recurses with binding `{:as, :author}` and filter `{:age, 25}`.
 
-Invalid-term path — `convert_params_to_filter(Post, %{author: "bad value"}, [])`:
+Invalid-term path - `convert_params_to_filter(Post, %{author: "bad value"}, [])`:
 
 Steps 1–4 identical.
 5. `container?("bad value")` → `false` → else branch.
@@ -179,15 +179,15 @@ A caller filters across an association by passing the association name as a key 
 
 #### Examples:
 
-    # Valid — map value for belongs_to association
+    # Valid - map value for belongs_to association
     CommonFilters.convert_params_to_filter(Post, %{author: %{age: 25}}, [])
     # => query with join on :author, where a.age == 25
 
-    # Valid — keyword list value
+    # Valid - keyword list value
     CommonFilters.convert_params_to_filter(Post, [author: [age: 25]], [])
     # => same query as above
 
-    # Invalid — scalar value for a known association key
+    # Invalid - scalar value for a known association key
     CommonFilters.convert_params_to_filter(Post, %{author: "bad value"}, [])
     # => query unchanged
     # => Logger warning: "Expected association filter value to be a map or keyword list, got: \"bad value\""
@@ -292,12 +292,12 @@ File: `test/ecto_shorts/common_filters/common_filters_association_filter_test.ex
 All commands run from `/Users/kurthogarth/Documents/GitHub/ecto_shorts`.
 
 1. Create `test/ecto_shorts/common_filters/common_filters_association_filter_test.exs` with the content above.
-2. Run `mix test test/ecto_shorts/common_filters/common_filters_association_filter_test.exs` — happy-path tests should pass; invalid-input test should fail (no warning emitted yet).
+2. Run `mix test test/ecto_shorts/common_filters/common_filters_association_filter_test.exs` - happy-path tests should pass; invalid-input test should fail (no warning emitted yet).
 3. Edit `lib/ecto_shorts/common_filters.ex` lines 218–221 as described in Milestone 2.
-4. Run `mix test test/ecto_shorts/common_filters/common_filters_association_filter_test.exs` — all three tests must pass.
-5. Run `mix test test/ecto_shorts/common_filters/` — no regressions.
+4. Run `mix test test/ecto_shorts/common_filters/common_filters_association_filter_test.exs` - all three tests must pass.
+5. Run `mix test test/ecto_shorts/common_filters/` - no regressions.
 6. Read remaining `lib/ecto_shorts/common_filters/*.ex` files; fix any routing+validation mixing found.
-7. Run `mix test` — full suite passes.
+7. Run `mix test` - full suite passes.
 8. Add four rules to `.agent/RULES.md` as described in Milestone 4.
 
 ## Validation and Acceptance
@@ -310,9 +310,9 @@ All steps are additive except the edit to `lib/ecto_shorts/common_filters.ex`. T
 
 ## Surprises & Discoveries
 
-- Initial audit of `join.ex`: `apply_join_op/5` uses nested `if` to check `key in @join_types` then `key in associations` — both checks are key-identity checks, not term-shape checks. This is not the routing+validation anti-pattern.
+- Initial audit of `join.ex`: `apply_join_op/5` uses nested `if` to check `key in @join_types` then `key in associations` - both checks are key-identity checks, not term-shape checks. This is not the routing+validation anti-pattern.
 - Full audit of all 21 builder modules confirmed only one instance of routing+validation mixing existed: the association branch in `apply_filters/6`. Every other module validates term shape inside its handler with explicit Logger.warning.
-- Pre-fix behavior of the invalid-input path was worse than expected: `%{author: "bad value"}` did not silently return the query unchanged — it added `where: p0.author == ^"bad value"` to the query, actively corrupting it.
+- Pre-fix behavior of the invalid-input path was worse than expected: `%{author: "bad value"}` did not silently return the query unchanged - it added `where: p0.author == ^"bad value"` to the query, actively corrupting it.
 
 ## Decision Log
 

@@ -299,11 +299,11 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 * Do not silently move responsibility for interpreting structure from one boundary to another. If a proposed simplification changes where a shape is classified, unpacked, or made authoritative, name that shift explicitly, restate the affected contract, and stop for clarification before proceeding.
 
-* When splitting a multi-subject predicate or helper, delete the composite function entirely. Do not replace it with a new wrapper that combines the split parts using and, or, or a short pipeline. The composition belongs at the call site. A new named function is only justified when it owns a responsibility that is not immediately readable from a one-line combination of its parts — not when it exists solely to give a name to that combination.
+* When splitting a multi-subject predicate or helper, delete the composite function entirely. Do not replace it with a new wrapper that combines the split parts using and, or, or a short pipeline. The composition belongs at the call site. A new named function is only justified when it owns a responsibility that is not immediately readable from a one-line combination of its parts - not when it exists solely to give a name to that combination.
 
 * Before writing a private function, ask whether each condition or transformation inside it refers to a different subject. A function that tests the shape of a value and simultaneously checks a property of a key is operating on two subjects. A function that validates structure and also performs a schema lookup is crossing two responsibility boundaries. When the subjects differ, the function must be split. Reusability follows from single-subject ownership, not from the other direction.
 
-* Before writing a condition that determines which code path executes, identify which layer of responsibility that condition belongs to. Dispatch answers "which path owns this input?" — it depends on the input's identity, type, or membership. Validation answers "is this input acceptable for that path?" — it depends on the input's shape or content. These are different questions about different things and they belong at different layers. When a single dispatch condition spans both layers, a valid-dispatch/invalid-value input is silently absorbed into the dispatch result: the system cannot distinguish between "this input doesn't belong here" and "this input belongs here but is malformed," and the caller receives no signal about which situation occurred.
+* Before writing a condition that determines which code path executes, identify which layer of responsibility that condition belongs to. Dispatch answers "which path owns this input?" - it depends on the input's identity, type, or membership. Validation answers "is this input acceptable for that path?" - it depends on the input's shape or content. These are different questions about different things and they belong at different layers. When a single dispatch condition spans both layers, a valid-dispatch/invalid-value input is silently absorbed into the dispatch result: the system cannot distinguish between "this input doesn't belong here" and "this input belongs here but is malformed," and the caller receives no signal about which situation occurred.
 
 * Every code path has both a success contract and a failure contract. The success contract is naturally defined because the path must implement it to do anything useful. The failure contract is commonly left undesigned because the author stops thinking once the success path is complete. An undesigned failure contract is not neutral: the input goes to the wrong path, produces a silent wrong result, or disappears without trace. Before considering any code path complete, ask: for each way the input can be wrong, what does the caller observe? If the answer is not explicit and intentional, the path is incomplete. Define both contracts.
 
@@ -369,7 +369,7 @@ NON-NEGOTIABLE REQUIREMENTS:
   intentionally set.
   
 * When the user defines the required output shape for a task, produce that output exactly as defined. Do not
-  alter, filter, suppress, or improve the output to match a different standard — even a higher one — without
+  alter, filter, suppress, or improve the output to match a different standard - even a higher one - without
   explicit authorization. A result that deviates from the stated output requirement is incorrect regardless of
   its technical quality.
 
@@ -1102,7 +1102,7 @@ place where the meaning of the task is decided.
 25. Before making any behavioral code change, write a test that proves the current expected behavior at the
     public boundary first. A test written after a code change describes what the code does. A test written
     before a change specifies what the code should do. If you cannot write the test before the change, it means
-    the behavior you are about to implement is not yet specified clearly enough — that is the signal the
+    the behavior you are about to implement is not yet specified clearly enough - that is the signal the
     inability is sending. Do not treat the inability to write the test first as a reason to skip it. Treat it
     as a sign that the task boundary, the expected behavior, or the failure modes are still unresolved, and
     resolve them before writing code.
@@ -1244,6 +1244,6 @@ failing example as permission to reinterpret a settled contract instead of stopp
 If the implementer would still have to decide what to build, what must not change, or how to show that the
 work is correct, the plan is incomplete.
 
-Reject a plan, or a code change, when a private predicate or helper function joins two structurally unrelated checks or transformations into one function using and, or, a multi-clause pipeline, or any other compound expression where each sub-expression could stand alone as its own named function with its own test. Compound conditions are not the same as a single responsibility. If each half of the condition answers a different question about a different subject — the value, the key, the schema, the type — they are separate concerns and belong in separate functions regardless of how they are combined at the call site.
+Reject a plan, or a code change, when a private predicate or helper function joins two structurally unrelated checks or transformations into one function using and, or, a multi-clause pipeline, or any other compound expression where each sub-expression could stand alone as its own named function with its own test. Compound conditions are not the same as a single responsibility. If each half of the condition answers a different question about a different subject - the value, the key, the schema, the type - they are separate concerns and belong in separate functions regardless of how they are combined at the call site.
 
-Reject a code change that eliminates a multi-subject function by splitting it but then introduces a new composite wrapper that delegates to the split parts. The composite must disappear entirely. If the split parts are well-named, the call site must use them directly. A function that exists only to name a conjunction or disjunction of two already-named predicates is not a function with a responsibility — it is the same coupling shifted up one level.
+Reject a code change that eliminates a multi-subject function by splitting it but then introduces a new composite wrapper that delegates to the split parts. The composite must disappear entirely. If the split parts are well-named, the call site must use them directly. A function that exists only to name a conjunction or disjunction of two already-named predicates is not a function with a responsibility - it is the same coupling shifted up one level.

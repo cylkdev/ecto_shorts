@@ -5,33 +5,34 @@
 [![Credo](https://github.com/MikaAK/ecto_shorts/actions/workflows/credo.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/credo.yml)
 [![Dialyzer](https://github.com/MikaAK/ecto_shorts/actions/workflows/dialyzer.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/dialyzer.yml)
 
-EctoShorts builds on Ecto to provide data-driven CRUD, query building, and
-changeset helpers. Pass plain maps and keyword lists instead of composing
-`Ecto.Query` structs by hand.
+EctoShorts is a library built on top of Ecto that helps you handle the database operations most applications need without repeatedly writing the same query and changeset code by hand. Instead of rebuilding those patterns each time, you describe them as data and let EctoShorts handle the common cases for you. The result is less boilerplate, greater consistency across your codebase, and a faster way to implement everyday tasks such as filtering, pagination, CRUD operations, bulk writes, and transactional multi-record workflows.
 
-Use EctoShorts when you want to:
+EctoShorts is organized into the following components:
 
-* Build queries from data (maps, keyword lists) instead of macros
-* Reduce boilerplate for common CRUD operations
-* Run transactional multi-record operations with automatic rollback
-* Batch-fetch records by key for efficient lookups
-* Keep your context modules focused on business logic
+  * `EctoShorts.Actions` — the primary entry point. It accepts a schema module and a params map, delegates to the supporting components to build and execute the query, and returns results in a consistent `{:ok, result}` / `{:error, reason}` shape.
+  * `EctoShorts.CommonFilters` — translates a map or keyword list of filter params into an `Ecto.Query`. Schema field keys become `WHERE` conditions, while reserved keys such as `:limit`, `:order_by`, and `:preload` become the corresponding query operations. Use this directly when you need to build a query without executing it.
+  * `EctoShorts.CommonChanges` — provides helpers for building `changeset/2` functions, including preloading and casting associations, trimming strings, applying conditional changes, and validating fields.
+  * `EctoShorts.CommonSchema` — handles schema introspection by resolving field types, association metadata, and polymorphic source information at runtime.
+  * `EctoShorts.CommonParams` — prepares parameter lists for `insert_all`, `update_all`, and `delete_all`, including timestamp injection and field filtering.
+  * `EctoShorts.CommonQuery` — inspects query structure, including named bindings, positional bindings, sources, and prefixes.
+  * `EctoShorts.DynamicBuilders` — builds `Ecto.Query.dynamic/2` expressions from data. The PostgreSQL adapter supports scalar comparisons, string matching, array operations, and more.
+  * `EctoShorts.Testing` — provides test helpers for asserting against generated SQL and dynamic expressions.
 
-## Introduction
+In the typical case, you call `EctoShorts.Actions` from your context module and let it handle the rest. It builds an `Ecto.Query` from `EctoShorts.CommonFilters`, can pass that query through `EctoShorts.DynamicBuilders` when you need more complex expressions, and then executes it through your configured `Ecto.Repo`.
 
-EctoShorts is split into the following main components:
+You usually configure your repo once in `config.exs`, and EctoShorts resolves it automatically. When you need to override that behavior, every `EctoShorts.Actions` function also allows you to pass `:repo` or `:replica` at call time.
 
-| Module                     | Use when                                                                                  |
-|----------------------------|-------------------------------------------------------------------------------------------|
-| `EctoShorts.Actions`       | You need CRUD, batch, bulk, or transactional operations. Use this first.                  |
-| `EctoShorts.CommonFilters` | You need to build an `Ecto.Query` from a map or keyword list without executing it.        |
-| `EctoShorts.CommonChanges` | You need changeset helpers for associations, conditional changes, or field validation.    |
-| `EctoShorts.CommonSchema`  | You need schema introspection or polymorphic source handling.                             |
-| `EctoShorts.CommonParams`  | You need to prepare parameters for `insert_all`, `update_all`, or `delete_all`.           |
-| `EctoShorts.CommonQuery`   | You need to inspect query bindings, sources, or prefixes.                                 |
-| `EctoShorts.DynamicBuilders`      | You need to build `Ecto.Query.dynamic/2` expressions from data.                           |
-| `EctoShorts.Generator`      | Internal: generates function clauses at compile time.                                     |
-| `EctoShorts.Testing`       | You need test helpers for asserting on SQL, queries, or dynamic expressions.              |
+## Overview
+
+Ecto is a powerful tool, but in practice it often makes you write more code than the task should need, or write the same kind of code over and over. In many real applications, context modules slowly fill up with almost identical query pipelines: `from`, `where`, `order_by`, `limit`, `Repo.all`, repeated for different resources with only small changes. When you add conditional filters, the repetition grows even more. Each optional parameter often leads to another `maybe_filter_*` helper that only decides whether to add a clause or leave the query as it is. The same pattern shows up in changesets, bulk operations, and transactions. None of this is very hard, but over time it adds up to a lot of boilerplate that does not add much real value.
+
+EctoShorts solves this using data. Instead of building every query step by step, you describe what you want with a map or keyword list and pass it to `EctoShorts.Actions`. `CommonFilters` then reads that data and builds the matching `Ecto.Query` for you. Schema field keys become `WHERE` clauses, and options like `:limit`, `:order_by`, `:offset`, and `:preload` are turned into the matching query parts. More advanced comparisons, such as `%{views: %{>: 100}}`, become expressions like `WHERE views > $1`.
+
+When a filter is more complex than simple field matching, `DynamicBuilders` takes over and builds the right `Ecto.Query.dynamic/2` expressions. This lets EctoShorts support things like string matching, array checks, and PostgreSQL-specific operators while keeping the same data-based interface. After the query is built, `Actions` runs it through your configured `Ecto.Repo` and returns a consistent `{:ok, result}` or `{:error, reason}`.
+
+The same idea also applies to write operations. `Actions.create/3` handles the call to `Post.changeset/2` and `Repo.insert/1` for you. `Actions.create_many/3` wraps multiple inserts in an `Ecto.Multi`, so the whole transaction is rolled back if any changeset fails. `Actions.insert_all/3` uses `CommonParams` to prepare the entries by adding timestamps and removing virtual fields before calling `Repo.insert_all/2`.
+
+The result is code that is simpler and easier to maintain. Instead of spreading query and persistence logic across many helper functions, you describe what you want as data and let `Actions` handle it in a consistent way. That keeps your code focused on application behavior instead of repetitive setup work.
 
 ## Installation
 
