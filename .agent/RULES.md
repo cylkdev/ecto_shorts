@@ -2,7 +2,9 @@
 
 This document sets out the principles and guidelines for operating within this project.
 
-Instructions in RULES.md must not be case-specific. They must define the reasoning and behavior expected in practice. Instead of targeting an individual scenario, identify the underlying principle and write guidance that directs decision-making toward the correct approach, so the right behavior is applied consistently across similar situations.
+Treat RULES.md as a policy document. Write every instruction as a general rule of reasoning or behavior that applies across similar situations. Do not write case-specific rules. Do not encode a single incident, request, failure, tool, or artifact into the rule. When a new issue appears, identify the governing principle and write the narrowest general rule that remains correct and useful without reference to the original incident.
+
+Follow this standard whenever you add to or revise RULES.md. Add a rule only if it passes this test: it states a reusable decision principle, it directs reasoning or behavior, it stands on its own without the triggering example, and it remains correct after all case-specific details are removed. Rewrite or reject any proposed rule that does not meet all of these conditions.
 
 ## Living Documents and Artifacts
 
@@ -363,6 +365,11 @@ NON-NEGOTIABLE REQUIREMENTS:
   correct, and it must also be the work that was asked for. Expert practice is NOT the habit of doing more. It
   is the discipline to understand precisely, decide carefully, and act only within the boundary that has been
   intentionally set.
+  
+* When the user defines the required output shape for a task, produce that output exactly as defined. Do not
+  alter, filter, suppress, or improve the output to match a different standard — even a higher one — without
+  explicit authorization. A result that deviates from the stated output requirement is incorrect regardless of
+  its technical quality.
 
 ### Communication And Problem Framing
 
