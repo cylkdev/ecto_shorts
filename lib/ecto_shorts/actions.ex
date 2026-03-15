@@ -1,93 +1,32 @@
 defmodule EctoShorts.Actions do
   @moduledoc """
-  Public data-operation boundary for the EctoShorts API.
+  Data-driven CRUD, bulk, batch, and transaction helpers.
 
-  `EctoShorts.Actions` gives you a data-driven interface for reading,
-  creating, updating, deleting, batching, and transacting records without
-  having to write every `Ecto.Query` or changeset call by hand.
+  This module is the public action boundary for EctoShorts. It wraps common
+  `Ecto.Repo` operations in a consistent API and delegates query building to
+  `EctoShorts.CommonFilters`.
 
-  The module owns the caller-facing action API. It delegates query building to
-  `EctoShorts.CommonFilters`, changeset creation to schema-oriented helpers,
-  and family-specific implementation details to the adjacent
-  `EctoShorts.Actions.*` modules.
+  The API is split into five groups:
 
-  Use this module when you want to:
+  * CRUD helpers such as `all/3`, `find/3`, `create/3`, `update/4`, and
+    `delete/1`
+  * bulk helpers such as `insert_all/3`, `update_all/4`, and `delete_all/3`
+  * multi helpers such as `create_many/3`, `find_many/3`, and `update_many/3`
+  * batch helpers such as `batch/5` and `batch_find/4`
+  * transaction helpers such as `transaction/2` and `transact/2`
 
-  * work with a consistent public API over common `Ecto.Repo` operations
-  * express reads as filter params instead of Ecto macros
-  * batch related lookups by one or more keys
-  * run multi-step write flows with rollback on failure
-  * choose between single-record, bulk, and transactional helpers without
-    switching to a different calling style
+  Read helpers accept the public `EctoShorts.CommonFilters` language. Write
+  helpers build changesets through the schema unless the function family is
+  explicitly bulk-oriented.
 
-  ## Public families
+  In general:
 
-  The API is organized into five groups:
-
-  * **CRUD** - `preload/3`, `exists?/3`, `all/1-3`, `create/3`, `get/3`,
-    `find/3`, `update/4`, `delete/1-3`, `stream/3`, `aggregate/5`, and the
-    `find_*` wrappers
-  * **Bulk** - `insert_all/3`, `update_all/4`, `delete_all/3`
-  * **Multi** - `create_many/3`, `find_many/3`, `update_many/3`,
-    `delete_many/3`, `find_or_create_many/3`, `find_and_upsert_many/3`
-  * **Batch** - `batch/5`, `batch_find/4`
-  * **Transaction** - `transaction/2`, `transact/2`
-
-  ## Shared conventions
-
-  A few rules apply across the module:
-
-  * **Read helpers use `CommonFilters`.** Functions such as `exists?/3`,
-    `all/3`, `find/3`, `stream/3`, and `aggregate/5` accept the public
-    `EctoShorts.CommonFilters` language.
-  * **Reads use `:replica`; writes use `:repo`.** `get/3`, `find/3`,
-    `exists?/3`, and `aggregate/5` resolve the configured replica repo.
-    `create/3`, `update/4`, `delete/1-3`, bulk helpers, and multi helpers
-    resolve the configured write repo.
-  * **`:preload` is shared across many boundaries.** `get/3`, `find/3`,
-    `create/3`, `update/4`, the `find_*` wrappers, batch helpers, and the
-    multi helpers all support post-operation preloading through `opts`.
-  * **Bulk and Multi are different tradeoffs.** Bulk helpers execute one repo
-    operation against a prepared query or insert set. Multi helpers compose
-    several per-record operations inside an `Ecto.Multi` transaction.
-
-  ## Choosing the right function
-
-  | Use case | Preferred helper |
-  | --- | --- |
-  | Read one record by primary key and allow `nil` | `get/3` |
-  | Read one record by filter params and get an explicit error on miss | `find/3` |
-  | Read many records | `all/3` |
-  | Check whether any row matches | `exists?/3` |
-  | Run a count, sum, avg, min, or max | `aggregate/5` |
-  | Create one record with changeset validation | `create/3` |
-  | Update one record by id or struct | `update/4` |
-  | Delete one record, a changeset, or a list of records | `delete/1-3` |
-  | Bulk insert, update, or delete with repo-native row counts | `insert_all/3`, `update_all/4`, `delete_all/3` |
-  | Run many per-record operations atomically | `create_many/3`, `find_many/3`, `update_many/3`, `delete_many/3`, `find_or_create_many/3`, `find_and_upsert_many/3` |
-  | Reuse keyed lookups across many entries | `batch/5`, `batch_find/4` |
-  | Wrap work in a raw transaction | `transaction/2` |
-  | Wrap work in a normalized transaction API | `transact/2` |
-
-  ## Return shapes
-
-  The helpers intentionally return different shapes depending on what they do:
-
-  * **Single-record CRUD helpers** usually return `{:ok, struct}` or
-    `{:error, term()}`.
-  * **`get/3`** returns `struct | nil`.
-  * **`all/1-3`** returns a plain list.
-  * **Bulk update/delete helpers** return `{count, nil}`.
-  * **`insert_all/3`** returns `{:ok, {count, nil | rows}}` or
-    `{:error, [changeset, ...]}`.
-  * **Multi helpers** return `{:ok, list}` or `{:error, reason}` after
-    rollback on the first failure.
-  * **`transaction/2`** preserves the raw transaction shape.
-  * **`transact/2`** normalizes function and `Ecto.Multi` transaction results.
-
-  By default, caller-facing error payloads come from
-  `EctoShorts.Actions.ErrorMessage`. You can replace that shape by configuring
-  a different `EctoShorts.Actions.Error` implementation.
+  * reads use the configured `:replica`
+  * writes use the configured `:repo`
+  * `:preload` is applied after the main operation for helpers that return
+    structs
+  * bulk helpers run repo-native bulk operations
+  * multi helpers compose per-record operations inside an `Ecto.Multi`
 
   ## Examples
 
@@ -95,46 +34,15 @@ defmodule EctoShorts.Actions do
       alias EctoShorts.Schema.Post
 
       {:ok, post} = Actions.create(Post, %{title: "Hello", body: "World"})
-
       {:ok, post} = Actions.find(Post, %{id: 1})
-
       posts = Actions.all(Post, %{published: true, order_by: [desc: :inserted_at]})
-
       {:ok, post} = Actions.update(Post, post, %{title: "Updated"})
+      {:ok, _post} = Actions.delete(post)
 
-      {:ok, deleted} = Actions.delete(post)
+  ## Errors
 
-      grouped = Actions.batch(Post, [%{title: "Hello"}], :title, :one)
-
-  ## Important behaviors
-
-  * `find/3` returns `{:error, ...}` immediately when called with `%{}` and a
-    non-query source. This prevents accidental "give me any row" lookups.
-  * `stream/3` returns an enumerable that must be consumed inside a
-    transaction.
-  * `update/4` can apply optimistic locking either from `opts` or from a
-    schema-level `optimistic_lock/0` callback.
-  * `transaction/2` and `transact/2` are intentionally different:
-    `transaction/2` preserves the repo transaction result, while `transact/2`
-    reshapes it into the higher-level Actions contract.
-
-  ## Shared options
-
-  The exact supported options vary by function family, but these are the most
-  important shared caller-facing keys:
-
-  * `:repo` - write repo override
-  * `:replica` - read repo override
-  * `:changeset` - override the schema's default changeset callback
-  * `:dynamic_adapter` - dynamic-expression adapter override used by
-    `EctoShorts.CommonFilters`
-  * `:error_module` - custom error payload adapter
-  * `:preload` - post-operation preloads for the helpers that return structs
-  * `:optimistic_lock` - lock field, `{field, incrementer}`, or `false` for
-    update boundaries
-
-  See `EctoShorts.CommonFilters`, `EctoShorts.Config`,
-  `EctoShorts.CommonSchema`, and `EctoShorts.Actions.Error`.
+  This API uses `ErrorMessage` for error payloads by default. See `EctoShorts.Actions.Error`
+  for information on custom error adapters.
   """
 
   @moduledoc groups: [
@@ -195,36 +103,17 @@ defmodule EctoShorts.Actions do
   @doc group: "CRUD"
   @doc since: "3.0.0"
   @doc """
-  Preloads associations on the given struct or list of structs.
+  Preloads associations in the given struct or structs.
 
-  Delegates to `c:Ecto.Repo.preload/3` on the configured replica repo.
-  All options are forwarded directly to `c:Ecto.Repo.preload/3`.
-
-  ## Arguments
-
-    * `data` - a struct or list of structs to preload.
-    * `preloads` - the associations to preload. Accepts the same shapes as
-      `c:Ecto.Repo.preload/3`:
-      * an atom - `:author`
-      * a list of atoms - `[:author, :comments]`
-      * a keyword list for nested preloads - `[author: :profile]`
-      * an `{assoc, query}` tuple to preload with a custom query -
-        `{:comments, from(c in Comment, where: c.approved == true)}`
-    * `opts` - forwarded to `c:Ecto.Repo.preload/3`. Common options:
-      * `:force` - reload even if already loaded.
-      * `:in_parallel` - whether to run preloads in parallel.
-      * `:prefix` - the query prefix.
+  This delegates to `c:Ecto.Repo.preload/3` on the configured replica repo.
+  `preloads` accepts the same shapes as `Ecto.Repo.preload/3`, including
+  atoms, lists, keyword lists, and `{assoc, query}` tuples.
 
   ## Examples
 
-      post_with_author = EctoShorts.Actions.preload(post, :author)
-      posts_with_tags  = EctoShorts.Actions.preload(posts, [:author, :comments])
-
-      # Nested preload
+      post = EctoShorts.Actions.preload(post, :author)
+      posts = EctoShorts.Actions.preload(posts, [:author, :comments])
       post = EctoShorts.Actions.preload(post, author: :profile)
-
-      # Preload with a custom query
-      post = EctoShorts.Actions.preload(post, {:comments, from(c in Comment, where: c.approved == true)})
 
   See `c:Ecto.Repo.preload/3` for the full list of supported options.
   See also `all/3` and `EctoShorts.CommonChanges.preload_change_assoc/3`.
@@ -239,14 +128,8 @@ defmodule EctoShorts.Actions do
   @doc """
   Returns `true` if at least one record matches `params`, `false` otherwise.
 
-  Builds the query with `EctoShorts.CommonFilters` and delegates to
+  This builds a query with `EctoShorts.CommonFilters` and delegates to
   `c:Ecto.Repo.exists?/2` on the configured replica repo.
-
-  ## Arguments
-
-    * `source` - a schema module or queryable.
-    * `params` - filter params (see `EctoShorts.CommonFilters`).
-    * `opts` - forwarded to `c:Ecto.Repo.exists?/2`.
 
   ## Examples
 
@@ -266,11 +149,6 @@ defmodule EctoShorts.Actions do
   Fetches all records for the given queryable.
 
   Equivalent to `all(queryable, %{}, [])`.
-
-  ## Arguments
-
-    * `queryable` - a schema module, `{source, schema}` tuple, or
-      `Ecto.Query`.
 
   See also `all/2`, `all/3`, and `find/3`.
   """
@@ -294,16 +172,8 @@ defmodule EctoShorts.Actions do
   `[published: true, limit: 10]`. Use `all/3` when you want to separate
   query params from runtime options explicitly.
 
-  Raises `ArgumentError` when the second argument is neither a map
-  nor a keyword list.
-
-  ## Arguments
-
-    * `queryable` - a schema module, `{source, schema}` tuple, or
-      `Ecto.Query`.
-    * `params` - a map of filter params, or a keyword list where
-      `:repo`, `:replica`, and `:dynamic_adapter` are options and all
-      other keys are filter params.
+  Raises `ArgumentError` if the second argument is neither a map nor a
+  keyword list.
 
   ## Examples
 
@@ -331,29 +201,15 @@ defmodule EctoShorts.Actions do
   @doc """
   Fetches all records matching `params`.
 
-  This is the main list-read boundary in the module. It merges selected
-  convenience options into `params`, builds an `Ecto.Query` with
+  This is the main list-read helper. It builds an `Ecto.Query` with
   `EctoShorts.CommonFilters`, runs `c:Ecto.Repo.all/2`, and optionally
-  post-preloads the returned structs.
-
-  ## Arguments
-
-    * `queryable` - a schema module, `{source, schema}` tuple, or
-      `Ecto.Query`.
-    * `params` - filter params (see `EctoShorts.CommonFilters`).
-    * `opts` - keyword list of options.
+  preloads the returned structs.
 
   ## Options
 
-  The following options are consumed before query building and are
-  **not** forwarded to `c:Ecto.Repo.all/2`:
-
-    * `:order_by` - merged into `params` before building the query.
-    * `:group_by` - merged into `params` before building the query.
-    * `:preload` - associations to preload on the returned structs. Accepts
-      the same shapes as `preload/3`: an atom, list of atoms, keyword list
-      for nested preloads, or `{assoc, query}` tuple. Applied after the
-      query completes.
+  * `:order_by` - merged into `params` before query building
+  * `:group_by` - merged into `params` before query building
+  * `:preload` - applied after the query returns
 
   All other options are forwarded to `c:Ecto.Repo.all/2`.
 
@@ -389,18 +245,9 @@ defmodule EctoShorts.Actions do
   Builds a changeset via the schema's `changeset/2` (or the
   `:changeset` option) and delegates to `c:Ecto.Repo.insert/2`.
 
-  Returns `{:ok, struct}` or `{:error, changeset}`.
-
-  ## Arguments
-
-    * `schema` - the Ecto schema module.
-    * `params` - a map of attributes for the new record.
-    * `opts` - forwarded to `c:Ecto.Repo.insert/2`.
-
   ## Options
 
-    * `:preload` - associations to preload on the created struct. Accepts
-      the same shapes as `preload/3`. Applied after the insert completes.
+  * `:preload` - applied after the insert succeeds
 
   ## Examples
 
@@ -424,17 +271,10 @@ defmodule EctoShorts.Actions do
   Returns the struct or `nil`. Delegates to `c:Ecto.Repo.get/3` on
   the configured replica repo.
 
-  ## Arguments
-
-    * `queryable` - a schema module or queryable.
-    * `id` - the primary key value.
-    * `opts` - forwarded to `c:Ecto.Repo.get/3`.
-
   ## Options
 
-    * `:preload` - associations to preload on the returned struct. Accepts
-      the same shapes as `preload/3`. Returns `nil` unchanged when the
-      record is not found.
+  * `:preload` - applied after the record is loaded; `nil` is returned
+    unchanged when nothing is found
 
   ## Examples
 
@@ -460,18 +300,11 @@ defmodule EctoShorts.Actions do
   `find/3` uses `c:Ecto.Repo.one/2`, so callers should pass filters that
   identify at most one row.
 
-  ## Arguments
-
-    * `queryable` - a schema module or queryable.
-    * `params` - filter params (see `EctoShorts.CommonFilters`).
-    * `opts` - keyword list of options.
-
   ## Options
 
-    * `:order_by` - merged into `params` before query building.
-    * `:group_by` - merged into `params` before query building.
-    * `:preload` - associations to preload on the found struct. Accepts
-      the same shapes as `preload/3`. Applied after the record is located.
+  * `:order_by` - merged into `params` before query building
+  * `:group_by` - merged into `params` before query building
+  * `:preload` - applied after the record is found
 
   ## Examples
 
@@ -541,22 +374,10 @@ defmodule EctoShorts.Actions do
   `{:error, %ErrorMessage{code: :stale}}` when optimistic locking
   detects a concurrent modification.
 
-  ## Arguments
-
-    * `queryable` - the Ecto schema module.
-    * `id_or_schema_struct` - a primary key value or an existing struct.
-    * `params` - a map of attributes to update.
-    * `opts` - forwarded to `c:Ecto.Repo.update/2`.
-
   ## Options
 
-    * `:optimistic_lock` - an atom (lock field name), a
-      `{field, incrementer}` tuple, or `false`. When not set,
-      auto-detects by checking if the schema exports
-      `optimistic_lock/0`. See the "Shared options" section for
-      details.
-    * `:preload` - associations to preload on the updated struct. Accepts
-      the same shapes as `preload/3`. Applied after the update completes.
+  * `:optimistic_lock` - an atom, a `{field, incrementer}` tuple, or `false`
+  * `:preload` - applied after the update succeeds
 
   ## Optimistic locking
 
@@ -629,12 +450,6 @@ defmodule EctoShorts.Actions do
   deleted through the configured repo. When given a list, stops on
   the first failure (already-deleted entries are not rolled back).
 
-  Returns `{:ok, struct}`, `{:ok, [struct]}`, or `{:error, reason}`.
-
-  ## Arguments
-
-    * `data` - a struct, `Ecto.Changeset`, or list of either.
-
   ## Examples
 
       {:ok, deleted} = EctoShorts.Actions.delete(post)
@@ -654,11 +469,6 @@ defmodule EctoShorts.Actions do
 
   When `data` is a list, entries are deleted sequentially and the function
   stops on the first error. Earlier successful deletes are not rolled back.
-
-  ## Arguments
-
-    * `data` - a struct, `Ecto.Changeset`, or list of either.
-    * `opts` - forwarded to `c:Ecto.Repo.delete/2`.
 
   See `delete/1` for return values. See also `delete/3` and
   `find_and_delete/3`.
@@ -697,14 +507,6 @@ defmodule EctoShorts.Actions do
 
   Fetches the record with `find/3`, then deletes it.
 
-  Returns `{:ok, struct}` or `{:error, reason}`.
-
-  ## Arguments
-
-    * `queryable` - the Ecto schema module.
-    * `id` - the primary key value.
-    * `opts` - forwarded to `c:Ecto.Repo.delete/2`.
-
   ## Examples
 
       {:ok, deleted} = EctoShorts.Actions.delete(EctoShorts.Schema.Post, 1)
@@ -729,21 +531,13 @@ defmodule EctoShorts.Actions do
   Wraps `c:Ecto.Repo.stream/2` with filter support. The stream must be
   consumed inside a transaction (see `transact/2` or `transaction/2`).
 
-  ## Arguments
-
-  * `queryable` - a schema module or queryable.
-  * `params` - filter params (see `EctoShorts.CommonFilters`).
-  * `opts` - forwarded to `c:Ecto.Repo.stream/2`.
-
   ## Options
 
-  * `:max_rows` (default: `500`) - the number of rows to fetch from the
-    database per batch. Increase for throughput, decrease for memory.
+  * `:max_rows` (default: `500`) - rows fetched per batch
   * `:repo` - the `Ecto.Repo` to use. Defaults to `EctoShorts.Config.repo/0`.
 
   ## Examples
 
-      # Basic streaming inside a transaction
       EctoShorts.Actions.transact(fn ->
         EctoShorts.Schema.Post
         |> EctoShorts.Actions.stream(%{published: true})
@@ -751,7 +545,6 @@ defmodule EctoShorts.Actions do
         |> Stream.run()
       end)
 
-      # Custom chunk size for large datasets
       EctoShorts.Actions.transact(fn ->
         EctoShorts.Schema.Post
         |> EctoShorts.Actions.stream(%{}, max_rows: 1000)
@@ -774,15 +567,6 @@ defmodule EctoShorts.Actions do
 
   Delegates to `c:Ecto.Repo.aggregate/4` on the configured replica repo.
 
-  ## Arguments
-
-    * `queryable` - a schema module or queryable.
-    * `params` - filter params (see `EctoShorts.CommonFilters`).
-      Defaults to `%{}`.
-    * `aggregate` - the aggregate function atom. Defaults to `:count`.
-    * `key` - the field to aggregate over. Defaults to `:id`.
-    * `opts` - forwarded to `c:Ecto.Repo.aggregate/4`.
-
   ## Examples
 
       count = EctoShorts.Actions.aggregate(EctoShorts.Schema.Post, %{published: true})
@@ -802,15 +586,8 @@ defmodule EctoShorts.Actions do
   @doc """
   Finds a record matching `find_params`, or creates one with `create_params`.
 
-  Returns `{:ok, struct}` in both cases, or `{:error, changeset}` when
-  creation fails.
-
-  ## Arguments
-
-    * `queryable` - the Ecto schema module.
-    * `find_params` - filter params for the lookup.
-    * `create_params` - attributes for the new record if not found.
-    * `opts` - shared options.
+  This first calls `find/3`. If nothing is found, it creates a new record with
+  `create_params`.
 
   ## Examples
 
@@ -822,8 +599,7 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - associations to preload on the result struct. Accepts the
-      same shapes as `preload/3`.
+  * `:preload` - applied to the final struct
 
   See also `find_or_create/3`, `find_and_update/4`, and `create/3`.
   """
@@ -841,13 +617,6 @@ defmodule EctoShorts.Actions do
   Returns `{:ok, struct}`, `{:error, changeset}`, or
   `{:error, %ErrorMessage{code: :not_found}}`.
 
-  ## Arguments
-
-    * `source` - the Ecto schema module.
-    * `find_params` - filter params for the lookup.
-    * `update_params` - attributes to update on the found record.
-    * `opts` - shared options.
-
   ## Examples
 
       {:ok, post} = EctoShorts.Actions.find_and_update(
@@ -858,8 +627,7 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - associations to preload on the updated struct. Accepts the
-      same shapes as `preload/3`.
+  * `:preload` - applied after the update succeeds
 
   See also `update/4`, `find_and_upsert/4`, and `find/3`.
   """
@@ -877,15 +645,6 @@ defmodule EctoShorts.Actions do
   When found, updates with `upsert_params`. When not found, creates a
   record from `Map.merge(find_params, upsert_params)`.
 
-  Returns `{:ok, struct}` or `{:error, changeset}`.
-
-  ## Arguments
-
-    * `source` - the Ecto schema module.
-    * `find_params` - filter params for the lookup.
-    * `upsert_params` - attributes for update or creation.
-    * `opts` - shared options.
-
   ## Examples
 
       {:ok, post} = EctoShorts.Actions.find_and_upsert(
@@ -896,8 +655,7 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - associations to preload on the result struct. Accepts the
-      same shapes as `preload/3`.
+  * `:preload` - applied to the final struct
 
   See also `find_and_update/4`, `find_or_create/3`, and `create/3`.
   """
@@ -913,14 +671,6 @@ defmodule EctoShorts.Actions do
   @doc since: "3.0.0"
   @doc """
   Finds a record matching `find_params` and deletes it.
-
-  Returns `{:ok, struct}` or `{:error, reason}`.
-
-  ## Arguments
-
-    * `source` - the Ecto schema module.
-    * `find_params` - filter params for the lookup.
-    * `opts` - shared options.
 
   ## Examples
 
@@ -942,14 +692,6 @@ defmodule EctoShorts.Actions do
   The lookup filters `params` to the schema's query fields. When no
   record matches, creates one from the full `params` map.
 
-  Returns `{:ok, struct}` or `{:error, changeset}`.
-
-  ## Arguments
-
-    * `source` - the Ecto schema module.
-    * `params` - attributes used for both the lookup and creation.
-    * `opts` - shared options.
-
   ## Examples
 
       {:ok, post} = EctoShorts.Actions.find_or_create(
@@ -959,9 +701,8 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - associations to preload on the result struct. Accepts the
-      same shapes as `preload/3`. Applied once after the operation completes,
-      regardless of whether a record was found or created.
+  * `:preload` - applied once to the final result, whether it was found or
+    created
 
   ## Notes
 
@@ -998,11 +739,6 @@ defmodule EctoShorts.Actions do
   you want the repo transaction shape preserved. In particular, a function that
   returns `{:ok, value}` will produce `{:ok, {:ok, value}}`.
 
-  ## Arguments
-
-    * `fun_or_multi` - a function or `Ecto.Multi`.
-    * `opts` - forwarded to `c:Ecto.Repo.transaction/2`.
-
   ## Examples
 
       {:ok, _} = EctoShorts.Actions.transaction(fn ->
@@ -1030,15 +766,10 @@ defmodule EctoShorts.Actions do
   This is the higher-level transaction boundary to prefer when you want your
   caller-facing code to stay inside the usual Actions success/error contract.
 
-  ## Arguments
-
-    * `fun_or_multi` - a function or `Ecto.Multi`.
-    * `opts` - keyword list of options.
-
   ## Options
 
-    * `:strict` (default: `true`) - roll back on `{:error, reason}`
-      and unwrap `{:ok, value}`.
+  * `:strict` (default: `true`) - roll back on `{:error, reason}` and unwrap
+    `{:ok, value}`
 
   See also `transaction/2` and `create_many/3`.
   """
@@ -1070,37 +801,21 @@ defmodule EctoShorts.Actions do
   Raises `ArgumentError` when `:one` cardinality finds multiple records
   for a single batch key.
 
-  ## Arguments
-
-    * `schema` - the Ecto schema module.
-    * `params` - a list of param maps to batch.
-    * `batch_keys` - an atom or list of atoms. Defaults to `:id`.
-    * `cardinality` - `:one` or `:many`. Defaults to `:many`.
-    * `opts` - shared options.
-
   ## Options
 
-    * `:preload` - associations to preload on each value in the returned map.
-      Accepts the same shapes as `preload/3`. Applied after grouping completes.
+  * `:preload` - applied to each grouped result after loading
 
   ## Examples
 
-      # Group posts by author_id (many per key)
       EctoShorts.Actions.batch(
         Post,
         [%{author_id: 1}, %{author_id: 2}],
         :author_id,
         :many
       )
-      # %{1 => [%Post{...}], 2 => [%Post{...}]}
-
-      # Fetch one post per id
       EctoShorts.Actions.batch(Post, [%{id: 1}, %{id: 2}], :id, :one)
-      # %{1 => %Post{...}, 2 => %Post{...}}
 
-      # Composite key batch
       EctoShorts.Actions.batch(PostTag, [%{post_id: 1, tag_id: 5}], [:post_id, :tag_id], :one)
-      # %{%{post_id: 1, tag_id: 5} => %PostTag{...}}
   """
   @spec batch(module(), list(params()), atom() | list(atom()), cardinality, opts) :: map()
   def batch(schema, params, batch_keys \\ :id, cardinality \\ :many, opts \\ [])
@@ -1164,18 +879,10 @@ defmodule EctoShorts.Actions do
 
   Unmatched entries are returned unchanged.
 
-  ## Arguments
-
-    * `schema` - the Ecto schema module.
-    * `entries` - a list of maps or keyword lists.
-    * `keys` - an atom or list of atoms identifying the lookup fields.
-    * `opts` - shared options.
-
   ## Examples
 
       entries = [%{permalink: "existing", title: "Updated"}]
-      [{post, ^entries |> hd()}] =
-        EctoShorts.Actions.batch_find(EctoShorts.Schema.Post, entries, :permalink)
+      [{post, params}] = EctoShorts.Actions.batch_find(EctoShorts.Schema.Post, entries, :permalink)
   """
   @spec batch_find(module(), [map()], atom() | list(atom()), opts) :: [map()]
   def batch_find(schema, entries, keys, opts \\ []) do
@@ -1214,28 +921,13 @@ defmodule EctoShorts.Actions do
   When `:batch_find` is set, entries are first resolved through `batch_find/4`
   before the insert payload is built.
 
-  Returns `{:ok, {count, nil | [struct]}}` or
-  `{:error, [changeset]}`.
-
-  ## Arguments
-
-    * `source` - the Ecto schema module.
-    * `params_list` - a list of maps, keyword lists, structs, `{struct, params}` tuples, or changesets.
-    * `opts` - keyword list of options.
-
   ## Options
 
-    * `:batch_find` - atom or list of atoms. Batch-fetches matching
-      records before insertion using `batch_find/4`.
-    * `:validate` - set to `false` to skip changeset validation.
-    * `:on_conflict_replace` - controls conflict resolution:
-      `:none` (insert or do nothing), `:insert_keys` (default, replace
-      all non-primary-key fields), or a list of field atoms to replace.
-    * `:on_conflict` - Ecto-native conflict action, forwarded directly
-      to `c:Ecto.Repo.insert_all/3`. Overrides `:on_conflict_replace`
-      when both are set.
-    * `:conflict_target` - Ecto-native conflict target, forwarded
-      directly to `c:Ecto.Repo.insert_all/3`.
+  * `:batch_find` - batch-resolve matching records before preparing inserts
+  * `:validate` - set to `false` to skip changeset validation
+  * `:on_conflict_replace` - `:none`, `:insert_keys`, or a list of fields
+  * `:on_conflict` - forwarded directly to `c:Ecto.Repo.insert_all/3`
+  * `:conflict_target` - forwarded directly to `c:Ecto.Repo.insert_all/3`
 
   When at least one prepared insert contains all primary-key fields and the
   caller does not provide an explicit `:on_conflict`, the default conflict
@@ -1268,24 +960,10 @@ defmodule EctoShorts.Actions do
   Supports `:set`, `:inc`, `:push`, and `:pull` operations in
   `update_params`. Returns `{count, nil}`.
 
-  ## Arguments
-
-    * `source` - the Ecto schema module.
-    * `find_params` - filter params for the query.
-    * `update_params` - a map of update operations. Each value can be a plain
-      value (`:set` implied), or a tagged tuple: `{:inc, n}`, `{:push, v}`,
-      `{:pull, v}`. See `EctoShorts.CommonParams.convert_to_update_params/3`.
-    * `opts` - forwarded to `c:Ecto.Repo.update_all/3`.
-
   ## Examples
 
-      # Set title for all drafts
       EctoShorts.Actions.update_all(Post, %{published: false}, %{title: "Draft"})
-      # {5, nil}
-
-      # Increment views for a specific post
       EctoShorts.Actions.update_all(Post, %{id: 1}, %{views: {:inc, 1}})
-      # {1, nil}
 
   See also `EctoShorts.CommonParams.convert_to_update_params/3`
   and `update_many/3`.
@@ -1300,24 +978,10 @@ defmodule EctoShorts.Actions do
   @doc """
   Deletes all records matching `params`.
 
-  Returns `{count, nil}`.
-
-  ## Arguments
-
-    * `queryable` - the Ecto schema module or queryable.
-    * `params` - filter params (see `EctoShorts.CommonFilters`).
-      Defaults to `%{}`.
-    * `opts` - forwarded to `c:Ecto.Repo.delete_all/2`.
-
   ## Examples
 
-      # Delete all unpublished posts
       EctoShorts.Actions.delete_all(Post, %{published: false})
-      # {3, nil}
-
-      # Delete all records
       EctoShorts.Actions.delete_all(Post)
-      # {42, nil}
 
   See also `delete_many/3` and `EctoShorts.CommonFilters`.
   """
@@ -1334,14 +998,6 @@ defmodule EctoShorts.Actions do
   Each record is inserted individually inside an `Ecto.Multi`. Any
   failure rolls back the entire transaction.
 
-  Returns `{:ok, [struct]}` or `{:error, reason}`.
-
-  ## Arguments
-
-    * `schema` - the Ecto schema module.
-    * `params_list` - a list of attribute maps.
-    * `opts` - shared options.
-
   ## Examples
 
       {:ok, posts} = EctoShorts.Actions.create_many(EctoShorts.Schema.Post, [
@@ -1351,8 +1007,7 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - associations to preload on every struct in the result list.
-      Accepts the same shapes as `preload/3`. Applied after the transaction.
+  * `:preload` - applied after the transaction succeeds
 
   See also `create/3`, `insert_all/3`, and `transact/2`.
   """
@@ -1370,22 +1025,13 @@ defmodule EctoShorts.Actions do
   Each lookup runs inside an `Ecto.Multi`. A `nil` result rolls back
   the transaction with a `:not_found` error.
 
-  Returns `{:ok, [struct]}` or `{:error, reason}`.
-
-  ## Arguments
-
-    * `schema` - the Ecto schema module.
-    * `params_list` - a list of filter param maps.
-    * `opts` - shared options.
-
   ## Examples
 
       {:ok, posts} = EctoShorts.Actions.find_many(EctoShorts.Schema.Post, [%{id: 1}, %{id: 2}])
 
   ## Options
 
-    * `:preload` - associations to preload on every struct in the result list.
-      Accepts the same shapes as `preload/3`. Applied after the transaction.
+  * `:preload` - applied after the transaction succeeds
 
   See also `find/3`, `find_or_create_many/3`, and `transact/2`.
   """
@@ -1403,15 +1049,6 @@ defmodule EctoShorts.Actions do
   Entries can be `{find_params, update_params}` tuples or maps with an
   `:id` key. Raises `ArgumentError` for unrecognized shapes.
 
-  Returns `{:ok, [struct]}` or `{:error, reason}`.
-
-  ## Arguments
-
-    * `schema` - the Ecto schema module.
-    * `entries` - a list of `{find_params, update_params}` tuples or
-      maps with an `:id` key.
-    * `opts` - shared options.
-
   ## Examples
 
       {:ok, posts} = EctoShorts.Actions.update_many(EctoShorts.Schema.Post, [
@@ -1421,8 +1058,7 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - associations to preload on every struct in the result list.
-      Accepts the same shapes as `preload/3`. Applied after the transaction.
+  * `:preload` - applied after the transaction succeeds
 
   See also `update/4`, `find_and_update/4`, and `update_all/4`.
   """
@@ -1439,22 +1075,13 @@ defmodule EctoShorts.Actions do
 
   Entries can be structs, filter param maps, or raw id values.
 
-  Returns `{:ok, [struct]}` or `{:error, reason}`.
-
-  ## Arguments
-
-    * `schema` - the Ecto schema module.
-    * `records` - a list of structs, param maps, or id values.
-    * `opts` - shared options.
-
   ## Examples
 
       {:ok, deleted} = EctoShorts.Actions.delete_many(EctoShorts.Schema.Post, [post1, post2])
 
   ## Options
 
-    * `:preload` - associations to preload on every struct in the result list.
-      Accepts the same shapes as `preload/3`. Applied after the transaction.
+  * `:preload` - applied after the transaction succeeds
 
   See also `delete/1`, `delete_all/3`, and `transact/2`.
   """
@@ -1472,14 +1099,6 @@ defmodule EctoShorts.Actions do
   For each entry, finds a matching record or creates one from the
   same params.
 
-  Returns `{:ok, [struct]}` or `{:error, reason}`.
-
-  ## Arguments
-
-    * `schema` - the Ecto schema module.
-    * `params_list` - a list of attribute maps.
-    * `opts` - shared options.
-
   ## Examples
 
       {:ok, posts} = EctoShorts.Actions.find_or_create_many(EctoShorts.Schema.Post, [
@@ -1489,8 +1108,7 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - associations to preload on every struct in the result list.
-      Accepts the same shapes as `preload/3`. Applied after the transaction.
+  * `:preload` - applied after the transaction succeeds
 
   See also `find_or_create/3`, `create_many/3`, and `find_many/3`.
   """
@@ -1508,15 +1126,6 @@ defmodule EctoShorts.Actions do
   Entries can be `{find_params, upsert_params}` tuples or maps with an
   `:id` key. Raises `ArgumentError` for unrecognized shapes.
 
-  Returns `{:ok, [struct]}` or `{:error, reason}`.
-
-  ## Arguments
-
-    * `schema` - the Ecto schema module.
-    * `entries` - a list of `{find_params, upsert_params}` tuples or
-      maps with an `:id` key.
-    * `opts` - shared options.
-
   ## Examples
 
       {:ok, posts} = EctoShorts.Actions.find_and_upsert_many(EctoShorts.Schema.Post, [
@@ -1526,8 +1135,7 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:preload` - associations to preload on every struct in the result list.
-      Accepts the same shapes as `preload/3`. Applied after the transaction.
+  * `:preload` - applied after the transaction succeeds
 
   See also `find_and_upsert/4`, `update_many/3`, and `find_or_create_many/3`.
   """

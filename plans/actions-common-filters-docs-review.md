@@ -41,6 +41,9 @@ This plan does not add or revise documentation for private helpers or internal b
 - [x] (2026-03-15 22:16Z) Revised `lib/ecto_shorts/actions.ex` module docs, public typedocs, and the overloaded function docs that needed clearer caller-facing contracts.
 - [x] (2026-03-15 22:22Z) Revised `lib/ecto_shorts/common_filters.ex` module docs and public function docs so the filter-language surface is explained at the behavior-family level with live routing examples.
 - [x] (2026-03-15 22:27Z) Ran `mix test test/ecto_shorts/actions test/ecto_shorts/common_filters`; the targeted suites passed with 690 tests and 0 failures.
+- [x] (2026-03-15 22:31Z) Read `https://hexdocs.pm/ecto/Ecto.html` to capture the reference writing style, then started rewriting the public docs in `actions.ex` and `common_filters.ex` to match that tone while preserving the live contract.
+- [x] (2026-03-15 22:36Z) Completed the Ecto-style rewrite pass across the public docs in `lib/ecto_shorts/actions.ex` and `lib/ecto_shorts/common_filters.ex`, while restoring the prose `Filter Keys` section in `common_filters.ex` for readability.
+- [x] (2026-03-15 22:38Z) Reran `mix test test/ecto_shorts/actions test/ecto_shorts/common_filters` after the Ecto-style pass; the targeted suites again passed with 690 tests and 0 failures.
 
 ## Milestones
 
@@ -101,9 +104,9 @@ Completion means the module docs no longer stop at the current top-level routing
 
 The implementation pass completed as documentation-only work.
 
-`lib/ecto_shorts/actions.ex` now explains the module boundary more directly, documents the shared caller-visible conventions, adds public typedoc guidance for the main spec terms, and sharpens the docs for the overloaded public helpers where the live behavior was easiest to miss from the previous prose alone.
+`lib/ecto_shorts/actions.ex` now explains the module boundary more directly, documents the shared caller-visible conventions, adds public typedoc guidance for the main spec terms, and sharpens the docs for the overloaded public helpers where the live behavior was easiest to miss from the previous prose alone. A follow-up rewrite then shifted the public prose toward the shorter, reference-style tone used by the upstream `Ecto` docs without dropping the caller-visible contract details.
 
-`lib/ecto_shorts/common_filters.ex` now explains the public filter language at the behavior-family level, makes the binding-selector and join-routing shapes clearer, corrects the public lock-key description to match the current live code and tests, and expands the public function docs for `convert_params_to_filter/3` and `build_query/6`.
+`lib/ecto_shorts/common_filters.ex` now explains the public filter language at the behavior-family level, makes the binding-selector and join-routing shapes clearer, corrects the public lock-key description to match the current live code and tests, and expands the public function docs for `convert_params_to_filter/3` and `build_query/6`. The final style pass kept the prose more compact and `Ecto`-like while restoring the prose `Filter Keys` section in place of the table because that format was easier to read in this module.
 
 The main deferred issue discovered during the review is the `insert_all/3` batch lookup option naming mismatch noted in `Surprises & Discoveries`. That mismatch was recorded but not changed because this task was scoped to behavior-preserving documentation only.
 
