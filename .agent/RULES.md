@@ -371,6 +371,8 @@ NON-NEGOTIABLE REQUIREMENTS:
   explicit authorization. A result that deviates from the stated output requirement is incorrect regardless of
   its technical quality.
 
+* When writing a test input, the public form is confirmed only when you can cite the specific source that establishes it: a module doc example, an existing passing test that uses the same shape, or a live code path that accepts it by name. Familiarity, plausibility, or structural similarity to a known shape is not confirmation. If you cannot cite the source, the shape is unverified and must not be used.
+
 ### Communication And Problem Framing
 
 * Do not assume shared language means shared understanding. Translate every important request into concrete

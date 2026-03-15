@@ -112,12 +112,9 @@ defmodule EctoShorts.CommonFilters.SchemalessComparisonOperatorsTest do
       assert_query(expected, q2)
     end
 
-    # BUG: not_in produces a nil dynamic expression for schemaless sources,
-    # causing Ecto to raise ArgumentError at query build time.
-    @tag :skip
     test "matches records where the field is not in the given list" do
       expected = from p in "posts", where: is_nil(p.id) or p.id not in ^[1, 2, 3]
-      q2 = CommonFilters.convert_params_to_filter("posts", %{id: %{not_in: [1, 2, 3]}}, [])
+      q2 = CommonFilters.convert_params_to_filter("posts", %{id: %{not: %{in: [1, 2, 3]}}}, [])
 
       assert_query(expected, q2)
     end

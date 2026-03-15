@@ -4,24 +4,25 @@ defmodule EctoShorts.CommonFilters.SchemalessAssociationFilterTest do
 
   alias EctoShorts.CommonFilters
 
-  # Association shorthand requires schema introspection to detect that a key
-  # corresponds to an association. For a schemaless source, `association_key?/2`
-  # always returns false and the key falls through to a plain field-equality
-  # filter instead of producing a join. This test pins that silent-skip behavior.
-  describe "convert_params_to_filter/3 association shorthand degradation (schemaless)" do
-    # BUG: For a schemaless source, a map value for an unknown key recurses
-    # into the filter pipeline and produces a nil dynamic expression, causing
-    # Ecto to raise ArgumentError at query build time instead of ignoring it.
-    @tag :skip
-    test "a key that would be an association shorthand on a schema source is silently skipped for a schemaless source" do
+  import Ecto.Query
+
+  # For a schemaless source, `association_key?/2` always returns false because
+  # there is no schema to reflect on. A key that would trigger association
+  # shorthand on a schema source is treated as a plain field equality filter
+  # instead. To join on a related table, the caller must use the explicit
+  # `:join` filter key.
+  describe "convert_params_to_filter/3 unknown key with scalar value (schemaless)" do
+    test "treats an unknown key with a scalar value as a plain field equality filter" do
+      expected = from(p in "posts", where: p.author_id == ^1)
+
       actual =
         CommonFilters.convert_params_to_filter(
           "posts",
-          %{comments: %{published: true}},
+          %{author_id: 1},
           []
         )
 
-      assert actual.joins == []
+      assert_query(expected, actual)
     end
   end
 end
