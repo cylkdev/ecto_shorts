@@ -213,10 +213,6 @@ defmodule EctoShorts.Config do
   @doc since: "3.0.0"
   @doc """
   Returns the configured `:max_positional_bindings` value from the `:ecto_shorts` application environment.
-
-  Defaults to `5`. Used by `EctoShorts.Generator` to determine how many
-  positional binding clauses to generate. Increase when your queries join
-  more than ten tables.
   """
   @spec max_positional_bindings :: integer()
   def max_positional_bindings do

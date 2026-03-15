@@ -111,14 +111,6 @@ defmodule EctoShorts.MixProject do
           EctoShorts.CommonSchema,
           EctoShorts.SchemaHelpers
         ],
-        Compiler: [
-          EctoShorts.Generator,
-          EctoShorts.Generator.AST,
-          EctoShorts.Generator.ClauseBuilder,
-          EctoShorts.Generator.Blueprint,
-          EctoShorts.Generator.Builder,
-          EctoShorts.Generator.QueryBindingBuilder
-        ],
         "CommonParams API": [
           EctoShorts.CommonParams.Placeholders,
           EctoShorts.CommonParams.Timestamps
