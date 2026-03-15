@@ -1,7 +1,6 @@
 defmodule EctoShorts.CommonFilters.Lock do
   alias EctoShorts.QueryBindings
   alias EctoShorts.Config
-  alias EctoShorts.Logger
   alias EctoShorts.QueryProvider
 
   alias Ecto.Query
@@ -26,7 +25,7 @@ defmodule EctoShorts.CommonFilters.Lock do
         name -> build_lock(query, selected_binding, name, params, opts)
       end
     else
-      Logger.warning(
+      EctoShorts.Logger.warning(
         @logger_prefix,
         "Expected :lock value to be a map or keyword list with a :name key (e.g. %{name: :for_update}), got: #{inspect(params)}"
       )
@@ -65,7 +64,7 @@ defmodule EctoShorts.CommonFilters.Lock do
               next_query
 
             other ->
-              Logger.warning(
+              EctoShorts.Logger.warning(
                 @logger_prefix,
                 "Expected lock expression callback to return an Ecto.Query, got: #{inspect(other)}"
               )
@@ -73,7 +72,7 @@ defmodule EctoShorts.CommonFilters.Lock do
               query
           end
         else
-          Logger.warning(
+          EctoShorts.Logger.warning(
             @logger_prefix,
             "Expected lock expression resolved from QueryProvider to be a 1-arity function, got: #{inspect(callback)}"
           )
@@ -82,7 +81,7 @@ defmodule EctoShorts.CommonFilters.Lock do
         end
 
       {:error, reason} ->
-        Logger.warning(
+        EctoShorts.Logger.warning(
           @logger_prefix,
           "Lock expression callback returned error for #{inspect(custom_name)}: #{inspect(reason)}"
         )
@@ -90,7 +89,7 @@ defmodule EctoShorts.CommonFilters.Lock do
         query
 
       other ->
-        Logger.warning(
+        EctoShorts.Logger.warning(
           @logger_prefix,
           "Expected lock expression resolved from QueryProvider to return {:ok, function} | {:error, reason} | nil, got: #{inspect(other)}"
         )

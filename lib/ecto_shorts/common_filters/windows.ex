@@ -6,6 +6,7 @@ defmodule EctoShorts.CommonFilters.Windows do
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.Windows"
+
   @payload_window_keys [:window, :partition_by, :order_by, :frame]
   @window_keys [:partition_by, :order_by, :frame]
 

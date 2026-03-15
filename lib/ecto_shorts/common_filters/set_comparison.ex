@@ -1,11 +1,14 @@
 defmodule EctoShorts.CommonFilters.SetComparison do
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonFilters.Select
-  alias EctoShorts.Utils
 
-  def build_quantified_query(outer_key, term, opts) do
-    params = Utils.map_to_keyword(term)
+  @logger_prefix "EctoShorts.CommonFilters.SetComparison"
 
+  def build_quantified_query(outer_key, params, opts) when is_map(params) and not is_struct(params) do
+    build_quantified_query(outer_key, Map.to_list(params), opts)
+  end
+
+  def build_quantified_query(outer_key, params, opts) do
     if Keyword.keyword?(params) do
       source = Keyword.fetch!(params, :from)
       where_params = Keyword.get(params, :where, [])
@@ -14,7 +17,12 @@ defmodule EctoShorts.CommonFilters.SetComparison do
 
       Select.build_query(:select, source, inner_query, {:as, nil}, select_term, opts)
     else
-      term
+      EctoShorts.Logger.warning(
+        @logger_prefix,
+        "Expected a map or keyword list, got: #{inspect(params)}"
+      )
+
+      params
     end
   end
 

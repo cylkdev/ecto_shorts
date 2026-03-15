@@ -1,8 +1,6 @@
 defmodule EctoShorts.CommonFilters.Select do
   alias Ecto.Query
   alias EctoShorts.QueryBindings
-  alias EctoShorts.Logger
-  alias EctoShorts.Utils
 
   require Ecto.Query
 
@@ -20,9 +18,7 @@ defmodule EctoShorts.CommonFilters.Select do
   end
 
   def build_query(:select_merge, _source, query, selected_binding, term, _opts) do
-    normalized_term = Utils.map_to_keyword(term)
-
-    apply_select_merge_expr(query, selected_binding, normalized_term)
+    apply_select_merge_expr(query, selected_binding, term)
   end
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
@@ -184,7 +180,7 @@ defmodule EctoShorts.CommonFilters.Select do
   defp drop_existing_select(%Ecto.Query{select: nil} = query), do: query
 
   defp drop_existing_select(query) do
-    Logger.warning(
+    EctoShorts.Logger.warning(
       @logger_prefix,
       "Query already has a :select expression — dropping it before applying the new :select filter. Pass a query without an existing select to avoid this."
     )

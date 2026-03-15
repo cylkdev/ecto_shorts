@@ -1,16 +1,19 @@
 defmodule EctoShorts.CommonFilters.Update do
   alias EctoShorts.QueryBindings
-  alias EctoShorts.Utils
 
   alias Ecto.Query
   require Ecto.Query
 
-  {_, binding_patterns} =
-    QueryBindings.query_binding_contracts(__MODULE__)
+  def build_query(:update, source, query, selected_binding, map, opts)
+      when is_map(map) and not is_struct(map) do
+    build_query(:update, source, query, selected_binding, Map.to_list(map), opts)
+  end
 
   def build_query(:update, _source, query, selected_binding, term, _opts) do
-    apply_update_expr(query, selected_binding, Utils.map_to_keyword(term))
+    apply_update_expr(query, selected_binding, term)
   end
+
+  {_, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp apply_update_expr(query, unquote(quoted_binding_head), expr) do
