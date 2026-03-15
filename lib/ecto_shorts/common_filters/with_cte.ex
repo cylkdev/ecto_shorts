@@ -24,17 +24,8 @@ defmodule EctoShorts.CommonFilters.WithCte do
         apply_entry(schema_source, query_acc, cte_name, cte_definition, opts)
       end)
     else
-      Enum.reduce(params, query, fn
-        {cte_name, cte_definition}, query_acc ->
-          apply_entry(schema_source, query_acc, cte_name, cte_definition, opts)
-
-        other, query_acc ->
-          EctoShorts.Logger.warning(
-            @logger_prefix,
-            "Expected :with_cte params to be a map or keyword list, got: #{inspect(other)}"
-          )
-
-          query_acc
+      Enum.reduce(params, query, fn entry, query_acc ->
+        reduce_entry(schema_source, query_acc, entry, opts)
       end)
     end
   end
@@ -43,6 +34,24 @@ defmodule EctoShorts.CommonFilters.WithCte do
     EctoShorts.Logger.warning(
       @logger_prefix,
       "Expected :with_cte params to be a map or keyword list, got: #{inspect(value)}"
+    )
+
+    query
+  end
+
+  defp reduce_entry(schema_source, query, {cte_name, cte_definition}, opts) do
+    apply_entry(schema_source, query, cte_name, cte_definition, opts)
+  end
+
+  defp reduce_entry(schema_source, query, [{cte_name, cte_definition}], opts)
+       when not (is_atom(cte_name) or is_binary(cte_name)) do
+    apply_entry(schema_source, query, cte_name, cte_definition, opts)
+  end
+
+  defp reduce_entry(_schema_source, query, other, _opts) do
+    EctoShorts.Logger.warning(
+      @logger_prefix,
+      "Expected :with_cte params to be a map or keyword list, got: #{inspect(other)}"
     )
 
     query
