@@ -1,6 +1,8 @@
 # RULES.md
 
-This document outlines the rules and guidelines for operating within this project.
+This document sets out the principles and guidelines for operating within this project.
+
+Instructions in RULES.md must not be case-specific. They must define the reasoning and behavior expected in practice. Instead of targeting an individual scenario, identify the underlying principle and write guidance that directs decision-making toward the correct approach, so the right behavior is applied consistently across similar situations.
 
 ## Living Documents and Artifacts
 

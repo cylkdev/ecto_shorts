@@ -349,6 +349,38 @@ defmodule EctoShorts.CommonFilters.PreloadTest do
       assert_query(expected, actual)
     end
 
+    test "matches Ecto.Query for a join-backed preload with a select on the same binding" do
+      source =
+        from(p in Post,
+          join: c in assoc(p, :comments),
+          as: :comments
+        )
+
+      expected =
+        from(p in Post,
+          join: c in assoc(p, :comments),
+          as: :comments,
+          select: c.body,
+          preload: [comments: c]
+        )
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{
+            as: %{
+              comments: %{
+                preload: :comments,
+                select: :body
+              }
+            }
+          },
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
     # Passing a non-keyword list as the nested preload spec inside a binding-scoped
     # preload keyword entry produces a double-wrapped result. `normalize_preload/1`
     # returns a non-keyword list unchanged, and the tuple path in `build_preload/4`

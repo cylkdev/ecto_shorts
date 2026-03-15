@@ -215,7 +215,7 @@ defmodule EctoShorts.CommonFilters do
       key in API.filter_group(:post_aggregate) ->
         reduce_filter_group_or_build(key, source, query, selected_binding, term, opts)
 
-      association_filter?(source, key, term) ->
+      container?(term) and association_key?(source, key) ->
         query
         |> ensure_association_binding(source, key, opts)
         |> reduce_association_filters(filter, source, key, term, opts)
@@ -308,10 +308,6 @@ defmodule EctoShorts.CommonFilters do
   defp to_keyword([head | tail]), do: [to_keyword(head) | to_keyword(tail)]
   defp to_keyword({k, v}), do: {k, to_keyword(v)}
   defp to_keyword(term), do: term
-
-  defp association_filter?(source, key, term) do
-    container?(term) and association_key?(source, key)
-  end
 
   defp association_key?(source, key) do
     key in (CommonSchema.get_schema_reflection(source, :associations) || [])
