@@ -26,6 +26,10 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_query(expected, actual)
     end
 
+    # Three outer-key forms are supported for association joins: the explicit form
+    # `[association: [source: :author, as: :author]]`, the type-selector form
+    # `[type: :association, source: :author, ...]`, and this shorthand where the
+    # outer key is the association name itself.
     test "matches Ecto.Query for an association shorthand join payload" do
       expected =
         from(p in Post,
@@ -43,6 +47,9 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_query(expected, actual)
     end
 
+    # `type:` selects the source family (`:association`, `:schema`, `:table`, etc.).
+    # `qualifier:` selects the join mode (`:left`, `:right`, `:inner`, etc.).
+    # The two keys are independent; `type:` does not set the join mode.
     test "matches Ecto.Query for an explicit association join payload using the type source selector" do
       expected =
         from(p in Post,
@@ -131,6 +138,8 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_query(expected, actual)
     end
 
+    # `hints:` accepts an atom. The atom is resolved to a SQL hint string by the
+    # provider before being forwarded to Ecto.
     test "matches Ecto.Query for a table join payload with configured hints" do
       expected =
         from(p in Post,
@@ -248,6 +257,9 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_query(expected, actual)
     end
 
+    # Fragment joins require the `query_provider:` opt. The provider receives the
+    # source name and values and must return `{:ok, %Ecto.Query{}}`. The three
+    # tests below cover the nil, error, and invalid-return branches.
     test "matches Ecto.Query for a fragment join payload through the provider contract" do
       active_users =
         from(u in fragment("SELECT * FROM users WHERE age >= ?", ^18), select: u)
@@ -277,6 +289,7 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_query(expected, actual)
     end
 
+    # A nil return from the provider leaves the query unchanged.
     test "keeps the query unchanged when the fragment provider returns nil" do
       expected = from(p in Post)
 
@@ -301,6 +314,8 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert_query(expected, actual)
     end
 
+    # An `{:error, reason}` return from the provider logs a warning and leaves the
+    # query unchanged.
     test "keeps the query unchanged when the fragment provider returns an error" do
       expected = from(p in Post)
 
@@ -330,6 +345,8 @@ defmodule EctoShorts.CommonFilters.JoinTest do
       assert log =~ "Join source callback returned error for key :error_fragment: :forced_error"
     end
 
+    # A return value that is not `{:ok, query}`, `{:error, reason}`, or `nil` is
+    # rejected with a log warning and leaves the query unchanged.
     test "keeps the query unchanged when the fragment provider returns a raw source" do
       expected = from(p in Post)
 

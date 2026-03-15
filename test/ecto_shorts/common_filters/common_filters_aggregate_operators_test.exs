@@ -7,6 +7,9 @@ defmodule EctoShorts.CommonFilters.AggregateOperatorsTest do
 
   import Ecto.Query
 
+  # Aggregate operator shape: `%{field: %{agg_fn: %{comparator: value}}}`.
+  # The aggregate function wraps the field; the comparator applies to the result.
+  # Negated form: `%{field: %{not: %{agg_fn: %{comparator: value}}}}`.
   describe "convert_params_to_filter/3 aggregate operators" do
     test "Rule Statement 1: avg views greater than" do
       expected = from(p in Post, where: avg(p.views) > ^10)
@@ -15,6 +18,7 @@ defmodule EctoShorts.CommonFilters.AggregateOperatorsTest do
       assert_sql(expected, actual)
     end
 
+    # `not: %{avg: %{>: value}}` produces `not (avg(field) > value)`.
     test "Rule Statement 2: avg views greater than negated" do
       expected = from(p in Post, where: not (avg(p.views) > ^10))
       actual = CommonFilters.convert_params_to_filter(Post, %{views: %{not: %{avg: %{>: 10}}}}, [])

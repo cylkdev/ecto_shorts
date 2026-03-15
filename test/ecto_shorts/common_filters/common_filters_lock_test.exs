@@ -9,6 +9,9 @@ defmodule EctoShorts.CommonFilters.LockTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 lock shapes" do
+    # Built-in lock aliases (`:for_update`, `:for_share`) are resolved without a
+    # provider. The `name:` key is checked against the built-in alias table first;
+    # unrecognized names are forwarded to the query provider if one is configured.
     test "matches Ecto.Query for a root for_update alias lock" do
       expected = lock(Post, "FOR UPDATE")
 
@@ -35,6 +38,8 @@ defmodule EctoShorts.CommonFilters.LockTest do
       assert_query(expected, actual)
     end
 
+    # Provider-backed locks require the `query_provider:` opt. The provider callback
+    # receives the lock name and values and must return `{:ok, fn query -> query end}`.
     test "matches Ecto.Query for a provider-backed lock" do
       expected = lock(Post, "FOR UPDATE")
 
@@ -61,6 +66,8 @@ defmodule EctoShorts.CommonFilters.LockTest do
       assert_query(expected, actual)
     end
 
+    # The accepted lock shape is `%{name: atom}` or `[name: atom]`. Raw strings and
+    # bare functions are not accepted; both produce a log warning and a no-op.
     test "keeps the query unchanged for a direct raw string lock" do
       expected = from(p in Post)
 
@@ -129,6 +136,9 @@ defmodule EctoShorts.CommonFilters.LockTest do
       assert log =~ "Lock expression callback returned error for :error_fragment: :forced_error"
     end
 
+    # The provider return contract is `{:ok, fn}` | `{:error, reason}` | `nil`.
+    # A return value that does not match one of these shapes is rejected with a log
+    # warning and leaves the query unchanged.
     test "keeps the query unchanged when the lock provider returns a raw expression" do
       expected = from(p in Post)
 

@@ -36,6 +36,8 @@ defmodule EctoShorts.CommonFilters.HavingTest do
       assert_query(expected, actual)
     end
 
+    # `having:` accepts a pre-built `Ecto.Query.DynamicExpr` directly in addition to
+    # the nested map syntax.
     test "matches Ecto.Query for a root dynamic having" do
       source = from p in Post, group_by: p.author_id
       dynamic_expr = dynamic([p], avg(p.views) > 10)

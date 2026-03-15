@@ -8,6 +8,9 @@ defmodule EctoShorts.CommonFilters.SetOperationTest do
   import Ecto.Query
 
   describe "convert_params_to_filter/3 set operation shapes" do
+    # Set operation values accept two shapes: a filter params map/keyword (which is
+    # built into a query using the same source schema as the outer query), or a
+    # pre-built `%Ecto.Query{}`. Both forms are live for all six set operations.
     test "matches Ecto.Query for union with filter params" do
       other_query = from(p in Post, where: p.published == ^false)
       expected = union(Post, ^other_query)

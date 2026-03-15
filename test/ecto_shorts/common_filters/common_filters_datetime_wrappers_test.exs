@@ -7,6 +7,10 @@ defmodule EctoShorts.CommonFilters.DatetimeWrappersTest do
 
   import Ecto.Query
 
+  # `datetime:` wrapper shape: `%{field: %{comparator: %{datetime: %{fn: args}}}}`.
+  # The RHS is replaced with the Ecto datetime function before the comparison is
+  # applied. Supported RHS shapes: `%{add: ...}` (`datetime_add`), `%{ago: ...}`
+  # (`ago`), `%{from_now: ...}` (`from_now`). The field side is not wrapped.
   describe "convert_params_to_filter/3 datetime wrappers" do
     test "matches records using datetime_add before comparison" do
       expected = from(p in Post, where: p.inserted_at >= datetime_add(p.inserted_at, ^1, "day"))

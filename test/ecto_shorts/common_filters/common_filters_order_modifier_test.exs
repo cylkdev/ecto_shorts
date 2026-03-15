@@ -8,6 +8,8 @@ defmodule EctoShorts.CommonFilters.OrderModifierTest do
   import Ecto.Query
 
   describe "convert_params_to_filter/3 order modifier shapes" do
+    # A bare atom for `prepend_order_by` defaults to `desc:` order, unlike `order_by:`
+    # where a bare atom defaults to `asc:`.
     test "matches Ecto.Query for a root prepend_order_by atom" do
       expected = prepend_order_by(Post, [], desc: :title)
 
@@ -156,6 +158,8 @@ defmodule EctoShorts.CommonFilters.OrderModifierTest do
       assert_query(expected, actual)
     end
 
+    # `reverse_order:` is applied after all other params in the same call, including
+    # `order_by:` values that appear in the same params map.
     test "matches Ecto.Query for reverse_order after local order_by params" do
       expected =
         Post

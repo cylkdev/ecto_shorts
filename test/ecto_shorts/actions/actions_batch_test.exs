@@ -79,6 +79,8 @@ defmodule EctoShorts.Actions.BatchTest do
       %{post: post}
     end
 
+    # Entries whose first element is already a struct are passed through unchanged
+    # without a database query.
     test "keeps the entry unchanged when it is a struct-and-map tuple", %{post: post} do
       input = {post, %{title: "Ignored"}}
 
@@ -136,6 +138,8 @@ defmodule EctoShorts.Actions.BatchTest do
       assert id === post.id
     end
 
+    # A bare map or keyword list is looked up and converted to
+    # `{resolved_struct, original_params}`, preserving the original params.
     test "wraps the map entry into a tuple with the matching record", %{post: post} do
       input = %{permalink: "existing", title: "New"}
 

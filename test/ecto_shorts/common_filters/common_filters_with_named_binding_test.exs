@@ -25,6 +25,8 @@ defmodule EctoShorts.CommonFilters.WithNamedBindingTest do
       assert_query(expected, actual)
     end
 
+    # `with_named_binding` is idempotent. If the named binding already exists on the
+    # query, the join params are ignored and the query passes through unchanged.
     test "matches Ecto.Query when with_named_binding no-ops on an existing binding" do
       source =
         from(p in Post,

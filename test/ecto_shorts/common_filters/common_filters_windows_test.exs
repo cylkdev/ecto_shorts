@@ -156,6 +156,10 @@ defmodule EctoShorts.CommonFilters.WindowsTest do
       assert_query(expected, actual)
     end
 
+    # `window: :name` copies partition and order from the referenced window at
+    # filter-build time. Local keys in the child window override inherited values.
+    # Chaining is supported: a child can reference a window that itself references
+    # another.
     test "matches Ecto.Query for a root window reference by name only" do
       author_field = :author_id
 
@@ -370,6 +374,8 @@ defmodule EctoShorts.CommonFilters.WindowsTest do
       assert log =~ "Expected :window for :child_window to be an atom"
     end
 
+    # Window reference cycles are detected at filter-build time. A cycle produces a
+    # log warning and leaves the query unchanged.
     test "keeps the query unchanged when a window reference cycle exists" do
       expected = from(p in Post)
 
@@ -465,6 +471,7 @@ defmodule EctoShorts.CommonFilters.WindowsTest do
       assert log =~ "Expected window name to be an atom"
     end
 
+    # `:frame` requires an `Ecto.Query.DynamicExpr`. Raw strings are not accepted.
     test "keeps the query unchanged when frame is not a dynamic expression" do
       expected = from(p in Post)
 

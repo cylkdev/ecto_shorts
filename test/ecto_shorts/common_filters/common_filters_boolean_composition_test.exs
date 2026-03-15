@@ -29,6 +29,8 @@ defmodule EctoShorts.CommonFilters.BooleanCompositionTest do
       assert_sql(expected, actual)
     end
 
+    # `:and`, `:where`, and plain field keys all produce equivalent AND-joined
+    # where clauses.
     test ":and is equivalent to a plain field filter" do
       plain = CommonFilters.convert_params_to_filter(Post, %{views: 15}, [])
       via_and = CommonFilters.convert_params_to_filter(Post, %{and: %{views: 15}}, [])
@@ -52,6 +54,9 @@ defmodule EctoShorts.CommonFilters.BooleanCompositionTest do
       assert_sql(expected, actual)
     end
 
+    # Multiple predicates inside a single `:or` map are AND-merged into one `or_where`
+    # clause. The `:or` key determines the clause type; the inner predicates combine
+    # with AND, not OR.
     test ":or map with a range produces a single or_where with AND-merged conditions" do
       expected = from(p in Post, or_where: p.views < ^5 and p.views > ^10)
       actual = CommonFilters.convert_params_to_filter(Post, %{or: %{views: [<: 5, >: 10]}}, [])
@@ -141,6 +146,8 @@ defmodule EctoShorts.CommonFilters.BooleanCompositionTest do
       assert_sql(expected, actual)
     end
 
+    # A keyword list preserves declaration order. A map does not guarantee iteration
+    # order, so keyword lists are required when clause ordering matters.
     test "multiple where: and multiple or_where: all applied in order" do
       expected =
         from(p in Post,

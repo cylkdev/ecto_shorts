@@ -22,6 +22,7 @@ defmodule EctoShorts.CommonFilters.SelectTest do
       assert_query(expected, actual)
     end
 
+    # `true` selects the full binding (`select: p`), not a boolean field value.
     test "matches Ecto.Query for selecting the full root binding" do
       expected = from(p in Post, select: p)
 
@@ -35,6 +36,9 @@ defmodule EctoShorts.CommonFilters.SelectTest do
       assert_query(expected, actual)
     end
 
+    # `{:map, fields}` and `{:struct, fields}` are the public shapes for Ecto's
+    # `map/2` and `struct/2` projections. The first element is the projection type;
+    # the second is the field list or alias map.
     test "matches Ecto.Query for a root select map field list" do
       expected = from(p in Post, select: map(p, [:id, :title]))
 
@@ -135,6 +139,9 @@ defmodule EctoShorts.CommonFilters.SelectTest do
       assert_query(expected, actual)
     end
 
+    # `:first` and `:last` are positional aliases valid only inside the `at:` map.
+    # `:first` resolves to binding index 1 (the root binding); `:last` resolves to
+    # the highest binding index in the query.
     test "matches Ecto.Query for a first positional binding select alias mapping" do
       source =
         from(p in Post,
@@ -193,6 +200,8 @@ defmodule EctoShorts.CommonFilters.SelectTest do
       assert_query(expected, actual)
     end
 
+    # Applying `select:` to a query that already has a select clause overwrites it.
+    # A warning is logged and the new expression replaces the existing one.
     test "matches Ecto.Query when select overwrites an existing select" do
       source = from(p in Post, select: p.title)
       expected = from(p in Post, select: p.id)

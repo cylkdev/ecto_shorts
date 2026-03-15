@@ -55,6 +55,8 @@ defmodule EctoShorts.CommonFilters.WithCteTest do
       assert_query(expected, actual)
     end
 
+    # Including `from:` in the CTE filter params overrides the default source.
+    # Without `from:`, the CTE query is built from the same schema as the outer query.
     test "matches Ecto.Query for with_cte with filter params using an explicit from source" do
       cte_source = from(p in Post)
       cte_query = from(p in Post, where: p.published == ^true)
@@ -103,6 +105,8 @@ defmodule EctoShorts.CommonFilters.WithCteTest do
       assert_sql(expected, actual)
     end
 
+    # `recursive_ctes:` and `with_cte:` can appear in either order in the keyword
+    # list. Both orderings produce the same Ecto.Query structure.
     test "matches Ecto.Query when recursive_ctes is applied before with_cte" do
       cte_query = from(p in Post, where: p.published == ^true)
       expected = Post |> recursive_ctes(true) |> with_cte("published_posts", as: ^cte_query)
@@ -182,6 +186,8 @@ defmodule EctoShorts.CommonFilters.WithCteTest do
       assert_query(expected, actual)
     end
 
+    # When CTEs reference each other, the referenced CTE must appear before the
+    # referencing CTE in the params list. Use a keyword list to preserve this order.
     test "matches Ecto.Query for ordered keyword-list CTE dependencies" do
       published_posts_query = from(p in Post, where: p.published == ^true)
       recent_posts_query = from(p in "published_posts", where: p.title == ^"recent")

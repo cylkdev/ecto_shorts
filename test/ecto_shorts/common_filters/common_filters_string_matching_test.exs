@@ -15,6 +15,9 @@ defmodule EctoShorts.CommonFilters.StringMatchingTest do
       assert_sql(expected, q2)
     end
 
+    # Bare string values are wrapped as `%value%`. Values that already contain `%`
+    # or `_` are forwarded unchanged. `assert_sql/2` compares SQL strings only, not
+    # bound parameters, so `to_sql/3` tuple equality is used to verify the parameter.
     test "preserves caller-supplied wildcard patterns using like" do
       expected = from p in Post, where: like(p.title, ^"hello%")
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{like: "hello%"}}, [])
@@ -56,6 +59,9 @@ defmodule EctoShorts.CommonFilters.StringMatchingTest do
       assert_sql(expected, q2)
     end
 
+    # Each element in the list is checked independently: bare strings are wrapped,
+    # patterns containing `%` or `_` are forwarded unchanged. Uses `to_sql/3` tuple
+    # equality to verify bound parameter values.
     test "preserves caller-supplied wildcard patterns in the ilike list" do
       patterns = ["hello%", "%world"]
 

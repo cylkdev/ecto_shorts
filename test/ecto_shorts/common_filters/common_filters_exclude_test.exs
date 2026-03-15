@@ -360,6 +360,8 @@ defmodule EctoShorts.CommonFilters.ExcludeTest do
       assert_query(expected, actual)
     end
 
+    # `{:windows, [:name]}` removes only the named windows. The atom `:windows`
+    # removes all windows.
     test "matches Ecto.Query for excluding specific windows by name" do
       source =
         from(p in Post,

@@ -41,6 +41,8 @@ defmodule EctoShorts.CommonFilters.SubqueryTest do
       assert_query(expected, actual)
     end
 
+    # `subquery:` runs after all other filter params in the same call. Params that
+    # appear alongside it are applied to the inner query before it is wrapped.
     test "matches Ecto.Query for terminal subquery wrapping after local filters" do
       expected =
         Post
