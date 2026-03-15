@@ -1,6 +1,92 @@
 defmodule EctoShorts.Dynamics do
+  @moduledoc since: "3.0.0"
+  @moduledoc """
+  Entry point for building dynamic filter expressions.
+
+  This module is responsible for turning filter key-value pairs into
+  `Ecto.Query.DynamicExpr` values.
+
+  `EctoShorts.Dynamics` delegates the work to a dynamic adapter. The adapter
+  may be given explicitly, configured globally, or inferred from the repo
+  adapter. This allows callers to build dynamic expressions without depending
+  on database-specific modules.
+
+  ## Adapter resolution
+
+  The dynamic adapter is resolved in the following order:
+
+    1. The `:dynamic_adapter` option passed at call time
+    2. `EctoShorts.Config.dynamic_adapter/0`
+    3. The repo database adapter
+
+  At the moment, the following repo adapters are supported for inference:
+
+    * `Ecto.Adapters.Postgres` - resolves to `EctoShorts.Dynamics.Postgres`
+
+  All other adapters raise at runtime unless a custom dynamic adapter is
+  provided.
+
+  ## Custom adapters
+
+  You may provide your own adapter as long as it implements the
+  `EctoShorts.Adapter.Dynamic` behaviour.
+
+  A custom adapter may be configured in your application environment:
+
+      # config/config.exs
+      config :ecto_shorts, dynamic_adapter: MyApp.Dynamics.Custom
+
+  It may also be passed at call time:
+
+      EctoShorts.Dynamics.build_dynamic(source, binding, term,
+        dynamic_adapter: MyApp.Dynamics.Custom
+      )
+  """
+
   alias EctoShorts.Config
 
+  @doc since: "3.0.0"
+  @doc """
+  Builds an `Ecto.Query.DynamicExpr` for `term` using the adapter resolved
+  from `opts` (or from the configured repo).
+
+  ## Arguments
+
+    * `source` — the queryable source: a schema module, `{source, schema}`
+      tuple, or an existing `Ecto.Query`.
+    * `selected_binding` — the binding selector: `{:as, atom()}` for a
+      named binding or `{:at, pos_integer()}` for a positional binding.
+      Use `{:as, nil}` to target the default (first) binding.
+    * `term` — the filter term to translate. Typically a `{key, value}`
+      pair where `key` is a field atom and `value` is the filter
+      expression (scalar, keyword list of operators, range, etc.).
+    * `opts` — keyword options forwarded to the adapter.
+
+  ## Options
+
+    * `:dynamic_adapter` — a module implementing
+      `EctoShorts.Adapter.Dynamic`. Overrides all other resolution.
+    * `:repo` — the repo to use for adapter auto-detection.
+    * `:replica` — fallback repo when `:repo` is not given.
+
+  ## Returns
+
+  An `Ecto.Query.DynamicExpr` suitable for use with `Ecto.Query.where/3`,
+  `Ecto.Query.or_where/3`, `Ecto.Query.having/3`, etc.
+
+  ## Examples
+
+      iex> EctoShorts.Dynamics.build_dynamic(Post, {:as, nil}, {:views, 5}, repo: MyApp.Repo)
+      #Ecto.Query.DynamicExpr<...>
+
+      iex> EctoShorts.Dynamics.build_dynamic(
+      ...>   Post,
+      ...>   {:as, nil},
+      ...>   {:views, [>: 1, <: 10]},
+      ...>   repo: MyApp.Repo
+      ...> )
+      #Ecto.Query.DynamicExpr<...>
+  """
   def build_dynamic(source, selected_binding, term, opts) do
     adapter_for_repo!(opts).build_dynamic(source, selected_binding, term, opts)
   end

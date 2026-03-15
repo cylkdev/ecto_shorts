@@ -18,7 +18,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
-  alias EctoShorts.Dynamics.Postgres
+  alias EctoShorts.Dynamics
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
@@ -272,7 +272,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
   defp build_on_dynamic(schema_source, selected_binding, entries, opts) when is_list(entries) do
     Enum.reduce(entries, nil, fn {key, value}, acc ->
-      dyn = Postgres.build_dynamic(schema_source, selected_binding, {key, value}, opts)
+      dyn = Dynamics.build_dynamic(schema_source, selected_binding, {key, value}, opts)
       FilterHelpers.merge_dynamic(acc, :and, dyn)
     end)
   end
