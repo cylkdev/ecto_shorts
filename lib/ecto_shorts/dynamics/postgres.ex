@@ -20,7 +20,7 @@ defmodule EctoShorts.Dynamics.Postgres do
       when quantifier_op in @quantifier_operators do
     expr =
       params
-      |> Normalizer.normalize_params()
+      |> then(&Normalizer.normalize_params(source, &1, opts))
       |> Enum.reduce(nil, fn entry, acc ->
         dyn = apply_expr(source, selected_binding, entry, opts)
         FilterHelpers.merge_dynamic(acc, quantifier_op, dyn)
@@ -32,7 +32,7 @@ defmodule EctoShorts.Dynamics.Postgres do
   def build_dynamic(source, selected_binding, {key, params}, opts) do
     expr =
       params
-      |> Normalizer.normalize_params()
+      |> then(&Normalizer.normalize_params(source, &1, opts))
       |> Enum.reduce(nil, fn entry, acc ->
         {merge_op, expr_entry} = expr_entry(key, entry)
         dyn = apply_expr(source, selected_binding, expr_entry, opts)

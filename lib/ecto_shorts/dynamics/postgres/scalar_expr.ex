@@ -559,13 +559,13 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
 
       # Arithmetic: field OP field ARITH_OP value
       {op_a, {:value, {arith_op, {{:field, af}, {:value, av}}}}}
-      when op_a in @comparison_operators and arith_op in [:+, :-, :*, :/] ->
+      when op_a in @comparison_operators and arith_op in [:+, :-, :*, :/] and is_atom(af) and af != nil ->
         f = field_dyn(binding, key)
         f2 = field_dyn(binding, af)
         apply_arith_comparison(op_a, f, f2, arith_op, av, :plain)
 
       {:not, {op_a, {:value, {arith_op, {{:field, af}, {:value, av}}}}}}
-      when op_a in @comparison_operators and arith_op in [:+, :-, :*, :/] ->
+      when op_a in @comparison_operators and arith_op in [:+, :-, :*, :/] and is_atom(af) and af != nil ->
         f = field_dyn(binding, key)
         f2 = field_dyn(binding, af)
         apply_arith_comparison(op_a, f, f2, arith_op, av, :negated)
