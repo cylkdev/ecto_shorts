@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics do
+defmodule EctoShorts.DynamicBuilders do
   @moduledoc since: "3.0.0"
   @moduledoc """
   Entry point for building dynamic filter expressions.
@@ -6,7 +6,7 @@ defmodule EctoShorts.Dynamics do
   This module is responsible for turning filter key-value pairs into
   `Ecto.Query.DynamicExpr` values.
 
-  `EctoShorts.Dynamics` delegates the work to a dynamic adapter. The adapter
+  `EctoShorts.DynamicBuilders` delegates the work to a dynamic adapter. The adapter
   may be given explicitly, configured globally, or inferred from the repo
   adapter. This allows callers to build dynamic expressions without depending
   on database-specific modules.
@@ -21,7 +21,7 @@ defmodule EctoShorts.Dynamics do
 
   At the moment, the following repo adapters are supported for inference:
 
-    * `Ecto.Adapters.Postgres` - resolves to `EctoShorts.Dynamics.Postgres`
+    * `Ecto.Adapters.Postgres` - resolves to `EctoShorts.DynamicBuilders.Postgres`
 
   All other adapters raise at runtime unless a custom dynamic adapter is
   provided.
@@ -29,17 +29,17 @@ defmodule EctoShorts.Dynamics do
   ## Custom adapters
 
   You may provide your own adapter as long as it implements the
-  `EctoShorts.Adapter.Dynamic` behaviour.
+  `EctoShorts.Adapter.DynamicBuilder` behaviour.
 
   A custom adapter may be configured in your application environment:
 
       # config/config.exs
-      config :ecto_shorts, dynamic_adapter: MyApp.Dynamics.Custom
+      config :ecto_shorts, dynamic_adapter: MyApp.DynamicBuilders.Custom
 
   It may also be passed at call time:
 
-      EctoShorts.Dynamics.build_dynamic(source, binding, term,
-        dynamic_adapter: MyApp.Dynamics.Custom
+      EctoShorts.DynamicBuilders.build_dynamic(source, binding, term,
+        dynamic_adapter: MyApp.DynamicBuilders.Custom
       )
   """
 
@@ -65,7 +65,7 @@ defmodule EctoShorts.Dynamics do
   ## Options
 
     * `:dynamic_adapter` - a module implementing
-      `EctoShorts.Adapter.Dynamic`. Overrides all other resolution.
+      `EctoShorts.Adapter.DynamicBuilder`. Overrides all other resolution.
     * `:repo` - the repo to use for adapter auto-detection.
     * `:replica` - fallback repo when `:repo` is not given.
 
@@ -76,10 +76,10 @@ defmodule EctoShorts.Dynamics do
 
   ## Examples
 
-      iex> EctoShorts.Dynamics.build_dynamic(Post, {:as, nil}, {:views, 5}, repo: MyApp.Repo)
+      iex> EctoShorts.DynamicBuilders.build_dynamic(Post, {:as, nil}, {:views, 5}, repo: MyApp.Repo)
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.Dynamics.build_dynamic(
+      iex> EctoShorts.DynamicBuilders.build_dynamic(
       ...>   Post,
       ...>   {:as, nil},
       ...>   {:views, [>: 1, <: 10]},
@@ -99,7 +99,7 @@ defmodule EctoShorts.Dynamics do
 
       case repo.__adapter__() do
         Ecto.Adapters.Postgres ->
-          EctoShorts.Dynamics.Postgres
+          EctoShorts.DynamicBuilders.Postgres
 
         Ecto.Adapters.MyXQL ->
           raise "Adapter not yet implemented: Ecto.Adapters.MyXQL"

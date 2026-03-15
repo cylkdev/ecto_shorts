@@ -29,7 +29,7 @@ EctoShorts is split into the following main components:
 | `EctoShorts.CommonSchema`  | You need schema introspection or polymorphic source handling.                             |
 | `EctoShorts.CommonParams`  | You need to prepare parameters for `insert_all`, `update_all`, or `delete_all`.           |
 | `EctoShorts.CommonQuery`   | You need to inspect query bindings, sources, or prefixes.                                 |
-| `EctoShorts.Dynamics`      | You need to build `Ecto.Query.dynamic/2` expressions from data.                           |
+| `EctoShorts.DynamicBuilders`      | You need to build `Ecto.Query.dynamic/2` expressions from data.                           |
 | `EctoShorts.Generator`      | Internal: generates function clauses at compile time.                                     |
 | `EctoShorts.Testing`       | You need test helpers for asserting on SQL, queries, or dynamic expressions.              |
 
@@ -57,7 +57,7 @@ behaviour. Used to construct error values returned by `EctoShorts.Actions`
 functions. Defaults to `EctoShorts.Actions.Error`.
 
 * `:dynamic_adapter` - A module implementing `EctoShorts.Dynamic`.
-Auto-resolved to `EctoShorts.Dynamics.Postgres` when the repo uses
+Auto-resolved to `EctoShorts.DynamicBuilders.Postgres` when the repo uses
 `Ecto.Adapters.Postgres`. Defaults to resolved from the repo's adapter.
 
 * `:query_provider` - A module that resolves provider-backed join and lock
@@ -392,7 +392,7 @@ EctoShorts modules collaborate in a layered architecture:
              │
              ▼
     ┌─────────────────┐
-    │    Dynamics     │
+    │    DynamicBuilders     │
     │(Dynamic exprs)  │
     └────────┬────────┘
              │
@@ -406,7 +406,7 @@ EctoShorts modules collaborate in a layered architecture:
 
 1. Your context module calls `EctoShorts.Actions` with a schema and params.
 2. Actions delegates to `CommonFilters` to build an `Ecto.Query`.
-3. CommonFilters uses `Dynamics` to build dynamic expressions.
+3. CommonFilters uses `DynamicBuilders` to build dynamic expressions.
 4. Actions executes the query through the configured `Ecto.Repo`.
 5. Results are returned to your context module.
 

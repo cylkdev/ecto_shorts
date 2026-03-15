@@ -12,7 +12,7 @@ defmodule EctoShorts.Config do
       config :ecto_shorts,
         repo: MyApp.Repo,
         replica: MyApp.Repo.Replica,
-        dynamic_adapter: EctoShorts.Dynamics.Postgres,
+        dynamic_adapter: EctoShorts.DynamicBuilders.Postgres,
         query_builder: MyApp.CustomQueryBuilder,
         query_provider: MyApp.QueryProvider,
         error_module: EctoShorts.Actions.Error,
@@ -22,7 +22,7 @@ defmodule EctoShorts.Config do
   |---|---|---|---|
   | `:repo` | `module()` | `nil` | Primary `Ecto.Repo` for write operations |
   | `:replica` | `module()` | `nil` | Read replica repo; falls back to `:repo` when absent |
-  | `:dynamic_adapter` | `module()` | auto-detected | `EctoShorts.Adapter.Dynamic` implementation; auto-detected from the repo's database adapter when not set |
+  | `:dynamic_adapter` | `module()` | auto-detected | `EctoShorts.Adapter.DynamicBuilder` implementation; auto-detected from the repo's database adapter when not set |
   | `:query_builder` | `module()` | `nil` | `EctoShorts.Adapter.QueryBuilder` implementation used by `EctoShorts.CommonFilters` |
   | `:query_provider` | `module()` | `nil` | `EctoShorts.Adapter.QueryProvider` implementation for named query expressions |
   | `:error_module` | `module()` | `EctoShorts.Actions.Error` | Module used by `EctoShorts.Actions` to build error responses |

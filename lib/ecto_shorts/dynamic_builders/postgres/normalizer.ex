@@ -1,10 +1,10 @@
-defmodule EctoShorts.Dynamics.Postgres.Normalizer do
+defmodule EctoShorts.DynamicBuilders.Postgres.Normalizer do
   @moduledoc """
   Input normalization for the Postgres dynamic expression adapter.
 
   This module converts the flexible filter term shapes accepted by the
   public EctoShorts filter API into a canonical internal representation
-  before expression building begins. The caller (`Dynamics.Adapters.Postgres`)
+  before expression building begins. The caller (`DynamicBuilders.Adapters.Postgres`)
   calls `normalize_params/3` to flatten and canonicalize the raw filter
   value, then dispatches each normalized entry to the appropriate
   expression builder.
@@ -59,7 +59,7 @@ defmodule EctoShorts.Dynamics.Postgres.Normalizer do
   @datetime_wrappers [:datetime, :date]
   @datetime_value_operators [:add, :ago, :from_now]
 
-  @logger_prefix "EctoShorts.Dynamics.Postgres.Normalizer"
+  @logger_prefix "EctoShorts.DynamicBuilders.Postgres.Normalizer"
 
   @doc """
   Normalizes a raw filter term into a flat list of canonical entries.

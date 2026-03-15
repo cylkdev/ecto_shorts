@@ -28,17 +28,17 @@ Don't do this:
 
 ```elixir
 # BAD EXAMPLE, DO NOT COPY!
-require EctoShorts.Dynamics.Postgres.ExprHelpers
-alias EctoShorts.Dynamics.Postgres.ExprHelpers
+require EctoShorts.DynamicBuilders.Postgres.ExprHelpers
+alias EctoShorts.DynamicBuilders.Postgres.ExprHelpers
 ```
 
 Do this:
 
 ```elixir
 # GOOD EXAMPLE, COPY THIS!
-alias EctoShorts.Dynamics.Postgres.ExprHelpers
+alias EctoShorts.DynamicBuilders.Postgres.ExprHelpers
 
-require EctoShorts.Dynamics.Postgres.ExprHelpers
+require EctoShorts.DynamicBuilders.Postgres.ExprHelpers
 ```
 
 Don't do this:
@@ -47,8 +47,8 @@ Don't do this:
 # BAD EXAMPLE, DO NOT COPY!
 alias EctoShorts.Generator.AST
 alias EctoShorts.Generator.Blueprint
-require EctoShorts.Dynamics.Postgres.ExprHelpers
-alias EctoShorts.Dynamics.Postgres.ExprHelpers
+require EctoShorts.DynamicBuilders.Postgres.ExprHelpers
+alias EctoShorts.DynamicBuilders.Postgres.ExprHelpers
 ```
 
 Do this:
@@ -57,9 +57,9 @@ Do this:
 # GOOD EXAMPLE, COPY THIS!
 alias EctoShorts.Generator.AST
 alias EctoShorts.Generator.Blueprint
-alias EctoShorts.Dynamics.Postgres.ExprHelpers
+alias EctoShorts.DynamicBuilders.Postgres.ExprHelpers
 
-require EctoShorts.Dynamics.Postgres.ExprHelpers
+require EctoShorts.DynamicBuilders.Postgres.ExprHelpers
 ```
 
 ## Why do this

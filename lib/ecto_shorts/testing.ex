@@ -71,7 +71,7 @@ defmodule EctoShorts.Testing do
 
       test "builds correct dynamic expression" do
         expected = dynamic([p], p.published == ^true)
-        actual = EctoShorts.Dynamics.convert_to_dynamic({:as, :post}, :published, {:==, true})
+        actual = EctoShorts.DynamicBuilders.convert_to_dynamic({:as, :post}, :published, {:==, true})
         assert_dynamic(expected, actual)
       end
 
@@ -107,7 +107,7 @@ defmodule EctoShorts.Testing do
 
   * You are testing a custom dynamic expression builder.
   * You want to verify the AST structure of a dynamic expression.
-  * You are testing `EctoShorts.Dynamics` or a custom adapter.
+  * You are testing `EctoShorts.DynamicBuilders` or a custom adapter.
 
   ## Testing complex queries
 
@@ -234,7 +234,7 @@ defmodule EctoShorts.Testing do
   compiled SQL tuples directly. If it does, there may be a real difference
   in the SQL structure.
 
-  See also `EctoShorts.CommonFilters`, `EctoShorts.Dynamics`, and
+  See also `EctoShorts.CommonFilters`, `EctoShorts.DynamicBuilders`, and
   `EctoShorts.Actions`.
   """
   alias ExUnit.Assertions

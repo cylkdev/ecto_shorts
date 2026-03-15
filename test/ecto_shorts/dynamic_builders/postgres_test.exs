@@ -1,7 +1,7 @@
-defmodule EctoShorts.Dynamics.PostgresTest do
+defmodule EctoShorts.DynamicBuilders.PostgresTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Dynamics.Postgres
+  alias EctoShorts.DynamicBuilders.Postgres
   alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
 
