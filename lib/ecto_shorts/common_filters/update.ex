@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters.Update do
   @moduledoc false
 
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
 
   alias Ecto.Query
   require Ecto.Query
@@ -15,7 +15,7 @@ defmodule EctoShorts.CommonFilters.Update do
     apply_update_expr(query, selected_binding, term)
   end
 
-  {_, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
+  {_, binding_patterns} = QueryBinding.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp apply_update_expr(query, unquote(quoted_binding_head), expr) do

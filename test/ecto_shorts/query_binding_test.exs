@@ -1,9 +1,9 @@
-defmodule EctoShorts.QueryBindingsTest do
+defmodule EctoShorts.QueryBindingTest do
   use ExUnit.Case, async: true
 
   test "query_binding_contracts/2 exposes root, named, and positional binding contracts" do
     {target_binding_var, binding_patterns} =
-      EctoShorts.QueryBindings.query_binding_contracts(__MODULE__, positions: 2)
+      EctoShorts.QueryBinding.query_binding_contracts(__MODULE__, positions: 2)
 
     assert Macro.to_string(target_binding_var) === "q"
 

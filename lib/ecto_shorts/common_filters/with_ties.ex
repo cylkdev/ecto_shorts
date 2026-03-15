@@ -5,7 +5,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
     CommonFilters.Limit,
     CommonFilters.OrderBy,
     CommonSchema,
-    QueryBindings
+    QueryBinding
   }
 
   alias Ecto.Query
@@ -14,7 +14,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
   @logger_prefix "EctoShorts.CommonFilters.WithTies"
   @default_limit 1000
 
-  {_, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
+  {_, binding_patterns} = QueryBinding.query_binding_contracts(__MODULE__)
 
   def build_query(:with_ties, source, query, selected_binding, map, opts)
       when is_map(map) and not is_struct(map) do

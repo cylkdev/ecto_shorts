@@ -1,8 +1,8 @@
-# ExecPlan: Polish QueryBindings, Normalizer, Logger, Docs
+# ExecPlan: Polish QueryBinding, Normalizer, Logger, Docs
 
 ## Purpose
 Five cleanup tasks:
-1. Add `@moduledoc` / `@doc` to `EctoShorts.QueryBindings`
+1. Add `@moduledoc` / `@doc` to `EctoShorts.QueryBinding`
 2. Extract normalization logic from `Dynamics.Adapters.Postgres` into a
    `Dynamics.Adapters.Postgres.Normalizer` sub-module with its own tests
 3. Delete stale empty test directories (`compiler/`, `generator/`, `dynamics/postgres/`)
@@ -15,7 +15,7 @@ Five cleanup tasks:
 
 ## Progress
 
-- [ ] 1. QueryBindings docs
+- [ ] 1. QueryBinding docs
 - [ ] 2. Normalizer sub-module + tests
 - [ ] 3. Delete stale empty dirs
 - [ ] 4. Actions doc audit
@@ -23,7 +23,7 @@ Five cleanup tasks:
 
 ## Steps
 
-### 1. QueryBindings docs
+### 1. QueryBinding docs
 - Replace `@moduledoc false` with a real moduledoc explaining the module's
   responsibility (compile-time query binding contracts and AST helpers).
 - Add `@doc` to every public function.

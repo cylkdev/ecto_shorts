@@ -1,11 +1,11 @@
 defmodule EctoShorts.CommonFilters.Limit do
   alias Ecto.Query
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
 
   require Ecto.Query
 
   {_, binding_patterns} =
-    QueryBindings.query_binding_contracts(__MODULE__)
+    QueryBinding.query_binding_contracts(__MODULE__)
 
   def build_query(filter, _source, query, selected_binding, expr, _opts) when filter in [:first, :limit] do
     apply_limit(query, selected_binding, expr)

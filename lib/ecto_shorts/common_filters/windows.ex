@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters.Windows do
   @moduledoc false
 
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
 
   alias Ecto.Query
   require Ecto.Query
@@ -246,7 +246,7 @@ defmodule EctoShorts.CommonFilters.Windows do
 
   defp normalize_order_by(value, _selected_binding), do: value
 
-  {target_binding_var, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
+  {target_binding_var, binding_patterns} = QueryBinding.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp apply_window_definition(

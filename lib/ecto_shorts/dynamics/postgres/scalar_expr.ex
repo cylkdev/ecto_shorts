@@ -1,7 +1,7 @@
 defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
   import Ecto.Query
 
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
 
   @aggregate_helpers [:avg, :count, :max, :min, :sum]
   @operators [:membership, :comparison, :string_transform, :string]
@@ -10,7 +10,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
   @string_operators [:like, :ilike]
 
   {target_binding_var, binding_patterns} =
-    QueryBindings.query_binding_contracts(__MODULE__)
+    QueryBinding.query_binding_contracts(__MODULE__)
 
   context = __MODULE__
   key_var = Macro.var(:key, context)

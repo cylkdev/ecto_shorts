@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters.Distinct do
   @moduledoc false
 
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
   alias Ecto.Query
 
   require Ecto.Query
@@ -16,7 +16,7 @@ defmodule EctoShorts.CommonFilters.Distinct do
   ]
 
   {target_binding_var, binding_patterns} =
-    QueryBindings.query_binding_contracts(__MODULE__)
+    QueryBinding.query_binding_contracts(__MODULE__)
 
   def build_query(:distinct, _source, query, selected_binding, params, _opts) do
     build_distinct(query, selected_binding, params)

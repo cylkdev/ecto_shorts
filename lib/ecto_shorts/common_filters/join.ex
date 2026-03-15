@@ -22,7 +22,7 @@ defmodule EctoShorts.CommonFilters.Join do
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
   alias EctoShorts.Config
   alias EctoShorts.Adapter.QueryProvider
 
@@ -32,7 +32,7 @@ defmodule EctoShorts.CommonFilters.Join do
   @logger_prefix "EctoShorts.CommonFilters.Join"
 
   {target_binding_var, binding_patterns} =
-    QueryBindings.query_binding_contracts(__MODULE__)
+    QueryBinding.query_binding_contracts(__MODULE__)
 
   @doc false
   def hints, do: @hints

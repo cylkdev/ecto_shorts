@@ -1,11 +1,11 @@
 defmodule EctoShorts.CommonFilters.Having do
   alias EctoShorts.Dynamics
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
 
   alias Ecto.Query
   require Ecto.Query
 
-  {_, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
+  {_, binding_patterns} = QueryBinding.query_binding_contracts(__MODULE__)
 
   def build_query(filter, _source, query, _selected_binding, nil, _opts)
       when filter in [:having, :or_having] do

@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBindings do
+defmodule EctoShorts.QueryBinding do
   @moduledoc """
   Compile-time query binding contracts and AST helpers.
 
@@ -23,7 +23,7 @@ defmodule EctoShorts.QueryBindings do
 
       # At module body level - generates binding patterns once:
       {target_binding_var, binding_patterns} =
-        EctoShorts.QueryBindings.query_binding_contracts(__MODULE__)
+        EctoShorts.QueryBinding.query_binding_contracts(__MODULE__)
 
       for {binding_head, binding_body} <- binding_patterns do
         def my_clause(unquote(binding_head), value) do
@@ -66,7 +66,7 @@ defmodule EctoShorts.QueryBindings do
 
   ## Examples
 
-      {target_var, patterns} = EctoShorts.QueryBindings.query_binding_contracts(__MODULE__, positions: 3)
+      {target_var, patterns} = EctoShorts.QueryBinding.query_binding_contracts(__MODULE__, positions: 3)
       length(patterns)
       # => 5  (nil-as, named-as, at-1, at-2, at-3)
   """
@@ -104,7 +104,7 @@ defmodule EctoShorts.QueryBindings do
 
   ## Examples
 
-      EctoShorts.QueryBindings.negated_expr(quote do: x == 1)
+      EctoShorts.QueryBinding.negated_expr(quote do: x == 1)
       # => quote do: not (x == 1)
   """
   def negated_expr(expr) do
@@ -251,8 +251,8 @@ defmodule EctoShorts.QueryBindings do
 
       step = Macro.var(:_, MyMod)
       q    = Macro.var(:q, MyMod)
-      EctoShorts.QueryBindings.positional_binding_vars(1, q, step)  # => [q]
-      EctoShorts.QueryBindings.positional_binding_vars(3, q, step)  # => [step, step, q]
+      EctoShorts.QueryBinding.positional_binding_vars(1, q, step)  # => [q]
+      EctoShorts.QueryBinding.positional_binding_vars(3, q, step)  # => [step, step, q]
   """
   def positional_binding_vars(index, q_var, step_var) when is_integer(index) and index >= 1 do
     if index === 1 do

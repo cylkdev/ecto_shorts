@@ -2,7 +2,7 @@ defmodule EctoShorts.CommonFilters.Offset do
   @moduledoc false
 
   alias Ecto.Query
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
 
   require Ecto.Query
 
@@ -10,7 +10,7 @@ defmodule EctoShorts.CommonFilters.Offset do
     apply_offset(query, selected_binding, expr)
   end
 
-  {_, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
+  {_, binding_patterns} = QueryBinding.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp apply_offset(query, unquote(quoted_binding_head), expr) do

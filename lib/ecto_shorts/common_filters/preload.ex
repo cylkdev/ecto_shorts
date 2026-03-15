@@ -2,12 +2,12 @@ defmodule EctoShorts.CommonFilters.Preload do
   @moduledoc false
 
   alias Ecto.Query
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
 
   require Ecto.Query
 
   {target_binding_var, binding_patterns} =
-    QueryBindings.query_binding_contracts(__MODULE__)
+    QueryBinding.query_binding_contracts(__MODULE__)
 
   def build_query(:preload, _source, query, selected_binding, params, _opts) do
     case selected_binding do

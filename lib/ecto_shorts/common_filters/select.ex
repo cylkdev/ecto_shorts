@@ -1,13 +1,13 @@
 defmodule EctoShorts.CommonFilters.Select do
   alias Ecto.Query
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
 
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.Select"
 
   {target_binding_var, binding_patterns} =
-    QueryBindings.query_binding_contracts(__MODULE__)
+    QueryBinding.query_binding_contracts(__MODULE__)
 
   def build_query(:select, _source, query, selected_binding, term, _opts) do
     reduced_term = normalize_select_term(term)

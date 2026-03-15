@@ -2,12 +2,12 @@ defmodule EctoShorts.CommonFilters.GroupBy do
   @moduledoc false
 
   alias Ecto.Query
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
 
   require Ecto.Query
 
   {target_binding_var, binding_patterns} =
-    QueryBindings.query_binding_contracts(__MODULE__)
+    QueryBinding.query_binding_contracts(__MODULE__)
 
   def build_query(:group_by, _source, query, selected_binding, params, _opts) do
     build_group_by(query, selected_binding, params)

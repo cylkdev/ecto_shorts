@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonFilters.Lock do
-  alias EctoShorts.QueryBindings
+  alias EctoShorts.QueryBinding
   alias EctoShorts.Config
   alias EctoShorts.Adapter.QueryProvider
 
@@ -8,7 +8,7 @@ defmodule EctoShorts.CommonFilters.Lock do
 
   @logger_prefix "EctoShorts.CommonFilters.Lock"
 
-  {_, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
+  {_, binding_patterns} = QueryBinding.query_binding_contracts(__MODULE__)
 
   @spec build_query(
           :lock,
