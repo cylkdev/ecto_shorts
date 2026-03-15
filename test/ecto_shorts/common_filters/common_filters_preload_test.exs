@@ -219,9 +219,12 @@ defmodule EctoShorts.CommonFilters.PreloadTest do
       actual =
         CommonFilters.convert_params_to_filter(
           source,
-          [as: [comment_author: [preload: :author],
-                comments: [where: %{published: true},
-                           preload: [comments: [author: []]]]]],
+          [
+            as: [
+              comment_author: [preload: :author],
+              comments: [where: %{published: true}, preload: [comments: [author: []]]]
+            ]
+          ],
           []
         )
 

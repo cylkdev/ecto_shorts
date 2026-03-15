@@ -2,7 +2,9 @@ defmodule EctoShorts.Actions.BatchTest do
   use EctoShorts.DataCase, async: true
 
   alias EctoShorts.Actions
+  alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
+  alias EctoShorts.Schema.User
 
   describe "batch/4" do
     test "returns an empty map when no params are given" do
@@ -175,6 +177,53 @@ defmodule EctoShorts.Actions.BatchTest do
 
       assert resolved_post.id === post.id
       assert resolved_post.comments === []
+    end
+
+    test "preloads nested associations on the resolved struct" do
+      user =
+        %User{}
+        |> User.changeset(%{first_name: "Ada"})
+        |> Repo.insert!()
+
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "Nested", permalink: "nested"})
+        |> Repo.insert!()
+
+      %Comment{}
+      |> Comment.changeset(%{body: "hi there", post_id: post.id, author_id: user.id})
+      |> Repo.insert!()
+
+      input = %{permalink: "nested", title: "New"}
+
+      assert [{resolved_post, ^input}] =
+               Actions.batch_find(Post, [input], :permalink, preload: [comments: :author])
+
+      assert [%Comment{author: %User{id: author_id}}] = resolved_post.comments
+      assert author_id === user.id
+    end
+  end
+
+  describe "batch_find/4 with multiple entries" do
+    test "resolves multiple entries in a single batched lookup" do
+      post_a =
+        %Post{}
+        |> Post.changeset(%{title: "Alpha", permalink: "alpha"})
+        |> Repo.insert!()
+
+      post_b =
+        %Post{}
+        |> Post.changeset(%{title: "Beta", permalink: "beta"})
+        |> Repo.insert!()
+
+      input_a = %{permalink: "alpha", title: "New A"}
+      input_b = %{permalink: "beta", title: "New B"}
+
+      assert [{%Post{id: id_a}, ^input_a}, {%Post{id: id_b}, ^input_b}] =
+               Actions.batch_find(Post, [input_a, input_b], :permalink, [])
+
+      assert id_a === post_a.id
+      assert id_b === post_b.id
     end
   end
 

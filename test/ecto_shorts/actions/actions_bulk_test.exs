@@ -177,5 +177,4 @@ defmodule EctoShorts.Actions.BulkTest do
       assert {0, nil} = Actions.delete_all(Post, %{title: "Missing"})
     end
   end
-
 end

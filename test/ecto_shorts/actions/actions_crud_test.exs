@@ -2461,9 +2461,7 @@ defmodule EctoShorts.Actions.CRUDTest do
         |> Repo.insert!()
 
       assert {:ok, %Post{title: "K updated", comments: []}} =
-               Actions.find_and_update(Post, %{id: post.id}, %{title: "K updated"},
-                 preload: [:comments]
-               )
+               Actions.find_and_update(Post, %{id: post.id}, %{title: "K updated"}, preload: [:comments])
     end
   end
 
@@ -2485,9 +2483,7 @@ defmodule EctoShorts.Actions.CRUDTest do
         |> Repo.insert!()
 
       assert {:ok, %Post{title: "M updated", comments: []}} =
-               Actions.find_and_upsert(Post, %{id: post.id}, %{title: "M updated"},
-                 preload: [:comments]
-               )
+               Actions.find_and_upsert(Post, %{id: post.id}, %{title: "M updated"}, preload: [:comments])
     end
   end
 

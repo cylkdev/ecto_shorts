@@ -281,9 +281,7 @@ defmodule EctoShorts.Actions.MultiTest do
         |> Repo.insert!()
 
       assert {:ok, posts} =
-               Actions.find_many(Post, [%{id: post_a.id}, %{id: post_b.id}],
-                 preload: [:comments]
-               )
+               Actions.find_many(Post, [%{id: post_a.id}, %{id: post_b.id}], preload: [:comments])
 
       assert Enum.all?(posts, fn p -> p.comments == [] end)
     end

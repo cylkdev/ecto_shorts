@@ -301,6 +301,10 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 * Before writing a private function, ask whether each condition or transformation inside it refers to a different subject. A function that tests the shape of a value and simultaneously checks a property of a key is operating on two subjects. A function that validates structure and also performs a schema lookup is crossing two responsibility boundaries. When the subjects differ, the function must be split. Reusability follows from single-subject ownership, not from the other direction.
 
+* Before writing a condition that determines which code path executes, identify which layer of responsibility that condition belongs to. Dispatch answers "which path owns this input?" — it depends on the input's identity, type, or membership. Validation answers "is this input acceptable for that path?" — it depends on the input's shape or content. These are different questions about different things and they belong at different layers. When a single dispatch condition spans both layers, a valid-dispatch/invalid-value input is silently absorbed into the dispatch result: the system cannot distinguish between "this input doesn't belong here" and "this input belongs here but is malformed," and the caller receives no signal about which situation occurred.
+
+* Every code path has both a success contract and a failure contract. The success contract is naturally defined because the path must implement it to do anything useful. The failure contract is commonly left undesigned because the author stops thinking once the success path is complete. An undesigned failure contract is not neutral: the input goes to the wrong path, produces a silent wrong result, or disappears without trace. Before considering any code path complete, ask: for each way the input can be wrong, what does the caller observe? If the answer is not explicit and intentional, the path is incomplete. Define both contracts.
+
 ### Scope And Intent Control
 
 * Remain within the boundaries of the task. Do not follow tangents, pursue adjacent ideas, or expand the work
@@ -1084,17 +1088,25 @@ place where the meaning of the task is decided.
     public boundary is impossible to exercise. This is your BDD anchor. The first test must fail because the
     promised behavior does not exist yet.
 
-25. Run the TDD loop in one-rule increments. Write one failing test for one rule. Run it and confirm it fails
+25. Before making any behavioral code change, write a test that proves the current expected behavior at the
+    public boundary first. A test written after a code change describes what the code does. A test written
+    before a change specifies what the code should do. If you cannot write the test before the change, it means
+    the behavior you are about to implement is not yet specified clearly enough — that is the signal the
+    inability is sending. Do not treat the inability to write the test first as a reason to skip it. Treat it
+    as a sign that the task boundary, the expected behavior, or the failure modes are still unresolved, and
+    resolve them before writing code.
+
+26. Run the TDD loop in one-rule increments. Write one failing test for one rule. Run it and confirm it fails
     for the right reason. Change the code with the smallest possible edit to satisfy that rule. Run the test
     again and make it pass. Refactor only while tests stay green. If you change code without first having a
     failing test for that change, you are guessing.
 
-26. Step inward only when the boundary test exposes a missing inner rule. When the outer test fails because a
+27. Step inward only when the boundary test exposes a missing inner rule. When the outer test fails because a
     specific parser, validator, query builder, or mapper does not yet behave correctly, pause and write a
     focused test for that inner unit. Make that inner test pass, then return immediately to the boundary test.
     Do not stay inside longer than necessary. The outer behavior remains the measure of progress.
 
-27. Measure completeness with a coverage table you can answer yourself:
+28. Measure completeness with a coverage table you can answer yourself:
 
 - Do I have at least one executable test for each rule?
 - Do I have a test for valid input?
@@ -1110,7 +1122,7 @@ examples including omitted and invalid input, the ownership and contract section
 and the remaining risk. If the table cannot do that by pointing back to specific parts of the `ExecPlan`, the
 plan is incomplete.
 
-28. Judge design quality with explicit checks, not taste. Ask:
+29. Judge design quality with explicit checks, not taste. Ask:
 
 - Does each public function have one clear responsibility?
 - Does one module clearly own the behavior?
@@ -1126,10 +1138,11 @@ plan is incomplete.
 - Does each private function test exactly one condition or own exactly one transformation? If a predicate returns a boolean that is the and of two unrelated checks, or a transformer applies two unrelated changes in sequence, treat it as two functions that have not yet been separated.
 - Before writing a private helper, name its single responsibility in one plain noun phrase. If you cannot do that without using "and", the function has more than one responsibility and must be split before you write it.
 - Can I delete this function and inline its body at the call site without losing clarity or introducing repetition? If yes and the body is a one-line combination of already-named predicates, the function has no independent responsibility and must not exist.
+- Does each code path have both a success contract and a failure contract? For each way an input can be wrong, can the caller observe that something went wrong and why? If the failure contract is undefined, implicit, or silent, the path is incomplete regardless of whether the success path works.
 
 Every "no" identifies work to do.
 
-29. Finish with end-to-end verification. Re-run the focused tests for the new behavior. Re-run the broader
+30. Finish with end-to-end verification. Re-run the focused tests for the new behavior. Re-run the broader
   tests that protect neighboring behavior. Compare the results against the examples you wrote in step 7. If
   even one example cannot be pointed to in code, docs, or tests as proven, you are not done.
 

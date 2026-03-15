@@ -2043,6 +2043,7 @@ defmodule EctoShorts.Actions do
   end
 
   defp maybe_preload(nil, _opts), do: nil
+
   defp maybe_preload(data, opts) do
     case opts[:preload] do
       nil -> data

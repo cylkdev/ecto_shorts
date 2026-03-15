@@ -215,10 +215,19 @@ defmodule EctoShorts.CommonFilters do
       key in API.filter_group(:post_aggregate) ->
         reduce_filter_group_or_build(key, source, query, selected_binding, term, opts)
 
-      container?(term) and association_key?(source, key) ->
-        query
-        |> ensure_association_binding(source, key, opts)
-        |> reduce_association_filters(filter, source, key, term, opts)
+      association_key?(source, key) ->
+        if container?(term) do
+          query
+          |> ensure_association_binding(source, key, opts)
+          |> reduce_association_filters(filter, source, key, term, opts)
+        else
+          EctoShorts.Logger.warning(
+            @logger_prefix,
+            "Expected association filter value to be a map or keyword list, got: #{inspect(term)}"
+          )
+
+          query
+        end
 
       key in API.filters() ->
         build_query(key, source, query, selected_binding, term, opts)
