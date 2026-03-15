@@ -1,0 +1,151 @@
+defmodule EctoShorts.CommonFilters.LockTest do
+  use ExUnit.Case, async: true
+  use EctoShorts.Testing
+
+  alias EctoShorts.CommonFilters
+  alias EctoShorts.Schema.Post
+
+  import Ecto.Query
+  import ExUnit.CaptureLog
+
+  describe "convert_params_to_filter/3 lock shapes" do
+    test "matches Ecto.Query for a root for_update alias lock" do
+      expected = lock(Post, "FOR UPDATE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :for_update}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root map alias lock" do
+      expected = lock(Post, "FOR SHARE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :for_share}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a provider-backed lock" do
+      expected = lock(Post, "FOR UPDATE")
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :provider_for_update}},
+          query_provider: EctoShorts.TestQueryProvider
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a provider-backed lock with values" do
+      expected = from(p in Post, lock: fragment("FOR UPDATE SKIP LOCKED"))
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :for_update_with_clause, values: %{clause: "SKIP LOCKED"}}},
+          query_provider: EctoShorts.TestQueryProvider
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "keeps the query unchanged for a direct raw string lock" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: "FOR SHARE NOWAIT"},
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected :lock value to be a map or keyword list with a :name key"
+    end
+
+    test "keeps the query unchanged for a direct raw function lock" do
+      lock_fun = fn query -> from(p in query, lock: "FOR UPDATE") end
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: lock_fun},
+              []
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected :lock value to be a map or keyword list with a :name key"
+    end
+
+    test "keeps the query unchanged when the lock provider returns nil" do
+      expected = from(p in Post)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{name: :provider_for_update}},
+          query_provider: EctoShorts.TestNoOpQueryProvider
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "keeps the query unchanged when the lock provider returns an error" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: %{name: :error_fragment}},
+              query_provider: EctoShorts.TestQueryProvider
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Lock expression callback returned error for :error_fragment: :forced_error"
+    end
+
+    test "keeps the query unchanged when the lock provider returns a raw expression" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: %{name: :legacy_for_update}},
+              query_provider: EctoShorts.TestQueryProvider
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~
+               "Expected lock expression resolved from QueryProvider to return {:ok, function} | {:error, reason} | nil"
+    end
+  end
+end

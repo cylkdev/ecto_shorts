@@ -1,4 +1,6 @@
 defmodule EctoShorts.CommonFilters.API do
+  @moduledoc false
+
   alias EctoShorts.CommonFilters.{
     Distinct,
     Exclude,

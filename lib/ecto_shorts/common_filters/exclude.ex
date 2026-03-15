@@ -1,4 +1,6 @@
 defmodule EctoShorts.CommonFilters.Exclude do
+  @moduledoc false
+
   alias Ecto.Query
 
   def build_query(:exclude, _source, query, _selected_binding, term, _opts) do

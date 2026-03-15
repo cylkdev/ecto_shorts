@@ -1,4 +1,6 @@
 defmodule EctoShorts.CommonFilters.GroupBy do
+  @moduledoc false
+
   alias Ecto.Query
   alias EctoShorts.QueryBindings
 

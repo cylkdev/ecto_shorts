@@ -1,4 +1,6 @@
 defmodule EctoShorts.CommonFilters.Distinct do
+  @moduledoc false
+
   alias EctoShorts.QueryBindings
   alias Ecto.Query
 
