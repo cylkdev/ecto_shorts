@@ -5,18 +5,19 @@
 [![Credo](https://github.com/MikaAK/ecto_shorts/actions/workflows/credo.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/credo.yml)
 [![Dialyzer](https://github.com/MikaAK/ecto_shorts/actions/workflows/dialyzer.yml/badge.svg)](https://github.com/MikaAK/ecto_shorts/actions/workflows/dialyzer.yml)
 
+
 EctoShorts is a library built on top of Ecto that helps you handle the database operations most applications need without repeatedly writing the same query and changeset code by hand. Instead of rebuilding those patterns each time, you describe them as data and let EctoShorts handle the common cases for you. The result is less boilerplate, greater consistency across your codebase, and a faster way to implement everyday tasks such as filtering, pagination, CRUD operations, bulk writes, and transactional multi-record workflows.
 
 EctoShorts is organized into the following components:
 
-  * `EctoShorts.Actions` — the primary entry point. It accepts a schema module and a params map, delegates to the supporting components to build and execute the query, and returns results in a consistent `{:ok, result}` / `{:error, reason}` shape.
-  * `EctoShorts.CommonFilters` — translates a map or keyword list of filter params into an `Ecto.Query`. Schema field keys become `WHERE` conditions, while reserved keys such as `:limit`, `:order_by`, and `:preload` become the corresponding query operations. Use this directly when you need to build a query without executing it.
-  * `EctoShorts.CommonChanges` — provides helpers for building `changeset/2` functions, including preloading and casting associations, trimming strings, applying conditional changes, and validating fields.
-  * `EctoShorts.CommonSchema` — handles schema introspection by resolving field types, association metadata, and polymorphic source information at runtime.
-  * `EctoShorts.CommonParams` — prepares parameter lists for `insert_all`, `update_all`, and `delete_all`, including timestamp injection and field filtering.
-  * `EctoShorts.CommonQuery` — inspects query structure, including named bindings, positional bindings, sources, and prefixes.
-  * `EctoShorts.DynamicBuilders` — builds `Ecto.Query.dynamic/2` expressions from data. The PostgreSQL adapter supports scalar comparisons, string matching, array operations, and more.
-  * `EctoShorts.Testing` — provides test helpers for asserting against generated SQL and dynamic expressions.
+* `EctoShorts.Actions` — the primary entry point. It accepts a schema module and a params map, delegates to the supporting components to build and execute the query, and returns results in a consistent `{:ok, result}` / `{:error, reason}` shape.
+* `EctoShorts.CommonFilters` — translates a map or keyword list of filter params into an `Ecto.Query`. Schema field keys become `WHERE` conditions, while reserved keys such as `:limit`, `:order_by`, and `:preload` become the corresponding query operations. Use this directly when you need to build a query without executing it.
+* `EctoShorts.CommonChanges` — provides helpers for building `changeset/2` functions, including preloading and casting associations, trimming strings, applying conditional changes, and validating fields.
+* `EctoShorts.CommonSchema` — handles schema introspection by resolving field types, association metadata, and polymorphic source information at runtime.
+* `EctoShorts.CommonParams` — prepares parameter lists for `insert_all`, `update_all`, and `delete_all`, including timestamp injection and field filtering.
+* `EctoShorts.CommonQuery` — inspects query structure, including named bindings, positional bindings, sources, and prefixes.
+* `EctoShorts.DynamicBuilders` — builds `Ecto.Query.dynamic/2` expressions from data. The PostgreSQL adapter supports scalar comparisons, string matching, array operations, and more.
+* `EctoShorts.Testing` — provides test helpers for asserting against generated SQL and dynamic expressions.
 
 In the typical case, you call `EctoShorts.Actions` from your context module and let it handle the rest. It builds an `Ecto.Query` from `EctoShorts.CommonFilters`, can pass that query through `EctoShorts.DynamicBuilders` when you need more complex expressions, and then executes it through your configured `Ecto.Repo`.
 
@@ -38,557 +39,492 @@ The result is code that is simpler and easier to maintain. Instead of spreading 
 
 Add EctoShorts to your dependencies:
 
+```elixir
+def deps do
+  [
     {:ecto_shorts, "~> 3.0"}
+  ]
+end
+```
 
-Configure a repo:
+Configure a default repo:
 
-    # config/config.exs
-    config :ecto_shorts, repo: MyApp.Repo
+```elixir
+# config/config.exs
+import Config
+
+config :ecto_shorts, :repo, MyApp.Repo
+```
 
 ## Configuration
 
-* `:repo` - The primary `Ecto.Repo` module used for write operations.
-Required by most `EctoShorts.Actions` functions. Defaults to `nil`.
+All configuration lives under the `:ecto_shorts` application key.
 
-* `:replica` - A read-only `Ecto.Repo` module. Falls back to `:repo` when
-not set. Used by read operations in `EctoShorts.Actions`. Defaults to `nil`.
+```elixir
+# config/config.exs
+import Config
 
-* `:error_module` - A module implementing the `EctoShorts.Actions.Error`
-behaviour. Used to construct error values returned by `EctoShorts.Actions`
-functions. Defaults to `EctoShorts.Actions.Error`.
+config :ecto_shorts,
+  repo: MyApp.Repo,
+  replica: MyApp.Repo.Replica,
+  dynamic_adapter: EctoShorts.DynamicBuilders.Postgres,
+  query_builder: MyApp.QueryBuilder,
+  query_provider: MyApp.QueryProvider,
+  error_module: EctoShorts.Actions.Error,
+  max_positional_bindings: 10
+```
 
-* `:dynamic_adapter` - A module implementing `EctoShorts.Dynamic`.
-Auto-resolved to `EctoShorts.DynamicBuilders.Postgres` when the repo uses
-`Ecto.Adapters.Postgres`. Defaults to resolved from the repo's adapter.
+Available keys:
 
-* `:query_provider` - A module that resolves provider-backed join and lock
-expressions. Must export `resolve_query_expression/3` and return shapes
-that match the calling filter contract. Defaults to `nil`.
+- `:repo` - default `Ecto.Repo` used by repo-backed operations
+- `:replica` - read replica repo; falls back to `:repo` when a helper supports replica fallback
+- `:dynamic_adapter` - module implementing `EctoShorts.Adapter.DynamicBuilder`
+- `:query_builder` - module implementing `EctoShorts.Adapter.QueryBuilder`
+- `:query_provider` - module implementing `EctoShorts.Adapter.QueryProvider`
+- `:error_module` - module used by `EctoShorts.Actions` to build error responses
+- `:max_positional_bindings` - optional override for generated positional binding support
 
-* `:max_positional_bindings` - Controls how many positional query binding clauses
-`EctoShorts.Generator` generates. Increase when your queries join more than
-three tables. Defaults to `3`.
+Runtime options still take precedence over application config.
 
-Example:
+## Quick start
 
-    # config/config.exs
-    import Config
+Assume you have:
 
-    config :ecto_shorts,
-      repo: MyApp.Repo,
-      replica: MyApp.Repo.Replica,
-      error_module: MyApp.Error,
-      dynamic_adapter: MyApp.DynamicAdapter,
-      max_positional_bindings: 3
+- an `Ecto.Repo` such as `MyApp.Repo`
+- a schema such as `MyApp.Blog.Post`
+- a `changeset/2` function on that schema for write helpers
 
-## Run the first examples
+```elixir
+alias EctoShorts.Actions
+alias MyApp.Blog.Post
 
-### Prerequisites
+{:ok, post} =
+  Actions.create(
+    Post,
+    %{title: "Hello", body: "World"},
+    repo: MyApp.Repo
+  )
 
-When you want to run these examples, you need the following:
+posts =
+  Actions.all(
+    Post,
+    %{published: true, order_by: [desc: :inserted_at], limit: 10},
+    repo: MyApp.Repo
+  )
 
-* An `Ecto.Repo` module (for example `MyApp.Repo`) that is configured
-  and started.
-* An `Ecto.Schema` module (for example `MyApp.Post`).
-* A `changeset/2` function on the schema for write operations.
-  Override with the `:changeset` option if needed.
+{:ok, found_post} =
+  Actions.find(
+    Post,
+    %{id: post.id},
+    repo: MyApp.Repo
+  )
 
-### Ecto in 60 seconds
+{:ok, updated_post} =
+  Actions.update(
+    Post,
+    post,
+    %{title: "Updated"},
+    repo: MyApp.Repo
+  )
 
-If you are new to Ecto, these are the core building blocks:
+{:ok, _deleted_post} = Actions.delete(updated_post, repo: MyApp.Repo)
+```
 
-* `Ecto.Repo` - where queries run (talks to the database).
-* `Ecto.Schema` - what you query (table-backed structs).
-* `Ecto.Query` - how you read data (composable query values).
-* `Ecto.Changeset` - how you write data (cast and validate before
-  insert or update).
+## `EctoShorts.Actions`
 
-EctoShorts must know which repo to use. Either configure it once:
+`EctoShorts.Actions` is the main public entry point.
 
-    # config/config.exs
-    config :ecto_shorts, repo: MyApp.Repo
+It groups the API into five families:
 
-Or pass `:repo` / `:replica` at call time (shown below).
+- CRUD helpers such as `all/3`, `find/3`, `create/3`, `update/4`, and `delete/1-3`
+- bulk helpers such as `insert_all/3`, `update_all/4`, and `delete_all/3`
+- multi helpers such as `create_many/3`, `find_many/3`, `update_many/3`, and `delete_many/3`
+- batch helpers such as `batch/5` and `batch_find/4`
+- transaction helpers such as `transaction/2` and `transact/2`
 
-### How it works
+Examples:
 
-* `EctoShorts.Actions` is the entry point - it builds queries and executes them.
+```elixir
+alias EctoShorts.Actions
+alias MyApp.Blog.Post
 
-* Filter params are plain data:
-  * Keys that match schema fields become `WHERE` conditions.
-  * Reserved keys like `:limit` become query operations.
+posts = Actions.all(Post, %{published: true}, repo: MyApp.Repo)
+true = Actions.exists?(Post, %{published: true}, repo: MyApp.Repo)
+{:ok, post} = Actions.find(Post, %{id: 1}, repo: MyApp.Repo)
 
-* Under the hood:
-  * `EctoShorts.CommonFilters` turns params into an `Ecto.Query`.
-  * The configured `Ecto.Repo` runs that query against the database.
+{:ok, post} = Actions.create(Post, %{title: "Hello"}, repo: MyApp.Repo)
+{:ok, post} = Actions.update(Post, post, %{title: "Updated"}, repo: MyApp.Repo)
+{:ok, _post} = Actions.delete(post, repo: MyApp.Repo)
+```
 
-### Examples
+Bulk helpers:
 
-    alias EctoShorts.Actions
-
-    # Create
-    {:ok, post} = Actions.create(Post, %{title: "Hello", body: "World"})
-
-    # Read
-    posts = Actions.all(Post, %{published: true, limit: 10})
-    {:ok, post} = Actions.find(Post, %{id: 1})
-
-    # Update
-    {:ok, post} = Actions.update(Post, post, %{title: "Updated"})
-
-    # Delete
-    {:ok, _} = Actions.delete(post)
-
-### Troubleshooting
-
-Common errors when running the examples above:
-
-* **Repo not configured** - set `config :ecto_shorts, repo: MyApp.Repo` or pass `repo:` / `replica:` at call time.
-
-* **Repo not started** - add the repo to your application supervisor.
-
-* **Missing changeset** - add `changeset/2` to the schema module or use the `:changeset` option.
-
-* **Unknown filter key** - verify the key matches a schema field or a supported query operation.
-
-## Common workflows
-
-This section shows how to combine EctoShorts functions for real features.
-
-### Building a CRUD resource
-
-A typical Phoenix context module using EctoShorts:
-
-    defmodule MyApp.Blog do
-      alias EctoShorts.Actions
-      alias MyApp.Blog.Post
-
-      def list_posts(params \\ %{}) do
-        Actions.all(Post, Map.merge(%{order_by: [desc: :inserted_at]}, params))
-      end
-
-      def get_post(id) do
-        Actions.find(Post, %{id: id})
-      end
-
-      def create_post(attrs) do
-        Actions.create(Post, attrs)
-      end
-
-      def update_post(post, attrs) do
-        Actions.update(Post, post, attrs)
-      end
-
-      def delete_post(post) do
-        Actions.delete(post)
-      end
-    end
-
-### Filtering and pagination
-
-Use filter params to build complex queries:
-
-    # Filter by multiple fields
-    Actions.all(Post, %{
-      published: true,
-      author_id: 1,
-      inserted_at: %{>=: ~U[2024-01-01 00:00:00Z]}
-    })
-
-    # Pagination
-    Actions.all(Post, %{
-      published: true,
-      order_by: [desc: :inserted_at],
-      limit: 20,
-      offset: 40
-    })
-
-    # Preload associations
-    Actions.all(Post, %{
-      published: true,
-      preload: [:author, :comments]
-    })
-
-See `EctoShorts.CommonFilters` for the complete filter language.
-
-### Bulk operations
-
-Use bulk functions when performance matters more than per-record validation:
-
-    # Insert many records at once
-    entries = [
+```elixir
+{:ok, {count, nil}} =
+  Actions.insert_all(
+    Post,
+    [
       %{title: "Post 1", body: "Body 1"},
       %{title: "Post 2", body: "Body 2"}
-    ]
-    {:ok, {2, nil}} = Actions.insert_all(Post, entries)
+    ],
+    repo: MyApp.Repo
+  )
 
-    # Update many records
-    {count, nil} = Actions.update_all(Post, %{draft: true}, %{set: %{published: true}})
+{count, nil} =
+  Actions.update_all(
+    Post,
+    %{published: false},
+    %{title: "Draft"},
+    repo: MyApp.Repo
+  )
 
-    # Delete many records
-    {count, nil} = Actions.delete_all(Post, %{published: false})
+{count, nil} = Actions.delete_all(Post, %{published: false}, repo: MyApp.Repo)
+```
 
-### Transactional operations
+Multi helpers:
 
-Use Multi functions when operations must succeed or fail together:
+```elixir
+{:ok, posts} =
+  Actions.create_many(
+    Post,
+    [
+      %{title: "Post 1", body: "Body 1"},
+      %{title: "Post 2", body: "Body 2"}
+    ],
+    repo: MyApp.Repo
+  )
 
-    # Create multiple records atomically
-    {:ok, posts} = Actions.create_many(Post, [
-      %{title: "Post 1"},
-      %{title: "Post 2"}
-    ])
+{:ok, posts} =
+  Actions.find_many(
+    Post,
+    [%{id: 1}, %{id: 2}],
+    repo: MyApp.Repo
+  )
 
-    # If any fails, all are rolled back
-    {:error, reason} = Actions.create_many(Post, [
-      %{title: "Valid"},
-      %{title: nil}  # Invalid - rolls back the first insert too
-    ])
+{:ok, posts} =
+  Actions.update_many(
+    Post,
+    [
+      {%{id: 1}, %{title: "Updated 1"}},
+      {%{id: 2}, %{title: "Updated 2"}}
+    ],
+    repo: MyApp.Repo
+  )
+```
 
-### Custom changesets
+## `EctoShorts.CommonFilters`
 
-Override the default `changeset/2` function:
+`EctoShorts.CommonFilters.convert_params_to_filter/3` is the public query language for EctoShorts.
 
-    # Use a different changeset function
-    Actions.create(Post, attrs, changeset: &Post.admin_changeset/2)
+It accepts:
 
-    # Inline changeset logic
-    Actions.create(Post, attrs, changeset: fn struct, params ->
-      struct
-      |> Ecto.Changeset.cast(params, [:title, :body])
-      |> Ecto.Changeset.put_change(:source, "api")
-    end)
+- a schema module
+- a `{source, schema}` tuple
+- a schemaless table name such as `"posts"`
+- a prebuilt `Ecto.Query`
 
-## API Overview
+It always takes three arguments:
 
-### EctoShorts.Actions
-
-The primary entry point for all database operations. Use this module
-when you need to create, read, update, or delete records.
-
-    alias EctoShorts.Actions
-
-    # Single-record CRUD
-    {:ok, post} = Actions.create(Post, %{title: "Hello"})
-    {:ok, post} = Actions.find(Post, %{id: 1})
-    {:ok, post} = Actions.update(Post, post, %{title: "Updated"})
-    {:ok, _} = Actions.delete(post)
-
-    # Bulk operations (no transactions)
-    {:ok, {count, nil}} = Actions.insert_all(Post, list_of_maps)
-    {count, nil} = Actions.update_all(Post, %{draft: true}, %{set: %{published: true}})
-    {count, nil} = Actions.delete_all(Post, %{published: false})
-
-    # Multi operations (transactional)
-    {:ok, posts} = Actions.create_many(Post, list_of_maps)
-    {:ok, posts} = Actions.find_many(Post, [%{id: 1}, %{id: 2}])
-
-See `EctoShorts.Actions` for the complete API.
-
-### EctoShorts.CommonFilters
-
-Builds `Ecto.Query` structs from maps and keyword lists. Use this module
-when you need to build a query without executing it.
-
-    alias EctoShorts.CommonFilters
-
-    # Build a query from params
-    query = CommonFilters.convert_params_to_filter(Post, %{
+```elixir
+query =
+  EctoShorts.CommonFilters.convert_params_to_filter(
+    MyApp.Blog.Post,
+    %{
       published: true,
       views: %{>: 100},
       order_by: [desc: :inserted_at],
       limit: 10
-    })
-
-    # Execute with your repo
-    posts = MyApp.Repo.all(query)
-
-The filter language supports:
-
-* Field equality: `%{published: true}`
-* Comparison operators: `%{views: %{>: 100}}`
-* Logical operators: `%{or: [[published: true], [draft: true]]}`
-* Query operations: `:limit`, `:offset`, `:order_by`, `:preload`, etc.
-* Joins and associations
-* Aggregates and grouping
-
-See `EctoShorts.CommonFilters` for the complete filter language.
-
-### EctoShorts.CommonChanges
-
-Changeset helpers for building `changeset/2` functions. Use this module
-when you need to preload associations, apply conditional changes, or
-validate fields.
-
-    defmodule MyApp.User do
-      use Ecto.Schema
-      import Ecto.Changeset
-      alias EctoShorts.CommonChanges
+    },
+    []
+  )
+```
 
-      def changeset(user, attrs) do
-        user
-        |> cast(attrs, [:name, :email])
-        |> validate_required([:name, :email])
-        |> CommonChanges.preload_change_assoc(:address)
-        |> CommonChanges.trim_string_change([:name, :email])
-      end
-    end
+### Filter language highlights
 
-See `EctoShorts.CommonChanges` for the complete API.
-
-### EctoShorts.CommonSchema
+Field keys become predicates, while reserved keys become query operations.
 
-Schema introspection and changeset construction. Use this module when
-you need to inspect schema fields, handle polymorphic sources, or build
-changesets programmatically.
+Examples:
 
-    alias EctoShorts.CommonSchema
-
-    # Get schema fields
-    fields = CommonSchema.get_schema_fields(Post)
+```elixir
+%{published: true}
+%{views: %{>: 100}}
+%{where: %{published: true}, or_where: %{title: "Draft"}}
+%{limit: 10, offset: 20, order_by: [desc: :inserted_at]}
+%{group_by: :author_id, having: %{views: %{avg: %{>: 100}}}}
+%{select: [:id, :title], preload: [:author, :comments]}
+```
 
-    # Build a changeset
-    changeset = CommonSchema.create_changeset(Post, %{title: "Hello"}, [])
+The query filtering api includes:
 
-See `EctoShorts.CommonSchema` for the complete API.
+- field equality and comparison operators
+- boolean grouping through `:where`, `:or_where`, `:and`, and `:or`
+- joins and association shorthand
+- ordering, distinct, limits, offsets, `:first`, and `:last`
+- projection with `:select` and `:select_merge`
+- preloads, subqueries, updates, exclusions, and query prefixes
+- set operations such as `:union`, `:union_all`, `:except`, and `:intersect`
+- recursive CTEs, `:with_cte`, windows, and `:with_ties`
+- named-binding support through top-level `:as` and `:at`
 
-### EctoShorts.Testing
+### Binding selectors
 
-Test helpers for asserting on SQL, queries, and dynamic expressions.
-
-    defmodule MyApp.BlogTest do
-      use MyApp.DataCase
-      import EctoShorts.Testing
+Binding selection is a top-level public API:
 
-      test "filters by published status" do
-        query = CommonFilters.convert_params_to_filter(Post, %{published: true})
+```elixir
+%{as: %{author: %{select: :first_name}}}
+%{at: %{2 => %{select: :first_name}}}
+%{at: %{first: %{select: :title}}}
+%{at: %{last: %{select: :inserted_at}}}
+```
 
-        assert_sql query, ~r/WHERE.*published = \$1/
-      end
-    end
+These shapes are first-class. They are not wrapped in a `:bind` key.
 
-See `EctoShorts.Testing` for the complete API.
+### Joins and associations
 
-## Architecture overview
+Explicit join payloads use `type:` to choose the source family and `qualifier:` to choose the join mode:
 
-EctoShorts modules collaborate in a layered architecture:
+```elixir
+%{join: [type: :association, source: :author, as: :author, qualifier: :left, on: true]}
+```
 
-    ┌─────────────────────────────────────────────────────────┐
-    │                    Your Application                     │
-    │                  (Context Modules)                      │
-    └─────────────────────────┬───────────────────────────────┘
-                              │
-                              ▼
-    ┌─────────────────────────────────────────────────────────┐
-    │                  EctoShorts.Actions                     │
-    │            (Entry point for all operations)             │
-    └─────────────────────────┬───────────────────────────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              │               │               │
-              ▼               ▼               ▼
-    ┌─────────────────┐ ┌───────────┐ ┌─────────────────┐
-    │  CommonFilters  │ │CommonParams│ │  CommonChanges  │
-    │ (Query building)│ │(Bulk params)│ │(Changeset helpers)│
-    └────────┬────────┘ └───────────┘ └─────────────────┘
-             │
-             ▼
-    ┌─────────────────┐
-    │    DynamicBuilders     │
-    │(Dynamic exprs)  │
-    └────────┬────────┘
-             │
-             ▼
-    ┌─────────────────────────────────────────────────────────┐
-    │                      Ecto.Repo                          │
-    │                     (Database)                          │
-    └─────────────────────────────────────────────────────────┘
+Association shorthand is a separate surface:
 
-**Data flow:**
+```elixir
+%{comments: %{approved: true}}
+```
 
-1. Your context module calls `EctoShorts.Actions` with a schema and params.
-2. Actions delegates to `CommonFilters` to build an `Ecto.Query`.
-3. CommonFilters uses `DynamicBuilders` to build dynamic expressions.
-4. Actions executes the query through the configured `Ecto.Repo`.
-5. Results are returned to your context module.
+This ensures the association binding exists and applies the nested filters on that binding.
 
-**Extensions:**
+The explicit outer-key association form is also supported:
 
-* `:changeset` option - override the default changeset function
-* `:error_module` option - customize error formatting
-* `:dynamic_adapter` option - customize dynamic expression building
+```elixir
+%{join: [association: [source: :author, as: :author]]}
+```
 
-## Migrating from raw Ecto
+### Locks
 
-This section shows before/after comparisons for common patterns.
+`:lock` supports three public payload families:
 
-### Reading records
+- a map or keyword list with `name:`
+- a raw string lock clause
+- a unary function that receives the current query and returns an `Ecto.Query`
 
-**Before (raw Ecto):**
+### CTEs
 
-    import Ecto.Query
+`:recursive_ctes` and `:with_cte` are part of the query filter public API:
 
-    def list_published_posts(limit) do
-      Post
-      |> where([p], p.published == true)
-      |> order_by([p], desc: p.inserted_at)
-      |> limit(^limit)
-      |> Repo.all()
-    end
+```elixir
+cte_query =
+  from p in MyApp.Blog.Post,
+    where: p.published == true
 
-**After (EctoShorts):**
+query =
+  EctoShorts.CommonFilters.convert_params_to_filter(
+    MyApp.Blog.Post,
+    %{with_cte: %{published_posts: %{as: cte_query}}},
+    []
+  )
+```
 
-    def list_published_posts(limit) do
-      Actions.all(Post, %{
-        published: true,
-        order_by: [desc: :inserted_at],
-        limit: limit
-      })
-    end
+If clause order matters, use a keyword list rather than a map.
 
-### Creating records
+## `EctoShorts.CommonChanges`
 
-**Before (raw Ecto):**
+`EctoShorts.CommonChanges` is for reusable changeset pipeline helpers.
 
-    def create_post(attrs) do
-      %Post{}
-      |> Post.changeset(attrs)
-      |> Repo.insert()
-    end
+Useful helpers include:
 
-**After (EctoShorts):**
+- `preload_change_assoc/3`
+- `trim_string_change/2`
+- `validate_not_unset/2`
+- `put_new_change/3`
+- `put_new_value/3`
+- `apply_when/3`
 
-    def create_post(attrs) do
-      Actions.create(Post, attrs)
-    end
+Example:
 
-### Updating records
+```elixir
+def changeset(post, attrs) do
+  post
+  |> cast(attrs, [:title, :slug, :published_at])
+  |> EctoShorts.CommonChanges.trim_string_change([:title, :slug])
+  |> EctoShorts.CommonChanges.apply_when(
+    &EctoShorts.CommonChanges.changeset_field_nil?(&1, :published_at),
+    &put_change(&1, :published_at, DateTime.utc_now())
+  )
+end
+```
 
-**Before (raw Ecto):**
+## `EctoShorts.CommonParams`
 
-    def update_post(post, attrs) do
-      post
-      |> Post.changeset(attrs)
-      |> Repo.update()
-    end
+`EctoShorts.CommonParams` prepares payloads for repo-native bulk operations.
 
-**After (EctoShorts):**
+It is the lower-level API behind helpers such as `Actions.insert_all/3` and `Actions.update_all/4`.
 
-    def update_post(post, attrs) do
-      Actions.update(Post, post, attrs)
-    end
+Key functions include:
 
-### Complex filtering
+- `convert_to_insert_params/3`
+- `build_on_conflict_options/3`
+- `convert_to_update_params/3`
 
-**Before (raw Ecto):**
+Example:
 
-    import Ecto.Query
+```elixir
+{:ok, inserts} =
+  EctoShorts.CommonParams.convert_to_insert_params(
+    MyApp.Blog.Post,
+    [
+      %{title: "First post", published: true},
+      %{title: "Second post", published: false}
+    ]
+  )
+```
 
-    def search_posts(params) do
-      Post
-      |> maybe_filter_published(params[:published])
-      |> maybe_filter_author(params[:author_id])
-      |> maybe_filter_date(params[:after])
-      |> order_by([p], desc: p.inserted_at)
-      |> limit(^Map.get(params, :limit, 20))
-      |> Repo.all()
-    end
+## `EctoShorts.CommonQuery` and `EctoShorts.CommonSchema`
 
-    defp maybe_filter_published(query, nil), do: query
-    defp maybe_filter_published(query, published) do
-      where(query, [p], p.published == ^published)
-    end
+Use `EctoShorts.CommonQuery` when you need to inspect bindings and sources in a query.
 
-    defp maybe_filter_author(query, nil), do: query
-    defp maybe_filter_author(query, author_id) do
-      where(query, [p], p.author_id == ^author_id)
-    end
+Use `EctoShorts.CommonSchema` when you need to normalize a source, build structs, inspect schema metadata, or create changesets from flexible source forms.
 
-    defp maybe_filter_date(query, nil), do: query
-    defp maybe_filter_date(query, after_date) do
-      where(query, [p], p.inserted_at >= ^after_date)
-    end
+Examples:
 
-**After (EctoShorts):**
+```elixir
+source = EctoShorts.CommonSchema.normalize_source({"archived_posts", MyApp.Blog.Post})
+query = EctoShorts.CommonSchema.to_query(MyApp.Blog.Post)
+fields = EctoShorts.CommonSchema.get_schema_reflection(MyApp.Blog.Post, :fields)
+changeset = EctoShorts.CommonSchema.create_changeset(MyApp.Blog.Post, %{title: "Hello"}, [])
+```
 
-    def search_posts(params) do
-      filters =
-        params
-        |> Map.take([:published, :author_id])
-        |> maybe_put_date_filter(params[:after])
-        |> Map.put(:order_by, [desc: :inserted_at])
-        |> Map.put(:limit, Map.get(params, :limit, 20))
+## `EctoShorts.DynamicBuilders`
 
-      Actions.all(Post, filters)
-    end
+`EctoShorts.DynamicBuilders.build_dynamic/4` builds `Ecto.Query.DynamicExpr` values through a dynamic adapter.
 
-    defp maybe_put_date_filter(filters, nil), do: filters
-    defp maybe_put_date_filter(filters, after_date) do
-      Map.put(filters, :inserted_at, %{>=: after_date})
-    end
+Adapter resolution order is:
 
-### Bulk operations
+1. `:dynamic_adapter` passed at call time
+2. configured `EctoShorts.Config.dynamic_adapter/0`
+3. auto-detection from the repo adapter
 
-**Before (raw Ecto):**
+At the moment, PostgreSQL is the supported auto-resolved adapter.
 
-    def publish_all_drafts do
-      Post
-      |> where([p], p.draft == true)
-      |> Repo.update_all(set: [published: true, draft: false])
-    end
+```elixir
+dynamic =
+  EctoShorts.DynamicBuilders.build_dynamic(
+    MyApp.Blog.Post,
+    {:as, nil},
+    {:views, [>: 1, <: 10]},
+    repo: MyApp.Repo
+  )
+```
 
-**After (EctoShorts):**
+## `EctoShorts.Testing`
 
-    def publish_all_drafts do
-      Actions.update_all(Post, %{draft: true}, %{set: %{published: true, draft: false}})
-    end
+`EctoShorts.Testing` provides assertions for queries, SQL, and dynamic expressions.
 
-## Configuration
+Repo-bound usage:
 
-    config :ecto_shorts,
-      repo: MyApp.Repo,
-      replica: MyApp.Repo.Replica,
-      error_module: MyApp.CustomError,
-      dynamic_adapter: MyApp.DynamicAdapter,
-      max_positional_bindings: 3
+```elixir
+defmodule MyApp.PostQueryTest do
+  use ExUnit.Case, async: true
+  use EctoShorts.Testing, repo: MyApp.Repo
 
-* `:repo` - the default `Ecto.Repo` for write operations.
+  import Ecto.Query
 
-* `:replica` - the `Ecto.Repo` for read operations. Falls back to
-  `:repo` when not set.
+  alias EctoShorts.CommonFilters
+  alias MyApp.Blog.Post
 
-* `:error_module` - a module implementing the
-  `EctoShorts.Actions.Error` behaviour for error formatting.
+  test "published filter matches the expected query" do
+    expected = from p in Post, where: p.published == ^true
+    actual = CommonFilters.convert_params_to_filter(Post, %{published: true}, [])
 
-* `:dynamic_adapter` - a module implementing the
-  `EctoShorts.Dynamic` behaviour for dynamic expressions.
+    assert_query(expected, actual)
+    assert_sql(expected, actual)
+  end
+end
+```
 
-* `:max_positional_bindings` - maximum query bindings before falling
-  back to a subquery strategy. Defaults to `3`.
+Direct usage:
 
-All keys are optional. Pass `:repo` and `:replica` at call time via
-options on most `EctoShorts.Actions` functions.
+```elixir
+EctoShorts.Testing.assert_sql(MyApp.Repo, expected_query, actual_query)
+```
 
-See `EctoShorts.Config` for all configuration options.
+Important note: `assert_sql/4` compares the generated SQL string only. If parameter values matter for the assertion, compare full `Ecto.Adapters.SQL.to_sql/3` tuples directly.
 
-## Edge cases and warnings
+## Common workflows
 
-> **Empty params in find/3**
->
-> Calling `Actions.find(Post, %{})` returns `{:error, :not_found}`
-> immediately without querying the database. This prevents accidental
-> fetches of arbitrary records.
+### Build a context with `Actions`
 
-> **Large batch sizes**
->
-> `insert_all/3` and `update_all/4` execute a single SQL statement.
-> Very large batches may exceed database limits. Consider chunking
-> into smaller batches for thousands of records.
+```elixir
+defmodule MyApp.Blog do
+  alias EctoShorts.Actions
+  alias MyApp.Blog.Post
+
+  def list_posts(params \\ %{}) do
+    Actions.all(
+      Post,
+      Map.merge(%{order_by: [desc: :inserted_at]}, params),
+      repo: MyApp.Repo
+    )
+  end
+
+  def get_post(id) do
+    Actions.find(Post, %{id: id}, repo: MyApp.Repo)
+  end
+
+  def create_post(attrs) do
+    Actions.create(Post, attrs, repo: MyApp.Repo)
+  end
+
+  def update_post(post, attrs) do
+    Actions.update(Post, post, attrs, repo: MyApp.Repo)
+  end
+
+  def delete_post(post) do
+    Actions.delete(post, repo: MyApp.Repo)
+  end
+end
+```
+
+### Query without executing
+
+```elixir
+query =
+  EctoShorts.CommonFilters.convert_params_to_filter(
+    MyApp.Blog.Post,
+    %{
+      published: true,
+      preload: [:author],
+      order_by: [desc: :inserted_at]
+    },
+    []
+  )
+
+posts = MyApp.Repo.all(query)
+```
+
+### Work with schemaless or polymorphic sources
+
+```elixir
+EctoShorts.Actions.all("posts", %{published: true}, repo: MyApp.Repo)
+
+EctoShorts.Actions.all(
+  {"archived_posts", MyApp.Blog.Post},
+  %{published: true},
+  repo: MyApp.Repo
+)
+```
+
+## Edge cases
+
+- `Actions.find(source, %{}, opts)` returns `{:error, ...}` immediately for non-query sources instead of querying an arbitrary record
+- `insert_all/3` and `update_all/4` execute repo-native bulk operations; for very large batches, chunking may still be appropriate
+- if `with_cte`, `join`, or similar clauses rely on evaluation order, prefer keyword lists over maps
 
 ## Next steps
 
-* API entry point: `EctoShorts.Actions`
-* Filter language reference: `EctoShorts.CommonFilters`
-* Changeset helpers: `EctoShorts.CommonChanges`
-* Configuration: `EctoShorts.Config`
-* Nesting and precedence rules: `guides/RULES.md`
-* Worked examples: `guides/WORKED_EXAMPLES.md`
+- Read `EctoShorts.Actions` for the main runtime API
+- Read `EctoShorts.CommonFilters` for the query filter language
+- Read `EctoShorts.CommonChanges` for changeset helpers
+- Read `EctoShorts.Config` for runtime and application configuration
+- Check `CHANGELOG.md` for release history
