@@ -5,7 +5,6 @@ defmodule EctoShorts.CommonFilters do
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
   alias EctoShorts.CommonFilters.API
-  alias EctoShorts.QueryBuilder
   alias EctoShorts.Utils
 
   @logger_prefix "EctoShorts.CommonFilters"
@@ -145,7 +144,7 @@ defmodule EctoShorts.CommonFilters do
 
       module when is_atom(module) ->
         if function_exported?(module, :build_query, 6) do
-          QueryBuilder.build_query(module, filter, source, query, selected_binding, term, opts)
+          module.build_query(filter, source, query, selected_binding, term, opts)
         else
           EctoShorts.Logger.warning(
             @logger_prefix,

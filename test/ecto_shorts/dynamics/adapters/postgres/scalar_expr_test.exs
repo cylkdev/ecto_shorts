@@ -1,8 +1,8 @@
-defmodule EctoShorts.Dynamics.Postgres.ScalarExprTest do
+defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExprTest do
   use ExUnit.Case, async: true
   use EctoShorts.Testing
 
-  alias EctoShorts.Dynamics.Postgres.ScalarExpr
+  alias EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr
   alias EctoShorts.Schema.Comment
   alias EctoShorts.Schema.Post
 

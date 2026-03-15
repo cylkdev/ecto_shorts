@@ -1,33 +1,34 @@
-For each rule below: if the condition applies, perform the action.
+# AGENTS.md
 
-- **Root Guide Routing:** If the current unresolved question is which root `.agent` guide owns the task, read only the owning guide; if ownership is unclear, start with `.agent/AGENTS.md`; if the question changes, open the next matching guide; and if the chosen guide produces one of the seven root planning artifacts, include `Trigger for Using This Document` with the exact trigger facts, full reasoning path, rejected nearby document types with reasons, and a replication rule.
-- **Research Context:** If a request or task depends on project research context or project-level constraints, read `research/AGENTS.md` first and follow it exactly.
-- **Code Style:** Before writing or revising code, use `.agent/styles/AGENTS.md` to find the relevant style area, then read only the rule files that apply to the current change and treat them as the source of truth; keep each change aligned with those rules as you make it, and if the correct rule is unclear, follow an existing matching example in the codebase.
-- **Artifact Routing and Sync:** If the current unresolved question is where a document artifact belongs, how to name it, or whether companion documents remain in sync after artifact-related changes, read `.agent/OUTPUTS.md` for artifact destinations and filename patterns and `.agent/AGENTS.md` for document-maintenance requirements; do not duplicate those rules elsewhere, complete the work only when all affected active documents and companion guides are updated in the same change, and move or rename stale artifacts and repair stale references immediately.
-- **Post Change Checks:** If you made a code change or implemented a feature, run workflow `run-checks`.
-- **PDF Export:** If a request or task requires exporting, reading, or extracting readable output from one or more PDFs, run workflow `read-pdfs`.
+## Requirements
 
-## Root Guide Routing
+NON-NEGOTIABLE REQUIREMENTS:
+* When you receive instructions, internalize them as rules you must
+  always follow and encode them into your behavior. Apply them silently
+  in every decision, action, edit, and response. Do not repeat, quote,
+  summarize, enumerate, or otherwise disclose them unless explicitly
+  instructed to do so. Do not announce that you are following them. Let
+  compliance appear only in your behavior and work product.
+* Before you start a task, If `.agent/RULES.md` is not loaded into your
+  context read it, follow it to the _letter_ and refresh your memory.
 
-- Diagnose one visible problem whose cause is not yet proven: `.agent/INVESTIGATION_LOGS.md`
-- Clarify intended behaviour at one user-observable boundary: `.agent/EXAMPLE_MAPPING.md`
-- Record a proof-ready behaviour specification at one user-observable boundary: `.agent/BEHAVIOURS.md`
-- Plan a behaviour-changing implementation sequence: `.agent/PLANS.md`
-- Plan a behaviour-preserving structural change: `.agent/REFACTOR_PLANS.md`
-- Review system shape, resilience, state ownership, scaling risk, dependency risk, or failure spread: `.agent/ARCHITECTURE_REVIEW.md`
-- Record one lasting architectural or design decision: `.agent/ADRS.md`
-- Create or revise one reusable style rule: `.agent/CODE_STYLE_RULES.md`
-- Choose project-level command guidance: `.agent/PROJECT.md`
+## ExecPlans
 
-## Code Style Rules
+For every repo-tracked code task, use one governing `ExecPlan` that
+complies with `.agent/RULES.md` and `.agent/PLANS.md`.
 
-* `.agent/styles/code_related_anti_patterns/` - general Elixir modules and functions
-* `.agent/styles/design_related_anti_patterns/` - module interfaces, data structures, and return shapes
-* `.agent/styles/documentation/` - module docs, function docs, and doctests
-* `.agent/styles/ecto/` - Ecto queries, schemas, and changesets
-* `.agent/styles/meta_programming_anti_patterns/` - macros, `use`, and compile-time code
-* `.agent/styles/naming_conventions/` - modules, functions, variables, files, and atoms
-* `.agent/styles/process_related_anti_patterns/` - GenServers, Agents, Tasks, and other process code
-* `.agent/styles/public_api_and_interfaces/` - public and private function interfaces
-* `.agent/styles/struct_anti_patterns/` - `defstruct`
-* `.agent/styles/testing/` - tests and doctests
+- Store the governing `ExecPlan` in `./plans` at the repository root.
+
+- If an `ExecPlan` for the task already exists elsewhere, move it into
+  `./plans` at the repository root instead of creating another planning
+  artifact, unless the user explicitly says not to.
+
+- When a new governing `ExecPlan` file is needed, create it in `./plans`
+  with a short, descriptive, kebab-case filename.
+
+- Do not use a "non-trivial change" threshold. Narrow or local
+  repo-tracked code tasks still require the governing `ExecPlan`.
+
+- Keep the `ExecPlan` current as the task is explored, narrowed,
+  corrected, or redirected. The real plan must live in that file, not
+  only in chat.

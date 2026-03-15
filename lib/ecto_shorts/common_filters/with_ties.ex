@@ -1,14 +1,14 @@
 defmodule EctoShorts.CommonFilters.WithTies do
   alias Ecto.Query
   alias EctoShorts.CommonFilters.{Limit, OrderBy}
-  alias EctoShorts.{CommonSchema, Compiler, Utils}
+  alias EctoShorts.{CommonSchema, QueryBindings, Utils}
 
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.WithTies"
   @default_limit 1000
 
-  {_, binding_patterns} = Compiler.query_binding_contracts(__MODULE__)
+  {_, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
 
   def build_query(:with_ties, source, query, selected_binding, params, opts) do
     apply_with_ties(source, query, selected_binding, params, opts)
