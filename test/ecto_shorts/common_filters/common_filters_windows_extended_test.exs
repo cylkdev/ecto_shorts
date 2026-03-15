@@ -78,7 +78,7 @@ defmodule EctoShorts.CommonFilters.WindowsExtendedTest do
       actual =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{windows: [post_window: [order_by: {:desc, :inserted_at}]]},
+          %{windows: [post_window: [order_by: [desc: :inserted_at]]]},
           []
         )
 

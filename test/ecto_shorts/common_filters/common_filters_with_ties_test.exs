@@ -19,7 +19,7 @@ defmodule EctoShorts.CommonFilters.WithTiesTest do
       actual =
         CommonFilters.convert_params_to_filter(
           Post,
-          [order_by: {:desc, :inserted_at}, limit: 1, with_ties: true],
+          [order_by: [desc: :inserted_at], limit: 1, with_ties: true],
           []
         )
 
@@ -36,7 +36,7 @@ defmodule EctoShorts.CommonFilters.WithTiesTest do
       actual =
         CommonFilters.convert_params_to_filter(
           Post,
-          [order_by: {:desc, :inserted_at}, limit: 1, with_ties: false],
+          [order_by: [desc: :inserted_at], limit: 1, with_ties: false],
           []
         )
 
@@ -53,7 +53,7 @@ defmodule EctoShorts.CommonFilters.WithTiesTest do
       actual =
         CommonFilters.convert_params_to_filter(
           Post,
-          [order_by: {:desc, :inserted_at}, with_ties: true],
+          [order_by: [desc: :inserted_at], with_ties: true],
           []
         )
 

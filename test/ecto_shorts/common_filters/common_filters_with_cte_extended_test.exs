@@ -16,7 +16,7 @@ defmodule EctoShorts.CommonFilters.WithCteExtendedTest do
       actual =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{with_cte: [{"published_posts", [as: cte_query]}]},
+          %{with_cte: [%{"published_posts" => [as: cte_query]}]},
           []
         )
 
@@ -72,7 +72,7 @@ defmodule EctoShorts.CommonFilters.WithCteExtendedTest do
       actual =
         CommonFilters.convert_params_to_filter(
           Post,
-          %{with_cte: [{123, [as: cte_query]}]},
+          %{with_cte: [%{123 => [as: cte_query]}]},
           []
         )
 

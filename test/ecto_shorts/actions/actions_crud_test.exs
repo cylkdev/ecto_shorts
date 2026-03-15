@@ -53,7 +53,7 @@ defmodule EctoShorts.Actions.CRUDTest do
         Actions.all(Post, %{
           where: %{published: true},
           or_where: %{title: "OrWhereMatch"},
-          order_by: %{asc: :title}
+          order_by: [asc: :title]
         })
 
       assert Enum.map(results, & &1.title) === ["OrWhereMatch", "WhereMatch"]
@@ -143,7 +143,7 @@ defmodule EctoShorts.Actions.CRUDTest do
         Actions.all(q, %{
           as: %{
             author: %{
-              order_by: %{asc: :first_name}
+              order_by: [asc: :first_name]
             }
           }
         })
@@ -179,7 +179,7 @@ defmodule EctoShorts.Actions.CRUDTest do
         Actions.all(q, %{
           at: %{
             2 => %{
-              order_by: %{asc: :first_name}
+              order_by: [asc: :first_name]
             }
           }
         })
@@ -280,7 +280,7 @@ defmodule EctoShorts.Actions.CRUDTest do
 
       assert [%Post{title: "One"}] =
                Actions.all(Post, %{
-                 order_by: %{asc: :id},
+                 order_by: [asc: :id],
                  limit: 1
                })
     end
@@ -296,7 +296,7 @@ defmodule EctoShorts.Actions.CRUDTest do
 
       assert [%Post{title: "One"}] =
                Actions.all(Post, %{
-                 order_by: %{asc: :id},
+                 order_by: [asc: :id],
                  first: 1
                })
     end
@@ -312,7 +312,7 @@ defmodule EctoShorts.Actions.CRUDTest do
 
       assert [%Post{title: "Two"}] =
                Actions.all(Post, %{
-                 order_by: %{asc: :id},
+                 order_by: [asc: :id],
                  offset: 1
                })
     end
@@ -2028,7 +2028,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert {:ok, [%Post{title: "A"}, %Post{title: "B"}]} =
                Repo.transaction(fn ->
                  Post
-                 |> Actions.stream(%{order_by: %{asc: :title}})
+                 |> Actions.stream(%{order_by: [asc: :title]})
                  |> Enum.to_list()
                end)
     end
@@ -2043,7 +2043,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert {:ok, posts} =
                Repo.transaction(fn ->
                  Post
-                 |> Actions.stream(%{order_by: %{asc: :id}}, max_rows: 2)
+                 |> Actions.stream(%{order_by: [asc: :id]}, max_rows: 2)
                  |> Enum.to_list()
                end)
 

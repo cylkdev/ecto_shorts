@@ -113,7 +113,11 @@ defmodule EctoShorts.Dynamics.Postgres.NormalizerTest do
 
     test "normalizes datetime operation node with atom field" do
       assert {:ago, [field: :inserted_at, count: 3, interval: :day]} =
-               Normalizer.normalize_value_node(nil, {:ago, [field: :inserted_at, count: 3, interval: :day]}, [])
+               Normalizer.normalize_value_node(
+                 nil,
+                 {:ago, [field: :inserted_at, count: 3, interval: :day]},
+                 []
+               )
     end
 
     test "normalizes field: shorthand keyword" do
