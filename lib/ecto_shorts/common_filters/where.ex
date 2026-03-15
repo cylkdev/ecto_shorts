@@ -1,4 +1,6 @@
 defmodule EctoShorts.CommonFilters.Where do
+  @moduledoc false
+
   alias Ecto.Query
   require Ecto.Query
 

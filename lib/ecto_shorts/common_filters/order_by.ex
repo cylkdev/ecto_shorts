@@ -1,10 +1,12 @@
 defmodule EctoShorts.CommonFilters.OrderBy do
-  alias EctoShorts.QueryBindings
-  alias Ecto.Query
+  @moduledoc false
 
+  alias EctoShorts.QueryBindings
+
+  alias Ecto.Query
   require Ecto.Query
 
-  @order_directions [
+  @directions [
     :asc,
     :asc_nulls_last,
     :asc_nulls_first,
@@ -51,7 +53,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
     end
 
     defp build_order_by(query, unquote(quoted_binding_head), {dir, field_name})
-         when dir in @order_directions and is_atom(field_name) do
+         when dir in @directions and is_atom(field_name) do
       Query.order_by(
         query,
         [unquote_splicing(quoted_binding_body)],
@@ -62,7 +64,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
     defp build_order_by(query, unquote(quoted_binding_head), entries) when is_list(entries) do
       order_exprs =
         Enum.map(entries, fn
-          {dir, field_name} when dir in @order_directions and is_atom(field_name) ->
+          {dir, field_name} when dir in @directions and is_atom(field_name) ->
             dyn =
               Query.dynamic(
                 [unquote_splicing(quoted_binding_body)],
@@ -106,7 +108,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
     end
 
     defp build_prepend_order_by(query, unquote(quoted_binding_head), {dir, field_name})
-         when dir in @order_directions and is_atom(field_name) do
+         when dir in @directions and is_atom(field_name) do
       Query.prepend_order_by(
         query,
         [unquote_splicing(quoted_binding_body)],
@@ -118,7 +120,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
          when is_list(entries) do
       order_exprs =
         Enum.map(entries, fn
-          {dir, field_name} when dir in @order_directions and is_atom(field_name) ->
+          {dir, field_name} when dir in @directions and is_atom(field_name) ->
             dyn =
               Query.dynamic(
                 [unquote_splicing(quoted_binding_body)],

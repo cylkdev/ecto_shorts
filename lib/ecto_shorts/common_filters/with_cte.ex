@@ -1,6 +1,7 @@
 defmodule EctoShorts.CommonFilters.WithCte do
+  @moduledoc false
+
   alias EctoShorts.CommonFilters
-  alias EctoShorts.Utils
 
   alias Ecto.Query
   require Ecto.Query
@@ -8,9 +9,13 @@ defmodule EctoShorts.CommonFilters.WithCte do
   @logger_prefix "EctoShorts.CommonFilters.WithCte"
   @cte_operations [:all, :update_all, :delete_all]
 
+  def build_query(:with_cte, source, query, selected_binding, map, opts)
+      when is_map(map) and not is_struct(map) do
+    build_query(:with_cte, source, query, selected_binding, Map.to_list(map), opts)
+  end
+
   def build_query(:with_cte, schema_source, query, _selected_binding, params, opts) do
-    normalized_params = Utils.map_to_keyword(params)
-    reduce_entries(schema_source, query, normalized_params, opts)
+    reduce_entries(schema_source, query, params, opts)
   end
 
   defp reduce_entries(schema_source, query, params, opts) when is_list(params) do

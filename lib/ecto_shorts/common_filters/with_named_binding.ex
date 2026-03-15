@@ -1,13 +1,17 @@
 defmodule EctoShorts.CommonFilters.WithNamedBinding do
+  @moduledoc false
+
   alias Ecto.Query
   alias EctoShorts.CommonFilters
-  alias EctoShorts.Utils
 
   @logger_prefix "EctoShorts.CommonFilters.WithNamedBinding"
 
-  def build_query(:with_named_binding, _source, query, _selected_binding, term, opts) do
-    params = Utils.map_to_keyword(term)
+  def build_query(:with_named_binding, source, query, selected_binding, map, opts)
+      when is_map(map) and not is_struct(map) do
+    build_query(:with_named_binding, source, query, selected_binding, Map.to_list(map), opts)
+  end
 
+  def build_query(:with_named_binding, _source, query, _selected_binding, params, opts) do
     if Keyword.keyword?(params) do
       Enum.reduce(params, query, fn
         {key, value}, query_acc ->
@@ -24,7 +28,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
     else
       EctoShorts.Logger.warning(
         @logger_prefix,
-        "Expected :with_named_binding params to be a map or keyword list, got: #{inspect(term)}"
+        "Expected :with_named_binding params to be a map or keyword list, got: #{inspect(params)}"
       )
 
       query

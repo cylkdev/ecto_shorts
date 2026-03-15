@@ -165,10 +165,12 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp sort_filter_params(params) do
-    where_filters = Keyword.take(params, [:where])
-    or_where_filters = Keyword.take(params, [:or_where])
+    where_filters = Enum.filter(params, fn {key, _val} -> key == :where end)
+    or_where_filters = Enum.filter(params, fn {key, _val} -> key == :or_where end)
     terminal_filters = Enum.filter(params, fn {key, _val} -> key in [:last, :subquery] end)
-    other_filters = Keyword.drop(params, [:where, :or_where, :last, :subquery])
+
+    other_filters =
+      Enum.filter(params, fn {key, _val} -> key not in [:where, :or_where, :last, :subquery] end)
 
     where_filters
     |> Kernel.++(other_filters)

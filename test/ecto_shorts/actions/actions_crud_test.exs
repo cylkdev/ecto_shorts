@@ -1419,6 +1419,207 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert Enum.any?(results, &match?(%Post{title: "Unpublished"}, &1))
     end
 
+    test ":and with a single field is equivalent to a plain field filter" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", views: 15})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "NoMatch", views: 99})
+      |> Repo.insert!()
+
+      plain = Actions.all(Post, %{views: 15})
+      via_and = Actions.all(Post, %{and: %{views: 15}})
+
+      assert [%Post{title: "Match"}] = plain
+      assert plain === via_and
+    end
+
+    test ":and with a single field is equivalent to :where" do
+      %Post{}
+      |> Post.changeset(%{title: "Match", views: 15})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "NoMatch", views: 99})
+      |> Repo.insert!()
+
+      via_where = Actions.all(Post, %{where: %{views: 15}})
+      via_and = Actions.all(Post, %{and: %{views: 15}})
+
+      assert [%Post{title: "Match"}] = via_where
+      assert via_where === via_and
+    end
+
+    test ":or with a single field is equivalent to :or_where" do
+      %Post{}
+      |> Post.changeset(%{title: "A", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "B", published: false})
+      |> Repo.insert!()
+
+      via_or_where =
+        Actions.all(Post, where: %{published: true}, or_where: %{published: false})
+
+      via_or =
+        Actions.all(Post, where: %{published: true}, or: %{published: false})
+
+      assert Enum.count(via_or_where) === 2
+      assert Enum.sort_by(via_or_where, & &1.title) === Enum.sort_by(via_or, & &1.title)
+    end
+
+    test "multiple where: entries in a keyword list AND together" do
+      %Post{}
+      |> Post.changeset(%{title: "BothMatch", published: true, views: 5})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "OnlyPublished", published: true, views: 99})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "OnlyViews", published: false, views: 5})
+      |> Repo.insert!()
+
+      assert [result] =
+               Actions.all(Post, where: %{published: true}, where: %{views: 5})
+
+      assert %Post{title: "BothMatch"} = result
+    end
+
+    test "multiple or_where: entries in a keyword list OR together" do
+      %Post{}
+      |> Post.changeset(%{title: "A", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "B", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "C", published: false})
+      |> Repo.insert!()
+
+      results =
+        Actions.all(Post, or_where: %{title: "A"}, or_where: %{title: "B"})
+
+      assert Enum.count(results) === 2
+      assert Enum.any?(results, &match?(%Post{title: "A"}, &1))
+      assert Enum.any?(results, &match?(%Post{title: "B"}, &1))
+    end
+
+    test "multiple where: and multiple or_where: entries compose correctly" do
+      %Post{}
+      |> Post.changeset(%{title: "BothWhere", published: true, views: 0})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Extra1", published: false, views: 99})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "Extra2", published: false, views: 99})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "NoMatch", published: false, views: 1})
+      |> Repo.insert!()
+
+      results =
+        Actions.all(Post,
+          where: %{published: true},
+          where: %{views: 0},
+          or_where: %{title: "Extra1"},
+          or_where: %{title: "Extra2"}
+        )
+
+      assert Enum.count(results) === 3
+      assert Enum.any?(results, &match?(%Post{title: "BothWhere"}, &1))
+      assert Enum.any?(results, &match?(%Post{title: "Extra1"}, &1))
+      assert Enum.any?(results, &match?(%Post{title: "Extra2"}, &1))
+    end
+
+    test "two :and groups in a keyword list compose as AND" do
+      %Post{}
+      |> Post.changeset(%{title: "BothMatch", published: true, views: 5})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "OnlyPublished", published: true, views: 99})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "OnlyViews", published: false, views: 5})
+      |> Repo.insert!()
+
+      assert [result] =
+               Actions.all(Post, and: %{published: true}, and: %{views: 5})
+
+      assert %Post{title: "BothMatch"} = result
+    end
+
+    # When using a keyword list, sort_filter_params ensures :where entries execute
+    # before :or_where entries, producing: (where conditions) OR (or_where conditions).
+    test "keyword list: where + multiple or_where compose as (W) OR (OW1) OR (OW2)" do
+      %Post{}
+      |> Post.changeset(%{title: "WherePost", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "OrA", published: false})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "OrB", published: false})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "NoMatch", published: false})
+      |> Repo.insert!()
+
+      results =
+        Actions.all(Post,
+          where: %{published: true},
+          or_where: %{title: "OrA"},
+          or_where: %{title: "OrB"}
+        )
+
+      assert Enum.count(results) === 3
+      assert Enum.any?(results, &match?(%Post{title: "WherePost"}, &1))
+      assert Enum.any?(results, &match?(%Post{title: "OrA"}, &1))
+      assert Enum.any?(results, &match?(%Post{title: "OrB"}, &1))
+    end
+
+    # When using a map, Elixir does not guarantee key iteration order.
+    # For order-sensitive compositions (e.g. mixing where and or_where), use a
+    # keyword list instead. Maps work correctly for single where + single or_where
+    # combinations where order does not affect the result.
+    test "map: single where + single or_where matches both conditions" do
+      %Post{}
+      |> Post.changeset(%{title: "WherePost", published: true})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "OrPost", published: false})
+      |> Repo.insert!()
+
+      %Post{}
+      |> Post.changeset(%{title: "NoMatch", published: false})
+      |> Repo.insert!()
+
+      results =
+        Actions.all(Post, %{
+          where: %{published: true},
+          or_where: %{title: "OrPost"}
+        })
+
+      assert Enum.count(results) === 2
+      assert Enum.any?(results, &match?(%Post{title: "WherePost"}, &1))
+      assert Enum.any?(results, &match?(%Post{title: "OrPost"}, &1))
+    end
+
     test "returns records where the field is nil" do
       %Post{}
       |> Post.changeset(%{title: "Nil", permalink: "scalar-nil", published_at: nil})

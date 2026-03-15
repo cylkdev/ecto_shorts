@@ -1,4 +1,6 @@
 defmodule EctoShorts.CommonFilters.SetOperation do
+  @moduledoc false
+
   alias Ecto.Query
   alias EctoShorts.CommonFilters
 

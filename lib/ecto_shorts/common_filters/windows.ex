@@ -1,8 +1,9 @@
 defmodule EctoShorts.CommonFilters.Windows do
-  alias Ecto.Query
-  alias EctoShorts.QueryBindings
-  alias EctoShorts.Utils
+  @moduledoc false
 
+  alias EctoShorts.QueryBindings
+
+  alias Ecto.Query
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.Windows"
@@ -10,12 +11,13 @@ defmodule EctoShorts.CommonFilters.Windows do
   @payload_window_keys [:window, :partition_by, :order_by, :frame]
   @window_keys [:partition_by, :order_by, :frame]
 
-  {target_binding_var, binding_patterns} =
-    QueryBindings.query_binding_contracts(__MODULE__)
+  def build_query(:windows, source, query, selected_binding, map, opts)
+      when is_map(map) and not is_struct(map) do
+    build_query(:windows, source, query, selected_binding, Map.to_list(map), opts)
+  end
 
   def build_query(:windows, _source, query, selected_binding, params, _opts) do
-    normalized_params = Utils.map_to_keyword(params)
-    reduce_params(query, selected_binding, normalized_params)
+    reduce_params(query, selected_binding, params)
   end
 
   defp reduce_params(query, selected_binding, params) when is_list(params) do
@@ -243,6 +245,8 @@ defmodule EctoShorts.CommonFilters.Windows do
   end
 
   defp normalize_order_by(value, _selected_binding), do: value
+
+  {target_binding_var, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     defp apply_window_definition(

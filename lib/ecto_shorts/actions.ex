@@ -823,11 +823,7 @@ defmodule EctoShorts.Actions do
   end
 
   def all(queryable, opts) do
-    params =
-      opts
-      |> Keyword.drop([:repo, :replica, :dynamic_adapter])
-      |> Map.new()
-
+    params = Keyword.drop(opts, [:repo, :replica, :dynamic_adapter])
     all(queryable, params, Keyword.take(opts, [:repo, :replica, :dynamic_adapter]))
   end
 

@@ -1,4 +1,6 @@
 defmodule EctoShorts.CommonFilters.SetComparison do
+  @moduledoc false
+
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonFilters.Select
 

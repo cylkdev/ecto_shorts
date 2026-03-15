@@ -1,4 +1,6 @@
 defmodule EctoShorts.CommonFilters.SubQuery do
+  @moduledoc false
+
   alias EctoShorts.CommonFilters
 
   alias Ecto.Query
