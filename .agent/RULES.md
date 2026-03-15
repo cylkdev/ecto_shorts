@@ -295,6 +295,8 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 * Do not silently move responsibility for interpreting structure from one boundary to another. If a proposed simplification changes where a shape is classified, unpacked, or made authoritative, name that shift explicitly, restate the affected contract, and stop for clarification before proceeding.
 
+* When splitting a multi-subject predicate or helper, delete the composite function entirely. Do not replace it with a new wrapper that combines the split parts using and, or, or a short pipeline. The composition belongs at the call site. A new named function is only justified when it owns a responsibility that is not immediately readable from a one-line combination of its parts — not when it exists solely to give a name to that combination.
+
 * Before writing a private function, ask whether each condition or transformation inside it refers to a different subject. A function that tests the shape of a value and simultaneously checks a property of a key is operating on two subjects. A function that validates structure and also performs a schema lookup is crossing two responsibility boundaries. When the subjects differ, the function must be split. Reusability follows from single-subject ownership, not from the other direction.
 
 ### Scope And Intent Control
@@ -1121,6 +1123,7 @@ plan is incomplete.
   to infer behavior from hidden transformations?
 - Does each private function test exactly one condition or own exactly one transformation? If a predicate returns a boolean that is the and of two unrelated checks, or a transformer applies two unrelated changes in sequence, treat it as two functions that have not yet been separated.
 - Before writing a private helper, name its single responsibility in one plain noun phrase. If you cannot do that without using "and", the function has more than one responsibility and must be split before you write it.
+- Can I delete this function and inline its body at the call site without losing clarity or introducing repetition? If yes and the body is a one-line combination of already-named predicates, the function has no independent responsibility and must not exist.
 
 Every "no" identifies work to do.
 
@@ -1216,3 +1219,5 @@ If the implementer would still have to decide what to build, what must not chang
 work is correct, the plan is incomplete.
 
 Reject a plan, or a code change, when a private predicate or helper function joins two structurally unrelated checks or transformations into one function using and, or, a multi-clause pipeline, or any other compound expression where each sub-expression could stand alone as its own named function with its own test. Compound conditions are not the same as a single responsibility. If each half of the condition answers a different question about a different subject — the value, the key, the schema, the type — they are separate concerns and belong in separate functions regardless of how they are combined at the call site.
+
+Reject a code change that eliminates a multi-subject function by splitting it but then introduces a new composite wrapper that delegates to the split parts. The composite must disappear entirely. If the split parts are well-named, the call site must use them directly. A function that exists only to name a conjunction or disjunction of two already-named predicates is not a function with a responsibility — it is the same coupling shifted up one level.

@@ -310,8 +310,11 @@ defmodule EctoShorts.CommonFilters do
   defp to_keyword(term), do: term
 
   defp association_filter?(source, key, term) do
-    container?(term) and
-      key in (CommonSchema.get_schema_reflection(source, :associations) || [])
+    container?(term) and association_key?(source, key)
+  end
+
+  defp association_key?(source, key) do
+    key in (CommonSchema.get_schema_reflection(source, :associations) || [])
   end
 
   defp container?(term) do
