@@ -26,7 +26,6 @@ defmodule EctoShorts.CommonFilters.Join do
   alias EctoShorts.Config
   alias EctoShorts.Logger
   alias EctoShorts.QueryProvider
-  alias EctoShorts.Utils
 
   alias Ecto.Query
   require Ecto.Query
@@ -41,7 +40,6 @@ defmodule EctoShorts.CommonFilters.Join do
 
   def build_query(:join, schema_source, query, selected_binding, params, opts) do
     params
-    |> Utils.map_to_keyword()
     |> normalize_join_entries()
     |> reduce_join_entries(schema_source, query, selected_binding, opts)
   end

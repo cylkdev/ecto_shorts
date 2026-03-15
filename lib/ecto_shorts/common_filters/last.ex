@@ -1,20 +1,10 @@
 defmodule EctoShorts.CommonFilters.Last do
   alias EctoShorts.CommonSchema
-  alias EctoShorts.Utils
 
   alias Ecto.Query
   require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters.Last"
-
-  def build_query(:last, source, query, selected_binding, term, opts)
-      when (is_map(term) and not is_struct(term)) or is_list(term) do
-    term
-    |> Utils.map_to_keyword()
-    |> Enum.reduce(query, fn entry, query_acc ->
-      build_query(:last, source, query_acc, selected_binding, entry, opts)
-    end)
-  end
 
   def build_query(:last, source, query, _selected_binding, {sort_key, limit}, _opts) do
     sort_keys =
@@ -39,12 +29,19 @@ defmodule EctoShorts.CommonFilters.Last do
     build_query(:last, source, query, selected_binding, {nil, limit}, opts)
   end
 
-  def build_query(:last, _source, query, _selected_binding, term, _opts) do
-    EctoShorts.Logger.warning(
-      @logger_prefix,
-      "Expected :last value to be an integer, a {sort_key, limit} tuple, or a map/keyword list of such pairs, got: #{inspect(term)}"
-    )
+  def build_query(:last, source, query, selected_binding, term, opts)
+      when is_map(term) or is_list(term) do
+    if (is_map(term) and not is_struct(term)) or Keyword.keyword?(term) do
+      Enum.reduce(term, query, fn entry, query_acc ->
+        build_query(:last, source, query_acc, selected_binding, entry, opts)
+      end)
+    else
+      EctoShorts.Logger.warning(
+        @logger_prefix,
+        "Expected :last value to be an integer, a {sort_key, limit} tuple, or a map/keyword list of such pairs, got: #{inspect(term)}"
+      )
 
-    query
+      query
+    end
   end
 end
