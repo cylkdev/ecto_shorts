@@ -144,8 +144,8 @@ defmodule EctoShorts.Actions do
   def exists?(source, params, opts \\ [])
 
   def exists?(%Source{} = source, params, opts) do
-    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
-      exists?(queryable, clean_params, opts)
+    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
+      exists?(queryable, input_params, opts)
     end
   end
 
@@ -165,8 +165,8 @@ defmodule EctoShorts.Actions do
   """
   @spec all(queryable) :: list(term())
   def all(%Source{} = source) do
-    with {:ok, queryable, clean_params} <- resolve_source(source, %{}, []) do
-      all(queryable, clean_params, [])
+    with {:ok, queryable, input_params} <- resolve_source(source, %{}, []) do
+      all(queryable, input_params, [])
     end
   end
 
@@ -202,8 +202,8 @@ defmodule EctoShorts.Actions do
   """
   @spec all(queryable, params | opts) :: list(term())
   def all(%Source{} = source, params) when is_map(params) and not is_struct(params) do
-    with {:ok, queryable, clean_params} <- resolve_source(source, params, []) do
-      all(queryable, clean_params, [])
+    with {:ok, queryable, input_params} <- resolve_source(source, params, []) do
+      all(queryable, input_params, [])
     end
   end
 
@@ -211,8 +211,8 @@ defmodule EctoShorts.Actions do
     params = Keyword.drop(opts, [:repo, :replica, :dynamic_adapter])
     actual_opts = Keyword.take(opts, [:repo, :replica, :dynamic_adapter])
 
-    with {:ok, queryable, clean_params} <- resolve_source(source, params, actual_opts) do
-      all(queryable, clean_params, actual_opts)
+    with {:ok, queryable, input_params} <- resolve_source(source, params, actual_opts) do
+      all(queryable, input_params, actual_opts)
     end
   end
 
@@ -259,8 +259,8 @@ defmodule EctoShorts.Actions do
   """
   @spec all(queryable, params, opts) :: list(term())
   def all(%Source{} = source, params, opts) do
-    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
-      all(queryable, clean_params, opts)
+    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
+      all(queryable, input_params, opts)
     end
   end
 
@@ -298,8 +298,8 @@ defmodule EctoShorts.Actions do
   def create(schema, params, opts \\ [])
 
   def create(%Source{} = source, params, opts) do
-    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
-      create(queryable, clean_params, opts)
+    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
+      create(queryable, input_params, opts)
     end
   end
 
@@ -366,8 +366,8 @@ defmodule EctoShorts.Actions do
   def find(queryable, params, opts \\ [])
 
   def find(%Source{} = source, params, opts) do
-    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
-      find(queryable, clean_params, opts)
+    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
+      find(queryable, input_params, opts)
     end
   end
 
@@ -610,8 +610,8 @@ defmodule EctoShorts.Actions do
   def stream(queryable, params \\ %{}, opts \\ [])
 
   def stream(%Source{} = source, params, opts) do
-    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
-      stream(queryable, clean_params, opts)
+    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
+      stream(queryable, input_params, opts)
     end
   end
 
@@ -638,8 +638,8 @@ defmodule EctoShorts.Actions do
   def aggregate(queryable, params \\ %{}, aggregate \\ :count, key \\ :id, opts \\ [])
 
   def aggregate(%Source{} = source, params, aggregate, key, opts) do
-    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
-      aggregate(queryable, clean_params, aggregate, key, opts)
+    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
+      aggregate(queryable, input_params, aggregate, key, opts)
     end
   end
 
@@ -817,8 +817,8 @@ defmodule EctoShorts.Actions do
   def find_or_create(source, params, opts \\ [])
 
   def find_or_create(%Source{} = source, params, opts) do
-    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
-      find_or_create(queryable, clean_params, opts)
+    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
+      find_or_create(queryable, input_params, opts)
     end
   end
 
@@ -1258,12 +1258,12 @@ defmodule EctoShorts.Actions do
 
     case Source.fetch(source, from_key) do
       {:ok, queryable} ->
-        clean_params =
+        input_params =
           if is_map(params),
             do: Map.delete(params, :from),
             else: Keyword.delete(params, :from)
 
-        {:ok, queryable, clean_params}
+        {:ok, queryable, input_params}
 
       :error ->
         {:error, Error.call(:not_found, "source not found.", %{from: from_key}, opts)}
