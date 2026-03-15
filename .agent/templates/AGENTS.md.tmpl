@@ -1,0 +1,10 @@
+
+
+- Run `MIX_ENV=test mix coveralls.json` when you need a machine-readable coverage
+artifact that another tool (CI, a script, or an agent) can reliably parse and act
+on, rather than a human-oriented terminal summary. Use it any time you want to
+capture coverage as structured data for automation: enforce coverage thresholds,
+diff coverage between branches, upload to a service, or feed the results into
+analysis and reporting pipelines. Prefer this command over mix test alone whenever
+coverage must be measured, preserved, and consumed programmatically as part of a
+repeatable workflow.
