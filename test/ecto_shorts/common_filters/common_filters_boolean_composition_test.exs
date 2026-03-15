@@ -67,24 +67,76 @@ defmodule EctoShorts.CommonFilters.BooleanCompositionTest do
     end
   end
 
+  describe "convert_params_to_filter/3 list-of-maps / list-of-keyword-lists" do
+    test ":and with a list of maps applies each map as a separate where clause" do
+      expected = from(p in Post, where: p.views == ^5, where: p.published == ^true)
+      actual = CommonFilters.convert_params_to_filter(Post, %{and: [%{views: 5}, %{published: true}]}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test ":and with a list of keyword lists applies each entry as a separate where clause" do
+      expected = from(p in Post, where: p.views == ^5, where: p.published == ^true)
+      actual = CommonFilters.convert_params_to_filter(Post, %{and: [[views: 5], [published: true]]}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test ":or with a list of maps applies each map as a separate or_where clause" do
+      expected = from(p in Post, or_where: p.views == ^5, or_where: p.published == ^true)
+      actual = CommonFilters.convert_params_to_filter(Post, %{or: [%{views: 5}, %{published: true}]}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test ":or with a list of keyword lists applies each entry as a separate or_where clause" do
+      expected = from(p in Post, or_where: p.views == ^5, or_where: p.published == ^true)
+      actual = CommonFilters.convert_params_to_filter(Post, %{or: [[views: 5], [published: true]]}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test ":where with a list of maps applies each map as a separate where clause" do
+      expected = from(p in Post, where: p.views == ^5, where: p.published == ^true)
+      actual = CommonFilters.convert_params_to_filter(Post, %{where: [%{views: 5}, %{published: true}]}, [])
+
+      assert_sql(expected, actual)
+    end
+
+    test ":or_where with a list of maps applies each map as a separate or_where clause" do
+      expected = from(p in Post, or_where: p.views == ^5, or_where: p.published == ^true)
+
+      actual =
+        CommonFilters.convert_params_to_filter(Post, %{or_where: [%{views: 5}, %{published: true}]}, [])
+
+      assert_sql(expected, actual)
+    end
+  end
+
   describe "convert_params_to_filter/3 keyword list compositions" do
     test "two where: entries AND together" do
       expected = from(p in Post, where: p.published == ^true, where: p.views == ^5)
-      actual = CommonFilters.convert_params_to_filter(Post, [where: %{published: true}, where: %{views: 5}], [])
+
+      actual =
+        CommonFilters.convert_params_to_filter(Post, [where: %{published: true}, where: %{views: 5}], [])
 
       assert_sql(expected, actual)
     end
 
     test "two or_where: entries produce separate or_where clauses" do
       expected = from(p in Post, or_where: p.title == ^"A", or_where: p.title == ^"B")
-      actual = CommonFilters.convert_params_to_filter(Post, [or_where: %{title: "A"}, or_where: %{title: "B"}], [])
+
+      actual =
+        CommonFilters.convert_params_to_filter(Post, [or_where: %{title: "A"}, or_where: %{title: "B"}], [])
 
       assert_sql(expected, actual)
     end
 
     test "where: followed by or_where: preserves order" do
       expected = from(p in Post, where: p.published == ^true, or_where: p.title == ^"X")
-      actual = CommonFilters.convert_params_to_filter(Post, [where: %{published: true}, or_where: %{title: "X"}], [])
+
+      actual =
+        CommonFilters.convert_params_to_filter(Post, [where: %{published: true}, or_where: %{title: "X"}], [])
 
       assert_sql(expected, actual)
     end

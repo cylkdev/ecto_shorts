@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonFilters.Having do
-  alias EctoShorts.Dynamics.Adapters.Postgres
+  alias EctoShorts.Dynamics.Postgres
   alias EctoShorts.QueryBindings
 
   alias Ecto.Query

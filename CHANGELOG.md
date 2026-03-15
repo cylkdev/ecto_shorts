@@ -7,7 +7,7 @@
 - Minimum supported Elixir version is now `~> 1.15` (was `~> 1.13`).
 - `EctoShorts.CommonSchemas` has been removed. Use `EctoShorts.CommonSchema` instead.
 - `EctoShorts.QueryHelpers` has been removed. Use `EctoShorts.CommonQuery` instead.
-- `EctoShorts.QueryBuilder` (and its submodules) has been removed. Use `EctoShorts.Dynamics` and `EctoShorts.Generator` instead.
+- `EctoShorts.Adapter.QueryBuilder` (and its submodules) has been removed. Use `EctoShorts.Dynamics` and `EctoShorts.Generator` instead.
 - `EctoShorts.Utils.Logger` has been removed. Use `EctoShorts.Logger` instead.
 - `SchemaHelpers.build_struct/2` has been removed. Use `CommonSchema.build_struct/1` instead.
 - `SchemaHelpers.schema?/1` has been removed. Use `SchemaHelpers.schema_struct?/1` instead.
@@ -27,7 +27,7 @@
 - Added `EctoShorts.Generator` which provides data-driven function clause generation at compile time. This adds support for `Ecto.Query` positional bindings.
 - Added `EctoShorts.Logger` which provides a consistent, prefixed logging interface (`debug/2`, `info/2`, `warning/2`, `error/2`).
 - Added `EctoShorts.Testing` which provides assertion helpers for verifying dynamic expressions and generated SQL. Use `use EctoShorts.Testing` to bring `assert_dynamic/2`, `refute_dynamic/2`, `assert_query/2`, `refute_query/2`, `assert_sql/3-4`, and `refute_sql/3-4` into test modules.
-- Added `EctoShorts.QueryProvider` which resolves expression callbacks for joins and locks. This decouples query construction from execution.
+- Added `EctoShorts.Adapter.QueryProvider` which resolves expression callbacks for joins and locks. This decouples query construction from execution.
 - Added `EctoShorts.Utils.atomize_keys/1` which recursively converts string-keyed maps to atom-keyed maps using only existing atoms.
 - New `Actions` helpers:
   - `preload/3` to preload associations.

@@ -1,7 +1,7 @@
 defmodule EctoShorts.CommonFilters.Lock do
   alias EctoShorts.QueryBindings
   alias EctoShorts.Config
-  alias EctoShorts.QueryProvider
+  alias EctoShorts.Adapter.QueryProvider
 
   alias Ecto.Query
   require Ecto.Query

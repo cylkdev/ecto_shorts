@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryProvider do
+defmodule EctoShorts.Adapter.QueryProvider do
   @moduledoc """
   Public API for resolving dynamic query expressions from a query provider module.
 

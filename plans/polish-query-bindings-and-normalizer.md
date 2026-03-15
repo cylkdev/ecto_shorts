@@ -44,7 +44,7 @@ Five cleanup tasks:
 
 ### 4. Actions doc audit
 - `:dynamic_adapter` shared option says `EctoShorts.Dynamic` — should
-  be `EctoShorts.Dynamics.Adapter`.
+  be `EctoShorts.Adapter.Dynamic`.
 - `insert_all/3` return type table says `{:ok, {count, nil, [struct]}}` — 
   trailing nil column is wrong formatting.
 - Everything else is accurate.

@@ -1,7 +1,7 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.NormalizerTest do
+defmodule EctoShorts.Dynamics.Postgres.NormalizerTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Dynamics.Adapters.Postgres.Normalizer
+  alias EctoShorts.Dynamics.Postgres.Normalizer
 
   describe "normalize_params/1" do
     test "passes a plain scalar through as a single-element list" do

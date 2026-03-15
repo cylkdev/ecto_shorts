@@ -18,13 +18,13 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
-  alias EctoShorts.Dynamics.Adapters.Postgres
+  alias EctoShorts.Dynamics.Postgres
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
   alias EctoShorts.QueryBindings
   alias EctoShorts.Config
-  alias EctoShorts.QueryProvider
+  alias EctoShorts.Adapter.QueryProvider
 
   alias Ecto.Query
   require Ecto.Query

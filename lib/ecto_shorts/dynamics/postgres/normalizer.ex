@@ -1,4 +1,4 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres.Normalizer do
+defmodule EctoShorts.Dynamics.Postgres.Normalizer do
   @moduledoc """
   Input normalization for the Postgres dynamic expression adapter.
 

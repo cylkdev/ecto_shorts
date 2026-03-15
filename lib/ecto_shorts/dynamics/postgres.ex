@@ -1,16 +1,15 @@
-defmodule EctoShorts.Dynamics.Adapters.Postgres do
-  alias EctoShorts.CommonFilters.SetComparison
-  alias EctoShorts.CommonFilters.FilterHelpers
-  alias EctoShorts.CommonSchema
-
-  alias EctoShorts.Dynamics.Adapters.Postgres.{
-    ArrayExpr,
-    CommonExpr,
-    Normalizer,
-    ScalarExpr
+defmodule EctoShorts.Dynamics.Postgres do
+  alias EctoShorts.{
+    CommonSchema,
+    CommonFilters.FilterHelpers,
+    CommonFilters.SetComparison,
+    Dynamics.Postgres.ArrayExpr,
+    Dynamics.Postgres.CommonExpr,
+    Dynamics.Postgres.Normalizer,
+    Dynamics.Postgres.ScalarExpr
   }
 
-  @behaviour EctoShorts.Dynamics.Adapter
+  @behaviour EctoShorts.Adapter.Dynamic
 
   @quantifier_operators [:all, :any]
 

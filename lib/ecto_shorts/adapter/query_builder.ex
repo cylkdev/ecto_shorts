@@ -1,4 +1,4 @@
-defmodule EctoShorts.QueryBuilder do
+defmodule EctoShorts.Adapter.QueryBuilder do
   @moduledoc """
   Behaviour defining the query-builder API.
 
@@ -13,7 +13,7 @@ defmodule EctoShorts.QueryBuilder do
   processing at the top level:
 
       defmodule MyApp.CustomQueryBuilder do
-        @behaviour EctoShorts.QueryBuilder
+        @behaviour EctoShorts.Adapter.QueryBuilder
 
         @impl true
         def build_query(filter, source, query, selected_binding, term, opts) do

@@ -10,7 +10,7 @@ defmodule EctoShorts.CommonFilters do
 
   @binding_operator [:as, :at]
 
-  @behaviour EctoShorts.QueryBuilder
+  @behaviour EctoShorts.Adapter.QueryBuilder
 
   def convert_params_to_filter(source, params, opts) do
     query = CommonSchema.to_query(source)
@@ -53,14 +53,26 @@ defmodule EctoShorts.CommonFilters do
         build_query(key, source, query, selected_binding, term, opts)
 
       key == :and ->
-        Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
-          apply_filters(filter, source, query_acc, selected_binding, {inner_key, inner_value}, opts)
-        end)
+        if filter_group_list?(term) do
+          Enum.reduce(term, query, fn entry, query_acc ->
+            apply_filters(filter, source, query_acc, selected_binding, to_keyword(entry), opts)
+          end)
+        else
+          Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
+            apply_filters(filter, source, query_acc, selected_binding, {inner_key, inner_value}, opts)
+          end)
+        end
 
       key == :or ->
-        Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
-          or_entries(source, query_acc, selected_binding, inner_key, inner_value, opts)
-        end)
+        if filter_group_list?(term) do
+          Enum.reduce(term, query, fn entry, query_acc ->
+            apply_filters(:or_where, source, query_acc, selected_binding, to_keyword(entry), opts)
+          end)
+        else
+          Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
+            or_entries(source, query_acc, selected_binding, inner_key, inner_value, opts)
+          end)
+        end
 
       true ->
         build_query(filter, source, query, selected_binding, {key, term}, opts)
@@ -72,19 +84,26 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp reduce_filter_group_or_build(filter, source, query, selected_binding, term, opts) do
-    if reducible_filter_entries?(term) do
-      Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
-        apply_filters(
-          filter,
-          source,
-          query_acc,
-          selected_binding,
-          {inner_key, inner_value},
-          opts
-        )
-      end)
-    else
-      build_query(filter, source, query, selected_binding, term, opts)
+    cond do
+      filter_group_list?(term) ->
+        Enum.reduce(term, query, fn entry, query_acc ->
+          apply_filters(filter, source, query_acc, selected_binding, to_keyword(entry), opts)
+        end)
+
+      reducible_filter_entries?(term) ->
+        Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
+          apply_filters(
+            filter,
+            source,
+            query_acc,
+            selected_binding,
+            {inner_key, inner_value},
+            opts
+          )
+        end)
+
+      true ->
+        build_query(filter, source, query, selected_binding, term, opts)
     end
   end
 
@@ -129,12 +148,17 @@ defmodule EctoShorts.CommonFilters do
     (is_map(term) and not is_struct(term)) or Keyword.keyword?(term)
   end
 
+  defp filter_group_list?(term) do
+    is_list(term) and not Keyword.keyword?(term) and
+      Enum.all?(term, fn e -> (is_map(e) and not is_struct(e)) or Keyword.keyword?(e) end)
+  end
+
   defp association_filter?(source, key, term) do
     reducible_filter_entries?(term) and
       key in (CommonSchema.get_schema_reflection(source, :associations) || [])
   end
 
-  @impl EctoShorts.QueryBuilder
+  @impl EctoShorts.Adapter.QueryBuilder
   @doc false
   def build_query(filter, source, query, selected_binding, term, opts) do
     case opts[:query_builder] || Config.query_builder() do

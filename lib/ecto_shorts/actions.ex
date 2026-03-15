@@ -600,7 +600,7 @@ defmodule EctoShorts.Actions do
     `changeset/2`. Can be 1-arity (receives params), 2-arity (receives
     struct and params), or 3-arity (receives struct, params, and opts).
 
-  * `:dynamic_adapter` - a module implementing `EctoShorts.Dynamics.Adapter`.
+  * `:dynamic_adapter` - a module implementing `EctoShorts.Adapter.Dynamic`.
     Defaults to `EctoShorts.Config.dynamic_adapter/0`.
 
   * `:error_module` - a module implementing `EctoShorts.Actions.Error`.
@@ -818,13 +818,17 @@ defmodule EctoShorts.Actions do
   See also `all/1`, `all/3`, and `find/3`.
   """
   @spec all(queryable, params | opts) :: list(term())
-  def all(queryable, params) when is_map(params) do
+  def all(queryable, params) when is_map(params) and not is_struct(params) do
     all(queryable, params, [])
   end
 
   def all(queryable, opts) do
-    params = Keyword.drop(opts, [:repo, :replica, :dynamic_adapter])
-    all(queryable, params, Keyword.take(opts, [:repo, :replica, :dynamic_adapter]))
+    if Keyword.keyword?(opts) do
+      params = Keyword.drop(opts, [:repo, :replica, :dynamic_adapter])
+      all(queryable, params, Keyword.take(opts, [:repo, :replica, :dynamic_adapter]))
+    else
+      raise ArgumentError, "Expected the options parameter to be a keyword list, got: #{inspect(opts)}"
+    end
   end
 
   @doc group: "CRUD"
