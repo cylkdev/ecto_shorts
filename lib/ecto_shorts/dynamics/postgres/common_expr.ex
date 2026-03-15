@@ -4,13 +4,22 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExpr do
 
   require Ecto.Query
 
-  @operators [:ids, :before, :after, :until, :since, :exists,
-              :start_date, :end_date, :since_date, :until_date]
+  @operators [
+    :ids,
+    :before,
+    :after,
+    :until,
+    :since,
+    :exists,
+    :start_date,
+    :end_date,
+    :since_date,
+    :until_date
+  ]
 
   def operators, do: @operators
 
-  {target_binding_var, binding_patterns} =
-    Compiler.query_binding_contracts(10, __MODULE__)
+  {target_binding_var, binding_patterns} = Compiler.query_binding_contracts(10, __MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     def dynamic_expr(unquote(quoted_binding_head), operator, negated, term, _opts) do

@@ -27,75 +27,103 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
 
     # Binding-specific field accessor functions (one dynamic/2 call each, no logic)
     defp field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              field(unquote(target_binding_var), ^unquote(key_var)))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        field(unquote(target_binding_var), ^unquote(key_var))
+      )
     end
 
     defp is_nil_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              is_nil(field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        is_nil(field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp not_nil_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              not is_nil(field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        not is_nil(field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp date_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              fragment("date(?)", field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        fragment("date(?)", field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp lower_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              fragment("lower(?)", field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        fragment("lower(?)", field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp upper_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              fragment("upper(?)", field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        fragment("upper(?)", field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp avg_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              avg(field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        avg(field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp count_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              count(field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        count(field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp max_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              max(field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        max(field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp min_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              min(field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        min(field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp sum_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              sum(field(unquote(target_binding_var), ^unquote(key_var))))
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        sum(field(unquote(target_binding_var), ^unquote(key_var)))
+      )
     end
 
     defp membership_in_dyn(unquote(quoted_binding_head), unquote(key_var), values) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              field(unquote(target_binding_var), ^unquote(key_var)) in ^values)
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        field(unquote(target_binding_var), ^unquote(key_var)) in ^values
+      )
     end
 
     defp membership_not_in_dyn(unquote(quoted_binding_head), unquote(key_var), values) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              is_nil(field(unquote(target_binding_var), ^unquote(key_var))) or
-                field(unquote(target_binding_var), ^unquote(key_var)) not in ^values)
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        is_nil(field(unquote(target_binding_var), ^unquote(key_var))) or
+          field(unquote(target_binding_var), ^unquote(key_var)) not in ^values
+      )
     end
 
     defp membership_nil_aware_in_dyn(unquote(quoted_binding_head), unquote(key_var), values) do
-      dynamic([unquote_splicing(quoted_binding_body)],
-              not is_nil(field(unquote(target_binding_var), ^unquote(key_var))) and
-                field(unquote(target_binding_var), ^unquote(key_var)) in ^values)
+      dynamic(
+        [unquote_splicing(quoted_binding_body)],
+        not is_nil(field(unquote(target_binding_var), ^unquote(key_var))) and
+          field(unquote(target_binding_var), ^unquote(key_var)) in ^values
+      )
     end
   end
 
@@ -216,10 +244,17 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
 
     case term do
       # Nil checks
-      {:==, nil} -> is_nil_dyn(binding, key)
-      {:not, {:==, nil}} -> not_nil_dyn(binding, key)
-      {:!=, nil} -> not_nil_dyn(binding, key)
-      {:not, {:!=, nil}} -> is_nil_dyn(binding, key)
+      {:==, nil} ->
+        is_nil_dyn(binding, key)
+
+      {:not, {:==, nil}} ->
+        not_nil_dyn(binding, key)
+
+      {:!=, nil} ->
+        not_nil_dyn(binding, key)
+
+      {:not, {:!=, nil}} ->
+        is_nil_dyn(binding, key)
 
       # Scalar comparisons
       {:==, v} when not is_tuple(v) ->
@@ -693,7 +728,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
   defp apply_dyn_comparison(:<, lhs, rhs, :negated), do: dynamic([], not (^lhs < ^rhs))
   defp apply_dyn_comparison(:<=, lhs, rhs, :plain), do: dynamic([], ^lhs <= ^rhs)
   defp apply_dyn_comparison(:<=, lhs, rhs, :negated), do: dynamic([], not (^lhs <= ^rhs))
-
 
   def dynamic_expr(_selected_binding, _key, _negated, _term, _opts), do: nil
 

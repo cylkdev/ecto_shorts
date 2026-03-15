@@ -3665,7 +3665,7 @@ defmodule EctoShorts.CommonFiltersTest do
     end
   end
 
-   describe "convert_params_to_filter/3 comparison operators" do
+  describe "convert_params_to_filter/3 comparison operators" do
     test "matches records where the field equals the value using ==" do
       expected = from p in Post, where: p.id == ^1
       q2 = CommonFilters.convert_params_to_filter(Post, %{id: %{==: 1}}, [])
