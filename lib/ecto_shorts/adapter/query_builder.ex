@@ -41,13 +41,13 @@ defmodule EctoShorts.Adapter.QueryBuilder do
 
   Receives:
 
-    * `filter` — the filter group atom (e.g. `:where`, `:order_by`, `:join`).
-    * `source` — the queryable source (schema module or `Ecto.Query.t()`).
-    * `query` — the current `Ecto.Query.t()` being built.
-    * `selected_binding` — the active binding selector: `{:as, atom()}` for
+    * `filter` - the filter group atom (e.g. `:where`, `:order_by`, `:join`).
+    * `source` - the queryable source (schema module or `Ecto.Query.t()`).
+    * `query` - the current `Ecto.Query.t()` being built.
+    * `selected_binding` - the active binding selector: `{:as, atom()}` for
       named bindings or `{:at, pos_integer()}` for positional bindings.
-    * `term` — the filter value for this entry.
-    * `opts` — keyword options forwarded from the call site.
+    * `term` - the filter value for this entry.
+    * `opts` - keyword options forwarded from the call site.
 
   Must return the updated `Ecto.Query.t()`.
   """

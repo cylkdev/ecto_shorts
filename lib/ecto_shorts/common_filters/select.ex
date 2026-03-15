@@ -182,7 +182,7 @@ defmodule EctoShorts.CommonFilters.Select do
   defp drop_existing_select(query) do
     EctoShorts.Logger.warning(
       @logger_prefix,
-      "Query already has a :select expression — dropping it before applying the new :select filter. Pass a query without an existing select to avoid this."
+      "Query already has a :select expression - dropping it before applying the new :select filter. Pass a query without an existing select to avoid this."
     )
 
     Query.exclude(query, :select)

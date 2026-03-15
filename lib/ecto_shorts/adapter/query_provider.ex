@@ -3,7 +3,7 @@ defmodule EctoShorts.Adapter.QueryProvider do
   Public API for resolving dynamic query expressions from a query provider module.
 
   A query provider is a module that knows how to turn a named expression key and
-  its parameters into an Ecto query fragment — such as a subquery, a lock clause,
+  its parameters into an Ecto query fragment - such as a subquery, a lock clause,
   or a window definition. This allows callers to supply named, reusable query
   logic without hard-coding it inside the filter layer.
 
@@ -45,11 +45,11 @@ defmodule EctoShorts.Adapter.QueryProvider do
 
   `resolve_query_expression/4` must return one of:
 
-    * `{:ok, Ecto.Query.t()}` — a subquery or fragment query.
-    * `{:ok, function}` — a unary function `(Ecto.Query.t() -> Ecto.Query.t())` applied to the current query.
-    * `{:ok, keyword()}` — a keyword list of query options (e.g. for window definitions).
-    * `{:error, reason}` — an error tuple; the filter layer will log a warning and skip the expression.
-    * `nil` — treated as "no expression"; the filter layer skips the expression silently.
+    * `{:ok, Ecto.Query.t()}` - a subquery or fragment query.
+    * `{:ok, function}` - a unary function `(Ecto.Query.t() -> Ecto.Query.t())` applied to the current query.
+    * `{:ok, keyword()}` - a keyword list of query options (e.g. for window definitions).
+    * `{:error, reason}` - an error tuple; the filter layer will log a warning and skip the expression.
+    * `nil` - treated as "no expression"; the filter layer skips the expression silently.
 
   ## Implementing this behaviour
 
@@ -87,12 +87,12 @@ defmodule EctoShorts.Adapter.QueryProvider do
   `EctoShorts.CommonFilters.Lock` when a provider-backed expression key is
   encountered.
 
-    * `selected_binding` — the active binding selector: `{:as, atom()}` or
+    * `selected_binding` - the active binding selector: `{:as, atom()}` or
       `{:at, pos_integer()}`.
-    * `expression_key` — the atom key identifying which expression to resolve.
-    * `expression_params` — the value associated with the expression key in the
+    * `expression_key` - the atom key identifying which expression to resolve.
+    * `expression_params` - the value associated with the expression key in the
       filter params.
-    * `opts` — keyword options forwarded from the call site.
+    * `opts` - keyword options forwarded from the call site.
 
   Must return one of the shapes described in the module doc.
   """

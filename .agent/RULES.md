@@ -188,6 +188,14 @@ NON-NEGOTIABLE REQUIREMENTS:
   permission to declare the contract settled. An observed expectation is not the same thing as an intended
   contract.
 
+* When writing or reviewing a test, verify that every input value is expressed in the public caller-facing
+  form that the documented API accepts, not in an internal representation that happens to reach the same code
+  path. An input is in the public form only if it matches a shape that appears in, or is derivable from, the
+  module documentation, public examples, or the published contract. If the only evidence that an input works
+  is that it passes through internal normalization, the test is not proving public behavior - it is proving
+  an incidental internal path. Treat the distinction between public input shape and internal representation
+  as a correctness boundary, not a style preference.
+
 * When artifacts conflict, do not collapse the mismatch into a single favored explanation too early. Keep the
   live hypothesis set open until the evidence rules alternatives out. The implementation may be wrong, but the
   test may also be stale, the documentation may be outdated, the caller may no longer be real, the code path
@@ -462,6 +470,8 @@ NON-NEGOTIABLE REQUIREMENTS:
 * If some repo artifacts changed and the runtime owner code did not, say that explicitly. Name the changed
   plan or test files, name the unchanged owner file or boundary, and explain why that matters for the current
   state. Do not make the reader infer whether the live behavior actually changed.
+
+* When answering an evaluative question, reason to a verdict. State what the evidence establishes, identify what the evidence rules out, and then state the conclusion that follows from that reasoning as a direct, unambiguous sentence. Do not stop at explanation. An answer that describes the situation accurately but leaves the conclusion implicit has not answered the question. The verdict must be stated, and it must be derivable by a reader who reads only the final sentence without having read the rest of the response.
 
 * If the user responds to a blocker explanation by asking what the current state is or what action is actually
   needed, treat that as evidence the explanation is missing layers. Rebuild it from the concrete state:

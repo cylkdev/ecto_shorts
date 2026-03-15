@@ -43,9 +43,9 @@ Five cleanup tasks:
 - `test/ecto_shorts/dynamics/postgres/`
 
 ### 4. Actions doc audit
-- `:dynamic_adapter` shared option says `EctoShorts.Dynamic` — should
+- `:dynamic_adapter` shared option says `EctoShorts.Dynamic` - should
   be `EctoShorts.Adapter.Dynamic`.
-- `insert_all/3` return type table says `{:ok, {count, nil, [struct]}}` — 
+- `insert_all/3` return type table says `{:ok, {count, nil, [struct]}}` - 
   trailing nil column is wrong formatting.
 - Everything else is accurate.
 
@@ -55,4 +55,4 @@ what the valid input shapes are. Files: `last.ex`, `lock.ex`, `sub_query.ex`,
 `select.ex`, `order_by.ex`.
 
 ## Verification
-- `mix test` — 11 doctests, 721+ tests, 0 failures
+- `mix test` - 11 doctests, 721+ tests, 0 failures

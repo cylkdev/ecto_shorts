@@ -15,11 +15,11 @@ defmodule EctoShorts.CommonFilters do
 
   ### Binding selectors
 
-  * `:as` — selects a named binding for the subsequent filter expressions.
+  * `:as` - selects a named binding for the subsequent filter expressions.
 
         %{as: %{post: %{published: true}}}
 
-  * `:at` — selects a positional binding (1-based integer, or the aliases
+  * `:at` - selects a positional binding (1-based integer, or the aliases
     `:first` / `:last`) for the subsequent filter expressions.
 
         %{at: %{1 => %{published: true}}}
@@ -27,18 +27,18 @@ defmodule EctoShorts.CommonFilters do
 
   ### Boolean group operators
 
-  These are transparency wrappers; they do not add a new nesting level —
+  These are transparency wrappers; they do not add a new nesting level -
   they expand their contents into individual `WHERE` or `OR WHERE` clauses
   on the query directly.
 
-  * `:and` — applies each condition inside the value as a `WHERE` clause
+  * `:and` - applies each condition inside the value as a `WHERE` clause
     (AND-joined with any existing clauses). Accepts a map, keyword list,
     or list of maps / keyword lists.
 
         %{and: %{views: 5, published: true}}
         %{and: [%{views: 5}, %{published: true}]}
 
-  * `:or` — applies each condition inside the value as a separate
+  * `:or` - applies each condition inside the value as a separate
     `OR WHERE` clause. Accepts the same shapes as `:and`. A range value
     on a single field (`[>: 1, <: 10]`) AND-merges the range operators
     inside one `OR WHERE` expression.
@@ -48,13 +48,13 @@ defmodule EctoShorts.CommonFilters do
 
   ### Predicate filters
 
-  * `:where` — adds a `WHERE` clause. Multiple `:where` entries in a
+  * `:where` - adds a `WHERE` clause. Multiple `:where` entries in a
     keyword list are AND-joined in order.
 
         %{where: %{published: true}}
         [where: %{published: true}, where: %{views: 5}]
 
-  * `:or_where` — adds an `OR WHERE` clause. Multiple `:or_where` entries
+  * `:or_where` - adds an `OR WHERE` clause. Multiple `:or_where` entries
     in a keyword list are OR-joined in order.
 
         %{or_where: %{published: false}}
@@ -107,9 +107,9 @@ defmodule EctoShorts.CommonFilters do
   | `:offset` | pagination | `OFFSET` clause |
   | `:select` | projection | `SELECT` clause |
   | `:select_merge` | projection | merge into an existing `SELECT` |
-  | `:preload` | eager load | `Ecto.Query.preload/3` — atom, list, keyword list, or `{assoc, query}` tuple |
+  | `:preload` | eager load | `Ecto.Query.preload/3` - atom, list, keyword list, or `{assoc, query}` tuple |
   | `:subquery` | nested query | wrap the current query in a subquery |
-  | `:lock` | concurrency | `LOCK` clause — name atom, raw string, or unary function |
+  | `:lock` | concurrency | `LOCK` clause - name atom, raw string, or unary function |
   | `:exclude` | removal | drop a clause from the query (e.g. `:order_by`) |
   | `:update` | mutation | `UPDATE SET` operations for `update_all` |
   | `:put_query_prefix` | namespace | set the query prefix (PostgreSQL schema) |
@@ -149,21 +149,21 @@ defmodule EctoShorts.CommonFilters do
 
   ## Arguments
 
-    * `source` — a schema module, `{source, schema}` tuple, or an
+    * `source` - a schema module, `{source, schema}` tuple, or an
       existing `Ecto.Query`.
-    * `params` — a map or keyword list of filter params. Keyword lists
+    * `params` - a map or keyword list of filter params. Keyword lists
       preserve duplicate keys (e.g. multiple `where:` entries), which is
       required for composing several independent `WHERE` or `OR WHERE`
       clauses. See the module doc for the full key reference.
-    * `opts` — keyword list of options.
+    * `opts` - keyword list of options.
 
   ## Options
 
-    * `:sorter` — a unary function that receives the normalised keyword
+    * `:sorter` - a unary function that receives the normalised keyword
       list and returns a reordered keyword list. Defaults to the built-in
       sort that places `:where` first, then other filters, then
       `:or_where`, then terminal filters (`:last`, `:subquery`).
-    * `:query_builder` — a module that implements
+    * `:query_builder` - a module that implements
       `EctoShorts.Adapter.QueryBuilder`. When set, all `build_query/6`
       calls are delegated to that module instead of the default
       `EctoShorts.CommonFilters.API`.
@@ -338,14 +338,14 @@ defmodule EctoShorts.CommonFilters do
 
   ## Arguments
 
-    * `filter` — the filter group atom (e.g. `:where`, `:order_by`, `:join`).
-    * `source` — the queryable source.
-    * `query` — the current `Ecto.Query.t()` being built.
-    * `selected_binding` — the active binding selector: `{:as, atom()}` or
+    * `filter` - the filter group atom (e.g. `:where`, `:order_by`, `:join`).
+    * `source` - the queryable source.
+    * `query` - the current `Ecto.Query.t()` being built.
+    * `selected_binding` - the active binding selector: `{:as, atom()}` or
       `{:at, pos_integer()}`.
-    * `term` — the filter value (a `{field, value}` tuple for field filters,
+    * `term` - the filter value (a `{field, value}` tuple for field filters,
       or the raw value for structural filters like `:limit`).
-    * `opts` — keyword options forwarded from the call site. When `:query_builder`
+    * `opts` - keyword options forwarded from the call site. When `:query_builder`
       is set, all dispatching is delegated to that module.
 
   Custom query builder implementations can call this function to fall

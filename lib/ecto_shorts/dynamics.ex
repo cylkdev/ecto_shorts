@@ -52,22 +52,22 @@ defmodule EctoShorts.Dynamics do
 
   ## Arguments
 
-    * `source` — the queryable source: a schema module, `{source, schema}`
+    * `source` - the queryable source: a schema module, `{source, schema}`
       tuple, or an existing `Ecto.Query`.
-    * `selected_binding` — the binding selector: `{:as, atom()}` for a
+    * `selected_binding` - the binding selector: `{:as, atom()}` for a
       named binding or `{:at, pos_integer()}` for a positional binding.
       Use `{:as, nil}` to target the default (first) binding.
-    * `term` — the filter term to translate. Typically a `{key, value}`
+    * `term` - the filter term to translate. Typically a `{key, value}`
       pair where `key` is a field atom and `value` is the filter
       expression (scalar, keyword list of operators, range, etc.).
-    * `opts` — keyword options forwarded to the adapter.
+    * `opts` - keyword options forwarded to the adapter.
 
   ## Options
 
-    * `:dynamic_adapter` — a module implementing
+    * `:dynamic_adapter` - a module implementing
       `EctoShorts.Adapter.Dynamic`. Overrides all other resolution.
-    * `:repo` — the repo to use for adapter auto-detection.
-    * `:replica` — fallback repo when `:repo` is not given.
+    * `:repo` - the repo to use for adapter auto-detection.
+    * `:replica` - fallback repo when `:repo` is not given.
 
   ## Returns
 

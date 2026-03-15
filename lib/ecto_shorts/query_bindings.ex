@@ -4,7 +4,7 @@ defmodule EctoShorts.QueryBindings do
 
   This module provides two things:
 
-  1. **Binding contracts** — `query_binding_contracts/2` generates the
+  1. **Binding contracts** - `query_binding_contracts/2` generates the
      exhaustive set of Ecto query binding patterns for a given module at
      compile time. Each filter sub-module calls this at the top level of
      its body so that Elixir emits one function clause per binding shape
@@ -13,7 +13,7 @@ defmodule EctoShorts.QueryBindings do
      `{:at, index}` selectors without runtime branching inside every hot
      code path.
 
-  2. **AST helpers** — a collection of functions that produce quoted
+  2. **AST helpers** - a collection of functions that produce quoted
      Elixir AST fragments used inside `defmacro`-free `quote/unquote`
      blocks inside the dynamic expression sub-modules.  They keep the
      expression builders readable by naming the construction of pinned
@@ -21,7 +21,7 @@ defmodule EctoShorts.QueryBindings do
 
   ## Compile-time usage
 
-      # At module body level — generates binding patterns once:
+      # At module body level - generates binding patterns once:
       {target_binding_var, binding_patterns} =
         EctoShorts.QueryBindings.query_binding_contracts(__MODULE__)
 
@@ -53,16 +53,16 @@ defmodule EctoShorts.QueryBindings do
       scoped to `context`.
     * `binding_patterns` is a list of `{binding_head, binding_body}` pairs
       covering:
-      - `{:as, nil}` — root/default binding
-      - `{:as, name}` — named binding
-      - `{:at, 1}` through `{:at, n}` — positional bindings
+      - `{:as, nil}` - root/default binding
+      - `{:as, name}` - named binding
+      - `{:at, 1}` through `{:at, n}` - positional bindings
 
   ## Arguments
 
-    * `context` — the calling module atom, used to scope generated variables
+    * `context` - the calling module atom, used to scope generated variables
       so they do not leak across modules. Defaults to `__MODULE__`.
-    * `opts` — keyword options:
-      * `:positions` — override the maximum positional binding count.
+    * `opts` - keyword options:
+      * `:positions` - override the maximum positional binding count.
 
   ## Examples
 
@@ -122,11 +122,11 @@ defmodule EctoShorts.QueryBindings do
 
   ## Arguments
 
-    * `left` — the left-hand side AST node.
-    * `op` — an operator atom. Supported: `:in`, `:==`/`:eq`, `:!=`/`:ne`,
+    * `left` - the left-hand side AST node.
+    * `op` - an operator atom. Supported: `:in`, `:==`/`:eq`, `:!=`/`:ne`,
       `:>`/`:gt`, `:<`/`:lt`, `:>=`/`:gte`, `:<=`/`:lte`, `:+`, `:-`,
       `:*`, `:/`.
-    * `right` — the right-hand side AST node.
+    * `right` - the right-hand side AST node.
   """
   def special_form_ast(left, :in, right) do
     quote do
@@ -215,10 +215,10 @@ defmodule EctoShorts.QueryBindings do
 
   ## Arguments
 
-    * `selected_binding` — `{:as, target_var}` or `{:at, index}`.
-    * `q_var` — the `Macro.var/2` for the query row variable.
-    * `field_expr` — the inner field expression AST to wrap.
-    * `context` — the calling module atom, used to scope the step variable
+    * `selected_binding` - `{:as, target_var}` or `{:at, index}`.
+    * `q_var` - the `Macro.var/2` for the query row variable.
+    * `field_expr` - the inner field expression AST to wrap.
+    * `context` - the calling module atom, used to scope the step variable
       for positional bindings.
   """
   def dyn_expr({:as, target_var}, q_var, field_expr, _context) do

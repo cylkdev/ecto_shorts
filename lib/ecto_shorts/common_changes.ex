@@ -681,10 +681,10 @@ defmodule EctoShorts.CommonChanges do
   `put_or_cast_assoc/3` when the association is present in params. For most
   use cases this is the only function you need:
 
-  1. `preload_change_assoc/3` — **use this in your `changeset/2`** for full
+  1. `preload_change_assoc/3` - **use this in your `changeset/2`** for full
      association management.
-  2. `preload_changeset_assoc/3` — lower-level: only preloads the data.
-  3. `put_or_cast_assoc/3` — lower-level: only selects and applies
+  2. `preload_changeset_assoc/3` - lower-level: only preloads the data.
+  3. `put_or_cast_assoc/3` - lower-level: only selects and applies
      `put_assoc` vs `cast_assoc`.
 
   ## Options
@@ -739,14 +739,14 @@ defmodule EctoShorts.CommonChanges do
 
   Returns the changeset with the association preloaded in `changeset.data`.
 
-  You typically do not call this directly — use `preload_change_assoc/3`
+  You typically do not call this directly - use `preload_change_assoc/3`
   which calls this then `put_or_cast_assoc/3` in one step.
 
   ## Options
 
-    * `:ids` — a list of IDs. When given, queries for those records and sets
+    * `:ids` - a list of IDs. When given, queries for those records and sets
       the association directly instead of using `Repo.preload/3`.
-    * `:repo` — the `Ecto.Repo` to use. Defaults to `EctoShorts.Config.repo/0`.
+    * `:repo` - the `Ecto.Repo` to use. Defaults to `EctoShorts.Config.repo/0`.
 
   ## Examples
 
@@ -801,7 +801,7 @@ defmodule EctoShorts.CommonChanges do
     records and calls `cast_assoc`.
   * Otherwise - `cast_assoc`.
 
-  You typically do not call this directly — use `preload_change_assoc/3`
+  You typically do not call this directly - use `preload_change_assoc/3`
   which calls `preload_changeset_assoc/3` then this function in one step.
 
   ## Examples

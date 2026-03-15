@@ -302,7 +302,7 @@ defmodule EctoShorts.Testing do
   Asserts that two queries generate identical SQL strings using the given repo.
 
   Uses `Ecto.Adapters.SQL.to_sql/3` to compile each query and compares
-  **only the SQL string** — bound parameter values are ignored. To also
+  **only the SQL string** - bound parameter values are ignored. To also
   assert parameter values, use `Ecto.Adapters.SQL.to_sql/3` directly and
   compare the full `{sql, params}` tuple.
 
@@ -427,18 +427,18 @@ defmodule EctoShorts.Testing do
   the following 2-3 argument helpers are injected, with the repo bound at
   compile time:
 
-  * `assert_dynamic/2` — delegates to `EctoShorts.Testing.assert_dynamic/2`.
-  * `refute_dynamic/2` — delegates to `EctoShorts.Testing.refute_dynamic/2`.
-  * `assert_query/2` — delegates to `EctoShorts.Testing.assert_query/2`.
-  * `refute_query/2` — delegates to `EctoShorts.Testing.refute_query/2`.
-  * `assert_sql/2-3` — delegates to `EctoShorts.Testing.assert_sql/4` with
+  * `assert_dynamic/2` - delegates to `EctoShorts.Testing.assert_dynamic/2`.
+  * `refute_dynamic/2` - delegates to `EctoShorts.Testing.refute_dynamic/2`.
+  * `assert_query/2` - delegates to `EctoShorts.Testing.assert_query/2`.
+  * `refute_query/2` - delegates to `EctoShorts.Testing.refute_query/2`.
+  * `assert_sql/2-3` - delegates to `EctoShorts.Testing.assert_sql/4` with
     the bound repo. Signature: `assert_sql(query_a, query_b, kind \\\\ :all)`.
-  * `refute_sql/2-3` — delegates to `EctoShorts.Testing.refute_sql/4` with
+  * `refute_sql/2-3` - delegates to `EctoShorts.Testing.refute_sql/4` with
     the bound repo. Signature: `refute_sql(query_a, query_b, kind \\\\ :all)`.
 
   ## Options
 
-    * `:repo` — the `Ecto.Repo` module to use. Defaults to
+    * `:repo` - the `Ecto.Repo` module to use. Defaults to
       `EctoShorts.Config.repo/0`.
 
   ## Example

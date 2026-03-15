@@ -738,15 +738,15 @@ defmodule EctoShorts.Actions do
     * `data` - a struct or list of structs to preload.
     * `preloads` - the associations to preload. Accepts the same shapes as
       `c:Ecto.Repo.preload/3`:
-      * an atom — `:author`
-      * a list of atoms — `[:author, :comments]`
-      * a keyword list for nested preloads — `[author: :profile]`
-      * an `{assoc, query}` tuple to preload with a custom query —
+      * an atom - `:author`
+      * a list of atoms - `[:author, :comments]`
+      * a keyword list for nested preloads - `[author: :profile]`
+      * an `{assoc, query}` tuple to preload with a custom query -
         `{:comments, from(c in Comment, where: c.approved == true)}`
     * `opts` - forwarded to `c:Ecto.Repo.preload/3`. Common options:
-      * `:force` — reload even if already loaded.
-      * `:in_parallel` — whether to run preloads in parallel.
-      * `:prefix` — the query prefix.
+      * `:force` - reload even if already loaded.
+      * `:in_parallel` - whether to run preloads in parallel.
+      * `:prefix` - the query prefix.
 
   ## Examples
 

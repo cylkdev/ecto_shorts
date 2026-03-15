@@ -12,10 +12,10 @@ A naming conflict also exists: `insert_all/3` already uses `:preload` to mean so
 
 ## In Scope
 
-1. Rename the `:preload` option in `insert_all/3` to `:batch_preload` — both the runtime check and the `@doc` option table.
+1. Rename the `:preload` option in `insert_all/3` to `:batch_preload` - both the runtime check and the `@doc` option table.
 2. Add two private helpers in `lib/ecto_shorts/actions.ex`:
-   - `maybe_preload(data, opts)` — calls `preload/3` when `opts[:preload]` is set and non-empty; no-ops on `nil` input.
-   - `maybe_preload_ok(result, opts)` — unwraps `{:ok, value}`, preloads, re-wraps; passes `{:error, _}` through unchanged.
+   - `maybe_preload(data, opts)` - calls `preload/3` when `opts[:preload]` is set and non-empty; no-ops on `nil` input.
+   - `maybe_preload_ok(result, opts)` - unwraps `{:ok, value}`, preloads, re-wraps; passes `{:error, _}` through unchanged.
 3. Wire `opts[:preload]` through every public function that returns structs, using the helpers above:
    - **CRUD**: `all/3`, `get/3`, `find/3`, `create/3`, `update/4`, `find_or_create/3`, `find_and_create/4`, `find_and_update/4`, `find_and_upsert/4`
    - **Multi**: `create_many/3`, `find_many/3`, `update_many/3`, `delete_many/3`, `find_or_create_many/3`, `find_and_upsert_many/3`
@@ -25,12 +25,12 @@ A naming conflict also exists: `insert_all/3` already uses `:preload` to mean so
 
 ## Out of Scope
 
-- `update_all/4` and `delete_all/3` — return `{count, nil}`, no structs.
-- `insert_all/3` `:preload` support for post-insert preloading — `insert_all` returns `{:ok, {count, nil}}` by default; `:returning` is an Ecto-native opt-in outside this task.
-- `batch_preload/4` — this is a param-merging utility, not a struct-returning function.
-- `delete/1,2,3` — returns the deleted struct; adding preload to deleted records is not useful.
-- `stream/3` — returns an `Enumerable`, not a struct; preloading inside a lazy stream requires a transaction context the caller owns.
-- `aggregate/5` — returns a scalar.
+- `update_all/4` and `delete_all/3` - return `{count, nil}`, no structs.
+- `insert_all/3` `:preload` support for post-insert preloading - `insert_all` returns `{:ok, {count, nil}}` by default; `:returning` is an Ecto-native opt-in outside this task.
+- `batch_preload/4` - this is a param-merging utility, not a struct-returning function.
+- `delete/1,2,3` - returns the deleted struct; adding preload to deleted records is not useful.
+- `stream/3` - returns an `Enumerable`, not a struct; preloading inside a lazy stream requires a transaction context the caller owns.
+- `aggregate/5` - returns a scalar.
 
 ## Progress
 
@@ -46,25 +46,25 @@ A naming conflict also exists: `insert_all/3` already uses `:preload` to mean so
 
 ## Milestones
 
-### Milestone 1 — Rename conflict and helpers
+### Milestone 1 - Rename conflict and helpers
 
 Rename `:preload` to `:batch_preload` in `insert_all/3`. Add the two private helpers. Compile and run the full suite to establish a green baseline before adding new behavior.
 
 Acceptance: `mix compile --warnings-as-errors` passes; `mix test` passes (all existing tests green, including the insert_all tests that used `:preload`).
 
-### Milestone 2 — Wire CRUD
+### Milestone 2 - Wire CRUD
 
 Apply `maybe_preload` / `maybe_preload_ok` to all CRUD functions listed in scope. Update their `@doc` option tables.
 
 Acceptance: Compile clean. Write at least two CRUD tests (`all/3` and `create/3`) that exercise `:preload`; run `mix test`.
 
-### Milestone 3 — Wire Multi
+### Milestone 3 - Wire Multi
 
 Apply `maybe_preload_ok` at the call site of `run_multi/2` in each Multi function. Update docs.
 
 Acceptance: Compile clean. Write one Multi test (`create_many/3`); run `mix test`.
 
-### Milestone 4 — Wire Batch, Tests, Full Suite
+### Milestone 4 - Wire Batch, Tests, Full Suite
 
 Apply preload map-walk to `batch/5`. Update docs. Write the remaining tests (batch + regression for `insert_all` rename). Run `mix test` and confirm all pass.
 
@@ -102,7 +102,7 @@ Test files live in `test/ecto_shorts/actions/`. Patterns use `EctoShorts.DataCas
 
 ## Plan of Work
 
-**Step 1 — Rename in `insert_all/3`**
+**Step 1 - Rename in `insert_all/3`**
 
 In `actions.ex` around line 1673, change:
 
@@ -116,7 +116,7 @@ to:
 
 Also update the `@doc` option table entry from `:preload` to `:batch_preload`.
 
-**Step 2 — Private helpers**
+**Step 2 - Private helpers**
 
 Add near the bottom of `actions.ex`, before the existing `put_param/3`:
 
@@ -132,7 +132,7 @@ Add near the bottom of `actions.ex`, before the existing `put_param/3`:
     defp maybe_preload_ok({:ok, value}, opts), do: {:ok, maybe_preload(value, opts)}
     defp maybe_preload_ok(other, _opts), do: other
 
-**Step 3 — CRUD wiring**
+**Step 3 - CRUD wiring**
 
 For each function, pipe the final result through the appropriate helper:
 
@@ -143,11 +143,11 @@ For each function, pipe the final result through the appropriate helper:
 - `update/4` (struct branch): pipe repo update result through `maybe_preload_ok(opts)`.
 - `find_or_create/3`, `find_and_create/4`, `find_and_update/4`, `find_and_upsert/4`: pipe their final `{:ok, struct}` result through `maybe_preload_ok(opts)`.
 
-**Step 4 — Multi wiring**
+**Step 4 - Multi wiring**
 
 In each `*_many` public function, pipe `run_multi(...)` through `maybe_preload_ok(opts)`.
 
-**Step 5 — Batch wiring**
+**Step 5 - Batch wiring**
 
 In `batch/5`, after the result map is computed, apply:
 
@@ -156,7 +156,7 @@ In `batch/5`, after the result map is computed, apply:
 
 This works for both `:one` (value is a struct) and `:many` (value is a list of structs), since `Ecto.Repo.preload/3` accepts both.
 
-**Step 6 — Docs**
+**Step 6 - Docs**
 
 For each modified function, add to the options list:
 
@@ -172,9 +172,9 @@ For `insert_all/3`, rename `:preload` to `:batch_preload` in the option descript
 
 - Upstream callers: all public functions returning bare structs or lists.
 - Input: `data` is `nil | struct() | [struct()]`, `opts` is `keyword()`.
-- Output: same type as input — `nil | struct() | [struct()]`.
+- Output: same type as input - `nil | struct() | [struct()]`.
 - Invariant: if `opts[:preload]` is nil or `[]`, returns `data` unchanged.
-- Does NOT accept: `{:ok, _}` tuples — those go through `maybe_preload_ok/2`.
+- Does NOT accept: `{:ok, _}` tuples - those go through `maybe_preload_ok/2`.
 
 **`maybe_preload_ok/2`**
 

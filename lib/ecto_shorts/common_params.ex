@@ -688,12 +688,12 @@ defmodule EctoShorts.CommonParams do
 
   The value for each field can be:
 
-  * A plain value — equivalent to `{:set, value}`.
-  * `{:set, value}` — explicit set.
-  * `{:inc, integer}` — increment a field of type `:integer`.
-  * `{:push, value}` — append to a field of type `{:array, _}`.
-  * `{:pull, value}` — remove from a field of type `{:array, _}`.
-  * A list of the above tagged tuples — applies each operation in sequence.
+  * A plain value - equivalent to `{:set, value}`.
+  * `{:set, value}` - explicit set.
+  * `{:inc, integer}` - increment a field of type `:integer`.
+  * `{:push, value}` - append to a field of type `{:array, _}`.
+  * `{:pull, value}` - remove from a field of type `{:array, _}`.
+  * A list of the above tagged tuples - applies each operation in sequence.
 
   Raises `ArgumentError` when `:inc` is used on a non-integer field, or when
   `:push`/`:pull` is used on a non-array field.

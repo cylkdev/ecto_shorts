@@ -61,7 +61,7 @@ defmodule EctoShorts.Dynamics.Postgres.NormalizerTest do
       assert {:field, :inserted_at} = Normalizer.normalize_value_node({:field, :inserted_at})
     end
 
-    test "normalizes {:field, binary_name} — atomizes the string" do
+    test "normalizes {:field, binary_name} - atomizes the string" do
       assert {:field, :inserted_at} = Normalizer.normalize_value_node({:field, "inserted_at"})
     end
 

@@ -14,16 +14,16 @@ defmodule EctoShorts.Dynamics.Postgres.Normalizer do
   Filter values may arrive in many shapes depending on how the caller
   constructed the params map:
 
-    * Plain scalar values — passed through unchanged.
-    * Maps (`%{field: value}`) — converted to keyword list form.
-    * Keyword lists — iterated; each entry is normalized recursively.
-    * Quantifier tuples (`{:all, payload}`, `{:any, payload}`) — kept
+    * Plain scalar values - passed through unchanged.
+    * Maps (`%{field: value}`) - converted to keyword list form.
+    * Keyword lists - iterated; each entry is normalized recursively.
+    * Quantifier tuples (`{:all, payload}`, `{:any, payload}`) - kept
       as-is so the expression builder can handle subquery expansion.
-    * Arithmetic value tuples (`{:+, [left, right]}`) — converted to
+    * Arithmetic value tuples (`{:+, [left, right]}`) - converted to
       `{op, {normalized_left, normalized_right}}`.
     * Datetime wrapper tuples (`{:datetime, payload}`, `{:date, payload}`)
-      — payload is normalized and rewrapped.
-    * Field/value marker tuples (`{:field, name}`, `{:value, v}`) —
+      - payload is normalized and rewrapped.
+    * Field/value marker tuples (`{:field, name}`, `{:value, v}`) -
       field name is atomized; value is normalized recursively.
 
   ## Value node normalization
@@ -43,10 +43,10 @@ defmodule EctoShorts.Dynamics.Postgres.Normalizer do
 
   Each element of the returned list is one of:
 
-    * `{key, value}` — a field/operator pair ready for expression building.
-    * `{:and, {key, value}}` / `{:or, {key, value}}` — a merge-operator
+    * `{key, value}` - a field/operator pair ready for expression building.
+    * `{:and, {key, value}}` / `{:or, {key, value}}` - a merge-operator
       tagged pair produced by `normalize_keyword_params/2`.
-    * `{quantifier, payload}` — a quantifier operator pair.
+    * `{quantifier, payload}` - a quantifier operator pair.
 
   ## Examples
 
