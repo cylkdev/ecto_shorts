@@ -1467,7 +1467,15 @@ defmodule EctoShorts.Actions do
   ## Options
 
     * `:preload` - associations to preload on the result struct. Accepts the
-      same shapes as `preload/3`. Applied after the find or create completes.
+      same shapes as `preload/3`. Applied once after the operation completes,
+      regardless of whether a record was found or created.
+
+  ## Notes
+
+  `:preload` is intentionally withheld from the internal `find/3` call and
+  applied to the final result instead. This ensures a single preload pass
+  covers both the found path and the created path, rather than preloading
+  during the lookup and then discarding that work on the create path.
 
   See also `find_and_create/4`, `find_or_create_many/3`, and `create/3`.
   """

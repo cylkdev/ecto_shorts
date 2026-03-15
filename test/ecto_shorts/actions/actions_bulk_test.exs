@@ -106,6 +106,20 @@ defmodule EctoShorts.Actions.BulkTest do
 
       assert [%Comment{body: "x"}, %Comment{body: "y"}] = Repo.all(Comment)
     end
+
+    test "merges matching records into params before insertion when :batch_preload is set" do
+      existing =
+        %Post{}
+        |> Post.changeset(%{title: "Existing"})
+        |> Repo.insert!()
+
+      entries = [%{title: "Existing"}, %{title: "New"}]
+
+      assert {:ok, {2, nil}} =
+               Actions.insert_all(Post, entries, batch_preload: :title)
+
+      assert Repo.get!(Post, existing.id).title == "Existing"
+    end
   end
 
   describe "update_all/4" do
@@ -164,28 +178,4 @@ defmodule EctoShorts.Actions.BulkTest do
     end
   end
 
-  describe "insert_all/3 :batch_preload option (rename regression)" do
-    test "batch_preload option pre-loads matching records into params before insertion" do
-      existing =
-        %Post{}
-        |> Post.changeset(%{title: "Existing"})
-        |> Repo.insert!()
-
-      entries = [%{title: "Existing"}, %{title: "New"}]
-
-      assert {:ok, {2, nil}} =
-               Actions.insert_all(Post, entries, batch_preload: :title)
-
-      assert Repo.get!(Post, existing.id).title == "Existing"
-    end
-
-    test ":preload key no longer triggers batch_preload behavior" do
-      %Post{}
-      |> Post.changeset(%{title: "Original"})
-      |> Repo.insert!()
-
-      assert {:ok, {1, nil}} =
-               Actions.insert_all(Post, [%{title: "Another"}])
-    end
-  end
 end

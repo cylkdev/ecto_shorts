@@ -2336,11 +2336,11 @@ defmodule EctoShorts.Actions.CRUDTest do
     test "preloads associations on returned structs" do
       post =
         %Post{}
-        |> Post.changeset(%{title: "Preload Test"})
+        |> Post.changeset(%{title: "A"})
         |> Repo.insert!()
 
       %Comment{}
-      |> Comment.changeset(%{body: "Hello", post_id: post.id})
+      |> Comment.changeset(%{body: "first", post_id: post.id})
       |> Repo.insert!()
 
       [result] = Actions.all(Post, %{id: post.id}, preload: [:comments])
@@ -2350,20 +2350,20 @@ defmodule EctoShorts.Actions.CRUDTest do
 
     test "returns structs without preloading when :preload is absent" do
       %Post{}
-      |> Post.changeset(%{title: "No Preload"})
+      |> Post.changeset(%{title: "B"})
       |> Repo.insert!()
 
-      [result] = Actions.all(Post, %{title: "No Preload"})
+      [result] = Actions.all(Post, %{title: "B"})
 
       assert %Ecto.Association.NotLoaded{} = result.comments
     end
 
     test "returns structs unchanged when :preload is an empty list" do
       %Post{}
-      |> Post.changeset(%{title: "Empty Preload"})
+      |> Post.changeset(%{title: "C"})
       |> Repo.insert!()
 
-      [result] = Actions.all(Post, %{title: "Empty Preload"}, preload: [])
+      [result] = Actions.all(Post, %{title: "C"}, preload: [])
 
       assert %Ecto.Association.NotLoaded{} = result.comments
     end
@@ -2373,11 +2373,11 @@ defmodule EctoShorts.Actions.CRUDTest do
     test "preloads associations on the returned struct" do
       post =
         %Post{}
-        |> Post.changeset(%{title: "Get Preload"})
+        |> Post.changeset(%{title: "D"})
         |> Repo.insert!()
 
       %Comment{}
-      |> Comment.changeset(%{body: "Hi!", post_id: post.id})
+      |> Comment.changeset(%{body: "first", post_id: post.id})
       |> Repo.insert!()
 
       result = Actions.get(Post, post.id, preload: [:comments])
@@ -2394,11 +2394,11 @@ defmodule EctoShorts.Actions.CRUDTest do
     test "preloads associations on the found struct" do
       post =
         %Post{}
-        |> Post.changeset(%{title: "Find Preload"})
+        |> Post.changeset(%{title: "E"})
         |> Repo.insert!()
 
       %Comment{}
-      |> Comment.changeset(%{body: "Nice", post_id: post.id})
+      |> Comment.changeset(%{body: "first", post_id: post.id})
       |> Repo.insert!()
 
       assert {:ok, %Post{comments: [%Comment{}]}} =
@@ -2409,7 +2409,7 @@ defmodule EctoShorts.Actions.CRUDTest do
   describe "create/3 with :preload" do
     test "preloads associations on the created struct" do
       assert {:ok, %Post{comments: []}} =
-               Actions.create(Post, %{title: "Create Preload"}, preload: [:comments])
+               Actions.create(Post, %{title: "F"}, preload: [:comments])
     end
   end
 
@@ -2417,27 +2417,27 @@ defmodule EctoShorts.Actions.CRUDTest do
     test "preloads associations on the updated struct" do
       post =
         %Post{}
-        |> Post.changeset(%{title: "Before"})
+        |> Post.changeset(%{title: "G"})
         |> Repo.insert!()
 
-      assert {:ok, %Post{title: "After", comments: []}} =
-               Actions.update(Post, post, %{title: "After"}, preload: [:comments])
+      assert {:ok, %Post{title: "G updated", comments: []}} =
+               Actions.update(Post, post, %{title: "G updated"}, preload: [:comments])
     end
   end
 
   describe "find_or_create/3 with :preload" do
     test "preloads associations on the created struct" do
       assert {:ok, %Post{comments: []}} =
-               Actions.find_or_create(Post, %{title: "FOC Preload"}, preload: [:comments])
+               Actions.find_or_create(Post, %{title: "H"}, preload: [:comments])
     end
 
     test "preloads associations on the found struct" do
       %Post{}
-      |> Post.changeset(%{title: "FOC Found"})
+      |> Post.changeset(%{title: "I"})
       |> Repo.insert!()
 
-      assert {:ok, %Post{title: "FOC Found", comments: []}} =
-               Actions.find_or_create(Post, %{title: "FOC Found"}, preload: [:comments])
+      assert {:ok, %Post{title: "I", comments: []}} =
+               Actions.find_or_create(Post, %{title: "I"}, preload: [:comments])
     end
   end
 
@@ -2446,8 +2446,8 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert {:ok, %Post{comments: []}} =
                Actions.find_and_create(
                  Post,
-                 %{title: "FAC Not Found"},
-                 %{title: "FAC Not Found"},
+                 %{title: "J"},
+                 %{title: "J"},
                  preload: [:comments]
                )
     end
@@ -2457,11 +2457,11 @@ defmodule EctoShorts.Actions.CRUDTest do
     test "preloads associations on the updated struct" do
       post =
         %Post{}
-        |> Post.changeset(%{title: "FAU Before"})
+        |> Post.changeset(%{title: "K"})
         |> Repo.insert!()
 
-      assert {:ok, %Post{title: "FAU After", comments: []}} =
-               Actions.find_and_update(Post, %{id: post.id}, %{title: "FAU After"},
+      assert {:ok, %Post{title: "K updated", comments: []}} =
+               Actions.find_and_update(Post, %{id: post.id}, %{title: "K updated"},
                  preload: [:comments]
                )
     end
@@ -2472,7 +2472,7 @@ defmodule EctoShorts.Actions.CRUDTest do
       assert {:ok, %Post{comments: []}} =
                Actions.find_and_upsert(
                  Post,
-                 %{title: "FAUp Not Found"},
+                 %{title: "L"},
                  %{},
                  preload: [:comments]
                )
@@ -2481,11 +2481,11 @@ defmodule EctoShorts.Actions.CRUDTest do
     test "preloads associations on the updated struct when record is found" do
       post =
         %Post{}
-        |> Post.changeset(%{title: "FAUp Before"})
+        |> Post.changeset(%{title: "M"})
         |> Repo.insert!()
 
-      assert {:ok, %Post{title: "FAUp After", comments: []}} =
-               Actions.find_and_upsert(Post, %{id: post.id}, %{title: "FAUp After"},
+      assert {:ok, %Post{title: "M updated", comments: []}} =
+               Actions.find_and_upsert(Post, %{id: post.id}, %{title: "M updated"},
                  preload: [:comments]
                )
     end
