@@ -53,6 +53,16 @@ defmodule EctoShorts.CommonFilters do
       key in API.filters() ->
         build_query(key, source, query, selected_binding, term, opts)
 
+      key == :and ->
+        Enum.reduce(Utils.map_to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
+          apply_filters(:where, source, query_acc, selected_binding, {inner_key, inner_value}, opts)
+        end)
+
+      key == :or ->
+        Enum.reduce(Utils.map_to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
+          reduce_or_conditions(source, query_acc, selected_binding, inner_key, inner_value, opts)
+        end)
+
       true ->
         build_query(filter, source, query, selected_binding, {key, term}, opts)
     end
@@ -76,6 +86,16 @@ defmodule EctoShorts.CommonFilters do
       end)
     else
       build_query(filter, source, query, selected_binding, term, opts)
+    end
+  end
+
+  defp reduce_or_conditions(source, query, selected_binding, key, value, opts) do
+    if reducible_filter_entries?(value) do
+      Enum.reduce(Utils.map_to_keyword(value), query, fn {inner_key, inner_value}, query_acc ->
+        reduce_or_conditions(source, query_acc, selected_binding, key, {inner_key, inner_value}, opts)
+      end)
+    else
+      build_query(:or_where, source, query, selected_binding, {key, value}, opts)
     end
   end
 
