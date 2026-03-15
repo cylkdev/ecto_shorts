@@ -91,7 +91,7 @@ defmodule EctoShorts.MixProject do
           EctoShorts.CommonChanges,
           EctoShorts.CommonFilters,
           EctoShorts.CommonParams,
-          EctoShorts.Source
+          EctoShorts.Actions.Source
         ],
         Actions: [
           EctoShorts.Actions.Batch,

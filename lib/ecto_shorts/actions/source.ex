@@ -1,4 +1,4 @@
-defmodule EctoShorts.Source do
+defmodule EctoShorts.Actions.Source do
   @moduledoc since: "3.0.0"
   @moduledoc """
   when this is passed the :from key must point to a name and it returns {:ok, value} or {:error, reason}

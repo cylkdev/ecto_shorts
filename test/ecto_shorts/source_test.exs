@@ -1,7 +1,7 @@
-defmodule EctoShorts.SourceTest do
+defmodule EctoShorts.Actions.SourceTest do
   use ExUnit.Case, async: true
 
-  alias EctoShorts.Source
+  alias EctoShorts.Actions.Source
 
   describe "new/1" do
     test "builds a Source struct with empty tables when no tables key given" do

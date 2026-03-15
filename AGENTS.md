@@ -1,299 +1,44 @@
 # EctoShorts
 
-EctoShorts is a data-driven layer on top of Ecto for common reads, writes, bulk operations, and multi-record workflows. The core idea is simple: instead of rebuilding the same `from` / `where` / `order_by` / `Repo.*` pipelines by hand, you describe the work as maps or keyword lists and let EctoShorts build the query, changeset, or bulk payload for you.
+This is an Elixir library built on top of Ecto that helps you handle the database operations most applications need without repeatedly writing the same query and changeset code by hand. Instead of rebuilding those patterns each time, you describe them as data and let EctoShorts handle the common cases for you. The result is less boilerplate, greater consistency across your codebase, and a faster way to implement everyday tasks such as filtering, pagination, CRUD operations, bulk writes, and transactional multi-record workflows.
 
-Use this file as a fast execution manual and API map. It is not meant to replace the README or full module docs. It is meant to answer, quickly, where a behavior lives, when to use it, and where to look for live examples.
+EctoShorts is organized into the following components:
 
-## Start Here by Task
+* **`EctoShorts.Actions`** — the primary entry point. It accepts a schema module and a params map, delegates to the supporting components to build and execute the query, and returns results in a consistent `{:ok, result}` / `{:error, reason}` shape. In practice, this is where most application-facing work begins. The main families here are CRUD helpers such as `all/3`, `find/3`, `create/3`, and `update/4`, bulk helpers such as `insert_all/3` and `update_all/4`, multi helpers such as `create_many/3` and `update_many/3`, batch helpers such as `batch/5`, and transaction wrappers such as `transaction/2` and `transact/2`.
+* **`EctoShorts.CommonFilters`** — translates a map or keyword list of filter params into an `Ecto.Query`. Schema field keys become `WHERE` conditions, while reserved keys such as `:limit`, `:order_by`, and `:preload` become the corresponding query operations. Use this directly when you need to build a query without executing it, or when you need to understand the filter language that `Actions` read helpers accept.
+* **`EctoShorts.CommonChanges`** — provides helpers for building `changeset/2` functions, including preloading and casting associations, trimming strings, applying conditional changes, and validating fields. This is the place to start when the work is really about changeset ergonomics rather than query execution.
+* **`EctoShorts.CommonSchema`** — handles schema introspection by resolving field types, association metadata, and polymorphic source information at runtime. It is also the place to look when the source is not just a simple schema module, such as a table name string, a query, or a `{source, schema}` tuple.
+* **`EctoShorts.CommonParams`** — prepares parameter lists for `insert_all`, `update_all`, and `delete_all`, including timestamp injection, field filtering, conflict handling, and bulk update directives. Reach for this when you need to know the exact payload that a bulk helper will send to the repo.
+* **`EctoShorts.CommonQuery`** — inspects query structure, including named bindings, positional bindings, sources, and prefixes. This becomes useful when you are working on query composition, binding-aware features, or schema lookup from an existing `Ecto.Query`.
+* **`EctoShorts.DynamicBuilders`** — builds `Ecto.Query.dynamic/2` expressions from data. The PostgreSQL adapter supports scalar comparisons, string matching, array operations, and more. Use this when the filter you need is more expressive than simple field matching.
+* **`EctoShorts.Testing`** — provides test helpers for asserting against generated queries, SQL, and dynamic expressions. This is the quickest proof surface when you need to check whether a query-producing change still matches the intended contract.
 
-- **Need repo-backed CRUD or query execution?** Start at `EctoShorts.Actions`.
-- **Need to build a query without executing it?** Start at `EctoShorts.CommonFilters.convert_params_to_filter/3`.
-- **Need reusable helpers inside a schema `changeset/2`?** Start at `EctoShorts.CommonChanges`.
-- **Need `insert_all` or `update_all` payload preparation?** Start at `EctoShorts.CommonParams`.
-- **Need to inspect sources, bindings, or schema metadata?** Start at `EctoShorts.CommonSchema` or `EctoShorts.CommonQuery`.
-- **Need adapter-backed `dynamic/2` expressions?** Start at `EctoShorts.DynamicBuilders`.
-- **Need to prove query behavior in tests?** Start at `EctoShorts.Testing`.
+In the typical case, you call `EctoShorts.Actions` from your context module and let it handle the rest. It builds an `Ecto.Query` from `EctoShorts.CommonFilters`, can pass that query through `EctoShorts.DynamicBuilders` when you need more complex expressions, and then executes it through your configured `Ecto.Repo`. The normal reading path is therefore `Actions -> CommonFilters -> Repo`, while the normal write path is `Actions -> schema changeset or CommonParams -> Repo`.
 
-If you are unsure, start with `EctoShorts.Actions` for anything application-facing and drop down to the lower-level modules only when you need more control.
+You usually configure your repo once in `config.exs`, and EctoShorts resolves it automatically. When you need to override that behavior, every `EctoShorts.Actions` function also allows you to pass `:repo` or `:replica` at call time. The rest of the main runtime configuration also lives under the `:ecto_shorts` application key, including `:dynamic_adapter`, `:query_builder`, `:query_provider`, `:error_module`, and `:max_positional_bindings`. If you need the exact resolution rules, read `lib/ecto_shorts/config.ex`.
 
-## Core Flow
+## Overview
 
-Most read paths look like this:
+Ecto is a powerful tool, but in practice it often makes you write more code than the task should need, or write the same kind of code over and over. In many real applications, context modules slowly fill up with almost identical query pipelines: `from`, `where`, `order_by`, `limit`, `Repo.all`, repeated for different resources with only small changes. When you add conditional filters, the repetition grows even more. Each optional parameter often leads to another `maybe_filter_*` helper that only decides whether to add a clause or leave the query as it is. The same pattern shows up in changesets, bulk operations, and transactions. None of this is very hard, but over time it adds up to a lot of boilerplate that does not add much real value.
 
-1. Your code calls `EctoShorts.Actions`.
-2. `EctoShorts.Actions` hands filter params to `EctoShorts.CommonFilters`.
-3. `EctoShorts.CommonFilters` turns the params into an `Ecto.Query`.
-4. `EctoShorts.Actions` executes the query through the configured `:repo` or `:replica`.
+EctoShorts solves this using data. Instead of building every query step by step, you describe what you want with a map or keyword list and pass it to `EctoShorts.Actions`. `CommonFilters` then reads that data and builds the matching `Ecto.Query` for you. Schema field keys become `WHERE` clauses, and options like `:limit`, `:order_by`, `:offset`, and `:preload` are turned into the matching query parts. More advanced comparisons, such as `%{views: %{>: 100}}`, become expressions like `WHERE views > $1`.
 
-Most write paths look like this:
+When a filter is more complex than simple field matching, `DynamicBuilders` takes over and builds the right `Ecto.Query.dynamic/2` expressions. This lets EctoShorts support things like string matching, array checks, and PostgreSQL-specific operators while keeping the same data-based interface. After the query is built, `Actions` runs it through your configured `Ecto.Repo` and returns a consistent `{:ok, result}` or `{:error, reason}`.
 
-1. Your code calls a write helper in `EctoShorts.Actions`.
-2. `EctoShorts.CommonSchema` builds or normalizes the schema data.
-3. The schema `changeset/2` runs for normal writes, or `EctoShorts.CommonParams` prepares repo-native bulk payloads for bulk helpers.
-4. The configured repo performs the insert, update, delete, multi, or transaction.
+The same idea also applies to write operations. `Actions.create/3` handles the call to `Post.changeset/2` and `Repo.insert/1` for you. `Actions.create_many/3` wraps multiple inserts in an `Ecto.Multi`, so the whole transaction is rolled back if any changeset fails. `Actions.insert_all/3` uses `CommonParams` to prepare the entries by adding timestamps and removing virtual fields before calling `Repo.insert_all/2`. If you only need the payload preparation itself, rather than the higher-level helper, `CommonParams` is the lower-level boundary that owns that work.
 
-## Directory Map
+Most contributors will spend the bulk of their time in `EctoShorts.Actions` and `EctoShorts.CommonFilters`. If the task is application-facing and you want to fetch, create, update, delete, batch, or transact records, start in `Actions`. If the task is about how filter params become an `Ecto.Query`, start in `CommonFilters`, especially `convert_params_to_filter/3`. The lower-level modules matter when the problem is narrower: `CommonChanges` for reusable changeset helpers, `CommonSchema` for flexible source handling and schema lookups, `CommonQuery` for query introspection, `DynamicBuilders` for adapter-backed dynamic expressions, and `Testing` when you need proof rather than intuition.
 
-- **`README.md`**: best high-level overview and cross-module examples.
-- **`lib/ecto_shorts/`**: public runtime modules.
-- **`lib/ecto_shorts/actions/`**: support modules behind `EctoShorts.Actions` for bulk, multi, batch, transaction, and error behavior.
-- **`lib/ecto_shorts/common_filters/`**: individual filter-family builders such as joins, ordering, projection, CTEs, and locks.
-- **`test/ecto_shorts/`**: main proof surface for live behavior. Start here before assuming how an API works.
-- **`test/ecto_shorts/actions/`**: action-family behavior.
-- **`test/ecto_shorts/common_filters/`**: filter-language behavior for schema-backed queries.
-- **`test/ecto_shorts/common_filters_schemaless/`**: filter-language behavior for schemaless sources.
-- **`examples/`**: runnable examples, especially `run.exs` and `ecto_query_dsl.exs`.
-- **`config/`**: library config defaults and repo wiring examples.
-- **`plans/`**: repo-tracked execution plans and task history.
+`CommonFilters` is worth learning as its own public language because most of the library’s read behavior depends on it. It accepts a schema module, a prebuilt query, a schemaless table name such as `"posts"`, or a `{source, schema}` tuple, and it supports much more than simple field equality. The live filter surface includes boolean composition through `where`, `or_where`, `and`, and `or`; joins and association filters; ordering and pagination; grouping and `having`; projection through `select` and `select_merge`; preloads and subqueries; set operations; CTEs and windows; locking; and binding-aware routing. If clause order or duplicate keys matter, use a keyword list rather than a map. Binding selectors are top-level `%{as: %{...}}` and `%{at: %{...}}` shapes, not a nested `:bind` wrapper. For joins, association shorthand is the quick route when you are filtering through a declared association, while explicit `join:` payloads are the right choice when you need more control over the source, qualifier, or binding name. For locks, the live public shapes include named lock payloads, raw lock strings, and unary functions that transform the query directly.
 
-## Configuration Knobs
+The lower-level modules exist so you do not have to force every task through `Actions`. `CommonChanges` gives you reusable changeset helpers such as association preloading, conditional mutation, string trimming, and default-setting. `CommonSchema` tells you what source a queryable refers to, which schema is in play, and how to build structs or changesets when the source is not a simple schema module. `CommonQuery` answers questions about bindings and prefixes inside an existing `Ecto.Query`. `DynamicBuilders` is the adapter-backed escape hatch for more expressive boolean logic. `Testing` closes the loop by letting you compare queries, SQL, and dynamic expressions directly, with the important caveat that `assert_sql/4` compares SQL strings only, so if bound params matter you should compare full `Ecto.Adapters.SQL.to_sql/3` tuples instead.
 
-The main runtime config lives under the `:ecto_shorts` application key:
+The result is code that is simpler and easier to maintain. Instead of spreading query and persistence logic across many helper functions, you describe what you want as data and let `Actions` and the supporting modules handle it in a consistent way. That keeps your code focused on application behavior instead of repetitive setup work.
 
-- **`:repo`**: primary repo for writes.
-- **`:replica`**: read repo; falls back to `:repo` when appropriate.
-- **`:dynamic_adapter`**: adapter for `EctoShorts.DynamicBuilders`.
-- **`:query_builder`**: custom query-builder implementation used by `EctoShorts.CommonFilters`.
-- **`:query_provider`**: provider for named query expressions such as custom joins or locks.
-- **`:error_module`**: custom error adapter for `EctoShorts.Actions`.
-- **`:max_positional_bindings`**: cap for positional binding support.
+## Finding Your Way
 
-If you need the exact behavior of repo and adapter resolution, read `lib/ecto_shorts/config.ex`.
+If you have no context and need to start somewhere fast, begin with `EctoShorts.Actions` for anything that looks like ordinary application work. If you need to understand query construction without running it, go straight to `EctoShorts.CommonFilters`. If the problem lives inside a schema `changeset/2`, move to `EctoShorts.CommonChanges`. If the task is about bulk payload preparation, `CommonParams` is the right boundary. If you are debugging source resolution, query bindings, or schema metadata, the next stop is usually `CommonSchema` or `CommonQuery`. If you need stronger proof before you change behavior, use `EctoShorts.Testing` and then read the nearest tests under `test/ecto_shorts/`.
 
-## Public Module Map
+The directory layout is simple once you know where to look. `README.md` is the best high-level overview and cross-module example set. `lib/ecto_shorts/` holds the main public runtime modules. `lib/ecto_shorts/actions/` and `lib/ecto_shorts/common_filters/` hold the support modules behind the two main public boundaries. `test/ecto_shorts/` is the main proof surface for live behavior, with `test/ecto_shorts/actions/` covering action behavior and `test/ecto_shorts/common_filters/` plus `test/ecto_shorts/common_filters_schemaless/` covering the query language. `examples/` gives you runnable examples, especially `run.exs` and `ecto_query_dsl.exs`.
 
-### `EctoShorts.Actions`
-
-This is the main public entry point for application code.
-
-Use it when you want EctoShorts to both build and execute the work. Read helpers accept the public `CommonFilters` language. Normal write helpers go through your schema `changeset/2`. Bulk helpers use repo-native bulk operations. Multi helpers compose those operations inside `Ecto.Multi`.
-
-Important function families:
-
-- **CRUD**: `all/3`, `find/3`, `create/3`, `update/4`, `delete/1-3`, `exists?/3`, `preload/3`
-- **Bulk**: `insert_all/3`, `update_all/4`, `delete_all/3`
-- **Multi**: `create_many/3`, `find_many/3`, `update_many/3`, `delete_many/3`
-- **Batch**: `batch/5`, `batch_find/4`
-- **Transaction**: `transaction/2`, `transact/2`
-
-Use `Actions` when the task is “get records”, “create or update records”, “perform this in a multi”, or “run this transactional workflow”.
-
-Best proof surfaces:
-
-- `lib/ecto_shorts/actions.ex`
-- `test/ecto_shorts/actions/`
-- `README.md`
-
-### `EctoShorts.CommonFilters`
-
-This is the public query language for EctoShorts. The main caller-facing entry point is `convert_params_to_filter/3`.
-
-Use it when you need an `Ecto.Query` but do not want to execute it yet, or when you need to understand what shapes `Actions` read helpers accept.
-
-Accepted source forms include:
-
-- a schema module
-- a `{source, schema}` tuple
-- a schemaless table name like `"posts"`
-- a prebuilt `Ecto.Query`
-
-Important filter families:
-
-- **Field predicates**: schema field keys become `WHERE` clauses.
-- **Boolean groups**: `where`, `or_where`, `and`, `or`
-- **Joins and associations**: `join`, association shorthand like `%{comments: %{approved: true}}`
-- **Ordering and result shape**: `order_by`, `prepend_order_by`, `reverse_order`, `limit`, `offset`, `first`, `last`, `distinct`
-- **Grouping and aggregation**: `group_by`, `having`, `or_having`
-- **Projection**: `select`, `select_merge`
-- **Loading and nesting**: `preload`, `subquery`
-- **Set composition**: `union`, `union_all`, `except`, `except_all`, `intersect`, `intersect_all`
-- **CTEs and windows**: `recursive_ctes`, `with_cte`, `windows`, `with_ties`
-- **Bindings**: top-level `as` and `at`
-- **Concurrency and utility**: `lock`, `update`, `exclude`, `put_query_prefix`, `with_named_binding`
-
-Important usage notes:
-
-- Use a **keyword list** instead of a map when duplicate keys or clause order matter, especially for repeated `where`, `or_where`, `join`, or `with_cte`.
-- Binding selectors are **top-level public shapes**. Use `%{as: %{author: %{...}}}` or `%{at: %{2 => %{...}}}`. They are not wrapped in `:bind`.
-- For joins, use association shorthand when you want “ensure this association binding exists and filter on it”. Use explicit `join:` payloads when you need source-family control, `qualifier:`, `on:`, or binding naming.
-- `lock` supports three public payload families: a map or keyword list with `name:`, a raw string clause, or a unary function that receives the query and returns an `Ecto.Query`.
-
-Best proof surfaces:
-
-- `lib/ecto_shorts/common_filters.ex`
-- `lib/ecto_shorts/common_filters/`
-- `test/ecto_shorts/common_filters/`
-- `test/ecto_shorts/common_filters_schemaless/`
-- `examples/ecto_query_dsl.exs`
-
-### `EctoShorts.CommonChanges`
-
-This module is for reusable helpers inside schema `changeset/2` pipelines.
-
-Use it when your task is about changeset ergonomics rather than query building. It is especially useful for association handling, conditional mutation, field-state checks, coercion, and defaults.
-
-High-value functions:
-
-- **Association workflows**: `preload_change_assoc/3`, `preload_changeset_assoc/3`, `put_or_cast_assoc/3`
-- **Conditional mutation**: `apply_when/3`
-- **Field-state checks**: `has_nil_change?/2`, `has_empty_change?/2`, `changeset_field_nil?/2`, `changeset_field_empty?/2`
-- **Validation and coercion**: `validate_not_unset/2`, `trim_string_change/2`, `truncate_datetime_change/3`
-- **Defaults**: `put_new_change/3`, `put_new_value/3`
-
-Reach for this module when you would otherwise write repetitive changeset helpers around associations, defaults, field preservation, or cleanup.
-
-Best proof surfaces:
-
-- `lib/ecto_shorts/common_changes.ex`
-- `test/ecto_shorts/common_changes_test.exs`
-
-### `EctoShorts.CommonParams`
-
-This module prepares data for repo-native bulk operations.
-
-Use it when you want the lower-level API behind `Actions.insert_all/3` and `Actions.update_all/4`, or when you need to understand exactly how EctoShorts prepares bulk payloads.
-
-High-value functions:
-
-- `convert_to_insert_params/3`
-- `convert_to_update_params/3`
-- `build_on_conflict_options/3`
-
-What it owns:
-
-- validating bulk insert entries through the schema `changeset/2`
-- filtering fields to query fields
-- injecting timestamps
-- placeholder substitution
-- building `on_conflict` and `conflict_target` options
-- converting update directives like `{:inc, 1}`, `{:push, value}`, and `{:pull, value}`
-
-Use this module when the question is “what exact payload is going into `insert_all` or `update_all`?”
-
-Best proof surfaces:
-
-- `lib/ecto_shorts/common_params.ex`
-- `test/ecto_shorts/common_params_test.exs`
-
-### `EctoShorts.CommonSchema`
-
-This module normalizes sources, inspects schema metadata, builds structs, and creates changesets.
-
-Use it when you need to accept flexible source forms or you need schema metadata without hardcoding assumptions.
-
-High-value functions:
-
-- `normalize_source/1`
-- `to_query/1`
-- `get_schema/1`
-- `get_schema_reflection/2-3`
-- `build_struct/1`
-- `create_changeset/3`
-
-This is also the place to look when dealing with:
-
-- schemaless sources like `"posts"`
-- polymorphic `{source, schema}` tuples like `{"archived_posts", Post}`
-- custom changeset resolution
-
-Best proof surfaces:
-
-- `lib/ecto_shorts/common_schema.ex`
-- `test/ecto_shorts/common_schema_test.exs`
-
-### `EctoShorts.CommonQuery`
-
-This module introspects `Ecto.Query` structures at runtime.
-
-Use it when you need to answer questions like:
-
-- what source is this query using?
-- how many bindings does it have?
-- what schema does a named or positional binding point to?
-- what prefix is applied?
-
-High-value functions:
-
-- `get_query_source/1`
-- `query_binding_count/1`
-- `get_query_binding_source/2`
-- `get_query_prefix/1`
-
-This is the right module when you are working on dynamic query composition, binding validation, or query inspection helpers.
-
-Best proof surfaces:
-
-- `lib/ecto_shorts/common_query.ex`
-- `test/ecto_shorts/common_query_test.exs`
-
-### `EctoShorts.DynamicBuilders`
-
-This is the entry point for building `Ecto.Query.DynamicExpr` values through an adapter.
-
-Use it when the problem is more complex than direct field filtering and you need adapter-backed dynamic expressions.
-
-High-value function:
-
-- `build_dynamic/4`
-
-Adapter resolution order:
-
-1. `:dynamic_adapter` passed at call time
-2. configured `EctoShorts.Config.dynamic_adapter/0`
-3. repo adapter inference
-
-At the moment, PostgreSQL is the supported auto-resolved adapter.
-
-Best proof surfaces:
-
-- `lib/ecto_shorts/dynamic_builders.ex`
-- `lib/ecto_shorts/dynamic_builders/`
-- `test/ecto_shorts/dynamic_builders/`
-
-### `EctoShorts.Testing`
-
-This module provides test helpers for queries, SQL, and dynamic expressions.
-
-Use it when you need to prove query generation behavior without inventing brittle assertions.
-
-High-value functions:
-
-- `assert_query/2`
-- `refute_query/2`
-- `assert_sql/3-4`
-- `refute_sql/3-4`
-- `assert_dynamic/2`
-- `refute_dynamic/2`
-
-Important note:
-
-- `assert_sql/4` compares the generated **SQL string only**. If bound params matter, compare full `Ecto.Adapters.SQL.to_sql/3` tuples directly.
-
-Best proof surfaces:
-
-- `lib/ecto_shorts/testing.ex`
-- `test/ecto_shorts/testing_test.exs`
-
-## Common Scenarios
-
-- **I need a normal filtered read.** Use `EctoShorts.Actions.all/3` or `find/3` with `CommonFilters` params.
-- **I need to build a query and inspect it before execution.** Use `EctoShorts.CommonFilters.convert_params_to_filter/3`.
-- **I need association filters.** Start with association shorthand if the key is a declared schema association. Use explicit `join:` when you need more control.
-- **I need grouped or aggregate queries.** Use `group_by`, `having`, and related filter families in `CommonFilters`.
-- **I need preloads.** Use `preload` in query params when you want eager loading on read paths. Use `CommonChanges.preload_change_assoc/3` when the work is inside a changeset pipeline.
-- **I need bulk insert or bulk update behavior.** Start with `Actions.insert_all/3` or `Actions.update_all/4`. Drop to `CommonParams` when you need the exact prepared payload.
-- **I need a schemaless query or alternate table with the same schema.** Use a table name string or a `{source, schema}` tuple. See `CommonSchema`.
-- **I need to prove query behavior.** Start with `EctoShorts.Testing` and then read the nearest tests under `test/ecto_shorts/`.
-
-## Where to Verify Live Behavior
-
-Before making assumptions, check these in order:
-
-- **`README.md`** for the fastest public overview and cross-module examples.
-- **Module docs in `lib/ecto_shorts/*.ex`** for the owning boundary and accepted shapes.
-- **`test/ecto_shorts/actions/`** for action behavior.
-- **`test/ecto_shorts/common_filters/`** and **`test/ecto_shorts/common_filters_schemaless/`** for query-language behavior.
-- **`test/ecto_shorts/common_changes_test.exs`**, **`common_params_test.exs`**, **`common_query_test.exs`**, and **`common_schema_test.exs`** for the lower-level APIs.
-- **`examples/run.exs`** and **`examples/ecto_query_dsl.exs`** for runnable example flows.
-
-Live code and tests are the primary evidence for what the library supports now.
+When the overview is not enough, verify behavior from the live repo before assuming anything. Start with `README.md` for the fastest public examples, then move to the owning module in `lib/ecto_shorts/`, and then to the nearest tests under `test/ecto_shorts/`. For application-facing behavior, `test/ecto_shorts/actions/` is usually the best proof surface. For query-shape and filter-language behavior, start with `test/ecto_shorts/common_filters/` and `test/ecto_shorts/common_filters_schemaless/`. For runnable flows, check `examples/`. Live code and tests are the primary evidence for what the library supports now.
