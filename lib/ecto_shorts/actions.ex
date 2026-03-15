@@ -934,7 +934,7 @@ defmodule EctoShorts.Actions do
     schema
     |> CommonSchema.create_changeset(params, opts)
     |> Config.repo!(opts).insert(opts)
-    |> maybe_preload_ok(opts)
+    |> handle_response_preload(opts)
   end
 
   @doc group: "CRUD"
@@ -1116,7 +1116,7 @@ defmodule EctoShorts.Actions do
       |> maybe_apply_optimistic_lock(queryable, opts)
 
     Config.repo!(opts).update(changeset, opts)
-    |> maybe_preload_ok(opts)
+    |> handle_response_preload(opts)
   rescue
     Ecto.StaleEntryError ->
       {:error,
@@ -1493,7 +1493,7 @@ defmodule EctoShorts.Actions do
         |> create(params, opts)
       end
 
-    maybe_preload_ok(result, opts)
+    handle_response_preload(result, opts)
   end
 
   @doc group: "Transaction"
@@ -1840,7 +1840,7 @@ defmodule EctoShorts.Actions do
   @spec create_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     run_multi(Multi.build_create_many_multi(schema, params_list, opts), opts)
-    |> maybe_preload_ok(opts)
+    |> handle_response_preload(opts)
   end
 
   @doc group: "Multi"
@@ -1873,7 +1873,7 @@ defmodule EctoShorts.Actions do
   @spec find_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_many(schema, params_list, opts \\ []) when is_list(params_list) do
     run_multi(Multi.build_find_many_multi(schema, params_list, opts), opts)
-    |> maybe_preload_ok(opts)
+    |> handle_response_preload(opts)
   end
 
   @doc group: "Multi"
@@ -1910,7 +1910,7 @@ defmodule EctoShorts.Actions do
   @spec update_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def update_many(schema, entries, opts \\ []) when is_list(entries) do
     run_multi(Multi.build_update_many_multi(schema, entries, opts), opts)
-    |> maybe_preload_ok(opts)
+    |> handle_response_preload(opts)
   end
 
   @doc group: "Multi"
@@ -1942,7 +1942,7 @@ defmodule EctoShorts.Actions do
   @spec delete_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def delete_many(schema, records, opts \\ []) when is_list(records) do
     run_multi(Multi.build_delete_many_multi(schema, records, opts), opts)
-    |> maybe_preload_ok(opts)
+    |> handle_response_preload(opts)
   end
 
   @doc group: "Multi"
@@ -1978,7 +1978,7 @@ defmodule EctoShorts.Actions do
   @spec find_or_create_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_or_create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     run_multi(Multi.build_find_or_create_multi(schema, params_list, opts), opts)
-    |> maybe_preload_ok(opts)
+    |> handle_response_preload(opts)
   end
 
   @doc group: "Multi"
@@ -2015,7 +2015,7 @@ defmodule EctoShorts.Actions do
   @spec find_and_upsert_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_and_upsert_many(schema, entries, opts \\ []) when is_list(entries) do
     run_multi(Multi.build_upsert_multi(schema, entries, opts), opts)
-    |> maybe_preload_ok(opts)
+    |> handle_response_preload(opts)
   end
 
   defp run_multi(multi, opts) do
@@ -2052,8 +2052,8 @@ defmodule EctoShorts.Actions do
     end
   end
 
-  defp maybe_preload_ok({:ok, value}, opts), do: {:ok, maybe_preload(value, opts)}
-  defp maybe_preload_ok(other, _opts), do: other
+  defp handle_response_preload({:ok, value}, opts), do: {:ok, maybe_preload(value, opts)}
+  defp handle_response_preload(other, _opts), do: other
 
   defp put_param(enum, opts, key) do
     case Keyword.get(opts, key) do

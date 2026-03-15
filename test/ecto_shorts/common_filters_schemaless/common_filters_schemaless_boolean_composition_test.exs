@@ -97,7 +97,9 @@ defmodule EctoShorts.CommonFilters.SchemalessBooleanCompositionTest do
 
     test ":where with a list of maps applies each map as a separate where clause" do
       expected = from(p in "posts", where: p.views == ^5, where: p.published == ^true)
-      actual = CommonFilters.convert_params_to_filter("posts", %{where: [%{views: 5}, %{published: true}]}, [])
+
+      actual =
+        CommonFilters.convert_params_to_filter("posts", %{where: [%{views: 5}, %{published: true}]}, [])
 
       assert_query(expected, actual)
     end
@@ -173,7 +175,9 @@ defmodule EctoShorts.CommonFilters.SchemalessBooleanCompositionTest do
 
     test "two :and groups in a keyword list compose as sequential where clauses" do
       expected = from(p in "posts", where: p.published == ^true, where: p.views == ^5)
-      actual = CommonFilters.convert_params_to_filter("posts", [and: %{published: true}, and: %{views: 5}], [])
+
+      actual =
+        CommonFilters.convert_params_to_filter("posts", [and: %{published: true}, and: %{views: 5}], [])
 
       assert_query(expected, actual)
     end

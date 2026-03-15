@@ -9,6 +9,20 @@ defmodule EctoShorts.CommonFilters.WithCteTest do
   import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 with_cte shapes" do
+    test "accepts a map payload for with_cte (map→list conversion path)" do
+      cte_query = from(p in Post, where: p.published == ^true)
+      expected = with_cte(Post, "published_posts", as: ^cte_query)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{with_cte: %{published_posts: %{as: cte_query}}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
     test "matches Ecto.Query for with_cte with a prebuilt query" do
       cte_query = from(p in Post, where: p.published == ^true)
       expected = with_cte(Post, "published_posts", as: ^cte_query)

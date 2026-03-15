@@ -57,6 +57,14 @@ defmodule EctoShorts.TestQueryProvider do
     fn query -> from(q in query, lock: "FOR UPDATE") end
   end
 
+  def resolve_query_expression(_selected_binding, :callback_bad_return, _params, _opts) do
+    {:ok, fn _query -> :not_a_query end}
+  end
+
+  def resolve_query_expression(_selected_binding, :callback_not_function, _params, _opts) do
+    {:ok, :not_a_function}
+  end
+
   def resolve_query_expression(_selected_binding, _source_key, _params, _opts) do
     {:error, :unsupported_fragment_key}
   end

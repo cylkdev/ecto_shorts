@@ -8,6 +8,19 @@ defmodule EctoShorts.CommonFilters.HavingTest do
   import Ecto.Query
 
   describe "convert_params_to_filter/3 having shapes" do
+    test "returns query unchanged when having is nil" do
+      expected = from p in Post, group_by: p.author_id
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          expected,
+          %{having: nil},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
     test "matches Ecto.Query for a root aggregate having" do
       source = from p in Post, group_by: p.author_id
       expected = from p in Post, group_by: p.author_id, having: avg(p.views) > ^100

@@ -307,6 +307,8 @@ NON-NEGOTIABLE REQUIREMENTS:
 
 * Every code path has both a success contract and a failure contract. The success contract is naturally defined because the path must implement it to do anything useful. The failure contract is commonly left undesigned because the author stops thinking once the success path is complete. An undesigned failure contract is not neutral: the input goes to the wrong path, produces a silent wrong result, or disappears without trace. Before considering any code path complete, ask: for each way the input can be wrong, what does the caller observe? If the answer is not explicit and intentional, the path is incomplete. Define both contracts.
 
+* Write test descriptions as clear statements of observable behavior. State what the code accomplishes from the caller’s point of view, and make the intended outcome understandable without reading the test body. Center the description on the result the test proves. Use names that explain the behavior being validated.
+
 ### Scope And Intent Control
 
 * Remain within the boundaries of the task. Do not follow tangents, pursue adjacent ideas, or expand the work

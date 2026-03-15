@@ -7,6 +7,38 @@ defmodule EctoShorts.CommonFilters.UpdateTest do
 
   import Ecto.Query
 
+  describe "convert_params_to_filter/3 subquery shapes" do
+    test "wraps the filtered query in a subquery when given a map filter" do
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{subquery: %{limit: 5}},
+          []
+        )
+
+      assert %Ecto.SubQuery{} = actual
+    end
+
+    test "logs warning and returns query unchanged when subquery value is not a map or keyword list" do
+      import ExUnit.CaptureLog
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{subquery: :invalid},
+              []
+            )
+
+          assert %Ecto.Query{} = actual
+          refute is_nil(actual)
+        end)
+
+      assert log =~ "Expected :subquery value"
+    end
+  end
+
   describe "convert_params_to_filter/3 update shapes" do
     test "matches Ecto.Query for a root update set payload" do
       updates = [set: [title: "After"]]

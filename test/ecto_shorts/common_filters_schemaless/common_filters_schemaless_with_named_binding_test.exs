@@ -18,7 +18,9 @@ defmodule EctoShorts.CommonFilters.SchemalessWithNamedBindingTest do
       actual =
         CommonFilters.convert_params_to_filter(
           "posts",
-          %{with_named_binding: [users: %{join: [table: [source: "users", as: :users, on: %{author_id: 1}]]}]},
+          %{
+            with_named_binding: [users: %{join: [table: [source: "users", as: :users, on: %{author_id: 1}]]}]
+          },
           []
         )
 
@@ -36,7 +38,9 @@ defmodule EctoShorts.CommonFilters.SchemalessWithNamedBindingTest do
       actual =
         CommonFilters.convert_params_to_filter(
           source,
-          %{with_named_binding: %{users: %{join: [table: [source: "users", as: :users, on: %{author_id: 1}]]}}},
+          %{
+            with_named_binding: %{users: %{join: [table: [source: "users", as: :users, on: %{author_id: 1}]]}}
+          },
           []
         )
 

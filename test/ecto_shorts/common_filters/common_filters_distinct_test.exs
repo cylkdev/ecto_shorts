@@ -149,4 +149,52 @@ defmodule EctoShorts.CommonFilters.DistinctTest do
       assert_query(expected, actual)
     end
   end
+
+  describe "convert_params_to_filter/3 distinct extended shapes" do
+    test "matches Ecto.Query for a root distinct bare-atom list" do
+      expected = from p in Post, distinct: [asc: p.title, asc: p.views]
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{distinct: [:title, :views]},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a named binding distinct bare-atom list" do
+      source =
+        from(p in Post,
+          join: a in assoc(p, :author),
+          as: :author
+        )
+
+      field_name = :first_name
+      expected = distinct(source, [author: a], asc: field(a, ^field_name))
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          source,
+          %{as: %{author: %{distinct: [:first_name]}}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "matches Ecto.Query for a root boolean false distinct" do
+      expected = from p in Post, distinct: false
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{distinct: false},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+  end
 end

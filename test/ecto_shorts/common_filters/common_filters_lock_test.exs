@@ -158,4 +158,55 @@ defmodule EctoShorts.CommonFilters.LockTest do
                "Expected lock expression resolved from QueryProvider to return {:ok, function} | {:error, reason} | nil"
     end
   end
+
+  describe "convert_params_to_filter/3 lock extended paths" do
+    test "keeps the query unchanged when lock params map has no :name key" do
+      expected = from(p in Post)
+
+      actual =
+        CommonFilters.convert_params_to_filter(
+          Post,
+          %{lock: %{values: %{clause: "SKIP LOCKED"}}},
+          []
+        )
+
+      assert_query(expected, actual)
+    end
+
+    test "logs warning and keeps query unchanged when provider callback returns a non-Ecto.Query" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: %{name: :callback_bad_return}},
+              query_provider: EctoShorts.TestQueryProvider
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected lock expression callback to return an Ecto.Query"
+    end
+
+    test "logs warning and keeps query unchanged when provider returns a non-function ok tuple" do
+      expected = from(p in Post)
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{lock: %{name: :callback_not_function}},
+              query_provider: EctoShorts.TestQueryProvider
+            )
+
+          assert_query(expected, actual)
+        end)
+
+      assert log =~ "Expected lock expression resolved from QueryProvider to be a 1-arity function"
+    end
+  end
 end
