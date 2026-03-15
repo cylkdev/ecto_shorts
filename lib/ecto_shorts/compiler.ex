@@ -6,7 +6,8 @@ defmodule EctoShorts.Compiler do
 
   @spec query_binding_contracts(atom(), keyword()) :: Macro.t()
   def query_binding_contracts(context \\ __MODULE__, opts \\ []) do
-    max_positional_bindings = opts[:positions] || Config.max_positional_bindings() || @default_max_positional_bindings
+    max_positional_bindings =
+      opts[:positions] || Config.max_positional_bindings() || @default_max_positional_bindings
 
     target_binding_var = Macro.var(:q, context)
     binding_alias_var = Macro.var(:binding_alias, context)
