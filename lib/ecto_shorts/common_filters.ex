@@ -89,13 +89,7 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp or_entries(source, query, selected_binding, key, value, opts) do
-    if reducible_filter_entries?(value) do
-      Enum.reduce(to_keyword(value), query, fn {inner_key, inner_value}, query_acc ->
-        or_entries(source, query_acc, selected_binding, key, {inner_key, inner_value}, opts)
-      end)
-    else
-      build_query(:or_where, source, query, selected_binding, {key, value}, opts)
-    end
+    build_query(:or_where, source, query, selected_binding, {key, value}, opts)
   end
 
   defp resolve_binding_selector(_query, :at, :first), do: {:at, 1}
