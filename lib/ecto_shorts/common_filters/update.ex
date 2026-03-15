@@ -1,12 +1,12 @@
 defmodule EctoShorts.CommonFilters.Update do
-  alias EctoShorts.Compiler
+  alias EctoShorts.QueryBindings
   alias EctoShorts.Utils
 
   alias Ecto.Query
   require Ecto.Query
 
   {_, binding_patterns} =
-    Compiler.query_binding_contracts(__MODULE__)
+    QueryBindings.query_binding_contracts(__MODULE__)
 
   def build_query(:update, _source, query, selected_binding, term, _opts) do
     apply_update_expr(query, selected_binding, Utils.map_to_keyword(term))

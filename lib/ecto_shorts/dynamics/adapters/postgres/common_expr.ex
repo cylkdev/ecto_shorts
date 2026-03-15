@@ -1,6 +1,6 @@
-defmodule EctoShorts.Dynamics.Postgres.CommonExpr do
+defmodule EctoShorts.Dynamics.Adapters.Postgres.CommonExpr do
   alias Ecto.Query
-  alias EctoShorts.Compiler
+  alias EctoShorts.QueryBindings
 
   require Ecto.Query
 
@@ -19,7 +19,7 @@ defmodule EctoShorts.Dynamics.Postgres.CommonExpr do
 
   def operators, do: @operators
 
-  {target_binding_var, binding_patterns} = Compiler.query_binding_contracts(__MODULE__)
+  {target_binding_var, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     def dynamic_expr(unquote(quoted_binding_head), operator, negated, term, _opts) do

@@ -21,13 +21,13 @@ For each rule below: if the condition applies, perform the action.
 
 ## Code Style Rules
 
-* `.agent/styles/code_related_anti_patterns/` — general Elixir modules and functions
-* `.agent/styles/design_related_anti_patterns/` — module interfaces, data structures, and return shapes
-* `.agent/styles/documentation/` — module docs, function docs, and doctests
-* `.agent/styles/ecto/` — Ecto queries, schemas, and changesets
-* `.agent/styles/meta_programming_anti_patterns/` — macros, `use`, and compile-time code
-* `.agent/styles/naming_conventions/` — modules, functions, variables, files, and atoms
-* `.agent/styles/process_related_anti_patterns/` — GenServers, Agents, Tasks, and other process code
-* `.agent/styles/public_api_and_interfaces/` — public and private function interfaces
-* `.agent/styles/struct_anti_patterns/` — `defstruct`
-* `.agent/styles/testing/` — tests and doctests
+* `.agent/styles/code_related_anti_patterns/` - general Elixir modules and functions
+* `.agent/styles/design_related_anti_patterns/` - module interfaces, data structures, and return shapes
+* `.agent/styles/documentation/` - module docs, function docs, and doctests
+* `.agent/styles/ecto/` - Ecto queries, schemas, and changesets
+* `.agent/styles/meta_programming_anti_patterns/` - macros, `use`, and compile-time code
+* `.agent/styles/naming_conventions/` - modules, functions, variables, files, and atoms
+* `.agent/styles/process_related_anti_patterns/` - GenServers, Agents, Tasks, and other process code
+* `.agent/styles/public_api_and_interfaces/` - public and private function interfaces
+* `.agent/styles/struct_anti_patterns/` - `defstruct`
+* `.agent/styles/testing/` - tests and doctests

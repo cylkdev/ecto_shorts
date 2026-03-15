@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonFilters.OrderBy do
-  alias EctoShorts.Compiler
+  alias EctoShorts.QueryBindings
   alias Ecto.Query
 
   require Ecto.Query
@@ -15,7 +15,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
 
   @logger_prefix "EctoShorts.CommonFilters.OrderBy"
 
-  {target_binding_var, binding_patterns} = Compiler.query_binding_contracts(__MODULE__)
+  {target_binding_var, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
 
   def build_query(:order_by, _source, query, selected_binding, params, _opts) do
     build_order_by(query, selected_binding, params)

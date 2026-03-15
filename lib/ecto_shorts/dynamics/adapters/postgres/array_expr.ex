@@ -1,11 +1,11 @@
-defmodule EctoShorts.Dynamics.Postgres.ArrayExpr do
+defmodule EctoShorts.Dynamics.Adapters.Postgres.ArrayExpr do
   alias Ecto.Query
-  alias EctoShorts.Compiler
+  alias EctoShorts.QueryBindings
 
   require Ecto.Query
 
   {target_binding_var, binding_patterns} =
-    Compiler.query_binding_contracts(__MODULE__)
+    QueryBindings.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     def dynamic_expr(unquote(quoted_binding_head), key, negated, term, _opts) do

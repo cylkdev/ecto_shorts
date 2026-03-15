@@ -4,7 +4,7 @@ defmodule EctoShorts.CommonFilters.Where do
 
   def build_query(filter, source, query, selected_binding, term, opts) do
     dyn =
-      EctoShorts.Adapters.Postgres.build_dynamic(
+      EctoShorts.Dynamics.Adapters.Postgres.build_dynamic(
         source,
         selected_binding,
         term,

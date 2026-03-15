@@ -1,10 +1,10 @@
 defmodule EctoShorts.CommonFilters.Offset do
   alias Ecto.Query
-  alias EctoShorts.Compiler
+  alias EctoShorts.QueryBindings
 
   require Ecto.Query
 
-  {_, binding_patterns} = Compiler.query_binding_contracts(__MODULE__)
+  {_, binding_patterns} = QueryBindings.query_binding_contracts(__MODULE__)
 
   def build_query(:offset, _source, query, selected_binding, expr, _opts) do
     apply_offset(query, selected_binding, expr)

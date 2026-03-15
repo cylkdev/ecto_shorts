@@ -1,7 +1,7 @@
-defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
+defmodule EctoShorts.Dynamics.Adapters.Postgres.ScalarExpr do
   import Ecto.Query
 
-  alias EctoShorts.Compiler
+  alias EctoShorts.QueryBindings
 
   @aggregate_helpers [:avg, :count, :max, :min, :sum]
   @operators [:membership, :comparison, :string_transform, :string]
@@ -10,7 +10,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
   @string_operators [:like, :ilike]
 
   {target_binding_var, binding_patterns} =
-    Compiler.query_binding_contracts(__MODULE__)
+    QueryBindings.query_binding_contracts(__MODULE__)
 
   context = __MODULE__
   key_var = Macro.var(:key, context)
@@ -18,7 +18,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
   def operators, do: @operators
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
-    # Thin entry shim — delegates entirely to non-generated dispatch_expr
+    # Thin entry shim - delegates entirely to non-generated dispatch_expr
     def dynamic_expr(selected_binding = unquote(quoted_binding_head), key, negated, term, _opts) do
       {op, normalized_term} = normalize_term(term)
       dispatch_expr(selected_binding, key, negated, {op, normalized_term})
@@ -237,7 +237,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
     end
   end
 
-  # All comparison cases in one function — compiled once, not 12×
+  # All comparison cases in one function - compiled once, not 12×
   defp comparison_impl(binding, key, negated, {op, value}) do
     term = if negated == :not, do: {:not, {op, value}}, else: {op, value}
 
@@ -467,7 +467,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
         f = agg_field_dyn(binding, key, helper)
         dynamic([], not (^f <= ^v))
 
-      # Datetime comparisons — interval is already a ^-pinned runtime var after Phase 1
+      # Datetime comparisons - interval is already a ^-pinned runtime var after Phase 1
       {:==, {:date, {:ago, params}}} ->
         count = Keyword.fetch!(params, :count)
         interval = Keyword.fetch!(params, :interval)
@@ -546,7 +546,7 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
         f = date_field_dyn(binding, key)
         dynamic([], ^f < fragment("date(?)", ago(^count, ^interval)))
 
-      # Generic datetime — all ops × {datetime,date} × {ago,from_now,add}
+      # Generic datetime - all ops × {datetime,date} × {ago,from_now,add}
       {op_d, {wrapper, {datetime_op, params}}}
       when op_d in @comparison_operators and wrapper in [:datetime, :date] and
              datetime_op in [:ago, :from_now, :add] ->

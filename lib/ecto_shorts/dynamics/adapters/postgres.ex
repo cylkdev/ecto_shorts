@@ -1,15 +1,15 @@
-defmodule EctoShorts.Adapters.Postgres do
+defmodule EctoShorts.Dynamics.Adapters.Postgres do
   alias EctoShorts.CommonFilters.SetComparison
   alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
 
-  alias EctoShorts.Dynamics.Postgres.{
+  alias EctoShorts.Dynamics.Adapters.Postgres.{
     ArrayExpr,
     CommonExpr,
     ScalarExpr
   }
 
-  @behaviour EctoShorts.DynamicExprBuilder
+  @behaviour EctoShorts.Dynamics.Adapter
 
   @quantifier_operators [:all, :any]
   @arithmetic_value_operators [:+, :-, :*, :/]

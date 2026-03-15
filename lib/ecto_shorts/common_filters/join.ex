@@ -18,11 +18,11 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
-  alias EctoShorts.Adapters.Postgres
+  alias EctoShorts.Dynamics.Adapters.Postgres
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonFilters.FilterHelpers
   alias EctoShorts.CommonSchema
-  alias EctoShorts.Compiler
+  alias EctoShorts.QueryBindings
   alias EctoShorts.Config
   alias EctoShorts.Logger
   alias EctoShorts.QueryProvider
@@ -34,7 +34,7 @@ defmodule EctoShorts.CommonFilters.Join do
   @logger_prefix "EctoShorts.CommonFilters.Join"
 
   {target_binding_var, binding_patterns} =
-    Compiler.query_binding_contracts(__MODULE__)
+    QueryBindings.query_binding_contracts(__MODULE__)
 
   @doc false
   def hints, do: @hints
