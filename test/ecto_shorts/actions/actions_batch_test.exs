@@ -69,7 +69,7 @@ defmodule EctoShorts.Actions.BatchTest do
     end
   end
 
-  describe "batch_preload/4" do
+  describe "batch_find/4" do
     setup do
       post =
         %Post{}
@@ -84,14 +84,14 @@ defmodule EctoShorts.Actions.BatchTest do
     test "keeps the entry unchanged when it is a struct-and-map tuple", %{post: post} do
       input = {post, %{title: "Ignored"}}
 
-      assert [result] = Actions.batch_preload(Post, [input], :permalink, [])
+      assert [result] = Actions.batch_find(Post, [input], :permalink, [])
       assert result === input
     end
 
     test "keeps the entry unchanged when it is a struct-and-keyword tuple", %{post: post} do
       input = {post, [title: "Ignored"]}
 
-      assert [result] = Actions.batch_preload(Post, [input], :permalink, [])
+      assert [result] = Actions.batch_find(Post, [input], :permalink, [])
       assert result === input
     end
 
@@ -99,7 +99,7 @@ defmodule EctoShorts.Actions.BatchTest do
       input = {%{permalink: "existing"}, %{title: "New"}}
 
       assert [{%Post{id: id}, %{title: "New"}}] =
-               Actions.batch_preload(Post, [input], :permalink, [])
+               Actions.batch_find(Post, [input], :permalink, [])
 
       assert id === post.id
     end
@@ -111,7 +111,7 @@ defmodule EctoShorts.Actions.BatchTest do
       input = {[permalink: "existing"], [title: "New"]}
 
       assert [{%Post{id: id}, [title: "New"]}] =
-               Actions.batch_preload(Post, [input], :permalink, [])
+               Actions.batch_find(Post, [input], :permalink, [])
 
       assert id === post.id
     end
@@ -122,7 +122,7 @@ defmodule EctoShorts.Actions.BatchTest do
       input = {[permalink: "existing"], %{title: "New"}}
 
       assert [{%Post{id: id}, %{title: "New"}}] =
-               Actions.batch_preload(Post, [input], :permalink, [])
+               Actions.batch_find(Post, [input], :permalink, [])
 
       assert id === post.id
     end
@@ -133,7 +133,7 @@ defmodule EctoShorts.Actions.BatchTest do
       input = {%{permalink: "existing"}, [title: "New"]}
 
       assert [{%Post{id: id}, [title: "New"]}] =
-               Actions.batch_preload(Post, [input], :permalink, [])
+               Actions.batch_find(Post, [input], :permalink, [])
 
       assert id === post.id
     end
@@ -143,7 +143,7 @@ defmodule EctoShorts.Actions.BatchTest do
     test "wraps the map entry into a tuple with the matching record", %{post: post} do
       input = %{permalink: "existing", title: "New"}
 
-      assert [{%Post{id: id}, params}] = Actions.batch_preload(Post, [input], :permalink, [])
+      assert [{%Post{id: id}, params}] = Actions.batch_find(Post, [input], :permalink, [])
       assert id === post.id
       assert params === input
     end
@@ -151,13 +151,30 @@ defmodule EctoShorts.Actions.BatchTest do
     test "wraps the keyword entry into a tuple with the matching record", %{post: post} do
       input = [permalink: "existing", title: "New"]
 
-      assert [{%Post{id: id}, params}] = Actions.batch_preload(Post, [input], :permalink, [])
+      assert [{%Post{id: id}, params}] = Actions.batch_find(Post, [input], :permalink, [])
       assert id === post.id
       assert params === input
     end
 
     test "keeps a nil entry unchanged", %{post: _post} do
-      assert [nil] = Actions.batch_preload(Post, [nil], :permalink, [])
+      assert [nil] = Actions.batch_find(Post, [nil], :permalink, [])
+    end
+  end
+
+  describe "batch_find/4 with :preload" do
+    test "preloads associations on the resolved struct" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "Findable", permalink: "findable"})
+        |> Repo.insert!()
+
+      input = %{permalink: "findable", title: "New"}
+
+      assert [{resolved_post, ^input}] =
+               Actions.batch_find(Post, [input], :permalink, preload: [:comments])
+
+      assert resolved_post.id === post.id
+      assert resolved_post.comments === []
     end
   end
 

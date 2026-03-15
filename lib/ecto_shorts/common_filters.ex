@@ -261,7 +261,7 @@ defmodule EctoShorts.CommonFilters do
           apply_filters(filter, source, query_acc, selected_binding, to_keyword(entry), opts)
         end)
 
-      reducible_filter_entries?(term) ->
+      container?(term) ->
         Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
           apply_filters(
             filter,
@@ -309,23 +309,18 @@ defmodule EctoShorts.CommonFilters do
   defp to_keyword({k, v}), do: {k, to_keyword(v)}
   defp to_keyword(term), do: term
 
-  defp reducible_filter_entries?(term) do
+  defp association_filter?(source, key, term) do
+    container?(term) and
+      key in (CommonSchema.get_schema_reflection(source, :associations) || [])
+  end
+
+  defp container?(term) do
     (is_map(term) and not is_struct(term)) or Keyword.keyword?(term)
   end
 
-  # defp filter_group_list?([]), do: true
-  # defp filter_group_list?([head | _]) when (is_map(head) and not is_struct(head)) or Keyword.keyword?(head), do: true
-  # defp filter_group_list?(_), do: false
-
-  defp filter_group_list?(term) do
-    is_list(term) and not Keyword.keyword?(term) and
-      Enum.all?(term, fn e -> (is_map(e) and not is_struct(e)) or Keyword.keyword?(e) end)
-  end
-
-  defp association_filter?(source, key, term) do
-    reducible_filter_entries?(term) and
-      key in (CommonSchema.get_schema_reflection(source, :associations) || [])
-  end
+  defp filter_group_list?([]), do: true
+  defp filter_group_list?([head | _]), do: container?(head)
+  defp filter_group_list?(_), do: false
 
   @impl EctoShorts.Adapter.QueryBuilder
   @doc """

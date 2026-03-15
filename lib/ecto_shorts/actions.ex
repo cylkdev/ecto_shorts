@@ -86,7 +86,7 @@ defmodule EctoShorts.Actions do
 
   ### Batch
 
-  Keyed lookups for efficient fetching: `batch/5` and `batch_preload/4`.
+  Keyed lookups for efficient fetching: `batch/5` and `batch_find/4`.
 
   ### Transaction
 
@@ -543,12 +543,12 @@ defmodule EctoShorts.Actions do
       results = Actions.batch(Post, params, [:author_id, :category_id])
       # => %{%{author_id: 1, category_id: 2} => [...], ...}
 
-  ### batch_preload/4
+  ### batch_find/4
 
   Fetch records and zip them into the original entries:
 
       entries = [%{user_id: 1, data: "a"}, %{user_id: 2, data: "b"}]
-      enriched = Actions.batch_preload(User, entries, :user_id)
+      enriched = Actions.batch_find(User, entries, :user_id)
       # Each entry now has the User fields merged in
 
   ## Transactions
@@ -1667,11 +1667,11 @@ defmodule EctoShorts.Actions do
 
       # Merge each post's author into a list of post param maps
       entries = [%{author_id: 1, title: "Hello"}, %{author_id: 2, title: "World"}]
-      EctoShorts.Actions.batch_preload(User, entries, :id)
+      EctoShorts.Actions.batch_find(User, entries, :id)
       # [%{author_id: 1, title: "Hello", id: 1, ...}, ...]
   """
-  @spec batch_preload(module(), [map()], atom() | list(atom()), opts) :: [map()]
-  def batch_preload(schema, entries, keys, opts \\ []) do
+  @spec batch_find(module(), [map()], atom() | list(atom()), opts) :: [map()]
+  def batch_find(schema, entries, keys, opts \\ []) do
     {params_list, index_to_key} = Batch.extract_lookup_params(entries, keys)
 
     key_fields = Batch.normalize_key_fields(keys)
@@ -1697,8 +1697,8 @@ defmodule EctoShorts.Actions do
   Inserts many records via `c:Ecto.Repo.insert_all/3`.
 
   Each entry is validated through the schema's `changeset/2` unless
-  `validate: false` is set. When `:preload` is set, matching records
-  are fetched with `batch_preload/4` before insertion.
+  `validate: false` is set. When `:batch_find` is set, matching records
+  are fetched with `batch_find/4` before insertion.
 
   Returns `{:ok, {count, nil | [struct]}}` or
   `{:error, [changeset]}`.
@@ -1711,8 +1711,8 @@ defmodule EctoShorts.Actions do
 
   ## Options
 
-    * `:batch_preload` - atom or list of atoms. Batch-preloads matching
-      records before insertion using `batch_preload/4`.
+    * `:batch_find` - atom or list of atoms. Batch-fetches matching
+      records before insertion using `batch_find/4`.
     * `:validate` - set to `false` to skip changeset validation.
     * `:on_conflict_replace` - controls conflict resolution:
       `:none` (insert or do nothing), `:insert_keys` (default, replace
@@ -1732,8 +1732,8 @@ defmodule EctoShorts.Actions do
           {:ok, {non_neg_integer(), nil | list(term())}} | {:error, term()}
   def insert_all(source, params_list, opts \\ []) do
     params_list =
-      if Keyword.has_key?(opts, :batch_preload) do
-        batch_preload(source, params_list, opts[:batch_preload], opts)
+      if Keyword.has_key?(opts, :batch_find) do
+        batch_find(source, params_list, opts[:batch_find], opts)
       else
         params_list
       end

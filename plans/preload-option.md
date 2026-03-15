@@ -8,11 +8,11 @@ See `.agent/PLANS.md` for the full ExecPlan standard that this document must be 
 
 After this change, callers can pass `preload: [:comments]` (or any shape accepted by `Ecto.Repo.preload/3`) to every `EctoShorts.Actions` function that returns structs, and those associations will be loaded automatically before the result is returned. Today the caller must manually call `Actions.preload/3` as a second step; this change makes it a first-class option.
 
-A naming conflict also exists: `insert_all/3` already uses `:preload` to mean something different (pre-fetching related data into the *params list* before insertion, via `batch_preload/4`). That option is renamed to `:batch_preload` as part of this task so `:preload` unambiguously means `Ecto.Repo.preload/3`.
+A naming conflict also existed: `insert_all/3` previously used `:preload` to mean something different (pre-fetching related data into the *params list* before insertion, via `batch_preload/4`). That option was renamed, and the function itself was renamed. See supersession note in Progress.
 
 ## In Scope
 
-1. Rename the `:preload` option in `insert_all/3` to `:batch_preload` - both the runtime check and the `@doc` option table.
+1. ~~Rename the `:preload` option in `insert_all/3` to `:batch_preload`~~ — **superseded**: the option is now `:batch_find` and the function is now `batch_find/4`. See `plans/batch-find-rename-and-preload-81133f.md`.
 2. Add two private helpers in `lib/ecto_shorts/actions.ex`:
    - `maybe_preload(data, opts)` - calls `preload/3` when `opts[:preload]` is set and non-empty; no-ops on `nil` input.
    - `maybe_preload_ok(result, opts)` - unwraps `{:ok, value}`, preloads, re-wraps; passes `{:error, _}` through unchanged.
@@ -35,12 +35,12 @@ A naming conflict also exists: `insert_all/3` already uses `:preload` to mean so
 ## Progress
 
 - [x] (2026-03-15) ExecPlan written.
-- [ ] Rename `:preload` → `:batch_preload` in `insert_all/3`.
-- [ ] Add `maybe_preload/2` and `maybe_preload_ok/2` private helpers.
-- [ ] Wire CRUD functions.
-- [ ] Wire Multi functions.
-- [ ] Wire `batch/5`.
-- [ ] Update docs.
+- [~] ~~Rename `:preload` → `:batch_preload` in `insert_all/3`~~ — **superseded** by `plans/batch-find-rename-and-preload-81133f.md`: `batch_preload/4` was renamed to `batch_find/4` and the option is `:batch_find` (2026-03-15).
+- [x] Add `maybe_preload/2` and `maybe_preload_ok/2` private helpers.
+- [x] Wire CRUD functions.
+- [x] Wire Multi functions.
+- [x] Wire `batch/5`.
+- [x] Update docs.
 - [ ] Write tests.
 - [ ] Run full suite, verify green.
 
@@ -102,19 +102,9 @@ Test files live in `test/ecto_shorts/actions/`. Patterns use `EctoShorts.DataCas
 
 ## Plan of Work
 
-**Step 1 - Rename in `insert_all/3`**
+**Step 1 - Rename in `insert_all/3`** *(superseded)*
 
-In `actions.ex` around line 1673, change:
-
-    if Keyword.has_key?(opts, :preload) do
-      batch_preload(source, params_list, opts[:preload], opts)
-
-to:
-
-    if Keyword.has_key?(opts, :batch_preload) do
-      batch_preload(source, params_list, opts[:batch_preload], opts)
-
-Also update the `@doc` option table entry from `:preload` to `:batch_preload`.
+Originally planned to rename `:preload` → `:batch_preload`. The function and option were subsequently renamed to `batch_find/4` and `:batch_find` respectively by `plans/batch-find-rename-and-preload-81133f.md`. Live code now uses `:batch_find`.
 
 **Step 2 - Private helpers**
 
