@@ -59,6 +59,7 @@ defmodule EctoShorts.Actions do
   alias EctoShorts.Actions.Bulk
   alias EctoShorts.Actions.Error
   alias EctoShorts.Actions.Multi
+  alias EctoShorts.Actions.Source
   alias EctoShorts.Actions.Transaction
 
   alias EctoShorts.{
@@ -70,10 +71,12 @@ defmodule EctoShorts.Actions do
   @typedoc """
   Query source accepted by the public read helpers.
 
-  This is usually a schema module, an `{source, schema}` tuple, or a prebuilt
-  `Ecto.Query.t()`.
+  This is usually a schema module, an `{source, schema}` tuple, a prebuilt
+  `Ecto.Query.t()`, or an `EctoShorts.Actions.Source.t()` key-value lookup
+  struct. When a `Source.t()` is passed, the caller must include a `:from` key
+  in params whose value matches a key in the source's store.
   """
-  @type queryable :: module() | {binary(), module()} | Ecto.Query.t()
+  @type queryable :: module() | {binary(), module()} | Ecto.Query.t() | Source.t()
 
   @typedoc """
   Public parameter container used by the Actions API.
@@ -138,7 +141,15 @@ defmodule EctoShorts.Actions do
   See also `find/3` and `all/3`.
   """
   @spec exists?(queryable, params, opts) :: boolean()
-  def exists?(source, params, opts \\ []) do
+  def exists?(source, params, opts \\ [])
+
+  def exists?(%Source{} = source, params, opts) do
+    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
+      exists?(queryable, clean_params, opts)
+    end
+  end
+
+  def exists?(source, params, opts) do
     source
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).exists?(opts)
@@ -153,6 +164,12 @@ defmodule EctoShorts.Actions do
   See also `all/2`, `all/3`, and `find/3`.
   """
   @spec all(queryable) :: list(term())
+  def all(%Source{} = source) do
+    with {:ok, queryable, clean_params} <- resolve_source(source, %{}, []) do
+      all(queryable, clean_params, [])
+    end
+  end
+
   def all(queryable) do
     all(queryable, %{}, [])
   end
@@ -184,6 +201,21 @@ defmodule EctoShorts.Actions do
   See also `all/1`, `all/3`, and `find/3`.
   """
   @spec all(queryable, params | opts) :: list(term())
+  def all(%Source{} = source, params) when is_map(params) and not is_struct(params) do
+    with {:ok, queryable, clean_params} <- resolve_source(source, params, []) do
+      all(queryable, clean_params, [])
+    end
+  end
+
+  def all(%Source{} = source, opts) when is_list(opts) do
+    params = Keyword.drop(opts, [:repo, :replica, :dynamic_adapter])
+    actual_opts = Keyword.take(opts, [:repo, :replica, :dynamic_adapter])
+
+    with {:ok, queryable, clean_params} <- resolve_source(source, params, actual_opts) do
+      all(queryable, clean_params, actual_opts)
+    end
+  end
+
   def all(queryable, params) when is_map(params) and not is_struct(params) do
     all(queryable, params, [])
   end
@@ -226,6 +258,12 @@ defmodule EctoShorts.Actions do
   See also `find/3`, `stream/3`, and `EctoShorts.CommonFilters`.
   """
   @spec all(queryable, params, opts) :: list(term())
+  def all(%Source{} = source, params, opts) do
+    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
+      all(queryable, clean_params, opts)
+    end
+  end
+
   def all(queryable, params, opts) do
     params =
       params
@@ -257,7 +295,15 @@ defmodule EctoShorts.Actions do
   See also `find/3`, `update/4`, and `EctoShorts.CommonChanges`.
   """
   @spec create(module(), params, opts) :: {:ok, struct()} | {:error, term()}
-  def create(schema, params, opts \\ []) do
+  def create(schema, params, opts \\ [])
+
+  def create(%Source{} = source, params, opts) do
+    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
+      create(queryable, clean_params, opts)
+    end
+  end
+
+  def create(schema, params, opts) do
     schema
     |> CommonSchema.create_changeset(params, opts)
     |> Config.repo!(opts).insert(opts)
@@ -318,6 +364,12 @@ defmodule EctoShorts.Actions do
   """
   @spec find(queryable, params, opts) :: {:ok, struct()} | {:error, term()}
   def find(queryable, params, opts \\ [])
+
+  def find(%Source{} = source, params, opts) do
+    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
+      find(queryable, clean_params, opts)
+    end
+  end
 
   def find(query, params, opts)
       when params === %{} and not is_struct(query, Ecto.Query) do
@@ -555,7 +607,15 @@ defmodule EctoShorts.Actions do
   See also `all/3`, `transact/2`, and `EctoShorts.CommonFilters`.
   """
   @spec stream(queryable, params, opts) :: Enumerable.t()
-  def stream(queryable, params \\ %{}, opts \\ []) do
+  def stream(queryable, params \\ %{}, opts \\ [])
+
+  def stream(%Source{} = source, params, opts) do
+    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
+      stream(queryable, clean_params, opts)
+    end
+  end
+
+  def stream(queryable, params, opts) do
     queryable
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.repo!(opts).stream(opts)
@@ -575,7 +635,15 @@ defmodule EctoShorts.Actions do
   See also `all/3` and `exists?/3`.
   """
   @spec aggregate(queryable, params, atom(), atom(), opts) :: term()
-  def aggregate(queryable, params \\ %{}, aggregate \\ :count, key \\ :id, opts \\ []) do
+  def aggregate(queryable, params \\ %{}, aggregate \\ :count, key \\ :id, opts \\ [])
+
+  def aggregate(%Source{} = source, params, aggregate, key, opts) do
+    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
+      aggregate(queryable, clean_params, aggregate, key, opts)
+    end
+  end
+
+  def aggregate(queryable, params, aggregate, key, opts) do
     queryable
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.replica!(opts).aggregate(aggregate, key, opts)
@@ -604,7 +672,15 @@ defmodule EctoShorts.Actions do
   See also `find_or_create/3`, `find_and_update/4`, and `create/3`.
   """
   @spec find_and_create(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_and_create(queryable, find_params, create_params, opts \\ []) do
+  def find_and_create(queryable, find_params, create_params, opts \\ [])
+
+  def find_and_create(%Source{} = source, find_params, create_params, opts) do
+    with {:ok, queryable, clean_find_params} <- resolve_source(source, find_params, opts) do
+      find_and_create(queryable, clean_find_params, create_params, opts)
+    end
+  end
+
+  def find_and_create(queryable, find_params, create_params, opts) do
     with {:error, _} <- find(queryable, find_params, Keyword.delete(opts, :preload)) do
       create(queryable, create_params, opts)
     end
@@ -632,7 +708,15 @@ defmodule EctoShorts.Actions do
   See also `update/4`, `find_and_upsert/4`, and `find/3`.
   """
   @spec find_and_update(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_and_update(source, find_params, update_params, opts \\ []) do
+  def find_and_update(source, find_params, update_params, opts \\ [])
+
+  def find_and_update(%Source{} = source, find_params, update_params, opts) do
+    with {:ok, queryable, clean_find_params} <- resolve_source(source, find_params, opts) do
+      find_and_update(queryable, clean_find_params, update_params, opts)
+    end
+  end
+
+  def find_and_update(source, find_params, update_params, opts) do
     with {:ok, record} <- find(source, find_params, Keyword.delete(opts, :preload)) do
       update(source, record, update_params, opts)
     end
@@ -660,7 +744,15 @@ defmodule EctoShorts.Actions do
   See also `find_and_update/4`, `find_or_create/3`, and `create/3`.
   """
   @spec find_and_upsert(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_and_upsert(source, find_params, upsert_params, opts \\ []) do
+  def find_and_upsert(source, find_params, upsert_params, opts \\ [])
+
+  def find_and_upsert(%Source{} = source, find_params, upsert_params, opts) do
+    with {:ok, queryable, clean_find_params} <- resolve_source(source, find_params, opts) do
+      find_and_upsert(queryable, clean_find_params, upsert_params, opts)
+    end
+  end
+
+  def find_and_upsert(source, find_params, upsert_params, opts) do
     case find(source, find_params, Keyword.delete(opts, :preload)) do
       {:ok, record} -> update(source, record, upsert_params, opts)
       {:error, _} -> create(source, Map.merge(find_params, upsert_params), opts)
@@ -679,7 +771,15 @@ defmodule EctoShorts.Actions do
   See also `delete/1`, `delete_all/3`, and `find/3`.
   """
   @spec find_and_delete(module(), params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_and_delete(source, find_params, opts \\ []) do
+  def find_and_delete(source, find_params, opts \\ [])
+
+  def find_and_delete(%Source{} = source, find_params, opts) do
+    with {:ok, queryable, clean_find_params} <- resolve_source(source, find_params, opts) do
+      find_and_delete(queryable, clean_find_params, opts)
+    end
+  end
+
+  def find_and_delete(source, find_params, opts) do
     with {:ok, record} <- find(source, find_params, opts) do
       delete(record, opts)
     end
@@ -714,7 +814,15 @@ defmodule EctoShorts.Actions do
   See also `find_and_create/4`, `find_or_create_many/3`, and `create/3`.
   """
   @spec find_or_create(module(), params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_or_create(source, params, opts \\ []) do
+  def find_or_create(source, params, opts \\ [])
+
+  def find_or_create(%Source{} = source, params, opts) do
+    with {:ok, queryable, clean_params} <- resolve_source(source, params, opts) do
+      find_or_create(queryable, clean_params, opts)
+    end
+  end
+
+  def find_or_create(source, params, opts) do
     result =
       with {:error, _} <-
              find(
@@ -1143,6 +1251,23 @@ defmodule EctoShorts.Actions do
   def find_and_upsert_many(schema, entries, opts \\ []) when is_list(entries) do
     run_multi(Multi.build_upsert_multi(schema, entries, opts), opts)
     |> handle_response_preload(opts)
+  end
+
+  defp resolve_source(%Source{} = source, params, opts) do
+    from_key = if is_map(params), do: params[:from], else: Keyword.get(params, :from)
+
+    case Source.fetch(source, from_key) do
+      {:ok, queryable} ->
+        clean_params =
+          if is_map(params),
+            do: Map.delete(params, :from),
+            else: Keyword.delete(params, :from)
+
+        {:ok, queryable, clean_params}
+
+      :error ->
+        {:error, Error.call(:not_found, "source not found.", %{from: from_key}, opts)}
+    end
   end
 
   defp run_multi(multi, opts) do

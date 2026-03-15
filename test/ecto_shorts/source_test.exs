@@ -4,14 +4,14 @@ defmodule EctoShorts.Actions.SourceTest do
   alias EctoShorts.Actions.Source
 
   describe "new/1" do
-    test "builds a Source struct with empty tables when no tables key given" do
+    test "builds a Source struct with empty store when no store key given" do
       result = Source.new([])
-      assert %Source{tables: %{}} = result
+      assert %Source{store: %{}} = result
     end
 
-    test "builds a Source struct with provided tables map" do
-      result = Source.new(tables: %{"users" => :users_table})
-      assert %Source{tables: %{"users" => :users_table}} = result
+    test "builds a Source struct with provided store map" do
+      result = Source.new(store: %{"users" => :users_table})
+      assert %Source{store: %{"users" => :users_table}} = result
     end
   end
 end

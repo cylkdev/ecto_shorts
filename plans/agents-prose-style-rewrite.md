@@ -31,8 +31,8 @@ This plan does not authorize a repo-wide documentation sweep outside `AGENTS.md`
 - [x] (2026-03-15 23:39Z) Re-read `.agent/RULES.md`, `.agent/PLANS.md`, `.agent/guides/MODULE_SPECIFICATIONS.md`, `.agent/guides/FUNCTION_SPECIFICATIONS.md`, and `.agent/guides/TESTING_PRINCIPLES.md` before implementation resumed.
 - [x] (2026-03-15 23:40Z) Confirmed the current `AGENTS.md` is too segmented for the user’s requested style and that no repo-root ExecPlan for this AGENTS rewrite already exists.
 - [x] (2026-03-15 23:41Z) Created this repo-root ExecPlan to govern the rewrite.
-- [ ] Rewrite `AGENTS.md` so it matches the original prose-heavy style while preserving the most useful live guidance from the current draft.
-- [ ] Review the final `AGENTS.md` against the style sample, repo evidence, and scope limits.
+- [x] (2026-03-15 23:46Z) Rewrote `AGENTS.md` in a prose-first form that restores the original opening flow, keeps the component list readable, and folds the live module and proof guidance into paragraphs.
+- [x] (2026-03-15 23:47Z) Reviewed the final `AGENTS.md` against the user-provided sample and removed leftover bold formatting in the component list so the tone and visual shape stay closer to the original.
 
 ## Milestones
 
@@ -66,11 +66,17 @@ Completion means the final document is prose-first, behavior-preserving in tone,
   Rationale: The user wants the original reading experience back, not a loss of the useful repo knowledge already gathered.
   Date/Author: 2026-03-15 / Cascade
 
+- Decision: Preserve only one additional navigational section, `Finding Your Way`, instead of restoring the earlier many-section layout.
+  Rationale: The rewrite still needs a light orientation path for zero-context contributors, but a single compact section keeps the document closer to the original reading experience.
+  Date/Author: 2026-03-15 / Cascade
+
 ## Outcomes & Retrospective
 
-Implementation is not complete yet.
+The `AGENTS.md` rewrite is complete.
 
-The main lesson so far is that a documentation improvement can still be wrong if it changes the reading mode the user explicitly wanted to preserve. The revised rewrite must optimize for the original human-readable flow first and findability second.
+The final document restores the original opening style, keeps the prose-heavy overview, and adds only one light navigation section at the end. The substance from the earlier reference-style draft was preserved where it helped a zero-context reader, especially around the main module roles, the filter-language boundary, the lower-level helper modules, and the main proof surfaces in `README.md`, `test/ecto_shorts/`, and `examples/`.
+
+The main lesson from the task is that documentation quality here depends as much on reading mode as on factual coverage. A more complete reference can still be the wrong result if it changes a human-readable overview into a dense map. In this repo, `AGENTS.md` works better as an extended orientation document than as a compact handbook.
 
 ## Context and Orientation
 
