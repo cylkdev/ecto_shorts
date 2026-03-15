@@ -876,6 +876,10 @@ defmodule EctoShorts.Actions do
 
     * `:order_by` - merged into `params` before building the query.
     * `:group_by` - merged into `params` before building the query.
+    * `:preload` - associations to preload on the returned structs. Accepts
+      the same shapes as `preload/3`: an atom, list of atoms, keyword list
+      for nested preloads, or `{assoc, query}` tuple. Applied after the
+      query completes.
 
   All other options are forwarded to `c:Ecto.Repo.all/2`.
 
@@ -895,6 +899,7 @@ defmodule EctoShorts.Actions do
     queryable
     |> CommonFilters.convert_params_to_filter(params, opts)
     |> Config.repo!(opts).all(opts)
+    |> maybe_preload(opts)
   end
 
   @doc group: "CRUD"
@@ -912,6 +917,11 @@ defmodule EctoShorts.Actions do
     * `params` - a map of attributes for the new record.
     * `opts` - forwarded to `c:Ecto.Repo.insert/2`.
 
+  ## Options
+
+    * `:preload` - associations to preload on the created struct. Accepts
+      the same shapes as `preload/3`. Applied after the insert completes.
+
   ## Examples
 
       iex> EctoShorts.Actions.create(EctoShorts.Schema.Post, %{title: "Hello", body: "World"}, repo: EctoShorts.Repo)
@@ -924,6 +934,7 @@ defmodule EctoShorts.Actions do
     schema
     |> CommonSchema.create_changeset(params, opts)
     |> Config.repo!(opts).insert(opts)
+    |> maybe_preload_ok(opts)
   end
 
   @doc group: "CRUD"
@@ -939,6 +950,12 @@ defmodule EctoShorts.Actions do
     * `id` - the primary key value.
     * `opts` - forwarded to `c:Ecto.Repo.get/3`.
 
+  ## Options
+
+    * `:preload` - associations to preload on the returned struct. Accepts
+      the same shapes as `preload/3`. Returns `nil` unchanged when the
+      record is not found.
+
   ## Examples
 
       post = EctoShorts.Actions.get(EctoShorts.Schema.Post, 1)
@@ -948,6 +965,7 @@ defmodule EctoShorts.Actions do
   @spec get(queryable, id, opts) :: struct() | nil
   def get(queryable, id, opts \\ []) do
     Config.replica!(opts).get(queryable, id, opts)
+    |> maybe_preload(opts)
   end
 
   @doc group: "CRUD"
@@ -969,6 +987,8 @@ defmodule EctoShorts.Actions do
 
     * `:order_by` - merged into `params` before query building.
     * `:group_by` - merged into `params` before query building.
+    * `:preload` - associations to preload on the found struct. Accepts
+      the same shapes as `preload/3`. Applied after the record is located.
 
   ## Examples
 
@@ -1021,7 +1041,7 @@ defmodule EctoShorts.Actions do
          )}
 
       record ->
-        {:ok, record}
+        {:ok, maybe_preload(record, opts)}
     end
   end
 
@@ -1052,6 +1072,8 @@ defmodule EctoShorts.Actions do
       auto-detects by checking if the schema exports
       `optimistic_lock/0`. See the "Shared options" section for
       details.
+    * `:preload` - associations to preload on the updated struct. Accepts
+      the same shapes as `preload/3`. Applied after the update completes.
 
   ## Optimistic locking
 
@@ -1094,6 +1116,7 @@ defmodule EctoShorts.Actions do
       |> maybe_apply_optimistic_lock(queryable, opts)
 
     Config.repo!(opts).update(changeset, opts)
+    |> maybe_preload_ok(opts)
   rescue
     Ecto.StaleEntryError ->
       {:error,
@@ -1304,11 +1327,16 @@ defmodule EctoShorts.Actions do
         %{title: "Hello", body: "World"}
       )
 
+  ## Options
+
+    * `:preload` - associations to preload on the result struct. Accepts the
+      same shapes as `preload/3`.
+
   See also `find_or_create/3`, `find_and_update/4`, and `create/3`.
   """
   @spec find_and_create(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
   def find_and_create(queryable, find_params, create_params, opts \\ []) do
-    with {:error, _} <- find(queryable, find_params, opts) do
+    with {:error, _} <- find(queryable, find_params, Keyword.delete(opts, :preload)) do
       create(queryable, create_params, opts)
     end
   end
@@ -1335,11 +1363,16 @@ defmodule EctoShorts.Actions do
         %{title: "Updated"}
       )
 
+  ## Options
+
+    * `:preload` - associations to preload on the updated struct. Accepts the
+      same shapes as `preload/3`.
+
   See also `update/4`, `find_and_upsert/4`, and `find/3`.
   """
   @spec find_and_update(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
   def find_and_update(source, find_params, update_params, opts \\ []) do
-    with {:ok, record} <- find(source, find_params, opts) do
+    with {:ok, record} <- find(source, find_params, Keyword.delete(opts, :preload)) do
       update(source, record, update_params, opts)
     end
   end
@@ -1368,11 +1401,16 @@ defmodule EctoShorts.Actions do
         %{body: "Updated body"}
       )
 
+  ## Options
+
+    * `:preload` - associations to preload on the result struct. Accepts the
+      same shapes as `preload/3`.
+
   See also `find_and_update/4`, `find_or_create/3`, and `create/3`.
   """
   @spec find_and_upsert(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
   def find_and_upsert(source, find_params, upsert_params, opts \\ []) do
-    case find(source, find_params, opts) do
+    case find(source, find_params, Keyword.delete(opts, :preload)) do
       {:ok, record} -> update(source, record, upsert_params, opts)
       {:error, _} -> create(source, Map.merge(find_params, upsert_params), opts)
     end
@@ -1426,20 +1464,28 @@ defmodule EctoShorts.Actions do
         %{title: "Hello", body: "World"}
       )
 
+  ## Options
+
+    * `:preload` - associations to preload on the result struct. Accepts the
+      same shapes as `preload/3`. Applied after the find or create completes.
+
   See also `find_and_create/4`, `find_or_create_many/3`, and `create/3`.
   """
   @spec find_or_create(module(), params, opts) :: {:ok, struct()} | {:error, term()}
   def find_or_create(source, params, opts \\ []) do
-    with {:error, _} <-
-           find(
-             source,
-             Map.take(params, CommonSchema.get_query_fields(opts, source)),
-             opts
-           ) do
-      source
-      |> CommonSchema.get_schema_source()
-      |> create(params, opts)
-    end
+    result =
+      with {:error, _} <-
+             find(
+               source,
+               Map.take(params, CommonSchema.get_query_fields(opts, source)),
+               Keyword.delete(opts, :preload)
+             ) do
+        source
+        |> CommonSchema.get_schema_source()
+        |> create(params, opts)
+      end
+
+    maybe_preload_ok(result, opts)
   end
 
   @doc group: "Transaction"
@@ -1525,6 +1571,11 @@ defmodule EctoShorts.Actions do
     * `cardinality` - `:one` or `:many`. Defaults to `:many`.
     * `opts` - shared options.
 
+  ## Options
+
+    * `:preload` - associations to preload on each value in the returned map.
+      Accepts the same shapes as `preload/3`. Applied after grouping completes.
+
   ## Examples
 
       # Group posts by author_id (many per key)
@@ -1565,6 +1616,7 @@ defmodule EctoShorts.Actions do
         |> Config.repo!(opts).all(opts)
         |> Enum.group_by(&Map.take(&1, batch_keys))
         |> Batch.handle_batch_response(cardinality, batch_keys)
+        |> Map.new(fn {k, v} -> {k, maybe_preload(v, opts)} end)
     end
   end
 
@@ -1583,6 +1635,7 @@ defmodule EctoShorts.Actions do
       |> Config.repo!(opts).all(opts)
       |> Enum.group_by(&Batch.normalize_batch_key(&1, batch_key))
       |> Batch.handle_batch_response(cardinality, batch_key)
+      |> Map.new(fn {k, v} -> {k, maybe_preload(v, opts)} end)
     end
   end
 
@@ -1769,11 +1822,17 @@ defmodule EctoShorts.Actions do
         %{title: "Post 2", body: "Body 2"}
       ])
 
+  ## Options
+
+    * `:preload` - associations to preload on every struct in the result list.
+      Accepts the same shapes as `preload/3`. Applied after the transaction.
+
   See also `create/3`, `insert_all/3`, and `transact/2`.
   """
   @spec create_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     run_multi(Multi.build_create_many_multi(schema, params_list, opts), opts)
+    |> maybe_preload_ok(opts)
   end
 
   @doc group: "Multi"
@@ -1796,11 +1855,17 @@ defmodule EctoShorts.Actions do
 
       {:ok, posts} = EctoShorts.Actions.find_many(EctoShorts.Schema.Post, [%{id: 1}, %{id: 2}])
 
+  ## Options
+
+    * `:preload` - associations to preload on every struct in the result list.
+      Accepts the same shapes as `preload/3`. Applied after the transaction.
+
   See also `find/3`, `find_or_create_many/3`, and `transact/2`.
   """
   @spec find_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_many(schema, params_list, opts \\ []) when is_list(params_list) do
     run_multi(Multi.build_find_many_multi(schema, params_list, opts), opts)
+    |> maybe_preload_ok(opts)
   end
 
   @doc group: "Multi"
@@ -1827,11 +1892,17 @@ defmodule EctoShorts.Actions do
         {%{id: 2}, %{title: "Updated 2"}}
       ])
 
+  ## Options
+
+    * `:preload` - associations to preload on every struct in the result list.
+      Accepts the same shapes as `preload/3`. Applied after the transaction.
+
   See also `update/4`, `find_and_update/4`, and `update_all/4`.
   """
   @spec update_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def update_many(schema, entries, opts \\ []) when is_list(entries) do
     run_multi(Multi.build_update_many_multi(schema, entries, opts), opts)
+    |> maybe_preload_ok(opts)
   end
 
   @doc group: "Multi"
@@ -1853,11 +1924,17 @@ defmodule EctoShorts.Actions do
 
       {:ok, deleted} = EctoShorts.Actions.delete_many(EctoShorts.Schema.Post, [post1, post2])
 
+  ## Options
+
+    * `:preload` - associations to preload on every struct in the result list.
+      Accepts the same shapes as `preload/3`. Applied after the transaction.
+
   See also `delete/1`, `delete_all/3`, and `transact/2`.
   """
   @spec delete_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def delete_many(schema, records, opts \\ []) when is_list(records) do
     run_multi(Multi.build_delete_many_multi(schema, records, opts), opts)
+    |> maybe_preload_ok(opts)
   end
 
   @doc group: "Multi"
@@ -1883,11 +1960,17 @@ defmodule EctoShorts.Actions do
         %{title: "Post 2", body: "Body 2"}
       ])
 
+  ## Options
+
+    * `:preload` - associations to preload on every struct in the result list.
+      Accepts the same shapes as `preload/3`. Applied after the transaction.
+
   See also `find_or_create/3`, `create_many/3`, and `find_many/3`.
   """
   @spec find_or_create_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_or_create_many(schema, params_list, opts \\ []) when is_list(params_list) do
     run_multi(Multi.build_find_or_create_multi(schema, params_list, opts), opts)
+    |> maybe_preload_ok(opts)
   end
 
   @doc group: "Multi"
@@ -1914,11 +1997,17 @@ defmodule EctoShorts.Actions do
         {%{title: "New"}, %{body: "New body"}}
       ])
 
+  ## Options
+
+    * `:preload` - associations to preload on every struct in the result list.
+      Accepts the same shapes as `preload/3`. Applied after the transaction.
+
   See also `find_and_upsert/4`, `update_many/3`, and `find_or_create_many/3`.
   """
   @spec find_and_upsert_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_and_upsert_many(schema, entries, opts \\ []) when is_list(entries) do
     run_multi(Multi.build_upsert_multi(schema, entries, opts), opts)
+    |> maybe_preload_ok(opts)
   end
 
   defp run_multi(multi, opts) do

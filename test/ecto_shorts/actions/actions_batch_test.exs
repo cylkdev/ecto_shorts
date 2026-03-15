@@ -156,4 +156,27 @@ defmodule EctoShorts.Actions.BatchTest do
       assert [nil] = Actions.batch_preload(Post, [nil], :permalink, [])
     end
   end
+
+  describe "batch/5 with :preload" do
+    test "preloads associations on batched structs with :one cardinality" do
+      _post =
+        %Post{}
+        |> Post.changeset(%{title: "Batch Preload"})
+        |> Repo.insert!()
+
+      result = Actions.batch(Post, [%{title: "Batch Preload"}], :title, :one, preload: [:comments])
+
+      assert %Post{comments: []} = result["Batch Preload"]
+    end
+
+    test "preloads associations on batched lists with :many cardinality" do
+      %Post{}
+      |> Post.changeset(%{title: "Batch Many"})
+      |> Repo.insert!()
+
+      result = Actions.batch(Post, [%{title: "Batch Many"}], :title, :many, preload: [:comments])
+
+      assert [%Post{comments: []}] = result["Batch Many"]
+    end
+  end
 end

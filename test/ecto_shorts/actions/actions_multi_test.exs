@@ -258,4 +258,34 @@ defmodule EctoShorts.Actions.MultiTest do
       assert {:ok, [%Post{title: "Updated"}]} = Actions.find_and_upsert_many(Post, params)
     end
   end
+
+  describe "create_many/3 with :preload" do
+    test "preloads associations on all created structs" do
+      assert {:ok, posts} =
+               Actions.create_many(Post, [%{title: "A"}, %{title: "B"}], preload: [:comments])
+
+      assert Enum.all?(posts, fn p -> p.comments == [] end)
+    end
+  end
+
+  describe "find_many/3 with :preload" do
+    test "preloads associations on all found structs" do
+      post_a =
+        %Post{}
+        |> Post.changeset(%{title: "FM-A"})
+        |> Repo.insert!()
+
+      post_b =
+        %Post{}
+        |> Post.changeset(%{title: "FM-B"})
+        |> Repo.insert!()
+
+      assert {:ok, posts} =
+               Actions.find_many(Post, [%{id: post_a.id}, %{id: post_b.id}],
+                 preload: [:comments]
+               )
+
+      assert Enum.all?(posts, fn p -> p.comments == [] end)
+    end
+  end
 end

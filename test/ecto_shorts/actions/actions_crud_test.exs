@@ -2332,6 +2332,165 @@ defmodule EctoShorts.Actions.CRUDTest do
     end
   end
 
+  describe "all/3 with :preload" do
+    test "preloads associations on returned structs" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "Preload Test"})
+        |> Repo.insert!()
+
+      %Comment{}
+      |> Comment.changeset(%{body: "Hello", post_id: post.id})
+      |> Repo.insert!()
+
+      [result] = Actions.all(Post, %{id: post.id}, preload: [:comments])
+
+      assert [%Comment{}] = result.comments
+    end
+
+    test "returns structs without preloading when :preload is absent" do
+      %Post{}
+      |> Post.changeset(%{title: "No Preload"})
+      |> Repo.insert!()
+
+      [result] = Actions.all(Post, %{title: "No Preload"})
+
+      assert %Ecto.Association.NotLoaded{} = result.comments
+    end
+
+    test "returns structs unchanged when :preload is an empty list" do
+      %Post{}
+      |> Post.changeset(%{title: "Empty Preload"})
+      |> Repo.insert!()
+
+      [result] = Actions.all(Post, %{title: "Empty Preload"}, preload: [])
+
+      assert %Ecto.Association.NotLoaded{} = result.comments
+    end
+  end
+
+  describe "get/3 with :preload" do
+    test "preloads associations on the returned struct" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "Get Preload"})
+        |> Repo.insert!()
+
+      %Comment{}
+      |> Comment.changeset(%{body: "Hi!", post_id: post.id})
+      |> Repo.insert!()
+
+      result = Actions.get(Post, post.id, preload: [:comments])
+
+      assert [%Comment{}] = result.comments
+    end
+
+    test "returns nil unchanged when record is not found" do
+      assert nil == Actions.get(Post, -1, preload: [:comments])
+    end
+  end
+
+  describe "find/3 with :preload" do
+    test "preloads associations on the found struct" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "Find Preload"})
+        |> Repo.insert!()
+
+      %Comment{}
+      |> Comment.changeset(%{body: "Nice", post_id: post.id})
+      |> Repo.insert!()
+
+      assert {:ok, %Post{comments: [%Comment{}]}} =
+               Actions.find(Post, %{id: post.id}, preload: [:comments])
+    end
+  end
+
+  describe "create/3 with :preload" do
+    test "preloads associations on the created struct" do
+      assert {:ok, %Post{comments: []}} =
+               Actions.create(Post, %{title: "Create Preload"}, preload: [:comments])
+    end
+  end
+
+  describe "update/4 with :preload" do
+    test "preloads associations on the updated struct" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "Before"})
+        |> Repo.insert!()
+
+      assert {:ok, %Post{title: "After", comments: []}} =
+               Actions.update(Post, post, %{title: "After"}, preload: [:comments])
+    end
+  end
+
+  describe "find_or_create/3 with :preload" do
+    test "preloads associations on the created struct" do
+      assert {:ok, %Post{comments: []}} =
+               Actions.find_or_create(Post, %{title: "FOC Preload"}, preload: [:comments])
+    end
+
+    test "preloads associations on the found struct" do
+      %Post{}
+      |> Post.changeset(%{title: "FOC Found"})
+      |> Repo.insert!()
+
+      assert {:ok, %Post{title: "FOC Found", comments: []}} =
+               Actions.find_or_create(Post, %{title: "FOC Found"}, preload: [:comments])
+    end
+  end
+
+  describe "find_and_create/4 with :preload" do
+    test "preloads associations on the created struct when record is not found" do
+      assert {:ok, %Post{comments: []}} =
+               Actions.find_and_create(
+                 Post,
+                 %{title: "FAC Not Found"},
+                 %{title: "FAC Not Found"},
+                 preload: [:comments]
+               )
+    end
+  end
+
+  describe "find_and_update/4 with :preload" do
+    test "preloads associations on the updated struct" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "FAU Before"})
+        |> Repo.insert!()
+
+      assert {:ok, %Post{title: "FAU After", comments: []}} =
+               Actions.find_and_update(Post, %{id: post.id}, %{title: "FAU After"},
+                 preload: [:comments]
+               )
+    end
+  end
+
+  describe "find_and_upsert/4 with :preload" do
+    test "preloads associations on the created struct when record is not found" do
+      assert {:ok, %Post{comments: []}} =
+               Actions.find_and_upsert(
+                 Post,
+                 %{title: "FAUp Not Found"},
+                 %{},
+                 preload: [:comments]
+               )
+    end
+
+    test "preloads associations on the updated struct when record is found" do
+      post =
+        %Post{}
+        |> Post.changeset(%{title: "FAUp Before"})
+        |> Repo.insert!()
+
+      assert {:ok, %Post{title: "FAUp After", comments: []}} =
+               Actions.find_and_upsert(Post, %{id: post.id}, %{title: "FAUp After"},
+                 preload: [:comments]
+               )
+    end
+  end
+
   describe "find_and_update/4 optimistic locking" do
     test "applies locking when find_and_update uses a schema with a lock callback" do
       post =
