@@ -2,7 +2,6 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
   import Ecto.Query
 
   alias EctoShorts.Compiler
-  alias EctoShorts.Dynamics.Postgres.ScalarExprComparisonQuote
 
   @max_positional_bindings 10
   @aggregate_helpers [:avg, :count, :max, :min, :sum]
@@ -16,748 +15,685 @@ defmodule EctoShorts.Dynamics.Postgres.ScalarExpr do
 
   context = __MODULE__
   key_var = Macro.var(:key, context)
-  negated_var = Macro.var(:negated, context)
-  value_var = Macro.var(:value, context)
 
   def operators, do: @operators
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
+    # Thin entry shim — delegates entirely to non-generated dispatch_expr
     def dynamic_expr(selected_binding = unquote(quoted_binding_head), key, negated, term, _opts) do
       {op, normalized_term} = normalize_term(term)
-
-      case family_for(op, normalized_term) do
-        :membership ->
-          membership_expr(selected_binding, key, negated, {op, normalized_term})
-
-        :string_transform ->
-          string_transform_expr(selected_binding, key, negated, {op, normalized_term})
-
-        :string ->
-          string_expr(selected_binding, key, negated, {op, normalized_term})
-
-        :comparison ->
-          comparison_expr(selected_binding, key, negated, {op, normalized_term})
-      end
+      dispatch_expr(selected_binding, key, negated, {op, normalized_term})
     end
 
-    defp membership_expr(
-           unquote(quoted_binding_head),
-           unquote(key_var),
-           unquote(negated_var),
-           unquote(value_var)
-         ) do
-      term =
-        case unquote(negated_var) do
-          :not -> {:not, unquote(value_var)}
-          _ -> unquote(value_var)
-        end
-
-      case term do
-        {:not, {:in, values}} when is_list(values) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            is_nil(field(unquote(target_binding_var), ^unquote(key_var))) or
-              field(unquote(target_binding_var), ^unquote(key_var)) not in ^values
-          )
-
-        {:in, values} when is_list(values) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) in ^values
-          )
-
-        {:not, {:==, values}} when is_list(values) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            is_nil(field(unquote(target_binding_var), ^unquote(key_var))) or
-              field(unquote(target_binding_var), ^unquote(key_var)) not in ^values
-          )
-
-        {:==, values} when is_list(values) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) in ^values
-          )
-
-        {:not, {:!=, values}} when is_list(values) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not is_nil(field(unquote(target_binding_var), ^unquote(key_var))) and
-              field(unquote(target_binding_var), ^unquote(key_var)) in ^values
-          )
-
-        {:!=, values} when is_list(values) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            is_nil(field(unquote(target_binding_var), ^unquote(key_var))) or
-              field(unquote(target_binding_var), ^unquote(key_var)) not in ^values
-          )
-
-        _ ->
-          nil
-      end
+    # Binding-specific field accessor functions (one dynamic/2 call each, no logic)
+    defp field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              field(unquote(target_binding_var), ^unquote(key_var)))
     end
 
-    defp comparison_expr(
-           unquote(quoted_binding_head),
-           unquote(key_var),
-           unquote(negated_var),
-           unquote(value_var)
-         ) do
-      term =
-        case unquote(negated_var) do
-          :not -> {:not, unquote(value_var)}
-          _ -> unquote(value_var)
-        end
-
-      case term do
-        {:not, {:avg, {:>, aggregate_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (avg(field(unquote(target_binding_var), ^unquote(key_var))) > ^aggregate_value)
-          )
-
-        {:avg, {:>, aggregate_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            avg(field(unquote(target_binding_var), ^unquote(key_var))) > ^aggregate_value
-          )
-
-        {:not, {:count, {:>, aggregate_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (count(field(unquote(target_binding_var), ^unquote(key_var))) > ^aggregate_value)
-          )
-
-        {:count, {:>, aggregate_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            count(field(unquote(target_binding_var), ^unquote(key_var))) > ^aggregate_value
-          )
-
-        {:count, {:==, aggregate_value}} when not is_nil(aggregate_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            count(field(unquote(target_binding_var), ^unquote(key_var))) == ^aggregate_value
-          )
-
-        {:not, {:max, {:>=, aggregate_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (max(field(unquote(target_binding_var), ^unquote(key_var))) >= ^aggregate_value)
-          )
-
-        {:max, {:>=, aggregate_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            max(field(unquote(target_binding_var), ^unquote(key_var))) >= ^aggregate_value
-          )
-
-        {:not, {:min, {:<, aggregate_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (min(field(unquote(target_binding_var), ^unquote(key_var))) < ^aggregate_value)
-          )
-
-        {:min, {:<, aggregate_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            min(field(unquote(target_binding_var), ^unquote(key_var))) < ^aggregate_value
-          )
-
-        {:min, {:==, aggregate_value}} when not is_nil(aggregate_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            min(field(unquote(target_binding_var), ^unquote(key_var))) == ^aggregate_value
-          )
-
-        {:not, {:sum, {:>, aggregate_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (sum(field(unquote(target_binding_var), ^unquote(key_var))) > ^aggregate_value)
-          )
-
-        {:sum, {:>, aggregate_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            sum(field(unquote(target_binding_var), ^unquote(key_var))) > ^aggregate_value
-          )
-
-        {:sum, {:==, aggregate_value}} when not is_nil(aggregate_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            sum(field(unquote(target_binding_var), ^unquote(key_var))) == ^aggregate_value
-          )
-
-        {:sum, {:!=, aggregate_value}} when not is_nil(aggregate_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            sum(field(unquote(target_binding_var), ^unquote(key_var))) != ^aggregate_value
-          )
-
-        {:avg, {:!=, aggregate_value}} when not is_nil(aggregate_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            avg(field(unquote(target_binding_var), ^unquote(key_var))) != ^aggregate_value
-          )
-
-        {:avg, {:<=, aggregate_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            avg(field(unquote(target_binding_var), ^unquote(key_var))) <= ^aggregate_value
-          )
-
-        {:>, {:value, {:+, {{:field, arithmetic_field}, {:value, scalar_value}}}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) >
-              field(unquote(target_binding_var), ^arithmetic_field) + ^scalar_value
-          )
-
-        {:==, {:date, {:ago, params}}} ->
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("date(?)", field(unquote(target_binding_var), ^unquote(key_var))) ==
-              fragment("date(?)", ago(^count, ^interval))
-          )
-
-        {:!=, {:date, {:from_now, params}}} ->
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("date(?)", field(unquote(target_binding_var), ^unquote(key_var))) !=
-              fragment("date(?)", from_now(^count, ^interval))
-          )
-
-        {:not, {:>, {:date, {:from_now, params}}}} ->
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (
-              fragment("date(?)", field(unquote(target_binding_var), ^unquote(key_var))) >
-                fragment("date(?)", from_now(^count, ^interval))
-            )
-          )
-
-        {:>=, {:date, {:add, params}}} ->
-          field_name = Keyword.get(params, :field)
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("date(?)", field(unquote(target_binding_var), ^unquote(key_var))) >=
-              fragment(
-                "date(?)",
-                datetime_add(field(unquote(target_binding_var), ^field_name), ^count, ^interval)
-              )
-          )
-
-        {:>=, {:datetime, {:add, params}}} ->
-          field_name = Keyword.get(params, :field)
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) >=
-              datetime_add(field(unquote(target_binding_var), ^field_name), ^count, ^interval)
-          )
-
-        {:not, {:>=, {:datetime, {:add, params}}}} ->
-          field_name = Keyword.get(params, :field)
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (
-              field(unquote(target_binding_var), ^unquote(key_var)) >=
-                datetime_add(field(unquote(target_binding_var), ^field_name), ^count, ^interval)
-            )
-          )
-
-        {:>, {:datetime, {:ago, params}}} ->
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) > ago(^count, ^interval)
-          )
-
-        {:>, {:datetime, {:from_now, params}}} ->
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) > from_now(^count, ^interval)
-          )
-
-        {:not, {:<, {:datetime, {:ago, params}}}} ->
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) < ago(^count, ^interval))
-          )
-
-        {:<, {:datetime, {:ago, params}}} ->
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) < ago(^count, ^interval)
-          )
-
-        {:<=, {:datetime, {:from_now, params}}} ->
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) <= from_now(^count, ^interval)
-          )
-
-        {:<, {:date, {:ago, params}}} ->
-          count = Keyword.fetch!(params, :count)
-          interval = Keyword.fetch!(params, :interval)
-
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("date(?)", field(unquote(target_binding_var), ^unquote(key_var))) <
-              fragment("date(?)", ago(^count, ^interval))
-          )
-
-        {:not, {:==, nil}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not is_nil(field(unquote(target_binding_var), ^unquote(key_var)))
-          )
-
-        {:==, nil} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            is_nil(field(unquote(target_binding_var), ^unquote(key_var)))
-          )
-
-        {:not, {:!=, nil}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            is_nil(field(unquote(target_binding_var), ^unquote(key_var)))
-          )
-
-        {:!=, nil} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not is_nil(field(unquote(target_binding_var), ^unquote(key_var)))
-          )
-
-        {:not, {:==, scalar_value}} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) != ^scalar_value
-          )
-
-        {:==, scalar_value} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) == ^scalar_value
-          )
-
-        {:not, {:!=, scalar_value}} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) == ^scalar_value
-          )
-
-        {:!=, scalar_value} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) != ^scalar_value
-          )
-
-        {:not, {:>, scalar_value}} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) > ^scalar_value)
-          )
-
-        {:>, scalar_value} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) > ^scalar_value
-          )
-
-        {:not, {:>=, scalar_value}} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) >= ^scalar_value)
-          )
-
-        {:>=, scalar_value} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) >= ^scalar_value
-          )
-
-        {:not, {:<, scalar_value}} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) < ^scalar_value)
-          )
-
-        {:<, scalar_value} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) < ^scalar_value
-          )
-
-        {:not, {:<=, scalar_value}} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) <= ^scalar_value)
-          )
-
-        {:<=, scalar_value} when not is_tuple(scalar_value) ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) <= ^scalar_value
-          )
-
-        {:not, {:==, {:all, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) == all(quantified_value))
-          )
-
-        {:==, {:all, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) == all(quantified_value)
-          )
-
-        {:not, {:==, {:any, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) == any(quantified_value))
-          )
-
-        {:==, {:any, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) == any(quantified_value)
-          )
-
-        {:not, {:!=, {:all, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) != all(quantified_value))
-          )
-
-        {:!=, {:all, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) != all(quantified_value)
-          )
-
-        {:not, {:!=, {:any, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) != any(quantified_value))
-          )
-
-        {:!=, {:any, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) != any(quantified_value)
-          )
-
-        {:not, {:>, {:all, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) > all(quantified_value))
-          )
-
-        {:>, {:all, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) > all(quantified_value)
-          )
-
-        {:not, {:>, {:any, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) > any(quantified_value))
-          )
-
-        {:>, {:any, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) > any(quantified_value)
-          )
-
-        {:not, {:>=, {:all, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) >= all(quantified_value))
-          )
-
-        {:>=, {:all, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) >= all(quantified_value)
-          )
-
-        {:not, {:>=, {:any, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) >= any(quantified_value))
-          )
-
-        {:>=, {:any, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) >= any(quantified_value)
-          )
-
-        {:not, {:<, {:all, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) < all(quantified_value))
-          )
-
-        {:<, {:all, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) < all(quantified_value)
-          )
-
-        {:not, {:<, {:any, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) < any(quantified_value))
-          )
-
-        {:<, {:any, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) < any(quantified_value)
-          )
-
-        {:not, {:<=, {:all, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) <= all(quantified_value))
-          )
-
-        {:<=, {:all, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) <= all(quantified_value)
-          )
-
-        {:not, {:<=, {:any, quantified_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not (field(unquote(target_binding_var), ^unquote(key_var)) <= any(quantified_value))
-          )
-
-        {:<=, {:any, quantified_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            field(unquote(target_binding_var), ^unquote(key_var)) <= any(quantified_value)
-          )
-
-        _ ->
-          unquote(
-            ScalarExprComparisonQuote.quote_body(
-              quoted_binding_head,
-              {target_binding_var, key_var, negated_var, value_var},
-              context
-            )
-          )
-      end
+    defp is_nil_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              is_nil(field(unquote(target_binding_var), ^unquote(key_var))))
     end
 
-    defp string_transform_expr(
-           unquote(quoted_binding_head),
-           unquote(key_var),
-           unquote(negated_var),
-           unquote(value_var)
-         ) do
-      term =
-        case unquote(negated_var) do
-          :not -> {:not, unquote(value_var)}
-          _ -> unquote(value_var)
-        end
-
-      case term do
-        {:not, {:==, {:lower, transform_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("lower(?)", field(unquote(target_binding_var), ^unquote(key_var))) != ^transform_value
-          )
-
-        {:==, {:lower, transform_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("lower(?)", field(unquote(target_binding_var), ^unquote(key_var))) == ^transform_value
-          )
-
-        {:not, {:!=, {:lower, transform_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("lower(?)", field(unquote(target_binding_var), ^unquote(key_var))) == ^transform_value
-          )
-
-        {:!=, {:lower, transform_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("lower(?)", field(unquote(target_binding_var), ^unquote(key_var))) != ^transform_value
-          )
-
-        {:not, {:==, {:upper, transform_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("upper(?)", field(unquote(target_binding_var), ^unquote(key_var))) != ^transform_value
-          )
-
-        {:==, {:upper, transform_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("upper(?)", field(unquote(target_binding_var), ^unquote(key_var))) == ^transform_value
-          )
-
-        {:not, {:!=, {:upper, transform_value}}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("upper(?)", field(unquote(target_binding_var), ^unquote(key_var))) == ^transform_value
-          )
-
-        {:!=, {:upper, transform_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment("upper(?)", field(unquote(target_binding_var), ^unquote(key_var))) != ^transform_value
-          )
-
-        _ ->
-          nil
-      end
+    defp not_nil_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              not is_nil(field(unquote(target_binding_var), ^unquote(key_var))))
     end
 
-    defp string_expr(
-           unquote(quoted_binding_head),
-           unquote(key_var),
-           unquote(negated_var),
-           unquote(value_var)
-         ) do
-      term =
-        case unquote(negated_var) do
-          :not -> {:not, unquote(value_var)}
-          _ -> unquote(value_var)
-        end
+    defp date_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              fragment("date(?)", field(unquote(target_binding_var), ^unquote(key_var))))
+    end
 
-      case term do
-        {:not, {:like, values}} when is_list(values) ->
-          patterns = Enum.map(values, &preserve_or_wrap_pattern/1)
+    defp lower_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              fragment("lower(?)", field(unquote(target_binding_var), ^unquote(key_var))))
+    end
 
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not fragment(
-              "? LIKE ANY(?)",
-              field(unquote(target_binding_var), ^unquote(key_var)),
-              ^patterns
-            )
-          )
+    defp upper_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              fragment("upper(?)", field(unquote(target_binding_var), ^unquote(key_var))))
+    end
 
-        {:like, values} when is_list(values) ->
-          patterns = Enum.map(values, &preserve_or_wrap_pattern/1)
+    defp avg_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              avg(field(unquote(target_binding_var), ^unquote(key_var))))
+    end
 
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment(
-              "? LIKE ANY(?)",
-              field(unquote(target_binding_var), ^unquote(key_var)),
-              ^patterns
-            )
-          )
+    defp count_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              count(field(unquote(target_binding_var), ^unquote(key_var))))
+    end
 
-        {:not, {:ilike, values}} when is_list(values) ->
-          patterns = Enum.map(values, &preserve_or_wrap_pattern/1)
+    defp max_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              max(field(unquote(target_binding_var), ^unquote(key_var))))
+    end
 
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not fragment(
-              "? ILIKE ANY(?)",
-              field(unquote(target_binding_var), ^unquote(key_var)),
-              ^patterns
-            )
-          )
+    defp min_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              min(field(unquote(target_binding_var), ^unquote(key_var))))
+    end
 
-        {:ilike, values} when is_list(values) ->
-          patterns = Enum.map(values, &preserve_or_wrap_pattern/1)
+    defp sum_field_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              sum(field(unquote(target_binding_var), ^unquote(key_var))))
+    end
 
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            fragment(
-              "? ILIKE ANY(?)",
-              field(unquote(target_binding_var), ^unquote(key_var)),
-              ^patterns
-            )
-          )
+    defp membership_in_dyn(unquote(quoted_binding_head), unquote(key_var), values) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              field(unquote(target_binding_var), ^unquote(key_var)) in ^values)
+    end
 
-        {:not, {:like, string_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not like(
-              field(unquote(target_binding_var), ^unquote(key_var)),
-              ^preserve_or_wrap_pattern(string_value)
-            )
-          )
+    defp membership_not_in_dyn(unquote(quoted_binding_head), unquote(key_var), values) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              is_nil(field(unquote(target_binding_var), ^unquote(key_var))) or
+                field(unquote(target_binding_var), ^unquote(key_var)) not in ^values)
+    end
 
-        {:like, string_value} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            like(
-              field(unquote(target_binding_var), ^unquote(key_var)),
-              ^preserve_or_wrap_pattern(string_value)
-            )
-          )
-
-        {:not, {:ilike, string_value}} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            not ilike(
-              field(unquote(target_binding_var), ^unquote(key_var)),
-              ^preserve_or_wrap_pattern(string_value)
-            )
-          )
-
-        {:ilike, string_value} ->
-          dynamic(
-            [unquote_splicing(quoted_binding_body)],
-            ilike(
-              field(unquote(target_binding_var), ^unquote(key_var)),
-              ^preserve_or_wrap_pattern(string_value)
-            )
-          )
-
-        _ ->
-          nil
-      end
+    defp membership_nil_aware_in_dyn(unquote(quoted_binding_head), unquote(key_var), values) do
+      dynamic([unquote_splicing(quoted_binding_body)],
+              not is_nil(field(unquote(target_binding_var), ^unquote(key_var))) and
+                field(unquote(target_binding_var), ^unquote(key_var)) in ^values)
     end
   end
+
+  # ── Non-generated dispatch: compiled once regardless of binding count ──────
+
+  defp dispatch_expr(binding, key, negated, {op, value}) do
+    case family_for(op, value) do
+      :membership -> membership_impl(binding, key, negated, {op, value})
+      :string_transform -> string_transform_impl(binding, key, negated, {op, value})
+      :string -> string_impl(binding, key, negated, {op, value})
+      :comparison -> comparison_impl(binding, key, negated, {op, value})
+    end
+  end
+
+  defp membership_impl(binding, key, negated, {op, value}) do
+    term = if negated == :not, do: {:not, {op, value}}, else: {op, value}
+
+    case term do
+      {:not, {:in, values}} when is_list(values) -> membership_not_in_dyn(binding, key, values)
+      {:in, values} when is_list(values) -> membership_in_dyn(binding, key, values)
+      {:not, {:==, values}} when is_list(values) -> membership_not_in_dyn(binding, key, values)
+      {:==, values} when is_list(values) -> membership_in_dyn(binding, key, values)
+      {:not, {:!=, values}} when is_list(values) -> membership_nil_aware_in_dyn(binding, key, values)
+      {:!=, values} when is_list(values) -> membership_not_in_dyn(binding, key, values)
+      _ -> nil
+    end
+  end
+
+  defp string_transform_impl(binding, key, negated, {op, value}) do
+    term = if negated == :not, do: {:not, {op, value}}, else: {op, value}
+
+    case term do
+      {:not, {:==, {:lower, v}}} ->
+        f = lower_field_dyn(binding, key)
+        dynamic([], ^f != ^v)
+
+      {:==, {:lower, v}} ->
+        f = lower_field_dyn(binding, key)
+        dynamic([], ^f == ^v)
+
+      {:not, {:!=, {:lower, v}}} ->
+        f = lower_field_dyn(binding, key)
+        dynamic([], ^f == ^v)
+
+      {:!=, {:lower, v}} ->
+        f = lower_field_dyn(binding, key)
+        dynamic([], ^f != ^v)
+
+      {:not, {:==, {:upper, v}}} ->
+        f = upper_field_dyn(binding, key)
+        dynamic([], ^f != ^v)
+
+      {:==, {:upper, v}} ->
+        f = upper_field_dyn(binding, key)
+        dynamic([], ^f == ^v)
+
+      {:not, {:!=, {:upper, v}}} ->
+        f = upper_field_dyn(binding, key)
+        dynamic([], ^f == ^v)
+
+      {:!=, {:upper, v}} ->
+        f = upper_field_dyn(binding, key)
+        dynamic([], ^f != ^v)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp string_impl(binding, key, negated, {op, value}) do
+    term = if negated == :not, do: {:not, {op, value}}, else: {op, value}
+
+    case term do
+      {:not, {:like, values}} when is_list(values) ->
+        patterns = Enum.map(values, &preserve_or_wrap_pattern/1)
+        f = field_dyn(binding, key)
+        dynamic([], not fragment("? LIKE ANY(?)", ^f, ^patterns))
+
+      {:like, values} when is_list(values) ->
+        patterns = Enum.map(values, &preserve_or_wrap_pattern/1)
+        f = field_dyn(binding, key)
+        dynamic([], fragment("? LIKE ANY(?)", ^f, ^patterns))
+
+      {:not, {:ilike, values}} when is_list(values) ->
+        patterns = Enum.map(values, &preserve_or_wrap_pattern/1)
+        f = field_dyn(binding, key)
+        dynamic([], not fragment("? ILIKE ANY(?)", ^f, ^patterns))
+
+      {:ilike, values} when is_list(values) ->
+        patterns = Enum.map(values, &preserve_or_wrap_pattern/1)
+        f = field_dyn(binding, key)
+        dynamic([], fragment("? ILIKE ANY(?)", ^f, ^patterns))
+
+      {:not, {:like, v}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not like(^f, ^preserve_or_wrap_pattern(v)))
+
+      {:like, v} ->
+        f = field_dyn(binding, key)
+        dynamic([], like(^f, ^preserve_or_wrap_pattern(v)))
+
+      {:not, {:ilike, v}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not ilike(^f, ^preserve_or_wrap_pattern(v)))
+
+      {:ilike, v} ->
+        f = field_dyn(binding, key)
+        dynamic([], ilike(^f, ^preserve_or_wrap_pattern(v)))
+
+      _ ->
+        nil
+    end
+  end
+
+  # All comparison cases in one function — compiled once, not 12×
+  defp comparison_impl(binding, key, negated, {op, value}) do
+    term = if negated == :not, do: {:not, {op, value}}, else: {op, value}
+
+    case term do
+      # Nil checks
+      {:==, nil} -> is_nil_dyn(binding, key)
+      {:not, {:==, nil}} -> not_nil_dyn(binding, key)
+      {:!=, nil} -> not_nil_dyn(binding, key)
+      {:not, {:!=, nil}} -> is_nil_dyn(binding, key)
+
+      # Scalar comparisons
+      {:==, v} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f == ^v)
+
+      {:not, {:==, v}} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f != ^v)
+
+      {:!=, v} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f != ^v)
+
+      {:not, {:!=, v}} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f == ^v)
+
+      {:>, v} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f > ^v)
+
+      {:not, {:>, v}} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f > ^v))
+
+      {:>=, v} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f >= ^v)
+
+      {:not, {:>=, v}} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f >= ^v))
+
+      {:<, v} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f < ^v)
+
+      {:not, {:<, v}} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f < ^v))
+
+      {:<=, v} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f <= ^v)
+
+      {:not, {:<=, v}} when not is_tuple(v) ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f <= ^v))
+
+      # Quantified comparisons (all / any)
+      {:==, {:all, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f == all(qv))
+
+      {:not, {:==, {:all, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f == all(qv)))
+
+      {:==, {:any, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f == any(qv))
+
+      {:not, {:==, {:any, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f == any(qv)))
+
+      {:!=, {:all, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f != all(qv))
+
+      {:not, {:!=, {:all, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f != all(qv)))
+
+      {:!=, {:any, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f != any(qv))
+
+      {:not, {:!=, {:any, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f != any(qv)))
+
+      {:>, {:all, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f > all(qv))
+
+      {:not, {:>, {:all, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f > all(qv)))
+
+      {:>, {:any, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f > any(qv))
+
+      {:not, {:>, {:any, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f > any(qv)))
+
+      {:>=, {:all, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f >= all(qv))
+
+      {:not, {:>=, {:all, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f >= all(qv)))
+
+      {:>=, {:any, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f >= any(qv))
+
+      {:not, {:>=, {:any, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f >= any(qv)))
+
+      {:<, {:all, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f < all(qv))
+
+      {:not, {:<, {:all, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f < all(qv)))
+
+      {:<, {:any, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f < any(qv))
+
+      {:not, {:<, {:any, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f < any(qv)))
+
+      {:<=, {:all, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f <= all(qv))
+
+      {:not, {:<=, {:all, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f <= all(qv)))
+
+      {:<=, {:any, qv}} ->
+        f = field_dyn(binding, key)
+        dynamic([], ^f <= any(qv))
+
+      {:not, {:<=, {:any, qv}}} ->
+        f = field_dyn(binding, key)
+        dynamic([], not (^f <= any(qv)))
+
+      # Aggregate: nil checks
+      {helper, {:==, nil}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], is_nil(^f))
+
+      {:not, {helper, {:==, nil}}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], not is_nil(^f))
+
+      {helper, {:!=, nil}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], not is_nil(^f))
+
+      {:not, {helper, {:!=, nil}}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], is_nil(^f))
+
+      # Aggregate: value comparisons
+      {helper, {:==, v}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], ^f == ^v)
+
+      {:not, {helper, {:==, v}}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], ^f != ^v)
+
+      {helper, {:!=, v}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], ^f != ^v)
+
+      {:not, {helper, {:!=, v}}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], ^f == ^v)
+
+      {helper, {:>, v}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], ^f > ^v)
+
+      {:not, {helper, {:>, v}}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], not (^f > ^v))
+
+      {helper, {:>=, v}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], ^f >= ^v)
+
+      {:not, {helper, {:>=, v}}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], not (^f >= ^v))
+
+      {helper, {:<, v}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], ^f < ^v)
+
+      {:not, {helper, {:<, v}}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], not (^f < ^v))
+
+      {helper, {:<=, v}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], ^f <= ^v)
+
+      {:not, {helper, {:<=, v}}} when helper in @aggregate_helpers ->
+        f = agg_field_dyn(binding, key, helper)
+        dynamic([], not (^f <= ^v))
+
+      # Datetime comparisons — interval is already a ^-pinned runtime var after Phase 1
+      {:==, {:date, {:ago, params}}} ->
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = date_field_dyn(binding, key)
+        dynamic([], ^f == fragment("date(?)", ago(^count, ^interval)))
+
+      {:!=, {:date, {:from_now, params}}} ->
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = date_field_dyn(binding, key)
+        dynamic([], ^f != fragment("date(?)", from_now(^count, ^interval)))
+
+      {:not, {:>, {:date, {:from_now, params}}}} ->
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = date_field_dyn(binding, key)
+        dynamic([], not (^f > fragment("date(?)", from_now(^count, ^interval))))
+
+      {:>=, {:date, {:add, params}}} ->
+        field_name = Keyword.get(params, :field)
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = date_field_dyn(binding, key)
+        f2 = field_dyn(binding, field_name)
+        dynamic([], ^f >= fragment("date(?)", datetime_add(^f2, ^count, ^interval)))
+
+      {:>=, {:datetime, {:add, params}}} ->
+        field_name = Keyword.get(params, :field)
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = field_dyn(binding, key)
+        f2 = field_dyn(binding, field_name)
+        dynamic([], ^f >= datetime_add(^f2, ^count, ^interval))
+
+      {:not, {:>=, {:datetime, {:add, params}}}} ->
+        field_name = Keyword.get(params, :field)
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = field_dyn(binding, key)
+        f2 = field_dyn(binding, field_name)
+        dynamic([], not (^f >= datetime_add(^f2, ^count, ^interval)))
+
+      {:>, {:datetime, {:ago, params}}} ->
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = field_dyn(binding, key)
+        dynamic([], ^f > ago(^count, ^interval))
+
+      {:>, {:datetime, {:from_now, params}}} ->
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = field_dyn(binding, key)
+        dynamic([], ^f > from_now(^count, ^interval))
+
+      {:not, {:<, {:datetime, {:ago, params}}}} ->
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = field_dyn(binding, key)
+        dynamic([], not (^f < ago(^count, ^interval)))
+
+      {:<, {:datetime, {:ago, params}}} ->
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = field_dyn(binding, key)
+        dynamic([], ^f < ago(^count, ^interval))
+
+      {:<=, {:datetime, {:from_now, params}}} ->
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = field_dyn(binding, key)
+        dynamic([], ^f <= from_now(^count, ^interval))
+
+      {:<, {:date, {:ago, params}}} ->
+        count = Keyword.fetch!(params, :count)
+        interval = Keyword.fetch!(params, :interval)
+        f = date_field_dyn(binding, key)
+        dynamic([], ^f < fragment("date(?)", ago(^count, ^interval)))
+
+      # Generic datetime — all ops × {datetime,date} × {ago,from_now,add}
+      {op_d, {wrapper, {datetime_op, params}}}
+      when op_d in @comparison_operators and wrapper in [:datetime, :date] and
+             datetime_op in [:ago, :from_now, :add] ->
+        apply_datetime_comparison(binding, key, op_d, wrapper, datetime_op, params, :plain)
+
+      {:not, {op_d, {wrapper, {datetime_op, params}}}}
+      when op_d in @comparison_operators and wrapper in [:datetime, :date] and
+             datetime_op in [:ago, :from_now, :add] ->
+        apply_datetime_comparison(binding, key, op_d, wrapper, datetime_op, params, :negated)
+
+      # Arithmetic: field OP field ARITH_OP value
+      {op_a, {:value, {arith_op, {{:field, af}, {:value, av}}}}}
+      when op_a in @comparison_operators and arith_op in [:+, :-, :*, :/] ->
+        f = field_dyn(binding, key)
+        f2 = field_dyn(binding, af)
+        apply_arith_comparison(op_a, f, f2, arith_op, av, :plain)
+
+      {:not, {op_a, {:value, {arith_op, {{:field, af}, {:value, av}}}}}}
+      when op_a in @comparison_operators and arith_op in [:+, :-, :*, :/] ->
+        f = field_dyn(binding, key)
+        f2 = field_dyn(binding, af)
+        apply_arith_comparison(op_a, f, f2, arith_op, av, :negated)
+
+      # Value wrapper (unwraps plain scalar/field references)
+      {:not, {op_v, {:value, v}}} when op_v in @comparison_operators ->
+        f = field_dyn(binding, key)
+        apply_scalar_comparison(op_v, f, v, :negated)
+
+      {op_v, {:value, v}} when op_v in @comparison_operators ->
+        f = field_dyn(binding, key)
+        apply_scalar_comparison(op_v, f, v, :plain)
+
+      # Generic scalar fallback (catches any remaining value)
+      {:not, {op_g, v}} when op_g in @comparison_operators ->
+        f = field_dyn(binding, key)
+        apply_scalar_comparison(op_g, f, v, :negated)
+
+      {op_g, v} when op_g in @comparison_operators ->
+        f = field_dyn(binding, key)
+        apply_scalar_comparison(op_g, f, v, :plain)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp agg_field_dyn(binding, key, :avg), do: avg_field_dyn(binding, key)
+  defp agg_field_dyn(binding, key, :count), do: count_field_dyn(binding, key)
+  defp agg_field_dyn(binding, key, :max), do: max_field_dyn(binding, key)
+  defp agg_field_dyn(binding, key, :min), do: min_field_dyn(binding, key)
+  defp agg_field_dyn(binding, key, :sum), do: sum_field_dyn(binding, key)
+
+  defp apply_scalar_comparison(:==, f, v, :plain), do: dynamic([], ^f == ^v)
+  defp apply_scalar_comparison(:==, f, v, :negated), do: dynamic([], ^f != ^v)
+  defp apply_scalar_comparison(:!=, f, v, :plain), do: dynamic([], ^f != ^v)
+  defp apply_scalar_comparison(:!=, f, v, :negated), do: dynamic([], ^f == ^v)
+  defp apply_scalar_comparison(:>, f, v, :plain), do: dynamic([], ^f > ^v)
+  defp apply_scalar_comparison(:>, f, v, :negated), do: dynamic([], not (^f > ^v))
+  defp apply_scalar_comparison(:>=, f, v, :plain), do: dynamic([], ^f >= ^v)
+  defp apply_scalar_comparison(:>=, f, v, :negated), do: dynamic([], not (^f >= ^v))
+  defp apply_scalar_comparison(:<, f, v, :plain), do: dynamic([], ^f < ^v)
+  defp apply_scalar_comparison(:<, f, v, :negated), do: dynamic([], not (^f < ^v))
+  defp apply_scalar_comparison(:<=, f, v, :plain), do: dynamic([], ^f <= ^v)
+  defp apply_scalar_comparison(:<=, f, v, :negated), do: dynamic([], not (^f <= ^v))
+
+  defp apply_arith_comparison(:==, f, f2, :+, v, :plain), do: dynamic([], ^f == ^f2 + ^v)
+  defp apply_arith_comparison(:==, f, f2, :+, v, :negated), do: dynamic([], not (^f == ^f2 + ^v))
+  defp apply_arith_comparison(:!=, f, f2, :+, v, :plain), do: dynamic([], ^f != ^f2 + ^v)
+  defp apply_arith_comparison(:!=, f, f2, :+, v, :negated), do: dynamic([], not (^f != ^f2 + ^v))
+  defp apply_arith_comparison(:>, f, f2, :+, v, :plain), do: dynamic([], ^f > ^f2 + ^v)
+  defp apply_arith_comparison(:>, f, f2, :+, v, :negated), do: dynamic([], not (^f > ^f2 + ^v))
+  defp apply_arith_comparison(:>=, f, f2, :+, v, :plain), do: dynamic([], ^f >= ^f2 + ^v)
+  defp apply_arith_comparison(:>=, f, f2, :+, v, :negated), do: dynamic([], not (^f >= ^f2 + ^v))
+  defp apply_arith_comparison(:<, f, f2, :+, v, :plain), do: dynamic([], ^f < ^f2 + ^v)
+  defp apply_arith_comparison(:<, f, f2, :+, v, :negated), do: dynamic([], not (^f < ^f2 + ^v))
+  defp apply_arith_comparison(:<=, f, f2, :+, v, :plain), do: dynamic([], ^f <= ^f2 + ^v)
+  defp apply_arith_comparison(:<=, f, f2, :+, v, :negated), do: dynamic([], not (^f <= ^f2 + ^v))
+  defp apply_arith_comparison(:==, f, f2, :-, v, :plain), do: dynamic([], ^f == ^f2 - ^v)
+  defp apply_arith_comparison(:==, f, f2, :-, v, :negated), do: dynamic([], not (^f == ^f2 - ^v))
+  defp apply_arith_comparison(:!=, f, f2, :-, v, :plain), do: dynamic([], ^f != ^f2 - ^v)
+  defp apply_arith_comparison(:!=, f, f2, :-, v, :negated), do: dynamic([], not (^f != ^f2 - ^v))
+  defp apply_arith_comparison(:>, f, f2, :-, v, :plain), do: dynamic([], ^f > ^f2 - ^v)
+  defp apply_arith_comparison(:>, f, f2, :-, v, :negated), do: dynamic([], not (^f > ^f2 - ^v))
+  defp apply_arith_comparison(:>=, f, f2, :-, v, :plain), do: dynamic([], ^f >= ^f2 - ^v)
+  defp apply_arith_comparison(:>=, f, f2, :-, v, :negated), do: dynamic([], not (^f >= ^f2 - ^v))
+  defp apply_arith_comparison(:<, f, f2, :-, v, :plain), do: dynamic([], ^f < ^f2 - ^v)
+  defp apply_arith_comparison(:<, f, f2, :-, v, :negated), do: dynamic([], not (^f < ^f2 - ^v))
+  defp apply_arith_comparison(:<=, f, f2, :-, v, :plain), do: dynamic([], ^f <= ^f2 - ^v)
+  defp apply_arith_comparison(:<=, f, f2, :-, v, :negated), do: dynamic([], not (^f <= ^f2 - ^v))
+  defp apply_arith_comparison(:==, f, f2, :*, v, :plain), do: dynamic([], ^f == ^f2 * ^v)
+  defp apply_arith_comparison(:==, f, f2, :*, v, :negated), do: dynamic([], not (^f == ^f2 * ^v))
+  defp apply_arith_comparison(:!=, f, f2, :*, v, :plain), do: dynamic([], ^f != ^f2 * ^v)
+  defp apply_arith_comparison(:!=, f, f2, :*, v, :negated), do: dynamic([], not (^f != ^f2 * ^v))
+  defp apply_arith_comparison(:>, f, f2, :*, v, :plain), do: dynamic([], ^f > ^f2 * ^v)
+  defp apply_arith_comparison(:>, f, f2, :*, v, :negated), do: dynamic([], not (^f > ^f2 * ^v))
+  defp apply_arith_comparison(:>=, f, f2, :*, v, :plain), do: dynamic([], ^f >= ^f2 * ^v)
+  defp apply_arith_comparison(:>=, f, f2, :*, v, :negated), do: dynamic([], not (^f >= ^f2 * ^v))
+  defp apply_arith_comparison(:<, f, f2, :*, v, :plain), do: dynamic([], ^f < ^f2 * ^v)
+  defp apply_arith_comparison(:<, f, f2, :*, v, :negated), do: dynamic([], not (^f < ^f2 * ^v))
+  defp apply_arith_comparison(:<=, f, f2, :*, v, :plain), do: dynamic([], ^f <= ^f2 * ^v)
+  defp apply_arith_comparison(:<=, f, f2, :*, v, :negated), do: dynamic([], not (^f <= ^f2 * ^v))
+  defp apply_arith_comparison(:==, f, f2, :/, v, :plain), do: dynamic([], ^f == ^f2 / ^v)
+  defp apply_arith_comparison(:==, f, f2, :/, v, :negated), do: dynamic([], not (^f == ^f2 / ^v))
+  defp apply_arith_comparison(:!=, f, f2, :/, v, :plain), do: dynamic([], ^f != ^f2 / ^v)
+  defp apply_arith_comparison(:!=, f, f2, :/, v, :negated), do: dynamic([], not (^f != ^f2 / ^v))
+  defp apply_arith_comparison(:>, f, f2, :/, v, :plain), do: dynamic([], ^f > ^f2 / ^v)
+  defp apply_arith_comparison(:>, f, f2, :/, v, :negated), do: dynamic([], not (^f > ^f2 / ^v))
+  defp apply_arith_comparison(:>=, f, f2, :/, v, :plain), do: dynamic([], ^f >= ^f2 / ^v)
+  defp apply_arith_comparison(:>=, f, f2, :/, v, :negated), do: dynamic([], not (^f >= ^f2 / ^v))
+  defp apply_arith_comparison(:<, f, f2, :/, v, :plain), do: dynamic([], ^f < ^f2 / ^v)
+  defp apply_arith_comparison(:<, f, f2, :/, v, :negated), do: dynamic([], not (^f < ^f2 / ^v))
+  defp apply_arith_comparison(:<=, f, f2, :/, v, :plain), do: dynamic([], ^f <= ^f2 / ^v)
+  defp apply_arith_comparison(:<=, f, f2, :/, v, :negated), do: dynamic([], not (^f <= ^f2 / ^v))
+
+  defp apply_datetime_comparison(binding, key, op, :datetime, :ago, params, mode) do
+    count = Keyword.fetch!(params, :count)
+    interval = Keyword.fetch!(params, :interval)
+    f = field_dyn(binding, key)
+    expr = dynamic([], ^f)
+    rhs = dynamic([], ago(^count, ^interval))
+    apply_dyn_comparison(op, expr, rhs, mode)
+  end
+
+  defp apply_datetime_comparison(binding, key, op, :datetime, :from_now, params, mode) do
+    count = Keyword.fetch!(params, :count)
+    interval = Keyword.fetch!(params, :interval)
+    f = field_dyn(binding, key)
+    expr = dynamic([], ^f)
+    rhs = dynamic([], from_now(^count, ^interval))
+    apply_dyn_comparison(op, expr, rhs, mode)
+  end
+
+  defp apply_datetime_comparison(binding, key, op, :datetime, :add, params, mode) do
+    field_name = Keyword.get(params, :field)
+    count = Keyword.fetch!(params, :count)
+    interval = Keyword.fetch!(params, :interval)
+    f = field_dyn(binding, key)
+    f2 = field_dyn(binding, field_name)
+    rhs = dynamic([], datetime_add(^f2, ^count, ^interval))
+    apply_dyn_comparison(op, dynamic([], ^f), rhs, mode)
+  end
+
+  defp apply_datetime_comparison(binding, key, op, :date, :ago, params, mode) do
+    count = Keyword.fetch!(params, :count)
+    interval = Keyword.fetch!(params, :interval)
+    f = date_field_dyn(binding, key)
+    rhs = dynamic([], fragment("date(?)", ago(^count, ^interval)))
+    apply_dyn_comparison(op, dynamic([], ^f), rhs, mode)
+  end
+
+  defp apply_datetime_comparison(binding, key, op, :date, :from_now, params, mode) do
+    count = Keyword.fetch!(params, :count)
+    interval = Keyword.fetch!(params, :interval)
+    f = date_field_dyn(binding, key)
+    rhs = dynamic([], fragment("date(?)", from_now(^count, ^interval)))
+    apply_dyn_comparison(op, dynamic([], ^f), rhs, mode)
+  end
+
+  defp apply_datetime_comparison(binding, key, op, :date, :add, params, mode) do
+    field_name = Keyword.get(params, :field)
+    count = Keyword.fetch!(params, :count)
+    interval = Keyword.fetch!(params, :interval)
+    f = date_field_dyn(binding, key)
+    f2 = field_dyn(binding, field_name)
+    rhs = dynamic([], fragment("date(?)", datetime_add(^f2, ^count, ^interval)))
+    apply_dyn_comparison(op, dynamic([], ^f), rhs, mode)
+  end
+
+  defp apply_dyn_comparison(:==, lhs, rhs, :plain), do: dynamic([], ^lhs == ^rhs)
+  defp apply_dyn_comparison(:==, lhs, rhs, :negated), do: dynamic([], ^lhs != ^rhs)
+  defp apply_dyn_comparison(:!=, lhs, rhs, :plain), do: dynamic([], ^lhs != ^rhs)
+  defp apply_dyn_comparison(:!=, lhs, rhs, :negated), do: dynamic([], ^lhs == ^rhs)
+  defp apply_dyn_comparison(:>, lhs, rhs, :plain), do: dynamic([], ^lhs > ^rhs)
+  defp apply_dyn_comparison(:>, lhs, rhs, :negated), do: dynamic([], not (^lhs > ^rhs))
+  defp apply_dyn_comparison(:>=, lhs, rhs, :plain), do: dynamic([], ^lhs >= ^rhs)
+  defp apply_dyn_comparison(:>=, lhs, rhs, :negated), do: dynamic([], not (^lhs >= ^rhs))
+  defp apply_dyn_comparison(:<, lhs, rhs, :plain), do: dynamic([], ^lhs < ^rhs)
+  defp apply_dyn_comparison(:<, lhs, rhs, :negated), do: dynamic([], not (^lhs < ^rhs))
+  defp apply_dyn_comparison(:<=, lhs, rhs, :plain), do: dynamic([], ^lhs <= ^rhs)
+  defp apply_dyn_comparison(:<=, lhs, rhs, :negated), do: dynamic([], not (^lhs <= ^rhs))
+
 
   def dynamic_expr(_selected_binding, _key, _negated, _term, _opts), do: nil
 

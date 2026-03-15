@@ -1,4 +1,4 @@
-defmodule EctoShorts.CompilerTest.BrokenCompiled3844 do
+defmodule EctoShorts.CompilerTest.BrokenCompiled4099 do
   @moduledoc false
   import Ecto.Query, only: [dynamic: 2]
 

@@ -1,4 +1,4 @@
-defmodule EctoShorts.CompilerTest.PartitionedCompiledFirst2118 do
+defmodule EctoShorts.CompilerTest.PartitionedCompiledFirst5250 do
   @moduledoc false
   import Ecto.Query, only: [dynamic: 2]
 
