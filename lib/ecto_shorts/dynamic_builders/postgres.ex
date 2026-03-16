@@ -1,10 +1,10 @@
-defmodule EctoShorts.DynamicExpressions.Postgres do
+defmodule EctoShorts.DynamicBuilders.Postgres do
   @moduledoc """
   Build Postgres-specific dynamic filter expressions.
 
   Use this module when you want to call the Postgres dynamic adapter
   directly. If you want adapter resolution or adapter-agnostic dynamic
-  building, start with `EctoShorts.DynamicExpressions.build_dynamic/4` instead.
+  building, start with `EctoShorts.DynamicBuilders.build_dynamic/4` instead.
 
   `build_dynamic/4` is the only public entry point. It accepts a queryable
   `source`, a binding selector, and one filter entry, and returns a dynamic
@@ -32,10 +32,10 @@ defmodule EctoShorts.DynamicExpressions.Postgres do
 
   ## Examples
 
-      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
+      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(
+      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(
       ...>   Post,
       ...>   {:as, nil},
       ...>   {:any, [published: true, archived: false]}
@@ -47,13 +47,13 @@ defmodule EctoShorts.DynamicExpressions.Postgres do
     CommonSchema,
     CommonFilters.Dynamic,
     CommonFilters.SetComparison,
-    DynamicExpressions.Postgres.ArrayExpr,
-    DynamicExpressions.Postgres.CommonExpr,
-    DynamicExpressions.Postgres.Normalizer,
-    DynamicExpressions.Postgres.ScalarExpr
+    DynamicBuilders.Postgres.ArrayExpr,
+    DynamicBuilders.Postgres.CommonExpr,
+    DynamicBuilders.Postgres.Normalizer,
+    DynamicBuilders.Postgres.ScalarExpr
   }
 
-  @behaviour EctoShorts.Adapter.DynamicExpression
+  @behaviour EctoShorts.Adapter.DynamicBuilder
 
   @quantifier_operators [:all, :any]
 
@@ -95,17 +95,17 @@ defmodule EctoShorts.DynamicExpressions.Postgres do
 
   ## Examples
 
-      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
+      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(
+      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(
       ...>   Post,
       ...>   {:as, nil},
       ...>   {:views, [>: 1, <: 10]}
       ...> )
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(
+      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(
       ...>   Post,
       ...>   {:as, nil},
       ...>   {:all, [published: true, archived: false]}

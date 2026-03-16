@@ -1,8 +1,8 @@
-defmodule EctoShorts.DynamicExpressions.Postgres.ArrayExprTest do
+defmodule EctoShorts.DynamicBuilders.Postgres.ArrayExprTest do
   use ExUnit.Case, async: true
   use EctoShorts.Testing
 
-  alias EctoShorts.DynamicExpressions.Postgres.ArrayExpr
+  alias EctoShorts.DynamicBuilders.Postgres.ArrayExpr
 
   import Ecto.Query
 

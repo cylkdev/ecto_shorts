@@ -16,10 +16,10 @@ EctoShorts is organized into the following components:
 * `EctoShorts.CommonSchema` — handles schema introspection by resolving field types, association metadata, and polymorphic source information at runtime.
 * `EctoShorts.CommonParams` — prepares parameter lists for `insert_all`, `update_all`, and `delete_all`, including timestamp injection and field filtering.
 * `EctoShorts.CommonQuery` — inspects query structure, including named bindings, positional bindings, sources, and prefixes.
-* `EctoShorts.DynamicExpressions` — builds `Ecto.Query.dynamic/2` expressions from data. The PostgreSQL adapter supports scalar comparisons, string matching, array operations, and more.
+* `EctoShorts.DynamicBuilders` — builds `Ecto.Query.dynamic/2` expressions from data. The PostgreSQL adapter supports scalar comparisons, string matching, array operations, and more.
 * `EctoShorts.Testing` — provides test helpers for asserting against generated SQL and dynamic expressions.
 
-In the typical case, you call `EctoShorts.Actions` from your context module and let it handle the rest. It builds an `Ecto.Query` from `EctoShorts.CommonFilters`, can pass that query through `EctoShorts.DynamicExpressions` when you need more complex expressions, and then executes it through your configured `Ecto.Repo`.
+In the typical case, you call `EctoShorts.Actions` from your context module and let it handle the rest. It builds an `Ecto.Query` from `EctoShorts.CommonFilters`, can pass that query through `EctoShorts.DynamicBuilders` when you need more complex expressions, and then executes it through your configured `Ecto.Repo`.
 
 You usually configure your repo once in `config.exs`, and EctoShorts resolves it automatically. When you need to override that behavior, every `EctoShorts.Actions` function also allows you to pass `:repo` or `:replica` at call time.
 
@@ -29,7 +29,7 @@ Ecto is a powerful tool, but in practice it often makes you write more code than
 
 EctoShorts solves this using data. Instead of building every query step by step, you describe what you want with a map or keyword list and pass it to `EctoShorts.Actions`. `CommonFilters` then reads that data and builds the matching `Ecto.Query` for you. Schema field keys become `WHERE` clauses, and options like `:limit`, `:order_by`, `:offset`, and `:preload` are turned into the matching query parts. More advanced comparisons, such as `%{views: %{>: 100}}`, become expressions like `WHERE views > $1`.
 
-When a filter is more complex than simple field matching, `DynamicExpressions` takes over and builds the right `Ecto.Query.dynamic/2` expressions. This lets EctoShorts support things like string matching, array checks, and PostgreSQL-specific operators while keeping the same data-based interface. After the query is built, `Actions` runs it through your configured `Ecto.Repo` and returns a consistent `{:ok, result}` or `{:error, reason}`.
+When a filter is more complex than simple field matching, `DynamicBuilders` takes over and builds the right `Ecto.Query.dynamic/2` expressions. This lets EctoShorts support things like string matching, array checks, and PostgreSQL-specific operators while keeping the same data-based interface. After the query is built, `Actions` runs it through your configured `Ecto.Repo` and returns a consistent `{:ok, result}` or `{:error, reason}`.
 
 The same idea also applies to write operations. `Actions.create/3` handles the call to `Post.changeset/2` and `Repo.insert/1` for you. `Actions.create_many/3` wraps multiple inserts in an `Ecto.Multi`, so the whole transaction is rolled back if any changeset fails. `Actions.insert_all/3` uses `CommonParams` to prepare the entries by adding timestamps and removing virtual fields before calling `Repo.insert_all/2`.
 
@@ -67,7 +67,7 @@ import Config
 config :ecto_shorts,
   repo: MyApp.Repo,
   replica: MyApp.Repo.Replica,
-  dynamic_adapter: EctoShorts.DynamicExpressions.Postgres,
+  dynamic_adapter: EctoShorts.DynamicBuilders.Postgres,
   query_builder: MyApp.QueryBuilder,
   query_provider: MyApp.QueryProvider,
   error_module: EctoShorts.Actions.Error,
@@ -78,7 +78,7 @@ Available keys:
 
 - `:repo` - default `Ecto.Repo` used by repo-backed operations
 - `:replica` - read replica repo; falls back to `:repo` when a helper supports replica fallback
-- `:dynamic_adapter` - module implementing `EctoShorts.Adapter.DynamicExpression`
+- `:dynamic_adapter` - module implementing `EctoShorts.Adapter.DynamicBuilder`
 - `:query_builder` - module implementing `EctoShorts.Adapter.QueryBuilder`
 - `:query_provider` - module implementing `EctoShorts.Adapter.QueryProvider`
 - `:error_module` - module used by `EctoShorts.Actions` to build error responses
@@ -395,9 +395,9 @@ fields = EctoShorts.CommonSchema.get_schema_reflection(MyApp.Blog.Post, :fields)
 changeset = EctoShorts.CommonSchema.create_changeset(MyApp.Blog.Post, %{title: "Hello"}, [])
 ```
 
-## `EctoShorts.DynamicExpressions`
+## `EctoShorts.DynamicBuilders`
 
-`EctoShorts.DynamicExpressions.build_dynamic/4` builds `Ecto.Query.DynamicExpr` values through a dynamic adapter.
+`EctoShorts.DynamicBuilders.build_dynamic/4` builds `Ecto.Query.DynamicExpr` values through a dynamic adapter.
 
 Adapter resolution order is:
 
@@ -409,7 +409,7 @@ At the moment, PostgreSQL is the supported auto-resolved adapter.
 
 ```elixir
 dynamic =
-  EctoShorts.DynamicExpressions.build_dynamic(
+  EctoShorts.DynamicBuilders.build_dynamic(
     MyApp.Blog.Post,
     {:as, nil},
     {:views, [>: 1, <: 10]},

@@ -3,7 +3,7 @@ defmodule EctoShorts.CommonFilters.SetComparison do
 
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonFilters.Select
-  alias EctoShorts.DynamicExpressions.Postgres.Normalizer
+  alias EctoShorts.DynamicBuilders.Postgres.Normalizer
 
   @logger_prefix "EctoShorts.CommonFilters.SetComparison"
 

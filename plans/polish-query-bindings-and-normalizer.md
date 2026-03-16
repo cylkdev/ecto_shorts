@@ -3,8 +3,8 @@
 ## Purpose
 Five cleanup tasks:
 1. Add `@moduledoc` / `@doc` to `EctoShorts.QueryBinding`
-2. Extract normalization logic from `DynamicExpressions.Adapters.Postgres` into a
-   `DynamicExpressions.Adapters.Postgres.Normalizer` sub-module with its own tests
+2. Extract normalization logic from `DynamicBuilders.Adapters.Postgres` into a
+   `DynamicBuilders.Adapters.Postgres.Normalizer` sub-module with its own tests
 3. Delete stale empty test directories (`compiler/`, `generator/`, `dynamics/postgres/`)
 4. Verify `EctoShorts.Actions` docs are accurate and current
 5. Replace all vague `"Expected ..., got:"` Logger messages with specific descriptions
@@ -44,7 +44,7 @@ Five cleanup tasks:
 
 ### 4. Actions doc audit
 - `:dynamic_adapter` shared option says `EctoShorts.Dynamic` - should
-  be `EctoShorts.Adapter.DynamicExpression`.
+  be `EctoShorts.Adapter.DynamicBuilder`.
 - `insert_all/3` return type table says `{:ok, {count, nil, [struct]}}` - 
   trailing nil column is wrong formatting.
 - Everything else is accurate.

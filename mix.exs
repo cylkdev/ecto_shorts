@@ -102,10 +102,10 @@ defmodule EctoShorts.MixProject do
           EctoShorts.Testing
         ],
         "Dynamic Expressions": [
-          EctoShorts.DynamicExpressions,
+          EctoShorts.DynamicBuilders,
           EctoShorts.Dynamic,
-          EctoShorts.Adapter.DynamicExpression,
-          EctoShorts.DynamicExpressions.Postgres
+          EctoShorts.Adapter.DynamicBuilder,
+          EctoShorts.DynamicBuilders.Postgres
         ],
         "Schema & Query Introspection": [
           EctoShorts.CommonQuery,

@@ -1,9 +1,9 @@
-defmodule EctoShorts.DynamicExpressions.Postgres.NormalizerTest do
+defmodule EctoShorts.DynamicBuilders.Postgres.NormalizerTest do
   use ExUnit.Case, async: true
 
   import ExUnit.CaptureLog
 
-  alias EctoShorts.DynamicExpressions.Postgres.Normalizer
+  alias EctoShorts.DynamicBuilders.Postgres.Normalizer
   alias EctoShorts.Schema.Post
 
   describe "normalize_params/3" do

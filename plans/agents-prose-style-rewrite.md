@@ -89,7 +89,7 @@ The main lesson from the task is that documentation quality here depends as much
 
 The current `AGENTS.md` already contains accurate material gathered from `README.md`, `lib/ecto_shorts/actions.ex`, `lib/ecto_shorts/common_filters.ex`, the other main public modules under `lib/ecto_shorts/`, and the proof surfaces under `test/ecto_shorts/` and `examples/`. The rewrite should preserve the substance that came from those live sources, but it must present that substance in a form that feels like the original overview rather than a segmented reference document.
 
-The key public modules that need to remain discoverable in `AGENTS.md` are `EctoShorts.Actions`, `EctoShorts.CommonFilters`, `EctoShorts.CommonChanges`, `EctoShorts.CommonSchema`, `EctoShorts.CommonParams`, `EctoShorts.CommonQuery`, `EctoShorts.DynamicExpressions`, and `EctoShorts.Testing`. The file should also still point a reader to the main proof surfaces in `README.md`, `test/ecto_shorts/`, and `examples/`.
+The key public modules that need to remain discoverable in `AGENTS.md` are `EctoShorts.Actions`, `EctoShorts.CommonFilters`, `EctoShorts.CommonChanges`, `EctoShorts.CommonSchema`, `EctoShorts.CommonParams`, `EctoShorts.CommonQuery`, `EctoShorts.DynamicBuilders`, and `EctoShorts.Testing`. The file should also still point a reader to the main proof surfaces in `README.md`, `test/ecto_shorts/`, and `examples/`.
 
 ## Module Specifications
 

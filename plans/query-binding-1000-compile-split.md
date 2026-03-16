@@ -39,13 +39,13 @@ This module owns generation of binding-contract AST and helper functions for pos
 
 This module owns the public filter-routing contract. `convert_params_to_filter/3` is the caller-facing entry point that resolves top-level filter params, translates `:as` and `:at` selectors into the active binding selector, and delegates each filter family to the appropriate builder through `build_query/6` and `EctoShorts.CommonFilters.API`. The live binding-selector semantics must remain stable across this task.
 
-### `EctoShorts.DynamicExpressions.Postgres`
+### `EctoShorts.DynamicBuilders.Postgres`
 
 This module owns Postgres-specific dynamic-expression dispatch. `build_dynamic/4` normalizes one public filter entry and routes it to `CommonExpr`, `ArrayExpr`, or `ScalarExpr` based on operator and field type. The task may restructure internal helpers, but the public adapter contract and returned `Ecto.Query.DynamicExpr` semantics must remain unchanged.
 
 ### Hotspot consumer modules
 
-The likely compile-time hotspots are the modules that still generate substantial function bodies once per binding contract: `EctoShorts.CommonFilters.Join`, `Select`, `OrderBy`, `Windows`, and `EctoShorts.DynamicExpressions.Postgres.ArrayExpr`. These modules should continue to own their filter-family or expression-family behavior, but their generated loops should stop duplicating large runtime decisions.
+The likely compile-time hotspots are the modules that still generate substantial function bodies once per binding contract: `EctoShorts.CommonFilters.Join`, `Select`, `OrderBy`, `Windows`, and `EctoShorts.DynamicBuilders.Postgres.ArrayExpr`. These modules should continue to own their filter-family or expression-family behavior, but their generated loops should stop duplicating large runtime decisions.
 
 ## Function specifications
 
@@ -67,7 +67,7 @@ The likely compile-time hotspots are the modules that still generate substantial
 - Delegates selected-binding work through `build_query/6` without changing user-visible query semantics.
 - This task must not change the result shape or the meaning of existing binding selectors other than allowing deeper positional defaults.
 
-### `EctoShorts.DynamicExpressions.Postgres.build_dynamic/4`
+### `EctoShorts.DynamicBuilders.Postgres.build_dynamic/4`
 
 - Accepts a source, selected binding, one filter entry, and options.
 - Returns an `Ecto.Query.DynamicExpr` for that entry.
@@ -81,8 +81,8 @@ The likely compile-time hotspots are the modules that still generate substantial
   -> `CommonFilters.API.build_query/6`
   -> filter-family module such as `Join`, `Select`, `OrderBy`, or `Windows`
 
-- `DynamicExpressions.build_dynamic/4`
-  -> `DynamicExpressions.Postgres.build_dynamic/4`
+- `DynamicBuilders.build_dynamic/4`
+  -> `DynamicBuilders.Postgres.build_dynamic/4`
   -> `ArrayExpr.dynamic_expr/5`, `ScalarExpr.dynamic_expr/5`, or `CommonExpr.dynamic_expr/5`
 
 - `QueryBinding.query_binding_contracts/2` is the compile-time seam. Consumer modules may keep compile-time-generated heads and binding bodies, but behavior-heavy work should move behind non-generated helpers or extracted neighbor modules compiled once.
@@ -140,14 +140,14 @@ Run focused suites for the touched families, then broader regression checks. Re-
 | Join behavior is preserved after splitting | `CommonFilters.convert_params_to_filter/3` through `Join` | Existing boundary tests | `mix test test/ecto_shorts/common_filters/common_filters_join_test.exs test/ecto_shorts/common_filters_schemaless/common_filters_schemaless_join_test.exs` | Covers executed join cases only |
 | Select behavior is preserved after splitting | `CommonFilters.convert_params_to_filter/3` through `Select` | Existing boundary tests | `mix test test/ecto_shorts/common_filters/common_filters_select_test.exs test/ecto_shorts/common_filters/common_filters_select_merge_test.exs test/ecto_shorts/common_filters_schemaless/common_filters_schemaless_select_test.exs test/ecto_shorts/common_filters_schemaless/common_filters_schemaless_select_merge_test.exs` | Covers executed projection cases only |
 | Windows behavior is preserved after splitting | `CommonFilters.convert_params_to_filter/3` through `Windows` | Existing boundary tests | `mix test test/ecto_shorts/common_filters/common_filters_windows_test.exs test/ecto_shorts/common_filters_schemaless/common_filters_schemaless_windows_test.exs` | Covers executed window cases only |
-| Array expression behavior is preserved after splitting | `DynamicExpressions.Postgres.build_dynamic/4` through `ArrayExpr` | Existing targeted tests | `mix test test/ecto_shorts/dynamic_expressions/postgres/array_expr_test.exs` | Covers executed array-expression cases only |
+| Array expression behavior is preserved after splitting | `DynamicBuilders.Postgres.build_dynamic/4` through `ArrayExpr` | Existing targeted tests | `mix test test/ecto_shorts/dynamic_expressions/postgres/array_expr_test.exs` | Covers executed array-expression cases only |
 | Compile time improves relative to the unoptimized `1000` before-state | Clean compile boundary | Timing comparison | `env MIX_ENV=dev /usr/bin/time -lp sh -c 'mix clean && mix compile'` before and after | Environmental noise remains; compare same machine and command |
 | Broader behavior remains green | Repo test surface | Regression evidence | Choose the narrowest broader suite warranted by touched files, potentially `mix test` if changes are wide enough | Passing tests do not prove unexecuted cases |
 
 ## Progress
 
 - [x] 2026-03-16: Loaded `.agent/RULES.md`, `.agent/PLANS.md`, and the required spec/testing guides.
-- [x] 2026-03-16: Mapped the `QueryBinding` consumers and the public boundary chain through `CommonFilters` and `DynamicExpressions.Postgres`.
+- [x] 2026-03-16: Mapped the `QueryBinding` consumers and the public boundary chain through `CommonFilters` and `DynamicBuilders.Postgres`.
 - [x] 2026-03-16: Confirmed the current inconsistency between `@default_max_positional_bindings 1000` and the dev config override of `10`.
 - [x] 2026-03-16: Recorded the current dev before-state with `env MIX_ENV=dev /usr/bin/time -lp sh -c 'mix clean && mix compile'` at an effective default limit of `10`; wall time `33.06s`.
 - [x] 2026-03-16: Implemented the `1000`-default alignment in `lib/ecto_shorts/query_binding.ex` and reduced generated branching in the main compile-time hotspot families.

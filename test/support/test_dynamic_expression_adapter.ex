@@ -1,4 +1,4 @@
-defmodule EctoShorts.TestDynamicExpressionAdapter do
+defmodule EctoShorts.TestDynamicBuilderAdapter do
   @moduledoc false
 
   import Ecto.Query
