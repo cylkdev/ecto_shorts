@@ -118,7 +118,7 @@ defmodule EctoShorts.Actions.BulkTest do
       assert {:ok, {2, nil}} =
                Actions.insert_all(Post, entries, batch_preload: :title)
 
-      assert Repo.get!(Post, existing.id).title == "Existing"
+      assert Repo.get!(Post, existing.id).title === "Existing"
     end
   end
 

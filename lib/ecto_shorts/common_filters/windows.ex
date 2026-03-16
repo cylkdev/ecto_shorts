@@ -2,6 +2,7 @@ defmodule EctoShorts.CommonFilters.Windows do
   @moduledoc false
 
   alias EctoShorts.QueryBinding
+  alias EctoShorts.Logger
 
   alias Ecto.Query
   require Ecto.Query
@@ -33,7 +34,7 @@ defmodule EctoShorts.CommonFilters.Windows do
   end
 
   defp reduce_params(query, _selected_binding, value) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :windows params to be a map or keyword list, got: #{inspect(value)}"
     )
@@ -56,7 +57,7 @@ defmodule EctoShorts.CommonFilters.Windows do
       {window_name, window_definition}, {:ok, entries} ->
         cond do
           not is_atom(window_name) ->
-            EctoShorts.Logger.warning(
+            Logger.warning(
               @logger_prefix,
               "Expected window name to be an atom, got: #{inspect(window_name)}"
             )
@@ -64,7 +65,7 @@ defmodule EctoShorts.CommonFilters.Windows do
             {:halt, :error}
 
           not Keyword.keyword?(window_definition) ->
-            EctoShorts.Logger.warning(
+            Logger.warning(
               @logger_prefix,
               "Expected window definition for #{inspect(window_name)} to be a map or keyword list, got: #{inspect(window_definition)}"
             )
@@ -76,7 +77,7 @@ defmodule EctoShorts.CommonFilters.Windows do
         end
 
       other, _acc ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected :windows params to be a map or keyword list, got: #{inspect(other)}"
         )
@@ -107,7 +108,7 @@ defmodule EctoShorts.CommonFilters.Windows do
 
   defp resolve_window_definition(window_name, definitions_by_name, resolved_map, path) do
     if window_name in path do
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Detected cyclic :windows reference involving #{inspect(window_name)}"
       )
@@ -122,7 +123,7 @@ defmodule EctoShorts.CommonFilters.Windows do
           {:ok, resolved_definition, Map.put(resolved_map, window_name, resolved_definition)}
 
         referenced_window when not is_atom(referenced_window) ->
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Expected :window for #{inspect(window_name)} to be an atom, got: #{inspect(referenced_window)}"
           )
@@ -131,7 +132,7 @@ defmodule EctoShorts.CommonFilters.Windows do
 
         referenced_window ->
           if is_nil(definitions_by_name[referenced_window]) do
-            EctoShorts.Logger.warning(
+            Logger.warning(
               @logger_prefix,
               "Expected referenced window #{inspect(referenced_window)} for #{inspect(window_name)} to exist"
             )
@@ -158,7 +159,7 @@ defmodule EctoShorts.CommonFilters.Windows do
   defp apply_window(query, selected_binding, window_name, window_definition) do
     cond do
       not is_atom(window_name) ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected window name to be an atom, got: #{inspect(window_name)}"
         )
@@ -166,7 +167,7 @@ defmodule EctoShorts.CommonFilters.Windows do
         query
 
       not Keyword.keyword?(window_definition) ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected window definition for #{inspect(window_name)} to be a map or keyword list, got: #{inspect(window_definition)}"
         )
@@ -182,7 +183,7 @@ defmodule EctoShorts.CommonFilters.Windows do
         if is_nil(frame) or is_atom(frame) or is_struct(frame, Ecto.Query.DynamicExpr) do
           apply_window_definition(query, selected_binding, window_name, partition_by, order_by, frame)
         else
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Expected :frame for #{inspect(window_name)} to be an Ecto dynamic expression, got: #{inspect(frame)}"
           )

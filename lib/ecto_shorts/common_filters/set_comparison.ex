@@ -4,6 +4,7 @@ defmodule EctoShorts.CommonFilters.SetComparison do
   alias EctoShorts.CommonFilters
   alias EctoShorts.CommonFilters.Select
   alias EctoShorts.DynamicBuilders.Postgres.Normalizer
+  alias EctoShorts.Logger
 
   @logger_prefix "EctoShorts.CommonFilters.SetComparison"
 
@@ -20,7 +21,7 @@ defmodule EctoShorts.CommonFilters.SetComparison do
 
       Select.build_query(:select, source, inner_query, {:as, nil}, select_term, opts)
     else
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Expected a map or keyword list, got: #{inspect(params)}"
       )

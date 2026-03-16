@@ -2,6 +2,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   @moduledoc false
 
   alias EctoShorts.QueryBinding
+  alias EctoShorts.Logger
 
   alias Ecto.Query
   require Ecto.Query
@@ -33,7 +34,7 @@ defmodule EctoShorts.CommonFilters.OrderBy do
         Query.reverse_order(query)
 
       term ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected :reverse_order value to be true, got: #{inspect(term)}"
         )

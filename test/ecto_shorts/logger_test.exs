@@ -1,5 +1,5 @@
 defmodule EctoShorts.LoggerTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case
 
   import ExUnit.CaptureLog
 

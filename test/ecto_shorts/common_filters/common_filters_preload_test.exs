@@ -200,7 +200,7 @@ defmodule EctoShorts.CommonFilters.PreloadTest do
           as: :comment_author
         )
 
-      expected =
+      base_expected =
         from(p in Post,
           join: c in assoc(p, :comments),
           as: :comments,
@@ -210,9 +210,8 @@ defmodule EctoShorts.CommonFilters.PreloadTest do
           preload: [comments: [author: []]],
           preload: [author: a]
         )
-        |> then(fn q ->
-          from([p, c] in q, preload: [comments: c])
-        end)
+
+      expected = from([p, c] in base_expected, preload: [comments: c])
 
       # A keyword list is used for `as:` to guarantee iteration order so the
       # resulting preload clause key order is deterministic across runs.

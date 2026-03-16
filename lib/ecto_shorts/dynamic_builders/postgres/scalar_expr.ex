@@ -19,7 +19,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ScalarExpr do
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
     # Thin entry shim - delegates entirely to non-generated dispatch_expr
-    def dynamic_expr(selected_binding = unquote(quoted_binding_head), key, negated, term, _opts) do
+    def dynamic_expr(unquote(quoted_binding_head) = selected_binding, key, negated, term, _opts) do
       {op, normalized_term} = normalize_term(term)
       dispatch_expr(selected_binding, key, negated, {op, normalized_term})
     end
@@ -32,7 +32,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ScalarExpr do
       )
     end
 
-    defp is_nil_dyn(unquote(quoted_binding_head), unquote(key_var)) do
+    defp nil_field_dyn?(unquote(quoted_binding_head), unquote(key_var)) do
       dynamic(
         [unquote_splicing(quoted_binding_body)],
         is_nil(field(unquote(target_binding_var), ^unquote(key_var)))
@@ -138,7 +138,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ScalarExpr do
   end
 
   defp membership_impl(binding, key, negated, {op, value}) do
-    term = if negated == :not, do: {:not, {op, value}}, else: {op, value}
+    term = if negated === :not, do: {:not, {op, value}}, else: {op, value}
 
     case term do
       {:not, {:in, values}} when is_list(values) -> membership_not_in_dyn(binding, key, values)
@@ -152,7 +152,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ScalarExpr do
   end
 
   defp string_transform_impl(binding, key, negated, {op, value}) do
-    term = if negated == :not, do: {:not, {op, value}}, else: {op, value}
+    term = if negated === :not, do: {:not, {op, value}}, else: {op, value}
 
     case term do
       {:not, {:==, {:lower, v}}} ->
@@ -193,7 +193,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ScalarExpr do
   end
 
   defp string_impl(binding, key, negated, {op, value}) do
-    term = if negated == :not, do: {:not, {op, value}}, else: {op, value}
+    term = if negated === :not, do: {:not, {op, value}}, else: {op, value}
 
     case term do
       {:not, {:like, values}} when is_list(values) ->
@@ -239,12 +239,12 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ScalarExpr do
 
   # All comparison cases in one function - compiled once, not 12×
   defp comparison_impl(binding, key, negated, {op, value}) do
-    term = if negated == :not, do: {:not, {op, value}}, else: {op, value}
+    term = if negated === :not, do: {:not, {op, value}}, else: {op, value}
 
     case term do
       # Nil checks
       {:==, nil} ->
-        is_nil_dyn(binding, key)
+        nil_field_dyn?(binding, key)
 
       {:not, {:==, nil}} ->
         not_nil_dyn(binding, key)
@@ -253,7 +253,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ScalarExpr do
         not_nil_dyn(binding, key)
 
       {:not, {:!=, nil}} ->
-        is_nil_dyn(binding, key)
+        nil_field_dyn?(binding, key)
 
       # Scalar comparisons
       {:==, v} when not is_tuple(v) ->

@@ -114,6 +114,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
       #Ecto.Query.DynamicExpr<...>
   """
   @spec build_dynamic(term(), {:as, nil | atom()} | {:at, pos_integer()}, term(), keyword()) ::
+          # credo:disable-for-next-line Credo.Check.Warning.SpecWithStruct
           %Ecto.Query.DynamicExpr{}
   def build_dynamic(source, selected_binding, args, opts \\ [])
 

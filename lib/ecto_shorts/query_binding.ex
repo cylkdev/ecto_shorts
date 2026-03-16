@@ -137,13 +137,13 @@ defmodule EctoShorts.QueryBinding do
 
   def special_form_ast(left, op, right) when op in [:==, :eq] do
     quote do
-      unquote(left) == unquote(right)
+      unquote(left) === unquote(right)
     end
   end
 
   def special_form_ast(left, op, right) when op in [:!=, :ne] do
     quote do
-      unquote(left) != unquote(right)
+      unquote(left) !== unquote(right)
     end
   end
 

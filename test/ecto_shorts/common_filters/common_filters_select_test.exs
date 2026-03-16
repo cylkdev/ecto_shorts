@@ -470,7 +470,7 @@ defmodule EctoShorts.CommonFilters.SelectTest do
     end
 
     test "matches Ecto.Query for root select_merge with a dynamic expr alias" do
-      dyn = Ecto.Query.dynamic([p], p.views * ^2)
+      dyn = dynamic([p], p.views * ^2)
 
       expected =
         from(p in Post,

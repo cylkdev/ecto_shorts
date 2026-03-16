@@ -22,7 +22,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.CommonExpr do
   {target_binding_var, binding_patterns} = QueryBinding.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
-    def dynamic_expr(selected_binding = unquote(quoted_binding_head), operator, negated, term, _opts) do
+    def dynamic_expr(unquote(quoted_binding_head) = selected_binding, operator, negated, term, _opts) do
       selected_binding
       |> dispatch_expr(operator, term)
       |> maybe_negate(negated)

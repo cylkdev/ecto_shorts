@@ -81,7 +81,7 @@ defmodule EctoShorts.TestQueryProvider do
 
   defp fetch_string(params, key) do
     case Keyword.get(params, key) do
-      value when is_binary(value) and value != "" -> {:ok, value}
+      value when is_binary(value) and value !== "" -> {:ok, value}
       _ -> {:error, {:missing_or_invalid, key}}
     end
   end

@@ -5,6 +5,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
     CommonFilters.Limit,
     CommonFilters.OrderBy,
     CommonSchema,
+    Logger,
     QueryBinding
   }
 
@@ -25,7 +26,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
     if Keyword.keyword?(params) or is_boolean(params) do
       apply_with_ties(source, query, selected_binding, params, opts)
     else
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Expected :with_ties value to be a boolean or keyword/map payload, got: #{inspect(params)}"
       )
@@ -55,17 +56,15 @@ defmodule EctoShorts.CommonFilters.WithTies do
       |> Keyword.keys()
       |> Enum.reject(&(&1 === :limit))
 
-    cond do
-      unknown_keys !== [] ->
-        EctoShorts.Logger.warning(
-          @logger_prefix,
-          "Expected :with_ties params to only include :limit, got unsupported keys: #{inspect(unknown_keys)}"
-        )
+    if unknown_keys !== [] do
+      Logger.warning(
+        @logger_prefix,
+        "Expected :with_ties params to only include :limit, got unsupported keys: #{inspect(unknown_keys)}"
+      )
 
-        query
-
-      true ->
-        apply_limit_payload(source, query, selected_binding, Keyword.get(params, :limit), opts)
+      query
+    else
+      apply_limit_payload(source, query, selected_binding, Keyword.get(params, :limit), opts)
     end
   end
 
@@ -93,7 +92,7 @@ defmodule EctoShorts.CommonFilters.WithTies do
   end
 
   defp apply_limit_payload(_source, query, _selected_binding, value, _opts) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Expected :with_ties :limit to be an integer or nil, got: #{inspect(value)}"
     )

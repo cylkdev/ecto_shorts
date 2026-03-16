@@ -3,11 +3,10 @@ defmodule EctoShorts.CommonFilters.LimitTest do
   use EctoShorts.Testing
 
   alias EctoShorts.CommonFilters
+  alias EctoShorts.CommonFilters.Limit
   alias EctoShorts.Schema.Post
 
   import Ecto.Query
-
-  alias EctoShorts.CommonFilters.Limit
 
   describe "Limit.build_query/6 fallthrough binding" do
     test "applies limit with no binding when selector is unrecognized" do

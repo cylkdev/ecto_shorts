@@ -53,6 +53,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Normalizer do
   """
 
   alias EctoShorts.CommonSchema
+  alias EctoShorts.Logger
 
   @quantifier_operators [:all, :any]
   @arithmetic_value_operators [:+, :-, :*, :/]
@@ -267,8 +268,8 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Normalizer do
       count = Keyword.fetch!(term, :count)
       interval = Keyword.fetch!(term, :interval)
 
-      maybe_put_datetime_field(source, field_name, [], opts)
-      |> Kernel.++(count: count, interval: interval)
+      base = maybe_put_datetime_field(source, field_name, [], opts)
+      base ++ [count: count, interval: interval]
     else
       raise ArgumentError, "Expected datetime params to be a keyword list or map, got: #{inspect(term)}"
     end
@@ -309,7 +310,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Normalizer do
   def normalize_field_name(_source, field_name, _opts) when is_atom(field_name), do: field_name
 
   def normalize_field_name(source, field_name, opts) when is_binary(field_name) do
-    case (source != nil && CommonSchema.get_schema(source) != nil &&
+    case (source !== nil && CommonSchema.get_schema(source) !== nil &&
             CommonSchema.get_schema_reflection(source, :fields)) || nil do
       fields when is_list(fields) ->
         string_fields = MapSet.new(fields, &Atom.to_string/1)
@@ -317,7 +318,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Normalizer do
         if MapSet.member?(string_fields, field_name) do
           String.to_existing_atom(field_name)
         else
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Field \"#{field_name}\" does not exist on schema #{inspect(CommonSchema.get_schema(source))}, skipping field reference"
           )
@@ -334,7 +335,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Normalizer do
           if MapSet.member?(allowed_set, field_name) do
             String.to_atom(field_name)
           else
-            EctoShorts.Logger.warning(
+            Logger.warning(
               @logger_prefix,
               "Field \"#{field_name}\" is not in the :allowed_keys list, skipping field reference"
             )
@@ -346,7 +347,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.Normalizer do
             String.to_existing_atom(field_name)
           rescue
             ArgumentError ->
-              EctoShorts.Logger.warning(
+              Logger.warning(
                 @logger_prefix,
                 "Field \"#{field_name}\" could not be resolved to an existing atom, skipping field reference"
               )

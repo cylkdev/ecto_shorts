@@ -1,5 +1,6 @@
 defmodule EctoShorts.CommonFilters.Select do
   alias Ecto.Query
+  alias EctoShorts.Logger
   alias EctoShorts.QueryBinding
 
   require Ecto.Query
@@ -211,7 +212,7 @@ defmodule EctoShorts.CommonFilters.Select do
   defp drop_existing_select(%Ecto.Query{select: nil} = query), do: query
 
   defp drop_existing_select(query) do
-    EctoShorts.Logger.warning(
+    Logger.warning(
       @logger_prefix,
       "Query already has a :select expression - dropping it before applying the new :select filter. Pass a query without an existing select to avoid this."
     )

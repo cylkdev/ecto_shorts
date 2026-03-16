@@ -277,7 +277,7 @@ defmodule EctoShorts.CommonFilters.OrderModifierTest do
 
   describe "convert_params_to_filter/3 order_by DynamicExpr and fallthrough paths" do
     test "order_by passes a DynamicExpr entry through unchanged in a list" do
-      dyn = Ecto.Query.dynamic([p], p.views > ^0)
+      dyn = dynamic([p], p.views > ^0)
 
       actual =
         CommonFilters.convert_params_to_filter(
@@ -290,7 +290,7 @@ defmodule EctoShorts.CommonFilters.OrderModifierTest do
     end
 
     test "order_by passes a non-atom non-dynamic list entry through as-is (other branch)" do
-      dyn = Ecto.Query.dynamic([p], p.views > ^0)
+      dyn = dynamic([p], p.views > ^0)
 
       actual =
         CommonFilters.convert_params_to_filter(
@@ -314,7 +314,7 @@ defmodule EctoShorts.CommonFilters.OrderModifierTest do
     end
 
     test "prepend_order_by passes a DynamicExpr entry through unchanged in a list" do
-      dyn = Ecto.Query.dynamic([p], p.views > ^0)
+      dyn = dynamic([p], p.views > ^0)
 
       actual =
         CommonFilters.convert_params_to_filter(
@@ -327,7 +327,7 @@ defmodule EctoShorts.CommonFilters.OrderModifierTest do
     end
 
     test "prepend_order_by passes a non-atom non-dynamic list entry through as-is (other branch)" do
-      dyn = Ecto.Query.dynamic([p], p.views > ^0)
+      dyn = dynamic([p], p.views > ^0)
 
       actual =
         CommonFilters.convert_params_to_filter(

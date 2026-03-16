@@ -24,7 +24,7 @@ defmodule EctoShorts.CommonFilters.BooleanCompositionTest do
 
     test ":and map with multiple fields produces all fields where-AND-joined" do
       expected = from(p in Post, where: p.published == ^true, where: p.views == ^5)
-      actual = CommonFilters.convert_params_to_filter(Post, %{and: %{published: true, views: 5}}, [])
+      actual = CommonFilters.convert_params_to_filter(Post, %{and: [published: true, views: 5]}, [])
 
       assert_sql(expected, actual)
     end

@@ -223,13 +223,11 @@ defmodule EctoShorts.CommonFilters do
   """
 
   alias Ecto.Query
-  require Ecto.Query
-
   alias EctoShorts.CommonQuery
   alias EctoShorts.CommonSchema
   alias EctoShorts.Config
   alias EctoShorts.DynamicBuilders
-
+  alias EctoShorts.Logger
   alias EctoShorts.CommonFilters.{
     Distinct,
     GroupBy,
@@ -250,6 +248,8 @@ defmodule EctoShorts.CommonFilters do
     WithTies,
     WithNamedBinding
   }
+
+  require Ecto.Query
 
   @logger_prefix "EctoShorts.CommonFilters"
 
@@ -380,7 +380,7 @@ defmodule EctoShorts.CommonFilters do
           |> ensure_association_binding(source, key, opts)
           |> reduce_association_filters(filter, source, key, term, opts)
         else
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Expected association filter value to be a map or keyword list, got: #{inspect(term)}"
           )
@@ -391,24 +391,32 @@ defmodule EctoShorts.CommonFilters do
       key in @all_filters ->
         build_query(key, source, query, selected_binding, term, opts)
 
-      key == :and ->
+      key === :and ->
         if filter_group_list?(term) do
           Enum.reduce(term, query, fn entry, query_acc ->
-            apply_filters(filter, source, query_acc, selected_binding, to_keyword(entry), opts)
+            entry
+            |> to_keyword()
+            |> then(&apply_filters(filter, source, query_acc, selected_binding, &1, opts))
           end)
         else
-          Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
+          term
+          |> to_keyword()
+          |> Enum.reduce(query, fn {inner_key, inner_value}, query_acc ->
             apply_filters(filter, source, query_acc, selected_binding, {inner_key, inner_value}, opts)
           end)
         end
 
-      key == :or ->
+      key === :or ->
         if filter_group_list?(term) do
           Enum.reduce(term, query, fn entry, query_acc ->
-            apply_filters(:or_where, source, query_acc, selected_binding, to_keyword(entry), opts)
+            entry
+            |> to_keyword()
+            |> then(&apply_filters(:or_where, source, query_acc, selected_binding, &1, opts))
           end)
         else
-          Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
+          term
+          |> to_keyword()
+          |> Enum.reduce(query, fn {inner_key, inner_value}, query_acc ->
             or_entries(source, query_acc, selected_binding, inner_key, inner_value, opts)
           end)
         end
@@ -426,19 +434,16 @@ defmodule EctoShorts.CommonFilters do
     cond do
       filter_group_list?(term) ->
         Enum.reduce(term, query, fn entry, query_acc ->
-          apply_filters(filter, source, query_acc, selected_binding, to_keyword(entry), opts)
+          entry
+          |> to_keyword()
+          |> then(&apply_filters(filter, source, query_acc, selected_binding, &1, opts))
         end)
 
       container?(term) ->
-        Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
-          apply_filters(
-            filter,
-            source,
-            query_acc,
-            selected_binding,
-            {inner_key, inner_value},
-            opts
-          )
+        term
+        |> to_keyword()
+        |> Enum.reduce(query, fn {inner_key, inner_value}, query_acc ->
+          apply_filters(filter, source, query_acc, selected_binding, {inner_key, inner_value}, opts)
         end)
 
       true ->
@@ -455,7 +460,9 @@ defmodule EctoShorts.CommonFilters do
   defp resolve_binding_selector(_query, key, inner_key), do: {key, inner_key}
 
   defp reduce_association_filters(query, filter, source, key, term, opts) do
-    Enum.reduce(to_keyword(term), query, fn {inner_key, inner_value}, query_acc ->
+    term
+    |> to_keyword()
+    |> Enum.reduce(query, fn {inner_key, inner_value}, query_acc ->
       apply_filters(filter, source, query_acc, {:as, key}, {inner_key, inner_value}, opts)
     end)
   end
@@ -530,7 +537,7 @@ defmodule EctoShorts.CommonFilters do
         if function_exported?(module, :build_query, 6) do
           module.build_query(filter, source, query, selected_binding, term, opts)
         else
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Module does not export the required function build_query/6: #{inspect(module)}"
           )
@@ -649,8 +656,8 @@ defmodule EctoShorts.CommonFilters do
   end
 
   defp sort_filter_params(params) do
-    where_filters = Enum.filter(params, fn {key, _val} -> key == :where end)
-    or_where_filters = Enum.filter(params, fn {key, _val} -> key == :or_where end)
+    where_filters = Enum.filter(params, fn {key, _val} -> key === :where end)
+    or_where_filters = Enum.filter(params, fn {key, _val} -> key === :or_where end)
     terminal_filters = Enum.filter(params, fn {key, _val} -> key in [:last, :subquery] end)
 
     other_filters =

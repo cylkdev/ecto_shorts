@@ -58,7 +58,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.NormalizerTest do
       assert 42 = Normalizer.normalize_value_node(nil, 42, [])
       assert :foo = Normalizer.normalize_value_node(nil, :foo, [])
       assert "bar" = Normalizer.normalize_value_node(nil, "bar", [])
-      assert nil == Normalizer.normalize_value_node(nil, nil, [])
+      assert nil === Normalizer.normalize_value_node(nil, nil, [])
     end
 
     test "converts a map to a list and re-normalizes" do
@@ -157,7 +157,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.NormalizerTest do
       log =
         capture_log(fn ->
           result = Normalizer.normalize_field_name(Post, "nonexistent_field_xyz", [])
-          assert result == nil
+          assert result === nil
         end)
 
       assert log =~ "nonexistent_field_xyz"
@@ -168,7 +168,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.NormalizerTest do
   describe "normalize_field_name/3 - no schema, :allowed_keys provided (tier 2)" do
     test "returns atom via String.to_atom when string is in allowed_keys" do
       result = Normalizer.normalize_field_name("scores", "score", allowed_keys: ["score", "rank"])
-      assert result == :score
+      assert result === :score
     end
 
     test "returns nil and logs a warning when string is not in allowed_keys" do
@@ -181,7 +181,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.NormalizerTest do
               allowed_keys: ["score", "rank"]
             )
 
-          assert result == nil
+          assert result === nil
         end)
 
       assert log =~ "unknown_col"
@@ -205,7 +205,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.NormalizerTest do
               []
             )
 
-          assert result == nil
+          assert result === nil
         end)
 
       assert log =~ "this_atom_will_never_exist_zzz_9999"

@@ -264,7 +264,7 @@ defmodule EctoShorts.Actions.MultiTest do
       assert {:ok, posts} =
                Actions.create_many(Post, [%{title: "A"}, %{title: "B"}], preload: [:comments])
 
-      assert Enum.all?(posts, fn p -> p.comments == [] end)
+      assert Enum.all?(posts, fn p -> p.comments === [] end)
     end
   end
 
@@ -283,7 +283,7 @@ defmodule EctoShorts.Actions.MultiTest do
       assert {:ok, posts} =
                Actions.find_many(Post, [%{id: post_a.id}, %{id: post_b.id}], preload: [:comments])
 
-      assert Enum.all?(posts, fn p -> p.comments == [] end)
+      assert Enum.all?(posts, fn p -> p.comments === [] end)
     end
   end
 end

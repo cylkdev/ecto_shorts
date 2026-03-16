@@ -1079,7 +1079,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Changeset.put_change(:title, "keep me")
 
       result = CommonChanges.truncate_datetime_change(changeset, :title)
-      assert Changeset.get_change(result, :title) == "keep me"
+      assert Changeset.get_change(result, :title) === "keep me"
     end
   end
 
@@ -1091,7 +1091,7 @@ defmodule EctoShorts.CommonChangesTest do
         |> Changeset.put_change(:views, 42)
 
       result = CommonChanges.trim_string_change(changeset, :views)
-      assert Changeset.get_change(result, :views) == 42
+      assert Changeset.get_change(result, :views) === 42
     end
   end
 

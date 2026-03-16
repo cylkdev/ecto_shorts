@@ -8,7 +8,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ArrayExpr do
     QueryBinding.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
-    def dynamic_expr(selected_binding = unquote(quoted_binding_head), key, negated, term, _opts) do
+    def dynamic_expr(unquote(quoted_binding_head) = selected_binding, key, negated, term, _opts) do
       selected_binding
       |> dispatch_expr(key, normalize_term(term))
       |> maybe_negate(negated)
@@ -21,7 +21,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ArrayExpr do
       )
     end
 
-    defp is_nil_dyn(unquote(quoted_binding_head), key) do
+    defp nil_field_dyn?(unquote(quoted_binding_head), key) do
       Query.dynamic(
         [unquote_splicing(quoted_binding_body)],
         is_nil(field(unquote(target_binding_var), ^key))
@@ -76,16 +76,18 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ArrayExpr do
   def dynamic_expr(_selected_binding, _key, _negated, _term, _opts), do: nil
 
   defp dispatch_expr(binding, key, {:==, nil}) do
-    is_nil_dyn(binding, key)
+    nil_field_dyn?(binding, key)
   end
 
   defp dispatch_expr(binding, key, {:==, values}) when is_list(values) do
     field = field_dyn(binding, key)
+    # credo:disable-for-next-line
     Query.dynamic([], ^field == ^values)
   end
 
   defp dispatch_expr(binding, key, {:!=, values}) when is_list(values) do
     field = field_dyn(binding, key)
+    # credo:disable-for-next-line
     Query.dynamic([], ^field != ^values)
   end
 
@@ -132,6 +134,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ArrayExpr do
 
   defp dispatch_expr(binding, key, {:count, {:==, 0}}) do
     field = field_dyn(binding, key)
+    # credo:disable-for-next-line
     Query.dynamic([], fragment("coalesce(array_length(?, 1), 0)", ^field) == ^0)
   end
 

@@ -2,7 +2,9 @@ defmodule EctoShorts.CommonFilters.StringMatchingTest do
   use ExUnit.Case, async: true
   use EctoShorts.Testing
 
+  alias Ecto.Adapters.SQL
   alias EctoShorts.CommonFilters
+  alias EctoShorts.Config
   alias EctoShorts.Schema.Post
 
   import Ecto.Query
@@ -22,8 +24,8 @@ defmodule EctoShorts.CommonFilters.StringMatchingTest do
       expected = from p in Post, where: like(p.title, ^"hello%")
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{like: "hello%"}}, [])
 
-      assert Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Config.repo(), expected) ===
-               Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Config.repo(), q2)
+      assert SQL.to_sql(:all, Config.repo(), expected) ===
+               SQL.to_sql(:all, Config.repo(), q2)
     end
 
     test "matches records where the field contains the text case-insensitively using ilike" do
@@ -72,8 +74,8 @@ defmodule EctoShorts.CommonFilters.StringMatchingTest do
 
       q2 = CommonFilters.convert_params_to_filter(Post, %{title: %{ilike: ["hello%", "%world"]}}, [])
 
-      assert Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Config.repo(), expected) ===
-               Ecto.Adapters.SQL.to_sql(:all, EctoShorts.Config.repo(), q2)
+      assert SQL.to_sql(:all, Config.repo(), expected) ===
+               SQL.to_sql(:all, Config.repo(), q2)
     end
 
     test "excludes records where the field contains the text using negated like" do

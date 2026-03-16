@@ -462,7 +462,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                })
 
       assert %User{first_name: "NamedPostsPreload"} = loaded_author = result.author
-      assert Enum.map(loaded_author.posts, & &1.title) |> Enum.sort() === ["NestedPost", "ParentPost"]
+      assert (loaded_author.posts |> Enum.map(& &1.title) |> Enum.sort()) === ["NestedPost", "ParentPost"]
     end
 
     test "loads nested associations from a named binding when preload uses the live :as shape" do
@@ -510,7 +510,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                })
 
       assert %User{first_name: "NamedNestedPreload"} = loaded_author = result.author
-      assert Enum.map(loaded_author.posts, & &1.title) |> Enum.sort() === ["NestedPost", "ParentPost"]
+      assert (loaded_author.posts |> Enum.map(& &1.title) |> Enum.sort()) === ["NestedPost", "ParentPost"]
 
       assert Enum.any?(loaded_author.posts, fn loaded_post ->
                Ecto.assoc_loaded?(loaded_post.comments) and
@@ -558,7 +558,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                })
 
       assert %User{first_name: "PositionalPostsPreload"} = loaded_author = result.author
-      assert Enum.map(loaded_author.posts, & &1.title) |> Enum.sort() === ["NestedPost", "ParentPost"]
+      assert (loaded_author.posts |> Enum.map(& &1.title) |> Enum.sort()) === ["NestedPost", "ParentPost"]
     end
 
     test "loads nested associations from a positional binding when preload uses the live :at shape" do
@@ -605,7 +605,7 @@ defmodule EctoShorts.Actions.CRUDTest do
                })
 
       assert %User{first_name: "PositionalNestedPreload"} = loaded_author = result.author
-      assert Enum.map(loaded_author.posts, & &1.title) |> Enum.sort() === ["NestedPost", "ParentPost"]
+      assert (loaded_author.posts |> Enum.map(& &1.title) |> Enum.sort()) === ["NestedPost", "ParentPost"]
 
       assert Enum.any?(loaded_author.posts, fn loaded_post ->
                Ecto.assoc_loaded?(loaded_post.comments) and
@@ -2386,7 +2386,7 @@ defmodule EctoShorts.Actions.CRUDTest do
     end
 
     test "returns nil unchanged when record is not found" do
-      assert nil == Actions.get(Post, -1, preload: [:comments])
+      assert nil === Actions.get(Post, -1, preload: [:comments])
     end
   end
 

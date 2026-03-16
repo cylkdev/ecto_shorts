@@ -26,6 +26,7 @@ defmodule EctoShorts.CommonFilters.Join do
   alias EctoShorts.QueryBinding
   alias EctoShorts.Config
   alias EctoShorts.Adapter.QueryProvider
+  alias EctoShorts.Logger
 
   alias Ecto.Query
   require Ecto.Query
@@ -70,7 +71,7 @@ defmodule EctoShorts.CommonFilters.Join do
 
         reduce_join(schema_source, query, selected_binding, join_expr, opts)
       else
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected join type to be one of #{inspect(@join_types)}, got: #{inspect(key)}"
         )
@@ -90,7 +91,7 @@ defmodule EctoShorts.CommonFilters.Join do
         end)
       end
     else
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Expected :join params to be a map or keyword list, got: #{inspect(nested)}"
       )
@@ -111,7 +112,7 @@ defmodule EctoShorts.CommonFilters.Join do
         opts
       )
     else
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Expected join options to have a :source key, got: #{inspect(join_options)}"
       )
@@ -135,7 +136,7 @@ defmodule EctoShorts.CommonFilters.Join do
         {:ok, source}
 
       {:error, reason} ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Join source callback returned error for key #{inspect(source_key)}: #{inspect(reason)}"
         )
@@ -143,7 +144,7 @@ defmodule EctoShorts.CommonFilters.Join do
         :error
 
       other ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected join source callback to return {:ok, source} | {:error, reason} | nil, got: #{inspect(other)}"
         )
@@ -250,7 +251,7 @@ defmodule EctoShorts.CommonFilters.Join do
         if Keyword.keyword?(list) do
           {:ok, build_on_dynamic(schema_source, selected_binding, list, opts)}
         else
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Expected :on to be a keyword list, map, or true, got: #{inspect(list)}"
           )
@@ -262,7 +263,7 @@ defmodule EctoShorts.CommonFilters.Join do
         {:ok, dyn}
 
       term ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected :on to be a keyword list, map, or true, got: #{inspect(term)}"
         )

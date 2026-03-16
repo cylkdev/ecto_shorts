@@ -3,6 +3,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
 
   alias Ecto.Query
   alias EctoShorts.CommonFilters
+  alias EctoShorts.Logger
 
   @logger_prefix "EctoShorts.CommonFilters.WithNamedBinding"
 
@@ -18,7 +19,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
           apply_entry(query_acc, key, value, opts)
 
         other, query_acc ->
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "Expected :with_named_binding params to be a map or keyword list, got: #{inspect(other)}"
           )
@@ -26,7 +27,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
           query_acc
       end)
     else
-      EctoShorts.Logger.warning(
+      Logger.warning(
         @logger_prefix,
         "Expected :with_named_binding params to be a map or keyword list, got: #{inspect(params)}"
       )
@@ -38,7 +39,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
   defp apply_entry(query, key, params, opts) do
     cond do
       not is_atom(key) ->
-        EctoShorts.Logger.warning(
+        Logger.warning(
           @logger_prefix,
           "Expected :with_named_binding key to be an atom, got: #{inspect(key)}"
         )
@@ -54,7 +55,7 @@ defmodule EctoShorts.CommonFilters.WithNamedBinding do
         if Query.has_named_binding?(new_query, key) do
           new_query
         else
-          EctoShorts.Logger.warning(
+          Logger.warning(
             @logger_prefix,
             "callback function for with_named_binding/3 should create a named binding for key #{inspect(key)}"
           )
