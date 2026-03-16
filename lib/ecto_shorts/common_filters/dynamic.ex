@@ -1,4 +1,4 @@
-defmodule EctoShorts.CommonFilters.FilterHelpers do
+defmodule EctoShorts.CommonFilters.Dynamic do
   import Ecto.Query, only: [dynamic: 1]
 
   def merge_dynamic(nil, _, b), do: b

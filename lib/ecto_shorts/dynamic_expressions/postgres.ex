@@ -1,10 +1,10 @@
-defmodule EctoShorts.DynamicBuilders.Postgres do
+defmodule EctoShorts.DynamicExpressions.Postgres do
   @moduledoc """
   Build Postgres-specific dynamic filter expressions.
 
   Use this module when you want to call the Postgres dynamic adapter
   directly. If you want adapter resolution or adapter-agnostic dynamic
-  building, start with `EctoShorts.DynamicBuilders.build_dynamic/4` instead.
+  building, start with `EctoShorts.DynamicExpressions.build_dynamic/4` instead.
 
   `build_dynamic/4` is the only public entry point. It accepts a queryable
   `source`, a binding selector, and one filter entry, and returns a dynamic
@@ -32,10 +32,10 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
 
   ## Examples
 
-      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
+      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(
+      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(
       ...>   Post,
       ...>   {:as, nil},
       ...>   {:any, [published: true, archived: false]}
@@ -45,15 +45,15 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
 
   alias EctoShorts.{
     CommonSchema,
-    CommonFilters.FilterHelpers,
+    CommonFilters.Dynamic,
     CommonFilters.SetComparison,
-    DynamicBuilders.Postgres.ArrayExpr,
-    DynamicBuilders.Postgres.CommonExpr,
-    DynamicBuilders.Postgres.Normalizer,
-    DynamicBuilders.Postgres.ScalarExpr
+    DynamicExpressions.Postgres.ArrayExpr,
+    DynamicExpressions.Postgres.CommonExpr,
+    DynamicExpressions.Postgres.Normalizer,
+    DynamicExpressions.Postgres.ScalarExpr
   }
 
-  @behaviour EctoShorts.Adapter.DynamicBuilder
+  @behaviour EctoShorts.Adapter.DynamicExpression
 
   @quantifier_operators [:all, :any]
 
@@ -95,17 +95,17 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
 
   ## Examples
 
-      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
+      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(Post, {:as, nil}, {:views, 5})
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(
+      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(
       ...>   Post,
       ...>   {:as, nil},
       ...>   {:views, [>: 1, <: 10]}
       ...> )
       #Ecto.Query.DynamicExpr<...>
 
-      iex> EctoShorts.DynamicBuilders.Postgres.build_dynamic(
+      iex> EctoShorts.DynamicExpressions.Postgres.build_dynamic(
       ...>   Post,
       ...>   {:as, nil},
       ...>   {:all, [published: true, archived: false]}
@@ -123,10 +123,10 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
       |> then(&Normalizer.normalize_params(source, &1, opts))
       |> Enum.reduce(nil, fn entry, acc ->
         dyn = apply_expr(source, selected_binding, entry, opts)
-        FilterHelpers.merge_dynamic(acc, quantifier_op, dyn)
+        Dynamic.merge_dynamic(acc, quantifier_op, dyn)
       end)
 
-    FilterHelpers.merge_dynamic(nil, :and, expr)
+    Dynamic.merge_dynamic(nil, :and, expr)
   end
 
   def build_dynamic(source, selected_binding, {key, params}, opts) do
@@ -136,10 +136,10 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
       |> Enum.reduce(nil, fn entry, acc ->
         {merge_op, expr_entry} = expr_entry(key, entry)
         dyn = apply_expr(source, selected_binding, expr_entry, opts)
-        FilterHelpers.merge_dynamic(acc, merge_op, dyn)
+        Dynamic.merge_dynamic(acc, merge_op, dyn)
       end)
 
-    FilterHelpers.merge_dynamic(nil, :and, expr)
+    Dynamic.merge_dynamic(nil, :and, expr)
   end
 
   defp apply_expr(source, selected_binding, {key, term}, opts) do
@@ -150,7 +150,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
       Keyword.keyword?(term) ->
         Enum.reduce(term, nil, fn {inner_key, inner_value}, acc ->
           dyn = apply_expr(source, selected_binding, {key, {inner_key, inner_value}}, opts)
-          FilterHelpers.merge_dynamic(acc, :and, dyn)
+          Dynamic.merge_dynamic(acc, :and, dyn)
         end)
 
       true ->

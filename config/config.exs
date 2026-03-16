@@ -29,7 +29,7 @@ else
     repo: nil,
     replica: nil,
     error_module: EctoShorts.Actions.Error,
-    dynamic_adapter: EctoShorts.DynamicBuilders.Postgres,
+    dynamic_adapter: EctoShorts.DynamicExpressions.Postgres,
     max_positional_bindings: 10,
     query_provider: nil,
     hints: []

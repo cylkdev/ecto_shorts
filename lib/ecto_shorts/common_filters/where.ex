@@ -6,7 +6,7 @@ defmodule EctoShorts.CommonFilters.Where do
 
   def build_query(filter, source, query, selected_binding, term, opts) do
     dyn =
-      EctoShorts.DynamicBuilders.build_dynamic(
+      EctoShorts.DynamicExpressions.build_dynamic(
         source,
         selected_binding,
         term,

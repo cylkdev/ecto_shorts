@@ -33,6 +33,7 @@ This plan does not authorize a repo-wide documentation sweep outside `AGENTS.md`
 - [x] (2026-03-15 23:41Z) Created this repo-root ExecPlan to govern the rewrite.
 - [x] (2026-03-15 23:46Z) Rewrote `AGENTS.md` in a prose-first form that restores the original opening flow, keeps the component list readable, and folds the live module and proof guidance into paragraphs.
 - [x] (2026-03-15 23:47Z) Reviewed the final `AGENTS.md` against the user-provided sample and removed leftover bold formatting in the component list so the tone and visual shape stay closer to the original.
+- [x] (2026-03-15 23:58Z) Replaced the explicit route-mapping at the end of `AGENTS.md` with reflective prose about reasoning from behavior and intent to the owning public boundary, then confirming that reasoning with live code and tests.
 
 ## Milestones
 
@@ -70,11 +71,15 @@ Completion means the final document is prose-first, behavior-preserving in tone,
   Rationale: The rewrite still needs a light orientation path for zero-context contributors, but a single compact section keeps the document closer to the original reading experience.
   Date/Author: 2026-03-15 / Cascade
 
+- Decision: Rewrite `Finding Your Way` as reflective prose rather than as a compact route map.
+  Rationale: The user clarified that even light explicit routing was still too specific and that the section should instead teach the reader how to reason from purpose and behavior toward the right boundary.
+  Date/Author: 2026-03-15 / Cascade
+
 ## Outcomes & Retrospective
 
 The `AGENTS.md` rewrite is complete.
 
-The final document restores the original opening style, keeps the prose-heavy overview, and adds only one light navigation section at the end. The substance from the earlier reference-style draft was preserved where it helped a zero-context reader, especially around the main module roles, the filter-language boundary, the lower-level helper modules, and the main proof surfaces in `README.md`, `test/ecto_shorts/`, and `examples/`.
+The final document restores the original opening style, keeps the prose-heavy overview, and ends with one reflective section about how to reason toward the right public boundary instead of following a route map. The substance from the earlier reference-style draft was preserved where it helped a zero-context reader, especially around the main module roles, the filter-language boundary, the lower-level helper modules, and the need to confirm reasoning against live code and tests.
 
 The main lesson from the task is that documentation quality here depends as much on reading mode as on factual coverage. A more complete reference can still be the wrong result if it changes a human-readable overview into a dense map. In this repo, `AGENTS.md` works better as an extended orientation document than as a compact handbook.
 
@@ -84,7 +89,7 @@ The main lesson from the task is that documentation quality here depends as much
 
 The current `AGENTS.md` already contains accurate material gathered from `README.md`, `lib/ecto_shorts/actions.ex`, `lib/ecto_shorts/common_filters.ex`, the other main public modules under `lib/ecto_shorts/`, and the proof surfaces under `test/ecto_shorts/` and `examples/`. The rewrite should preserve the substance that came from those live sources, but it must present that substance in a form that feels like the original overview rather than a segmented reference document.
 
-The key public modules that need to remain discoverable in `AGENTS.md` are `EctoShorts.Actions`, `EctoShorts.CommonFilters`, `EctoShorts.CommonChanges`, `EctoShorts.CommonSchema`, `EctoShorts.CommonParams`, `EctoShorts.CommonQuery`, `EctoShorts.DynamicBuilders`, and `EctoShorts.Testing`. The file should also still point a reader to the main proof surfaces in `README.md`, `test/ecto_shorts/`, and `examples/`.
+The key public modules that need to remain discoverable in `AGENTS.md` are `EctoShorts.Actions`, `EctoShorts.CommonFilters`, `EctoShorts.CommonChanges`, `EctoShorts.CommonSchema`, `EctoShorts.CommonParams`, `EctoShorts.CommonQuery`, `EctoShorts.DynamicExpressions`, and `EctoShorts.Testing`. The file should also still point a reader to the main proof surfaces in `README.md`, `test/ecto_shorts/`, and `examples/`.
 
 ## Module Specifications
 

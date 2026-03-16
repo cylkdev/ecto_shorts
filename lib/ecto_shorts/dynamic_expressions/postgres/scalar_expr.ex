@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicBuilders.Postgres.ScalarExpr do
+defmodule EctoShorts.DynamicExpressions.Postgres.ScalarExpr do
   import Ecto.Query
 
   alias EctoShorts.QueryBinding

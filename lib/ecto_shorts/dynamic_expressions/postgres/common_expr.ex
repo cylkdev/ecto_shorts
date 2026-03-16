@@ -1,4 +1,4 @@
-defmodule EctoShorts.DynamicBuilders.Postgres.CommonExpr do
+defmodule EctoShorts.DynamicExpressions.Postgres.CommonExpr do
   alias Ecto.Query
   alias EctoShorts.QueryBinding
 

@@ -4,15 +4,15 @@ This ExecPlan is a living document. The sections `Progress`, `Surprises & Discov
 
 ## Purpose / Big Picture
 
-The query composition modules have grown or been refactored to the point where module names no longer reflect their responsibilities, thin wrapper modules add indirection without value, and the `Adapters.Postgres` module sits in the wrong namespace with a mismatched file path. After this change, the module tree accurately describes what each module does: `EctoShorts.Adapter.DynamicBuilder` is a documented behaviour for building dynamic expressions; `EctoShorts.DynamicBuilders.Postgres` is the concrete Postgres implementation; `EctoShorts.QueryBinding` generates compile-time Ecto query binding patterns; `EctoShorts.Adapter.QueryBuilder` and `EctoShorts.Adapter.QueryProvider` are documented public API contracts. The test file tree matches the lib file tree.
+The query composition modules have grown or been refactored to the point where module names no longer reflect their responsibilities, thin wrapper modules add indirection without value, and the `Adapters.Postgres` module sits in the wrong namespace with a mismatched file path. After this change, the module tree accurately describes what each module does: `EctoShorts.Adapter.DynamicExpression` is a documented behaviour for building dynamic expressions; `EctoShorts.DynamicExpressions.Postgres` is the concrete Postgres implementation; `EctoShorts.QueryBinding` generates compile-time Ecto query binding patterns; `EctoShorts.Adapter.QueryBuilder` and `EctoShorts.Adapter.QueryProvider` are documented public API contracts. The test file tree matches the lib file tree.
 
 ## In Scope
 
-1. Create `EctoShorts.Adapter.DynamicBuilder` as a new behaviour module at `lib/ecto_shorts/dynamics/adapter.ex`, documenting what an adapter is, what `build_dynamic/4` does, and how to implement one. Delete `lib/ecto_shorts/dynamic_expr_builder.ex`.
-2. Move `lib/ecto_shorts/dynamics/postgres.ex` (module `EctoShorts.Adapters.Postgres`) to `lib/ecto_shorts/dynamics/adapters/postgres.ex` and rename the module to `EctoShorts.DynamicBuilders.Postgres`. Update `@behaviour` to reference `EctoShorts.Adapter.DynamicBuilder`.
-3. Move the three sub-modules: `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`, `array_expr.ex`, `common_expr.ex` to `lib/ecto_shorts/dynamics/adapters/postgres/` and rename them to `EctoShorts.DynamicBuilders.Postgres.{ScalarExpr,ArrayExpr,CommonExpr}`.
+1. Create `EctoShorts.Adapter.DynamicExpression` as a new behaviour module at `lib/ecto_shorts/dynamics/adapter.ex`, documenting what an adapter is, what `build_dynamic/4` does, and how to implement one. Delete `lib/ecto_shorts/dynamic_expr_builder.ex`.
+2. Move `lib/ecto_shorts/dynamics/postgres.ex` (module `EctoShorts.Adapters.Postgres`) to `lib/ecto_shorts/dynamics/adapters/postgres.ex` and rename the module to `EctoShorts.DynamicExpressions.Postgres`. Update `@behaviour` to reference `EctoShorts.Adapter.DynamicExpression`.
+3. Move the three sub-modules: `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`, `array_expr.ex`, `common_expr.ex` to `lib/ecto_shorts/dynamics/adapters/postgres/` and rename them to `EctoShorts.DynamicExpressions.Postgres.{ScalarExpr,ArrayExpr,CommonExpr}`.
 4. Move test files: `test/ecto_shorts/dynamics/postgres_test.exs` and `test/ecto_shorts/dynamics/postgres/` to `test/ecto_shorts/dynamics/adapters/` and update module names.
-5. Create `lib/ecto_shorts/query_bindings.ex` with module `EctoShorts.QueryBinding`, containing `query_binding_contracts/2` from `Compiler` plus all functions from `EctoShorts.DynamicBuilders.Helpers`. Delete `lib/ecto_shorts/compiler.ex` and `lib/ecto_shorts/dynamics/helpers.ex`.
+5. Create `lib/ecto_shorts/query_bindings.ex` with module `EctoShorts.QueryBinding`, containing `query_binding_contracts/2` from `Compiler` plus all functions from `EctoShorts.DynamicExpressions.Helpers`. Delete `lib/ecto_shorts/compiler.ex` and `lib/ecto_shorts/dynamics/helpers.ex`.
 6. Add `@moduledoc` and function docs to `EctoShorts.Adapter.QueryProvider`.
 7. Add `@moduledoc` and `@callback` docs to `EctoShorts.Adapter.QueryBuilder`. Inline the 1-line `QueryBuilder.build_query/7` dispatcher call directly in `EctoShorts.CommonFilters`.
 8. Update all call sites: aliases, `@behaviour`, `config/config.exs`, `mix.exs` docs groups.
@@ -20,16 +20,16 @@ The query composition modules have grown or been refactored to the point where m
 ## Out of Scope
 
 - Changes to function signatures, public API behaviour, or test logic.
-- Any changes to `EctoShorts.DynamicBuilders` top-level module (it is already correct).
+- Any changes to `EctoShorts.DynamicExpressions` top-level module (it is already correct).
 - Changes to test support helper modules (`TestQueryProvider`, `TestNoOpQueryProvider`, etc.) - their names are generic and do not need renaming.
 
 ## Progress
 
 - [ ] Create ExecPlan
-- [ ] Create `EctoShorts.Adapter.DynamicBuilder` behaviour; delete `dynamic_expr_builder.ex`
-- [ ] Move+rename `Adapters.Postgres` → `DynamicBuilders.Adapters.Postgres` and 3 sub-modules; delete old lib files
+- [ ] Create `EctoShorts.Adapter.DynamicExpression` behaviour; delete `dynamic_expr_builder.ex`
+- [ ] Move+rename `Adapters.Postgres` → `DynamicExpressions.Adapters.Postgres` and 3 sub-modules; delete old lib files
 - [ ] Move+rename 4 test spec files; delete old test files
-- [ ] Create `QueryBinding` absorbing `Compiler` + `DynamicBuilders.Helpers`; delete both old files
+- [ ] Create `QueryBinding` absorbing `Compiler` + `DynamicExpressions.Helpers`; delete both old files
 - [ ] Add docs to `QueryProvider`
 - [ ] Add docs to `QueryBuilder`; inline dispatcher in `CommonFilters`
 - [ ] Update all remaining call sites
@@ -39,13 +39,13 @@ The query composition modules have grown or been refactored to the point where m
 
 ### Milestone 1 - New behaviour + adapter namespace
 
-Create `EctoShorts.Adapter.DynamicBuilder` behaviour. Move `EctoShorts.Adapters.Postgres` and its three sub-modules into the new `DynamicBuilders.Adapters.Postgres` namespace. Move matching test files. Delete old files.
+Create `EctoShorts.Adapter.DynamicExpression` behaviour. Move `EctoShorts.Adapters.Postgres` and its three sub-modules into the new `DynamicExpressions.Adapters.Postgres` namespace. Move matching test files. Delete old files.
 
 Verify: `mix test` passes after each file move.
 
 ### Milestone 2 - QueryBinding (replaces Compiler + Helpers)
 
-Create `lib/ecto_shorts/query_bindings.ex` with module `EctoShorts.QueryBinding` holding all functions from both `Compiler` and `DynamicBuilders.Helpers`. Update every file that aliases `EctoShorts.Compiler` or `EctoShorts.DynamicBuilders.Helpers`. Delete both old files.
+Create `lib/ecto_shorts/query_bindings.ex` with module `EctoShorts.QueryBinding` holding all functions from both `Compiler` and `DynamicExpressions.Helpers`. Update every file that aliases `EctoShorts.Compiler` or `EctoShorts.DynamicExpressions.Helpers`. Delete both old files.
 
 Verify: `mix test` passes.
 
@@ -65,7 +65,7 @@ Verify: `mix test` passes (11 doctests + 721 tests, 0 failures).
   Rationale: The module only generates Ecto query binding patterns - "Compiler" implies general compilation, which is misleading.
   Date/Author: 2026-03-15
 
-- Decision: `EctoShorts.DynamicBuilders.Helpers` functions absorbed into `QueryBinding`.
+- Decision: `EctoShorts.DynamicExpressions.Helpers` functions absorbed into `QueryBinding`.
   Rationale: All helpers are exclusively used at compile time by the same adapter modules that call `query_binding_contracts`. Keeping them in one module eliminates an alias hop.
   Date/Author: 2026-03-15
 
@@ -81,11 +81,11 @@ Verify: `mix test` passes (11 doctests + 721 tests, 0 failures).
 
 Key files and their roles:
 
-- `lib/ecto_shorts/dynamic_expr_builder.ex` - `EctoShorts.DynamicExprBuilder`: thin behaviour that will be replaced by `DynamicBuilders.Adapter`.
+- `lib/ecto_shorts/dynamic_expr_builder.ex` - `EctoShorts.DynamicExprBuilder`: thin behaviour that will be replaced by `DynamicExpressions.Adapter`.
 - `lib/ecto_shorts/dynamics/postgres.ex` - `EctoShorts.Adapters.Postgres`: the Postgres dynamic expression adapter. Module name/path mismatch.
 - `lib/ecto_shorts/dynamics/postgres/scalar_expr.ex`, `array_expr.ex`, `common_expr.ex` - sub-modules of the adapter, will move to `dynamics/adapters/postgres/`.
 - `lib/ecto_shorts/compiler.ex` - `EctoShorts.Compiler`: generates binding pattern ASTs. Will become `EctoShorts.QueryBinding`.
-- `lib/ecto_shorts/dynamics/helpers.ex` - `EctoShorts.DynamicBuilders.Helpers`: AST helper functions used at compile time. Will merge into `QueryBinding`.
+- `lib/ecto_shorts/dynamics/helpers.ex` - `EctoShorts.DynamicExpressions.Helpers`: AST helper functions used at compile time. Will merge into `QueryBinding`.
 - `lib/ecto_shorts/query_builder.ex` - `EctoShorts.Adapter.QueryBuilder`: public behaviour + 1-line dispatcher.
 - `lib/ecto_shorts/query_provider.ex` - `EctoShorts.Adapter.QueryProvider`: public dispatcher for query provider modules.
 
@@ -95,4 +95,4 @@ See steps in "In Scope" above and "Milestones". Each step: create new file with 
 
 ## Validation and Acceptance
 
-Run `mix test` from repo root. Expect: `11 doctests, 721 tests, 0 failures`. No references to `EctoShorts.Adapters.Postgres`, `EctoShorts.DynamicExprBuilder`, `EctoShorts.DynamicBuilders.Helpers`, or `EctoShorts.Compiler` should remain in `lib/` or `test/`.
+Run `mix test` from repo root. Expect: `11 doctests, 721 tests, 0 failures`. No references to `EctoShorts.Adapters.Postgres`, `EctoShorts.DynamicExprBuilder`, `EctoShorts.DynamicExpressions.Helpers`, or `EctoShorts.Compiler` should remain in `lib/` or `test/`.

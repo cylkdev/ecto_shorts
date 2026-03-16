@@ -1,5 +1,5 @@
 defmodule EctoShorts.CommonFilters.Having do
-  alias EctoShorts.DynamicBuilders
+  alias EctoShorts.DynamicExpressions
   alias EctoShorts.QueryBinding
 
   alias Ecto.Query
@@ -26,7 +26,7 @@ defmodule EctoShorts.CommonFilters.Having do
     if is_struct(term, Ecto.Query.DynamicExpr) do
       term
     else
-      DynamicBuilders.build_dynamic(
+      DynamicExpressions.build_dynamic(
         source,
         selected_binding,
         term,

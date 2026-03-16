@@ -1,4 +1,4 @@
-defmodule EctoShorts.Adapter.DynamicBuilder do
+defmodule EctoShorts.Adapter.DynamicExpression do
   @moduledoc """
   Behaviour for dynamic expression adapters.
 
@@ -9,7 +9,7 @@ defmodule EctoShorts.Adapter.DynamicBuilder do
 
   The following adapters are available out of the box:
 
-  * `EctoShorts.DynamicBuilders.Postgres` - Postgres-specific expression
+  * `EctoShorts.DynamicExpressions.Postgres` - Postgres-specific expression
     building including scalar comparisons, array operations, quantified
     subqueries, and datetime arithmetic.
 
@@ -27,7 +27,7 @@ defmodule EctoShorts.Adapter.DynamicBuilder do
   Define a module that implements this behaviour:
 
       defmodule MyApp.CustomAdapter do
-        @behaviour EctoShorts.Adapter.DynamicBuilder
+        @behaviour EctoShorts.Adapter.DynamicExpression
 
         @impl true
         def build_dynamic(source, selected_binding, {key, term}, opts) do

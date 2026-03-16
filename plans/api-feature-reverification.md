@@ -342,19 +342,19 @@ Public proof currently lives mainly in these files:
 
 Start with `convert_params_to_filter/3`. The module guarantees that it will reduce recognized filter entries through the API registry, preserve binding-selection context as filters nest, and hand field predicates to the configured query builder or the default API path. The module owns top-level param reduction and binding context selection. It does not own the implementation details of joins, locks, CTEs, or scalar and array expression generation.
 
-### `EctoShorts.DynamicBuilders.Postgres`
+### `EctoShorts.DynamicExpressions.Postgres`
 
-`EctoShorts.DynamicBuilders.Postgres` is the public adapter-facing entry point for dynamic predicate building. Use it when a field predicate has already been selected for expression generation and must become an `Ecto.Query.DynamicExpr` on the Postgres path.
+`EctoShorts.DynamicExpressions.Postgres` is the public adapter-facing entry point for dynamic predicate building. Use it when a field predicate has already been selected for expression generation and must become an `Ecto.Query.DynamicExpr` on the Postgres path.
 
 Start with `build_dynamic/4`. The module guarantees that it will normalize negation and quantified top-level forms before dispatching to `CommonExpr`, `ArrayExpr`, or `ScalarExpr`. It owns the routing decision between common operators, array-field operators, and scalar-field operators. It does not own the final SQL fragments for each operator family.
 
-### `EctoShorts.DynamicBuilders.Postgres.ArrayExpr`
+### `EctoShorts.DynamicExpressions.Postgres.ArrayExpr`
 
 `ArrayExpr` owns Postgres-specific behavior for array and map-backed field predicates once routing has already determined that the field is array-like. It accepts the normalized binding selector, field key, negation flag, and operator/value term, and returns a dynamic expression when the shape is supported.
 
 The live contract currently covers list equality and inequality, scalar membership, overlap via `in` with a list, array `nil`, array `count`, element-wise comparisons using `ANY`, array-local comparison `all:` using `ALL(array)`, containment-style `all: [in: list]` using `<@`, `lower` and `upper` transforms, and array `like` and `ilike` with wildcard preservation for caller-supplied `%` and `_`. This refactor preserves that runtime surface while making array-local `all` payload normalization follow data shape directly inside `ArrayExpr`.
 
-### `EctoShorts.DynamicBuilders.Postgres.ScalarExpr`
+### `EctoShorts.DynamicExpressions.Postgres.ScalarExpr`
 
 `ScalarExpr` owns non-array Postgres field predicates after routing has already decided the field is not array-like and does not belong to `CommonExpr`. Use it when the public filter pipeline has already selected a scalar field predicate and the work is about how that predicate becomes a dynamic expression on the Postgres path.
 
@@ -438,7 +438,7 @@ Important invalid-input behavior:
 
 - invalid filter shapes are generally handled by lower-level filter owners, which may keep the query unchanged and log a warning instead of raising
 
-### `EctoShorts.DynamicBuilders.Postgres.build_dynamic/4`
+### `EctoShorts.DynamicExpressions.Postgres.build_dynamic/4`
 
 Purpose: route one field predicate on the Postgres adapter path to the correct owner module and return the resulting dynamic expression.
 
@@ -465,7 +465,7 @@ Important invalid-input behavior:
 
 - unsupported downstream shapes are exposed as `nil` from the owner boundary rather than being silently reclassified at the router
 
-### `EctoShorts.DynamicBuilders.Postgres.ArrayExpr.dynamic_expr/5`
+### `EctoShorts.DynamicExpressions.Postgres.ArrayExpr.dynamic_expr/5`
 
 Purpose: turn one already-routed array-field predicate into a Postgres dynamic expression.
 
@@ -492,7 +492,7 @@ Important invalid-input behavior:
 
 - unsupported nested array payload shapes continue to return `nil` rather than being treated as supported behavior
 
-### `EctoShorts.DynamicBuilders.Postgres.ScalarExpr.dynamic_expr/5`
+### `EctoShorts.DynamicExpressions.Postgres.ScalarExpr.dynamic_expr/5`
 
 Purpose: turn one already-routed scalar-field predicate into a Postgres dynamic expression.
 
@@ -697,7 +697,7 @@ A typical public integration call begins at `EctoShorts.Actions.all/3`. That act
 
 For each entry, `apply_filters/6` decides what kind of thing it is looking at. In the intended public contract, top-level `as` and `at` maps change the selected binding and continue nested reduction. The live code still contains a `bind` branch, but that path is treated elsewhere in this plan as stale runtime drift rather than part of the intended caller-facing contract. If the key belongs to a filter group such as predicate or post-aggregate filters, the reducer either keeps descending or dispatches to the registered filter owner. If the key names an association and the term shape looks reducible, `CommonFilters` first ensures a named association binding through `with_named_binding`, then continues reduction under `{:as, association_name}`. Otherwise, the reducer dispatches directly to `CommonFilters.API.build_query/6`.
 
-When a field predicate reaches the Postgres dynamic path, `EctoShorts.DynamicBuilders.Postgres.build_dynamic/4` normalizes top-level negation, then normalizes top-level quantified forms such as `all` and `any` into equality against a built quantified query only when the payload is on the quantified-query contract. After that, it routes by family. Common operators such as `before` and `after` stay in `CommonExpr`. Array and map-backed fields route to `ArrayExpr`. Everything else routes to `ScalarExpr`.
+When a field predicate reaches the Postgres dynamic path, `EctoShorts.DynamicExpressions.Postgres.build_dynamic/4` normalizes top-level negation, then normalizes top-level quantified forms such as `all` and `any` into equality against a built quantified query only when the payload is on the quantified-query contract. After that, it routes by family. Common operators such as `before` and `after` stay in `CommonExpr`. Array and map-backed fields route to `ArrayExpr`. Everything else routes to `ScalarExpr`.
 
 That routing order still matters for the current refactor slice. String-pattern construction belongs in the owners after routing, not in the public reducer or Postgres router. Scalar-field string predicates travel from `CommonFilters.convert_params_to_filter/3` into `Postgres.build_dynamic/4`, then into `ScalarExpr.dynamic_expr/5`, where this follow-on rewrite must express the full scalar contract in one owner-local `case normalize_term(term)` structure that mirrors `ArrayExpr` and applies negation only once at the end. Array-field `all` payloads travel through the same public and router boundaries but finish in `ArrayExpr.dynamic_expr/5`, where `normalize_all_payload/1` now expresses map, tuple, empty-list, and recursive-list behavior structurally. Lock directives travel from `CommonFilters.convert_params_to_filter/3` into `Lock.build_query/6`, where provider-owned customization remains the only custom lock surface after the completed lock slice.
 
@@ -1051,15 +1051,15 @@ The main public interface for this task is `EctoShorts.CommonFilters.convert_par
 The main internal collaborators are:
 
 - `EctoShorts.CommonFilters.API`
-- `EctoShorts.DynamicBuilders.Postgres`
-- `EctoShorts.DynamicBuilders.Postgres.ArrayExpr`
-- `EctoShorts.DynamicBuilders.Postgres.ScalarExpr`
+- `EctoShorts.DynamicExpressions.Postgres`
+- `EctoShorts.DynamicExpressions.Postgres.ArrayExpr`
+- `EctoShorts.DynamicExpressions.Postgres.ScalarExpr`
 - `EctoShorts.CommonFilters.Join`
 - `EctoShorts.CommonFilters.Lock`
 - `EctoShorts.CommonFilters.WithCte`
 - `EctoShorts.CommonFilters.SetComparison`
 - `EctoShorts.Compiler.QueryBindingBuilder`
-- `EctoShorts.DynamicBuilders.Helpers`
+- `EctoShorts.DynamicExpressions.Helpers`
 
 The later implementation must preserve their existing public and internal handoff contracts unless this plan is revised first.
 
