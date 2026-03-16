@@ -7,6 +7,7 @@ defmodule EctoShorts.CommonFilters.ComparisonOperatorsTest do
   alias EctoShorts.Schema.Post
 
   import Ecto.Query
+  import ExUnit.CaptureLog
 
   describe "convert_params_to_filter/3 comparison operators" do
     test "matches records where the field equals the value using ==" do
@@ -247,6 +248,35 @@ defmodule EctoShorts.CommonFilters.ComparisonOperatorsTest do
         )
 
       assert_sql(expected, q2)
+    end
+
+    test "falls back to the default quantified select field when a string override is invalid" do
+      expected =
+        from(p in Post,
+          where:
+            p.id ==
+              all(
+                from(c in Comment,
+                  where: c.published == ^true,
+                  select: c.id
+                )
+              )
+        )
+
+      log =
+        capture_log(fn ->
+          actual =
+            CommonFilters.convert_params_to_filter(
+              Post,
+              %{id: %{all: %{from: Comment, select: %{field: "does_not_exist"}, where: %{published: true}}}},
+              []
+            )
+
+          assert_sql(expected, actual)
+        end)
+
+      assert log =~
+               "Field \"does_not_exist\" does not exist on schema EctoShorts.Schema.Comment, skipping field reference"
     end
 
     test "matches records using quantified greater-than all comparison" do
