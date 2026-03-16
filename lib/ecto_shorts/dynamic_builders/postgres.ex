@@ -43,9 +43,10 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
       #Ecto.Query.DynamicExpr<...>
   """
 
+  import Ecto.Query, only: [dynamic: 1]
+
   alias EctoShorts.{
     CommonSchema,
-    CommonFilters.Dynamic,
     CommonFilters.SetComparison,
     DynamicBuilders.Postgres.ArrayExpr,
     DynamicBuilders.Postgres.CommonExpr,
@@ -123,10 +124,10 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
       |> then(&Normalizer.normalize_params(source, &1, opts))
       |> Enum.reduce(nil, fn entry, acc ->
         dyn = apply_expr(source, selected_binding, entry, opts)
-        Dynamic.merge_dynamic(acc, quantifier_op, dyn)
+        merge_dynamic(acc, quantifier_op, dyn)
       end)
 
-    Dynamic.merge_dynamic(nil, :and, expr)
+    merge_dynamic(nil, :and, expr)
   end
 
   def build_dynamic(source, selected_binding, {key, params}, opts) do
@@ -136,10 +137,10 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
       |> Enum.reduce(nil, fn entry, acc ->
         {merge_op, expr_entry} = expr_entry(key, entry)
         dyn = apply_expr(source, selected_binding, expr_entry, opts)
-        Dynamic.merge_dynamic(acc, merge_op, dyn)
+        merge_dynamic(acc, merge_op, dyn)
       end)
 
-    Dynamic.merge_dynamic(nil, :and, expr)
+    merge_dynamic(nil, :and, expr)
   end
 
   defp apply_expr(source, selected_binding, {key, term}, opts) do
@@ -150,7 +151,7 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
       Keyword.keyword?(term) ->
         Enum.reduce(term, nil, fn {inner_key, inner_value}, acc ->
           dyn = apply_expr(source, selected_binding, {key, {inner_key, inner_value}}, opts)
-          Dynamic.merge_dynamic(acc, :and, dyn)
+          merge_dynamic(acc, :and, dyn)
         end)
 
       true ->
@@ -236,4 +237,9 @@ defmodule EctoShorts.DynamicBuilders.Postgres do
   defp binding_selector?({:as, name}) when is_atom(name), do: true
   defp binding_selector?({:at, position}) when is_integer(position) and position >= 1, do: true
   defp binding_selector?(_), do: false
+
+  defp merge_dynamic(nil, _, b), do: b
+  defp merge_dynamic(a, _, nil), do: a
+  defp merge_dynamic(a, :and, b), do: dynamic(^a and ^b)
+  defp merge_dynamic(a, :or, b), do: dynamic(^a or ^b)
 end

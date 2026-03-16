@@ -183,7 +183,12 @@ defmodule EctoShorts.CommonFilters.Select do
     select_merge_field(query, selected_binding, field_alias, field_name)
   end
 
-  defp apply_select_merge_entry(query, selected_binding, field_alias, %Ecto.Query.DynamicExpr{} = dynamic_expr) do
+  defp apply_select_merge_entry(
+         query,
+         selected_binding,
+         field_alias,
+         %Ecto.Query.DynamicExpr{} = dynamic_expr
+       ) do
     select_merge_dynamic(query, selected_binding, field_alias, dynamic_expr)
   end
 

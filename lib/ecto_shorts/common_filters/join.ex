@@ -18,9 +18,10 @@ defmodule EctoShorts.CommonFilters.Join do
 
   @join_types [:association, :schema, :table, :query, :subquery, :fragment]
 
+  import Ecto.Query, only: [dynamic: 1]
+
   alias EctoShorts.DynamicBuilders
   alias EctoShorts.CommonFilters
-  alias EctoShorts.CommonFilters.Dynamic
   alias EctoShorts.CommonSchema
   alias EctoShorts.QueryBinding
   alias EctoShorts.Config
@@ -273,7 +274,7 @@ defmodule EctoShorts.CommonFilters.Join do
   defp build_on_dynamic(schema_source, selected_binding, entries, opts) when is_list(entries) do
     Enum.reduce(entries, nil, fn {key, value}, acc ->
       dyn = DynamicBuilders.build_dynamic(schema_source, selected_binding, {key, value}, opts)
-      Dynamic.merge_dynamic(acc, :and, dyn)
+      merge_dynamic(acc, :and, dyn)
     end)
   end
 
@@ -434,4 +435,8 @@ defmodule EctoShorts.CommonFilters.Join do
       )
     end
   end
+
+  defp merge_dynamic(nil, _, b), do: b
+  defp merge_dynamic(a, _, nil), do: a
+  defp merge_dynamic(a, :and, b), do: dynamic(^a and ^b)
 end

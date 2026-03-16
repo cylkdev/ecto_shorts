@@ -53,20 +53,14 @@ defmodule EctoShorts.Actions do
                %{title: "Transaction", description: "Transaction wrappers."}
              ]
 
-  alias Ecto.Changeset
-
   alias EctoShorts.Actions.Batch
   alias EctoShorts.Actions.Bulk
-  alias EctoShorts.Actions.Error
+  alias EctoShorts.Actions.CRUD
   alias EctoShorts.Actions.Multi
   alias EctoShorts.Actions.Source
   alias EctoShorts.Actions.Transaction
 
-  alias EctoShorts.{
-    Config,
-    CommonFilters,
-    CommonSchema
-  }
+  alias EctoShorts.{Config, CommonFilters}
 
   @typedoc """
   Query source accepted by the public read helpers.
@@ -123,7 +117,7 @@ defmodule EctoShorts.Actions do
   """
   @spec preload(struct() | list(term()), term(), opts) :: struct() | list(term())
   def preload(data, preloads, opts \\ []) do
-    Config.replica!(opts).preload(data, preloads, opts)
+    CRUD.preload(data, preloads, opts)
   end
 
   @doc group: "CRUD"
@@ -141,18 +135,8 @@ defmodule EctoShorts.Actions do
   See also `find/3` and `all/3`.
   """
   @spec exists?(queryable, params, opts) :: boolean()
-  def exists?(source, params, opts \\ [])
-
-  def exists?(%Source{} = source, params, opts) do
-    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
-      exists?(queryable, input_params, opts)
-    end
-  end
-
-  def exists?(source, params, opts) do
-    source
-    |> CommonFilters.convert_params_to_filter(params, opts)
-    |> Config.replica!(opts).exists?(opts)
+  def exists?(source, params, opts \\ []) do
+    CRUD.exists?(source, params, opts)
   end
 
   @doc group: "CRUD"
@@ -164,9 +148,7 @@ defmodule EctoShorts.Actions do
   See also `all/2`, `all/3`, and `find/3`.
   """
   @spec all(queryable) :: list(term())
-  def all(queryable) do
-    all(queryable, %{}, [])
-  end
+  def all(queryable), do: CRUD.all(queryable)
 
   @doc group: "CRUD"
   @doc """
@@ -195,33 +177,7 @@ defmodule EctoShorts.Actions do
   See also `all/1`, `all/3`, and `find/3`.
   """
   @spec all(queryable, params | opts) :: list(term())
-  def all(%Source{} = source, params) when is_map(params) and not is_struct(params) do
-    with {:ok, queryable, input_params} <- resolve_source(source, params, []) do
-      all(queryable, input_params, [])
-    end
-  end
-
-  def all(%Source{} = source, opts) when is_list(opts) do
-    params = Keyword.drop(opts, [:repo, :replica, :dynamic_adapter])
-    actual_opts = Keyword.take(opts, [:repo, :replica, :dynamic_adapter])
-
-    with {:ok, queryable, input_params} <- resolve_source(source, params, actual_opts) do
-      all(queryable, input_params, actual_opts)
-    end
-  end
-
-  def all(queryable, params) when is_map(params) and not is_struct(params) do
-    all(queryable, params, [])
-  end
-
-  def all(queryable, opts) do
-    if Keyword.keyword?(opts) do
-      params = Keyword.drop(opts, [:repo, :replica, :dynamic_adapter])
-      all(queryable, params, Keyword.take(opts, [:repo, :replica, :dynamic_adapter]))
-    else
-      raise ArgumentError, "Expected the options parameter to be a keyword list, got: #{inspect(opts)}"
-    end
-  end
+  def all(queryable, params_or_opts), do: CRUD.all(queryable, params_or_opts)
 
   @doc group: "CRUD"
   @doc """
@@ -252,23 +208,7 @@ defmodule EctoShorts.Actions do
   See also `find/3`, `stream/3`, and `EctoShorts.CommonFilters`.
   """
   @spec all(queryable, params, opts) :: list(term())
-  def all(%Source{} = source, params, opts) do
-    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
-      all(queryable, input_params, opts)
-    end
-  end
-
-  def all(queryable, params, opts) do
-    params =
-      params
-      |> put_param(opts, :order_by)
-      |> put_param(opts, :group_by)
-
-    queryable
-    |> CommonFilters.convert_params_to_filter(params, opts)
-    |> Config.repo!(opts).all(opts)
-    |> maybe_preload(opts)
-  end
+  def all(queryable, params, opts), do: CRUD.all(queryable, params, opts)
 
   @doc group: "CRUD"
   @doc """
@@ -289,19 +229,8 @@ defmodule EctoShorts.Actions do
   See also `find/3`, `update/4`, and `EctoShorts.CommonChanges`.
   """
   @spec create(module(), params, opts) :: {:ok, struct()} | {:error, term()}
-  def create(schema, params, opts \\ [])
-
-  def create(%Source{} = source, params, opts) do
-    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
-      create(queryable, input_params, opts)
-    end
-  end
-
-  def create(schema, params, opts) do
-    schema
-    |> CommonSchema.create_changeset(params, opts)
-    |> Config.repo!(opts).insert(opts)
-    |> handle_response_preload(opts)
+  def create(schema, params, opts \\ []) do
+    CRUD.create(schema, params, opts)
   end
 
   @doc group: "CRUD"
@@ -324,8 +253,7 @@ defmodule EctoShorts.Actions do
   """
   @spec get(queryable, id, opts) :: struct() | nil
   def get(queryable, id, opts \\ []) do
-    Config.replica!(opts).get(queryable, id, opts)
-    |> maybe_preload(opts)
+    CRUD.get(queryable, id, opts)
   end
 
   @doc group: "CRUD"
@@ -357,54 +285,8 @@ defmodule EctoShorts.Actions do
   See also `all/3`, `create/3`, and `find_or_create/3`.
   """
   @spec find(queryable, params, opts) :: {:ok, struct()} | {:error, term()}
-  def find(queryable, params, opts \\ [])
-
-  def find(%Source{} = source, params, opts) do
-    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
-      find(queryable, input_params, opts)
-    end
-  end
-
-  def find(query, params, opts)
-      when params === %{} and not is_struct(query, Ecto.Query) do
-    {:error,
-     Error.call(
-       :not_found,
-       "record not found.",
-       %{
-         query: query,
-         params: params
-       },
-       opts
-     )}
-  end
-
-  def find(source, params, opts) do
-    params =
-      params
-      |> put_param(opts, :order_by)
-      |> put_param(opts, :group_by)
-
-    opts = Keyword.drop(opts, [:order_by, :group_by])
-
-    case source
-         |> CommonFilters.convert_params_to_filter(params, opts)
-         |> Config.replica!(opts).one(opts) do
-      nil ->
-        {:error,
-         Error.call(
-           :not_found,
-           "record not found.",
-           %{
-             query: source,
-             params: params
-           },
-           opts
-         )}
-
-      record ->
-        {:ok, maybe_preload(record, opts)}
-    end
+  def find(queryable, params, opts \\ []) do
+    CRUD.find(queryable, params, opts)
   end
 
   @doc group: "CRUD"
@@ -458,34 +340,8 @@ defmodule EctoShorts.Actions do
   See also `find_and_update/4`, `create/3`, and `EctoShorts.CommonChanges`.
   """
   @spec update(module(), id | struct(), params, opts) :: {:ok, struct()} | {:error, term()}
-  def update(queryable, id_or_schema_struct, params, opts \\ [])
-
-  def update(queryable, id, params, opts) when is_integer(id) or is_binary(id) do
-    with {:ok, record} <- find(queryable, %{id: id}, opts) do
-      update(queryable, record, params, opts)
-    end
-  end
-
-  def update(queryable, schema_struct, params, opts) do
-    changeset =
-      queryable
-      |> CommonSchema.create_changeset(schema_struct, params, opts)
-      |> maybe_apply_optimistic_lock(queryable, opts)
-
-    Config.repo!(opts).update(changeset, opts)
-    |> handle_response_preload(opts)
-  rescue
-    Ecto.StaleEntryError ->
-      {:error,
-       Error.call(
-         :stale,
-         "record has been modified by another process.",
-         %{
-           schema: CommonSchema.get_schema(queryable),
-           struct: schema_struct
-         },
-         opts
-       )}
+  def update(queryable, id_or_schema_struct, params, opts \\ []) do
+    CRUD.update(queryable, id_or_schema_struct, params, opts)
   end
 
   @doc group: "CRUD"
@@ -505,9 +361,7 @@ defmodule EctoShorts.Actions do
   """
   @spec delete(struct() | Ecto.Changeset.t() | [struct() | Ecto.Changeset.t()]) ::
           {:ok, struct() | list(term())} | {:error, term()}
-  def delete(data) do
-    delete(data, [])
-  end
+  def delete(data), do: CRUD.delete(data)
 
   @doc group: "CRUD"
   @doc """
@@ -521,30 +375,8 @@ defmodule EctoShorts.Actions do
   """
   @spec delete(queryable | struct() | Ecto.Changeset.t() | [struct() | Ecto.Changeset.t()], id | opts) ::
           {:ok, struct() | list(term())} | {:error, term()}
-  def delete(data, opts)
-
-  def delete(queryable, id) when is_binary(id) or is_integer(id) do
-    delete(queryable, id, [])
-  end
-
-  def delete(%{data: %{__meta__: %{schema: schema}}} = changeset, opts) do
-    do_delete(changeset, schema, opts)
-  end
-
-  def delete(%{__meta__: %{schema: schema}} = schema_struct, opts) do
-    do_delete(schema_struct, schema, opts)
-  end
-
-  def delete(records_or_changesets, opts) when is_list(records_or_changesets) do
-    with {:ok, results} <-
-           Enum.reduce_while(records_or_changesets, {:ok, []}, fn entry, {:ok, acc} ->
-             case delete(entry, opts) do
-               {:ok, result} -> {:cont, {:ok, [result | acc]}}
-               {:error, reason} -> {:halt, {:error, reason}}
-             end
-           end) do
-      {:ok, Enum.reverse(results)}
-    end
+  def delete(data, opts) do
+    CRUD.delete(data, opts)
   end
 
   @doc group: "CRUD"
@@ -560,14 +392,8 @@ defmodule EctoShorts.Actions do
   See also `delete/1`, `delete_all/3`, and `find_and_delete/3`.
   """
   @spec delete(queryable, id, opts) :: {:ok, struct()} | {:error, term()}
-  def delete(queryable, id, opts) when is_integer(id) or is_binary(id) do
-    with {:ok, record} <- find(queryable, %{id: id}, opts) do
-      delete(record, opts)
-    end
-  end
-
-  def delete(_queryable, %_{} = struct_or_changeset, opts) do
-    delete(struct_or_changeset, opts)
+  def delete(queryable, id, opts) do
+    CRUD.delete(queryable, id, opts)
   end
 
   @doc group: "CRUD"
@@ -601,18 +427,8 @@ defmodule EctoShorts.Actions do
   See also `all/3`, `transact/2`, and `EctoShorts.CommonFilters`.
   """
   @spec stream(queryable, params, opts) :: Enumerable.t()
-  def stream(queryable, params \\ %{}, opts \\ [])
-
-  def stream(%Source{} = source, params, opts) do
-    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
-      stream(queryable, input_params, opts)
-    end
-  end
-
-  def stream(queryable, params, opts) do
-    queryable
-    |> CommonFilters.convert_params_to_filter(params, opts)
-    |> Config.repo!(opts).stream(opts)
+  def stream(queryable, params \\ %{}, opts \\ []) do
+    CRUD.stream(queryable, params, opts)
   end
 
   @doc group: "CRUD"
@@ -629,18 +445,8 @@ defmodule EctoShorts.Actions do
   See also `all/3` and `exists?/3`.
   """
   @spec aggregate(queryable, params, atom(), atom(), opts) :: term()
-  def aggregate(queryable, params \\ %{}, aggregate \\ :count, key \\ :id, opts \\ [])
-
-  def aggregate(%Source{} = source, params, aggregate, key, opts) do
-    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
-      aggregate(queryable, input_params, aggregate, key, opts)
-    end
-  end
-
-  def aggregate(queryable, params, aggregate, key, opts) do
-    queryable
-    |> CommonFilters.convert_params_to_filter(params, opts)
-    |> Config.replica!(opts).aggregate(aggregate, key, opts)
+  def aggregate(queryable, params \\ %{}, aggregate \\ :count, key \\ :id, opts \\ []) do
+    CRUD.aggregate(queryable, params, aggregate, key, opts)
   end
 
   @doc group: "CRUD"
@@ -666,18 +472,8 @@ defmodule EctoShorts.Actions do
   See also `find_or_create/3`, `find_and_update/4`, and `create/3`.
   """
   @spec find_and_create(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_and_create(queryable, find_params, create_params, opts \\ [])
-
-  def find_and_create(%Source{} = source, find_params, create_params, opts) do
-    with {:ok, queryable, clean_find_params} <- resolve_source(source, find_params, opts) do
-      find_and_create(queryable, clean_find_params, create_params, opts)
-    end
-  end
-
-  def find_and_create(queryable, find_params, create_params, opts) do
-    with {:error, _} <- find(queryable, find_params, Keyword.delete(opts, :preload)) do
-      create(queryable, create_params, opts)
-    end
+  def find_and_create(queryable, find_params, create_params, opts \\ []) do
+    CRUD.find_and_create(queryable, find_params, create_params, opts)
   end
 
   @doc group: "CRUD"
@@ -702,18 +498,8 @@ defmodule EctoShorts.Actions do
   See also `update/4`, `find_and_upsert/4`, and `find/3`.
   """
   @spec find_and_update(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_and_update(source, find_params, update_params, opts \\ [])
-
-  def find_and_update(%Source{} = source, find_params, update_params, opts) do
-    with {:ok, queryable, clean_find_params} <- resolve_source(source, find_params, opts) do
-      find_and_update(queryable, clean_find_params, update_params, opts)
-    end
-  end
-
-  def find_and_update(source, find_params, update_params, opts) do
-    with {:ok, record} <- find(source, find_params, Keyword.delete(opts, :preload)) do
-      update(source, record, update_params, opts)
-    end
+  def find_and_update(source, find_params, update_params, opts \\ []) do
+    CRUD.find_and_update(source, find_params, update_params, opts)
   end
 
   @doc group: "CRUD"
@@ -738,19 +524,8 @@ defmodule EctoShorts.Actions do
   See also `find_and_update/4`, `find_or_create/3`, and `create/3`.
   """
   @spec find_and_upsert(module(), params, params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_and_upsert(source, find_params, upsert_params, opts \\ [])
-
-  def find_and_upsert(%Source{} = source, find_params, upsert_params, opts) do
-    with {:ok, queryable, clean_find_params} <- resolve_source(source, find_params, opts) do
-      find_and_upsert(queryable, clean_find_params, upsert_params, opts)
-    end
-  end
-
-  def find_and_upsert(source, find_params, upsert_params, opts) do
-    case find(source, find_params, Keyword.delete(opts, :preload)) do
-      {:ok, record} -> update(source, record, upsert_params, opts)
-      {:error, _} -> create(source, Map.merge(find_params, upsert_params), opts)
-    end
+  def find_and_upsert(source, find_params, upsert_params, opts \\ []) do
+    CRUD.find_and_upsert(source, find_params, upsert_params, opts)
   end
 
   @doc group: "CRUD"
@@ -765,18 +540,8 @@ defmodule EctoShorts.Actions do
   See also `delete/1`, `delete_all/3`, and `find/3`.
   """
   @spec find_and_delete(module(), params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_and_delete(source, find_params, opts \\ [])
-
-  def find_and_delete(%Source{} = source, find_params, opts) do
-    with {:ok, queryable, clean_find_params} <- resolve_source(source, find_params, opts) do
-      find_and_delete(queryable, clean_find_params, opts)
-    end
-  end
-
-  def find_and_delete(source, find_params, opts) do
-    with {:ok, record} <- find(source, find_params, opts) do
-      delete(record, opts)
-    end
+  def find_and_delete(source, find_params, opts \\ []) do
+    CRUD.find_and_delete(source, find_params, opts)
   end
 
   @doc group: "CRUD"
@@ -808,28 +573,8 @@ defmodule EctoShorts.Actions do
   See also `find_and_create/4`, `find_or_create_many/3`, and `create/3`.
   """
   @spec find_or_create(module(), params, opts) :: {:ok, struct()} | {:error, term()}
-  def find_or_create(source, params, opts \\ [])
-
-  def find_or_create(%Source{} = source, params, opts) do
-    with {:ok, queryable, input_params} <- resolve_source(source, params, opts) do
-      find_or_create(queryable, input_params, opts)
-    end
-  end
-
-  def find_or_create(source, params, opts) do
-    result =
-      with {:error, _} <-
-             find(
-               source,
-               Map.take(params, CommonSchema.get_query_fields(opts, source)),
-               Keyword.delete(opts, :preload)
-             ) do
-        source
-        |> CommonSchema.get_schema_source()
-        |> create(params, opts)
-      end
-
-    handle_response_preload(result, opts)
+  def find_or_create(source, params, opts \\ []) do
+    CRUD.find_or_create(source, params, opts)
   end
 
   @doc group: "Transaction"
@@ -940,7 +685,19 @@ defmodule EctoShorts.Actions do
         |> Config.repo!(opts).all(opts)
         |> Enum.group_by(&Map.take(&1, batch_keys))
         |> Batch.handle_batch_response(cardinality, batch_keys)
-        |> Map.new(fn {k, v} -> {k, maybe_preload(v, opts)} end)
+        |> then(fn results ->
+          preloaded =
+            results
+            |> Enum.map(fn {_, v} -> v end)
+            |> CRUD.maybe_preload(opts)
+
+          results
+          |> Enum.map(fn {k, _} -> k end)
+          |> Enum.zip(preloaded)
+          |> Map.new()
+        end)
+
+        |> Map.new(fn {k, v} -> {k, CRUD.maybe_preload(v, opts)} end)
     end
   end
 
@@ -959,7 +716,7 @@ defmodule EctoShorts.Actions do
       |> Config.repo!(opts).all(opts)
       |> Enum.group_by(&Batch.normalize_batch_key(&1, batch_key))
       |> Batch.handle_batch_response(cardinality, batch_key)
-      |> Map.new(fn {k, v} -> {k, maybe_preload(v, opts)} end)
+      |> Map.new(fn {k, v} -> {k, CRUD.maybe_preload(v, opts)} end)
     end
   end
 
@@ -1115,8 +872,8 @@ defmodule EctoShorts.Actions do
   """
   @spec create_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def create_many(schema, params_list, opts \\ []) when is_list(params_list) do
-    run_multi(Multi.build_create_many_multi(schema, params_list, opts), opts)
-    |> handle_response_preload(opts)
+    result = run_multi(Multi.build_create_many_multi(schema, params_list, opts), opts)
+    CRUD.handle_response_preload(result, opts)
   end
 
   @doc group: "Multi"
@@ -1139,8 +896,8 @@ defmodule EctoShorts.Actions do
   """
   @spec find_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_many(schema, params_list, opts \\ []) when is_list(params_list) do
-    run_multi(Multi.build_find_many_multi(schema, params_list, opts), opts)
-    |> handle_response_preload(opts)
+    result = run_multi(Multi.build_find_many_multi(schema, params_list, opts), opts)
+    CRUD.handle_response_preload(result, opts)
   end
 
   @doc group: "Multi"
@@ -1166,8 +923,8 @@ defmodule EctoShorts.Actions do
   """
   @spec update_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def update_many(schema, entries, opts \\ []) when is_list(entries) do
-    run_multi(Multi.build_update_many_multi(schema, entries, opts), opts)
-    |> handle_response_preload(opts)
+    result = run_multi(Multi.build_update_many_multi(schema, entries, opts), opts)
+    CRUD.handle_response_preload(result, opts)
   end
 
   @doc group: "Multi"
@@ -1189,8 +946,8 @@ defmodule EctoShorts.Actions do
   """
   @spec delete_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def delete_many(schema, records, opts \\ []) when is_list(records) do
-    run_multi(Multi.build_delete_many_multi(schema, records, opts), opts)
-    |> handle_response_preload(opts)
+    result = run_multi(Multi.build_delete_many_multi(schema, records, opts), opts)
+    CRUD.handle_response_preload(result, opts)
   end
 
   @doc group: "Multi"
@@ -1216,8 +973,8 @@ defmodule EctoShorts.Actions do
   """
   @spec find_or_create_many(module(), list(params()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_or_create_many(schema, params_list, opts \\ []) when is_list(params_list) do
-    run_multi(Multi.build_find_or_create_multi(schema, params_list, opts), opts)
-    |> handle_response_preload(opts)
+    result = run_multi(Multi.build_find_or_create_multi(schema, params_list, opts), opts)
+    CRUD.handle_response_preload(result, opts)
   end
 
   @doc group: "Multi"
@@ -1243,104 +1000,13 @@ defmodule EctoShorts.Actions do
   """
   @spec find_and_upsert_many(module(), list(term()), opts()) :: {:ok, list(term())} | {:error, term()}
   def find_and_upsert_many(schema, entries, opts \\ []) when is_list(entries) do
-    run_multi(Multi.build_upsert_multi(schema, entries, opts), opts)
-    |> handle_response_preload(opts)
-  end
-
-  defp resolve_source(%Source{} = source, params, opts) do
-    from_key = if is_map(params), do: params[:from], else: Keyword.get(params, :from)
-
-    case Source.fetch(source, from_key) do
-      {:ok, queryable} ->
-        input_params =
-          if is_map(params),
-            do: Map.delete(params, :from),
-            else: Keyword.delete(params, :from)
-
-        {:ok, queryable, input_params}
-
-      :error ->
-        {:error, Error.call(:not_found, "source not found.", %{from: from_key}, opts)}
-    end
+    result = run_multi(Multi.build_upsert_multi(schema, entries, opts), opts)
+    CRUD.handle_response_preload(result, opts)
   end
 
   defp run_multi(multi, opts) do
     multi
     |> transaction(opts)
     |> Multi.handle_multi_response(opts)
-  end
-
-  defp do_delete(schema_data, schema, opts) do
-    with {:error, failed_changeset} <-
-           schema
-           |> CommonSchema.create_changeset(schema_data, opts)
-           |> Config.repo!(opts).delete(opts) do
-      {:error,
-       Error.call(
-         :conflict,
-         "failed to delete record.",
-         %{
-           schema: schema,
-           changeset: failed_changeset
-         },
-         opts
-       )}
-    end
-  end
-
-  defp maybe_preload(nil, _opts), do: nil
-
-  defp maybe_preload(data, opts) do
-    case opts[:preload] do
-      nil -> data
-      [] -> data
-      preloads -> preload(data, preloads, opts)
-    end
-  end
-
-  defp handle_response_preload({:ok, value}, opts), do: {:ok, maybe_preload(value, opts)}
-  defp handle_response_preload(other, _opts), do: other
-
-  defp put_param(enum, opts, key) do
-    case Keyword.get(opts, key) do
-      nil ->
-        enum
-
-      value ->
-        if is_map(enum) do
-          Map.put(enum, key, value)
-        else
-          enum ++ [{key, value}]
-        end
-    end
-  end
-
-  defp maybe_apply_optimistic_lock(changeset, queryable, opts) do
-    case resolve_optimistic_lock(queryable, opts) do
-      false ->
-        changeset
-
-      {field, incrementer} when is_atom(field) and is_function(incrementer, 1) ->
-        Changeset.optimistic_lock(changeset, field, incrementer)
-
-      field when is_atom(field) ->
-        Changeset.optimistic_lock(changeset, field)
-    end
-  end
-
-  defp resolve_optimistic_lock(queryable, opts) do
-    case Keyword.fetch(opts, :optimistic_lock) do
-      {:ok, value} ->
-        value
-
-      :error ->
-        schema = CommonSchema.get_schema(queryable)
-
-        if schema !== nil and function_exported?(schema, :optimistic_lock, 0) do
-          schema.optimistic_lock()
-        else
-          false
-        end
-    end
   end
 end

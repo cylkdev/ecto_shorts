@@ -29,7 +29,8 @@ defmodule EctoShorts.CommonFilters.SetComparison do
     end
   end
 
-  defp quantified_select_field(_source, field_name, _outer_key, _opts) when is_atom(field_name), do: field_name
+  defp quantified_select_field(_source, field_name, _outer_key, _opts) when is_atom(field_name),
+    do: field_name
 
   defp quantified_select_field(source, field_name, outer_key, opts) when is_binary(field_name) do
     Normalizer.normalize_field_name(source, field_name, opts) || outer_key

@@ -191,13 +191,21 @@ defmodule EctoShorts.DynamicBuilders.Postgres.ArrayExpr do
   defp dispatch_expr(binding, key, {:like, value}) do
     field = field_dyn(binding, key)
     patterns = normalize_patterns(value)
-    Query.dynamic([], fragment("EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t LIKE ANY (?))", ^field, ^patterns))
+
+    Query.dynamic(
+      [],
+      fragment("EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t LIKE ANY (?))", ^field, ^patterns)
+    )
   end
 
   defp dispatch_expr(binding, key, {:ilike, value}) do
     field = field_dyn(binding, key)
     patterns = normalize_patterns(value)
-    Query.dynamic([], fragment("EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t ILIKE ANY (?))", ^field, ^patterns))
+
+    Query.dynamic(
+      [],
+      fragment("EXISTS (SELECT 1 FROM unnest(?) AS t WHERE t ILIKE ANY (?))", ^field, ^patterns)
+    )
   end
 
   defp dispatch_expr(_binding, _key, _term), do: nil
