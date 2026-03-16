@@ -246,39 +246,23 @@ defmodule EctoShorts.CommonFilters.Windows do
 
   defp normalize_order_by(value, _selected_binding), do: value
 
+  defp apply_window_definition(query, _selected_binding, window_name, partition_by, order_by, nil) do
+    Query.windows(
+      query,
+      [{window_name, [partition_by: ^partition_by, order_by: ^order_by]}]
+    )
+  end
+
+  defp apply_window_definition(query, _selected_binding, window_name, partition_by, order_by, frame) do
+    Query.windows(
+      query,
+      [{window_name, [partition_by: ^partition_by, order_by: ^order_by, frame: ^frame]}]
+    )
+  end
+
   {target_binding_var, binding_patterns} = QueryBinding.query_binding_contracts(__MODULE__)
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
-    defp apply_window_definition(
-           query,
-           unquote(quoted_binding_head),
-           window_name,
-           partition_by,
-           order_by,
-           nil
-         ) do
-      Query.windows(
-        query,
-        [unquote_splicing(quoted_binding_body)],
-        [{window_name, [partition_by: ^partition_by, order_by: ^order_by]}]
-      )
-    end
-
-    defp apply_window_definition(
-           query,
-           unquote(quoted_binding_head),
-           window_name,
-           partition_by,
-           order_by,
-           frame
-         ) do
-      Query.windows(
-        query,
-        [unquote_splicing(quoted_binding_body)],
-        [{window_name, [partition_by: ^partition_by, order_by: ^order_by, frame: ^frame]}]
-      )
-    end
-
     defp dynamic_field_expr(unquote(quoted_binding_head), field_name) do
       Query.dynamic(
         [unquote_splicing(quoted_binding_body)],

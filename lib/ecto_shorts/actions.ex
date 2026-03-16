@@ -164,12 +164,6 @@ defmodule EctoShorts.Actions do
   See also `all/2`, `all/3`, and `find/3`.
   """
   @spec all(queryable) :: list(term())
-  def all(%Source{} = source) do
-    with {:ok, queryable, input_params} <- resolve_source(source, %{}, []) do
-      all(queryable, input_params, [])
-    end
-  end
-
   def all(queryable) do
     all(queryable, %{}, [])
   end

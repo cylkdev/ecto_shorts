@@ -40,9 +40,7 @@ defmodule EctoShorts.QueryBinding do
   chains.
   """
 
-  alias EctoShorts.Config
-
-  @default_max_positional_bindings 1000
+  @default_max_positional_bindings 10
 
   @doc """
   Generates binding patterns for a query binding module at compile time.
@@ -64,6 +62,10 @@ defmodule EctoShorts.QueryBinding do
     * `opts` - keyword options:
       * `:positions` - override the maximum positional binding count.
 
+  ## Options
+
+    * `:positions` - the number of positional bindings to create.
+
   ## Examples
 
       {target_var, patterns} = EctoShorts.QueryBinding.query_binding_contracts(__MODULE__, positions: 3)
@@ -72,8 +74,7 @@ defmodule EctoShorts.QueryBinding do
   """
   @spec query_binding_contracts(atom(), keyword()) :: Macro.t()
   def query_binding_contracts(context \\ __MODULE__, opts \\ []) do
-    max_positional_bindings =
-      opts[:positions] || Config.max_positional_bindings() || @default_max_positional_bindings |> IO.inspect(label: "YO")
+    max_positional_bindings = opts[:positions] || @default_max_positional_bindings
 
     target_binding_var = Macro.var(:q, context)
     binding_alias_var = Macro.var(:binding_alias, context)

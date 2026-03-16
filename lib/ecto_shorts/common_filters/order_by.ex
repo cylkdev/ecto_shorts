@@ -43,113 +43,62 @@ defmodule EctoShorts.CommonFilters.OrderBy do
   end
 
   for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
-    defp build_order_by(query, unquote(quoted_binding_head), field_name)
-         when is_atom(field_name) do
-      Query.order_by(
-        query,
+    defp field_dyn(unquote(quoted_binding_head), field_name) do
+      Query.dynamic(
         [unquote_splicing(quoted_binding_body)],
-        desc: field(unquote(target_binding_var), ^field_name)
+        field(unquote(target_binding_var), ^field_name)
       )
     end
+  end
 
-    defp build_order_by(query, unquote(quoted_binding_head), {dir, field_name})
-         when dir in @directions and is_atom(field_name) do
-      Query.order_by(
-        query,
-        [unquote_splicing(quoted_binding_body)],
-        [{^dir, field(unquote(target_binding_var), ^field_name)}]
-      )
-    end
+  defp build_order_by(query, selected_binding, field_name) when is_atom(field_name) do
+    Query.order_by(query, ^[desc: field_dyn(selected_binding, field_name)])
+  end
 
-    defp build_order_by(query, unquote(quoted_binding_head), entries) when is_list(entries) do
-      order_exprs =
-        Enum.map(entries, fn
-          {dir, field_name} when dir in @directions and is_atom(field_name) ->
-            dyn =
-              Query.dynamic(
-                [unquote_splicing(quoted_binding_body)],
-                field(unquote(target_binding_var), ^field_name)
-              )
+  defp build_order_by(query, selected_binding, {dir, field_name})
+       when dir in @directions and is_atom(field_name) do
+    Query.order_by(query, ^[{dir, field_dyn(selected_binding, field_name)}])
+  end
 
-            {dir, dyn}
-
-          field_name when is_atom(field_name) ->
-            dyn =
-              Query.dynamic(
-                [unquote_splicing(quoted_binding_body)],
-                field(unquote(target_binding_var), ^field_name)
-              )
-
-            {:desc, dyn}
-
-          %Ecto.Query.DynamicExpr{} = dynamic_expr ->
-            dynamic_expr
-
-          other ->
-            other
-        end)
-
-      Query.order_by(query, ^order_exprs)
-    end
+  defp build_order_by(query, selected_binding, entries) when is_list(entries) do
+    Query.order_by(query, ^build_order_exprs(selected_binding, entries))
   end
 
   defp build_order_by(query, _selected_binding, expr) do
     Query.order_by(query, ^expr)
   end
 
-  for {quoted_binding_head, quoted_binding_body} <- binding_patterns do
-    defp build_prepend_order_by(query, unquote(quoted_binding_head), field_name)
-         when is_atom(field_name) do
-      Query.prepend_order_by(
-        query,
-        [unquote_splicing(quoted_binding_body)],
-        desc: field(unquote(target_binding_var), ^field_name)
-      )
-    end
+  defp build_prepend_order_by(query, selected_binding, field_name) when is_atom(field_name) do
+    Query.prepend_order_by(query, ^[desc: field_dyn(selected_binding, field_name)])
+  end
 
-    defp build_prepend_order_by(query, unquote(quoted_binding_head), {dir, field_name})
-         when dir in @directions and is_atom(field_name) do
-      Query.prepend_order_by(
-        query,
-        [unquote_splicing(quoted_binding_body)],
-        [{^dir, field(unquote(target_binding_var), ^field_name)}]
-      )
-    end
+  defp build_prepend_order_by(query, selected_binding, {dir, field_name})
+       when dir in @directions and is_atom(field_name) do
+    Query.prepend_order_by(query, ^[{dir, field_dyn(selected_binding, field_name)}])
+  end
 
-    defp build_prepend_order_by(query, unquote(quoted_binding_head), entries)
-         when is_list(entries) do
-      order_exprs =
-        Enum.map(entries, fn
-          {dir, field_name} when dir in @directions and is_atom(field_name) ->
-            dyn =
-              Query.dynamic(
-                [unquote_splicing(quoted_binding_body)],
-                field(unquote(target_binding_var), ^field_name)
-              )
-
-            {dir, dyn}
-
-          field_name when is_atom(field_name) ->
-            dyn =
-              Query.dynamic(
-                [unquote_splicing(quoted_binding_body)],
-                field(unquote(target_binding_var), ^field_name)
-              )
-
-            {:desc, dyn}
-
-          %Ecto.Query.DynamicExpr{} = dynamic_expr ->
-            dynamic_expr
-
-          other ->
-            other
-        end)
-
-      Query.prepend_order_by(query, ^order_exprs)
-    end
+  defp build_prepend_order_by(query, selected_binding, entries)
+       when is_list(entries) do
+    Query.prepend_order_by(query, ^build_order_exprs(selected_binding, entries))
   end
 
   defp build_prepend_order_by(query, _selected_binding, expr) do
     Query.prepend_order_by(query, ^expr)
+  end
+
+  defp build_order_exprs(selected_binding, entries) do
+    Enum.map(entries, fn
+      {dir, field_name} when dir in @directions and is_atom(field_name) ->
+        {dir, field_dyn(selected_binding, field_name)}
+
+      field_name when is_atom(field_name) ->
+        {:desc, field_dyn(selected_binding, field_name)}
+
+      %Ecto.Query.DynamicExpr{} = dynamic_expr ->
+        dynamic_expr
+
+      other ->
+        other
+    end)
   end
 end
